@@ -9,7 +9,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { SectorBreakdownCard, MetricCardGrid, type CardImageType } from "../primitives";
+import { SectorBreakdownCard, MetricCardGrid, type CardImageType, useCountryData } from "../primitives";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -35,6 +35,7 @@ export function EconomyTab({
 }) {
   const [expandedSection, setExpandedSection] = React.useState<string | null>("sectors");
   const currency = country?.nationalIdentity?.currency || "USD";
+  const { isPublicReadOnly } = useCountryData();
 
   const toggleSection = (sectionId: string) => {
     setExpandedSection(expandedSection === sectionId ? null : sectionId);
@@ -49,7 +50,7 @@ export function EconomyTab({
         backgroundImage={{
           countryId: country.id,
           cardType: "economic_indicators",
-          showEditButton: true,
+          showEditButton: !isPublicReadOnly,
           onEditClick: () =>
             setImageUploadModalAction({ isOpen: true, cardType: "economic_indicators" }),
           autoFallback: true,
@@ -77,16 +78,18 @@ export function EconomyTab({
               GDP, trade, and sector analysis for {country.name}
             </p>
           </div>
-          <Link href={createUrl("/mycountry/editor")}>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 cursor-pointer gap-1.5 border-emerald-500/20 bg-emerald-500/5 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-            >
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span>Open Editor</span>
-            </Button>
-          </Link>
+          {!isPublicReadOnly && (
+            <Link href={createUrl("/mycountry/editor")}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 cursor-pointer gap-1.5 border-emerald-500/20 bg-emerald-500/5 text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>Open Editor</span>
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* ── 3-Column Metric Toggle Grid ── */}

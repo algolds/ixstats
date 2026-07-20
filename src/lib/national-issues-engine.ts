@@ -812,7 +812,13 @@ export class NationalIssuesEngine {
       }
 
       // Load active templates
-      const whereClause: any = { isActive: true };
+      const whereClause: any = {
+        isActive: true,
+        NOT: [
+          { domain: { in: ["diplomatic", "foreign"] } },
+          { category: { in: ["DIPLOMATIC", "diplomatic"] } }
+        ]
+      };
       if (options?.forceDomain) {
         whereClause.domain = options.forceDomain;
       }

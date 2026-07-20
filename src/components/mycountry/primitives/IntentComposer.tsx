@@ -17,12 +17,26 @@ const TONE_CLS: Record<Tone, string> = {
   fog: "text-muted-foreground bg-muted/40 border-border",
 };
 
-const GOAL_CHIPS = [
-  "Cool the housing market",
-  "Modernize the navy",
-  "Court a neighbour as an ally",
-  "Rein in inflation",
-  "Develop the coast",
+interface DomesticSuggestion {
+  category: string;
+  label: string;
+  keywords: string[];
+  icon: string;
+}
+
+const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
+  { category: "Economy", label: "Cool the housing market", keywords: ["housing", "market", "rent", "property", "house"], icon: "🏠" },
+  { category: "Economy", label: "Create industrial manufacturing jobs", keywords: ["job", "manufacturing", "employ", "labor", "work"], icon: "🏭" },
+  { category: "Economy", label: "Increase the minimum wage", keywords: ["wage", "minimum", "pay", "income"], icon: "💵" },
+  { category: "Fiscal", label: "Rein in inflation", keywords: ["inflation", "price", "cost"], icon: "📈" },
+  { category: "Fiscal", label: "Reduce national debt deficit", keywords: ["debt", "deficit", "spend", "tax"], icon: "📊" },
+  { category: "Social", label: "Invest in public school education", keywords: ["education", "school", "teach", "learn"], icon: "📚" },
+  { category: "Social", label: "Improve healthcare and hospital access", keywords: ["health", "hospital", "medical", "doctor"], icon: "🏥" },
+  { category: "Social", label: "Expand social welfare safety net", keywords: ["welfare", "poverty", "support", "benefit"], icon: "🤝" },
+  { category: "Infrastructure", label: "Develop national highway transit", keywords: ["road", "highway", "transit", "infrastructure", "bridge"], icon: "🛣️" },
+  { category: "Infrastructure", label: "Upgrade the national energy power grid", keywords: ["grid", "energy", "power", "electricity"], icon: "⚡" },
+  { category: "Security", label: "Reduce urban crime rates", keywords: ["crime", "police", "security", "safety", "order"], icon: "👮" },
+  { category: "Defense", label: "Modernize national defense forces", keywords: ["military", "navy", "army", "defense", "forces"], icon: "🛡️" },
 ];
 
 interface IntentComposerProps {
@@ -160,25 +174,79 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
       )}
 
       {!goal ? (
-        <div className="space-y-1.5">
-          <div className="text-muted-foreground px-1 text-[11px] font-bold tracking-widest uppercase">
-            Suggested — from the state of your nation
-          </div>
-          {GOAL_CHIPS.map((g) => (
-            <button
-              key={g}
-              onClick={() => propose(g)}
-              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 text-left transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/20 hover:bg-amber-500/[0.04] active:scale-[0.97]"
-            >
-              <span className="grid h-7 w-7 place-items-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-400 shadow-sm">
-                ✦
-              </span>
-              <span className="text-foreground/90 flex-1 text-[13px] font-medium">{g}</span>
-              <span className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
-                goal
-              </span>
-            </button>
-          ))}
+        <div className="space-y-4">
+          {/* Autocomplete Search Matches */}
+          {q.trim().length > 0 && (
+            <div className="rounded-xl border border-white/10 bg-black/40 p-2.5 shadow-2xl backdrop-blur-md">
+              <div className="text-muted-foreground px-2 py-1 text-[10px] font-bold tracking-widest uppercase">
+                Matching Suggestions
+              </div>
+              <div className="mt-1.5 max-h-[220px] overflow-y-auto space-y-1">
+                {DOMESTIC_SUGGESTIONS.filter(
+                  (s) =>
+                    s.label.toLowerCase().includes(q.toLowerCase()) ||
+                    s.keywords.some((k) => k.includes(q.toLowerCase()))
+                ).map((s) => (
+                  <button
+                    key={s.label}
+                    onClick={() => {
+                      setQ(s.label);
+                      setErr(null);
+                      propose(s.label);
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-all hover:bg-amber-500/10 hover:text-amber-300"
+                  >
+                    <span className="text-sm">{s.icon}</span>
+                    <span className="font-semibold text-foreground/90">{s.label}</span>
+                    <span className="text-[9px] text-muted-foreground/60 ml-auto bg-white/5 px-2 py-0.5 rounded uppercase font-black tracking-wider">{s.category}</span>
+                  </button>
+                ))}
+                {DOMESTIC_SUGGESTIONS.filter(
+                  (s) =>
+                    s.label.toLowerCase().includes(q.toLowerCase()) ||
+                    s.keywords.some((k) => k.includes(q.toLowerCase()))
+                ).length === 0 && (
+                  <div className="text-muted-foreground py-4 text-center text-xs">
+                    No matching predefined goals. Press Enter to search custom intent.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Predefined suggestion grid */}
+          {q.trim().length === 0 && (
+            <div className="space-y-3">
+              <div className="text-muted-foreground px-1 text-[11px] font-bold tracking-widest uppercase">
+                Suggested Domestic Cabinet Goals
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {Array.from(new Set(DOMESTIC_SUGGESTIONS.map((s) => s.category))).map((cat) => (
+                  <div key={cat} className="rounded-xl border border-white/5 bg-white/[0.01] p-3 space-y-2">
+                    <div className="text-amber-400 text-[10px] font-black tracking-wider uppercase border-b border-white/5 pb-1 flex items-center justify-between">
+                      <span>{cat}</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {DOMESTIC_SUGGESTIONS.filter((s) => s.category === cat).map((s) => (
+                        <button
+                          key={s.label}
+                          onClick={() => {
+                            setQ(s.label);
+                            setErr(null);
+                            propose(s.label);
+                          }}
+                          className="flex items-center gap-2 rounded-lg bg-white/[0.02] hover:bg-amber-500/[0.04] px-2.5 py-2 text-left text-xs transition-all hover:text-amber-300 text-foreground/80 font-medium active:scale-[0.98]"
+                        >
+                          <span>{s.icon}</span>
+                          <span>{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : suggest.isFetching || !data ? (
         <div className="text-muted-foreground px-1 py-6 text-center text-sm">
@@ -192,17 +260,9 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
             {data.category && (
               <span className="text-muted-foreground ml-2 lowercase">
                 · {data.category}
-                {data.target ? ` · ${data.target}` : ""}
               </span>
             )}
           </div>
-
-          {data.foreignNeedsTarget && (
-            <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200">
-              Foreign-policy intents need a specific target — name who or what (e.g. “…with
-              Burgundie”).
-            </div>
-          )}
 
           {data.packages.map((p: any) => (
             <button

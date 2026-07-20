@@ -8,7 +8,7 @@ import { Bell, AlertTriangle, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { AnimatedTabContent, staggerItem, CardImageUploadModal } from "./primitives";
+import { AnimatedTabContent, staggerItem, CardImageUploadModal, useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
 import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
@@ -36,6 +36,7 @@ interface MyCountryTabSystemProps {
 
 function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCountryTabSystemProps) {
   const { activeTab, tabDirection, handleTabChange } = useMyCountryNavigation(v2);
+  const { isPublicReadOnly } = useCountryData();
   const {
     country,
     economyData,
@@ -123,15 +124,17 @@ function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCoun
       </AnimatedTabContent>
 
       {/* Render premium upgrade teaser */}
-      <UpgradeTeaser variant={variant} />
+      {!isPublicReadOnly && <UpgradeTeaser variant={variant} />}
 
       {/* Card Image Upload Modal */}
-      <CardImageUploadModal
-        isOpen={imageUploadModal.isOpen}
-        onClose={() => setImageUploadModal({ ...imageUploadModal, isOpen: false })}
-        countryId={country?.id || ""}
-        cardType={imageUploadModal.cardType}
-      />
+      {!isPublicReadOnly && (
+        <CardImageUploadModal
+          isOpen={imageUploadModal.isOpen}
+          onClose={() => setImageUploadModal({ ...imageUploadModal, isOpen: false })}
+          countryId={country?.id || ""}
+          cardType={imageUploadModal.cardType}
+        />
+      )}
 
       {/* Metric Detail Modals */}
       {(metricType === "gdp" || metricType === "gdp-per-capita" || metricType === "total-gdp") && (

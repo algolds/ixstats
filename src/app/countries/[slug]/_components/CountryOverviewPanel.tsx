@@ -38,6 +38,9 @@ import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
+import { CountryDataProvider } from "~/components/mycountry/primitives";
+import { MyCountryTabSystem } from "~/components/mycountry/MyCountryTabSystem";
+import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -98,10 +101,7 @@ export function CountryOverviewPanel({
   governmentStructure,
   onTabChange,
 }: CountryOverviewPanelProps) {
-  const [showFullWikiIntro, setShowFullWikiIntro] = useState(false);
-  const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
-  const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
-  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
+  const { hasGeometry, isLoading: mapLoading } = useCountryMapEmbed(country.id);
 
   const { data: activityData, isLoading: activityLoading } =
     api.activities.getCountryActivity.useQuery({
@@ -110,360 +110,52 @@ export function CountryOverviewPanel({
       timeRange: "90d",
     });
 
-  const keyMetrics = [
-    {
-      label: "Population",
-      value: Math.round(country.currentPopulation).toLocaleString(),
-      detail: "Total citizens",
-      icon: Users,
-      color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-      onClick: () => setIsPopulationModalOpen(true),
-    },
-    {
-      label: "GDP",
-      value: formatCompactCurrency(country.currentTotalGdp),
-      detail: "Nominal GDP (annual)",
-      icon: DollarSign,
-      color: "bg-green-500/10 text-green-600 dark:text-green-400",
-      onClick: () => setIsGdpModalOpen(true),
-    },
-    {
-      label: "GDP per Capita",
-      value: formatCompactCurrency(country.currentGdpPerCapita),
-      detail: "Average output per citizen",
-      icon: TrendingUp,
-      color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-      onClick: () => setIsGdpPerCapitaModalOpen(true),
-    },
-    {
-      label: "Growth",
-      value: formatPercent(country.adjustedGdpGrowth, "N/A", 2),
-      detail: "Adjusted GDP growth rate",
-      icon: Activity,
-      color:
-        (country.adjustedGdpGrowth ?? 0) > 0
-          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "bg-red-500/10 text-red-600 dark:text-red-400",
-      onClick: undefined as (() => void) | undefined,
-    },
-  ];
-
-  // Build government fields - first 6 are shown, rest behind "See more"
-  const primaryGovFields: Array<{
-    label: string;
-    value: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [];
-
-  const govName = governmentStructure?.governmentName || country?.nationalIdentity?.officialName;
-  if (govName) primaryGovFields.push({ label: "Government", value: govName, icon: Building });
-
-  const govType =
-    governmentStructure?.governmentType ||
-    country?.governmentType ||
-    country?.nationalIdentity?.governmentType;
-  if (govType) primaryGovFields.push({ label: "Government Type", value: govType, icon: Crown });
-
-  const hos = governmentStructure?.headOfState || country?.leader;
-  if (hos) primaryGovFields.push({ label: "Head of State", value: hos, icon: Users });
-
-  if (governmentStructure?.headOfGovernment)
-    primaryGovFields.push({
-      label: "Head of Government",
-      value: governmentStructure.headOfGovernment,
-      icon: Users,
-    });
-
-  const capital = country?.nationalIdentity?.capitalCity || wikiInfobox?.capital;
-  if (capital) primaryGovFields.push({ label: "Capital", value: capital, icon: MapPin });
-
-  if (country?.religion)
-    primaryGovFields.push({ label: "Religion", value: country.religion, icon: Heart });
-
   return (
     <>
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
-            {/* About + Wiki Intro */}
-            <Card className="bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  About {country.name.replace(/_/g, " ")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {/* Wiki Intro */}
-                {wikiIntro.length > 0 && (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <WikiHtmlContent
-                      as="p"
-                      className="mb-3 text-sm leading-relaxed"
-                      html={sanitizeWikiContent(wikiIntro[0] ?? "")}
-                    />
-                    {wikiIntro.length > 1 && (
-                      <>
-                        {showFullWikiIntro && (
-                          <div className="space-y-3">
-                            {wikiIntro.slice(1).map((paragraph, idx) => (
-                              <WikiHtmlContent
-                                key={idx}
-                                as="p"
-                                className="mb-3 text-sm leading-relaxed"
-                                html={sanitizeWikiContent(paragraph)}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowFullWikiIntro(!showFullWikiIntro)}
-                          className="text-primary hover:text-primary/80 mt-1"
-                        >
-                          {showFullWikiIntro
-                            ? "Show less"
-                            : `See more (${wikiIntro.length - 1} more)`}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* At a Glance — inline stats under about */}
-                <div className="border-border/50 border-t pt-4">
-                  <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                    At a Glance
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {keyMetrics.map((metric) => {
-                      const Icon = metric.icon;
-                      return (
-                        <button
-                          key={metric.label}
-                          type="button"
-                          onClick={metric.onClick}
-                          disabled={!metric.onClick}
-                          className="bg-muted/50 hover:bg-muted/80 disabled:hover:bg-muted/50 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-default"
-                        >
-                          <div className="mb-1 flex items-center gap-1.5">
-                            <Icon
-                              className={`h-3 w-3 ${metric.color.split(" ").slice(1).join(" ")}`}
-                            />
-                            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
-                              {metric.label}
-                            </span>
-                          </div>
-                          <p className="text-sm font-bold">{metric.value}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Government fields — inline under stats */}
-                {primaryGovFields.length > 0 && (
-                  <div className="border-border/50 border-t pt-4">
-                    <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                      Government
-                    </h4>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {primaryGovFields.map((field) => {
-                        const Icon = field.icon;
-                        return (
-                          <div key={field.label} className="flex items-start gap-2.5">
-                            <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                            <div>
-                              <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
-                                {field.label}
-                              </p>
-                              <p className="text-sm font-medium">{field.value}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Country profile stats — broader at-a-glance */}
-                <div className="border-border/50 border-t pt-4">
-                  <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                    Profile
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {[
-                      { label: "Economic Tier", value: (country as any).economicTier ?? "—" },
-                      { label: "Population Tier", value: (country as any).populationTier ?? "—" },
-                      { label: "Continent", value: (country as any).continent ?? "—" },
-                      ...((country as any).landArea
-                        ? [
-                            {
-                              label: "Land Area",
-                              value: `${Math.round((country as any).landArea).toLocaleString()} km²`,
-                            },
-                          ]
-                        : []),
-                      ...((country as any).populationDensity
-                        ? [
-                            {
-                              label: "Pop. Density",
-                              value: `${Math.round((country as any).populationDensity).toLocaleString()}/km²`,
-                            },
-                          ]
-                        : []),
-                      ...((country as any).unemploymentRate
-                        ? [
-                            {
-                              label: "Unemployment",
-                              value: formatPercent((country as any).unemploymentRate, "—", 1),
-                            },
-                          ]
-                        : []),
-                      ...((country as any).inflationRate
-                        ? [
-                            {
-                              label: "Inflation",
-                              value: formatPercent((country as any).inflationRate, "—", 1),
-                            },
-                          ]
-                        : []),
-                      ...(country.nationalIdentity?.currency
-                        ? [
-                            {
-                              label: "Currency",
-                              value: `${country.nationalIdentity.currency}${country.nationalIdentity.currencySymbol ? ` (${country.nationalIdentity.currencySymbol})` : ""}`,
-                            },
-                          ]
-                        : []),
-                    ]
-                      .filter((s) => s.value !== "—")
-                      .map((stat) => (
-                        <div key={stat.label} className="bg-muted/50 rounded-lg px-3 py-2">
-                          <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
-                            {stat.label}
-                          </p>
-                          <p className="mt-0.5 text-sm font-medium">{stat.value}</p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* National Symbols */}
-                {wikiInfobox &&
-                  (wikiInfobox.image_flag || wikiInfobox.flag || wikiInfobox.image_coat) && (
-                    <div className="border-border/50 border-t pt-4">
-                      <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                        National Symbols
-                      </h4>
-                      <div className="flex flex-wrap gap-3">
-                        {(wikiInfobox.image_flag || wikiInfobox.flag) && (
-                          <div className="flex min-w-[140px] flex-1 items-center gap-3 rounded-lg bg-blue-500/10 p-3">
-                            <img
-                              src={`https://ixwiki.com/wiki/Special:Filepath/${wikiInfobox.image_flag || wikiInfobox.flag}`}
-                              alt="National Flag"
-                              className="h-10 w-16 rounded object-cover shadow-md"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                            <div>
-                              <p className="text-muted-foreground text-[10px]">Flag</p>
-                              <p className="text-xs font-medium">Official</p>
-                            </div>
-                          </div>
-                        )}
-                        {(wikiInfobox.image_coat || wikiInfobox.coat_of_arms) && (
-                          <div className="flex min-w-[140px] flex-1 items-center gap-3 rounded-lg bg-amber-500/10 p-3">
-                            <img
-                              src={`https://ixwiki.com/wiki/Special:Filepath/${wikiInfobox.image_coat || wikiInfobox.coat_of_arms}`}
-                              alt="Coat of Arms"
-                              className="h-10 w-10 rounded object-cover shadow-md"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                            <div>
-                              <p className="text-muted-foreground text-[10px]">Coat of Arms</p>
-                              <p className="text-xs font-medium">Emblem</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Wiki + explore links */}
-                <div className="border-border/50 flex items-center justify-between border-t pt-4">
-                  <WikiLinkPreview title={country.name}>
-                    <Link
-                      href={createUrl(
-                        `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`
-                      )}
-                      className="text-primary flex items-center gap-2 text-xs hover:underline"
-                    >
-                      <BookOpen className="h-3 w-3" />
-                      Read more on IxWiki
-                    </Link>
-                  </WikiLinkPreview>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onTabChange("lore")}
-                      className="h-7 px-2 text-xs"
-                    >
-                      Dossier
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onTabChange("activity")}
-                      className="h-7 px-2 text-xs"
-                    >
-                      Activity
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CountryDataProvider userId="" countryId={country.id} isPublicReadOnly={true}>
+              <MyCountryTabSystem variant="unified" />
+            </CountryDataProvider>
           </div>
 
           {/* Sidebar - Geography + Vitality Rings + Recent Activity */}
           <div className="space-y-6">
             {/* Geography Map */}
-            <Card className="bg-card/50 overflow-hidden backdrop-blur-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Globe className="h-4 w-4" />
-                  Geography
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <CountryMapEmbed
-                  countryId={country.id}
-                  height="h-56"
-                  showNeighbors={true}
-                  showCities={true}
-                  boundsPadding={50}
-                />
-              </CardContent>
-              <div className="border-border/50 flex items-center justify-between border-t px-4 py-2">
-                <span className="text-muted-foreground text-xs">
-                  {country.currentPopulation
-                    ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
-                    : ""}
-                </span>
-                <a
-                  href={createUrl(`/maps?country=${country.id}`)}
-                  className="text-xs text-blue-500 hover:text-blue-600"
-                >
-                  Open full map
-                </a>
-              </div>
-            </Card>
+            {!mapLoading && hasGeometry && (
+              <Card className="bg-card/50 overflow-hidden backdrop-blur-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Globe className="h-4 w-4" />
+                    Geography
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <CountryMapEmbed
+                    countryId={country.id}
+                    height="h-56"
+                    showNeighbors={true}
+                    showCities={true}
+                    boundsPadding={50}
+                  />
+                </CardContent>
+                <div className="border-border/50 flex items-center justify-between border-t px-4 py-2">
+                  <span className="text-muted-foreground text-xs">
+                    {country.currentPopulation
+                      ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
+                      : ""}
+                  </span>
+                  <a
+                    href={createUrl(`/maps?country=${country.id}`)}
+                    className="text-xs text-blue-500 hover:text-blue-600"
+                  >
+                    Open full map
+                  </a>
+                </div>
+              </Card>
+            )}
 
             <VitalityRings data={vitalityData} variant="sidebar" />
 
@@ -605,26 +297,6 @@ export function CountryOverviewPanel({
           </div>
         </div>
       </div>
-
-      {/* Metric Detail Modals */}
-      <PopulationDetailsModal
-        isOpen={isPopulationModalOpen}
-        onClose={() => setIsPopulationModalOpen(false)}
-        countryId={country.id}
-        countryName={country.name}
-      />
-      <GdpDetailsModal
-        isOpen={isGdpModalOpen}
-        onClose={() => setIsGdpModalOpen(false)}
-        countryId={country.id}
-        countryName={country.name}
-      />
-      <GdpPerCapitaDetailsModal
-        isOpen={isGdpPerCapitaModalOpen}
-        onClose={() => setIsGdpPerCapitaModalOpen(false)}
-        countryId={country.id}
-        countryName={country.name}
-      />
     </>
   );
 }

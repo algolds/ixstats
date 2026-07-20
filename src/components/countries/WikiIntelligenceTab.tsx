@@ -18,6 +18,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
 import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
 
 /**
  * WikiIntelligenceTab Component
@@ -149,6 +151,10 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
       ? resolveImageUrl(wikiData.infobox.image_flag || wikiData.infobox.flag, wikiData.wikiSource)
       : undefined;
 
+  const activeSections = wikiData.sections.filter(
+    (section) => hasAccess(section.classification) && section.id !== "overview"
+  );
+
   return (
     <>
       <div className="space-y-6">
@@ -176,14 +182,11 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
           >
             {/* Sections View (Dossier) */}
             {activeView === "sections" && (
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
-                {/* Main Content - Dossier Sections */}
-                <div className="space-y-4 xl:col-span-3">
-                  {wikiData.sections
-                    .filter(
-                      (section) => hasAccess(section.classification) && section.id !== "overview"
-                    )
-                    .map((section) => (
+              activeSections.length > 0 || wikiData.infobox ? (
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+                  {/* Main Content - Dossier Sections */}
+                  <div className="space-y-4 xl:col-span-3">
+                    {activeSections.map((section) => (
                       <WikiSectionCard
                         key={section.id}
                         section={section}
@@ -196,20 +199,39 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
                         wikiSource={wikiData.wikiSource}
                       />
                     ))}
-                </div>
+                  </div>
 
-                {/* Right Sidebar - Wiki Infobox */}
-                <div className="xl:col-span-1">
-                  <WikiInfoBoxSidebar
-                    infobox={wikiData.infobox}
-                    handleWikiLinkClick={handleWikiLinkClick}
-                    onRefresh={handleRefresh}
-                    flagColors={flagColors}
-                    viewerClearanceLevel={viewerClearanceLevel}
-                    wikiSource={wikiData.wikiSource}
-                  />
+                  {/* Right Sidebar - Wiki Infobox */}
+                  <div className="xl:col-span-1">
+                    <WikiInfoBoxSidebar
+                      infobox={wikiData.infobox}
+                      handleWikiLinkClick={handleWikiLinkClick}
+                      onRefresh={handleRefresh}
+                      flagColors={flagColors}
+                      viewerClearanceLevel={viewerClearanceLevel}
+                      wikiSource={wikiData.wikiSource}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <Card className="glass-surface border-border overflow-hidden">
+                  <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                    <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                      <BookOpen className="text-muted-foreground/60 h-8 w-8" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold text-foreground">Dossier Pending</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md text-xs leading-relaxed">
+                      There is no active WikiOS database entry for <strong>{countryName}</strong>.
+                      Under standard diplomatic protocols, a public dossier is generated once a wiki article is initialized.
+                    </p>
+                    <Button asChild variant="outline" className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10">
+                      <Link href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}>
+                        Create Page on WikiOS
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )
             )}
 
             {/* Conflicts View (Analysis) */}

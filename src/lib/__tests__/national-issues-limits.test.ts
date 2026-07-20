@@ -30,6 +30,8 @@ const mockDb: any = {
   },
   country: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
   },
   embassy: {
     count: jest.fn(),
@@ -53,6 +55,9 @@ const mockDb: any = {
   nPCPersonalityAssignment: {
     findUnique: jest.fn(),
   },
+  intent: {
+    findMany: jest.fn(),
+  },
 };
 
 describe("National Issues Engine Limits - Unit Tests", () => {
@@ -71,6 +76,9 @@ describe("National Issues Engine Limits - Unit Tests", () => {
     mockDb.policy.findMany.mockResolvedValue([]);
     mockDb.nPCPersonalityAssignment.findUnique.mockResolvedValue(null);
     mockDb.issueGenerationLog.create.mockResolvedValue({});
+    mockDb.intent.findMany.mockResolvedValue([]);
+    mockDb.country.findFirst.mockResolvedValue(null);
+    mockDb.country.findMany.mockResolvedValue([]);
   });
 
   describe("shouldEvaluate limits check", () => {

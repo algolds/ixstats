@@ -9,6 +9,7 @@ import { RollupSettingsModal } from "./RollupSettingsModal";
 import { PopulateFromWikiButton } from "./PopulateFromWikiButton";
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
 import { GeographyReportModal } from "./GeographyReportModal";
+import { Card, CardContent } from "~/components/ui/card";
 
 /**
  * Geography attribute editor — MyCountry P-C.
@@ -22,7 +23,7 @@ import { GeographyReportModal } from "./GeographyReportModal";
  * upsertPoi, setCapital) — owner-gated via standardMutationCountryOwnerProcedure.
  */
 export function GeographyContent() {
-  const { country } = useCountryData();
+  const { country, isPublicReadOnly } = useCountryData();
   const countryId = country?.id;
 
   const {
@@ -36,7 +37,7 @@ export function GeographyContent() {
 
   const { data: geoProfile } = api.geoCore.getCountryGeoProfile.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId, staleTime: 30_000 }
+    { enabled: !!countryId && !!bundle?.geometry, staleTime: 30_000 }
   );
 
   if (!countryId) {
@@ -58,10 +59,29 @@ export function GeographyContent() {
 
   const { cities, subdivisions, pois, rollups, country: countryData } = bundle;
 
+  if (!bundle.geometry) {
+    return (
+      <div className="space-y-4">
+        <Card className="glass-surface border-border overflow-hidden">
+          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+              <MapPin className="text-muted-foreground/60 h-8 w-8" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-foreground">Map Integration Required</h3>
+            <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
+              This nation has not yet established map coordinates. Map feature linkage is required
+              to define cities, subdivisions, and points of interest.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Rollup settings trigger */}
-      {rollups && (
+      {rollups && !isPublicReadOnly && (
         <RollupSettingsModal
           countryId={countryId}
           geoRollupMode={countryData?.geoRollupMode ?? "hybrid"}
@@ -138,7 +158,7 @@ export function GeographyContent() {
 
       {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
           capital integrity, founded-year sanity, and coordinate-bounds issues. */}
-      <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
+      {!isPublicReadOnly && <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />}
 
       {/* Cities editor */}
       <SearchableList
@@ -200,6 +220,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
   const [gdpContribution, setGdpContribution] = useState(city.gdpContribution ?? 0);
   const [mayorName, setMayorName] = useState(city.mayorName ?? "");
   const [specialization, setSpecialization] = useState(city.specialization ?? "");
+  const { isPublicReadOnly } = useCountryData();
 
   const upsert = api.countryGeo.upsertCity.useMutation({
     onSuccess: () => {
@@ -230,7 +251,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
           </div>
         </div>
-        {editing ? (
+        {editing && !isPublicReadOnly ? (
           <div className="flex gap-1">
             <button
               onClick={handleSave}
@@ -251,21 +272,23 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1">
-            <PopulateFromWikiButton
-              countryId={countryId}
-              kind="city"
-              id={city.id}
-              wikiTitle={city.wikiPageTitle}
-              onApplied={onSaved}
-            />
-            <button
-              onClick={() => setEditing(true)}
-              className="text-muted-foreground text-[10px] underline"
-            >
-              Edit
-            </button>
-          </div>
+          !isPublicReadOnly && (
+            <div className="flex items-center gap-1">
+              <PopulateFromWikiButton
+                countryId={countryId}
+                kind="city"
+                id={city.id}
+                wikiTitle={city.wikiPageTitle}
+                onApplied={onSaved}
+              />
+              <button
+                onClick={() => setEditing(true)}
+                className="text-muted-foreground text-[10px] underline"
+              >
+                Edit
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -329,6 +352,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
   const [gdpContribution, setGdpContribution] = useState(subdivision.gdpContribution ?? 0);
   const [governorName, setGovernorName] = useState(subdivision.governorName ?? "");
   const [governmentType, setGovernmentType] = useState(subdivision.governmentType ?? "");
+  const { isPublicReadOnly } = useCountryData();
 
   const upsert = api.countryGeo.upsertSubdivision.useMutation({
     onSuccess: () => {
@@ -359,7 +383,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
             {subdivision.wikiPageTitle ? ` · wiki: ${subdivision.wikiPageTitle}` : ""}
           </div>
         </div>
-        {editing ? (
+        {editing && !isPublicReadOnly ? (
           <div className="flex gap-1">
             <button
               onClick={handleSave}
@@ -380,21 +404,23 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1">
-            <PopulateFromWikiButton
-              countryId={countryId}
-              kind="subdivision"
-              id={subdivision.id}
-              wikiTitle={subdivision.wikiPageTitle}
-              onApplied={onSaved}
-            />
-            <button
-              onClick={() => setEditing(true)}
-              className="text-muted-foreground text-[10px] underline"
-            >
-              Edit
-            </button>
-          </div>
+          !isPublicReadOnly && (
+            <div className="flex items-center gap-1">
+              <PopulateFromWikiButton
+                countryId={countryId}
+                kind="subdivision"
+                id={subdivision.id}
+                wikiTitle={subdivision.wikiPageTitle}
+                onApplied={onSaved}
+              />
+              <button
+                onClick={() => setEditing(true)}
+                className="text-muted-foreground text-[10px] underline"
+              >
+                Edit
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -460,6 +486,7 @@ function PoiCard({
   countryId: string;
   onApplied?: () => void;
 }) {
+  const { isPublicReadOnly } = useCountryData();
   return (
     <div className="border-border bg-card/30 rounded-lg border p-3">
       <div className="mb-1 flex items-center justify-between gap-1.5">
@@ -467,14 +494,16 @@ function PoiCard({
           <Tag className="text-muted-foreground h-3 w-3" />
           <div className="text-foreground text-xs font-semibold">{poi.name}</div>
         </div>
-        <PopulateFromWikiButton
-          countryId={countryId}
-          kind="poi"
-          id={poi.id}
-          wikiTitle={poi.wikiPageTitle}
-          onApplied={onApplied}
-          compact
-        />
+        {!isPublicReadOnly && (
+          <PopulateFromWikiButton
+            countryId={countryId}
+            kind="poi"
+            id={poi.id}
+            wikiTitle={poi.wikiPageTitle}
+            onApplied={onApplied}
+            compact
+          />
+        )}
       </div>
       <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
         <span className="bg-accent/60 rounded px-1.5 py-0.5 font-mono uppercase">

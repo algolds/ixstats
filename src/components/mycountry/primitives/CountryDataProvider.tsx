@@ -23,6 +23,7 @@ interface CountryDataContextValue {
   error: string | null;
   /** True when viewing another country in dev mode */
   isViewingOtherCountry: boolean;
+  isPublicReadOnly?: boolean;
 }
 
 const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
@@ -31,9 +32,15 @@ interface CountryDataProviderProps {
   children: ReactNode;
   userId: string;
   countryId?: string;
+  isPublicReadOnly?: boolean;
 }
 
-export function CountryDataProvider({ children, userId, countryId }: CountryDataProviderProps) {
+export function CountryDataProvider({
+  children,
+  userId,
+  countryId,
+  isPublicReadOnly = false,
+}: CountryDataProviderProps) {
   // Dev mode: allow viewing any country
   const { viewCountryId, isViewingOtherCountry } = useDevCountryView();
   // Demo mode: override with demo country for system owners
@@ -43,7 +50,7 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
     data: userProfile,
     isLoading: profileLoading,
     error: profileError,
-  } = api.users.getProfile.useQuery(undefined, { enabled: !!userId });
+  } = api.users.getProfile.useQuery(undefined, { enabled: !isPublicReadOnly && !!userId });
 
   // Demo mode takes priority, then dev view, then user's actual country
   const effectiveCountryId =
@@ -82,19 +89,20 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
     lastUpdate: new Date().toISOString(),
   };
 
-  const isLoading = profileLoading || countryLoading || ixTimeLoading;
+  const isLoading = (!isPublicReadOnly && profileLoading) || countryLoading || ixTimeLoading;
 
   const value = useMemo<CountryDataContextValue>(
     () => ({
-      userProfile,
+      userProfile: userProfile ?? null,
       country,
       economyData,
       systemStatus,
       activityRingsData,
       currentIxTime,
       isLoading: false,
-      error: profileError?.message || countryError?.message || null,
-      isViewingOtherCountry,
+      error: (!isPublicReadOnly && profileError?.message) || countryError?.message || null,
+      isViewingOtherCountry: isPublicReadOnly ? false : isViewingOtherCountry,
+      isPublicReadOnly,
     }),
     [
       userProfile,
@@ -106,6 +114,7 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
       profileError?.message,
       countryError?.message,
       isViewingOtherCountry,
+      isPublicReadOnly,
     ]
   );
 
@@ -133,7 +142,7 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
     );
   }
 
-  if (!profileLoading && !userProfile) {
+  if (!isPublicReadOnly && !profileLoading && !userProfile) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert className="mx-auto max-w-2xl">
@@ -146,7 +155,7 @@ export function CountryDataProvider({ children, userId, countryId }: CountryData
     );
   }
 
-  if (!isLoading && userProfile && !userProfile.countryId && !viewCountryId) {
+  if (!isPublicReadOnly && !isLoading && userProfile && !userProfile.countryId && !viewCountryId) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-2xl">

@@ -60,10 +60,8 @@ export function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
   return hits;
 }
 
-// ── goal classification (keyword → category, plus FP target parse) ──────────
 export type Category =
   | "defense"
-  | "foreign"
   | "fiscal"
   | "economy"
   | "social"
@@ -83,18 +81,7 @@ const KEYWORDS: Record<Category, string[]> = {
     "missile",
     "border security",
   ],
-  foreign: [
-    "ally",
-    "alliance",
-    "treaty",
-    "diplomat",
-    "foreign",
-    "trade deal",
-    "embassy",
-    "sever ties",
-    "relations with",
-    "war with",
-  ],
+
   fiscal: ["tax", "budget", "deficit", "debt", "spend", "inflation", "subsid", "austerity"],
   economy: [
     "industr",
@@ -146,7 +133,6 @@ const KEYWORDS: Record<Category, string[]> = {
 // category → real GovernmentDepartment.category (for budget writes)
 export const CATEGORY_TO_DEPT: Record<Category, string> = {
   defense: "Defense",
-  foreign: "Foreign Affairs",
   fiscal: "Finance",
   economy: "Commerce",
   social: "Health",
@@ -156,7 +142,6 @@ export const CATEGORY_TO_DEPT: Record<Category, string> = {
 // category → the Power Broker whose domain it touches (for acceptance projection)
 export const CATEGORY_TO_BROKER: Record<Category, string | null> = {
   defense: "generals",
-  foreign: null,
   fiscal: "magnates",
   economy: "magnates",
   social: "technocrats",
@@ -178,8 +163,20 @@ export function weightAcceptance(
   return order[i]!;
 }
 
-export function classifyGoal(goal: string): { category: Category; target?: string } {
+export function classifyGoal(goal: string): { category: Category } {
   const g = goal.toLowerCase();
+
+  // Enforce domestic policy goals only (block diplomatic/foreign affairs keywords)
+  const FOREIGN_KEYWORDS = ["ally", "alliance", "treaty", "diplomat", "foreign", "embassy", "relations with", "war with", "trade deal", "relations", "summit", "envoy", "ambassador", "burgundie", "urcea"];
+  if (
+    FOREIGN_KEYWORDS.some((k) => g.includes(k)) ||
+    goal.match(/\b(?:with|against|toward|to)\s+([A-Z][A-Za-z'\- ]{2,30})/)
+  ) {
+    throw new Error(
+      "Cabinet Directives are restricted to domestic policy. For foreign affairs, embassies, or treaties, please use the Diplomacy tab."
+    );
+  }
+
   let best: Category | null = null;
   let bestHits = 0;
   for (const cat of Object.keys(KEYWORDS) as Category[]) {
@@ -190,23 +187,14 @@ export function classifyGoal(goal: string): { category: Category; target?: strin
     }
   }
 
-  // foreign target: "with Burgundie", "against Karth", "ally with X"
-  const m = goal.match(/\b(?:with|against|toward|to)\s+([A-Z][A-Za-z'\- ]{2,30})/);
-  const target = m?.[1]?.trim();
-
-  // If a target exists and looks like a foreign relation phrase, classify as foreign affairs
-  if (target && (/war|ally|treaty|ties|relations/.test(g) || g.includes("embassy"))) {
-    return { category: "foreign", target };
-  }
-
-  if (bestHits === 0 && !target) {
+  if (bestHits === 0) {
     throw new Error(
-      "Goal not recognized. Please use standard policy keywords (e.g. tax, budget, military, ally, treaty, jobs, trade, crime, police, health, education)."
+      "Goal not recognized. Please use standard policy keywords (e.g. tax, budget, military, jobs, trade, crime, police, health, education)."
     );
   }
 
   const category = best ?? "economy";
-  return { category, target: category === "foreign" ? target : undefined };
+  return { category };
 }
 
 // ── category recipe: one budget line, one policy, and which fields move ─────
@@ -236,23 +224,7 @@ const RECIPES: Record<Category, Recipe> = {
       value: 1,
     },
   },
-  foreign: {
-    budgetLine: "Foreign Affairs",
-    policyName: "Foreign Policy Realignment",
-    statement: "signal intent through diplomatic channels",
-    improve: {
-      targetModel: "Country",
-      targetField: "diplomaticStanding",
-      operation: "add",
-      value: 1,
-    },
-    strain: {
-      targetModel: "GovernmentStructure",
-      targetField: "politicalStability",
-      operation: "subtract",
-      value: 1,
-    },
-  },
+
   fiscal: {
     budgetLine: "Treasury",
     policyName: "Fiscal Adjustment Act",
@@ -357,7 +329,7 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
   // 2) statement (measured) or policy (moderate/extreme)
   if (tier === "measured") {
     changes.push({
-      kind: cat === "foreign" ? "foreign" : "statement",
+      kind: "statement",
       label: r.statement,
       detail: "low-cost, high-acceptance",
     });
@@ -374,11 +346,8 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
   // 3) extreme adds a second lever + a bigger cost
   if (tier === "extreme") {
     changes.push({
-      kind: cat === "foreign" ? "foreign" : "policy",
-      label:
-        cat === "foreign" && target
-          ? `Escalate posture toward ${target}`
-          : `Emergency ${r.budgetLine.toLowerCase()} measures`,
+      kind: "policy",
+      label: `Emergency ${r.budgetLine.toLowerCase()} measures`,
       detail: "unlikely to clear stakeholders easily",
     });
     consequences.push(scale(r.strain, f * 0.6));
@@ -410,16 +379,15 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
 
 export function assemblePackages(goal: string): {
   category: Category;
-  target?: string;
   packages: IntentPackage[];
 } {
-  const { category, target } = classifyGoal(goal);
+  const { category } = classifyGoal(goal);
   const packages = (["measured", "moderate", "extreme"] as Tier[]).map((t) =>
-    buildPackage(t, category, goal, target)
+    buildPackage(t, category, goal)
   );
   const bad = forbiddenFieldsUsed(packages);
   if (bad.length) throw new Error(`Intent package touched locked core stats: ${bad.join(", ")}`);
-  return { category, target, packages };
+  return { category, packages };
 }
 
 // ── self-check ──────────────────────────────────────────────────────────────
@@ -427,21 +395,30 @@ export function demo() {
   const assert = (c: boolean, m: string) => {
     if (!c) throw new Error("assemble demo failed: " + m);
   };
-  const war = assemblePackages("Prepare for war with Burgundie");
-  assert(war.category === "foreign" && war.target === "Burgundie", "war→foreign+target");
-  assert(war.packages.length === 3, "3 tiers");
-  for (const p of war.packages) assert(p.changes.length <= 4, "≤4 changes");
+  const def = assemblePackages("Build military defenses");
+  assert(def.category === "defense", "defense classification");
+  assert(def.packages.length === 3, "3 tiers");
+  for (const p of def.packages) assert(p.changes.length <= 4, "≤4 changes");
   assert(
-    war.packages[0]!.acceptance === "good" && war.packages[2]!.acceptance === "bad",
+    def.packages[0]!.acceptance === "good" && def.packages[2]!.acceptance === "bad",
     "acceptance ordering"
   );
-  assert(forbiddenFieldsUsed(war.packages).length === 0, "no core-stat fields");
+  assert(forbiddenFieldsUsed(def.packages).length === 0, "no core-stat fields");
+
+  let threw = false;
+  try {
+    assemblePackages("Prepare for war with Burgundie");
+  } catch {
+    threw = true;
+  }
+  assert(threw, "foreign policy is blocked");
+
   const house = assemblePackages("Make housing affordable");
   assert(house.category === "economy", "housing→economy");
   // budget change carries structured dept + delta
-  const b = war.packages[1]!.changes.find((c) => c.kind === "budget")!;
+  const b = def.packages[1]!.changes.find((c) => c.kind === "budget")!;
   assert(
-    b.deptCategory === "Foreign Affairs" && (b.deltaPercent ?? 0) > 0,
+    b.deptCategory === "Defense" && (b.deltaPercent ?? 0) > 0,
     "budget change is structured"
   );
   // acceptance weighting: aligned unlocked broker bumps a hard-sell toward contested
