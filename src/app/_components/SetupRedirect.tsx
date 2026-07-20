@@ -31,6 +31,9 @@ export function SetupRedirect() {
     "/favicon.ico",
     "/admin", // Always skip setup redirect for admin page
     "/countries", // Skip setup redirect for country pages
+    "/help", // Skip setup redirect for help center articles
+    "/wiki", // Skip setup redirect for wikiOS
+    "/forum", // Skip setup redirect for forums
   ];
 
   const shouldSkipSetup = skipSetupPaths.some((path) => pathname?.startsWith(path) ?? false);
@@ -114,14 +117,14 @@ export function SetupRedirect() {
     router,
     shouldSkipSetup,
     permissionsLoading,
-    isSystemOwner,
+    isSystemOwnerUser,
     isAdminOrHigher,
   ]);
 
-  // Reset redirect flag when user changes
+  // Reset redirect flag when user or pathname changes
   useEffect(() => {
     hasRedirected.current = false;
-  }, [user?.id]);
+  }, [user?.id, pathname]);
 
   // Don't render anything - this is just for side effects
   return null;
