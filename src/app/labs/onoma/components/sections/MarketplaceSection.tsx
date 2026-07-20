@@ -47,26 +47,26 @@ export default function MarketplaceSection() {
     data: marketplaceData,
     isLoading,
     refetch,
-  } = api.onoma.marketplace.list.useQuery({
+  } = api.onoma.list.useQuery({
     searchQuery: searchQuery || undefined,
     culturalFamily: familyFilter !== "any" ? familyFilter : undefined,
   });
 
-  const forkMutation = api.onoma.marketplace.fork.useMutation({
+  const forkMutation = api.onoma.fork.useMutation({
     onSuccess: () => {
       notify.success("Language pack successfully cloned/forked to your local studio!");
-      void utils.onoma.marketplace.list.invalidate();
+      void utils.onoma.list.invalidate();
     },
     onError: (err) => {
       notify.error(`Failed to fork pack: ${err.message}`);
     },
   });
 
-  const rateMutation = api.onoma.marketplace.rate.useMutation({
+  const rateMutation = api.onoma.rate.useMutation({
     onSuccess: () => {
       notify.success("Your rating has been submitted.");
       setReviewComment("");
-      void utils.onoma.marketplace.list.invalidate();
+      void utils.onoma.list.invalidate();
     },
     onError: (err) => {
       notify.error(`Failed to submit review: ${err.message}`);

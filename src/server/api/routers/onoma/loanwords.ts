@@ -9,7 +9,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
    * List all loanword contacts for the current user.
    */
   listContacts: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.auth.userId;
+    const userId = ctx.user.id;
     return ctx.db.loanwordContact.findMany({
       where: { userId },
       include: {
@@ -35,7 +35,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Ensure both source and target exist and belong to user (or are public)
       const source = await ctx.db.languagePack.findFirst({
@@ -83,7 +83,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
   deleteContact: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const existing = await ctx.db.loanwordContact.findFirst({
         where: { id: input.id, userId },

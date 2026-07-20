@@ -17,7 +17,7 @@ export const onomaWritingRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       return ctx.db.writingSystem.findMany({
         where: {
           userId,
@@ -37,7 +37,7 @@ export const onomaWritingRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const system = await ctx.db.writingSystem.findFirst({
         where: { id: input.id, userId },
       });
@@ -67,7 +67,7 @@ export const onomaWritingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const data = {
         userId,
@@ -111,7 +111,7 @@ export const onomaWritingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const existing = await ctx.db.writingSystem.findFirst({
         where: { id: input.id, userId },

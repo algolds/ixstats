@@ -404,7 +404,7 @@ export const onomaCoreRouter = createTRPCRouter({
       await db.nameBank.deleteMany({
         where: {
           id: `published_${existing.id}`,
-          userId,
+          userId: ctx.user.id,
         },
       });
 
@@ -545,7 +545,7 @@ export const onomaCoreRouter = createTRPCRouter({
           },
           create: {
             id: `published_${item.id}`,
-            userId,
+            userId: ctx.user.id,
             type: item.contentType === "dictionary" ? "dictionary" : "saved-name",
             title: item.pageTitle,
             values,
@@ -561,7 +561,7 @@ export const onomaCoreRouter = createTRPCRouter({
         });
 
         if (item.contentType === "dictionary") {
-          await ActivityGenerator.createOnomaShare(userId, null, item.pageTitle);
+          await ActivityGenerator.createOnomaShare(ctx.user.id, null, item.pageTitle);
         }
 
         return published;
@@ -575,7 +575,7 @@ export const onomaCoreRouter = createTRPCRouter({
         return db.nameBank.deleteMany({
           where: {
             id: `published_${item.id}`,
-            userId,
+            userId: ctx.user.id,
           },
         });
       }

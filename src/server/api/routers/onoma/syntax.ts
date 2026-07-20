@@ -17,7 +17,7 @@ export const onomaSyntaxRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       return ctx.db.grammarProfile.findMany({
         where: {
           userId,
@@ -45,7 +45,7 @@ export const onomaSyntaxRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const data = {
         userId,
@@ -89,7 +89,7 @@ export const onomaSyntaxRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const existing = await ctx.db.grammarProfile.findFirst({
         where: { id: input.id, userId },

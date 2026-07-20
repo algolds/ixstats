@@ -22,7 +22,7 @@ export const onomaHistoryRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       return ctx.db.generationEvent.create({
         data: {
@@ -54,7 +54,7 @@ export const onomaHistoryRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const limit = input?.limit ?? 20;
       const cursor = input?.cursor;
 
@@ -90,7 +90,7 @@ export const onomaHistoryRouter = createTRPCRouter({
    * Generation statistics for the current user.
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.auth.userId;
+    const userId = ctx.user.id;
 
     const [totalEvents, totalFavorites, categoryBreakdown] = await Promise.all([
       ctx.db.generationEvent.count({ where: { userId } }),
@@ -128,7 +128,7 @@ export const onomaHistoryRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const existing = await ctx.db.generationFavorite.findUnique({
         where: {
@@ -171,7 +171,7 @@ export const onomaHistoryRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const limit = input?.limit ?? 50;
 
       const favorites = await ctx.db.generationFavorite.findMany({

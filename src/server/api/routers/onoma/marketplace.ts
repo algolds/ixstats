@@ -92,7 +92,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now().toString().slice(-4)}`;
 
       // Try fetching country ID from user
@@ -141,7 +141,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const sourcePack = await ctx.db.languagePack.findUnique({
         where: { id: input.packId },
@@ -222,7 +222,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Upsert review
       await ctx.db.languagePackReview.upsert({

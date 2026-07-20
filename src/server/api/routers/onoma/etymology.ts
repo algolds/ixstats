@@ -17,7 +17,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       return ctx.db.etymologyRoot.findMany({
         where: {
           userId,
@@ -41,7 +41,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
       return ctx.db.etymologyRoot.create({
         data: {
           userId,
@@ -64,7 +64,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Ensure ownership
       const root = await ctx.db.etymologyRoot.findFirst({
@@ -97,7 +97,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       // Validate root ownership
       const root = await ctx.db.etymologyRoot.findFirst({
@@ -142,7 +142,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const derivation = await ctx.db.etymologyDerivation.findUnique({
         where: { id: input.id },
@@ -169,7 +169,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.userId;
+      const userId = ctx.user.id;
 
       const root = await ctx.db.etymologyRoot.findFirst({
         where: { id: input.rootId, userId },
