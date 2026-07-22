@@ -124,6 +124,7 @@ export interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   overlayData?: Record<string, unknown>;
   onRouteClick?: (routeId: string) => void;
+  showOceanLabels?: boolean;
 }
 
 export interface IxWorldMapRef {
@@ -157,6 +158,7 @@ const IxWorldMap = memo(
       onZoomChange,
       overlayData,
       onRouteClick,
+      showOceanLabels = true,
     },
     ref
   ) {
@@ -214,6 +216,7 @@ const IxWorldMap = memo(
       labelFeaturesRef,
       fullLayerDataRef,
       theme,
+      showOceanLabels,
     });
 
     // ── 3. Hook: Manage Capitals & subdivisions Overlays ──
@@ -241,9 +244,13 @@ const IxWorldMap = memo(
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
-      const newStyle = buildBaseStyle(theme, projectionMode);
-      map.setStyle(newStyle as any, { diff: true });
-    }, [theme, isLoaded, projectionMode]);
+      try {
+        const newStyle = buildBaseStyle(theme, projectionMode);
+        map.setStyle(newStyle as any, { diff: true });
+      } catch (err) {
+        console.warn("[IxWorldMap] setStyle error:", err);
+      }
+    }, [theme, isLoaded]);
 
     // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {

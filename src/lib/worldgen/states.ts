@@ -51,7 +51,7 @@ export function generateStates(graph: PackedGraph, params: WorldGenParams): void
     if (params.useMarkovNaming && cultureId > 0) {
       const culture = graph.cultures[cultureId - 1];
       if (culture) {
-        const famIdx = families.findIndex((f) => f.id === culture.familyId);
+        const famIdx = families.findIndex((f) => f && f.id === culture.familyId);
         if (famIdx >= 0 && generators[famIdx]) {
           name = generators[famIdx]!.generate();
         }
@@ -186,12 +186,24 @@ function selectCapitals(
       if (placed >= alloc) break;
       if (capitals.length >= targetCount) break;
 
-      // Minimum spacing: no two capitals within 5 hops
-      if (isTooClose(graph, burg.cell, capitalCells, 5)) continue;
+      // Minimum spacing: no two capitals within 4 hops
+      if (isTooClose(graph, burg.cell, capitalCells, 4)) continue;
 
       capitals.push(burg);
       capitalCells.add(burg.cell);
       placed++;
+    }
+  }
+
+  // Fallback pass: if targetCount not met, relax spacing to 2 hops
+  if (capitals.length < targetCount) {
+    for (const burg of burgs) {
+      if (capitals.length >= targetCount) break;
+      if (capitalCells.has(burg.cell)) continue;
+      if (isTooClose(graph, burg.cell, capitalCells, 2)) continue;
+
+      capitals.push(burg);
+      capitalCells.add(burg.cell);
     }
   }
 
@@ -325,6 +337,7 @@ function fixDisconnectedRegions(graph: PackedGraph, states: State[]): void {
   const visited = new Uint8Array(n);
 
   for (const state of states) {
+    if (!state || !state.id) continue;
     const sid = state.id;
     // Find all cells of this state
     const stateCells: number[] = [];

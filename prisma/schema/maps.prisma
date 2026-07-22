@@ -513,10 +513,11 @@ model Realm {
   thumbnail       String?      // Preview image URL
   seed            Int?         // Master generation seed for reproducibility
   generationParams Json?       // WorldGenParams snapshot
-  countries       Country[]    @relation("RealmCountries")
-  worldConfig     WorldConfig? @relation("RealmWorldConfig")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  countries       Country[]        @relation("RealmCountries")
+  worldConfig     WorldConfig?     @relation("RealmWorldConfig")
+  territoryClaims TerritoryClaim[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([ownerId])
   @@index([status])
@@ -696,4 +697,30 @@ model NamedLake {
   @@index([geom_postgis], map: "idx_named_lake_geom", type: Gist)
   @@map("named_lakes")
 }
+
+model TerritoryClaim {
+  id                String   @id @default(cuid())
+  realmId           String
+  mapLayerFeatureId String
+  userId            String
+  nationName        String
+  governmentType    String?
+  capitalName       String?
+  flagUrl           String?
+  details           Json?
+  status            String   @default("pending") // pending, approved, rejected
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  realm             Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+
+  @@unique([realmId, mapLayerFeatureId, status])
+  @@index([realmId, status])
+  @@index([userId])
+  @@map("territory_claims")
+}
+
 

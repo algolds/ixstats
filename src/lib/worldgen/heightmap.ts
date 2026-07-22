@@ -1,109 +1,156 @@
 /**
- * Heightmap Generation — Azgaar-Style Blob-Based Terrain
+ * Heightmap Generation — Organic Multi-Fractal Terrain
  *
- * Creates elevation data by placing overlapping Gaussian-like blobs
- * via BFS, then normalizing to hit a target ocean percentage.
- *
- * Pipeline: blob placement → BFS expansion → template blending →
- *           noise → normalization → elevation zone assignment.
+ * Creates realistic continent elevation data combining multi-octave
+ * harmonic noise, continent seed placement, mountain ridges, and
+ * ocean percentage normalization.
  *
  * Mutates graph.cells.h and graph.cells.elevZone in-place.
  */
 
 import { makeRng } from "./rng";
-import { type PackedGraph, type WorldGenParams, WATER_THRESHOLD } from "./types";
-import { ELEVATION_ZONES, getZoneForNormalizedValue } from "../elevation-config";
+import { type PackedGraph, type WorldGenParams } from "./types";
 
 // ──────────────────────────────────────────────
 // Public API
 // ──────────────────────────────────────────────
 
-/**
- * Generate heightmap elevations for every cell in the graph.
- *
- * @param graph   The packed Voronoi graph (cells.h will be written)
- * @param params  World generation parameters (seed, continentCount, oceanPercentage, terrainRoughness)
- * @param template Optional pre-existing elevation template to blend toward
- */
 export function generateHeightmap(
   graph: PackedGraph,
   params: WorldGenParams,
   template?: Uint8Array | null
 ): void {
-  const rng = makeRng(params.seed + 1); // offset seed so heightmap differs from mesh
+  const rng = makeRng(params.seed + 1);
   const { cells } = graph;
   const n = cells.n;
 
-  // Working buffer — float to avoid clamping until the end
   const hFloat = new Float64Array(n);
 
-  // ── Step 1: Place continent blobs using farthest-point sampling ──
+  // 1. Place continent centers using farthest-point sampling
   const blobCenters = farthestPointSample(graph, params.continentCount, rng);
-  const gridExtent = 360; // longitude span
 
-  for (const center of blobCenters) {
-    const radius = (1 / 6 + rng() * (1 / 3 - 1 / 6)) * gridExtent;
-    const intensity = 60 + rng() * 30; // 60-90
-    const decay = 0.97;
-    expandBlob(graph, hFloat, center, radius, intensity, decay);
-  }
+  // Seed-derived noise rotation angles & frequencies for true procedural diversity
+  const angle1 = rng() * Math.PI * 2;
+  const angle2 = rng() * Math.PI * 2;
+  const freq1 = 0.025 + rng() * 0.025;
+  const freq2 = 0.07 + rng() * 0.05;
+  const freq3 = 0.18 + rng() * 0.12;
+  const offX1 = rng() * 500;
+  const offY1 = rng() * 500;
+  const offX2 = rng() * 500;
+  const offY2 = rng() * 500;
 
-  // ── Step 2: Add mountain blobs on existing land ──
-  const mountainCount = Math.round(50 + params.terrainRoughness * 150);
-  const landCandidates = getLandCandidates(hFloat, n);
+  // 2. Base continent distance field + seed-driven rotated multi-harmonic noise
+  for (let i = 0; i < n; i++) {
+    const lng = cells.p[i * 2]!;
+    const lat = cells.p[i * 2 + 1]!;
 
-  for (let m = 0; m < mountainCount; m++) {
-    if (landCandidates.length === 0) break;
-    const center = landCandidates[Math.floor(rng() * landCandidates.length)]!;
-    const radius = (1 / 20 + rng() * (1 / 10 - 1 / 20)) * gridExtent;
-    const intensity = 40 + rng() * 40; // 40-80
-    const decay = 0.97;
-    expandBlob(graph, hFloat, center, radius, intensity, decay);
-  }
+    // Find distance to closest continent center
+    let minDistSq = Infinity;
+    for (const cIdx of blobCenters) {
+      const cx = cells.p[cIdx * 2]!;
+      const cy = cells.p[cIdx * 2 + 1]!;
+      const dx = lng - cx;
+      const dy = lat - cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < minDistSq) minDistSq = d2;
+    }
 
-  // ── Step 3: Blend with template if provided ──
-  if (template && template.length === n) {
-    const blendWeight = params.templateStrength * 0.6;
-    for (let i = 0; i < n; i++) {
-      hFloat[i] = lerp(hFloat[i]!, template[i]!, blendWeight);
+    const distToCenter = Math.sqrt(minDistSq);
+    const continentBase = Math.max(0, 110 - distToCenter * 1.6);
+
+    const rx1 = lng * Math.cos(angle1) - lat * Math.sin(angle1);
+    const ry1 = lng * Math.sin(angle1) + lat * Math.cos(angle1);
+    const rx2 = lng * Math.cos(angle2) - lat * Math.sin(angle2);
+    const ry2 = lng * Math.sin(angle2) + lat * Math.cos(angle2);
+
+    const n1 = Math.sin((rx1 + offX1) * freq1) * Math.cos((ry1 + offY1) * freq1) * 50;
+    const n2 = Math.sin((rx2 + offX2) * freq2) * Math.cos((ry2 + offY2) * freq2) * 28;
+    const n3 = Math.sin(lng * freq3 + offX1) * Math.cos(lat * freq3 + offY1) * 14;
+
+    const baseNoise = continentBase + n1 + n2 + n3;
+
+    if (template && template.length === n) {
+      const strength = params.templateStrength ?? 0.6;
+      hFloat[i] = baseNoise * (1 - strength) + template[i]! * strength + n3;
+    } else {
+      hFloat[i] = baseNoise;
     }
   }
 
-  // ── Step 4: Add noise ──
-  for (let i = 0; i < n; i++) {
-    hFloat[i] += (rng() - 0.5) * 20 * params.terrainRoughness;
+  // 3. Add tectonic mountain ridges on land distributed across ALL continents
+  for (const cIdx of blobCenters) {
+    const cx = cells.p[cIdx * 2]!;
+    const cy = cells.p[cIdx * 2 + 1]!;
+
+    const continentLandCells: number[] = [];
+    for (let i = 0; i < n; i++) {
+      if (hFloat[i]! > 50) {
+        const dx = cells.p[i * 2]! - cx;
+        const dy = cells.p[i * 2 + 1]! - cy;
+        if (dx * dx + dy * dy < 2500) {
+          continentLandCells.push(i);
+        }
+      }
+    }
+
+    if (continentLandCells.length === 0) continue;
+
+    const numRidges = Math.floor(2 + rng() * 3);
+    for (let m = 0; m < numRidges; m++) {
+      const start = continentLandCells[Math.floor(rng() * continentLandCells.length)]!;
+      const angle = rng() * Math.PI * 2;
+      const length = Math.floor(12 + rng() * 22);
+      const peakHeight = 45 + rng() * 45;
+
+      addMountainRidge(graph, hFloat, start, length, peakHeight, angle, rng);
+    }
   }
 
-  // ── Step 5: Normalize to hit target ocean percentage ──
+  // 4. Evaluate 4-octave continuous topographic noise across 100% of all land cells
+  const oct1Freq = 0.015 + rng() * 0.01;
+  const oct2Freq = 0.04 + rng() * 0.02;
+  const oct3Freq = 0.09 + rng() * 0.04;
+  const oct4Freq = 0.22 + rng() * 0.08;
+
+  for (let i = 0; i < n; i++) {
+    if (hFloat[i]! > 50) {
+      const lng = cells.p[i * 2]!;
+      const lat = cells.p[i * 2 + 1]!;
+
+      // Octave 1: Macro Relief (continental shields & interior plateaus)
+      const oct1 = Math.sin(lng * oct1Freq + offX1) * Math.cos(lat * oct1Freq + offY1) * 35;
+      // Octave 2: Tectonic Fault Belts
+      const oct2 = Math.abs(Math.sin((lng + lat) * oct2Freq + offX2)) * 25;
+      // Octave 3: Hills & Valleys
+      const oct3 = Math.cos((lng - lat) * oct3Freq + offY2) * 15;
+      // Octave 4: Micro Relief
+      const oct4 = Math.sin((lng * 2 + lat) * oct4Freq) * 8;
+
+      hFloat[i] += oct1 + oct2 + oct3 + oct4;
+    }
+  }
+
+  // 5. Normalize heightmap to target ocean percentage
   normalizeForOcean(hFloat, n, params.oceanPercentage);
 
-  // ── Step 6: Write back to typed arrays ──
+  // 6. Write back to typed array
   for (let i = 0; i < n; i++) {
     cells.h[i] = Math.max(0, Math.min(255, Math.round(hFloat[i]!)));
   }
 
-  // ── Step 7: Assign elevation zones for land cells ──
+  // 7. Assign elevation zones
   assignElevationZones(graph);
 }
 
 // ──────────────────────────────────────────────
-// Internal: Blob Placement & Expansion
+// Helpers
 // ──────────────────────────────────────────────
 
-/**
- * Farthest-point sampling: pick well-spaced blob centers.
- * Starts from a random cell, then greedily picks the cell farthest
- * from all already-selected centers (using squared-distance on coordinates).
- */
 function farthestPointSample(graph: PackedGraph, count: number, rng: () => number): number[] {
   const { cells } = graph;
   const n = cells.n;
-  const centers: number[] = [];
-
-  // First center is random
-  centers.push(Math.floor(rng() * n));
-
-  // Distance-to-nearest-center for each cell
+  const centers: number[] = [Math.floor(rng() * n)];
   const dist = new Float64Array(n).fill(Infinity);
 
   for (let k = 1; k < count; k++) {
@@ -111,7 +158,6 @@ function farthestPointSample(graph: PackedGraph, count: number, rng: () => numbe
     const cx = cells.p[lastCenter * 2]!;
     const cy = cells.p[lastCenter * 2 + 1]!;
 
-    // Update distances with the newest center
     for (let i = 0; i < n; i++) {
       const dx = cells.p[i * 2]! - cx;
       const dy = cells.p[i * 2 + 1]! - cy;
@@ -119,7 +165,6 @@ function farthestPointSample(graph: PackedGraph, count: number, rng: () => numbe
       if (d2 < dist[i]!) dist[i] = d2;
     }
 
-    // Pick the cell with the greatest minimum distance
     let best = 0;
     let bestDist = -1;
     for (let i = 0; i < n; i++) {
@@ -130,154 +175,115 @@ function farthestPointSample(graph: PackedGraph, count: number, rng: () => numbe
     }
     centers.push(best);
   }
-
   return centers;
 }
 
-/**
- * BFS blob expansion from a center cell.
- * Each ring of neighbors gets elevation += intensity * decay^distance.
- * Stops when the contribution is < 0.5 or the BFS exceeds the radius
- * (measured in coordinate-space distance from center).
- */
-function expandBlob(
+function addMountainRidge(
   graph: PackedGraph,
   hFloat: Float64Array,
-  center: number,
-  radius: number,
-  intensity: number,
-  decay: number
+  startCell: number,
+  length: number,
+  heightPeak: number,
+  initialAngle: number,
+  rng: () => number
 ): void {
   const { cells } = graph;
-  const cx = cells.p[center * 2]!;
-  const cy = cells.p[center * 2 + 1]!;
-  const radiusSq = radius * radius;
+  let currCell = startCell;
+  let currAngle = initialAngle;
 
-  // BFS with distance tracking
-  const visited = new Uint8Array(cells.n);
-  const queue: Array<{ cell: number; ring: number }> = [{ cell: center, ring: 0 }];
-  visited[center] = 1;
+  for (let step = 0; step < length; step++) {
+    const frac = 1 - Math.abs(step - length / 2) / (length / 2);
+    const elev = heightPeak * (0.4 + 0.6 * frac);
 
-  while (queue.length > 0) {
-    const { cell, ring } = queue.shift()!;
-
-    // Contribution at this ring distance
-    const contribution = intensity * Math.pow(decay, ring);
-    if (contribution < 0.5) continue;
-
-    hFloat[cell] += contribution;
-
-    // Expand to neighbors
-    for (const nb of cells.neighbors[cell]!) {
-      if (visited[nb]) continue;
-
-      // Check coordinate distance from blob center
-      const dx = cells.p[nb * 2]! - cx;
-      const dy = cells.p[nb * 2 + 1]! - cy;
-      if (dx * dx + dy * dy > radiusSq) continue;
-
-      visited[nb] = 1;
-      queue.push({ cell: nb, ring: ring + 1 });
+    hFloat[currCell] = Math.max(hFloat[currCell]!, hFloat[currCell]! + elev);
+    for (const nb of cells.neighbors[currCell]!) {
+      hFloat[nb] = Math.max(hFloat[nb]!, hFloat[nb]! + elev * 0.6);
+      for (const nb2 of cells.neighbors[nb]!) {
+        hFloat[nb2] = Math.max(hFloat[nb2]!, hFloat[nb2]! + elev * 0.3);
+      }
     }
+
+    currAngle += (rng() - 0.5) * 0.5;
+    const targetLng = (cells.p[currCell * 2]! || 0) + Math.cos(currAngle) * 3;
+    const targetLat = (cells.p[currCell * 2 + 1]! || 0) + Math.sin(currAngle) * 3;
+
+    let bestNb = currCell;
+    let bestDist = Infinity;
+    for (const nb of cells.neighbors[currCell]!) {
+      const dx = cells.p[nb * 2]! - targetLng;
+      const dy = cells.p[nb * 2 + 1]! - targetLat;
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) {
+        bestDist = d;
+        bestNb = nb;
+      }
+    }
+    if (bestNb === currCell) break;
+    currCell = bestNb;
   }
 }
 
-/**
- * Collect cell indices that currently have "land-like" elevation.
- * Used to scatter mountain blobs only on existing continent mass.
- */
 function getLandCandidates(hFloat: Float64Array, n: number): number[] {
   const candidates: number[] = [];
-  // Estimate a rough threshold — cells with above-median elevation
-  const sorted = Array.from(hFloat).sort((a, b) => a - b);
-  const median = sorted[Math.floor(n * 0.5)]!;
   for (let i = 0; i < n; i++) {
-    if (hFloat[i]! > median) candidates.push(i);
+    if (hFloat[i]! > 51) candidates.push(i);
   }
   return candidates;
 }
 
-// ──────────────────────────────────────────────
-// Internal: Normalization
-// ──────────────────────────────────────────────
+function normalizeForOcean(hFloat: Float64Array, n: number, oceanPercentage: number): void {
+  const sorted = Array.from(hFloat).sort((a, b) => a - b);
+  const thresholdIndex = Math.floor(n * oceanPercentage);
+  const cutoff = sorted[thresholdIndex] ?? 50;
+  const maxVal = sorted[n - 1] ?? 100;
+  const range = Math.max(0.001, maxVal - cutoff);
 
-/**
- * Scale the float elevation buffer so that exactly `oceanPct` fraction of
- * cells end up below the WATER_THRESHOLD (51).
- *
- * Strategy: find the value at the `oceanPct` percentile. Linearly scale
- * so that value maps to 50 (just below threshold).
- */
-function normalizeForOcean(hFloat: Float64Array, n: number, oceanPct: number): void {
-  // Sort a copy to find the percentile value
-  const sorted = Float64Array.from(hFloat).sort();
-  const idx = Math.floor(oceanPct * n);
-  const pivotValue = sorted[Math.min(idx, n - 1)]!;
-
-  // Find min/max for scaling
-  const minH = sorted[0]!;
-  const maxH = sorted[n - 1]!;
-
-  if (maxH - minH < 0.01) {
-    // Flat terrain — fill with half ocean half land
-    for (let i = 0; i < n; i++) {
-      hFloat[i] = i < n * oceanPct ? 25 : 128;
-    }
-    return;
-  }
-
-  // Scale: values <= pivotValue map to [0, 50], values above map to [51, 255]
-  const waterTarget = WATER_THRESHOLD - 1; // 50
   for (let i = 0; i < n; i++) {
-    const raw = hFloat[i]!;
-    if (raw <= pivotValue) {
-      // Map [minH, pivotValue] → [0, waterTarget]
-      const t = pivotValue > minH ? (raw - minH) / (pivotValue - minH) : 0;
-      hFloat[i] = t * waterTarget;
+    if (hFloat[i]! < cutoff) {
+      // Map below cutoff to 0-50 (water)
+      hFloat[i] = Math.max(0, (hFloat[i]! / Math.max(1, cutoff)) * 50);
     } else {
-      // Map (pivotValue, maxH] → [WATER_THRESHOLD, 255]
-      const t = maxH > pivotValue ? (raw - pivotValue) / (maxH - pivotValue) : 0;
-      hFloat[i] = WATER_THRESHOLD + t * (255 - WATER_THRESHOLD);
+      // Map above cutoff to 52-255 (land) with realistic lowland curve (75% lowlands/hills)
+      const linearFrac = Math.min(1, Math.max(0, (hFloat[i]! - cutoff) / range));
+      const curvedFrac = Math.pow(linearFrac, 1.25); // Balanced 1.25 power curve gives rich elevation variation across all continents
+      hFloat[i] = 52 + curvedFrac * 203;
     }
   }
 }
 
-// ──────────────────────────────────────────────
-// Internal: Elevation Zone Assignment
-// ──────────────────────────────────────────────
-
-/**
- * Map each land cell's 0-255 elevation to one of the 9 canonical elevation zones.
- * Water cells get zone 0 by default (array is already zeroed).
- */
-function assignElevationZones(graph: PackedGraph): void {
+export function assignElevationZones(graph: PackedGraph): void {
   const { cells } = graph;
-  const landRange = 255 - WATER_THRESHOLD; // 204
 
+  // Collect all land cell height values
+  const landHeights: { cell: number; h: number }[] = [];
   for (let i = 0; i < cells.n; i++) {
-    const h = cells.h[i]!;
-    if (h < WATER_THRESHOLD) {
-      cells.elevZone[i] = 0;
-      continue;
-    }
-
-    // Normalize land elevation to [0, 1]
-    const normalized = (h - WATER_THRESHOLD) / landRange;
-    const zone = getZoneForNormalizedValue(normalized);
-    if (zone) {
-      const zoneIdx = ELEVATION_ZONES.indexOf(zone);
-      cells.elevZone[i] = zoneIdx >= 0 ? zoneIdx : 0;
+    if (cells.h[i]! >= 51) {
+      landHeights.push({ cell: i, h: cells.h[i]! });
     } else {
       cells.elevZone[i] = 0;
     }
   }
-}
 
-// ──────────────────────────────────────────────
-// Utility
-// ──────────────────────────────────────────────
+  if (landHeights.length === 0) return;
 
-/** Linear interpolation between a and b */
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
+  // Sort land heights ascending to compute robust quantile percentiles
+  landHeights.sort((a, b) => a.h - b.h);
+  const totalLand = landHeights.length;
+
+  // Quantile thresholds matching canonical IxEarth cartographic standards
+  const zoneCutoffs = [0.18, 0.35, 0.5, 0.65, 0.77, 0.87, 0.94, 0.98, 1.0];
+
+  for (let idx = 0; idx < totalLand; idx++) {
+    const { cell } = landHeights[idx]!;
+    const percentile = (idx + 1) / totalLand;
+
+    let assignedZone = 0;
+    for (let z = 0; z < zoneCutoffs.length; z++) {
+      if (percentile <= zoneCutoffs[z]!) {
+        assignedZone = z;
+        break;
+      }
+    }
+    cells.elevZone[cell] = assignedZone;
+  }
 }

@@ -36,8 +36,8 @@ export function createVoronoiMesh(
   const points = generateJitteredGrid(cellCount, rng);
   const n = points.length / 2;
 
-  // Step 2: Delaunay triangulation + Voronoi
-  const bounds: [number, number, number, number] = [-180, -90, 180, 90];
+  // Step 2: Delaunay triangulation + Voronoi bounded within safe geographic limits
+  const bounds: [number, number, number, number] = [-179.9, -84, 179.9, 84];
   let delaunay = Delaunay.from(
     Array.from({ length: n }, (_, i) => [points[i * 2]!, points[i * 2 + 1]!])
   );

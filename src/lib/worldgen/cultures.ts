@@ -40,10 +40,11 @@ export function generateCultures(graph: PackedGraph, params: WorldGenParams): vo
 
   const cultures: Culture[] = [];
   for (let c = 0; c < seeds.length; c++) {
+    const family = families[c % familyCount];
     cultures.push({
       id: c + 1, // 0 = no culture
-      name: families[c % familyCount]!.name + " Culture " + (c + 1),
-      familyId: families[c % familyCount]!.id,
+      name: (family?.name || "Culture") + " " + (c + 1),
+      familyId: family?.id || "latin",
       center: seeds[c]!,
       cellCount: 0,
     });

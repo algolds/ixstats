@@ -96,7 +96,7 @@ export function placeSettlements(graph: PackedGraph, params: WorldGenParams): vo
     if (params.useMarkovNaming && cultureId > 0) {
       const culture = graph.cultures[cultureId - 1];
       if (culture) {
-        const famIdx = families.findIndex((f) => f.id === culture.familyId);
+        const famIdx = families.findIndex((f) => f && f.id === culture.familyId);
         if (famIdx >= 0 && generators[famIdx]) {
           name = generators[famIdx]!.generate();
         }

@@ -52,13 +52,17 @@ export function generateWorld(
   report("mesh", 10, `Mesh: ${graph.cells.n} cells`);
 
   // ── Stage 2: IxWorld template (optional) ──
-  // Template loading would go here — for now, skip
-  // TODO: implement ixworld-template.ts to load actual GeoJSON shapes
-  report("template", 15, "Template: skipped");
+  let template: Uint8Array | null = null;
+  if (params.useIxWorldTemplate) {
+    report("template", 15, "Sampling IxWorld base template...");
+    const { sampleIxWorldTemplate } = require("./ixworld-template");
+    template = sampleIxWorldTemplate(graph);
+    report("template", 17, "IxWorld base template sampled");
+  }
 
   // ── Stage 3: Heightmap ──
   report("heightmap", 18, "Generating terrain...");
-  generateHeightmap(graph, params, null);
+  generateHeightmap(graph, params, template);
   report("heightmap", 30, "Terrain complete");
 
   // ── Stage 4: Features (flood-fill) ──

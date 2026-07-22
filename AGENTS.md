@@ -88,6 +88,13 @@ bun run ts:build          # build with project references (lib + server)
 - `~/components/*` → `./src/components/*`
 - `~/hooks/*` → `./src/hooks/*`
 
+### Product Model — IxWorld vs Realms
+- **IxWorld** is the internal/closed "default" realm for the Ixnay community. It is NOT open to external players.
+- **Realms** are the external-facing product. External users create their own realms with their own maps, nations, and simulation instances.
+- IxWorld is architecturally just `realm="default"` — same code paths, same models, same engine. But from a product perspective, it's a private instance.
+- When designing features, think "realm-first": everything should be realm-scoped and configurable. IxWorld benefits from these abstractions but is not the entry point for new external users.
+- Never propose "opening IxWorld to external players" as a strategy. The strategy is always "build Realms as the platform, IxWorld is one tenant."
+
 ## Environment & Infrastructure
 
 ### Database

@@ -8,7 +8,7 @@
  */
 
 import { type PackedGraph, type Feature } from "./types";
-import { isLand, isWater } from "./voronoi-mesh";
+import { isLand, isWater, cellAreaKm2 } from "./voronoi-mesh";
 
 // ──────────────────────────────────────────────
 // Public API
@@ -71,7 +71,7 @@ export function classifyFeatures(graph: PackedGraph): void {
           break;
         }
       }
-      type = touchesBoundary ? "ocean" : "lake";
+      type = !touchesBoundary || (component.length <= 15 && !cells.boundary[component[0]!]) ? "lake" : "ocean";
     } else {
       type = "land";
       // Check if land touches boundary (for metadata)
@@ -83,12 +83,18 @@ export function classifyFeatures(graph: PackedGraph): void {
       }
     }
 
+    // Compute feature area
+    let area = 0;
+    for (const c of component) {
+      area += cellAreaKm2(graph, c);
+    }
+
     // ── Step 3: Create feature and assign to cells ──
     const feature: Feature = {
       id: featureId,
       type,
       cellCount: component.length,
-      area: 0, // computed later if needed
+      area: Math.round(area),
       name: "",
       border: touchesBoundary,
     };

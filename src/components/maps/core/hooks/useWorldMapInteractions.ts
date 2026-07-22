@@ -274,17 +274,21 @@ export function useWorldMapInteractions({
 
       if (hoveredFeatureIdRef.current !== nextFeatureId) {
         if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
-          map.setFeatureState(
-            { source: "source-political", id: hoveredFeatureIdRef.current },
-            { hover: false }
-          );
+          try {
+            map.setFeatureState(
+              { source: "source-political", id: hoveredFeatureIdRef.current },
+              { hover: false }
+            );
+          } catch (_) {}
         }
 
         hoveredFeatureIdRef.current = nextFeatureId;
 
         if (nextFeatureId !== null) {
           if (map.getSource("source-political")) {
-            map.setFeatureState({ source: "source-political", id: nextFeatureId }, { hover: true });
+            try {
+              map.setFeatureState({ source: "source-political", id: nextFeatureId }, { hover: true });
+            } catch (_) {}
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 

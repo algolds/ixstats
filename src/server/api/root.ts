@@ -113,6 +113,7 @@ import { geoAdminRouter } from "./routers/geo/admin";
 import { geoAdminCitiesRouter } from "./routers/geo/admin/cities";
 import { geoSovereigntyRouter } from "./routers/geo/sovereignty";
 import { geoWikiRouter } from "./routers/geo/wiki";
+import { realmsPipelineRouter } from "./routers/geo/realms-pipeline";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
 import { studioRouter } from "./routers/studio";
@@ -245,6 +246,7 @@ export const appRouter = createTRPCRouter({
   geoAdmin: safeRouter("geoAdmin", () => mergeRouters(geoAdminRouter, geoAdminCitiesRouter)),
   geoSovereignty: safeRouter("geoSovereignty", () => geoSovereigntyRouter),
   geoWiki: safeRouter("geoWiki", () => geoWikiRouter),
+  realmsPipeline: safeRouter("realmsPipeline", () => realmsPipelineRouter),
   resources: safeRouter("resources", () => resourcesRouter),
   transport: safeRouter("transport", () => transportRouter),
   studio: safeRouter("studio", () => studioRouter),

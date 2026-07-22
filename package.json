@@ -357,13 +357,14 @@
       "^server-only$": "<rootDir>/jest-mocks/server-only.ts",
       "^ansi-regex$": "<rootDir>/jest-mocks/ansi-regex.ts",
       "^~/env$": "<rootDir>/jest-mocks/env.ts",
+      "^d3-delaunay$": "<rootDir>/jest-mocks/d3-delaunay.ts",
       "^~/trpc/react$": "<rootDir>/jest-mocks/trpc-react.ts",
       "^~/(.*)$": "<rootDir>/src/$1",
       "^@/(.*)$": "<rootDir>/src/$1",
       "^superjson$": "<rootDir>/jest-mocks/superjson.ts"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@t3-oss|zod|node-fetch)/)"
+      "node_modules/(?!(@t3-oss|zod|node-fetch|d3-delaunay|delaunator|robust-predicates)/)"
     ],
     "transform": {
       "^.+\\.(ts|tsx)$": [

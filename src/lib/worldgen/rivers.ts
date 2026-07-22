@@ -169,8 +169,9 @@ function computeDownstream(graph: PackedGraph): Int32Array {
     if (!isLand(graph, i)) continue;
 
     let lowestNb = -1;
-    let lowestH = cells.h[i]! + 1; // must be lower than current cell (or equal after fill)
+    let lowestH = cells.h[i]!;
 
+    // 1. Prefer strictly lower neighbor (downhill)
     for (const nb of cells.neighbors[i]!) {
       const nbH = cells.h[nb]!;
       if (nbH < lowestH) {
@@ -179,11 +180,22 @@ function computeDownstream(graph: PackedGraph): Int32Array {
       }
     }
 
-    // Accept neighbor even if it's the same height (depression-filled plateau)
+    // 2. If tied on plateau, pick neighbor closer to coast
     if (lowestNb === -1) {
-      // No lower neighbor at all — find equal-height neighbor
+      let minDist = cells.coastDist[i]!;
       for (const nb of cells.neighbors[i]!) {
-        if (cells.h[nb]! <= cells.h[i]!) {
+        const d = cells.coastDist[nb]!;
+        if (d < minDist) {
+          minDist = d;
+          lowestNb = nb;
+        }
+      }
+    }
+
+    // 3. Fallback: pick any neighbor closer to coast or water
+    if (lowestNb === -1) {
+      for (const nb of cells.neighbors[i]!) {
+        if (isWater(graph, nb) || cells.coastDist[nb]! <= cells.coastDist[i]!) {
           lowestNb = nb;
           break;
         }
@@ -220,6 +232,12 @@ function collectLandCellsSortedDesc(graph: PackedGraph): number[] {
 function accumulateFlux(graph: PackedGraph, landCells: number[], downstream: Int32Array): void {
   const { cells } = graph;
 
+  // 1. Initialize each land cell's flux with local precipitation (min 1)
+  for (const i of landCells) {
+    cells.flux[i] = Math.max(1, cells.prec[i] || 1);
+  }
+
+  // 2. Downhill flux accumulation (from highest cell to lowest)
   for (const i of landCells) {
     const ds = downstream[i]!;
     if (ds >= 0 && ds < cells.n) {
@@ -234,11 +252,12 @@ function accumulateFlux(graph: PackedGraph, landCells: number[], downstream: Int
 
 /**
  * Compute the flux threshold above which a cell is part of a river.
- * Uses the 97th percentile of land cell flux values (top ~3%).
- * Adjusts if the resulting river count would be too far from target.
+ * Uses 85th percentile of land cell flux values so major river channels trace cleanly.
  */
 function computeRiverThreshold(graph: PackedGraph, landCells: number[]): number {
   const { cells } = graph;
+
+  if (landCells.length === 0) return 1;
 
   // Collect all land flux values
   const fluxValues = new Float32Array(landCells.length);
@@ -247,11 +266,11 @@ function computeRiverThreshold(graph: PackedGraph, landCells: number[]): number 
   }
   fluxValues.sort();
 
-  // 97th percentile
-  const pctIdx = Math.floor(0.97 * fluxValues.length);
+  // 85th percentile for reliable river channel detection
+  const pctIdx = Math.floor(0.85 * fluxValues.length);
   const threshold = fluxValues[Math.min(pctIdx, fluxValues.length - 1)]!;
 
-  return Math.max(threshold, 1); // never zero
+  return Math.max(threshold, 2);
 }
 
 // ──────────────────────────────────────────────

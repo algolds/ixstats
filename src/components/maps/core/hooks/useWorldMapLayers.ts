@@ -25,6 +25,7 @@ interface UseWorldMapLayersProps {
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
   fullLayerDataRef: React.MutableRefObject<Map<string, FeatureCollection>>;
   theme?: MapTheme;
+  showOceanLabels?: boolean;
 }
 
 export function useWorldMapLayers({
@@ -37,13 +38,18 @@ export function useWorldMapLayers({
   labelFeaturesRef,
   fullLayerDataRef,
   theme,
+  showOceanLabels = true,
 }: UseWorldMapLayersProps) {
   // Update projection spec when mode changes
   useEffect(() => {
     if (!map || !isLoaded) return;
-    const spec = getProjectionSpec(projectionMode);
-    if ("setProjection" in map) {
-      (map as any).setProjection(spec);
+    try {
+      const spec = getProjectionSpec(projectionMode);
+      if ("setProjection" in map && typeof (map as any).setProjection === "function") {
+        (map as any).setProjection(spec);
+      }
+    } catch (err) {
+      console.warn("[IxWorldMap] Projection switch caught:", err);
     }
   }, [map, projectionMode, isLoaded]);
 
@@ -57,6 +63,7 @@ export function useWorldMapLayers({
         features: [
           {
             type: "Feature" as const,
+            id: 1,
             properties: { label: "Equator" },
             geometry: {
               type: "LineString" as const,
@@ -68,6 +75,7 @@ export function useWorldMapLayers({
           },
           {
             type: "Feature" as const,
+            id: 2,
             properties: { label: "Prime Meridian" },
             geometry: {
               type: "LineString" as const,
@@ -82,12 +90,14 @@ export function useWorldMapLayers({
 
       const oceanLabelsData = {
         type: "FeatureCollection" as const,
-        features: WATER_BODY_LABELS.map((wb, i) => ({
-          type: "Feature" as const,
-          id: i,
-          geometry: { type: "Point" as const, coordinates: wb.coordinates },
-          properties: { name: wb.name, wbType: wb.type, rank: wb.rank },
-        })),
+        features: showOceanLabels
+          ? WATER_BODY_LABELS.map((wb, i) => ({
+              type: "Feature" as const,
+              id: i + 1,
+              geometry: { type: "Point" as const, coordinates: wb.coordinates },
+              properties: { name: wb.name, wbType: wb.type, rank: wb.rank },
+            }))
+          : [],
       };
 
       const graticuleSource = map.getSource("graticule");
@@ -97,6 +107,7 @@ export function useWorldMapLayers({
         map.addSource("graticule", {
           type: "geojson",
           data: graticuleData,
+          generateId: true,
         });
         map.addLayer({
           id: "graticule-lines",
@@ -117,8 +128,9 @@ export function useWorldMapLayers({
         map.addSource("source-ocean-labels", {
           type: "geojson",
           data: oceanLabelsData,
+          generateId: true,
         });
-        if (!map.getLayer("ocean-labels")) {
+        if (showOceanLabels && oceanLabelsData.features.length > 0 && !map.getLayer("ocean-labels")) {
           map.addLayer({
             id: "ocean-labels",
             type: "symbol",
@@ -220,17 +232,17 @@ export function useWorldMapLayers({
               type: "line",
               source: sourceId,
               paint: {
-                "line-color": config.strokeColor ?? "#7cb5d2",
+                "line-color": ["coalesce", ["get", "fill"], config.strokeColor ?? "#7cb5d2"] as any,
                 "line-width": [
                   "interpolate",
                   ["linear"],
                   ["zoom"],
                   0,
-                  config.strokeWidth ?? 1,
+                  2.5,
                   6,
-                  (config.strokeWidth ?? 1) * 3,
+                  6.0,
                 ],
-                "line-opacity": layer.visible ? 0.7 : 0,
+                "line-opacity": layer.visible ? 0.9 : 0,
               },
               layout: {
                 "line-cap": "round",
@@ -271,47 +283,53 @@ export function useWorldMapLayers({
             }
 
             if (layer.type === "political") {
-              if (!map.getLayer("sovereignty-border")) {
-                map.addLayer({
-                  id: "sovereignty-border",
-                  type: "line",
-                  source: sourceId,
-                  filter: ["has", "_sovereignId"],
-                  paint: {
-                    "line-color": ["coalesce", ["get", "_fillColor"], "#888"] as any,
-                    "line-width": 2.5,
-                    "line-dasharray": [4, 2],
-                    "line-opacity": layer.visible ? 0.7 : 0,
-                  },
-                });
-              }
+              const hasSovereign = layer.data?.features?.some(
+                (f: any) => f.properties && f.properties._sovereignId
+              );
 
-              if (!map.getLayer("sovereignty-labels")) {
-                map.addLayer({
-                  id: "sovereignty-labels",
-                  type: "symbol",
-                  source: sourceId,
-                  filter: ["has", "_sovereignId"],
-                  layout: {
-                    "text-field": [
-                      "concat",
-                      ["get", "_displayName"],
-                      "\n",
-                      ["get", "_relationLabel"],
-                      " of ",
-                      ["get", "_sovereignName"],
-                    ] as any,
-                    "text-size": 9,
-                    "text-offset": [0, 1.5],
-                    "text-allow-overlap": false,
-                  },
-                  paint: {
-                    "text-color": "#6b5b3d",
-                    "text-halo-color": "#ffffff",
-                    "text-halo-width": 1.5,
-                  },
-                  minzoom: 4,
-                });
+              if (hasSovereign) {
+                if (!map.getLayer("sovereignty-border")) {
+                  map.addLayer({
+                    id: "sovereignty-border",
+                    type: "line",
+                    source: sourceId,
+                    filter: ["has", "_sovereignId"],
+                    paint: {
+                      "line-color": ["coalesce", ["get", "_fillColor"], "#888"] as any,
+                      "line-width": 2.5,
+                      "line-dasharray": [4, 2],
+                      "line-opacity": layer.visible ? 0.7 : 0,
+                    },
+                  });
+                }
+
+                if (!map.getLayer("sovereignty-labels")) {
+                  map.addLayer({
+                    id: "sovereignty-labels",
+                    type: "symbol",
+                    source: sourceId,
+                    filter: ["has", "_sovereignId"],
+                    layout: {
+                      "text-field": [
+                        "concat",
+                        ["get", "_displayName"],
+                        "\n",
+                        ["get", "_relationLabel"],
+                        " of ",
+                        ["get", "_sovereignName"],
+                      ] as any,
+                      "text-size": 9,
+                      "text-offset": [0, 1.5],
+                      "text-allow-overlap": false,
+                    },
+                    paint: {
+                      "text-color": "#6b5b3d",
+                      "text-halo-color": "#ffffff",
+                      "text-halo-width": 1.5,
+                    },
+                    minzoom: 4,
+                  });
+                }
               }
             }
           }
@@ -328,41 +346,44 @@ export function useWorldMapLayers({
               map.addSource("source-country-labels", {
                 type: "geojson",
                 data: layer.data as unknown as GeoJSON.GeoJSON,
+                generateId: true,
               });
-              map.addLayer({
-                id: "country-name-labels",
-                type: "symbol",
-                source: "source-country-labels",
-                layout: {
-                  "text-field": ["get", "_displayName"] as unknown as string,
-                  "text-font": [...MAP_SYMBOL_FONTS.regular],
-                  "text-size": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    1.5,
-                    10,
-                    3,
-                    12,
-                    5,
-                    14,
-                  ] as unknown as number,
-                  "text-allow-overlap": false,
-                  "text-ignore-placement": false,
-                  "text-optional": true,
-                  "text-padding": 2,
-                  "text-max-width": 8,
-                },
-                paint: {
-                  "text-color": "#2c2c2c",
-                  "text-halo-color": "#ffffff",
-                  "text-halo-width": 1.8,
-                  "text-halo-blur": 0.5,
-                  "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
-                },
-                minzoom: 1.5,
-              });
-              updateDistanceFade();
+              if (layer.data?.features?.length > 0 && !map.getLayer("country-name-labels")) {
+                map.addLayer({
+                  id: "country-name-labels",
+                  type: "symbol",
+                  source: "source-country-labels",
+                  layout: {
+                    "text-field": ["get", "_displayName"] as unknown as string,
+                    "text-font": [...MAP_SYMBOL_FONTS.regular],
+                    "text-size": [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      1.5,
+                      10,
+                      3,
+                      12,
+                      5,
+                      14,
+                    ] as unknown as number,
+                    "text-allow-overlap": false,
+                    "text-ignore-placement": false,
+                    "text-optional": true,
+                    "text-padding": 2,
+                    "text-max-width": 8,
+                  },
+                  paint: {
+                    "text-color": "#2c2c2c",
+                    "text-halo-color": "#ffffff",
+                    "text-halo-width": 1.8,
+                    "text-halo-blur": 0.5,
+                    "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
+                  },
+                  minzoom: 1.5,
+                });
+                updateDistanceFade();
+              }
             }
           }
         }
@@ -398,7 +419,7 @@ export function useWorldMapLayers({
             isVisible ? (politicalVisible ? config.fillOpacity : 1.0) : 0
           );
         } else if (config.type === "line") {
-          map.setPaintProperty(fillLayerId, "line-opacity", isVisible ? 0.7 : 0);
+          map.setPaintProperty(fillLayerId, "line-opacity", isVisible ? 0.9 : 0);
         } else {
           map.setPaintProperty(fillLayerId, "fill-opacity", isVisible ? config.fillOpacity : 0);
         }
