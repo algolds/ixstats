@@ -119,7 +119,7 @@ prettier.config.js
 # --------------------------------------------------------------------------------
 # Runtime Logs & Reports
 # --------------------------------------------------------------------------------
-logs/
+/logs/
 scripts/audit/reports/
 scripts/audit-reports/
 prisma/backups/
