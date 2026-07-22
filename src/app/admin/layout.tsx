@@ -48,9 +48,10 @@ function AccessDeniedScreen() {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isLoaded } = useUser();
+  const { user: permissionUser, isLoading: permissionsLoading } = usePermissions();
   const pathname = usePathname();
 
-  if (!isLoaded) {
+  if (!isLoaded || permissionsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -72,7 +73,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = isSystemOwner(user.id);
   const hasAdminRole =
-    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+    (typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role)) ||
+    (typeof permissionUser?.role?.name === "string" && allowedRoles.has(permissionUser.role.name));
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return <AccessDeniedScreen />;
