@@ -12,6 +12,9 @@ else
 fi
 
 echo "Restoring database to local container..."
+# Ensure the ixstats_readonly role exists in the postgres cluster so pg_restore doesn't fail on permissions
+$DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'ixstats_readonly') THEN CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD 'Q9ul7FneYGI4vT/s1/jkIokTH97nuZ8Xk9qnmIVMgVs='; END IF; END \$\$;"
+
 $DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS ixstats WITH (FORCE);"
 $DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "CREATE DATABASE ixstats;"
 $DOCKER_CMD exec -i ixstats-postgres pg_restore -U postgres -d ixstats --no-owner < /tmp/ixstats-prod.dump
