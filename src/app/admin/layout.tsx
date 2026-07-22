@@ -11,8 +11,8 @@ import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
+import { usePermissions } from "~/hooks/usePermissions";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
