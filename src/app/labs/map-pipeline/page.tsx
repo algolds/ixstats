@@ -20,7 +20,7 @@ const IxWorldMap = dynamic(() => import("~/components/maps/core/IxWorldMap"), {
 export default function MapPipelineLabPage() {
   const [config, setConfig] = useState<MapGenConfig>({
     seed: 12345,
-    cellCount: 1500,
+    cellCount: 100000,
     countryCount: 12,
     landCoverage: 35,
   });
@@ -57,6 +57,7 @@ export default function MapPipelineLabPage() {
         seed: config.seed,
         cellCount: config.cellCount,
         countryCountRange: [config.countryCount, config.countryCount],
+        oceanPercentage: 1 - config.landCoverage / 100,
       });
 
       if (!world.graph) return;

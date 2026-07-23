@@ -183,11 +183,13 @@ export interface WorldGenParams {
   useMarkovNaming: boolean;
   /** Specific language family IDs (empty = use all) */
   languageFamilies: string[];
+  /** Use UPG v2 unified physical geography engine (default true) */
+  useV2Engine?: boolean;
 }
 
 export const DEFAULT_PARAMS: WorldGenParams = {
   seed: 42,
-  cellCount: 20000,
+  cellCount: 50000,
   continentCount: 6,
   countryCountRange: [60, 200],
   oceanPercentage: 0.65,
@@ -199,6 +201,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   templateStrength: 0.6,
   useMarkovNaming: true,
   languageFamilies: [],
+  useV2Engine: true,
 };
 
 // ──────────────────────────────────────────────

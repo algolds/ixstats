@@ -15,18 +15,16 @@ export function escHtml(s: string): string {
 
 /** Area thresholds for progressive feature loading based on zoom */
 export const PROGRESSIVE_THRESHOLDS: Record<string, [number, number][]> = {
-  // [zoom, minAreaSqKm] — features below threshold are hidden
+  // [zoom, minAreaSqKm] — features below threshold are hidden at low zoom
   rivers: [
-    [0, 3000],
-    [3, 1000],
-    [5, 200],
-    [6, 0],
+    [0, 50],
+    [3, 20],
+    [5, 0],
   ],
   lakes: [
-    [0, 5000],
-    [3, 1000],
-    [5, 200],
-    [6, 0],
+    [0, 50],
+    [3, 20],
+    [5, 0],
   ],
 };
 
@@ -45,7 +43,7 @@ const filterCache = new WeakMap<any, Map<number, FeatureCollection>>();
 
 /** Filter a FeatureCollection by minimum area */
 export function filterByArea(data: FeatureCollection, minArea: number): FeatureCollection {
-  if (minArea <= 0) return data;
+  if (minArea <= 0 || !data || !data.features) return data;
 
   let areaCache = filterCache.get(data);
   if (!areaCache) {
@@ -58,7 +56,13 @@ export function filterByArea(data: FeatureCollection, minArea: number): FeatureC
     cached = {
       ...data,
       features: data.features.filter((f) => {
-        const area = (f.properties?._areaSqKm as number) ?? 0;
+        const area =
+          (f.properties?.areaKm2 as number) ??
+          (f.properties?._areaSqKm as number) ??
+          (f.properties?.areaSqKm as number) ??
+          ((f.properties?.lengthKm as number) ? (f.properties?.lengthKm as number) * 50 : undefined) ??
+          ((f.properties?.flux as number) ? (f.properties?.flux as number) * 10 : undefined) ??
+          99999;
         return area >= minArea;
       }),
     };

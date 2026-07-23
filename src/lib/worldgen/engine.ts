@@ -27,12 +27,14 @@ import { generateStates } from "./states";
 import { validateAndRepair } from "./validate";
 import { exportToGeoJSON } from "./export-geojson";
 
+import { generateWorld as generateWorldV2 } from "./v2";
+
 // ──────────────────────────────────────────────
 // Main Entry Point
 // ──────────────────────────────────────────────
 
 /**
- * Generate a complete world using the Azgaar-style Voronoi pipeline.
+ * Generate a complete world using the Unified Physical Geography Engine (v2).
  *
  * @param userParams Generation parameters (merged with defaults)
  * @param onProgress Optional progress callback for UI
@@ -43,6 +45,12 @@ export function generateWorld(
   onProgress?: ProgressCallback
 ): GeneratedWorld {
   const params: WorldGenParams = { ...DEFAULT_PARAMS, ...userParams };
+
+  if (params.useV2Engine !== false) {
+    const v2World = generateWorldV2(params, onProgress as any);
+    return v2World as unknown as GeneratedWorld;
+  }
+
   const t0 = performance.now();
   const report = onProgress ?? (() => {});
 

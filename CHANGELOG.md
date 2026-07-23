@@ -10,6 +10,21 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added
+
+- **Unified Physical Geography Engine (UPG v2 & Atlas Engine v4)**:
+  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/config.ts) and [page.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/map-pipeline/page.tsx). Removed resolution range sliders from [MapPipelineControls.tsx](file:///home/jxsig/projects/ixstats/src/components/labs/map-pipeline/MapPipelineControls.tsx) and added a `"100K RBF Spline Vector Engine"` telemetry badge.
+  - **Option A 3-Stage IxWorld Vector Synthesis Engine**:
+    - **Douglas-Peucker Decimation (`simplifyRing`)**: Integrated `simplifyRing` in [chaikin.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/helpers/chaikin.ts) to strip high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
+    - **Control Point Catmull-Rom Subdivision (`catmullRomSmooth`)**: Implemented 3-pass Catmull-Rom spline subdivision ($\tau = 0.5$) through structural control points for continuous, silk-smooth Bezier arcs at all zoom levels without scalloped wave bumps.
+    - **Continuous Multi-Octave Harmonic Vector Perturbation (`perturbRing`)**: Morphs vector coordinates with continuous harmonic noise matching IxWorld's `vector-synthesis.ts` architecture for organic fractal cartography.
+  - **Coastal Hypsometric Slope Damping**: Implemented smooth exponential coastal dampening ($H_{\text{damped}}[i] = H[i] \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}[i]})$) for `coastDist <= 8` in [coastlines.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/coastlines.ts), keeping shorelines in lowlands (`zone_0`/`zone_1`, 0–350m) and preventing off-white glacial peaks (`zone_8`) from touching ocean borders.
+  - **Polar Cosine Soft Clamping**: Added high-latitude noise dampening (`polarFactor = cos(((absLat - 70) / 18) * (PI / 2))`) for $|lat| > 70^\circ$ in [terrain.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/terrain.ts). Smoothly clamps South Pole ($lat < -74^\circ$) to a +800m polar continent plateau and North Pole ($lat > 76^\circ$) to a -1500m Arctic sea basin with ice caps (`biome === 10`), eliminating projection stretching/pinching.
+  - **Spatial Heightmap Laplacian Smoothing**: Added 2-pass spatial heightmap diffusion ($H_{\text{smoothed}}[i] = 0.5 \cdot H[i] + 0.5 \cdot \text{avg}(H_{\text{neighbors}})$) in [terrain.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/terrain.ts) to diffuse 1-cell elevation spikes into continuous, natural mountain massifs.
+  - **Blotchy Spot & Island State Alignment**: Filtered out isolated elevation clusters smaller than 6 cells ($Z \ge 3$) in [export.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/export.ts) to eliminate blotchy mountain dots. Fixed unclaimed island land cell assignment in [politics.ts](file:///home/jxsig/projects/ixstats/src/lib/worldgen/v2/politics.ts) by calculating Euclidean proximity to state capital source seeds.
+  - **Maps Pipeline Lab Page Layer Stack & Progressive Threshold Fixes**: Reordered MapLibre layer stacking so rivers (`zIndex: 7`) and lakes (`zIndex: 6`) render above political country fills (`zIndex: 4`). Fixed `PROGRESSIVE_THRESHOLDS` and `filterByArea` fallback logic in [map-core-helpers.ts](file:///home/jxsig/projects/ixstats/src/components/maps/core/utils/map-core-helpers.ts) to prevent 100% layer filtering at initial zoom.
+  - **Comprehensive Engine Documentation**: Created [src/lib/worldgen/README.md](file:///home/jxsig/projects/ixstats/src/lib/worldgen/README.md) documenting UPG v2 principles, 8-stage pipeline, GeoJSON layer contracts, 9 elevation zones, API usage, and test commands.
+
 ## [1.2.6 Ogma (Beta)] - 2026-07-20
 
 ### Added

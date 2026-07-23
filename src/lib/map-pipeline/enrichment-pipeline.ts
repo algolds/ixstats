@@ -174,7 +174,7 @@ export function enrichMapDataset(
     const vertexMap = new Map<string, Array<{ featureId: string; ringIndex: number; vertexIndex: number }>>();
 
     polLayer.features.forEach((feat) => {
-      const featureId = String(feat.properties?.id || feat.properties?.featureId || "unknown");
+      const featureId = String(feat.properties?._id || feat.properties?.id || feat.properties?.featureId || "unknown");
       const geom = feat.geometry as Polygon | MultiPolygon;
 
       if (geom.type === "Polygon") {

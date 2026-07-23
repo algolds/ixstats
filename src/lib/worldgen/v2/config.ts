@@ -13,7 +13,7 @@ import type { WorldGenParams } from "./types";
 
 export const DEFAULT_PARAMS: WorldGenParams = {
   seed: 42,
-  cellCount: 50000,
+  cellCount: 100000,
   plateCount: 10,
   continentCount: 6,
   countryCountRange: [60, 200],
@@ -28,7 +28,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   templateStrength: 0.6,
   useMarkovNaming: true,
   languageFamilies: [],
-  lloydIterations: 3,
+  lloydIterations: 5,
 };
 
 // ──────────────────────────────────────────────

@@ -30,6 +30,14 @@ export function MapPipelineTelemetry({
   const [selectedCountryId, setSelectedCountryId] = useState<string>(countries?.[0]?.featureId || "");
   const [activeTab, setActiveTab] = useState<"stats" | "geoprofile" | "resources" | "logs">("stats");
 
+  React.useEffect(() => {
+    if (countries && countries.length > 0) {
+      if (!countries.some((c) => c && c.featureId === selectedCountryId)) {
+        setSelectedCountryId(countries[0]!.featureId);
+      }
+    }
+  }, [countries, selectedCountryId]);
+
   const activeCountry = (countries || []).find((c) => c && c.featureId === selectedCountryId) || countries?.[0];
   const activeProfile = activeCountry
     ? (geoProfiles || []).find((p) => p && p.countryFeatureId === activeCountry.featureId)

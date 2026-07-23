@@ -54,9 +54,12 @@ export interface NormalizedMapData {
 /**
  * Normalize a PackedGraph output into structured realm map layers and entity datasets.
  */
+import { exportToGeoJSON as exportToGeoJSONV2 } from "../worldgen/v2/export";
+
 export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
   // 1. Export 7 GeoJSON layers sharing 100% identical cell topology & boundary alignment
-  const rawLayers = exportToGeoJSON(graph);
+  const isV2Graph = graph && graph.cells && ((graph.cells as any).isLand !== undefined || (graph.cells as any).plate !== undefined);
+  const rawLayers = isV2Graph ? exportToGeoJSONV2(graph as any) : exportToGeoJSON(graph);
 
   // 2. Extract country metadata from states and political layer
   const countries: NormalizedCountryPayload[] = [];
@@ -102,21 +105,20 @@ export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedM
     }
   }
 
-  // 3. Extract city markers from burgs
+  // 3. Extract city markers from settlements or burgs
   const cities: NormalizedCityPayload[] = [];
-  if (graph.burgs) {
-    for (const burg of graph.burgs) {
-      if (!burg || !burg.name) continue;
-      const countryFeatureId = burg.state ? `state_${burg.state}` : countries[0]?.featureId || "unclaimed";
-      cities.push({
-        name: burg.name,
-        type: burg.isCapital ? "national_capital" : "city",
-        coordinates: [burg.lng ?? 0, burg.lat ?? 0],
-        population: Math.round((burg.population || 50) * 1000),
-        isCapital: Boolean(burg.isCapital),
-        countryFeatureId,
-      });
-    }
+  const burgList = (graph as any).settlements || graph.burgs || [];
+  for (const burg of burgList) {
+    if (!burg || !burg.name) continue;
+    const countryFeatureId = burg.state ? `state_${burg.state}` : countries[0]?.featureId || "unclaimed";
+    cities.push({
+      name: burg.name,
+      type: burg.isCapital ? "national_capital" : "city",
+      coordinates: [burg.lng ?? 0, burg.lat ?? 0],
+      population: Math.round(burg.population || 50000),
+      isCapital: Boolean(burg.isCapital),
+      countryFeatureId,
+    });
   }
 
   // 4. Extract named rivers
@@ -124,14 +126,18 @@ export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedM
   if (graph.rivers) {
     for (const river of graph.rivers) {
       if (!river || !river.name || !river.cells) continue;
-      const coordinates = river.cells.map((ci) => [cellLng(graph, ci), cellLat(graph, ci)]);
+      const coordinates = Array.isArray(river.cells)
+        ? river.cells.map((ci: any) =>
+            typeof ci === "number" ? [cellLng(graph, ci), cellLat(graph, ci)] : ci
+          )
+        : [];
       rivers.push({
         name: river.name,
         geometry: {
           type: "LineString",
           coordinates,
         },
-        lengthKm: Math.round(river.length || 100),
+        lengthKm: Math.round((river as any).lengthKm || (river as any).length || 100),
       });
     }
   }

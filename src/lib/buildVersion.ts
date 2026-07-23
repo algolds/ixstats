@@ -44,7 +44,7 @@ export const VERSIONS = {
   engines: {
     mycountry: 3, // nation-scoped deterministic sim
     concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 3, // spatial foundation (worldgen, geo, maps) — powers IxWorld
+    atlas: 4, // spatial foundation (worldgen, geo, maps) — powers IxWorld; v4: UPG v2 100K RBF Spline Vector Engine
   },
 
   // UI / feature systems — independent, user-facing.

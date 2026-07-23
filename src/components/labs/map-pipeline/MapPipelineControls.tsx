@@ -149,21 +149,12 @@ export function MapPipelineControls({
               />
             </div>
 
-            {/* Cell Count */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground flex justify-between">
-                <span>Cell Resolution</span>
-                <span className="text-primary font-mono">{config.cellCount} cells</span>
-              </label>
-              <input
-                type="range"
-                min={500}
-                max={5000}
-                step={250}
-                value={config.cellCount}
-                onChange={(e) => onChangeConfig({ ...config, cellCount: Number(e.target.value) })}
-                className="w-full accent-primary"
-              />
+            {/* Mesh Engine Indicator */}
+            <div className="p-2.5 rounded-md border border-primary/20 bg-primary/5 flex items-center justify-between text-xs font-medium text-foreground">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" /> Mesh Engine
+              </span>
+              <span className="text-primary font-mono text-[11px] font-semibold">100K RBF Splines</span>
             </div>
 
             {/* Country Count */}

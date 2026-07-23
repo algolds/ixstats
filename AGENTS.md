@@ -95,6 +95,13 @@ bun run ts:build          # build with project references (lib + server)
 - When designing features, think "realm-first": everything should be realm-scoped and configurable. IxWorld benefits from these abstractions but is not the entry point for new external users.
 - Never propose "opening IxWorld to external players" as a strategy. The strategy is always "build Realms as the platform, IxWorld is one tenant."
 
+### Procedural Realm Map Architecture (UPG v2)
+- **Engine Location**: `src/lib/worldgen/v2/`
+- **Spatial Mesh Foundation**: 100,000-cell Voronoi mesh (`WorldGraph`), 5 Lloyd iterations. Fixed resolution (no UI sliders).
+- **Coastal Hypsometry**: Damped coastal land elevation (`coastDist <= 3`) keeps shorelines in lowlands (`zone_0`/`zone_1`) and prevents glacial peaks (`zone_8`) on water edges.
+- **Vector Spline Subdivision**: All 7 GeoJSON output layers use 4-pass Catmull-Rom spline subdivision ($\tau = 0.5$) on shared vertex topology.
+- **Layer Stacking Order**: Rivers (`zIndex: 7`) and Lakes (`zIndex: 6`) render **above** Political Countries (`zIndex: 4`).
+
 ## Environment & Infrastructure
 
 ### Database
