@@ -33,7 +33,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [architecture/data.md](architecture/data.md) | Prisma schema domains, migrations, seeders, data lifecycle |
 | [prevent_ts_graph_explosion.md](prevent_ts_graph_explosion.md) | TypeScript graph isolation (modular tsconfigs, cross-router import ban). Resolved in 1.0.6; enforced by `scripts/audit/audit-arch.ts` |
 | [AUTOSAVE_ARCHITECTURE.md](AUTOSAVE_ARCHITECTURE.md) | Autosave system architecture (map editor) |
-| [FRAMEWORK_SPEC.md](FRAMEWORK_SPEC.md) | IxWorld framework specification |
+| [FRAMEWORK_SPEC.md](FRAMEWORK_SPEC.md) | IxWorld & Realms multi-tenant framework specification, creation studio, and data models |
 
 > Root-level [`arch.md`](../arch.md) is the agent-facing condensed version of the TS-graph architecture rules (referenced by `CLAUDE.md`).
 
@@ -56,7 +56,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 | [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, CMS architecture, RBAC |
 | [systems/help.md](systems/help.md) | In-app help center architecture and authoring workflow |
 | [systems/forum.md](systems/forum.md) | XenForo forum integration, widget embedding |
-| [systems/maps.md](systems/maps.md) | IxWorld map: MapLibre GL, layers, geo API, border editor |
+| [systems/maps.md](systems/maps.md) | IxWorld & IxMaps system: UPG v2 engine, MapLibre GL, Realms platform, overlay registry, MyCountry integration |
 | [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo** (formerly Dynamic Island) plugin-driven system |
 | [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports management |
 | [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro) developer integration & testing guide |
