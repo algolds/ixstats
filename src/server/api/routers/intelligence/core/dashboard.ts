@@ -16,7 +16,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, cachedProtectedProcedure, premiumProcedure } from "~/server/api/trpc";
 import { evaluateThresholds } from "../alerts";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notification-api";
@@ -32,7 +32,7 @@ export const intelCoreDashboardRouter = createTRPCRouter({
    * Get comprehensive executive dashboard overview
    * Includes vitality metrics, active alerts, and quick actions
    */
-  getOverview: protectedProcedure
+  getOverview: cachedProtectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {

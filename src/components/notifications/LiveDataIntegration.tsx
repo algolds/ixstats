@@ -6,7 +6,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useUser } from "~/context/auth-context";
 import { useOptimizedIntelligenceData } from "~/hooks/useOptimizedIntelligenceData";
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import {
   diplomaticNotificationService,
@@ -58,12 +60,16 @@ export function LiveDataIntegration({
     enableVitality: false,
   });
 
+  const econInterval = useVisibleRefetch(60000);
+  const dipRelInterval = useVisibleRefetch(120000);
+  const dipChangeInterval = useVisibleRefetch(60000);
+
   // Economic data stream - using country data as proxy for economic metrics
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(
     { id: effectiveCountryId || "" },
     {
       enabled: enableEconomicStream && !!effectiveCountryId && effectiveCountryId.trim() !== "",
-      refetchInterval: 30000, // Refresh every 30 seconds
+      refetchInterval: econInterval,
       retry: false, // Don't retry on error
     }
   );
@@ -86,7 +92,7 @@ export function LiveDataIntegration({
     { countryId: effectiveCountryId },
     {
       enabled: enableDiplomaticStream && !!effectiveCountryId,
-      refetchInterval: 60000, // Refresh every minute
+      refetchInterval: dipRelInterval,
       retry: false, // Don't retry on error
     }
   );
@@ -95,7 +101,7 @@ export function LiveDataIntegration({
     { countryId: effectiveCountryId, hours: 24 },
     {
       enabled: enableDiplomaticStream && !!effectiveCountryId,
-      refetchInterval: 30000, // Refresh every 30 seconds for recent changes
+      refetchInterval: dipChangeInterval,
       retry: false, // Don't retry on error
     }
   );

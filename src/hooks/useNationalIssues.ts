@@ -5,9 +5,12 @@
 
 import { api } from "~/trpc/react";
 import { useState, useCallback } from "react";
+import { useVisibleRefetch } from "./useVisibleRefetch";
 
 export function useNationalIssues(countryId: string | undefined, domain?: string) {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+
+  const visibleInterval = useVisibleRefetch(60000);
 
   // Fetch active issues (optionally scoped to a domain, e.g. "political")
   const {
@@ -16,7 +19,7 @@ export function useNationalIssues(countryId: string | undefined, domain?: string
     refetch: refetchActive,
   } = api.nationalIssues.getMyIssues.useQuery(
     { countryId: countryId!, status: "active", domain },
-    { enabled: !!countryId, refetchInterval: 60000 }
+    { enabled: !!countryId, refetchInterval: visibleInterval }
   );
 
   // Fetch history
@@ -38,7 +41,7 @@ export function useNationalIssues(countryId: string | undefined, domain?: string
   // Pending count for badges
   const { data: countData, refetch: refetchCount } = api.nationalIssues.getPendingCount.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId, refetchInterval: 30000 }
+    { enabled: !!countryId, refetchInterval: visibleInterval }
   );
 
   // Mutations

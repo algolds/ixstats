@@ -33,9 +33,16 @@ export class UserManagementService {
       // Include country to avoid redundant re-fetch in countryOwnerMiddleware
       const existingUser = await this.db.user.findUnique({
         where: { clerkUserId },
-        include: {
-          role: true,
-          country: true,
+        select: {
+          id: true,
+          clerkUserId: true,
+          countryId: true,
+          roleId: true,
+          membershipTier: true,
+          createdAt: true,
+          updatedAt: true,
+          country: { select: { id: true, name: true, flag: true } },
+          role: { select: { id: true, name: true, level: true } },
         },
       });
 
@@ -43,7 +50,7 @@ export class UserManagementService {
         console.log(
           `[UserManagementService] Found existing user: ${clerkUserId}, role: ${existingUser.role?.name || "NO_ROLE"}`
         );
-        return existingUser as UserWithRole;
+        return existingUser as unknown as UserWithRole;
       }
 
       // User doesn't exist - create with proper role assignment

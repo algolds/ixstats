@@ -10,14 +10,19 @@ import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
+
 export function SystemMetricsCard() {
+  const statusInterval = useVisibleRefetch(30000);
+  const healthInterval = useVisibleRefetch(60000);
+
   const { data: systemStatus, refetch: refetchSystemStatus } = api.admin.getSystemStatus.useQuery(
     undefined,
-    { refetchInterval: 5000 }
+    { refetchInterval: statusInterval }
   );
 
   const { data: systemHealth } = api.admin.getSystemHealth.useQuery(undefined, {
-    refetchInterval: 30000,
+    refetchInterval: healthInterval,
   });
 
   if (!systemStatus || !systemHealth) {

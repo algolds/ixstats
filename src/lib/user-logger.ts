@@ -109,7 +109,8 @@ export class UserLogger {
    * Initialize user logging system
    */
   static initialize(): void {
-    if (this.initialized) {
+    const globalLogger = globalThis as unknown as { __userLoggerInitialized?: boolean };
+    if (this.initialized || globalLogger.__userLoggerInitialized) {
       return;
     }
 
@@ -124,6 +125,7 @@ export class UserLogger {
       });
 
       this.initialized = true;
+      globalLogger.__userLoggerInitialized = true;
     } catch (error) {
       ErrorLogger.logError(error as Error, {
         component: "UserLogger",

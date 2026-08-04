@@ -3,47 +3,30 @@
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
+import { useVisibleRefetch } from "./useVisibleRefetch";
 
 export type SectionNotifications = Partial<Record<MyCountrySection, number>>;
 
 /**
  * Aggregates notification counts for all MyCountry sidebar sections.
- * Called once in MyCountryRouter and threaded down via props.
+ * Consolidated into a single batch query + visibility-aware polling.
  */
 export function useMyCountryNotifications(countryId: string | undefined): SectionNotifications {
   const enabled = !!countryId;
+  const refetchInterval = useVisibleRefetch(60_000);
 
-  // Executive: pending national issues
-  const { data: issueCount } = api.nationalIssues.getPendingCount.useQuery(
-    { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 }
-  );
-
-  // Diplomacy: active missions
-  const { data: missions } = api.diplomaticEmbassies.getActiveMissions.useQuery(
-    { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 }
-  );
-
-  // Intelligence: critical alerts
-  const { data: intelOverview } = api.intelCore.getOverview.useQuery(
-    { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 }
-  );
-
-  // Defense: active threats
-  const { data: securityData } = api.security.getSecurityAssessment.useQuery(
-    { countryId: countryId! },
-    { enabled, refetchInterval: 60_000 }
+  const { data } = api.mycountry.getNotificationCounts.useQuery(
+    { countryId: countryId ?? "" },
+    { enabled, refetchInterval }
   );
 
   return useMemo(
     (): SectionNotifications => ({
-      executive: issueCount?.total ?? 0,
-      diplomacy: missions?.length ?? 0,
-      intelligence: intelOverview?.alerts?.critical ?? 0,
-      defense: (securityData as any)?.activeThreatCount ?? 0,
+      executive: data?.executive ?? 0,
+      diplomacy: data?.diplomacy ?? 0,
+      intelligence: data?.intelligence ?? 0,
+      defense: data?.defense ?? 0,
     }),
-    [issueCount, missions, intelOverview, securityData]
+    [data]
   );
 }

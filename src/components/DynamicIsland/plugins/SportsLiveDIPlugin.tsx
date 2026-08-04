@@ -15,6 +15,7 @@ import { IxTime } from "~/lib/ixtime";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import { computeLiveMatchState } from "~/lib/sports/live-match";
 import type { DIViewProps } from "~/components/DynamicIsland/types";
@@ -160,9 +161,10 @@ function ActiveSportsLivePlugin({ match }: { match: LiveActivityMatch }) {
 
 export function SportsLiveDIPlugin() {
   const { isSignedIn } = useUser();
+  const refetchInterval = useVisibleRefetch(30_000);
   const { data } = api.sports.getLiveActivities.useQuery(undefined, {
     enabled: isSignedIn,
-    refetchInterval: 30_000,
+    refetchInterval,
     refetchOnWindowFocus: true,
   });
 

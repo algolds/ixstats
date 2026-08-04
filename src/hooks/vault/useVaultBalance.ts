@@ -2,7 +2,7 @@
  * useVaultBalance Hook
  *
  * Real-time balance fetching with auto-refresh
- * - Polls every 30 seconds for updates
+ * - Polls every 60 seconds (visibility-aware)
  * - Refetches on window focus
  * - Provides manual refresh function
  */
@@ -11,9 +11,11 @@
 
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 
 export function useVaultBalance() {
   const { userId } = useAuth();
+  const refetchInterval = useVisibleRefetch(60000);
 
   const {
     data: balanceData,
@@ -23,9 +25,9 @@ export function useVaultBalance() {
     { userId: userId ?? "" },
     {
       enabled: !!userId,
-      refetchInterval: 30000, // Auto-refresh every 30 seconds
+      refetchInterval,
       refetchOnWindowFocus: true,
-      staleTime: 25000, // Consider data stale after 25 seconds
+      staleTime: 30000,
     }
   );
 

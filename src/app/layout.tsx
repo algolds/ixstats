@@ -8,30 +8,22 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
 import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ChunkLoadErrorBoundary";
-// ToasterProvider removed — all toasts now route through Dynamic Island
-import { IxTimeProvider } from "~/contexts/IxTimeContext";
-import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
-import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
 import { ToastProvider } from "~/components/ui/toast";
-import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
-import { DIPluginProvider } from "~/components/DynamicIsland";
-import { SportsLiveDIPlugin } from "~/components/DynamicIsland/plugins/SportsLiveDIPlugin";
-import { CalendarLiveDIPlugin } from "~/components/DynamicIsland/plugins/CalendarLiveDIPlugin";
-import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 
+
+import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -71,45 +63,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <TRPCReactProvider>
       <GlobalLinkTooltipProvider>
         <ThemeProvider>
-          <AbilityProvider>
-            <IxTimeProvider>
-              <ExecutiveNotificationProvider>
-                <ToastProvider>
-                  <NotificationBadgeProvider>
-                    <GlobalNotificationSystem>
-                      <DIPluginProvider>
-                        <SportsLiveDIPlugin />
-                        <CalendarLiveDIPlugin />
-                        <WikiContextProvider>
-                          <WebGLErrorHandler />
-                          <MapPrefetcher />
-                          <NavigationTransitionHandler />
-                          {isStandalone ? (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                            </div>
-                          ) : (
-                            <div className="flex min-h-screen flex-col">
-                              <Navigation />
-                              {/* <GlobalActivityMarquee /> */}
-                              <SetupRedirect />
-                              <main className="flex flex-1 flex-col">
-                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                              </main>
-                              <MiniPlayer />
-                            </div>
-                          )}
-                        </WikiContextProvider>
-                      </DIPluginProvider>
-                    </GlobalNotificationSystem>
-                  </NotificationBadgeProvider>
-                </ToastProvider>
-              </ExecutiveNotificationProvider>
-            </IxTimeProvider>
-          </AbilityProvider>
+          <ToastProvider>
+            <LazyGameProviders>
+              <WebGLErrorHandler />
+              <MapPrefetcher />
+              <NavigationTransitionHandler />
+              {isStandalone ? (
+                <div className="flex min-h-screen flex-col">
+                  <Navigation />
+                  <main className="flex flex-1 flex-col">
+                    <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                  </main>
+                </div>
+              ) : (
+                <div className="flex min-h-screen flex-col">
+                  <Navigation />
+                  {/* <GlobalActivityMarquee /> */}
+                  <SetupRedirect />
+                  <main className="flex flex-1 flex-col">
+                    <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                  </main>
+                  <MiniPlayer />
+                </div>
+              )}
+            </LazyGameProviders>
+          </ToastProvider>
         </ThemeProvider>
       </GlobalLinkTooltipProvider>
     </TRPCReactProvider>

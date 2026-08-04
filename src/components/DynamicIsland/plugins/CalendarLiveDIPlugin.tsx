@@ -16,6 +16,7 @@ import { IxTime } from "~/lib/ixtime";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import {
   getUpcomingEvents,
@@ -75,6 +76,7 @@ function ActiveCalendarLivePlugin({ event }: { event: CalendarEvent }) {
 
 export function CalendarLiveDIPlugin() {
   const { isSignedIn } = useUser();
+  const refetchInterval = useVisibleRefetch(60_000);
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
     enabled: isSignedIn,
     staleTime: 60_000,
@@ -83,11 +85,11 @@ export function CalendarLiveDIPlugin() {
 
   const { data: elections } = api.elections.getElections.useQuery(
     { countryId: countryId ?? "" },
-    { enabled: !!countryId, refetchInterval: 60_000 }
+    { enabled: !!countryId, refetchInterval }
   );
   const { data: issuesData } = api.nationalIssues.getMyIssues.useQuery(
     { countryId: countryId ?? "", status: "active" },
-    { enabled: !!countryId, refetchInterval: 60_000 }
+    { enabled: !!countryId, refetchInterval }
   );
 
   const imminent = useMemo(() => {

@@ -167,17 +167,16 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
             );
           user = await db.user.findUnique({
             where: { clerkUserId: activeUserId },
-            include: {
-              country: true,
-              role: {
-                include: {
-                  rolePermissions: {
-                    include: {
-                      permission: true,
-                    },
-                  },
-                },
-              },
+            select: {
+              id: true,
+              clerkUserId: true,
+              countryId: true,
+              roleId: true,
+              membershipTier: true,
+              createdAt: true,
+              updatedAt: true,
+              country: { select: { id: true, name: true, flag: true } },
+              role: { select: { id: true, name: true, level: true } },
             },
           });
           if (!user) {
@@ -513,6 +512,10 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
     throw err; // Re-throw to maintain error handling
   } finally {
     const endTime = Date.now();
+    const duration = endTime - startTime;
+    if (duration > 500) {
+      console.log(`[TRPC] ${path} took ${duration}ms to execute`);
+    }
 
     // Determine if this operation should be audited
     const shouldAudit =
@@ -756,34 +759,36 @@ const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
  * Input validation enhancement middleware
  */
 const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }) => {
-  // Enhanced validation for sensitive endpoints
-  if (path.includes("execute") || path.includes("Action")) {
-    // Validate input doesn't contain potential security risks
-    const inputStr = JSON.stringify(input);
+  // Enhanced validation for sensitive endpoints only
+  if (!path.includes("execute") && !path.includes("Action")) {
+    return next();
+  }
 
-    // Check for potential injection attempts
-    const suspiciousPatterns = [
-      /<script/i, // XSS
-      /javascript:/i, // XSS
-      /on\w+\s*=/i, // Event handlers
-      /union\s+select/i, // SQL injection
-      /drop\s+table/i, // SQL injection
-      /exec\s*\(/i, // Code execution
-    ];
+  // Validate input doesn't contain potential security risks
+  const inputStr = JSON.stringify(input);
 
-    for (const pattern of suspiciousPatterns) {
-      if (pattern.test(inputStr)) {
-        console.error(
-          `[SECURITY] Suspicious input detected from user ${ctx.auth?.userId}: ${pattern}`
-        );
-        throw new SecurityError("Invalid input detected");
-      }
+  // Check for potential injection attempts
+  const suspiciousPatterns = [
+    /<script/i, // XSS
+    /javascript:/i, // XSS
+    /on\w+\s*=/i, // Event handlers
+    /union\s+select/i, // SQL injection
+    /drop\s+table/i, // SQL injection
+    /exec\s*\(/i, // Code execution
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(inputStr)) {
+      console.error(
+        `[SECURITY] Suspicious input detected from user ${ctx.auth?.userId}: ${pattern}`
+      );
+      throw new SecurityError("Invalid input detected");
     }
+  }
 
-    // Check input size limits
-    if (inputStr.length > 10000) {
-      throw new ValidationError("Input too large");
-    }
+  // Check input size limits
+  if (inputStr.length > 10000) {
+    throw new ValidationError("Input too large");
   }
 
   return next();
@@ -826,31 +831,25 @@ export const premiumProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(premiumMiddleware)
-  .use(dataPrivacyMiddleware)
   .use(userLoggingMiddleware.withPerformance);
 export const countryOwnerProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
-  .use(dataPrivacyMiddleware)
   .use(userLoggingMiddleware.standard);
 export const adminProcedure = t.procedure
-  .use(timingMiddleware)
   .use(authMiddleware)
   .use(adminMiddleware)
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware)
   .use(userLoggingMiddleware.admin);
 export const executiveProcedure = t.procedure
-  .use(timingMiddleware)
   .use(authMiddleware)
   .use(countryOwnerMiddleware)
   .use(inputValidationMiddleware)
   .use(rateLimitMiddleware)
   .use(auditLogMiddleware)
-  .use(dataPrivacyMiddleware)
   .use(userLoggingMiddleware.sensitive);
 
 /**
@@ -923,8 +922,17 @@ const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput
   return cacheFactory({ ctx, path, input: rawInput, next });
 });
 
+const userCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
+  const rawInput = await getRawInput();
+  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
+  return cacheFactory({ ctx, path, input: rawInput, next });
+});
+
 // Cached public procedure (60s cache)
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
+
+// Cached protected procedure (30s user-aware cache)
+export const cachedProtectedProcedure = protectedProcedure.use(userCacheMiddleware);
 
 // Cached static procedure (1hr cache) - for reference data that rarely changes
 export const cachedStaticProcedure = publicProcedure.use(staticCacheMiddleware);

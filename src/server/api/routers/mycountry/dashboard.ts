@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, cachedPublicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { globalCache } from "~/lib/advanced-cache-system";
 import {
@@ -337,5 +337,54 @@ export const myCountryDashboardRouter = createTRPCRouter({
         console.error("[MyCountry ChangeLog] Error:", error);
         return [];
       }
+    }),
+
+  /**
+   * Aggregated notification count for MyCountry sidebar sections.
+   * Single round-trip batch endpoint replacing 4 separate polling queries.
+   */
+  getNotificationCounts: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ input }) => {
+      if (!input.countryId) {
+        return { executive: 0, diplomacy: 0, intelligence: 0, defense: 0 };
+      }
+
+      const [issueCount, missionCount, intelAlertCount, threatCount] = await Promise.all([
+        db.nationalIssue.count({
+          where: {
+            countryId: input.countryId,
+            status: { in: ["pending", "viewed"] },
+          },
+        }).catch(() => 0),
+        db.embassyMission.count({
+          where: {
+            embassy: {
+              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
+            },
+            status: { in: ["active", "pending", "in_progress"] },
+          },
+        }).catch(() => 0),
+        db.intelligenceAlert.count({
+          where: {
+            countryId: input.countryId,
+            isActive: true,
+            isResolved: false,
+          },
+        }).catch(() => 0),
+        db.securityThreat.count({
+          where: {
+            countryId: input.countryId,
+            isActive: true,
+          },
+        }).catch(() => 0),
+      ]);
+
+      return {
+        executive: issueCount,
+        diplomacy: missionCount,
+        intelligence: intelAlertCount,
+        defense: threatCount,
+      };
     }),
 });

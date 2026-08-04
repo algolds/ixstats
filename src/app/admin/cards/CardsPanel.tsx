@@ -31,6 +31,7 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
+import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -169,12 +170,14 @@ export default function CardAdminDashboardPage() {
     { refetchInterval: refreshInterval ?? false, enabled: activeTab === "sync" }
   );
 
+  const syncPollInterval = useVisibleRefetch(15000);
+
   // Poll all active/paused background jobs
   const { data: activeJobs, refetch: refetchActiveJobs } = api.nsImport.getActiveJobs.useQuery(
     undefined,
     {
       enabled: activeTab === "sync",
-      refetchInterval: 3000,
+      refetchInterval: syncPollInterval,
     }
   );
 

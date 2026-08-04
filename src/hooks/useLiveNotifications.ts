@@ -11,6 +11,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { useVisibleRefetch } from "./useVisibleRefetch";
 
 export interface LiveNotification {
   id: string;
@@ -67,6 +68,8 @@ export function useLiveNotifications(
   const utils = api.useUtils();
 
   // Query for initial notifications
+  const visibleInterval = useVisibleRefetch(pollingInterval);
+
   const {
     data: notificationsData,
     isLoading,
@@ -80,7 +83,7 @@ export function useLiveNotifications(
     {
       enabled: !!userId,
       refetchOnWindowFocus: true,
-      refetchInterval: pollingInterval,
+      refetchInterval: visibleInterval,
     }
   );
 
@@ -89,7 +92,7 @@ export function useLiveNotifications(
   const { data: unreadData, refetch: refetchUnreadCount } =
     api.notifications.getUnreadCount.useQuery(undefined, {
       enabled: !!userId && !!user,
-      refetchInterval: pollingInterval,
+      refetchInterval: visibleInterval,
     });
 
   // Derived state directly from Query Cache
