@@ -15,7 +15,6 @@ import {
   achievementNotificationService,
 } from "~/services/DiplomaticNotificationService";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
 
 interface LiveDataIntegrationProps {
   countryId?: string;
