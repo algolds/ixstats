@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerData } from "../IxWorldMap";
@@ -193,6 +193,8 @@ export function useWorldMapLayers({
     }
   }, [map, isLoaded, theme]);
 
+  const lastLoadedDataRef = useRef<Map<string, any>>(new Map());
+
   // Render/update base sorted layers
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -213,17 +215,23 @@ export function useWorldMapLayers({
           fullLayerDataRef.current.set(layer.type, layer.data);
         }
 
-        const minArea = getMinArea(layer.type, map.getZoom());
-        const sourceData = minArea > 0 ? filterByArea(layer.data, minArea) : layer.data;
-
         const existingSource = map.getSource(sourceId);
+        const prevData = lastLoadedDataRef.current.get(layer.type);
+
         if (existingSource) {
-          (existingSource as GeoJSONSource).setData(sourceData);
+          // ONLY call setData if layer data reference has actually changed
+          if (prevData !== layer.data) {
+            lastLoadedDataRef.current.set(layer.type, layer.data);
+            (existingSource as GeoJSONSource).setData(layer.data);
+          }
         } else {
+          lastLoadedDataRef.current.set(layer.type, layer.data);
           map.addSource(sourceId, {
             type: "geojson",
-            data: sourceData,
+            data: layer.data,
             generateId: true,
+            tolerance: 0,
+            buffer: 256,
           });
 
           if (config.type === "line") {

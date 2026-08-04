@@ -279,49 +279,11 @@ const IxWorldMap = memo(
         onReady: (map) => {
           mapRef.current = map;
 
-          // Progressive feature loading by zoom — rebind to THIS mount's data ref,
-          // replacing any handler left by a previous mount of the persistent instance.
-          if (map.__ixZoomHandler) map.off("zoomend", map.__ixZoomHandler);
-          let lastFilterZoom = -1;
-          const dataRef = fullLayerDataRef;
-          const zoomHandler = () => {
-            const zoom = map.getZoom();
-            const zoomBucket = Math.floor(zoom);
-            if (zoomBucket !== lastFilterZoom) {
-              lastFilterZoom = zoomBucket;
-
-              const updates: Promise<{ sourceId: string; data: FeatureCollection }>[] = [];
-              for (const layerType of Object.keys(PROGRESSIVE_THRESHOLDS)) {
-                const sourceId = `source-${layerType}`;
-                const source = map.getSource(sourceId) as
-                  | import("maplibre-gl").GeoJSONSource
-                  | undefined;
-                const fullData = dataRef.current.get(layerType);
-                if (!source || !fullData) continue;
-
-                updates.push(
-                  workerFilterRef
-                    .current(fullData, getMinArea(layerType, zoom))
-                    .then((filtered) => ({ sourceId, data: filtered }))
-                );
-              }
-
-              if (updates.length > 0) {
-                void Promise.all(updates).then((results) => {
-                  requestAnimationFrame(() => {
-                    for (const { sourceId, data } of results) {
-                      const source = map.getSource(sourceId) as
-                        | import("maplibre-gl").GeoJSONSource
-                        | undefined;
-                      if (source) source.setData(data);
-                    }
-                  });
-                });
-              }
-            }
-          };
-          map.on("zoomend", zoomHandler);
-          map.__ixZoomHandler = zoomHandler;
+          // Remove stale zoomend handlers to prevent setData zoom thrashing
+          if (map.__ixZoomHandler) {
+            map.off("zoomend", map.__ixZoomHandler);
+            map.__ixZoomHandler = undefined;
+          }
 
           // Tooltip popup lives on the persistent instance; reuse across mounts.
           if (!map.__ixTooltip) {

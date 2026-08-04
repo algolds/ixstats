@@ -42,7 +42,7 @@ export function computeHydroClimate(
   computePrecipitationAndRainShadows(graph);
 
   // ── Pass 5: Depression Filling & Downstream Routing ──
-  fillDepressionsAndRouteFlow(graph);
+  const depressionDepths = fillDepressionsAndRouteFlow(graph);
 
   // Recalibrate elevation zones to match post-hydraulic filled heightmap
   for (let i = 0; i < n; i++) {
@@ -57,9 +57,9 @@ export function computeHydroClimate(
     generateRiverNetworks(graph, params, rng);
   }
 
-  // ── Pass 7: Lake Formation ──
+  // ── Pass 7: Lake Formation (Land Depressions & River Sinks) ──
   if (params.hasLakes ?? true) {
-    generateLakes(graph);
+    generateLakes(graph, depressionDepths);
   }
 
   // ── Pass 8: Trewartha Biome Classification ──
@@ -299,7 +299,7 @@ function computePrecipitationAndRainShadows(graph: WorldGraph): void {
 // Pass 5: Depression Filling & Flow Routing
 // ──────────────────────────────────────────────
 
-function fillDepressionsAndRouteFlow(graph: WorldGraph): void {
+function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
   const { cells } = graph;
   const n = cells.n;
 
@@ -308,6 +308,7 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): void {
   // Priority-queue-based depression filling algorithm
   // Start from ocean/boundary cells and flood inward to ensure every cell has a downhill path
   const filledH = new Float64Array(cells.h);
+  const depressionDepths = new Float32Array(n);
 
   // Collect water & boundary cells as seeds
   const queue: { cell: number; elev: number }[] = [];
@@ -348,9 +349,10 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): void {
     }
   }
 
-  // Copy filled elevation back to cells.h so physical heightmap reflects hydraulic depression filling
+  // Track depression depths before updating cells.h
   for (let i = 0; i < n; i++) {
     if (cells.isLand[i]) {
+      depressionDepths[i] = Math.max(0, filledH[i]! - cells.h[i]!);
       cells.h[i] = filledH[i]!;
     }
   }
@@ -371,6 +373,8 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): void {
 
     cells.downstream[i] = lowestNb;
   }
+
+  return depressionDepths;
 }
 
 // ──────────────────────────────────────────────
@@ -407,7 +411,7 @@ function generateRiverNetworks(
   // Accumulate flux downhill
   for (const c of landCells) {
     const ds = cells.downstream[c]!;
-    if (ds >= 0) {
+    if (ds >= 0 && cells.isLand[ds]) {
       cells.flux[ds] += cells.flux[c]!;
     }
   }
@@ -439,10 +443,8 @@ function generateRiverNetworks(
         cells.river[curr] = riverId;
 
         const next = cells.downstream[curr]!;
+        // Stop tracing if next cell is out of bounds, ocean water, or forms a cycle
         if (next < 0 || !cells.isLand[next] || riverPath.includes(next)) {
-          if (next >= 0 && !cells.isLand[next]) {
-            riverPath.push(next); // Include mouth water cell
-          }
           break;
         }
         curr = next;
@@ -504,24 +506,73 @@ function generateRiverNetworks(
 }
 
 // ──────────────────────────────────────────────
-// Pass 7: Lakes
+// Pass 7: Lakes (Land Depressions & Sinks)
 // ──────────────────────────────────────────────
 
-function generateLakes(graph: WorldGraph): void {
+function generateLakes(graph: WorldGraph, depressionDepths: Float32Array): void {
   const { cells, features } = graph;
   const n = cells.n;
 
   cells.lake.fill(0);
 
-  // Identify lake features from geographic features
-  for (const f of features) {
-    if (f.type === "lake") {
-      for (let i = 0; i < n; i++) {
-        if (cells.feature[i] === f.id) {
-          cells.lake[i] = f.id;
+  // Identify candidate land cells (isLand === 1) sitting in depressions or endorheic sinks
+  const candidateCells: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (!cells.isLand[i]) continue;
+
+    const depth = depressionDepths[i] ?? 0;
+    const flux = cells.flux[i] ?? 0;
+    const isSink = cells.downstream[i] === -1;
+
+    // Land cell forms a lake if it has a hydraulic depression > 1.5m with flux > 20,
+    // or if it's an endorheic sink receiving river flux > 80
+    if ((depth > 1.5 && flux > 20) || (isSink && flux > 80)) {
+      candidateCells.push(i);
+    }
+  }
+
+  if (candidateCells.length === 0) return;
+
+  const candidateSet = new Set(candidateCells);
+  const visited = new Set<number>();
+  let nextLakeId = features.length > 0 ? Math.max(...features.map((f) => f.id)) + 1 : 1;
+
+  for (const c of candidateCells) {
+    if (visited.has(c)) continue;
+
+    const lakeComponent: number[] = [];
+    const queue = [c];
+    visited.add(c);
+
+    while (queue.length > 0) {
+      const curr = queue.pop()!;
+      lakeComponent.push(curr);
+
+      for (const nb of cells.neighbors[curr]!) {
+        if (cells.isLand[nb] && candidateSet.has(nb) && !visited.has(nb)) {
+          visited.add(nb);
+          queue.push(nb);
         }
       }
     }
+
+    if (lakeComponent.length === 0) continue;
+
+    const lakeId = nextLakeId++;
+    let totalAreaKm2 = 0;
+    for (const lc of lakeComponent) {
+      cells.lake[lc] = lakeId;
+      totalAreaKm2 += cellAreaKm2(graph, lc);
+    }
+
+    features.push({
+      id: lakeId,
+      type: "lake",
+      cellCount: lakeComponent.length,
+      areaKm2: Math.round(totalAreaKm2),
+      name: `Lake ${lakeId}`,
+      border: false,
+    });
   }
 }
 

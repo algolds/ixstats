@@ -160,8 +160,8 @@ function classifyGeographicFeatures(graph: WorldGraph): void {
     let type: GeographicFeature["type"];
 
     if (isWater) {
-      // Water body: ocean if it touches boundary or is large (>15 cells)
-      type = touchesBoundary || component.length > 15 ? "ocean" : "lake";
+      // Water body: all non-land cells belong to ocean features (inland lakes generated on land in hydro pass)
+      type = "ocean";
     } else {
       // Landmass: continent if >= 1000 cells (or >= 15% of total cells if low count), else island
       const continentThreshold = Math.min(1000, Math.floor(n * 0.05));

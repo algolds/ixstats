@@ -90,14 +90,9 @@ function exportAltitudes(graph: WorldGraph): FeatureCollection {
       }
     }
 
-    // For higher elevation zones (z >= 3), filter out tiny isolated clusters (< 6 cells) to prevent blotchy dots
-    let filteredZoneCells = zoneLandCells;
-    if (z >= 3 && zoneLandCells.length > 0) {
-      filteredZoneCells = filterSmallComponents(graph, zoneLandCells, 6);
-    }
-    if (filteredZoneCells.length === 0) continue;
+    if (zoneLandCells.length === 0) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, filteredZoneCells);
+    const geom = mergeCellsToMultiPolygon(graph, zoneLandCells);
     if (!geom) continue;
 
     const smoothedGeom = smoothGeometry(geom, 2);
@@ -206,13 +201,15 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
 }
 
 function exportRivers(graph: WorldGraph): FeatureCollection {
-  const { rivers } = graph;
+  const { rivers, cells } = graph;
   const geoFeatures: Feature[] = [];
 
   for (const river of rivers) {
-    if (river.cells.length < 2) continue;
+    // Filter river cells to strictly land cells to guarantee rivers never flow in ocean
+    const landRiverCells = river.cells.filter((c) => cells.isLand[c] === 1);
+    if (landRiverCells.length < 2) continue;
 
-    const lineCoords: [number, number][] = river.cells.map((c) => [
+    const lineCoords: [number, number][] = landRiverCells.map((c) => [
       cellLng(graph, c),
       cellLat(graph, c),
     ]);
@@ -253,7 +250,7 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
   for (const lake of lakeFeatures) {
     const lakeCells: number[] = [];
     for (let i = 0; i < cells.n; i++) {
-      if (cells.lake[i] === lake.id) {
+      if (cells.isLand[i] === 1 && cells.lake[i] === lake.id) {
         lakeCells.push(i);
       }
     }
@@ -320,12 +317,12 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
 // ──────────────────────────────────────────────
 
 function processVectorRing(ring: [number, number][], passes: number): [number, number][] {
-  // 1. Decimate high-frequency Voronoi cell chatter (120° vertex flips every few meters)
-  const simplified = simplifyRing(ring, 0.012);
-  // 2. Interpolate smooth Catmull-Rom spline curves through control points
+  // 1. Fine decimation of collinear/duplicate points (0.001° ≈ 100m)
+  const simplified = simplifyRing(ring, 0.001);
+  // 2. Interpolate smooth Catmull-Rom spline curves through structural control points
   const smoothed = catmullRomSmooth(simplified, passes);
-  // 3. Apply continuous multi-octave harmonic noise perturbation for natural organic detail
-  return perturbRing(smoothed, 42, 0.08, 0.008);
+  // 3. Sub-cell harmonic noise perturbation for natural organic cartographic detail
+  return perturbRing(smoothed, 42, 0.08, 0.004);
 }
 
 function smoothGeometry(

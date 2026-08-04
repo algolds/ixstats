@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
@@ -54,6 +54,8 @@ export function useMapLayers({
   lassoGeometry,
   rulerPoints,
 }: UseMapLayersProps) {
+  const lastLoadedEditorDataRef = useRef<Map<string, any>>(new Map());
+
   // 1. Render world map context layers (altitudes, rivers, lakes) as background
   useEffect(() => {
     if (!map || !isLoaded || !worldMapLayers || worldMapLayers.length === 0) return;
@@ -96,13 +98,21 @@ export function useMapLayers({
 
       try {
         const existingSource = map.getSource(sourceId);
+        const prevData = lastLoadedEditorDataRef.current.get(layer.type);
+
         if (existingSource) {
-          (existingSource as GeoJSONSource).setData(layer.data as FeatureCollection);
+          if (prevData !== layer.data) {
+            lastLoadedEditorDataRef.current.set(layer.type, layer.data);
+            (existingSource as GeoJSONSource).setData(layer.data as FeatureCollection);
+          }
         } else {
+          lastLoadedEditorDataRef.current.set(layer.type, layer.data);
           map.addSource(sourceId, {
             type: "geojson",
             data: layer.data as FeatureCollection,
             generateId: true,
+            tolerance: 0,
+            buffer: 256,
           });
 
           if (config.type === "line") {

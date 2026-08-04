@@ -67,11 +67,8 @@ export function mergeCellsToPolygon(
     return [verts.map(([x, y]) => [x, y] as Position)];
   }
 
-  const cellSet = new Set(cellIds);
-
-  // Collect boundary edges: edges NOT shared between two cells in the group
-  // Edge key: sorted vertex pair string
-  const edgeCounts = new Map<string, { p1: Position; p2: Position; count: number }>();
+  // Directed edge map: "x0,y0->x1,y1" => { p1, p2 }
+  const directedEdges = new Map<string, { p1: Position; p2: Position }>();
 
   for (const cellId of cellIds) {
     const verts = graph.cells.vertices[cellId]!;
@@ -81,37 +78,25 @@ export function mergeCellsToPolygon(
       const [x0, y0] = verts[i]!;
       const [x1, y1] = verts[i + 1]!;
 
-      // Create a canonical key for this edge
-      const key =
-        x0 < x1 || (x0 === x1 && y0 < y1)
-          ? `${x0.toFixed(6)},${y0.toFixed(6)}-${x1.toFixed(6)},${y1.toFixed(6)}`
-          : `${x1.toFixed(6)},${y1.toFixed(6)}-${x0.toFixed(6)},${y0.toFixed(6)}`;
-
-      const existing = edgeCounts.get(key);
-      if (existing) {
-        existing.count++;
-      } else {
-        edgeCounts.set(key, {
-          p1: [x0, y0],
-          p2: [x1, y1],
-          count: 1,
-        });
-      }
+      const key = `${x0.toFixed(6)},${y0.toFixed(6)}->${x1.toFixed(6)},${y1.toFixed(6)}`;
+      directedEdges.set(key, { p1: [x0, y0], p2: [x1, y1] });
     }
   }
 
-  // Keep only boundary edges (count === 1 = not shared)
+  // Keep only boundary directed edges (where reverse edge is NOT present in cell group)
   const boundaryEdges: { p1: Position; p2: Position }[] = [];
-  for (const edge of edgeCounts.values()) {
-    if (edge.count === 1) {
-      boundaryEdges.push({ p1: edge.p1, p2: edge.p2 });
+  for (const [key, edge] of directedEdges) {
+    const [startStr, endStr] = key.split("->");
+    const revKey = `${endStr}->${startStr}`;
+    if (!directedEdges.has(revKey)) {
+      boundaryEdges.push(edge);
     }
   }
 
   if (boundaryEdges.length === 0) return null;
 
-  // Chain boundary edges into closed rings
-  const rings = chainEdges(boundaryEdges);
+  // Chain directed boundary edges into closed rings
+  const rings = chainDirectedEdges(boundaryEdges);
   if (rings.length === 0) return null;
 
   // The largest ring is the exterior, rest are holes
@@ -156,17 +141,15 @@ export function mergeCellsToMultiPolygon(
 }
 
 // ──────────────────────────────────────────────
-// Internal: Edge Chaining
+// Internal: Directed Edge Chaining
 // ──────────────────────────────────────────────
 
 /**
- * Chain directed edges into closed rings.
- * Uses a vertex adjacency map to walk edges in order.
+ * Chain directed boundary edges into closed rings.
+ * Uses a vertex adjacency map to walk edges in exact counter-clockwise perimeter order.
  */
-function chainEdges(edges: { p1: Position; p2: Position }[]): Position[][] {
-  // Build adjacency: vertex → list of edges starting there
+function chainDirectedEdges(edges: { p1: Position; p2: Position }[]): Position[][] {
   const adj = new Map<string, { target: Position; used: boolean }[]>();
-
   const key = (p: Position) => `${p[0]!.toFixed(6)},${p[1]!.toFixed(6)}`;
 
   for (const edge of edges) {
@@ -182,36 +165,31 @@ function chainEdges(edges: { p1: Position; p2: Position }[]): Position[][] {
     const startEntries = adj.get(startKey);
     if (!startEntries) continue;
 
-    // Find an unused edge starting from this vertex
-    const startEntry = startEntries.find(
-      (e) => !e.used && Math.abs(e.target[0]! - edge.p2[0]!) < 1e-6 && Math.abs(e.target[1]! - edge.p2[1]!) < 1e-6
-    );
-    if (!startEntry) continue;
+    const unusedEntry = startEntries.find((e) => !e.used);
+    if (!unusedEntry) continue;
 
-    // Walk the ring
     const ring: Position[] = [edge.p1];
-    startEntry.used = true;
-    let current = edge.p2;
+    unusedEntry.used = true;
+    let current = unusedEntry.target;
     let safety = edges.length + 10;
 
     while (safety-- > 0) {
       ring.push(current);
-      const currentKey = key(current);
+      const currKey = key(current);
 
-      if (currentKey === startKey && ring.length > 2) {
-        // Ring is closed
+      if (currKey === startKey && ring.length > 2) {
         rings.push(ring);
         break;
       }
 
-      const nextEntries = adj.get(currentKey);
+      const nextEntries = adj.get(currKey);
       if (!nextEntries) break;
 
-      const next = nextEntries.find((e) => !e.used);
-      if (!next) break;
+      const nextEntry = nextEntries.find((e) => !e.used);
+      if (!nextEntry) break;
 
-      next.used = true;
-      current = next.target;
+      nextEntry.used = true;
+      current = nextEntry.target;
     }
   }
 
