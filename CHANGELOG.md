@@ -10,6 +10,25 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Optimized & Refactored
+
+- **Full-Stack Performance Optimization Suite (Plans A, B, C)**:
+  - **Plan A — Quick Wins**:
+    - **Prisma HMR Connection Leak Fix**: Corrected dev singleton pattern in [db.ts](file:///ixwiki/public/projects/ixstats/src/server/db.ts#L406) (`globalForPrisma.prisma = db`), stopping connection pool leaks across hot-reloads.
+    - **Static ErrorLogger Import**: Converted dynamic `import("~/lib/error-logger")` in tRPC errorFormatter ([trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L15)) to top-level static import.
+    - **React Query Memory Guard**: Reduced `gcTime` from 60m → 10m in [query-client.ts](file:///ixwiki/public/projects/ixstats/src/trpc/query-client.ts#L23) to prevent unbounded memory growth on long client sessions.
+    - **Lodash Bundle Tree-Shaking**: Converted all 10 `lodash` barrel imports to direct subpath imports (`lodash/debounce`, `lodash/isEqual`) and added `"lodash"` to `optimizePackageImports` in [next.config.js](file:///ixwiki/public/projects/ixstats/next.config.js#L77).
+  - **Plan B — Client-Side Performance**:
+    - **Lazy Game Provider Split**: Created [GameProviders.tsx](file:///ixwiki/public/projects/ixstats/src/components/providers/GameProviders.tsx) and [LazyGameProviders.tsx](file:///ixwiki/public/projects/ixstats/src/components/providers/LazyGameProviders.tsx). Extracted 7 domain providers + live activity plugins out of [layout.tsx](file:///ixwiki/public/projects/ixstats/src/app/layout.tsx), reducing public route provider count from 17 to 6.
+    - **Visibility-Aware Tab Polling**: Created [useVisibleRefetch.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useVisibleRefetch.ts) hook and wrapped all active `refetchInterval` polling. Immediately pauses background network polling when tab is inactive (`document.hidden`).
+    - **MyCountry Notification Consolidation**: Added `api.mycountry.getNotificationCounts` server procedure in [dashboard.ts](file:///ixwiki/public/projects/ixstats/src/server/api/routers/mycountry/dashboard.ts#L346) and refactored [useMyCountryNotifications.ts](file:///ixwiki/public/projects/ixstats/src/hooks/useMyCountryNotifications.ts), merging 4 separate 60s queries into 1 batched query.
+    - **Polling Frequency Tuning**: Tuned admin metrics (5s → 30s), admin cards sync (3s → 15s), vault balance (30s → 60s), national issues badge (30s → 60s), and background diplomatic/economic streams (30s/60s → 60s/120s).
+    - **User Logger Dev Singleton**: Attached `__userLoggerInitialized` to `globalThis` in [user-logger.ts](file:///ixwiki/public/projects/ixstats/src/lib/user-logger.ts#L110) to eliminate dev server initialization log spam.
+  - **Plan C — Server-Side Performance**:
+    - **tRPC Middleware Stack Trimming**: Removed no-op `dataPrivacyMiddleware` from procedure chains in [trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L820), trimming `adminProcedure` and `executiveProcedure` stacks from 8 to 5 layers. Added early return to `inputValidationMiddleware` and merged procedure timing into `auditLogMiddleware`.
+    - **Selective User Context Query**: Replaced heavy Prisma `include` with explicit `select` in `createTRPCContext` ([trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L170)) and `UserManagementService` ([user-management-service.ts](file:///ixwiki/public/projects/ixstats/src/lib/user-management-service.ts#L34)), reducing user context payload size by ~90%.
+    - **Protected Endpoint Server Caching**: Introduced `cachedProtectedProcedure` in [trpc.ts](file:///ixwiki/public/projects/ixstats/src/server/api/trpc.ts#L928) (30s user-aware cache) and applied server-side caching to `intelCore.getOverview` and `mycountry.getNotificationCounts`.
+
 ### Added
 
 - **Unified Physical Geography Engine (UPG v2 & Atlas Engine v4)**:
