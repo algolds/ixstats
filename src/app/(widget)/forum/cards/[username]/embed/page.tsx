@@ -10,6 +10,10 @@ import { rarityRank, formatValue, getRarityColors } from "~/shared/forum-utils";
 import { styles } from "../widget-styles";
 import { withBasePath } from "~/lib/base-path";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const EMBED_CARD_LIMIT = 3;
 
 export default async function ForumPostEmbed({

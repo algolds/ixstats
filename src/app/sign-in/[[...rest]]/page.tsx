@@ -1,6 +1,10 @@
 import { SignIn } from "@clerk/nextjs";
 import { withBasePath } from "~/lib/base-path";
 
+// TODO: Cache Components adoption. Refactor this route so this opt-out can be removed.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
 export default function Page() {
