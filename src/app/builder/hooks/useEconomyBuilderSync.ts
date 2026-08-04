@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";

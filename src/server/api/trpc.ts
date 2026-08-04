@@ -12,6 +12,7 @@ import { ZodError } from "zod";
 import { getAuth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
+import { ErrorLogger } from "~/lib/error-logger";
 
 import { db, isDatabaseReadOnly } from "~/server/db";
 
@@ -245,25 +246,18 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   errorFormatter({ shape, error, path, ctx }) {
     // Log all tRPC errors in production (except validation errors)
     if (process.env.NODE_ENV === "production" && error.code !== "BAD_REQUEST") {
-      // Import ErrorLogger dynamically to avoid circular dependencies
-      import("~/lib/error-logger")
-        .then(({ ErrorLogger }) => {
-          ErrorLogger.logAPIError(path || "unknown", error as Error, {
-            userId: ctx?.auth?.userId ?? undefined,
-            countryId: ctx?.user?.countryId ?? undefined,
-            path: path || "unknown",
-            action: "TRPC_ERROR",
-            metadata: {
-              code: error.code,
-              httpStatus: shape.data.httpStatus,
-            },
-          }).catch((logError) => {
-            console.error("[TRPC] Failed to log error:", logError);
-          });
-        })
-        .catch(() => {
-          // Silent fail if ErrorLogger import fails
-        });
+      ErrorLogger.logAPIError(path || "unknown", error as Error, {
+        userId: ctx?.auth?.userId ?? undefined,
+        countryId: ctx?.user?.countryId ?? undefined,
+        path: path || "unknown",
+        action: "TRPC_ERROR",
+        metadata: {
+          code: error.code,
+          httpStatus: shape.data.httpStatus,
+        },
+      }).catch((logError) => {
+        console.error("[TRPC] Failed to log error:", logError);
+      });
     }
 
     if (error.cause instanceof AppError) {

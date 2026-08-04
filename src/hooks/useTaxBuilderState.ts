@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { isEqual } from "lodash";
+import isEqual from "lodash/isEqual";
 import type {
   TaxSystemInput,
   TaxCategoryInput,

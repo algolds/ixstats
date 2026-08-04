@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Loader2, Search, Plus, X, ExternalLink } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { api } from "~/trpc/react";

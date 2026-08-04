@@ -403,4 +403,4 @@ if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
     .catch((err) => console.error("[DATABASE] Failed to load achievement-sync:", err));
 }
 
-if (env.NODE_ENV !== "production") globalForPrisma.prisma = undefined;
+if (env.NODE_ENV !== "production") globalForPrisma.prisma = db as unknown as PrismaClient;
