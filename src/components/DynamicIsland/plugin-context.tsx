@@ -66,8 +66,9 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
 
 // ── Hooks ──
 
+const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
 const DUMMY_SUBSCRIBE = () => () => {};
-const DUMMY_SNAPSHOT = () => new Map<string, DIPlugin>();
+const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
 
 /**
  * Register a DI plugin for the lifetime of the calling component.
