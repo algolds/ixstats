@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState, type ReactNode } from "react";
+import React, { useEffect, useRef, type ReactNode } from "react";
 import { MyCountrySidebarLayout } from "~/components/mycountry/MyCountrySidebarLayout";
 import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
 import { useCountryData } from "./CountryDataProvider";
 import { OverviewHero } from "../OverviewHero";
 import { api } from "~/trpc/react";
+import { useHeroCollapsed } from "~/hooks/useHeroCollapsed";
 
 interface SectionShellProps {
   /** Which section this shell renders (defaults the active nav state). */
@@ -47,20 +48,23 @@ export function SectionShell({
   onAgendaViewModeChange,
 }: SectionShellProps) {
   const { country } = useCountryData();
-  const [heroCollapsed, setHeroCollapsed] = useState(false);
 
-  // Collapse the hero by default for a valid-but-unmapped country. Applied once
-  // when the map status resolves; never fights the user's later expand/collapse.
+  // Hero collapse — persisted per country; v2 defaults to collapsed (actions-first).
+  const { collapsed: heroCollapsed, setCollapsed: persistCollapsed, hasStoredPref } =
+    useHeroCollapsed(v2, country?.id);
+
+  // v1 legacy: collapse by default for a valid-but-unmapped country. Applied once
+  // and only when the user hasn't recorded a preference; never fights a stored choice.
   const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
     { countryId: country?.id ?? "" },
     { enabled: !!country?.id }
   );
   const appliedDefaultCollapse = useRef(false);
   useEffect(() => {
-    if (appliedDefaultCollapse.current || !mapStatus) return;
+    if (appliedDefaultCollapse.current || hasStoredPref || v2 || !mapStatus) return;
     appliedDefaultCollapse.current = true;
-    if (!mapStatus.isMapped) setHeroCollapsed(true);
-  }, [mapStatus]);
+    if (!mapStatus.isMapped) persistCollapsed(true);
+  }, [mapStatus, v2, persistCollapsed, hasStoredPref]);
 
   // Fallback to standard OverviewHero if no custom hero is passed
   const finalHero =
@@ -68,7 +72,7 @@ export function SectionShell({
     (country?.id ? (
       <OverviewHero
         collapsed={heroCollapsed}
-        onCollapsedChange={setHeroCollapsed}
+        onCollapsedChange={persistCollapsed}
         countryId={country.id}
         onNavigate={onNavigate}
         v2={v2}

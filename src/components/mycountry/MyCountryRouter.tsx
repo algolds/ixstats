@@ -14,16 +14,14 @@ import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
 import { usePremium } from "~/hooks/usePremium";
 import { PremiumPreviewFrame } from "~/components/mycountry/primitives";
 import { useAbility } from "~/components/providers/AbilityProvider";
-import { Crown, ArrowRight, Sparkles } from "lucide-react";
+import { Crown, ArrowRight } from "lucide-react";
 import { GlassButton } from "~/components/ui/glass-button";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { createUrl } from "~/lib/url-utils";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
-import { StateSeal, IntentComposer } from "./primitives";
-import { api } from "~/trpc/react";
+import { V2CommandSurface } from "./v2/V2CommandSurface";
 
 // Loading skeleton for dynamically loaded sections
 function SectionSkeleton() {
@@ -125,30 +123,6 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
   const { country } = useCountryData();
   const pathname = usePathname();
   const router = useRouter();
-
-  // V2 composer states
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [composerInitialGoal, setComposerInitialGoal] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
-
-  const utils = api.useUtils();
-  const handleCommitted = useCallback(
-    (res: any) => {
-      const body = (res?.summary as string) ?? "Intent committed.";
-      setToast(body);
-      setTimeout(() => setToast(null), 4500);
-      setComposerOpen(false);
-      setComposerInitialGoal("");
-
-      // Invalidate queries to update dashboard stats, news feed, change log
-      void utils.mycountry.getCanonFeed.invalidate();
-      void utils.mycountry.getChangeLog.invalidate();
-      void utils.mycountry.getCountryDashboard.invalidate();
-      void utils.intent.getStatus.invalidate();
-      void utils.intent.getTree.invalidate();
-    },
-    [utils]
-  );
 
   // Initialize section from pathname (supports deep links)
   const [activeSection, setActiveSection] = useState<MyCountrySection>(() =>
@@ -275,10 +249,6 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
             onNavigate={handleNavigate}
             notifications={notifications}
             v2={v2}
-            onIssueDirective={(goal) => {
-              setComposerInitialGoal(typeof goal === "string" ? goal : "");
-              setComposerOpen(true);
-            }}
           />
         );
       case "executive":
@@ -288,10 +258,6 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
             onNavigate={handleNavigate}
             notifications={notifications}
             v2={v2}
-            onIssueDirective={(goal) => {
-              setComposerInitialGoal(typeof goal === "string" ? goal : "");
-              setComposerOpen(true);
-            }}
           />
         );
       case "diplomacy":
@@ -389,55 +355,22 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
       description="This section could not be loaded. Try again or refresh the page."
       resetKeys={[activeSection]}
     >
-      {renderSection()}
-      {activeSection === "overview" && country?.id && complianceSections.length > 0 && (
-        <MyCountryComplianceModal
-          isOpen={showComplianceModal}
-          sections={complianceSections}
-          onReview={handleReview}
-          onRemindLater={handleRemindLater}
-          onDismiss={handleRemindLater}
-        />
+      {v2 ? (
+        <V2CommandSurface />
+      ) : (
+        renderSection()
       )}
-      {/* Intent Composer Bottom Sheet for V2 */}
-      {v2 && country?.id && (
-        <Sheet open={composerOpen} onOpenChange={setComposerOpen}>
-          <SheetContent
-            side="bottom"
-            className="border-border bg-background/95 max-h-[85vh] overflow-y-auto backdrop-blur-xl"
-          >
-            <SheetHeader className="mb-2">
-              <SheetTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-4 w-4 text-amber-500" /> Issue a directive —{" "}
-                {country.name ?? "your nation"}
-              </SheetTitle>
-            </SheetHeader>
-            <div className="mx-auto max-w-3xl pb-6">
-              {composerOpen && (
-                <IntentComposer
-                  countryId={country.id}
-                  initialGoal={composerInitialGoal}
-                  onCommitted={handleCommitted}
-                />
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
-
-      {/* V2 in-world committed toast */}
-      {v2 && toast && (
-        <div className="border-border bg-secondary animate-in fade-in slide-in-from-bottom-2 fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-start gap-2.5 rounded-xl border px-4 py-3 shadow-2xl">
-          <StateSeal
-            flagUrl={country?.flag}
-            governmentType={country?.governmentType}
-            size={24}
-            showPips={false}
-            className="mt-0.5"
+      {country?.id &&
+        complianceSections.length > 0 &&
+        (v2 || activeSection === "overview") && (
+          <MyCountryComplianceModal
+            isOpen={showComplianceModal}
+            sections={complianceSections}
+            onReview={handleReview}
+            onRemindLater={handleRemindLater}
+            onDismiss={handleRemindLater}
           />
-          <span className="text-foreground/90 text-[13px] leading-snug">{toast}</span>
-        </div>
-      )}
+        )}
     </DashboardErrorBoundary>
   );
 }

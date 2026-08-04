@@ -463,6 +463,32 @@ export function OverviewHero({
               </span>
             </div>
           </div>
+
+          {/* Actions — v2 collapses by default, so the primary actions live on the bar */}
+          {v2 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => onIssueDirective?.()}
+                className="h-8 min-w-[100px] cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Directive
+              </Button>
+              <Link href={createUrl("/mycountry/editor")} className="min-w-[100px]">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 w-full cursor-pointer gap-1.5 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  Edit Country
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <button
             onClick={() => onCollapsedChange(false)}
             className="text-muted-foreground hover:bg-muted/30 border-border/40 flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
