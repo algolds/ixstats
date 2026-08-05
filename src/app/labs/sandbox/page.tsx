@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { FacetContainer, FacetVariant, FacetDepth, FacetInteractivity } from "~/components/ui/facet-container";
+import { FacetContainer } from "~/components/ui/facet-container";
+import type { FacetVariant, FacetDepth, FacetInteractivity } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import {
   Trophy,
