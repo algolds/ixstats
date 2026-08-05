@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetContainer, FacetVariant, FacetDepth, FacetInteractivity } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import {
   Trophy,
@@ -21,6 +21,10 @@ import {
   Shield,
   Briefcase,
   TrendingUp,
+  Palette,
+  Eye,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 
 // Import Kistan's 5 CS Intro Level Files
@@ -32,7 +36,7 @@ import * as Level5 from "./challenges/level5_async";
 
 export default function SandboxPage() {
   // Top-level Navigation Tabs
-  const [activeTab, setActiveTab] = useState<"sim" | "trpc" | "design" | "quiz">("sim");
+  const [activeTab, setActiveTab] = useState<"sim" | "trpc" | "facet" | "quiz">("sim");
 
   // Sub-tabs inside Quiz mode
   const [activeLevel, setActiveLevel] = useState<"lvl1" | "lvl2" | "lvl3" | "lvl4" | "lvl5">("lvl1");
@@ -59,10 +63,12 @@ export default function SandboxPage() {
     });
 
   // ==========================================
-  // TAB 3: DESIGN PHYSICS STATE
+  // TAB 3: FACET DESIGN LAB STATE
   // ==========================================
-  const [boxDepth, setBoxDepth] = useState<1 | 2 | 3 | 4>(2);
-  const [refractionEnabled, setRefractionEnabled] = useState(true);
+  const [facetVariant, setFacetVariant] = useState<FacetVariant>("overview");
+  const [facetDepth, setFacetDepth] = useState<FacetDepth>(2);
+  const [facetInteractivity, setFacetInteractivity] = useState<FacetInteractivity>("hover");
+  const [facetRefraction, setFacetRefraction] = useState(true);
 
   // ==========================================
   // TAB 4: 5-LEVEL CS INTRO QUIZ VALIDATION
@@ -145,7 +151,7 @@ export default function SandboxPage() {
               Labs Sandbox
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, design materials, and CS intro quizzes.
+              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, Facet design system components, and CS intro quizzes.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs bg-card border border-border/60 rounded-full px-3.5 py-1.5 text-muted-foreground self-start md:self-auto shadow-sm">
@@ -179,15 +185,15 @@ export default function SandboxPage() {
             tRPC Query
           </button>
           <button
-            onClick={() => setActiveTab("design")}
+            onClick={() => setActiveTab("facet")}
             className={`flex flex-1 items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-              activeTab === "design"
+              activeTab === "facet"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
             }`}
           >
-            <Layers className="h-4 w-4" />
-            Design Physics
+            <Palette className="h-4 w-4" />
+            Facet Design Lab
           </button>
           <button
             onClick={() => setActiveTab("quiz")}
@@ -327,63 +333,184 @@ export default function SandboxPage() {
             </FacetContainer>
           )}
 
-          {/* TAB 3: DESIGN PHYSICS */}
-          {activeTab === "design" && (
+          {/* TAB 3: FACET DESIGN LAB (COMPONENTS & VARIANTS) */}
+          {activeTab === "facet" && (
             <div className="space-y-6">
+              {/* Interactive Controls Bar */}
               <FacetContainer
                 variant="global"
                 depth={2}
-                className="bg-card/60 border border-border/60 rounded-2xl p-6 space-y-4"
+                className="bg-card/60 border border-border/60 rounded-2xl p-6 space-y-4 shadow-sm"
               >
-                <h2 className="text-xl font-semibold text-foreground">Glass Physics Controls</h2>
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Box Depth (Z-axis):</span>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <Palette className="h-5 w-5 text-primary" />
+                    Facet Component & Material Inspector
+                  </h2>
+                  <span className="text-xs text-muted-foreground font-mono">Facet Design System v1.1</span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-medium">Variant Surface</label>
                     <select
-                      value={boxDepth}
-                      onChange={(e) => setBoxDepth(Number(e.target.value) as any)}
-                      className="bg-card border border-border/60 rounded-lg px-2.5 py-1 text-sm text-foreground"
+                      value={facetVariant}
+                      onChange={(e) => setFacetVariant(e.target.value as FacetVariant)}
+                      className="w-full bg-card border border-border/60 rounded-lg px-2.5 py-1.5 text-xs text-foreground"
                     >
-                      <option value="1">Depth 1 (Low)</option>
-                      <option value="2">Depth 2 (Standard)</option>
-                      <option value="3">Depth 3 (High)</option>
-                      <option value="4">Depth 4 (Max)</option>
+                      <option value="overview">Overview (Cyan/Indigo)</option>
+                      <option value="economy">Economy (Amber/Gold)</option>
+                      <option value="military">Military (Red/Crimson)</option>
+                      <option value="security">Security (Emerald/Cyan)</option>
+                      <option value="cultural">Cultural (Purple/Violet)</option>
+                      <option value="builder">Builder (Slate/Blue)</option>
+                      <option value="mycountry">MyCountry Executive</option>
                     </select>
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={refractionEnabled}
-                      onChange={(e) => setRefractionEnabled(e.target.checked)}
-                      className="rounded border-border/60 bg-card text-primary focus:ring-primary"
-                    />
-                    Enable Refraction Blend
-                  </label>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-medium">Z-Depth Elevation</label>
+                    <select
+                      value={facetDepth}
+                      onChange={(e) => setFacetDepth(Number(e.target.value) as FacetDepth)}
+                      className="w-full bg-card border border-border/60 rounded-lg px-2.5 py-1.5 text-xs text-foreground"
+                    >
+                      <option value="1">Depth 1 (Low Surface)</option>
+                      <option value="2">Depth 2 (Standard Module)</option>
+                      <option value="3">Depth 3 (High Card)</option>
+                      <option value="4">Depth 4 (Max Overlay)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-medium">Interactivity</label>
+                    <select
+                      value={facetInteractivity}
+                      onChange={(e) => setFacetInteractivity(e.target.value as FacetInteractivity)}
+                      className="w-full bg-card border border-border/60 rounded-lg px-2.5 py-1.5 text-xs text-foreground"
+                    >
+                      <option value="none">None (Static)</option>
+                      <option value="hover">Hover (Subtle Lift)</option>
+                      <option value="click">Click (Active Spring)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={facetRefraction}
+                        onChange={(e) => setFacetRefraction(e.target.checked)}
+                        className="rounded border-border/60 bg-card text-primary focus:ring-primary"
+                      />
+                      Enable Refraction Sheen
+                    </label>
+                  </div>
                 </div>
               </FacetContainer>
 
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {[1, 2, 3, 4].map((depthLevel) => (
-                  <FacetContainer
-                    key={depthLevel}
-                    variant="builder"
-                    depth={depthLevel as any}
-                    enableRefraction={refractionEnabled}
-                    interactive="hover"
-                    className="bg-card/40 border border-border/60 rounded-xl p-5 flex flex-col justify-between h-[180px] hover:border-primary/40 transition-colors"
-                  >
-                    <div>
-                      <span className="text-xs text-primary font-semibold">LAYER</span>
-                      <h3 className="text-lg font-bold text-foreground mt-1">Z-Depth {depthLevel}</h3>
+              {/* Dynamic Live Inspector Card */}
+              <FacetContainer
+                variant={facetVariant}
+                depth={facetDepth}
+                interactive={facetInteractivity}
+                enableRefraction={facetRefraction}
+                className="bg-card/60 border border-border/60 rounded-2xl p-6 space-y-4"
+              >
+                <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-foreground capitalize">{facetVariant} Surface Preview</span>
+                  </div>
+                  <span className="text-xs text-primary font-mono font-semibold">Depth {facetDepth}</span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {/* KPI Display */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Gross Domestic Product</span>
+                    <div className="text-2xl font-bold text-foreground">$450.8 Billion</div>
+                    <div className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                      <TrendingUp className="h-3 w-3" /> +4.2% Annual Growth
                     </div>
-                    <p className="text-muted-foreground text-xs">
-                      {depthLevel === 1 && "Lies flat on background surface."}
-                      {depthLevel === 2 && "Default standard elevation index."}
-                      {depthLevel === 3 && "High layered dashboard module."}
-                      {depthLevel === 4 && "Floating popover/modal layer depth."}
-                    </p>
-                  </FacetContainer>
-                ))}
+                  </div>
+
+                  {/* Badges Gallery */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground block">Status Badges</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        ACTIVE
+                      </span>
+                      <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        PENDING
+                      </span>
+                      <span className="bg-primary/10 border border-primary/30 text-primary text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        VERIFIED
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions Gallery */}
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground block">Action Buttons</span>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-semibold transition-all">
+                        Execute
+                      </button>
+                      <button className="px-3 py-1.5 bg-accent/40 border border-border/60 hover:bg-accent/60 rounded-lg text-xs font-semibold text-foreground transition-all">
+                        Inspect
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </FacetContainer>
+
+              {/* Common Facet Gallery */}
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <FacetContainer
+                  variant="economy"
+                  depth={2}
+                  interactive="hover"
+                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
+                >
+                  <span className="text-xs text-amber-400 font-semibold font-mono">ECONOMY VARIANT</span>
+                  <h4 className="text-base font-bold text-foreground">Treasury Reserve</h4>
+                  <p className="text-xs text-muted-foreground">Gold/Amber refraction blend for fiscal panels.</p>
+                </FacetContainer>
+
+                <FacetContainer
+                  variant="military"
+                  depth={2}
+                  interactive="hover"
+                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
+                >
+                  <span className="text-xs text-rose-400 font-semibold font-mono">MILITARY VARIANT</span>
+                  <h4 className="text-base font-bold text-foreground">Readiness Index</h4>
+                  <p className="text-xs text-muted-foreground">Crimson/Red refraction gradient for defense alerts.</p>
+                </FacetContainer>
+
+                <FacetContainer
+                  variant="security"
+                  depth={2}
+                  interactive="hover"
+                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
+                >
+                  <span className="text-xs text-emerald-400 font-semibold font-mono">SECURITY VARIANT</span>
+                  <h4 className="text-base font-bold text-foreground">Intel Watch</h4>
+                  <p className="text-xs text-muted-foreground">Emerald/Cyan refraction blend for intelligence reports.</p>
+                </FacetContainer>
+
+                <FacetContainer
+                  variant="cultural"
+                  depth={2}
+                  interactive="hover"
+                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
+                >
+                  <span className="text-xs text-purple-400 font-semibold font-mono">CULTURAL VARIANT</span>
+                  <h4 className="text-base font-bold text-foreground">Social Unity</h4>
+                  <p className="text-xs text-muted-foreground">Purple/Violet refraction gradient for population stats.</p>
+                </FacetContainer>
               </div>
             </div>
           )}
