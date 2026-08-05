@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useCountryData } from "../primitives";
-import { OverviewHero } from "../OverviewHero";
-import { StateSeal } from "../primitives";
-import { useHeroCollapsed } from "~/hooks/useHeroCollapsed";
+import { useCountryData, StateSeal } from "../primitives";
 import { api } from "~/trpc/react";
 import { V2ModeToggle, type V2Mode } from "./V2ModeToggle";
 import { V2Home } from "./V2Home";
@@ -14,19 +11,18 @@ import { V2DrillSheets, type V2Drill } from "./V2DrillSheets";
 /**
  * The v2 command surface (migration §2). When v2 is active this replaces the
  * legacy sidebar/section war-rooms entirely:
- *   - HOME  — the action command surface (briefing + action grid + feed + rail)
+ *   - HOME  — the action command surface (command briefing hero + action grid + feed + rail)
  *   - CONSOLE — Executive mode: declare an Intent (the composer, primary)
  *   - DRILL-DOWNS — right-side sheets for depth (intent detail, relations, …)
- * No sidebar, one navigator, everything ≤1 click.
+ * Single unified navigation pill, everything ≤1 click.
  */
 export function V2CommandSurface() {
   const { country } = useCountryData();
   const countryId = country?.id ?? "";
 
-  const { collapsed, setCollapsed } = useHeroCollapsed(true, country?.id);
   const [mode, setMode] = useState<V2Mode>("home");
   const [drill, setDrill] = useState<V2Drill>(null);
-  const [goal, setGoal] = useState("");
+  const [_goal, setGoal] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   const utils = api.useUtils();
@@ -56,19 +52,9 @@ export function V2CommandSurface() {
   const openDrill = useCallback((d: V2Drill) => setDrill(d), []);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-5">
-      {/* Collapsed-by-default hero — action bar carries Directive + Edit */}
-      {country && (
-        <OverviewHero
-          collapsed={collapsed}
-          onCollapsedChange={setCollapsed}
-          countryId={country.id}
-          v2
-          onIssueDirective={() => declare()}
-        />
-      )}
-
-      <V2ModeToggle mode={mode} onChange={setMode} />
+    <div className="container mx-auto space-y-5 px-3 py-3 sm:px-4 sm:py-4">
+      {/* Primary Navigation Pill */}
+      <V2ModeToggle mode={mode} onChangeMode={setMode} />
 
       {mode === "home" ? (
         <V2Home

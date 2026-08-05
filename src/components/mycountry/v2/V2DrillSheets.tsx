@@ -1,20 +1,62 @@
 "use client";
 
-import { useMemo } from "react";
-import { Globe2, Shield, Landmark, Target, ArrowUpRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
+import { Globe2, Shield, Landmark, Target, Users, Scale, Building2, TrendingUp } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "~/components/ui/sheet";
-import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { useCountryData } from "../primitives";
+import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
-/** A v2 drill-down. Phase 1 ships the shell + infrastructure; deep content lands in Phase 3. */
+const EmbassiesAndRelationsPanel = dynamic(
+  () =>
+    import("~/components/diplomacy/EmbassiesAndRelationsPanel").then((m) => ({
+      default: m.EmbassiesAndRelationsPanel,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
+
+const DefenseCommandPanel = dynamic(
+  () =>
+    import("~/components/defense/DefenseCommandPanel").then((m) => ({
+      default: m.DefenseCommandPanel,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
+
+const CabinetPanel = dynamic(
+  () =>
+    import("~/components/executive/politics/CabinetPanel").then((m) => ({
+      default: m.CabinetPanel,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
+
+const PartyManager = dynamic(
+  () =>
+    import("~/components/executive/politics/PartyManager").then((m) => ({
+      default: m.PartyManager,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
+
+const LegislatureConfig = dynamic(
+  () =>
+    import("~/components/executive/politics/LegislatureConfig").then((m) => ({
+      default: m.LegislatureConfig,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
+
+/** A v2 drill-down surface. Phase 3 connects deep domain panels directly inside right-side sheets. */
 export type V2Drill =
-  | { kind: "relations" | "defense" | "politics" }
+  | { kind: "relations" | "defense" | "politics" | "economy" }
   | { kind: "intent"; intentId: string }
   | null;
 
 const DRILL_META: Record<
-  "relations" | "defense" | "politics",
+  "relations" | "defense" | "politics" | "economy",
   { title: string; icon: typeof Globe2; accent: string; blurb: string }
 > = {
   relations: {
@@ -35,6 +77,12 @@ const DRILL_META: Record<
     accent: "text-purple-400",
     blurb: "Parties, legislature and electoral config — your nation's declared political reality.",
   },
+  economy: {
+    title: "Economy & Budget",
+    icon: TrendingUp,
+    accent: "text-emerald-400",
+    blurb: "Macro trends, fiscal health and budget allocation. Financial posture surfaces here.",
+  },
 };
 
 const TIER_BADGE: Record<string, string> = {
@@ -43,20 +91,97 @@ const TIER_BADGE: Record<string, string> = {
   extreme: "text-red-300 bg-red-500/10 border-red-400/20",
 };
 
-function PhaseThreeScaffold({ title, blurb }: { title: string; blurb: string }) {
+function EconomyDrillDown({ countryId }: { countryId: string }) {
+  const { country } = useCountryData();
+  const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+
+  const metrics = [
+    {
+      label: "GDP (Total)",
+      value: country?.currentTotalGdp ? `$${(country.currentTotalGdp / 1e9).toFixed(2)}B` : "—",
+      sub: "Gross Domestic Product",
+      accent: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+    },
+    {
+      label: "GDP Growth",
+      value: country?.realGdpGrowthRate != null ? `${(country.realGdpGrowthRate * 100).toFixed(2)}%` : "—",
+      sub: "Annual real rate",
+      accent: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
+    },
+    {
+      label: "Economic Vitality",
+      value: dashboard?.economicVitality != null ? `${dashboard.economicVitality}/100` : "—",
+      sub: "National vitality band",
+      accent: "text-amber-400 border-amber-500/20 bg-amber-500/5",
+    },
+    {
+      label: "Government Efficiency",
+      value: dashboard?.governmentalEfficiency != null ? `${dashboard.governmentalEfficiency}/100` : "—",
+      sub: "Administrative capacity",
+      accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">{blurb}</p>
-      <FacetCard depth={1} className="border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
-        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/5">
-          <ArrowUpRight className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <p className="text-foreground/80 text-sm font-semibold">Depth surface</p>
-        <p className="text-muted-foreground mt-1 text-xs">
-          The full {title.toLowerCase()} drill-down arrives in Phase 3. Existing relations, defense
-          and politics surfaces remain available from the legacy nav for now.
+      <div className="grid grid-cols-2 gap-3">
+        {metrics.map(({ label, value, sub, accent }) => (
+          <div key={label} className={cn("rounded-xl border p-3.5 backdrop-blur-md", accent)}>
+            <p className="text-muted-foreground/70 text-[10px] font-bold tracking-wider uppercase">{label}</p>
+            <p className="text-foreground mt-1 text-lg font-extrabold">{value}</p>
+            <p className="text-muted-foreground mt-0.5 text-[11px]">{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+        <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+          Fiscal Health & Upkeep Strategy
+        </h4>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Active policies, proactive intents, and military posture consume continuous Civil Service Capacity (CivCap) and treasury budget lines. Lower efficiency obscures raw breakdowns into qualitative bands.
         </p>
       </FacetCard>
+    </div>
+  );
+}
+
+function PoliticsDrillDown({ countryId }: { countryId: string }) {
+  const [activeTab, setActiveTab] = useState<"cabinet" | "parties" | "legislature">("cabinet");
+
+  const tabs = [
+    { id: "cabinet" as const, label: "Cabinet", icon: Users },
+    { id: "parties" as const, label: "Parties", icon: Scale },
+    { id: "legislature" as const, label: "Legislature", icon: Building2 },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex rounded-lg border border-white/10 bg-white/[0.03] p-1">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+              activeTab === id
+                ? "border border-purple-500/30 bg-purple-500/20 text-purple-300 shadow-sm"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
+      {activeTab === "parties" && <PartyManager countryId={countryId} />}
+      {activeTab === "legislature" && <LegislatureConfig countryId={countryId} />}
     </div>
   );
 }
@@ -68,9 +193,7 @@ function IntentDetail({ countryId, intentId }: { countryId: string; intentId: st
   const children = useMemo(() => items.filter((i: any) => i.parentId === intentId), [items, intentId]);
 
   if (!intent) {
-    return (
-      <p className="text-muted-foreground text-sm">This directive could not be loaded.</p>
-    );
+    return <p className="text-muted-foreground text-sm">This directive could not be loaded.</p>;
   }
 
   return (
@@ -80,7 +203,7 @@ function IntentDetail({ countryId, intentId }: { countryId: string; intentId: st
           <span
             className={cn(
               "shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase",
-              TIER_BADGE[intent.tier] || "bg-slate-500/10 text-slate-400 border-slate-500/20"
+              TIER_BADGE[intent.tier] || "border-slate-500/20 bg-slate-500/10 text-slate-400"
             )}
           >
             {intent.tier}
@@ -104,7 +227,7 @@ function IntentDetail({ countryId, intentId }: { countryId: string; intentId: st
             {children.map((kid: any) => (
               <div
                 key={kid.id}
-                className="rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 text-sm text-foreground/85"
+                className="text-foreground/85 rounded-lg border border-white/5 bg-white/[0.01] px-3 py-2 text-sm"
               >
                 {kid.goal}
               </div>
@@ -137,7 +260,10 @@ export function V2DrillSheets({
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="right" className="border-border bg-background/95 w-full overflow-y-auto backdrop-blur-xl sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="border-border bg-background/95 w-full overflow-y-auto backdrop-blur-xl sm:max-w-xl lg:max-w-2xl"
+      >
         <SheetHeader className="mb-4">
           <SheetTitle className="flex items-center gap-2 text-base">
             <Icon className={cn("h-4 w-4", accent)} />
@@ -152,9 +278,15 @@ export function V2DrillSheets({
 
         {drill === null ? null : drill.kind === "intent" ? (
           <IntentDetail countryId={countryId} intentId={drill.intentId} />
-        ) : (
-          <PhaseThreeScaffold title={meta?.title ?? ""} blurb={meta?.blurb ?? ""} />
-        )}
+        ) : drill.kind === "relations" ? (
+          <EmbassiesAndRelationsPanel countryId={countryId} />
+        ) : drill.kind === "defense" ? (
+          <DefenseCommandPanel countryId={countryId} />
+        ) : drill.kind === "politics" ? (
+          <PoliticsDrillDown countryId={countryId} />
+        ) : drill.kind === "economy" ? (
+          <EconomyDrillDown countryId={countryId} />
+        ) : null}
       </SheetContent>
     </Sheet>
   );

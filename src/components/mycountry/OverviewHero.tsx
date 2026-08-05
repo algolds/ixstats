@@ -643,94 +643,98 @@ export function OverviewHero({
                 </Link>
               </div>
 
-              {/* Apple-style Daily Agenda Widget */}
-              <div className="mt-2 mb-3">
-                {agendaViewMode === "widgets" ? (
-                  <div className="grid h-[105px] grid-cols-5 gap-2.5">
-                    {/* Left Column: iOS Calendar widget */}
-                    <div className="col-span-2 flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] shadow-inner backdrop-blur-md select-none">
-                      <div className="bg-red-500 px-1 py-0.5 text-center text-[8px] leading-none font-extrabold tracking-widest text-white uppercase">
-                        {months[today.getMonth()]}
-                      </div>
-                      <div className="flex flex-grow flex-col items-center justify-center p-1">
-                        <span className="text-[8px] leading-none font-bold tracking-wider text-red-500 uppercase">
-                          {days[today.getDay()]}
-                        </span>
-                        <span className="text-foreground mt-0.5 text-xl leading-none font-black tracking-tighter">
-                          {today.getDate()}
-                        </span>
-                        <span className="text-muted-foreground/60 mt-1 max-w-full truncate px-1 text-center text-[7px] font-semibold tracking-tight uppercase">
-                          Up Next: {nextEventText}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Right Column: iOS Reminders widget */}
-                    <div className="col-span-3 flex h-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
-                      <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
-                        <span>Reminders</span>
-                        <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
-                          {agendaItems.length}
-                        </span>
-                      </div>
-
-                      <div className="flex-1 scrollbar-thin space-y-1 overflow-y-auto pr-0.5">
-                        {agendaItems.length > 0 ? (
-                          agendaItems.slice(0, 3).map((item) => {
-                            return (
-                              <button
-                                key={item.id}
-                                onClick={() => onNavigate?.(item.section)}
-                                className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[9px] font-medium transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
-                              >
-                                <div
-                                  className={cn(
-                                    "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all",
-                                    item.borderClass
-                                  )}
-                                >
-                                  <Check className="h-2 w-2 scale-0 transition-transform group-hover:scale-100" />
-                                </div>
-                                <span className="flex-1 truncate">{item.text}</span>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <div className="flex h-full flex-col items-center justify-center p-1 text-center text-emerald-500/80">
-                            <Check className="mb-0.5 h-4 w-4" />
-                            <span className="text-[8px] font-medium">All Tasks Complete</span>
+              {/* Agenda Widget, Vitality Rings, and Civil Service (v1 only; moved to V2CommandBriefingHero in v2) */}
+              {!v2 && (
+                <>
+                  <div className="mt-2 mb-3">
+                    {agendaViewMode === "widgets" ? (
+                      <div className="grid h-[105px] grid-cols-5 gap-2.5">
+                        {/* Left Column: iOS Calendar widget */}
+                        <div className="col-span-2 flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] shadow-inner backdrop-blur-md select-none">
+                          <div className="bg-red-500 px-1 py-0.5 text-center text-[8px] leading-none font-extrabold tracking-widest text-white uppercase">
+                            {months[today.getMonth()]}
                           </div>
-                        )}
+                          <div className="flex flex-grow flex-col items-center justify-center p-1">
+                            <span className="text-[8px] leading-none font-bold tracking-wider text-red-500 uppercase">
+                              {days[today.getDay()]}
+                            </span>
+                            <span className="text-foreground mt-0.5 text-xl leading-none font-black tracking-tighter">
+                              {today.getDate()}
+                            </span>
+                            <span className="text-muted-foreground/60 mt-1 max-w-full truncate px-1 text-center text-[7px] font-semibold tracking-tight uppercase">
+                              Up Next: {nextEventText}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Right Column: iOS Reminders widget */}
+                        <div className="col-span-3 flex h-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
+                          <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
+                            <span>Reminders</span>
+                            <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
+                              {agendaItems.length}
+                            </span>
+                          </div>
+
+                          <div className="flex-1 scrollbar-thin space-y-1 overflow-y-auto pr-0.5">
+                            {agendaItems.length > 0 ? (
+                              agendaItems.slice(0, 3).map((item) => {
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => onNavigate?.(item.section)}
+                                    className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[9px] font-medium transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
+                                  >
+                                    <div
+                                      className={cn(
+                                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all",
+                                        item.borderClass
+                                      )}
+                                    >
+                                      <Check className="h-2 w-2 scale-0 transition-transform group-hover:scale-100" />
+                                    </div>
+                                    <span className="flex-1 truncate">{item.text}</span>
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center p-1 text-center text-emerald-500/80">
+                                <Check className="mb-0.5 h-4 w-4" />
+                                <span className="text-[8px] font-medium">All Tasks Complete</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
+                    ) : (
+                      // SMART STACK VIEW
+                      <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />
+                    )}
+                  </div>
+
+                  {/* Vitality Rings Display */}
+                  {hasCountry && country && (
+                    <div className="mt-1 mb-2.5 flex shrink-0 items-center justify-between border-t border-white/5 pt-2.5 select-none">
+                      <div className="flex flex-col items-start text-[9px] font-extrabold tracking-wider uppercase text-muted-foreground/60 leading-tight">
+                        <span>Pop: {formatCompact(stats.population)}</span>
+                        <span>GDP: ${formatCompact(stats.currentTotalGdp)}</span>
+                      </div>
+                      <QuickVitalityRings
+                        rings={createVitalityRingsFromCountry(country)}
+                        size="sm"
+                        className="gap-1.5"
+                      />
                     </div>
-                  </div>
-                ) : (
-                  // SMART STACK VIEW
-                  <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />
-                )}
-              </div>
+                  )}
 
-              {/* Vitality Rings Display */}
-              {hasCountry && country && (
-                <div className="mt-1 mb-2.5 flex shrink-0 items-center justify-between border-t border-white/5 pt-2.5 select-none">
-                  <div className="flex flex-col items-start text-[9px] font-extrabold tracking-wider uppercase text-muted-foreground/60 leading-tight">
-                    <span>Pop: {formatCompact(stats.population)}</span>
-                    <span>GDP: ${formatCompact(stats.currentTotalGdp)}</span>
-                  </div>
-                  <QuickVitalityRings
-                    rings={createVitalityRingsFromCountry(country)}
-                    size="sm"
-                    className="gap-1.5"
+                  {/* Civil Service Capacity + Rollout Queue */}
+                  <CivilServiceWidget
+                    countryId={countryId}
+                    enabled={hasCountry}
+                    onNavigate={onNavigate}
                   />
-                </div>
+                </>
               )}
-
-              {/* Civil Service Capacity + Rollout Queue */}
-              <CivilServiceWidget
-                countryId={countryId}
-                enabled={hasCountry}
-                onNavigate={onNavigate}
-              />
             </div>
           </div>
         </div>

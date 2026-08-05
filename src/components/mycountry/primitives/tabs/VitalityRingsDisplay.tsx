@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -9,6 +9,7 @@ import { Activity, DollarSign, Users, Globe, Building, Heart, Shield, Zap } from
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
 
 export interface VitalityRing {
   id: string;
@@ -232,26 +233,46 @@ export function QuickVitalityRings({
   rings,
   size = "sm",
   className = "",
+  countryName,
 }: {
   rings: VitalityRing[];
   size?: "sm" | "md";
   className?: string;
+  countryName?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const ringSize = size === "sm" ? 60 : 80;
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      {rings.map((ring) => (
-        <HealthRing
-          key={ring.id}
-          value={ring.value}
-          size={ringSize}
-          color={ring.color}
-          label={ring.label}
-          tooltip={ring.description}
-        />
-      ))}
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          "group flex items-center gap-2 rounded-xl p-1 transition-all hover:bg-white/[0.06] hover:scale-[1.03] active:scale-[0.98] cursor-pointer",
+          className
+        )}
+        title="Click for Vitality Index Breakdown"
+      >
+        {rings.map((ring) => (
+          <HealthRing
+            key={ring.id}
+            value={ring.value}
+            size={ringSize}
+            color={ring.color}
+            label={ring.label}
+            tooltip={`${ring.label}: ${ring.value}/100 — Click for breakdown`}
+          />
+        ))}
+      </button>
+
+      <VitalityBreakdownModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        rings={rings}
+        countryName={countryName}
+      />
+    </>
   );
 }
 

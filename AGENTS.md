@@ -150,14 +150,14 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 | Package | Version |
 |---------|---------|
-| Next.js | 16.2.6 |
-| React | 19.2.6 |
+| Next.js | 16.3.0 |
+| React | 19.2.8 |
 | TypeScript | 5.9.3 |
 | Prisma | 6.19.3 |
-| tRPC | 11.17.0 |
+| tRPC | 11.18.0 |
 | Zod | 4.4.3 (NOT v3) |
-| Tailwind CSS | 4.3.0 (NOT v3) |
-| ESLint | 9.39.4 (flat config) |
+| Tailwind CSS | 4.3.3 (NOT v3) |
+| ESLint | 10.8.0 (flat config) |
 | Jest | 30.4.2 |
 | Express | 5.2.1 |
 

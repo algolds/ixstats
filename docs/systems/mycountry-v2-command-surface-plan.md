@@ -92,7 +92,7 @@ COUNTRY PROFILE (relocation target for deep stats)
 - **Standing as bands** (Tense/Neutral/Cooperative), not percentages; raw analytics off home.
 - **Stat tabs (Economy/Labor/Government/Geography) removed from home** → Phase 4.
 
-### Phase 3 — Drill-downs (reuse, don't rebuild)
+### Phase 3 — Drill-downs (reuse, don't rebuild) ✅ (done)
 - **Relations sheet:** reuse `DiplomaticRelationsList` / `EmbassiesAndRelationsPanel`, restyled to bands.
 - **Politics config sheet:** reuse `PartyManager` / `LegislatureConfig` / `CabinetPanel` behind one drill-down.
 - **Defense drill:** reuse defense panels as an intent category.

@@ -115,11 +115,12 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       }
     });
 
-    const totalRelations = (relations?.length ?? 0) + additionalRelationsCount;
+    const relList = relations ?? [];
+    const totalRelations = relList.length + additionalRelationsCount;
     const allianceCount = alliances?.length ?? 0;
     const avgStrength =
       totalRelations > 0
-        ? Math.round(relations!.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
+        ? Math.round(relList.reduce((sum, r) => sum + (r.strength ?? 0), 0) / totalRelations)
         : 0;
 
     return { activeEmbassies, totalRelations, allianceCount, avgStrength };

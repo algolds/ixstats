@@ -192,40 +192,44 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
   return (
     <div
       className={cn(
-        "relative flex h-[105px] w-full items-center justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md",
+        "relative flex min-h-[110px] w-full flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md",
         className
       )}
     >
       {current ? (
-        <div className="flex w-full items-center gap-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
-              current.borderClass
-            )}
-          >
-            <current.icon className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1 pr-6">
-            <span className="text-muted-foreground/60 text-[8px] font-bold tracking-wider uppercase">
-              {current.label}
-            </span>
-            <p className="text-foreground mt-0.5 truncate text-[10px] leading-tight font-semibold">
-              {current.text}
-            </p>
-            <button
-              onClick={() => onResolve(current.section)}
-              className="mt-1 flex items-center gap-0.5 text-[8px] font-bold text-amber-500 hover:text-amber-400 hover:underline"
+        <div className="flex h-full w-full flex-col sm:flex-row items-center justify-between gap-4 p-2">
+          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+            <div
+              className={cn(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-sm",
+                current.borderClass
+              )}
             >
-              Resolve Task <ChevronRight className="h-2.5 w-2.5" />
-            </button>
+              <current.icon className="h-5.5 w-5.5" />
+            </div>
+            <div className="min-w-0 text-left">
+              <span className="text-muted-foreground/60 text-[9px] font-extrabold tracking-widest uppercase">
+                {current.label}
+              </span>
+              <p className="text-foreground mt-0.5 text-xs sm:text-sm font-bold leading-snug">
+                {current.text}
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => onResolve(current.section)}
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95 shadow-sm"
+          >
+            Resolve Task <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       ) : (
-        <div className="flex w-full flex-col items-center justify-center py-2 text-center text-emerald-500">
-          <Check className="mb-1 h-5 w-5" />
-          <span className="text-[10px] font-bold">All sectors operating normally</span>
-          <p className="text-muted-foreground/60 mt-0.5 text-[8px]">
+        <div className="flex h-full w-full flex-col items-center justify-center py-5 px-4 text-center">
+          <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 shadow-sm">
+            <Check className="h-4.5 w-4.5 text-emerald-400" />
+          </div>
+          <span className="text-xs sm:text-sm font-bold tracking-wide text-emerald-400">All sectors operating normally</span>
+          <p className="text-muted-foreground/60 mt-0.5 text-[11px] font-medium">
             Your daily agenda is completely clear.
           </p>
         </div>
