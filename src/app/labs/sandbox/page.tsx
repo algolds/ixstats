@@ -19,13 +19,13 @@ import {
   Code2,
   ChevronRight,
   AlertCircle,
-  Shield,
   Briefcase,
   TrendingUp,
   Palette,
   Eye,
-  Sparkles,
-  ArrowUpRight,
+  Copy,
+  Send,
+  BookOpen,
 } from "lucide-react";
 
 // Import Kistan's 5 CS Intro Level Files
@@ -37,7 +37,7 @@ import * as Level5 from "./challenges/level5_async";
 
 export default function SandboxPage() {
   // Top-level Navigation Tabs
-  const [activeTab, setActiveTab] = useState<"sim" | "trpc" | "facet" | "quiz">("sim");
+  const [activeTab, setActiveTab] = useState<"sim" | "trpc" | "mutation" | "facet" | "cheatsheet" | "quiz">("sim");
 
   // Sub-tabs inside Quiz mode
   const [activeLevel, setActiveLevel] = useState<"lvl1" | "lvl2" | "lvl3" | "lvl4" | "lvl5">("lvl1");
@@ -64,7 +64,43 @@ export default function SandboxPage() {
     });
 
   // ==========================================
-  // TAB 3: FACET DESIGN LAB STATE
+  // TAB 3: tRPC MUTATION SANDBOX STATE
+  // ==========================================
+  const [policyTitle, setPolicyTitle] = useState("Economic Development Act");
+  const [policyPriority, setPolicyPriority] = useState<"HIGH" | "MEDIUM" | "LOW">("HIGH");
+  const [mutationPending, setMutationPending] = useState(false);
+  const [mutationResponse, setMutationResponse] = useState<any>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
+  const handleSimulateMutation = () => {
+    setMutationError(null);
+    setMutationResponse(null);
+
+    // Zod validation simulation
+    if (policyTitle.trim().length < 3) {
+      setMutationError("ZodValidationError: Policy title must be at least 3 characters long.");
+      return;
+    }
+
+    setMutationPending(true);
+    setTimeout(() => {
+      setMutationPending(false);
+      setMutationResponse({
+        success: true,
+        mutationId: `mut_${Math.random().toString(36).substring(2, 9)}`,
+        status: "APPROVED_AND_EXECUTED",
+        timestamp: new Date().toISOString(),
+        payload: {
+          title: policyTitle,
+          priority: policyPriority,
+          executor: "Kistan (Admin)",
+        },
+      });
+    }, 600);
+  };
+
+  // ==========================================
+  // TAB 4: FACET DESIGN LAB STATE
   // ==========================================
   const [facetVariant, setFacetVariant] = useState<FacetVariant>("overview");
   const [facetDepth, setFacetDepth] = useState<FacetDepth>(2);
@@ -72,7 +108,18 @@ export default function SandboxPage() {
   const [facetRefraction, setFacetRefraction] = useState(true);
 
   // ==========================================
-  // TAB 4: 5-LEVEL CS INTRO QUIZ VALIDATION
+  // TAB 5: CHEAT SHEET COPY FEEDBACK STATE
+  // ==========================================
+  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+
+  const copyToClipboard = (code: string, label: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedSnippet(label);
+    setTimeout(() => setCopiedSnippet(null), 2000);
+  };
+
+  // ==========================================
+  // TAB 6: 5-LEVEL CS INTRO QUIZ VALIDATION
   // ==========================================
   // Level 1: Variables & Data Types
   const [lvl1Name, setLvl1Name] = useState("Faneria");
@@ -152,7 +199,7 @@ export default function SandboxPage() {
               Labs Sandbox
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, Facet design system components, and CS intro quizzes.
+              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, Facet UI components, and CS intro quizzes.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs bg-card border border-border/60 rounded-full px-3.5 py-1.5 text-muted-foreground self-start md:self-auto shadow-sm">
@@ -162,10 +209,10 @@ export default function SandboxPage() {
         </div>
 
         {/* Top Navigation Tabs */}
-        <div className="flex gap-2 bg-card border border-border/60 p-1.5 rounded-2xl max-w-2xl shadow-sm">
+        <div className="flex flex-wrap gap-2 bg-card border border-border/60 p-1.5 rounded-2xl max-w-4xl shadow-sm">
           <button
             onClick={() => setActiveTab("sim")}
-            className={`flex flex-1 items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
               activeTab === "sim"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -176,7 +223,7 @@ export default function SandboxPage() {
           </button>
           <button
             onClick={() => setActiveTab("trpc")}
-            className={`flex flex-1 items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
               activeTab === "trpc"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -186,8 +233,19 @@ export default function SandboxPage() {
             tRPC Query
           </button>
           <button
+            onClick={() => setActiveTab("mutation")}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === "mutation"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+            }`}
+          >
+            <Send className="h-4 w-4" />
+            tRPC Mutation
+          </button>
+          <button
             onClick={() => setActiveTab("facet")}
-            className={`flex flex-1 items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
               activeTab === "facet"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
@@ -197,8 +255,19 @@ export default function SandboxPage() {
             Facet Design Lab
           </button>
           <button
+            onClick={() => setActiveTab("cheatsheet")}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+              activeTab === "cheatsheet"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
+            Cheat Sheet
+          </button>
+          <button
             onClick={() => setActiveTab("quiz")}
-            className={`flex flex-1 items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
               activeTab === "quiz"
                 ? "bg-amber-600 text-white shadow-md"
                 : "text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
@@ -334,10 +403,109 @@ export default function SandboxPage() {
             </FacetContainer>
           )}
 
-          {/* TAB 3: FACET DESIGN LAB (COMPONENTS & VARIANTS) */}
+          {/* TAB 3: tRPC MUTATION SANDBOX */}
+          {activeTab === "mutation" && (
+            <FacetContainer
+              variant="builder"
+              depth={2}
+              className="bg-card/60 border border-border/60 rounded-2xl p-6 space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <Send className="h-5 w-5 text-primary" />
+                    tRPC Mutation & Form State Lab
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Demonstrates <code className="text-primary font-mono">useMutation()</code>, loading states, Zod validation, and backend response payloads.
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground font-mono">api.policy.create.useMutation</span>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Form Input Side */}
+                <div className="space-y-4 bg-background/50 border border-border/40 p-5 rounded-xl">
+                  <h3 className="text-sm font-semibold text-foreground">1. Form Inputs</h3>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Policy Title</label>
+                    <input
+                      type="text"
+                      value={policyTitle}
+                      onChange={(e) => setPolicyTitle(e.target.value)}
+                      className="w-full bg-card border border-border/60 rounded-lg px-3 py-2 text-xs text-foreground focus:ring-primary"
+                      placeholder="Enter policy title..."
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Priority Tier</label>
+                    <select
+                      value={policyPriority}
+                      onChange={(e) => setPolicyPriority(e.target.value as any)}
+                      className="w-full bg-card border border-border/60 rounded-lg px-3 py-2 text-xs text-foreground"
+                    >
+                      <option value="HIGH">HIGH (Executive Priority)</option>
+                      <option value="MEDIUM">MEDIUM (Standard Cabinet)</option>
+                      <option value="LOW">LOW (Advisory Routine)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleSimulateMutation}
+                    disabled={mutationPending}
+                    className="w-full py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                  >
+                    {mutationPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Submit tRPC Mutation
+                  </button>
+
+                  {mutationError && (
+                    <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 p-3 rounded-lg text-destructive text-xs">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>{mutationError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Response / Cache View Side */}
+                <div className="space-y-4 bg-background/50 border border-border/40 p-5 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">2. Backend Mutation Response</h3>
+
+                    {mutationPending ? (
+                      <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                        <span className="text-muted-foreground text-xs font-mono">Executing server procedure...</span>
+                      </div>
+                    ) : mutationResponse ? (
+                      <div className="bg-background border border-border/60 rounded-xl p-4 overflow-x-auto">
+                        <pre className="text-xs font-mono text-emerald-400">
+                          {JSON.stringify(mutationResponse, null, 2)}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground text-xs border border-dashed border-border/60 rounded-xl">
+                        Submit the form on the left to trigger the mutation response.
+                      </div>
+                    )}
+                  </div>
+
+                  {mutationResponse && (
+                    <div className="text-[11px] text-muted-foreground bg-card border border-border/60 p-2.5 rounded-lg flex items-center justify-between font-mono">
+                      <span>Cache Status: Invalidated & Refetched</span>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </FacetContainer>
+          )}
+
+          {/* TAB 4: FACET DESIGN LAB */}
           {activeTab === "facet" && (
             <div className="space-y-6">
-              {/* Interactive Controls Bar */}
               <FacetContainer
                 variant="global"
                 depth={2}
@@ -410,7 +578,6 @@ export default function SandboxPage() {
                 </div>
               </FacetContainer>
 
-              {/* Dynamic Live Inspector Card */}
               <FacetContainer
                 variant={facetVariant}
                 depth={facetDepth}
@@ -427,7 +594,6 @@ export default function SandboxPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {/* KPI Display */}
                   <div className="space-y-1">
                     <span className="text-xs text-muted-foreground">Gross Domestic Product</span>
                     <div className="text-2xl font-bold text-foreground">$450.8 Billion</div>
@@ -436,7 +602,6 @@ export default function SandboxPage() {
                     </div>
                   </div>
 
-                  {/* Badges Gallery */}
                   <div className="space-y-2">
                     <span className="text-xs text-muted-foreground block">Status Badges</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -452,7 +617,6 @@ export default function SandboxPage() {
                     </div>
                   </div>
 
-                  {/* Actions Gallery */}
                   <div className="space-y-2">
                     <span className="text-xs text-muted-foreground block">Action Buttons</span>
                     <div className="flex gap-2">
@@ -466,57 +630,126 @@ export default function SandboxPage() {
                   </div>
                 </div>
               </FacetContainer>
-
-              {/* Common Facet Gallery */}
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <FacetContainer
-                  variant="economy"
-                  depth={2}
-                  interactive="hover"
-                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
-                >
-                  <span className="text-xs text-amber-400 font-semibold font-mono">ECONOMY VARIANT</span>
-                  <h4 className="text-base font-bold text-foreground">Treasury Reserve</h4>
-                  <p className="text-xs text-muted-foreground">Gold/Amber refraction blend for fiscal panels.</p>
-                </FacetContainer>
-
-                <FacetContainer
-                  variant="military"
-                  depth={2}
-                  interactive="hover"
-                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
-                >
-                  <span className="text-xs text-rose-400 font-semibold font-mono">MILITARY VARIANT</span>
-                  <h4 className="text-base font-bold text-foreground">Readiness Index</h4>
-                  <p className="text-xs text-muted-foreground">Crimson/Red refraction gradient for defense alerts.</p>
-                </FacetContainer>
-
-                <FacetContainer
-                  variant="security"
-                  depth={2}
-                  interactive="hover"
-                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
-                >
-                  <span className="text-xs text-emerald-400 font-semibold font-mono">SECURITY VARIANT</span>
-                  <h4 className="text-base font-bold text-foreground">Intel Watch</h4>
-                  <p className="text-xs text-muted-foreground">Emerald/Cyan refraction blend for intelligence reports.</p>
-                </FacetContainer>
-
-                <FacetContainer
-                  variant="cultural"
-                  depth={2}
-                  interactive="hover"
-                  className="bg-card/40 border border-border/60 rounded-xl p-5 space-y-3"
-                >
-                  <span className="text-xs text-purple-400 font-semibold font-mono">CULTURAL VARIANT</span>
-                  <h4 className="text-base font-bold text-foreground">Social Unity</h4>
-                  <p className="text-xs text-muted-foreground">Purple/Violet refraction gradient for population stats.</p>
-                </FacetContainer>
-              </div>
             </div>
           )}
 
-          {/* TAB 4: 5-LEVEL CS INTRO QUIZ */}
+          {/* TAB 5: CHEAT SHEET & PATTERN LIBRARY */}
+          {activeTab === "cheatsheet" && (
+            <div className="space-y-6">
+              <FacetContainer
+                variant="builder"
+                depth={2}
+                className="bg-card/60 border border-border/60 rounded-2xl p-6 space-y-4"
+              >
+                <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      IxStates Developer Code Cheat Sheet
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Common full-stack IxStates code patterns with 1-click copying.
+                    </p>
+                  </div>
+                  {copiedSnippet && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1 rounded-lg font-semibold animate-pulse">
+                      Copied {copiedSnippet}! ✅
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* React State & Hooks */}
+                  <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs uppercase font-semibold text-primary tracking-wider">1. React Hooks & State</h3>
+                      <button
+                        onClick={() => copyToClipboard(`const [count, setCount] = useState(0);\nconst double = useMemo(() => count * 2, [count]);`, "React Hooks")}
+                        className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 bg-card border border-border/60 px-2 py-1 rounded"
+                      >
+                        <Copy className="h-3 w-3" /> Copy
+                      </button>
+                    </div>
+                    <pre className="bg-background border border-border/60 p-3 rounded-lg text-xs font-mono text-foreground overflow-x-auto">
+{`const [taxRate, setTaxRate] = useState(25);
+const calculatedRevenue = useMemo(() => {
+  return taxRate * population * 10;
+}, [taxRate, population]);`}
+                    </pre>
+                  </div>
+
+                  {/* tRPC Data Pipeline */}
+                  <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs uppercase font-semibold text-primary tracking-wider">2. tRPC Query & Mutation</h3>
+                      <button
+                        onClick={() => copyToClipboard(`const { data, isLoading } = api.countries.getAll.useQuery();\nconst mutation = api.policy.create.useMutation();`, "tRPC Hook")}
+                        className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 bg-card border border-border/60 px-2 py-1 rounded"
+                      >
+                        <Copy className="h-3 w-3" /> Copy
+                      </button>
+                    </div>
+                    <pre className="bg-background border border-border/60 p-3 rounded-lg text-xs font-mono text-foreground overflow-x-auto">
+{`// Query Data
+const { data, isLoading } = api.countries.getAll.useQuery();
+
+// Mutate Data
+const { mutate } = api.policy.create.useMutation({
+  onSuccess: () => utils.invalidate()
+});`}
+                    </pre>
+                  </div>
+
+                  {/* JS/TS Array & Object Operations */}
+                  <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs uppercase font-semibold text-primary tracking-wider">3. Array & Object Operations</h3>
+                      <button
+                        onClick={() => copyToClipboard(`const names = nations.map(n => n.name);\nconst highStab = nations.filter(n => n.stability >= 80);`, "JS Array Ops")}
+                        className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 bg-card border border-border/60 px-2 py-1 rounded"
+                      >
+                        <Copy className="h-3 w-3" /> Copy
+                      </button>
+                    </div>
+                    <pre className="bg-background border border-border/60 p-3 rounded-lg text-xs font-mono text-foreground overflow-x-auto">
+{`// Filter array
+const allies = nations.filter(n => n.stability >= 80);
+
+// Map objects to JSX
+{allies.map(nation => (
+  <div key={nation.id}>{nation.name}</div>
+))}`}
+                    </pre>
+                  </div>
+
+                  {/* Facet Container Component */}
+                  <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs uppercase font-semibold text-primary tracking-wider">4. Facet UI Container</h3>
+                      <button
+                        onClick={() => copyToClipboard(`<FacetContainer variant="overview" depth={2} interactive="hover">\n  <div>Content</div>\n</FacetContainer>`, "Facet UI Container")}
+                        className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 bg-card border border-border/60 px-2 py-1 rounded"
+                      >
+                        <Copy className="h-3 w-3" /> Copy
+                      </button>
+                    </div>
+                    <pre className="bg-background border border-border/60 p-3 rounded-lg text-xs font-mono text-foreground overflow-x-auto">
+{`<FacetContainer 
+  variant="overview" 
+  depth={2} 
+  interactive="hover"
+  className="p-6 rounded-2xl"
+>
+  <h3>Card Content</h3>
+</FacetContainer>`}
+                    </pre>
+                  </div>
+                </div>
+              </FacetContainer>
+            </div>
+          )}
+
+          {/* TAB 6: 5-LEVEL CS INTRO QUIZ */}
           {activeTab === "quiz" && (
             <div className="space-y-6">
               {/* Gamified Header */}
