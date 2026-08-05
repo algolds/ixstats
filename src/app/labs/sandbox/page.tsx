@@ -18,20 +18,24 @@ import {
   Code2,
   ChevronRight,
   AlertCircle,
+  Shield,
+  Briefcase,
+  TrendingUp,
 } from "lucide-react";
 
-// Import Kistan's challenge files
-import * as Challenge1 from "./challenges/challenge1_calculator";
-import * as Challenge2 from "./challenges/challenge2_grid";
-import * as Challenge3 from "./challenges/challenge3_methods";
-import * as Challenge4 from "./challenges/challenge4_async";
+// Import Kistan's 5 CS Intro Level Files
+import * as Level1 from "./challenges/level1_variables";
+import * as Level2 from "./challenges/level2_conditionals";
+import * as Level3 from "./challenges/level3_arrays";
+import * as Level4 from "./challenges/level4_objects";
+import * as Level5 from "./challenges/level5_async";
 
 export default function SandboxPage() {
   // Top-level Navigation Tabs
   const [activeTab, setActiveTab] = useState<"sim" | "trpc" | "design" | "quiz">("sim");
 
   // Sub-tabs inside Quiz mode
-  const [activeQuizTab, setActiveQuizTab] = useState<"mod1" | "mod2" | "mod3" | "mod4">("mod1");
+  const [activeLevel, setActiveLevel] = useState<"lvl1" | "lvl2" | "lvl3" | "lvl4" | "lvl5">("lvl1");
 
   // ==========================================
   // TAB 1: SIMULATION STATE
@@ -61,74 +65,87 @@ export default function SandboxPage() {
   const [refractionEnabled, setRefractionEnabled] = useState(true);
 
   // ==========================================
-  // TAB 4: QUIZ / CHALLENGES VALIDATION STATE
+  // TAB 4: 5-LEVEL CS INTRO QUIZ VALIDATION
   // ==========================================
-  // Module 1
-  const [m1TaxRate, setM1TaxRate] = useState(25);
-  const [m1Population, setM1Population] = useState(40);
-  const m1Exported = typeof Challenge1.calculateTaxYield === "function";
-  const m1TestCalc = m1Exported ? Challenge1.calculateTaxYield(20, 50) : 0;
-  const m1Passed = m1Exported && m1TestCalc === 1000;
-  const m1CalculatedYield = m1Exported ? Challenge1.calculateTaxYield(m1TaxRate, m1Population) : 0;
+  // Level 1: Variables & Data Types
+  const [lvl1Name, setLvl1Name] = useState("Faneria");
+  const [lvl1Pop, setLvl1Pop] = useState(40);
+  const l1Exported = typeof Level1.formatNationHeader === "function";
+  const l1TestOutput = l1Exported ? Level1.formatNationHeader("Faneria", 40) : "";
+  const l1Passed = l1Exported && l1TestOutput.trim() === "Nation: Faneria | Population: 40M";
+  const l1LiveHeader = l1Exported ? Level1.formatNationHeader(lvl1Name, lvl1Pop) : "";
 
-  // Module 2
-  const m2ArrayExported = Array.isArray(Challenge2.nations) && Challenge2.nations.length >= 3;
-  const m2FormatExported = typeof Challenge2.formatNationCard === "function";
-  const m2TestFormat = m2FormatExported && m2ArrayExported ? Challenge2.formatNationCard(Challenge2.nations[0]) : "";
-  const m2Passed = m2ArrayExported && m2FormatExported && m2TestFormat.length > 0;
+  // Level 2: Conditionals & Control Flow
+  const [lvl2Gdp, setLvl2Gdp] = useState(45000);
+  const l2Exported = typeof Level2.getEconomicTier === "function";
+  const l2TestAdv = l2Exported && Level2.getEconomicTier(50000) === "Advanced";
+  const l2TestDev = l2Exported && Level2.getEconomicTier(25000) === "Developing";
+  const l2TestEmerg = l2Exported && Level2.getEconomicTier(10000) === "Emerging";
+  const l2Passed = l2Exported && l2TestAdv && l2TestDev && l2TestEmerg;
+  const l2LiveTier = l2Exported ? Level2.getEconomicTier(lvl2Gdp) : "";
 
-  // Module 3
-  const [m3Reserves, setM3Reserves] = useState(500);
-  const m3ObjectExported = !!Challenge3.NationTreasury && typeof Challenge3.NationTreasury === "object";
-  const m3MethodExported = m3ObjectExported && typeof Challenge3.NationTreasury.addReserves === "function";
-  const handleM3AddReserves = (amount: number) => {
-    if (m3MethodExported) {
-      Challenge3.NationTreasury.addReserves(amount);
-      setM3Reserves(Challenge3.NationTreasury.reserves);
+  // Level 3: Arrays & Iteration
+  const [lvl3MinStab, setLvl3MinStab] = useState(80);
+  const l3ArrayExported = Array.isArray(Level3.allNations) && Level3.allNations.length >= 3;
+  const l3FilterExported = typeof Level3.filterHighStabilityNations === "function";
+  const l3FilteredNations = l3FilterExported && l3ArrayExported ? Level3.filterHighStabilityNations(Level3.allNations, lvl3MinStab) : [];
+  const l3Passed = l3ArrayExported && l3FilterExported && Level3.filterHighStabilityNations(Level3.allNations, 80).length > 0;
+
+  // Level 4: Objects & Methods ('this')
+  const [lvl4Reserves, setLvl4Reserves] = useState(1000);
+  const l4ObjectExported = !!Level4.NationTreasuryVault && typeof Level4.NationTreasuryVault === "object";
+  const l4MethodExported = l4ObjectExported && typeof Level4.NationTreasuryVault.allocateBudget === "function";
+  const handleL4Allocate = (amount: number) => {
+    if (l4MethodExported) {
+      Level4.NationTreasuryVault.allocateBudget(amount);
+      setLvl4Reserves(Level4.NationTreasuryVault.reserves);
     }
   };
-  const m3Passed = m3MethodExported && m3Reserves > 500;
+  const l4Passed = l4MethodExported && lvl4Reserves !== 1000;
+  const l4StatusString = l4ObjectExported && typeof Level4.NationTreasuryVault.getVaultStatus === "function" ? Level4.NationTreasuryVault.getVaultStatus() : "";
 
-  // Module 4
-  const [m4Result, setM4Result] = useState<{ nation: string; intelScore: number } | null>(null);
-  const [m4Loading, setM4Loading] = useState(false);
-  const [, startM4Transition] = useTransition();
-  const m4FunctionExported = typeof Challenge4.fetchNationIntelligence === "function";
-  const handleM4RunIntel = () => {
-    if (!m4FunctionExported) return;
-    setM4Loading(true);
-    startM4Transition(async () => {
+  // Level 5: Functions, Promises & Async/Await
+  const [lvl5Result, setLvl5Result] = useState<Level5.IntelReport | null>(null);
+  const [lvl5Loading, setLvl5Loading] = useState(false);
+  const [, startLvl5Transition] = useTransition();
+  const l5FunctionExported = typeof Level5.fetchNationIntelReport === "function";
+
+  const handleLvl5RunIntel = () => {
+    if (!l5FunctionExported) return;
+    setLvl5Loading(true);
+    startLvl5Transition(async () => {
       try {
-        const res = await Challenge4.fetchNationIntelligence("Faneria");
-        setM4Result(res);
+        const res = await Level5.fetchNationIntelReport("faneria");
+        setLvl5Result(res);
       } catch (e) {
-        console.error("Module 4 error:", e);
+        console.error("Level 5 error:", e);
       } finally {
-        setM4Loading(false);
+        setLvl5Loading(false);
       }
     });
   };
-  const m4Passed = m4FunctionExported && !!m4Result && m4Result.intelScore > 0;
+  const l5Passed = l5FunctionExported && !!lvl5Result && lvl5Result.intelScore > 0;
 
-  // Progress
-  const completedCount = (m1Passed ? 1 : 0) + (m2Passed ? 1 : 0) + (m3Passed ? 1 : 0) + (m4Passed ? 1 : 0);
-  const progressPercent = (completedCount / 4) * 100;
-  const m2Unlocked = m1Passed;
-  const m3Unlocked = m1Passed && m2Passed;
-  const m4Unlocked = m1Passed && m2Passed && m3Passed;
+  // Level Progression & Locks
+  const completedCount = (l1Passed ? 1 : 0) + (l2Passed ? 1 : 0) + (l3Passed ? 1 : 0) + (l4Passed ? 1 : 0) + (l5Passed ? 1 : 0);
+  const progressPercent = (completedCount / 5) * 100;
+  const l2Unlocked = l1Passed;
+  const l3Unlocked = l1Passed && l2Passed;
+  const l4Unlocked = l1Passed && l2Passed && l3Passed;
+  const l5Unlocked = l1Passed && l2Passed && l3Passed && l4Passed;
   const [showHint, setShowHint] = useState(false);
 
   return (
     <div className="relative min-h-screen bg-background p-6 text-foreground md:p-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        {/* Header Block (No Sparkles Icon) */}
+        {/* Header Block */}
         <div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-5 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
               Labs Sandbox
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, design materials, and IDE challenges.
+              A premium, Facet-compliant playground to test simulation logic, tRPC endpoints, design materials, and CS intro quizzes.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs bg-card border border-border/60 rounded-full px-3.5 py-1.5 text-muted-foreground self-start md:self-auto shadow-sm">
@@ -187,9 +204,7 @@ export default function SandboxPage() {
 
         {/* Tab Content Area */}
         <div className="mt-4">
-          {/* ==================================================== */}
-          {/* TAB 1: SIMULATION CONTROLS */}
-          {/* ==================================================== */}
+          {/* TAB 1: SIMULATION */}
           {activeTab === "sim" && (
             <div className="grid gap-6 md:grid-cols-3">
               <FacetContainer
@@ -202,7 +217,6 @@ export default function SandboxPage() {
                   <span className="text-xs text-muted-foreground font-mono">Client State Hooks</span>
                 </div>
                 <div className="space-y-5">
-                  {/* Tax Rate Slider */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Income Tax Rate</span>
@@ -218,7 +232,6 @@ export default function SandboxPage() {
                     />
                   </div>
 
-                  {/* Defense Spending Slider */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Defense Allocation</span>
@@ -234,7 +247,6 @@ export default function SandboxPage() {
                     />
                   </div>
 
-                  {/* Education Spending Slider */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Education & Infrastructure</span>
@@ -275,9 +287,7 @@ export default function SandboxPage() {
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 2: tRPC QUERY CHECK */}
-          {/* ==================================================== */}
+          {/* TAB 2: tRPC QUERY */}
           {activeTab === "trpc" && (
             <FacetContainer
               variant="economy"
@@ -317,9 +327,7 @@ export default function SandboxPage() {
             </FacetContainer>
           )}
 
-          {/* ==================================================== */}
           {/* TAB 3: DESIGN PHYSICS */}
-          {/* ==================================================== */}
           {activeTab === "design" && (
             <div className="space-y-6">
               <FacetContainer
@@ -380,19 +388,17 @@ export default function SandboxPage() {
             </div>
           )}
 
-          {/* ==================================================== */}
-          {/* TAB 4: IDE QUIZZES & CHALLENGES */}
-          {/* ==================================================== */}
+          {/* TAB 4: 5-LEVEL CS INTRO QUIZ */}
           {activeTab === "quiz" && (
             <div className="space-y-6">
-              {/* Gamified Progress Bar Header */}
+              {/* Gamified Header */}
               <div className="flex flex-col gap-3 bg-card border border-border/60 p-4 rounded-2xl shadow-sm md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-amber-500" /> Kistan's IDE Challenge System
+                    <Trophy className="h-5 w-5 text-amber-500" /> Kistan's 5-Level CS/JS/TS Fundamentals Track
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Edit challenge files in <code className="text-primary font-mono">src/app/labs/sandbox/challenges/</code> to unlock modules!
+                    Edit level files in <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level*.ts</code> to unlock levels!
                   </p>
                 </div>
 
@@ -400,7 +406,7 @@ export default function SandboxPage() {
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between text-xs font-mono font-semibold">
                       <span className="text-muted-foreground">Progress</span>
-                      <span className="text-primary">{completedCount} / 4 Done</span>
+                      <span className="text-primary">{completedCount} / 5 Levels</span>
                     </div>
                     <div className="w-full bg-accent/40 h-2 rounded-full overflow-hidden">
                       <div
@@ -412,86 +418,83 @@ export default function SandboxPage() {
                 </div>
               </div>
 
-              {/* Sub-tabs inside Quiz mode */}
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 bg-card border border-border/60 p-1.5 rounded-2xl shadow-sm">
+              {/* Sub-tabs for Levels 1–5 */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 bg-card border border-border/60 p-1.5 rounded-2xl shadow-sm">
                 <button
-                  onClick={() => setActiveQuizTab("mod1")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-                    activeQuizTab === "mod1"
+                  onClick={() => setActiveLevel("lvl1")}
+                  className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeLevel === "lvl1"
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                   }`}
                 >
-                  {m1Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Sliders className="h-4 w-4" />}
-                  Mod 1: Calculator
+                  {l1Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Code2 className="h-4 w-4" />}
+                  Lvl 1: Variables
                 </button>
 
                 <button
-                  onClick={() => m2Unlocked && setActiveQuizTab("mod2")}
-                  disabled={!m2Unlocked}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-                    activeQuizTab === "mod2"
+                  onClick={() => l2Unlocked && setActiveLevel("lvl2")}
+                  disabled={!l2Unlocked}
+                  className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeLevel === "lvl2"
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : m2Unlocked
+                      : l2Unlocked
                       ? "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                       : "opacity-40 cursor-not-allowed text-muted-foreground"
                   }`}
                 >
-                  {!m2Unlocked ? (
-                    <Lock className="h-3.5 w-3.5" />
-                  ) : m2Passed ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Layers className="h-4 w-4" />
-                  )}
-                  Mod 2: Object Grid
+                  {!l2Unlocked ? <Lock className="h-3.5 w-3.5" /> : l2Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Sliders className="h-4 w-4" />}
+                  Lvl 2: Logic
                 </button>
 
                 <button
-                  onClick={() => m3Unlocked && setActiveQuizTab("mod3")}
-                  disabled={!m3Unlocked}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-                    activeQuizTab === "mod3"
+                  onClick={() => l3Unlocked && setActiveLevel("lvl3")}
+                  disabled={!l3Unlocked}
+                  className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeLevel === "lvl3"
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : m3Unlocked
+                      : l3Unlocked
                       ? "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                       : "opacity-40 cursor-not-allowed text-muted-foreground"
                   }`}
                 >
-                  {!m3Unlocked ? (
-                    <Lock className="h-3.5 w-3.5" />
-                  ) : m3Passed ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Zap className="h-4 w-4" />
-                  )}
-                  Mod 3: Methods & 'this'
+                  {!l3Unlocked ? <Lock className="h-3.5 w-3.5" /> : l3Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Layers className="h-4 w-4" />}
+                  Lvl 3: Arrays
                 </button>
 
                 <button
-                  onClick={() => m4Unlocked && setActiveQuizTab("mod4")}
-                  disabled={!m4Unlocked}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
-                    activeQuizTab === "mod4"
+                  onClick={() => l4Unlocked && setActiveLevel("lvl4")}
+                  disabled={!l4Unlocked}
+                  className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeLevel === "lvl4"
                       ? "bg-primary text-primary-foreground shadow-md"
-                      : m4Unlocked
+                      : l4Unlocked
                       ? "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                       : "opacity-40 cursor-not-allowed text-muted-foreground"
                   }`}
                 >
-                  {!m4Unlocked ? (
-                    <Lock className="h-3.5 w-3.5" />
-                  ) : m4Passed ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Database className="h-4 w-4" />
-                  )}
-                  Mod 4: Async Pipelines
+                  {!l4Unlocked ? <Lock className="h-3.5 w-3.5" /> : l4Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Briefcase className="h-4 w-4" />}
+                  Lvl 4: Objects
+                </button>
+
+                <button
+                  onClick={() => l5Unlocked && setActiveLevel("lvl5")}
+                  disabled={!l5Unlocked}
+                  className={`flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeLevel === "lvl5"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : l5Unlocked
+                      ? "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                      : "opacity-40 cursor-not-allowed text-muted-foreground"
+                  }`}
+                >
+                  {!l5Unlocked ? <Lock className="h-3.5 w-3.5" /> : l5Passed ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Database className="h-4 w-4" />}
+                  Lvl 5: Async
                 </button>
               </div>
 
-              {/* Quiz Module 1 */}
-              {activeQuizTab === "mod1" && (
+              {/* LEVEL 1: VARIABLES */}
+              {activeLevel === "lvl1" && (
                 <div className="grid gap-6 md:grid-cols-3">
                   <FacetContainer
                     variant="builder"
@@ -501,11 +504,11 @@ export default function SandboxPage() {
                     <div className="flex items-center justify-between border-b border-border/40 pb-4">
                       <div>
                         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                          <Sliders className="h-5 w-5 text-primary" />
-                          Module 1: The Reactive State Calculator
+                          <Code2 className="h-5 w-5 text-primary" />
+                          Level 1: Variables & Data Formatting
                         </h2>
                         <p className="text-xs text-muted-foreground mt-1">
-                          File to edit: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/challenge1_calculator.ts</code>
+                          File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level1_variables.ts</code>
                         </p>
                       </div>
                       <button
@@ -517,67 +520,53 @@ export default function SandboxPage() {
                       </button>
                     </div>
 
-                    {/* Test Assertions */}
                     <div className="space-y-2">
                       <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Test Assertions</h3>
                       <div className="grid gap-2 sm:grid-cols-2">
                         <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                          m1Exported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                          l1Exported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                         }`}>
-                          {m1Exported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                          <span>Exported <code>calculateTaxYield</code> function</span>
+                          {l1Exported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                          <span>Exported <code>formatNationHeader</code> function</span>
                         </div>
-
                         <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                          m1Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                          l1Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                         }`}>
-                          {m1Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                          <span>Returns formula <code>(taxRate * population * 10)</code></span>
+                          {l1Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                          <span>Returns <code>"Nation: Faneria | Population: 40M"</code></span>
                         </div>
                       </div>
                     </div>
 
                     {showHint && (
                       <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-300 text-xs space-y-1.5">
-                        <strong>💡 Hint for Module 1:</strong>
-                        <p>Open <code>challenge1_calculator.ts</code> in your IDE and update the function return line to:</p>
+                        <strong>💡 Hint for Level 1:</strong>
+                        <p>Open <code>level1_variables.ts</code> and return a template literal:</p>
                         <code className="block bg-background/80 p-2 rounded border border-amber-500/20 font-mono text-primary">
-                          return taxRate * population * 10;
+                          return `Nation: ${`name`} | Population: ${`populationMillions`}M`;
                         </code>
                       </div>
                     )}
 
-                    {/* Live Output Canvas */}
                     <div className="space-y-4 border-t border-border/40 pt-5">
-                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live UI Preview Canvas</h3>
-                      <div className="space-y-4 bg-background/50 border border-border/40 p-4 rounded-xl">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Tax Rate</span>
-                            <span className="font-bold text-primary">{m1TaxRate}%</span>
-                          </div>
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Interactive Input Canvas</h3>
+                      <div className="grid gap-4 sm:grid-cols-2 bg-background/50 border border-border/40 p-4 rounded-xl">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Nation Name</label>
                           <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={m1TaxRate}
-                            onChange={(e) => setM1TaxRate(Number(e.target.value))}
-                            className="w-full h-1.5 bg-accent/40 rounded-lg appearance-none cursor-pointer accent-primary"
+                            type="text"
+                            value={lvl1Name}
+                            onChange={(e) => setLvl1Name(e.target.value)}
+                            className="w-full bg-card border border-border/60 rounded-lg px-3 py-1.5 text-xs text-foreground"
                           />
                         </div>
-
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Population</span>
-                            <span className="font-bold text-primary">{m1Population} Million</span>
-                          </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Population (M)</label>
                           <input
-                            type="range"
-                            min="1"
-                            max="200"
-                            value={m1Population}
-                            onChange={(e) => setM1Population(Number(e.target.value))}
-                            className="w-full h-1.5 bg-accent/40 rounded-lg appearance-none cursor-pointer accent-primary"
+                            type="number"
+                            value={lvl1Pop}
+                            onChange={(e) => setLvl1Pop(Number(e.target.value))}
+                            className="w-full bg-card border border-border/60 rounded-lg px-3 py-1.5 text-xs text-foreground"
                           />
                         </div>
                       </div>
@@ -590,18 +579,15 @@ export default function SandboxPage() {
                     className="bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl p-6 flex flex-col justify-between text-center relative overflow-hidden"
                   >
                     <div className="space-y-3">
-                      <h3 className="text-xs uppercase tracking-wider text-primary font-semibold">Calculated Revenue Output</h3>
-                      <div className="text-5xl font-black text-foreground py-4 transition-all duration-300">
-                        ${m1CalculatedYield}M
+                      <h3 className="text-xs uppercase tracking-wider text-primary font-semibold font-mono">LIVE FUNCTION OUTPUT</h3>
+                      <div className="p-4 bg-background/80 border border-border/60 rounded-xl font-mono text-sm text-primary font-semibold py-8">
+                        {l1LiveHeader || "Function returned empty string"}
                       </div>
-                      <p className="text-muted-foreground text-xs">
-                        Rendered live by executing <code>calculateTaxYield({m1TaxRate}, {m1Population})</code>
-                      </p>
                     </div>
 
-                    {m1Passed && (
+                    {l1Passed && (
                       <div className="mt-6 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-emerald-400 text-xs font-semibold flex items-center justify-center gap-2">
-                        <span>Module 1 Passed! Module 2 Unlocked!</span>
+                        <span>Level 1 Passed! Level 2 Unlocked!</span>
                         <ChevronRight className="h-4 w-4" />
                       </div>
                     )}
@@ -609,8 +595,85 @@ export default function SandboxPage() {
                 </div>
               )}
 
-              {/* Quiz Module 2 */}
-              {activeQuizTab === "mod2" && (
+              {/* LEVEL 2: CONDITIONALS */}
+              {activeLevel === "lvl2" && (
+                <div className="grid gap-6 md:grid-cols-3">
+                  <FacetContainer
+                    variant="builder"
+                    depth={2}
+                    className="md:col-span-2 bg-card/60 border border-border/60 rounded-2xl p-6 space-y-6"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                          <Sliders className="h-5 w-5 text-primary" />
+                          Level 2: Economic Tier Classifier (Conditionals)
+                        </h2>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level2_conditionals.ts</code>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                        l2Exported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      }`}>
+                        {l2Exported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                        <span>Exported <code>getEconomicTier</code> function</span>
+                      </div>
+                      <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                        l2Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      }`}>
+                        {l2Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                        <span>Passes Advanced (≥40k), Developing (≥15k), Emerging tests</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 border-t border-border/40 pt-5">
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live GDP Per Capita Slider</h3>
+                      <div className="space-y-2 bg-background/50 border border-border/40 p-4 rounded-xl">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-muted-foreground">GDP Per Capita</span>
+                          <span className="text-primary">${lvl2Gdp.toLocaleString()}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="5000"
+                          max="80000"
+                          step="1000"
+                          value={lvl2Gdp}
+                          onChange={(e) => setLvl2Gdp(Number(e.target.value))}
+                          className="w-full h-1.5 bg-accent/40 rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                      </div>
+                    </div>
+                  </FacetContainer>
+
+                  <FacetContainer
+                    variant="overview"
+                    depth={3}
+                    className="bg-card/80 backdrop-blur-xl border border-border/80 rounded-2xl p-6 flex flex-col justify-between text-center relative overflow-hidden"
+                  >
+                    <div className="space-y-3">
+                      <h3 className="text-xs uppercase tracking-wider text-primary font-semibold">ECONOMIC TIER RESULT</h3>
+                      <div className="text-3xl font-black text-foreground py-6">
+                        {l2LiveTier || "Empty"}
+                      </div>
+                    </div>
+
+                    {l2Passed && (
+                      <div className="mt-6 bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl text-emerald-400 text-xs font-semibold flex items-center justify-center gap-2">
+                        <span>Level 2 Passed! Level 3 Unlocked!</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </div>
+                    )}
+                  </FacetContainer>
+                </div>
+              )}
+
+              {/* LEVEL 3: ARRAYS */}
+              {activeLevel === "lvl3" && (
                 <FacetContainer
                   variant="builder"
                   depth={2}
@@ -620,60 +683,63 @@ export default function SandboxPage() {
                     <div>
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
-                        Module 2: Object Array Grid Renderer (.map())
+                        Level 3: Alliance Stability Filter (.filter())
                       </h2>
                       <p className="text-xs text-muted-foreground mt-1">
-                        File to edit: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/challenge2_grid.ts</code>
+                        File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level3_arrays.ts</code>
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m2ArrayExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l3ArrayExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m2ArrayExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Exported <code>nations</code> array with ≥3 objects</span>
+                      {l3ArrayExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Exported <code>allNations</code> array (≥3 items)</span>
                     </div>
-
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m2FormatExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l3Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m2FormatExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Exported <code>formatNationCard</code> helper function</span>
+                      {l3Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span><code>filterHighStabilityNations</code> filters array correctly</span>
                     </div>
                   </div>
 
                   <div className="space-y-4 border-t border-border/40 pt-5">
-                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Mapped Facet Cards Canvas</h3>
-                    {!m2Passed ? (
-                      <div className="p-8 text-center bg-background/50 border border-border/40 rounded-xl text-muted-foreground text-sm">
-                        Complete the TODOs in <code>challenge2_grid.ts</code> to render the live object grid!
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Filtered Nations Canvas</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>Min Stability:</span>
+                        <input
+                          type="number"
+                          value={lvl3MinStab}
+                          onChange={(e) => setLvl3MinStab(Number(e.target.value))}
+                          className="w-16 bg-card border border-border/60 rounded px-2 py-1 text-xs text-foreground"
+                        />
                       </div>
-                    ) : (
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        {Challenge2.nations.map((nation, idx) => (
-                          <FacetContainer
-                            key={idx}
-                            variant="overview"
-                            depth={2}
-                            className="bg-card/60 border border-border/60 p-4 rounded-xl space-y-2 hover:border-primary/40 transition-colors"
-                          >
-                            <span className="text-xs text-primary font-mono font-semibold">NATION #{idx + 1}</span>
-                            <h4 className="text-lg font-bold text-foreground">{nation.name}</h4>
-                            <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
-                              {Challenge2.formatNationCard(nation)}
-                            </div>
-                          </FacetContainer>
-                        ))}
-                      </div>
-                    )}
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      {l3FilteredNations.map((nation, idx) => (
+                        <FacetContainer
+                          key={idx}
+                          variant="overview"
+                          depth={2}
+                          className="bg-card/60 border border-border/60 p-4 rounded-xl space-y-1.5"
+                        >
+                          <span className="text-xs text-primary font-semibold">{nation.name}</span>
+                          <div className="text-xs text-muted-foreground">GDP: ${nation.gdp}B</div>
+                          <div className="text-xs text-emerald-400 font-medium">Stability: {nation.stability}%</div>
+                        </FacetContainer>
+                      ))}
+                    </div>
                   </div>
                 </FacetContainer>
               )}
 
-              {/* Quiz Module 3 */}
-              {activeQuizTab === "mod3" && (
+              {/* LEVEL 4: OBJECTS & METHODS */}
+              {activeLevel === "lvl4" && (
                 <FacetContainer
                   variant="builder"
                   depth={2}
@@ -682,44 +748,44 @@ export default function SandboxPage() {
                   <div className="flex items-center justify-between border-b border-border/40 pb-4">
                     <div>
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" />
-                        Module 3: Object Methods & 'this' Binding
+                        <Briefcase className="h-5 w-5 text-primary" />
+                        Level 4: Treasury Vault Manager (Objects & 'this')
                       </h2>
                       <p className="text-xs text-muted-foreground mt-1">
-                        File to edit: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/challenge3_methods.ts</code>
+                        File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level4_objects.ts</code>
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m3ObjectExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l4ObjectExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m3ObjectExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Exported <code>NationTreasury</code> object</span>
+                      {l4ObjectExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Exported <code>NationTreasuryVault</code> object</span>
                     </div>
-
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m3MethodExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l4Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m3MethodExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span><code>addReserves(amount)</code> mutates internal state via <code>this</code></span>
+                      {l4Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span><code>allocateBudget(amount)</code> mutates reserves via <code>this</code></span>
                     </div>
                   </div>
 
                   <div className="space-y-4 border-t border-border/40 pt-5">
-                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Treasury State Inspector</h3>
+                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Vault State Inspector</h3>
                     <div className="bg-background/50 border border-border/40 p-6 rounded-xl space-y-4 text-center">
-                      <span className="text-xs text-muted-foreground font-mono">CURRENT TREASURY RESERVES</span>
-                      <div className="text-4xl font-black text-emerald-400">${m3Reserves}M</div>
+                      <span className="text-xs text-muted-foreground font-mono">CURRENT VAULT RESERVES</span>
+                      <div className="text-4xl font-black text-emerald-400">${lvl4Reserves}M</div>
+                      <p className="text-xs text-muted-foreground font-mono">{l4StatusString}</p>
 
                       <div className="flex justify-center gap-3 pt-2">
                         <button
-                          onClick={() => handleM3AddReserves(100)}
-                          disabled={!m3MethodExported}
+                          onClick={() => handleL4Allocate(100)}
+                          disabled={!l4MethodExported}
                           className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-semibold transition-all disabled:opacity-40"
                         >
-                          Call NationTreasury.addReserves(100)
+                          Call NationTreasuryVault.allocateBudget(100)
                         </button>
                       </div>
                     </div>
@@ -727,8 +793,8 @@ export default function SandboxPage() {
                 </FacetContainer>
               )}
 
-              {/* Quiz Module 4 */}
-              {activeQuizTab === "mod4" && (
+              {/* LEVEL 5: ASYNC */}
+              {activeLevel === "lvl5" && (
                 <FacetContainer
                   variant="builder"
                   depth={2}
@@ -738,47 +804,47 @@ export default function SandboxPage() {
                     <div>
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Database className="h-5 w-5 text-primary" />
-                        Module 4: Async Pipelines & Promises
+                        Level 5: Async Intelligence Dispatcher (Promises)
                       </h2>
                       <p className="text-xs text-muted-foreground mt-1">
-                        File to edit: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/challenge4_async.ts</code>
+                        File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level5_async.ts</code>
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m4FunctionExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l5FunctionExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m4FunctionExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Exported <code>async fetchNationIntelligence</code> function</span>
+                      {l5FunctionExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Exported <code>async fetchNationIntelReport</code> function</span>
                     </div>
-
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      m4Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l5Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {m4Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Promise resolves to <code>{`{ nation, intelScore }`}</code></span>
+                      {l5Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Promise resolves to IntelReport object</span>
                     </div>
                   </div>
 
                   <div className="space-y-4 border-t border-border/40 pt-5">
-                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Async Promise Dispatcher</h3>
+                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Async Intel Dispatcher</h3>
                     <div className="bg-background/50 border border-border/40 p-6 rounded-xl space-y-4 text-center">
                       <button
-                        onClick={handleM4RunIntel}
-                        disabled={m4Loading || !m4FunctionExported}
+                        onClick={handleLvl5RunIntel}
+                        disabled={lvl5Loading || !l5FunctionExported}
                         className="px-5 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 mx-auto disabled:opacity-40"
                       >
-                        {m4Loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                        Execute await fetchNationIntelligence("Faneria")
+                        {lvl5Loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                        Execute await fetchNationIntelReport("faneria")
                       </button>
 
-                      {m4Result && (
+                      {lvl5Result && (
                         <div className="bg-card border border-border/60 p-4 rounded-xl max-w-sm mx-auto space-y-1 text-left">
                           <span className="text-xs text-primary font-mono font-semibold">PROMISE FULFILLED</span>
-                          <div className="text-sm font-bold text-foreground">Nation: {m4Result.nation}</div>
-                          <div className="text-xs text-emerald-400 font-semibold">Intel Score: {m4Result.intelScore} / 100</div>
+                          <div className="text-sm font-bold text-foreground">Nation: {lvl5Result.nation}</div>
+                          <div className="text-xs text-emerald-400 font-semibold">Intel Score: {lvl5Result.intelScore} / 100</div>
+                          <div className="text-xs text-muted-foreground">Status: {lvl5Result.status}</div>
                         </div>
                       )}
                     </div>
