@@ -17,6 +17,7 @@ import { simplify } from "@turf/simplify";
 import { bbox } from "@turf/bbox";
 import { centroid } from "@turf/centroid";
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
+import { booleanIntersects } from "@turf/boolean-intersects";
 import { area } from "@turf/area";
 import { buffer } from "@turf/buffer";
 import { bezierSpline } from "@turf/bezier-spline";
@@ -372,6 +373,17 @@ interface UseMapEditorOptions {
   worldMapLayers?: import("~/components/maps/core/IxWorldMap").MapLayerData[];
 }
 
+// Plan 119 §2.2 — incremental cache patch helpers. Replace/reinsert a single
+// feature in an array by id so one edit does not trigger a full refetch.
+function upsertFeatureItem<T extends { id: string }>(arr: T[], item: T): T[] {
+  const idx = arr.findIndex((x) => x.id === item.id);
+  if (idx === -1) return [...arr, item];
+  return arr.map((x, i) => (i === idx ? item : x));
+}
+function removeFeatureItem<T extends { id: string }>(arr: T[], id: string): T[] {
+  return arr.filter((x) => x.id !== id);
+}
+
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
   const worldMapLayers = options?.worldMapLayers;
   const utils = api.useUtils();
@@ -392,6 +404,51 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     utils.transport.getAllRoutesGeoJSON.invalidate();
     utils.transport.getTransportStats.invalidate();
     utils.countryGeo.getCountryGeoBundle.invalidate();
+  }, [utils]);
+
+  // TEMP (Plan 119 §1.3): patch-vs-refetch measurement — remove before merging.
+  const mapEditorMeasRef = useRef({ patches: 0, refetches: 0, logged: false });
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const m = mapEditorMeasRef.current;
+      if (!m.logged) {
+        m.logged = true;
+        console.log(`[useMapEditor:meas] patches=${m.patches} refetches=${m.refetches}`);
+      }
+    }, 60_000);
+    return () => clearTimeout(t);
+  }, []);
+
+  /** Plan 119 §2.2 — patch the editor's feature caches in place so a single-feature
+   *  edit does NOT trigger a full getCountryFeatures refetch. getCountryGeoBundle is
+   *  patched too (not invalidated) to stay consistent. */
+  const patchCountryFeatures = useCallback(
+    (updater: (old: any) => any) => {
+      if (!countryId) return;
+      mapEditorMeasRef.current.patches++;
+      utils.geoCore.getCountryFeatures.setData({ countryId }, (old) =>
+        old ? updater(old) : old
+      );
+      utils.countryGeo.getCountryGeoBundle.setData({ countryId }, (old) =>
+        old ? updater(old) : old
+      );
+    },
+    [countryId, utils]
+  );
+
+  /** Plan 119 §2.2 — invalidate the "other view" caches WITHOUT refetching
+   *  getCountryFeatures (it is patched incrementally instead). */
+  const invalidateMapViews = useCallback(() => {
+    utils.geoCore.getMapBundle.invalidate();
+    utils.geoCore.getWorldMap.invalidate();
+    utils.geoFeatures.getAllStoryPins.invalidate();
+    utils.geoFeatures.getAllMapLabels.invalidate();
+    utils.geoCore.getCapitalCities.invalidate();
+    utils.geoCore.getCountryGeometry.invalidate();
+    utils.geoCore.getCountryLinkage.invalidate();
+    utils.transport.getCountryRoutes.invalidate();
+    utils.transport.getAllRoutesGeoJSON.invalidate();
+    utils.transport.getTransportStats.invalidate();
   }, [utils]);
 
   const [mode, setModeRaw] = useState<EditorMode>("view");
@@ -446,6 +503,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   // ── Ruler & Lasso State ──
   const [rulerPoints, setRulerPoints] = useState<[number, number][]>([]);
   const [lassoGeometry, setLassoGeometry] = useState<object | null>(null);
+  const [lassoTool, setLassoTool] = useState<"freehand" | "rect">("freehand");
 
   // ── Multi-Select ──
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -1069,6 +1127,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   // Debounced refetch — prevents cascading refetches from undo/redo
   const pendingRefetchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debouncedRefetch = useCallback(() => {
+    mapEditorMeasRef.current.refetches++;
     if (pendingRefetchRef.current) clearTimeout(pendingRefetchRef.current);
     pendingRefetchRef.current = setTimeout(() => {
       refetchFeatures();
@@ -1079,41 +1138,66 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // Mutations
   const createCity = api.countryGeo.upsertCity.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          cities: upsertFeatureItem(old.cities ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       continuePlacing("add-city");
     },
   });
 
   const updateCity = api.countryGeo.upsertCity.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          cities: upsertFeatureItem(old.cities ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       resetForm();
     },
   });
 
   const deleteCity = api.geoFeatures.deleteCity.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          cities: removeFeatureItem(old.cities ?? [], saved.id),
+        }));
+      }
+      invalidateMapViews();
       setSelectedFeature(null);
     },
   });
 
   const createSubdivision = api.countryGeo.upsertSubdivision.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          subdivisions: upsertFeatureItem(old.subdivisions ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       continuePlacing("add-subdivision");
     },
   });
 
   const updateSubdivision = api.countryGeo.upsertSubdivision.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          subdivisions: upsertFeatureItem(old.subdivisions ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       resetForm();
     },
   });
@@ -1165,33 +1249,53 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   });
 
   const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          subdivisions: removeFeatureItem(old.subdivisions ?? [], saved.id),
+        }));
+      }
+      invalidateMapViews();
       setSelectedFeature(null);
     },
   });
 
   const createPOI = api.countryGeo.upsertPoi.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          pois: upsertFeatureItem(old.pois ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       continuePlacing("add-poi");
     },
   });
 
   const updatePOI = api.countryGeo.upsertPoi.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          pois: upsertFeatureItem(old.pois ?? [], saved),
+        }));
+      }
+      invalidateMapViews();
       resetForm();
     },
   });
 
   const deletePOI = api.geoFeatures.deletePOI.useMutation({
-    onSuccess: () => {
-      invalidateAllMapData();
-      debouncedRefetch();
+    onSuccess: (saved) => {
+      if (saved?.id) {
+        patchCountryFeatures((old) => ({
+          ...old,
+          pois: removeFeatureItem(old.pois ?? [], saved.id),
+        }));
+      }
+      invalidateMapViews();
       setSelectedFeature(null);
     },
   });
@@ -3762,8 +3866,57 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setRulerPoints([]);
   }, []);
 
+  /** Shared geometry selection: points contained by `geometry`, polygons intersecting it (Plan 120 P4). */
+  const selectFeaturesInGeometry = useCallback(
+    (geometry: any, mode: "replace" | "add" | "subtract" = "replace") => {
+      const selectionFeature = {
+        type: "Feature" as const,
+        geometry,
+        properties: {},
+      };
+
+      const hits = new Set<string>();
+      for (const feature of allFeatures) {
+        if (feature.coordinates) {
+          const pt = point(feature.coordinates);
+          if (booleanPointInPolygon(pt, selectionFeature)) {
+            hits.add(feature.id);
+          }
+        } else if (feature.geometry) {
+          try {
+            if (
+              feature.geometry.type === "Polygon" ||
+              feature.geometry.type === "MultiPolygon"
+            ) {
+              if (booleanIntersects(selectionFeature, feature.geometry as any)) {
+                hits.add(feature.id);
+              }
+            }
+          } catch {
+            // Ignore malformed geometry
+          }
+        }
+      }
+
+      setSelectedIds((prev) => {
+        if (mode === "add") {
+          const next = new Set(prev);
+          for (const id of hits) next.add(id);
+          return next;
+        }
+        if (mode === "subtract") {
+          const next = new Set(prev);
+          for (const id of hits) next.delete(id);
+          return next;
+        }
+        return hits;
+      });
+    },
+    [allFeatures]
+  );
+
   const applyLassoSelection = useCallback(
-    (polygonCoords: [number, number][]) => {
+    (polygonCoords: [number, number][], mode: "replace" | "add" | "subtract" = "replace") => {
       if (polygonCoords.length < 3) return;
       const closedCoords = [...polygonCoords];
       if (
@@ -3773,27 +3926,36 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         closedCoords.push(closedCoords[0]);
       }
 
-      const lassoPoly = {
-        type: "Feature" as const,
-        geometry: {
-          type: "Polygon" as const,
+      selectFeaturesInGeometry(
+        {
+          type: "Polygon",
           coordinates: [closedCoords],
         },
-        properties: {},
-      };
-
-      const newSelectedIds = new Set<string>();
-      for (const feature of allFeatures) {
-        if (feature.coordinates) {
-          const pt = point(feature.coordinates);
-          if (booleanPointInPolygon(pt, lassoPoly)) {
-            newSelectedIds.add(feature.id);
-          }
-        }
-      }
-      setSelectedIds(newSelectedIds);
+        mode
+      );
     },
-    [allFeatures]
+    [selectFeaturesInGeometry]
+  );
+
+  /** Rectangular marquee selection from screen-space corners (Plan 120 P3). */
+  const applyRectSelection = useCallback(
+    (bounds: { west: number; south: number; east: number; north: number }, mode: "replace" | "add" | "subtract" = "replace") => {
+      const ring: [number, number][] = [
+        [bounds.west, bounds.north],
+        [bounds.east, bounds.north],
+        [bounds.east, bounds.south],
+        [bounds.west, bounds.south],
+        [bounds.west, bounds.north],
+      ];
+      selectFeaturesInGeometry(
+        {
+          type: "Polygon",
+          coordinates: [ring],
+        },
+        mode
+      );
+    },
+    [selectFeaturesInGeometry]
   );
 
   const applyPaintFill = useCallback(
@@ -4039,10 +4201,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     rulerPoints,
     setRulerPoints,
     lassoGeometry,
+    setLassoTool,
+    lassoTool,
     setLassoGeometry,
     addRulerPoint,
     clearRuler,
     applyLassoSelection,
+    applyRectSelection,
     applyPaintFill,
 
     // Eyedropper, Magic Wand & History Jump

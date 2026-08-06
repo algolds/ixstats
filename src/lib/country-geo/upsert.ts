@@ -333,7 +333,6 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
       data.submittedBy || "owner"
     );
   }
-
   await syncGeographicDemographics(db, countryId);
 
   // Refresh returned subdivision object with database state

@@ -153,6 +153,24 @@ MapLibre GL JS renders 7 primary vector GeoJSON layers. The layer stacking order
 | `FeaturePropertyPanel.tsx` | Contextual property drawer (~700 lines). Feature editing forms + **Province Painter (B)** map modes (Population, Development, Resources, Wiki Coverage). |
 | `BorderConformanceModal.tsx` | Spatial conformance modal (~100 lines). Validates province import shapes against national border constraints. |
 
+### Editor Utils (`src/components/maps/editor/utils/`)
+
+| File | Purpose |
+|------|---------|
+| `hit-test.ts` | **Deterministic distance-based hit-testing (Plan 120).** Two-phase query: exact-point first (closest wins, layer-priority tie-break), polygon containment second, grab-assist (±8px points / ±6px labels) over empty space only. Shared by hover and click. |
+| `transientStore.ts` | **Transient pointer state (Plan 106/112).** `useSyncExternalStore` store for high-frequency mousemove/cursor/hover data, eliminating React re-render cascades across sidebar panels. |
+| `geoJsonPatcher.ts` | **MapLibre source diffing (Plan 107).** `GeoJSONPatchEngine` with targeted `UPDATE_FEATURE`/`ADD_FEATURE`/`REMOVE_FEATURE` patches + `setFeatureState` GPU toggles, replacing full-collection GeoJSON stringification. |
+
+### Editor Selection Model (Plan 120)
+
+- **Nearest-hit wins**: hover and click share `hitTestFeatures`; a point dot beats a polygon fill; overlapping points break ties by layer priority (capital > city > POI > story-pin > map-label).
+- **Click vs drag separated**: mousedown→mouseup distance >4px is a drag; post-drag clicks never select/insert/deselect.
+- **Rectangle marquee**: Shift+drag in Select mode (Alt = subtract) or the Rect sub-tool of Lasso Select draws a rubber-band rect; both reuse the `editor-lasso` geometry preview.
+- **Polygon-aware selection**: `selectFeaturesInGeometry` in `useMapEditor.ts` selects points by point-in-polygon and subdivisions by Turf `booleanIntersects`, with replace/add/subtract modes.
+- **Locked layers unselectable**: `lockedLayers` plumbed from the LayerPanel exclude locked feature layers from selection and show a `not-allowed` cursor.
+- **On-map visuals**: `editor-subdivisions-selected` (distinct stroke) and `editor-points-selected` (halo circle) layers driven from `selectedFeature.id` / `selectedIds`.
+- **Multi-select parity**: Shift+click adds, Alt+click removes — matching the sidebar feature list.
+
 ---
 
 ## Pluggable Overlay Framework (`OVERLAY_REGISTRY`)
@@ -274,7 +292,9 @@ Key procedures powering map operations:
 - `geo.getWorldMap`: Public endpoint returning compressed, antimeridian-split GeoJSON layers.
 - `geo.getCountryGeometry`: Returns country boundary GeoJSON, visual centroid, and bounding box.
 - `geo.getPointInfo`: Spatial lookup returning elevation zone, climate biome, and country at `[lng, lat]`.
-- `geo.getCountryFeatures`: Fetches cities, subdivisions, POIs, and story pins for a country.
+- `geo.getCountryFeatures`: Fetches cities, subdivisions, POIs, and story pins for a country. Subdivision geometry is **truncated to 6dp (~0.11 m) at the response boundary** (Plan 119) — the DB stores full precision and the editor writes/reads authoritative geometry, shrinking payloads.
 - `geo.searchFeatures`: Full-text search across all geographical features.
 - `geo.submitBorderEdit`: Submits border geometry modifications to the admin review queue.
 - `geo.generateProceduralWorld`: Triggers UPG v2 engine generation for new realm creation.
+
+**Cache invalidation (Plan 119)**: Geo feature mutation routers (cities, POIs, story pins, map labels, subdivisions) share the consolidated key constants `GEO_FEATURE_INVALIDATE_KEYS` (+ `_WITH_STORY_PINS`, `_WITH_MAP_LABELS`) in `src/lib/trpc-cache.ts`, so any write invalidates the full map-bundle cache set (`geoCore.getCountryFeatures`, `getMapBundle`, `getWorldMap`, `getAllMapFeatures`, `countryGeo.getCountryGeoBundle`) plus the type-specific keys.

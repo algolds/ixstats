@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { ActivityGenerator } from "~/lib/activity-generator";
 import {
@@ -271,7 +271,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
         console.error("[geo.createPOI] Failed to create activity for POI:", e);
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("poi", input.countryId);
 
       if (poi.category === "resource") {
@@ -345,7 +345,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
         },
       });
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("poi", input.countryId);
 
       if (poi.category === "resource" || updated.category === "resource") {
@@ -379,7 +379,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
       }
 
       await ctx.db.pointOfInterest.delete({ where: { id: input.poiId } });
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("poi", input.countryId);
 
       if (poi.category === "resource") {

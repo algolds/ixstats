@@ -16,7 +16,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { validatePointContainment } from "~/lib/geo-validation";
 
@@ -266,7 +266,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
         },
       });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllMapLabels"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);
       return { id: label.id, text: label.text, status: "approved" as const };
     }),
@@ -331,7 +331,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
         where: { id: input.labelId },
         data: Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== undefined)),
       });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllMapLabels"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);
       return { id: updated.id, text: updated.text };
     }),
@@ -348,7 +348,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
       });
       if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllMapLabels"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);
       return { id: input.labelId, deleted: true };
     }),

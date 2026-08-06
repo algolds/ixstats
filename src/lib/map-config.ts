@@ -101,10 +101,10 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
     label: "Rivers",
     zIndex: 7,
     defaultVisible: true,
-    fillColor: "#0284c7",
+    fillColor: "#5295c4",
     fillOpacity: 1,
-    strokeColor: "#0284c7",
-    strokeWidth: 2.5,
+    strokeColor: "#5295c4",
+    strokeWidth: 1.0,
     type: "line",
   },
   icecaps: {
@@ -175,7 +175,7 @@ export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
       return { type: "mercator" };
     case "dynamic":
     default:
-      return { type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 4, "mercator"] };
+      return { type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 5.5, "mercator"] };
   }
 }
 

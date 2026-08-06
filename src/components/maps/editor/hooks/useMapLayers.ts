@@ -7,6 +7,7 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
+import { geoJSONPatcher } from "../utils/geoJsonPatcher";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseMapLayersProps {
@@ -116,23 +117,58 @@ export function useMapLayers({
           });
 
           if (config.type === "line") {
+            const isRiver = layer.type === "rivers";
             map.addLayer(
               {
                 id: fillLayerId,
                 type: "line",
                 source: sourceId,
                 paint: {
-                  "line-color": config.strokeColor ?? "#7cb5d2",
-                  "line-width": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    0,
-                    config.strokeWidth ?? 1,
-                    6,
-                    (config.strokeWidth ?? 1) * 3,
-                  ] as [string, ...unknown[]],
-                  "line-opacity": layer.visible ? 0.7 : 0,
+                  "line-color": config.strokeColor ?? "#5295c4",
+                  "line-width": isRiver
+                    ? ([
+                        "interpolate",
+                        ["exponential", 1.2],
+                        ["zoom"],
+                        0,
+                        0.4,
+                        2,
+                        0.6,
+                        4,
+                        1.0,
+                        6,
+                        1.8,
+                        9,
+                        3.2,
+                      ] as [string, ...unknown[]])
+                    : ([
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        0,
+                        config.strokeWidth ?? 1,
+                        6,
+                        (config.strokeWidth ?? 1) * 3,
+                      ] as [string, ...unknown[]]),
+                  "line-opacity": layer.visible
+                    ? isRiver
+                      ? ([
+                          "interpolate",
+                          ["linear"],
+                          ["zoom"],
+                          0,
+                          0.25,
+                          2,
+                          0.35,
+                          4,
+                          0.55,
+                          6,
+                          0.75,
+                          8,
+                          0.9,
+                        ] as unknown as number)
+                      : 0.7
+                    : 0,
                 },
                 layout: { "line-cap": "round", "line-join": "round" },
               },
@@ -430,6 +466,7 @@ export function useMapLayers({
       }));
 
     const pointsGeoJson = { type: "FeatureCollection" as const, features: pointFeatures };
+    geoJSONPatcher.cacheSourceFeatures("editor-points", pointFeatures as any);
 
     if (map.getSource("editor-points")) {
       getGeoJSONSource(map, "editor-points")?.setData(pointsGeoJson);
@@ -555,6 +592,19 @@ export function useMapLayers({
           "text-halo-width": 1.5,
         },
       });
+      map.addLayer({
+        id: "editor-points-selected",
+        type: "circle",
+        source: "editor-points",
+        paint: {
+          "circle-radius": ["case", ["==", ["get", "isCapital"], true], 10, 8],
+          "circle-color": "#f59e0b",
+          "circle-opacity": 0.35,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
+        },
+        filter: ["==", ["get", "id"], ""],
+      });
     }
 
     const polyFeatures = visibleFeatures
@@ -628,6 +678,17 @@ export function useMapLayers({
         source: "editor-subdivisions",
         paint: {
           "line-color": "#2563eb",
+          "line-width": 3,
+        },
+        filter: ["==", ["get", "id"], ""],
+      });
+
+      map.addLayer({
+        id: "editor-subdivisions-selected",
+        type: "line",
+        source: "editor-subdivisions",
+        paint: {
+          "line-color": "#f59e0b",
           "line-width": 3,
         },
         filter: ["==", ["get", "id"], ""],

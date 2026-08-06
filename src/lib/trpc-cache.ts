@@ -380,6 +380,25 @@ export const cacheConfigs = {
   userSpecific: { ttlSeconds: 30, namespace: "user", userAware: true },
 } as const;
 
+// Shared invalidation key sets for geo feature writes (Plan 119 §2.3)
+export const GEO_FEATURE_INVALIDATE_KEYS: string[] = [
+  "geoCore.getCountryFeatures",
+  "geoCore.getMapBundle",
+  "geoCore.getWorldMap",
+  "geoCore.getAllMapFeatures",
+  "countryGeo.getCountryGeoBundle",
+];
+
+export const GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS: string[] = [
+  ...GEO_FEATURE_INVALIDATE_KEYS,
+  "geoFeatures.getAllStoryPins",
+];
+
+export const GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS: string[] = [
+  ...GEO_FEATURE_INVALIDATE_KEYS,
+  "geoFeatures.getAllMapLabels",
+];
+
 export function clearTrpcMemoryCache(): void {
   memoryCache.clear();
   console.log("[TRPC_CACHE] Module-level memory cache cleared manually");

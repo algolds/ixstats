@@ -6,6 +6,7 @@ import type { FeatureCollection } from "geojson";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
 import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/map-config";
 import { escHtml, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
+import { transientMapStore } from "../../editor/utils/transientStore";
 
 interface UseWorldMapInteractionsProps {
   map: MapLibreMap | null;
@@ -292,6 +293,12 @@ export function useWorldMapInteractions({
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
+          const hoveredId = (nextFeature.properties?._countryId as string) || (nextFeature.properties?._id as string) || String(nextFeatureId);
+          transientMapStore.setHoveredFeatureId(hoveredId);
+          if (e.lngLat) {
+            transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
+          }
+
           onCountryHoverRef.current?.({
             featureId: nextFeature.properties?._id || "",
             displayName: nextFeature.properties?._displayName || "Unknown",
@@ -301,6 +308,8 @@ export function useWorldMapInteractions({
             countryId: (nextFeature.properties?._countryId as string) || null,
           });
         } else {
+          transientMapStore.setHoveredFeatureId(null);
+          transientMapStore.setCursorCoords(null);
           onCountryHoverRef.current?.(null);
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "";
         }

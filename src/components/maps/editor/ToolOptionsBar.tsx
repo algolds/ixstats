@@ -461,6 +461,9 @@ interface ToolOptionsBarProps {
   onWandMatchLevelChange?: (val: boolean) => void;
   wandMatchParent?: boolean;
   onWandMatchParentChange?: (val: boolean) => void;
+  // Lasso select options (Plan 120 P3)
+  lassoTool?: "freehand" | "rect";
+  onLassoToolChange?: (tool: "freehand" | "rect") => void;
 }
 
 const CITY_TYPES = [
@@ -1093,8 +1096,23 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={LassoSelect} label="Lasso Select" />
           <span className="text-muted-foreground text-[11px]">
-            Click and drag to draw a freehand loop around points to group-select them.
+            Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt = subtract.
           </span>
+          <div className="border-border/50 bg-background/80 flex items-center gap-0.5 rounded border p-0.5">
+            {(["freehand", "rect"] as const).map((tool) => (
+              <button
+                key={tool}
+                onClick={() => props.onLassoToolChange?.(tool)}
+                className={`h-5 rounded px-2 text-[10px] font-medium transition-colors ${
+                  (props.lassoTool ?? "freehand") === tool
+                    ? "bg-primary/15 text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tool === "freehand" ? "Freehand" : "Rect"}
+              </button>
+            ))}
+          </div>
         </>
       )}
 

@@ -182,9 +182,9 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "#7cb5d2",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 0, 1.2, 6, 3.6],
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], 2.5, 0.0, 4.0, 0.7]
+        "line-color": "#5295c4",
+        "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 0, 0.4, 2, 0.6, 4, 1.0, 6, 1.8, 9, 3.2],
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0.25, 2, 0.35, 4, 0.55, 6, 0.75, 8, 0.90]
       }
     },
     {

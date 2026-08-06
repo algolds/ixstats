@@ -45,6 +45,8 @@ import { RouteEditingToolbar } from "./toolbars/RouteEditingToolbar";
 import { MapHintPill } from "./toolbars/MapHintPill";
 
 import { getFeatureCoords } from "./utils/map-helpers";
+import { transientMapStore } from "./utils/transientStore";
+import { hitTestFeatures } from "./utils/hit-test";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -116,7 +118,20 @@ interface EditorMapProps {
   lassoGeometry?: any;
   setLassoGeometry?: (geom: any) => void;
   onAddRulerPoint?: (coords: [number, number]) => void;
-  onApplyLassoSelection?: (coords: [number, number][]) => void;
+  onApplyLassoSelection?: (coords: [number, number][], mode?: "replace" | "add" | "subtract") => void;
+  /** Rectangular marquee selection from screen-space bounds (Plan 120 P3). */
+  onApplyRectSelection?: (
+    bounds: { west: number; south: number; east: number; north: number },
+    mode?: "replace" | "add" | "subtract"
+  ) => void;
+  /** Locked feature-layer keys (from LayerPanel). Locked layers are not selectable. */
+  lockedLayers?: Record<string, boolean>;
+  /** Multi-select set for Shift/Alt click handling. */
+  selectedIds?: Set<string>;
+  /** Toggle a feature in/out of the multi-select (Shift+click). */
+  onToggleSelect?: (id: string) => void;
+  /** Lasso tool style: freehand loop vs rectangular marquee (Plan 120 P3). */
+  lassoTool?: "freehand" | "rect";
   onApplyPaintFill?: (subdivisionId: string) => void;
   onApplyEyedropper?: (feature: any) => void;
   onApplyMagicWand?: (feature: any, isShift: boolean, isAlt: boolean) => void;
@@ -169,9 +184,14 @@ const EditorMap = memo(
       setLassoGeometry,
       onAddRulerPoint,
       onApplyLassoSelection,
+      onApplyRectSelection,
       onApplyPaintFill,
       onApplyEyedropper,
       onApplyMagicWand,
+      lockedLayers,
+      selectedIds,
+      onToggleSelect,
+      lassoTool = "freehand",
       guides = [],
       setGuides,
       showGuides = true,
@@ -314,6 +334,19 @@ const EditorMap = memo(
     const spacebarPanActiveRef = useRef(false);
     spacebarPanActiveRef.current = spacebarPanActive;
 
+    /** Layers that participate in selection hit-testing (Plan 120 P1). */
+    const interactiveLayers = [
+      "editor-subdivisions-fill",
+      "editor-points-capital",
+      "editor-points-city",
+      "editor-points-poi",
+      "editor-points-story-pin",
+      "editor-points-map-label",
+      "editor-points-labels",
+      "editor-map-labels",
+      "editor-gaps-fill",
+    ];
+
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.code === "Space" || e.key === " ") {
@@ -397,6 +430,23 @@ const EditorMap = memo(
     onApplyEyedropperRef.current = onApplyEyedropper;
     const onApplyMagicWandRef = useRef(onApplyMagicWand);
     onApplyMagicWandRef.current = onApplyMagicWand;
+    const onToggleSelectRef = useRef(onToggleSelect);
+    onToggleSelectRef.current = onToggleSelect;
+    const selectedIdsRef = useRef(selectedIds);
+    selectedIdsRef.current = selectedIds;
+    const lockedLayersRef = useRef(lockedLayers);
+    lockedLayersRef.current = lockedLayers;
+    /** Pointer-down position for click-vs-drag discrimination (Plan 120 P2). */
+    const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+    /** True when the last gesture was a drag (>4px) — used to suppress post-drag clicks. */
+    const wasDragRef = useRef(false);
+    /** Last hovered feature id, to avoid redundant setFilter/setFeatureState (Plan 120 P7). */
+    const lastHoveredIdRef = useRef<string | null>(null);
+    /** Cached interactive-layer list excluding locked layers (Plan 120 P1/P5). */
+    const interactiveLayersRef = useRef<string[]>([]);
+    interactiveLayersRef.current = interactiveLayers;
+    const lassoToolRef = useRef(lassoTool);
+    lassoToolRef.current = lassoTool;
 
     useImperativeHandle(ref, () => ({
       flyTo: (lng: number, lat: number, zoom = 6) => {
@@ -635,17 +685,19 @@ const EditorMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
-      const interactiveLayers = [
-        "editor-subdivisions-fill",
-        "editor-points-capital",
-        "editor-points-city",
-        "editor-points-poi",
-        "editor-points-story-pin",
-        "editor-points-map-label",
-        "editor-points-labels",
-        "editor-map-labels",
-        "editor-gaps-fill",
-      ];
+      const getExcludedLayers = () => {
+        const locked = lockedLayersRef.current ?? {};
+        const out: string[] = [];
+        const addIf = (key: string, layers: string[]) => {
+          if (locked[key]) out.push(...layers);
+        };
+        addIf("regions", ["editor-subdivisions-fill", "editor-gaps-fill"]);
+        addIf("cities", ["editor-points-capital", "editor-points-city"]);
+        addIf("pois", ["editor-points-poi"]);
+        addIf("stories", ["editor-points-story-pin"]);
+        addIf("labels", ["editor-points-map-label", "editor-map-labels"]);
+        return out;
+      };
 
       const onMouseMove = (e: any) => {
         routePluginEvent("onMouseMove", e);
@@ -665,47 +717,43 @@ const EditorMap = memo(
         }
         if (isVertexEditing) return;
 
-        const hoverBbox = [
-          [e.point.x - 6, e.point.y - 6],
-          [e.point.x + 6, e.point.y + 6],
-        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
-        const hits = map.queryRenderedFeatures(hoverBbox, { layers: interactiveLayers });
-
-        const sortedHits = [...hits].sort((a, b) => {
-          const aId = a.layer.id;
-          const bId = b.layer.id;
-          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
-          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
-          if (isPointA && !isPointB) return -1;
-          if (!isPointA && isPointB) return 1;
-          return 0;
+        const { hit, locked } = hitTestFeatures(map, e.point, {
+          layers: interactiveLayersRef.current,
+          excludeLayers: getExcludedLayers(),
         });
 
-        if (sortedHits.length > 0) {
-          const firstHit = sortedHits[0]!;
-          const hitLayer = firstHit.layer.id;
+        const hitId = hit?.featureId ?? null;
 
-          if (hitLayer.startsWith("editor-points") || hitLayer === "editor-map-labels") {
+        if (hitId !== lastHoveredIdRef.current) {
+          lastHoveredIdRef.current = hitId;
+          if (map.getLayer("editor-subdivisions-hover")) {
+            map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], hitId ?? ""]);
+          }
+        }
+
+        if (locked) {
+          map.getCanvas().style.cursor = "not-allowed";
+        } else if (hit) {
+          const layerId = hit.layerId;
+          if (layerId.startsWith("editor-points") || layerId === "editor-map-labels") {
             map.getCanvas().style.cursor = "grab";
-          } else if (hitLayer === "editor-gaps-fill") {
+          } else if (layerId === "editor-gaps-fill") {
             map.getCanvas().style.cursor = "help";
           } else {
             map.getCanvas().style.cursor = "pointer";
           }
-
-          const hitId = firstHit.properties?.id as string | undefined;
-          if (map.getLayer("editor-subdivisions-hover") && hitId) {
-            map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], hitId]);
-          }
         } else {
           map.getCanvas().style.cursor = "";
-          if (map.getLayer("editor-subdivisions-hover")) {
-            map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
-          }
         }
+
+        transientMapStore.setHoveredFeatureId(hitId);
+        transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);
       };
 
       const onMouseLeave = () => {
+        transientMapStore.setHoveredFeatureId(null);
+        transientMapStore.setCursorCoords(null);
+        lastHoveredIdRef.current = null;
         if (isPickingLocationRef.current) {
           map.getCanvas().style.cursor = "crosshair";
           return;
@@ -724,6 +772,9 @@ const EditorMap = memo(
         if (spacebarPanActiveRef.current) return;
         if (isPickingLocationRef.current) return;
         if (e.routeClicked) return;
+        // Post-drag clicks (map pan / feature drag) must not select (Plan 120 P2).
+        if (wasDragRef.current) return;
+
         const currentMode = modeRef.current;
 
         // Skip selection in all drawing and placement modes
@@ -742,24 +793,13 @@ const EditorMap = memo(
           return;
         }
 
-        const clickBbox = [
-          [e.point.x - 6, e.point.y - 6],
-          [e.point.x + 6, e.point.y + 6],
-        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
-        const hits = map.queryRenderedFeatures(clickBbox, { layers: interactiveLayers });
-
-        const sortedHits = [...hits].sort((a, b) => {
-          const aId = a.layer.id;
-          const bId = b.layer.id;
-          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
-          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
-          if (isPointA && !isPointB) return -1;
-          if (!isPointA && isPointB) return 1;
-          return 0;
+        const { hit, locked } = hitTestFeatures(map, e.point, {
+          layers: interactiveLayersRef.current,
+          excludeLayers: getExcludedLayers(),
         });
 
-        if (sortedHits.length > 0) {
-          const hitId = sortedHits[0]!.properties?.id as string | undefined;
+        if (hit && !locked) {
+          const hitId = hit.featureId;
           if (hitId) {
             const match = featuresRef.current.find((f) => f.id === hitId);
             if (match) {
@@ -781,13 +821,22 @@ const EditorMap = memo(
                 }
                 return;
               }
+              // Shift/Alt click multi-select (Plan 120 P7)
+              const isShift = !!e.originalEvent?.shiftKey;
+              const isAlt = !!e.originalEvent?.altKey;
+              if (isShift || isAlt) {
+                if (onToggleSelectRef.current) {
+                  onToggleSelectRef.current(match.id);
+                }
+                return;
+              }
               if (onFeatureSelectRef.current) {
                 onFeatureSelectRef.current(match);
               }
             }
           }
         } else {
-          // Clicked empty space on canvas, deselect current selection only if in select/edit modes
+          // Clicked empty space on canvas (or locked feature), deselect only if in select/edit modes
           const isSelectMode = currentMode === "view" || currentMode.startsWith("edit-");
           if (isSelectMode && onFeatureSelectRef.current) {
             onFeatureSelectRef.current(null);
@@ -802,6 +851,7 @@ const EditorMap = memo(
         if (isPickingLocationRef.current) return;
         if (e.routeClicked) return;
         if (isVertexEditing) return;
+        if (wasDragRef.current) return;
 
         const currentMode = modeRef.current;
 
@@ -821,25 +871,13 @@ const EditorMap = memo(
           return;
         }
 
-        const contextBbox = [
-          [e.point.x - 6, e.point.y - 6],
-          [e.point.x + 6, e.point.y + 6],
-        ] as [import("maplibre-gl").PointLike, import("maplibre-gl").PointLike];
-        const hits = map.queryRenderedFeatures(contextBbox, { layers: interactiveLayers });
-
-        const sortedHits = [...hits].sort((a, b) => {
-          const aId = a.layer.id;
-          const bId = b.layer.id;
-          const isPointA = aId.startsWith("editor-points-") || aId === "editor-map-labels";
-          const isPointB = bId.startsWith("editor-points-") || bId === "editor-map-labels";
-          if (isPointA && !isPointB) return -1;
-          if (!isPointA && isPointB) return 1;
-          return 0;
+        const { hit, locked } = hitTestFeatures(map, e.point, {
+          layers: interactiveLayersRef.current,
+          excludeLayers: getExcludedLayers(),
         });
 
-        if (sortedHits.length > 0) {
-          const firstHit = sortedHits[0]!;
-          const hitLayer = firstHit.layer.id;
+        if (hit && !locked) {
+          const hitLayer = hit.layerId;
 
           if (hitLayer === "editor-gaps-fill") {
             if (onFeatureContextMenuRef.current) {
@@ -854,7 +892,7 @@ const EditorMap = memo(
                 type: "gap",
                 name: "Negative Space",
                 coordinates: [e.lngLat.lng, e.lngLat.lat],
-                geometry: firstHit.geometry,
+                geometry: hit.feature.geometry,
                 properties: {},
               };
               onFeatureContextMenuRef.current(virtualFeature, {
@@ -865,7 +903,7 @@ const EditorMap = memo(
             return;
           }
 
-          const hitId = firstHit.properties?.id as string | undefined;
+          const hitId = hit.featureId;
           if (hitId && onFeatureContextMenuRef.current) {
             const match = featuresRef.current.find((f) => f.id === hitId);
             if (match) {
@@ -885,10 +923,17 @@ const EditorMap = memo(
       };
 
       const onMouseDown = (e: any) => {
+        pointerDownPosRef.current = { x: e.point.x, y: e.point.y };
+        wasDragRef.current = false;
         routePluginEvent("onMouseDown", e);
       };
 
       const onMouseUp = (e: any) => {
+        const down = pointerDownPosRef.current;
+        if (down && e.point) {
+          const dist = Math.hypot(e.point.x - down.x, e.point.y - down.y);
+          wasDragRef.current = dist > 4;
+        }
         routePluginEvent("onMouseUp", e);
       };
 
@@ -927,6 +972,8 @@ const EditorMap = memo(
         if (spacebarPanActiveRef.current) return;
         if (e.routeClicked) return;
         if (isVertexEditing) return;
+        // Post-drag clicks (map pan) must not place/insert anything (Plan 120 P2).
+        if (wasDragRef.current) return;
 
         const currentMode = modeRef.current;
 
@@ -987,49 +1034,101 @@ const EditorMap = memo(
       };
     }, [isLoaded, isVertexEditing, onAddRulerPoint, onApplyPaintFill, snapPoint, routePluginEvent]);
 
-    // Handle Lasso click-and-drag selection
+    // Handle Lasso / Rect marquee click-and-drag selection (Plan 120 P3)
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
       let isDrawing = false;
+      let isRect = false;
+      let startLngLat: [number, number] | null = null;
+      let startPoint: { x: number; y: number } | null = null;
+      let mode: "replace" | "add" | "subtract" = "replace";
       let pts: [number, number][] = [];
 
       const onMouseDown = (e: any) => {
         if (spacebarPanActiveRef.current) return;
-        if (modeRef.current !== "lasso-select") return;
+        const currentMode = modeRef.current;
+        const isShift = !!e.originalEvent?.shiftKey;
+        const isAlt = !!e.originalEvent?.altKey;
+
+        // Rect marquee: Shift+drag in view mode, or rect tool in lasso-select
+        if (currentMode === "view") {
+          if (!isShift) return;
+          isRect = true;
+          mode = isAlt ? "subtract" : "add";
+        } else if (currentMode === "lasso-select") {
+          isRect = lassoToolRef.current === "rect";
+          mode = isShift ? "add" : isAlt ? "subtract" : "replace";
+        } else {
+          return;
+        }
 
         // Prevent map panning
         e.preventDefault();
         map.dragPan.disable();
 
         isDrawing = true;
-        pts = [[e.lngLat.lng, e.lngLat.lat]];
+        startLngLat = [e.lngLat.lng, e.lngLat.lat];
+        startPoint = { x: e.point.x, y: e.point.y };
+        pts = [];
+      };
 
-        setLassoGeometry({
-          type: "Polygon" as const,
-          coordinates: [[...pts, pts[0]]],
-        });
+      const buildRectGeometry = (curLngLat: [number, number]): any => {
+        if (!startLngLat) return null;
+        const [slng, slat] = startLngLat;
+        const [clng, clat] = curLngLat;
+        return {
+          type: "Polygon",
+          coordinates: [
+            [
+              [slng, slat],
+              [clng, slat],
+              [clng, clat],
+              [slng, clat],
+              [slng, slat],
+            ],
+          ],
+        };
       };
 
       const onMouseMove = (e: any) => {
         if (!isDrawing) return;
 
-        pts.push([e.lngLat.lng, e.lngLat.lat]);
+        if (isRect) {
+          const geom = buildRectGeometry([e.lngLat.lng, e.lngLat.lat]);
+          if (geom) setLassoGeometry(geom);
+          return;
+        }
 
+        pts.push([e.lngLat.lng, e.lngLat.lat]);
         setLassoGeometry({
           type: "Polygon" as const,
           coordinates: [[...pts, pts[0]]],
         });
       };
 
-      const onMouseUp = () => {
+      const onMouseUp = (e: any) => {
         if (!isDrawing) return;
         isDrawing = false;
         map.dragPan.enable();
 
-        if (pts.length >= 3 && onApplyLassoSelection) {
-          onApplyLassoSelection(pts);
+        const endPoint = e.point ? { x: e.point.x, y: e.point.y } : null;
+        const dragged = startPoint && endPoint ? Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y) > 4 : false;
+
+        if (isRect) {
+          if (dragged && startLngLat) {
+            const endLngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+            const bounds = {
+              west: Math.min(startLngLat[0], endLngLat[0]),
+              south: Math.min(startLngLat[1], endLngLat[1]),
+              east: Math.max(startLngLat[0], endLngLat[0]),
+              north: Math.max(startLngLat[1], endLngLat[1]),
+            };
+            onApplyRectSelection?.(bounds, mode);
+          }
+        } else if (pts.length >= 3 && onApplyLassoSelection) {
+          onApplyLassoSelection(pts, mode);
         }
         setLassoGeometry(null);
       };
@@ -1043,21 +1142,39 @@ const EditorMap = memo(
         map.off("mousemove", onMouseMove);
         map.off("mouseup", onMouseUp);
       };
-    }, [isLoaded, onApplyLassoSelection, setLassoGeometry]);
+    }, [isLoaded, onApplyLassoSelection, onApplyRectSelection, setLassoGeometry]);
 
-    // Highlight selected feature
+    // Highlight selected features (subdivisions + points) — Plan 120 P6
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
+      const ids = selectedIdsRef.current;
+      const idList = ids && ids.size > 0 ? Array.from(ids) : [];
+      const noneFilter = ["==", ["get", "id"], ""];
+
+      // Single subdivision selection (existing hover-highlight style)
       if (map.getLayer("editor-subdivisions-hover")) {
-        if (selectedFeature && selectedFeature.geometry) {
-          map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], selectedFeature.id]);
-        } else if (!selectedFeature) {
-          map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], ""]);
-        }
+        const single = selectedFeature && selectedFeature.geometry ? selectedFeature.id : "";
+        map.setFilter("editor-subdivisions-hover", ["==", ["get", "id"], single]);
       }
-    }, [isLoaded, selectedFeature]);
+
+      // Multi-selection subdivisions outline
+      if (map.getLayer("editor-subdivisions-selected")) {
+        map.setFilter(
+          "editor-subdivisions-selected",
+          idList.length > 0 ? (["in", ["get", "id"], ...idList] as any) : noneFilter
+        );
+      }
+
+      // Multi-selection point halo
+      if (map.getLayer("editor-points-selected")) {
+        map.setFilter(
+          "editor-points-selected",
+          idList.length > 0 ? (["in", ["get", "id"], ...idList] as any) : noneFilter
+        );
+      }
+    }, [isLoaded, selectedFeature, selectedIds]);
 
     const rect = containerRef.current?.getBoundingClientRect();
     const rulerWidth = rect ? rect.width - 24 : 0;

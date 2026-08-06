@@ -16,7 +16,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { getTerrainForArea } from "~/lib/base-layer-query";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/geo-validation";
@@ -254,7 +254,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         // Terrain query failed — non-blocking
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("subdivision", input.countryId);
 
       await syncGeographicDemographics(ctx.db, input.countryId);
@@ -356,7 +356,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         );
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("subdivision", input.countryId);
 
       await syncGeographicDemographics(ctx.db, input.countryId);
@@ -388,7 +388,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
       }
 
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("subdivision", input.countryId);
 
       await syncGeographicDemographics(ctx.db, input.countryId);
@@ -460,7 +460,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         }
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
 
       return {
         updated,
@@ -736,7 +736,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         }
       }
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("subdivision", input.countryId);
       await syncGeographicDemographics(ctx.db, input.countryId);
 

@@ -13,6 +13,7 @@ import {
   MAP_LAYER_TYPES,
 } from "~/lib/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import { applySmoothProjection } from "../utils/projectionTransition";
 import { getMinArea, filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 interface UseWorldMapLayersProps {
@@ -43,14 +44,7 @@ export function useWorldMapLayers({
   // Update projection spec when mode changes
   useEffect(() => {
     if (!map || !isLoaded) return;
-    try {
-      const spec = getProjectionSpec(projectionMode);
-      if ("setProjection" in map && typeof (map as any).setProjection === "function") {
-        (map as any).setProjection(spec);
-      }
-    } catch (err) {
-      console.warn("[IxWorldMap] Projection switch caught:", err);
-    }
+    applySmoothProjection(map, projectionMode);
   }, [map, projectionMode, isLoaded]);
 
   // Initial graticules, ocean labels
@@ -235,22 +229,57 @@ export function useWorldMapLayers({
           });
 
           if (config.type === "line") {
+            const isRiver = layer.type === "rivers";
             map.addLayer({
               id: fillLayerId,
               type: "line",
               source: sourceId,
               paint: {
-                "line-color": ["coalesce", ["get", "fill"], config.strokeColor ?? "#7cb5d2"] as any,
-                "line-width": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  0,
-                  2.5,
-                  6,
-                  6.0,
-                ],
-                "line-opacity": layer.visible ? 0.9 : 0,
+                "line-color": ["coalesce", ["get", "fill"], config.strokeColor ?? "#5295c4"] as any,
+                "line-width": isRiver
+                  ? [
+                      "interpolate",
+                      ["exponential", 1.2],
+                      ["zoom"],
+                      0,
+                      0.4,
+                      2,
+                      0.6,
+                      4,
+                      1.0,
+                      6,
+                      1.8,
+                      9,
+                      3.2,
+                    ]
+                  : [
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      0,
+                      config.strokeWidth ?? 1,
+                      6,
+                      (config.strokeWidth ?? 1) * 2,
+                    ],
+                "line-opacity": layer.visible
+                  ? isRiver
+                    ? [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        0,
+                        0.25,
+                        2,
+                        0.35,
+                        4,
+                        0.55,
+                        6,
+                        0.75,
+                        8,
+                        0.9,
+                      ]
+                    : 0.9
+                  : 0,
               },
               layout: {
                 "line-cap": "round",

@@ -376,6 +376,8 @@ export default function MapEditorOverlay({
               onWandMatchLevelChange={editor.setWandMatchLevel}
               wandMatchParent={editor.wandMatchParent}
               onWandMatchParentChange={editor.setWandMatchParent}
+              lassoTool={editor.lassoTool}
+              onLassoToolChange={editor.setLassoTool}
             />
           </EditorErrorBoundary>
         )}
@@ -719,6 +721,8 @@ export default function MapEditorOverlay({
                   pendingCoordinates={editor.pendingCoordinates}
                   pendingGeometry={editor.pendingGeometry}
                   selectedFeature={editor.selectedFeature}
+                  selectedIds={editor.selectedIds}
+                  onToggleSelect={editor.toggleSelectId}
                   onMapClick={editor.handleMapClick}
                   isPickingLocation={editor.isPickingLocation}
                   onDrawComplete={editor.handleDrawComplete}
@@ -744,6 +748,14 @@ export default function MapEditorOverlay({
                     labels: layerStates.labels?.visible ?? true,
                     routes: layerStates.routes?.visible ?? true,
                   }}
+                  lockedLayers={{
+                    regions: layerStates.regions?.locked ?? false,
+                    cities: layerStates.cities?.locked ?? false,
+                    pois: layerStates.pois?.locked ?? false,
+                    stories: layerStates.stories?.locked ?? false,
+                    labels: layerStates.labels?.locked ?? false,
+                    routes: layerStates.routes?.locked ?? false,
+                  }}
                   layerOpacity={{
                     regions: layerStates.regions?.opacity ?? 0.6,
                     cities: layerStates.cities?.opacity ?? 1,
@@ -768,7 +780,9 @@ export default function MapEditorOverlay({
                   setLassoGeometry={editor.setLassoGeometry}
                   onAddRulerPoint={editor.addRulerPoint}
                   onApplyLassoSelection={editor.applyLassoSelection}
+                  onApplyRectSelection={editor.applyRectSelection}
                   onApplyPaintFill={editor.applyPaintFill}
+                  lassoTool={editor.lassoTool}
                   guides={editor.guides}
                   setGuides={editor.setGuides}
                   showGuides={showGuides}

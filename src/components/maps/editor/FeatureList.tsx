@@ -60,6 +60,102 @@ const TYPE_COLORS = {
 
 type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route";
 
+interface FeatureRowItemProps {
+  feature: EditorFeature;
+  isSelected: boolean;
+  isMultiSelected: boolean;
+  onSelectFeature: (feature: EditorFeature) => void;
+  onEditFeature: (feature: EditorFeature) => void;
+  onDeleteFeature: (feature: EditorFeature) => void;
+  onToggleSelect?: (id: string) => void;
+  selectedRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+const FeatureRowItem = React.memo(
+  function FeatureRowItem({
+    feature,
+    isSelected,
+    isMultiSelected,
+    onSelectFeature,
+    onEditFeature,
+    onDeleteFeature,
+    onToggleSelect,
+    selectedRef,
+  }: FeatureRowItemProps) {
+    const Icon = TYPE_ICONS[feature.type as FeatureType] || MapPin;
+    const colorClass = TYPE_COLORS[feature.type as FeatureType] || "text-slate-500";
+    const isCapital = feature.properties?.isNationalCapital;
+    const wikiTitle = feature.properties?.wikiPageTitle as string | undefined;
+
+    const row = (
+      <div
+        ref={isSelected ? selectedRef : undefined}
+        className={`group flex items-center gap-1.5 rounded-lg px-2 py-2.5 transition-colors sm:py-1.5 ${
+          isSelected
+            ? "bg-primary/10 ring-primary/30 ring-1"
+            : isMultiSelected
+              ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
+              : "hover:bg-accent active:bg-accent"
+        }`}
+      >
+        <button
+          onClick={(e) => {
+            if (e.shiftKey && onToggleSelect) {
+              onToggleSelect(feature.id);
+            } else {
+              onSelectFeature(feature);
+            }
+          }}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />
+          <span className="text-foreground truncate text-sm">{feature.name}</span>
+          {isCapital && (
+            <span title="National Capital">
+              <Crown className="h-3 w-3 shrink-0 text-amber-500" />
+            </span>
+          )}
+        </button>
+        <div className="flex items-center gap-1 opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditFeature(feature);
+            }}
+            className="text-muted-foreground hover:text-foreground rounded p-2 transition-colors hover:bg-blue-100 sm:p-1 dark:hover:bg-blue-500/10"
+            title="Edit"
+          >
+            <Pencil className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFeature(feature);
+            }}
+            className="rounded p-2 text-rose-500 transition-colors hover:bg-rose-100 hover:text-rose-600 sm:p-1 dark:text-rose-400 dark:hover:bg-rose-500/20 dark:hover:text-rose-300"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+
+    return wikiTitle ? (
+      <WikiPreviewTooltip wikiTitle={wikiTitle}>
+        {row}
+      </WikiPreviewTooltip>
+    ) : (
+      row
+    );
+  },
+  (prev, next) =>
+    prev.feature.id === next.feature.id &&
+    prev.isSelected === next.isSelected &&
+    prev.isMultiSelected === next.isMultiSelected &&
+    prev.feature.name === next.feature.name
+);
+
 export const FeatureList = React.memo(function FeatureList({
   features,
   selectedFeature,
@@ -209,78 +305,23 @@ export const FeatureList = React.memo(function FeatureList({
                   : group.items;
 
                 return (
-                  <div className="space-y-0.5 pl-1">
+                  <div className="space-y-0.5 pl-1 [content-visibility:auto] [contain-intrinsic-size:1000px_36px]">
                     {visibleItems.map((feature) => {
-                      const Icon = TYPE_ICONS[feature.type];
-                      const colorClass = TYPE_COLORS[feature.type];
                       const isSelected = selectedFeature?.id === feature.id;
                       const isMultiSelected = selectedIds?.has(feature.id) ?? false;
-                      const isCapital = feature.properties.isNationalCapital;
-                      const wikiTitle = feature.properties.wikiPageTitle as string | undefined;
 
-                      const row = (
-                        <div
+                      return (
+                        <FeatureRowItem
                           key={feature.id}
-                          ref={isSelected ? selectedRef : undefined}
-                          className={`group flex items-center gap-1.5 rounded-lg px-2 py-2.5 transition-colors sm:py-1.5 ${
-                            isSelected
-                              ? "bg-primary/10 ring-primary/30 ring-1"
-                              : isMultiSelected
-                                ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
-                                : "hover:bg-accent active:bg-accent"
-                          }`}
-                        >
-                          <button
-                            onClick={(e) => {
-                              if (e.shiftKey && onToggleSelect) {
-                                onToggleSelect(feature.id);
-                              } else {
-                                onSelectFeature(feature);
-                              }
-                            }}
-                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                          >
-                            <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />
-                            <span className="text-foreground truncate text-sm">{feature.name}</span>
-                            {isCapital && (
-                              <span title="National Capital">
-                                <Crown className="h-3 w-3 shrink-0 text-amber-500" />
-                              </span>
-                            )}
-                          </button>
-                          <div
-                            className={`flex items-center gap-0.5 transition-opacity ${isSelected ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100"}`}
-                          >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditFeature(feature);
-                              }}
-                              className="text-muted-foreground rounded p-2 transition-colors hover:bg-blue-100 hover:text-blue-600 active:bg-blue-100 active:text-blue-600 sm:p-1 dark:hover:bg-blue-500/10 dark:active:bg-blue-500/10"
-                              title="Edit"
-                            >
-                              <Pencil className="h-4 w-4 sm:h-3 sm:w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteFeature(feature);
-                              }}
-                              className="text-muted-foreground rounded p-2 transition-colors hover:bg-red-100 hover:text-red-600 active:bg-red-100 active:text-red-600 sm:p-1 dark:hover:bg-red-500/10 dark:active:bg-red-500/10"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4 sm:h-3 sm:w-3" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-
-                      return wikiTitle ? (
-                        <WikiPreviewTooltip key={feature.id} wikiTitle={wikiTitle}>
-                          {row}
-                        </WikiPreviewTooltip>
-                      ) : (
-                        row
+                          feature={feature}
+                          isSelected={isSelected}
+                          isMultiSelected={isMultiSelected}
+                          onSelectFeature={onSelectFeature}
+                          onEditFeature={onEditFeature}
+                          onDeleteFeature={onDeleteFeature}
+                          onToggleSelect={onToggleSelect}
+                          selectedRef={selectedRef}
+                        />
                       );
                     })}
                     {isTruncated && (

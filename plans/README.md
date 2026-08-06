@@ -21,11 +21,32 @@ the live working set stays here.
 
 > Completed WikiOS workstreams (core boundary, extraction-blocker spike, workstream C exec/packaging) are in [`archive/`](archive/).
 
-### Map Editor — Advanced World Systems
+### Map Editor — Advanced World Systems & Performance Optimization
 | Plan | Priority | Status |
 |------|----------|--------|
 | [map-editor-improvements-overview.md](map-editor-improvements-overview.md) | — | ACTIVE (index) |
 | [103-shared-map-instance.md](103-shared-map-instance.md) | High | ACTIVE (planning) |
+| [106-map-editor-state-decoupling.md](106-map-editor-state-decoupling.md) | High | DONE (React State Isolation) |
+| [107-maplibre-source-diffing.md](107-maplibre-source-diffing.md) | High | DONE (GeoJSON Patch Engine) |
+| [108-geometry-worker-offloading.md](108-geometry-worker-offloading.md) | High | DONE (Web Worker Geometry Math) |
+| [109-sidebar-list-virtualization.md](109-sidebar-list-virtualization.md) | High | DONE (List Virtualization & CSS Containment) |
+| [120-map-editor-selection-photoshop.md](120-map-editor-selection-photoshop.md) | High | DONE (Photoshop-grade selection) |
+### Main IxWorld Map Viewer — Performance & Smoothness Optimization
+| Plan | Priority | Status |
+|------|----------|--------|
+| [110-ixworld-projection-smoothness.md](110-ixworld-projection-smoothness.md) | High | DONE (Globe-to-2D Projection Blend) |
+| [111-ixworld-progressive-lod-loading.md](111-ixworld-progressive-lod-loading.md) | High | DONE (Progressive LOD Streaming) |
+| [112-ixworld-transient-hover-decoupling.md](112-ixworld-transient-hover-decoupling.md) | High | DONE (Transient Hover Decoupling) |
+| [113-ixworld-worker-overlay-filtering.md](113-ixworld-worker-overlay-filtering.md) | High | ACTIVE (planning) |
+| [114-google-maps-dynamic-river-styling.md](114-google-maps-dynamic-river-styling.md) | High | DONE (Dynamic River Hydrography) |
+### Map Editor Backend & tRPC Data Pipeline Overhaul
+| Plan | Priority | Status |
+|------|----------|--------|
+| [119-map-editor-overhaul-revised.md](119-map-editor-overhaul-revised.md) | High | ACTIVE (implemented: response-boundary truncation + shared invalidation keys; remaining phases deferred pending baselines) |
+| [115-backend-geojson-compression-caching.md](115-backend-geojson-compression-caching.md) | High | ACTIVE (planning — superseded by 119) |
+| [116-backend-async-spatial-sync-decoupling.md](116-backend-async-spatial-sync-decoupling.md) | High | ACTIVE (planning — superseded by 119) |
+| [117-trpc-incremental-mutation-updates.md](117-trpc-incremental-mutation-updates.md) | High | ACTIVE (planning — superseded by 119) |
+| [118-backend-precalculated-spatial-metrics.md](118-backend-precalculated-spatial-metrics.md) | High | ACTIVE (planning — superseded by 119) |
 
 ### MyLeague & MyClub Core Improvements — secure & optimize simulation platform
 | Plan | Priority | Status |
@@ -38,6 +59,8 @@ the live working set stays here.
 |------|-------|--------|
 | [mycountry-bible-v2.md](mycountry-bible-v2.md) | Design & Product Bible v2 — Executive decision simulator | DONE (Verified) |
 | [mycountry-v2-migration.md](mycountry-v2-migration.md) | IA, Layout & Component Migration (Phases 1–6 + 3 Bible Enhancements) | DONE (Verified) |
+| [104-country-profile-ui-refresh.md](104-country-profile-ui-refresh.md) | Country Profile (/countries/[slug]) Facet UI/UX Refresh | ACTIVE (planning) |
+| [105-country-profile-performance-optimization.md](105-country-profile-performance-optimization.md) | Country Profile (/countries/[slug]) Performance & Bundle Optimization | ACTIVE (planning) |
 | [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–6 implemented; narrative+ledger spine) | DONE (Verified) |
 | [050-diplomatic-goals-stances.md](archive/050-diplomatic-goals-stances.md) | Obfuscate diplomacy math, add Stances & Goals | DONE (Verified) |
 | [051-unify-narrative-spine.md](archive/051-unify-narrative-spine.md) | Route actions through `recordCountryEvent` dispatcher | DONE (Verified) |

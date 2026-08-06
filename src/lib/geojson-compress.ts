@@ -32,7 +32,7 @@ function truncPositions(coords: Position[], factor: number): Position[] {
     .map((p) => truncPosition(p, factor));
 }
 
-function truncateGeometry(geom: Geometry, decimals: number): Geometry {
+export function truncateGeometry(geom: Geometry, decimals: number): Geometry {
   const factor = 10 ** decimals;
 
   switch (geom.type) {

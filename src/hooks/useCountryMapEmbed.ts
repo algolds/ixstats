@@ -24,10 +24,10 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     { enabled, ...MAP_CACHE }
   );
 
-  // Fetch world political layer for neighbor rendering (shared cache with main map)
+  // Fetch world political layer for neighbor rendering (shared cache with main map, 30m staleTime)
   const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
     { layers: ["political"] },
-    { enabled, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
+    { enabled, ...MAP_CACHE }
   );
 
   return useMemo(() => {
@@ -38,6 +38,16 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       rawBBox && rawBBox.length === 4
         ? { minLng: rawBBox[0], minLat: rawBBox[1], maxLng: rawBBox[2], maxLat: rawBBox[3] }
         : null;
+
+    // Derived neighbor feature collection for greyed-out neighbor rendering
+    const worldPolitical =
+      ((worldMap as Record<string, unknown>)?.political as import("geojson").FeatureCollection) ??
+      (bundle?.neighbors?.length
+        ? ({
+            type: "FeatureCollection",
+            features: bundle.neighbors,
+          } as import("geojson").FeatureCollection)
+        : undefined);
 
     return {
       // Geometry
@@ -59,9 +69,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       neighbors: bundle?.neighbors ?? [],
 
       // World political layer for greyed-out neighbor rendering
-      worldPolitical: (worldMap as Record<string, unknown>)?.political as
-        | import("geojson").FeatureCollection
-        | undefined,
+      worldPolitical,
 
       // State
       isLoading: bundleLoading,

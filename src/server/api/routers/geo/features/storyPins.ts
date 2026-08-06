@@ -16,7 +16,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/geo-validation";
 
@@ -264,7 +264,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
         },
       });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllStoryPins"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
       broadcastMapUpdate("storyPin", input.countryId);
 
       // Auto-generate ThinkPages news for major/legendary story pins
@@ -376,7 +376,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           ...(input.storylineOrder !== undefined && { storylineOrder: input.storylineOrder }),
         },
       });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllStoryPins"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
       broadcastMapUpdate("storyPin", input.countryId);
       return { id: updated.id, title: updated.title };
     }),
@@ -393,7 +393,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       });
       if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
       await ctx.db.storyPin.delete({ where: { id: input.pinId } });
-      await invalidateCache(["geoCore.getAllMapFeatures", "geoFeatures.getAllStoryPins"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
       broadcastMapUpdate("storyPin", input.countryId);
       return { id: input.pinId, deleted: true };
     }),

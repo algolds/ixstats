@@ -2,8 +2,9 @@ import { z } from "zod";
 import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import type { FeatureCollection, Feature } from "geojson";
+import type { FeatureCollection, Feature, Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/map-utils";
+import { truncateGeometry } from "~/lib/geojson-compress";
 
 export const countryProcedures = {
   getCountryGeometry: cachedPublicProcedure
@@ -145,7 +146,23 @@ export const countryProcedures = {
             .catch(() => []),
         ]);
 
-      return { subdivisions, cities, pois, storyPins, mapLabels, peaks, namedRivers, namedLakes };
+      // Plan 119 §2.1 — truncate subdivision geometry to 6dp (~0.11m) at the
+      // response boundary only. DB stores full precision; the editor's setData
+      // patch (useMapEditor) keeps writing/reading the authoritative geometry.
+      const truncatedSubdivisions = subdivisions.map((s) => {
+        if (!s.geometry || !(s.geometry as any).coordinates) return s;
+        return { ...s, geometry: truncateGeometry(s.geometry as unknown as Geometry, 6) };
+      });
+      return {
+        subdivisions: truncatedSubdivisions,
+        cities,
+        pois,
+        storyPins,
+        mapLabels,
+        peaks,
+        namedRivers,
+        namedLakes,
+      };
     }),
 
   /**

@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import {
   validatePointContainment,
@@ -256,7 +256,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
       });
 
       // Invalidate map caches so the public map updates
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       if (input.isNationalCapital) {
         await invalidateCache(["geoCore.getCapitalCities"]);
       }
@@ -339,7 +339,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
         },
       });
 
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       broadcastMapUpdate("city", input.countryId);
 
       if (updated.subdivisionId) {
@@ -374,7 +374,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
 
       const wasCapital = city.isNationalCapital;
       await ctx.db.city.delete({ where: { id: input.cityId } });
-      await invalidateCache(["geoCore.getAllMapFeatures"]);
+      await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS);
       if (wasCapital) {
         await invalidateCache(["geoCore.getCapitalCities"]);
       }

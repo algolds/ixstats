@@ -62,7 +62,7 @@ const TOOLS: ToolDef[] = [
   { mode: "add-subdivision", icon: Hexagon, label: "Region", shortcut: "R", group: 1 },
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
   { mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 2 },
-  { mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 2 },
+  { mode: "add-poi", icon: Landmark, label: "POI / Landmark", shortcut: "P", group: 2 },
   { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 2 },
   { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 3 },
   { mode: "eyedropper", icon: Pipette, label: "Eyedropper", shortcut: "I", group: 3 },
