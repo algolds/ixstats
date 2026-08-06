@@ -13,7 +13,9 @@ import {
 } from "~/components/ui/breadcrumb";
 import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { AlertTriangle, Users } from "lucide-react";
+import Link from "next/link";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { createUrl } from "~/lib/url-utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
@@ -24,7 +26,7 @@ import { CountryHeader } from "./_components/CountryHeader";
 import { CountryTabs } from "./_components/CountryTabs";
 import { CountryOverviewPanel } from "./_components/CountryOverviewPanel";
 import { CountryActivityPanel } from "./_components/CountryActivityPanel";
-import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
+import { DossierTab } from "~/components/countries/DossierTab";
 
 import { useCountryPageState } from "./_hooks/useCountryPageState";
 
@@ -157,19 +159,35 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
       />
 
       <div className="container mx-auto space-y-6 px-4 py-8">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{country.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{country.name}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-        <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <Button
+            size="sm"
+            onClick={() => setShowCountryActions(true)}
+            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-md"
+            style={{
+              borderColor: "var(--flag-border-primary)",
+              color: "var(--flag-primary)",
+              backgroundColor: "color-mix(in srgb, var(--flag-primary) 15%, transparent)",
+            }}
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>{isOwnCountry ? "Country Management" : "Country Actions"}</span>
+          </Button>
+        </div>
+
+        <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countryName={country.name} />
 
         {activeTab === "overview" && vitalityData && (
           <CountryOverviewPanel
@@ -183,7 +201,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         )}
 
         {activeTab === "lore" && country && (
-          <WikiIntelligenceTab
+          <DossierTab
             countryName={country.name}
             countryData={{
               currentPopulation: country.currentPopulation,

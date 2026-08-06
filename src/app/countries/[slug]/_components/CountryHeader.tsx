@@ -7,6 +7,7 @@ import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   Users,
   TrendingUp,
@@ -20,6 +21,7 @@ import {
   Palette,
 } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 import { cn } from "~/lib/utils";
 import type { BannerMode } from "../_hooks/useCountryPageState";
 
@@ -79,6 +81,26 @@ const bannerOptions: Array<{
   },
 ];
 
+// Uppercase micro-label treatment shared by all header stat badges.
+const microLabel = "text-[10px] font-extrabold uppercase tracking-wider";
+
+// Flag-derived tint for a badge: solid text + glass scrim over imagery, tinted glass otherwise.
+const badgeTint = (
+  color: "primary" | "secondary" | "accent",
+  hasImage: boolean
+): React.CSSProperties =>
+  hasImage
+    ? {
+        color: "#ffffff",
+        borderColor: `var(--flag-border-${color})`,
+        backgroundColor: "rgba(0, 0, 0, 0.45)",
+      }
+    : {
+        color: `var(--flag-${color})`,
+        borderColor: `var(--flag-${color})`,
+        backgroundColor: `color-mix(in srgb, var(--flag-${color}) 12%, transparent)`,
+      };
+
 export function CountryHeader({
   country,
   flagUrl,
@@ -96,6 +118,9 @@ export function CountryHeader({
 }: CountryHeaderProps) {
   const [showBannerPicker, setShowBannerPicker] = useState(false);
   const [showMediaSearch, setShowMediaSearch] = useState(false);
+
+  const flagColors = getFlagColors(country.name);
+  const flagThemeCSS = generateFlagThemeCSS(flagColors);
 
   const resolvedBannerUrl = (() => {
     switch (bannerMode) {
@@ -130,7 +155,12 @@ export function CountryHeader({
 
   return (
     <>
-      <div className="relative">
+      <FacetCard
+        depth={1}
+        interactive="none"
+        className="relative overflow-hidden rounded-none border-0 border-b border-white/10"
+        style={flagThemeCSS}
+      >
         {/* Banner image area */}
         <div
           className={cn(
@@ -153,6 +183,20 @@ export function CountryHeader({
             <div className="to-background/80 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
           )}
 
+          {/* Flag-derived ambient glow blobs */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-[var(--flag-glow-primary)] opacity-25 blur-3xl" />
+            <div className="absolute -right-16 -bottom-16 h-72 w-72 rounded-full bg-[var(--flag-glow-secondary)] opacity-20 blur-3xl" />
+          </div>
+
+          {/* Flag-tinted top light wash */}
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-multiply"
+            style={{
+              background: `linear-gradient(to bottom, ${flagColors.primary}26 0%, transparent 55%)`,
+            }}
+          />
+
           {/* Frosted glass bar behind content for readability */}
           {hasImage && (
             <div className="absolute inset-x-0 bottom-0 h-32 bg-black/40 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] backdrop-blur-md md:h-36" />
@@ -161,7 +205,7 @@ export function CountryHeader({
           {/* Country Header Content */}
           <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-8">
             <div className="flex items-center gap-4 md:gap-6">
-              {/* Flag */}
+              {/* Flag (state seal emblem) */}
               <div className="h-14 w-14 shrink-0 md:h-16 md:w-16 lg:h-20 lg:w-20">
                 <UnifiedCountryFlag
                   countryName={country.name}
@@ -180,7 +224,7 @@ export function CountryHeader({
               <div className="min-w-0 flex-1">
                 <h1
                   className={cn(
-                    "mb-1 text-3xl font-bold md:text-4xl lg:text-5xl",
+                    "mb-1 text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl",
                     hasImage
                       ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
                       : "text-foreground"
@@ -191,11 +235,10 @@ export function CountryHeader({
                 <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-colors",
-                      hasImage
-                        ? "border-blue-400/30 bg-blue-600/85 text-white backdrop-blur-md hover:bg-blue-500/90"
-                        : "border-blue-200 bg-blue-100 text-blue-800 hover:bg-blue-200 dark:border-blue-500/30 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                      "cursor-pointer font-semibold transition-all active:scale-95",
+                      microLabel
                     )}
+                    style={badgeTint("primary", hasImage)}
                     onClick={onTogglePopulationDisplay}
                   >
                     <Users className="mr-1.5 h-3 w-3" />
@@ -206,11 +249,10 @@ export function CountryHeader({
 
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-colors",
-                      hasImage
-                        ? "border-green-400/30 bg-green-600/85 text-white backdrop-blur-md hover:bg-green-500/90"
-                        : "border-green-200 bg-green-100 text-green-800 hover:bg-green-200 dark:border-green-500/30 dark:bg-green-500/20 dark:text-green-200 dark:hover:bg-green-500/30"
+                      "cursor-pointer font-semibold transition-all active:scale-95",
+                      microLabel
                     )}
+                    style={badgeTint("secondary", hasImage)}
                     onClick={onToggleGdpDisplay}
                   >
                     <TrendingUp className="mr-1.5 h-3 w-3" />
@@ -221,12 +263,8 @@ export function CountryHeader({
 
                   {country.landArea && (
                     <Badge
-                      className={cn(
-                        "font-semibold",
-                        hasImage
-                          ? "border-purple-400/30 bg-purple-600/85 text-white backdrop-blur-md"
-                          : "border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-200"
-                      )}
+                      className={cn("font-semibold", microLabel)}
+                      style={badgeTint("accent", hasImage)}
                     >
                       <MapPin className="mr-1.5 h-3 w-3" />
                       {country.landArea.toLocaleString()} km²
@@ -236,6 +274,7 @@ export function CountryHeader({
                   <Badge
                     className={cn(
                       "font-semibold",
+                      microLabel,
                       hasImage
                         ? (country.adjustedGdpGrowth ?? 0) > 0
                           ? "border-emerald-400/30 bg-emerald-600/85 text-white backdrop-blur-md"
@@ -258,39 +297,14 @@ export function CountryHeader({
                   {country.continent && (
                     <Badge
                       variant="outline"
-                      className={cn(
-                        hasImage
-                          ? "border-white/30 bg-black/40 text-white backdrop-blur-md"
-                          : "border-border bg-muted/50 text-muted-foreground"
-                      )}
+                      className={cn("font-semibold", microLabel)}
+                      style={badgeTint("accent", hasImage)}
                     >
                       <Globe className="mr-1 h-3 w-3" />
                       {country.continent}
                     </Badge>
                   )}
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex shrink-0 items-end gap-2">
-                <Button
-                  size="lg"
-                  variant={isOwnCountry ? "default" : "outline"}
-                  onClick={onCountryActionsClick}
-                  className={cn(
-                    "shadow-lg",
-                    !isOwnCountry &&
-                      (hasImage
-                        ? "text-foreground border-white/30 bg-white/95 backdrop-blur-md hover:bg-white dark:bg-gray-900/95 dark:hover:bg-gray-900"
-                        : "")
-                  )}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span className="hidden md:inline">
-                    {isOwnCountry ? "Country Management" : "Country Actions"}
-                  </span>
-                  <span className="md:hidden">Actions</span>
-                </Button>
               </div>
             </div>
           </div>
@@ -347,7 +361,7 @@ export function CountryHeader({
             </Popover>
           </div>
         )}
-      </div>
+      </FacetCard>
 
       {/* Media Search Modal for custom banner */}
       {showMediaSearch && (

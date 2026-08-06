@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { type WikiSettings } from "~/types/wiki-intelligence";
+import { type WikiSettings } from "~/types/dossier";
 import { WikiPageSearch } from "~/components/countries/WikiPageSearch";
 
 /**

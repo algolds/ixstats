@@ -24,10 +24,12 @@ export interface MediaWikiConfig {
   };
 }
 
+export const DEFAULT_USER_AGENT = "IxStats-Builder";
+
 export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   baseUrl: env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com",
   apiEndpoint: "/api.php",
-  userAgent: "IxStats-Builder", // Simplified User-Agent that works with iiwiki
+  userAgent: DEFAULT_USER_AGENT,
   timeout: 20000, // 20 seconds
 
   rateLimit: {
@@ -58,21 +60,21 @@ export const WIKI_SOURCES = {
     apiEndpoint: "/api.php",
     description:
       "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia",
-    userAgent: "IxStats-Builder",
+    userAgent: DEFAULT_USER_AGENT,
   },
   iiwiki: {
     name: "IIWiki",
     baseUrl: "https://iiwiki.com",
     apiEndpoint: "/api.php",
     description: "SimFic and Alt-History Encyclopedia",
-    userAgent: "IxStats-Builder",
+    userAgent: DEFAULT_USER_AGENT,
   },
   althistory: {
     name: "AltHistory Wiki",
     baseUrl: "https://althistory.fandom.com",
     apiEndpoint: "/api.php",
     description: "Alternative History and Speculative Fiction Encyclopedia",
-    userAgent: "IxStats-Builder",
+    userAgent: DEFAULT_USER_AGENT,
   },
 } as const;
 

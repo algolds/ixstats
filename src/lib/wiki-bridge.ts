@@ -15,6 +15,7 @@
  */
 
 import { Cache } from "~/lib/cache";
+import { DEFAULT_USER_AGENT } from "~/lib/mediawiki-config";
 
 import mysql from "mysql2/promise";
 import type { Pool } from "mysql2/promise";
@@ -1274,7 +1275,7 @@ function formatMWTimestamp(ts: string): string {
 // External Wiki Fetch Helper (retry + 403 resilience)
 // ──────────────────────────────────────────────
 
-const USER_AGENT = "IxStats-Builder";
+const USER_AGENT = DEFAULT_USER_AGENT;
 
 const offlineExternalHosts = new Map<string, number>();
 
@@ -1301,52 +1302,48 @@ function markExternalHostOffline(hostname: string) {
 }
 
 /**
- * Fetch from an external wiki API with retry logic for transient 403 errors.
- * Returns null on persistent failures instead of throwing.
+ * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
+ * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
+async function fetchExternalWiki(url: string): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
     return null;
   }
 
-  const result = await withRetrySafe(
-    async (signal) => {
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": USER_AGENT,
-          "Api-User-Agent": USER_AGENT,
-          Accept: "application/json, text/html, */*",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-        signal,
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response;
-    },
-    {
-      maxAttempts: retries + 1,
-      strategy: "linear",
-      baseDelayMs: 2000,
-      timeoutMs: 20000,
-      retryIf: (err) => err.message.includes("HTTP 403"),
-      onRetry: (attempt, err) => {
-        console.warn(`[WikiBridge] ${hostname} returned 403, retry ${attempt}/${retries + 1}`);
-      },
-    }
-  );
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  if (!result.success) {
-    if (result.error?.message.includes("HTTP 403")) {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Api-User-Agent": USER_AGENT,
+        Accept: "application/json, text/html, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (response.status === 403) {
       markExternalHostOffline(hostname);
+      return null;
+    }
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return response;
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.warn(`[WikiBridge] ${hostname} fetch timed out (5s)`);
     } else {
-      console.warn(`[WikiBridge] ${hostname} fetch failed:`, result.error?.message);
+      console.warn(`[WikiBridge] ${hostname} fetch failed:`, err?.message || err);
     }
     return null;
   }
-  return result.value ?? null;
 }
 
 // ──────────────────────────────────────────────

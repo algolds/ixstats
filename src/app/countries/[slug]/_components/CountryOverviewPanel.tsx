@@ -2,13 +2,38 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
-import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
-import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
-import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
+import { FacetCard } from "~/components/ui/facet-container";
+import { HealthRing } from "~/components/ui/health-ring";
+import type { RingConfig } from "~/components/mycountry/primitives/VitalityRings";
+const GdpDetailsModal = dynamic(
+  () => import("~/components/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
+  { ssr: false }
+);
+const PopulationDetailsModal = dynamic(
+  () =>
+    import("~/components/modals/PopulationDetailsModal").then((m) => ({
+      default: m.PopulationDetailsModal,
+    })),
+  { ssr: false }
+);
+const DemographicsHealthModal = dynamic(
+  () =>
+    import("~/components/modals/metric-details").then((m) => ({
+      default: m.DemographicsHealthModal,
+    })),
+  { ssr: false }
+);
+const GovernmentSpendingModal = dynamic(
+  () =>
+    import("~/components/modals/metric-details").then((m) => ({
+      default: m.GovernmentSpendingModal,
+    })),
+  { ssr: false }
+);
+import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
 import {
   BookOpen,
   // eslint-disable-next-line unused-imports/no-unused-imports
@@ -26,6 +51,7 @@ import {
   ArrowRight,
   Clock,
   DollarSign,
+  Shield,
 } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
@@ -34,6 +60,7 @@ import {
   formatCompactCurrency,
   formatPercentWithNormalization as formatPercent,
 } from "~/lib/format-utils";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 import { createUrl } from "~/lib/url-utils";
@@ -58,6 +85,7 @@ interface CountryOverviewPanelProps {
     currentTotalGdp: number;
     currentGdpPerCapita: number;
     adjustedGdpGrowth?: number | null;
+    economicTier?: string | null;
     lastCalculated?: Date | number;
     governmentType?: string | null;
     leader?: string | null;
@@ -103,6 +131,30 @@ export function CountryOverviewPanel({
 }: CountryOverviewPanelProps) {
   const { hasGeometry, isLoading: mapLoading } = useCountryMapEmbed(country.id);
 
+  const {
+    isOpen: isMetricModalOpen,
+    metricType,
+    openModal: openMetricModal,
+    closeModal: closeMetricModal,
+  } = useMetricDetailsModal();
+
+  const handleRingClick = (key: string) => {
+    switch (key) {
+      case "economicVitality":
+        openMetricModal("gdp", country.id);
+        break;
+      case "populationWellbeing":
+        openMetricModal("population", country.id);
+        break;
+      case "diplomaticStanding":
+        openMetricModal("demographics-health", country.id);
+        break;
+      case "governmentalEfficiency":
+        openMetricModal("government-spending", country.id);
+        break;
+    }
+  };
+
   const { data: activityData, isLoading: activityLoading } =
     api.activities.getCountryActivity.useQuery({
       countryId: country.id,
@@ -110,9 +162,51 @@ export function CountryOverviewPanel({
       timeRange: "90d",
     });
 
+  const flagColors = React.useMemo(() => getFlagColors(country.name), [country.name]);
+  const flagThemeCSS = React.useMemo(() => generateFlagThemeCSS(flagColors), [flagColors]);
+
+  // Flag-tinted vitality rings for the sidebar.
+  const vitalityRings: RingConfig[] = React.useMemo(
+    () => [
+      {
+        key: "economicVitality",
+        label: "Economic Health",
+        subtitle: "GDP & Growth",
+        color: flagColors.primary,
+        icon: DollarSign,
+        value: vitalityData.economicVitality,
+      },
+      {
+        key: "populationWellbeing",
+        label: "Population Wellbeing",
+        subtitle: "Demographics",
+        color: flagColors.secondary,
+        icon: Users,
+        value: vitalityData.populationWellbeing,
+      },
+      {
+        key: "diplomaticStanding",
+        label: "Diplomatic Standing",
+        subtitle: "International",
+        color: flagColors.accent,
+        icon: Shield,
+        value: vitalityData.diplomaticStanding,
+      },
+      {
+        key: "governmentalEfficiency",
+        label: "Government Efficiency",
+        subtitle: "Administration",
+        color: "#f97316",
+        icon: Building,
+        value: vitalityData.governmentalEfficiency,
+      },
+    ],
+    [flagColors, vitalityData]
+  );
+
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6" style={flagThemeCSS}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
@@ -121,14 +215,61 @@ export function CountryOverviewPanel({
             </CountryDataProvider>
           </div>
 
-          {/* Sidebar - Geography + Vitality Rings + Recent Activity */}
+          {/* Sidebar - Public Briefing (with Vitality Rings) + Geography + Recent Activity */}
           <div className="space-y-6">
+            {/* National Vitality Telemetry Card */}
+            <FacetCard
+              depth={1}
+              interactive="none"
+              className="group relative overflow-hidden rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md shadow-sm"
+            >
+              <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-[var(--flag-glow-primary)] opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35" />
+                <Activity
+                  className="absolute -right-3 -bottom-3 h-20 w-20 text-[var(--flag-primary)] opacity-[0.05]"
+                  strokeWidth={1}
+                />
+              </div>
+
+              {/* Vitality Rings 2x2 Grid */}
+              <div className="relative grid grid-cols-2 gap-3">
+                {vitalityRings.map((ring) => (
+                  <div
+                    key={ring.key}
+                    onClick={() => handleRingClick(ring.key)}
+                    className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                  >
+                    <HealthRing
+                      value={ring.value}
+                      size={36}
+                      color={ring.color}
+                      label={ring.label}
+                      tooltip={`${ring.label}: ${Math.round(ring.value)}% - ${ring.subtitle}`}
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">
+                        {ring.label}
+                      </div>
+                      <div className="text-xs font-bold leading-tight" style={{ color: ring.color }}>
+                        {Math.round(ring.value)}%
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </FacetCard>
+
             {/* Geography Map */}
             {!mapLoading && hasGeometry && (
-              <Card className="bg-card/50 overflow-hidden backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Globe className="h-4 w-4" />
+              <FacetCard
+                depth={1}
+                interactive="none"
+                className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+              >
+                <CardHeader className="px-4 py-3 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
+                    <Globe className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
                     Geography
                   </CardTitle>
                 </CardHeader>
@@ -141,30 +282,32 @@ export function CountryOverviewPanel({
                     boundsPadding={50}
                   />
                 </CardContent>
-                <div className="border-border/50 flex items-center justify-between border-t px-4 py-2">
-                  <span className="text-muted-foreground text-xs">
+                <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
+                  <span className="text-[11px] font-medium text-muted-foreground">
                     {country.currentPopulation
                       ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                       : ""}
                   </span>
                   <a
                     href={createUrl(`/maps?country=${country.id}`)}
-                    className="text-xs text-blue-500 hover:text-blue-600"
+                    className="text-[11px] font-semibold text-blue-500 transition-colors hover:text-blue-400"
                   >
-                    Open full map
+                    Open full map →
                   </a>
                 </div>
-              </Card>
+              </FacetCard>
             )}
 
-            <VitalityRings data={vitalityData} variant="sidebar" />
-
-            {/* Recent Activity Feed (moved to sidebar) */}
-            <Card className="bg-card/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
+            {/* Recent Activity Feed */}
+            <FacetCard
+              depth={1}
+              interactive="none"
+              className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+            >
+              <CardHeader className="px-4 py-3 pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Activity className="h-4 w-4" />
+                  <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
+                    <Activity className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
                     Recent Activity
                   </CardTitle>
                   {activityData && activityData.activities.length > 0 && (
@@ -293,10 +436,47 @@ export function CountryOverviewPanel({
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </FacetCard>
           </div>
         </div>
       </div>
+
+      {/* Metric Detail Modals */}
+      {metricType === "gdp" && (
+        <GdpDetailsModal
+          isOpen={isMetricModalOpen}
+          onClose={closeMetricModal}
+          countryId={country.id}
+          countryName={country.name}
+        />
+      )}
+
+      {metricType === "population" && (
+        <PopulationDetailsModal
+          isOpen={isMetricModalOpen}
+          onClose={closeMetricModal}
+          countryId={country.id}
+          countryName={country.name}
+        />
+      )}
+
+      {metricType === "demographics-health" && (
+        <DemographicsHealthModal
+          isOpen={isMetricModalOpen}
+          onClose={closeMetricModal}
+          countryId={country.id}
+          countryName={country.name}
+        />
+      )}
+
+      {metricType === "government-spending" && (
+        <GovernmentSpendingModal
+          isOpen={isMetricModalOpen}
+          onClose={closeMetricModal}
+          countryId={country.id}
+          countryName={country.name}
+        />
+      )}
     </>
   );
 }

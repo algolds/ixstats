@@ -19,7 +19,7 @@ import { RiShieldLine } from "react-icons/ri";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { type DataConflict } from "~/types/wiki-intelligence";
+import { type DataConflict } from "~/types/dossier";
 
 /**
  * Props for WikiConflictsView component

@@ -192,7 +192,7 @@ export const DailyBonusWidget: React.FC = () => {
                       IxCredits
                     </span>
                     <span className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
-                      1-10k credits scaled by level & streak
+                      1 to 10,000 IxCredits scaled by level & streak
                     </span>
                   </button>
 
@@ -210,7 +210,7 @@ export const DailyBonusWidget: React.FC = () => {
                       Card Pull
                     </span>
                     <span className="text-muted-foreground mt-0.5 text-[9px] leading-tight">
-                      Pulls 1 completely random card from the database
+                      Pulls 1 random card (streak scales rarity)
                     </span>
                   </button>
                 </div>

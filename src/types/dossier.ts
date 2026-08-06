@@ -125,7 +125,7 @@ export interface DataConflict {
 /**
  * Component props for the WikiIntelligenceTab component.
  */
-export interface WikiIntelligenceTabProps {
+export interface DossierTabProps {
   /** Name of the country to fetch intelligence for */
   countryName: string;
 
@@ -143,40 +143,37 @@ export interface WikiIntelligenceTabProps {
     /** Economic tier classification */
     economicTier: string;
 
-    /** Optional continent location */
+    /** Continent where the country is located */
     continent?: string;
 
-    /** Optional region within continent */
+    /** Regional classification */
     region?: string;
 
-    /** Optional government system type */
+    /** System of government */
     governmentType?: string;
 
-    /** Optional current leader/head of state */
+    /** Head of state / leader name */
     leader?: string;
 
-    /** Optional capital city */
+    /** Official capital city */
     capital?: string;
 
-    /** Optional primary religion */
+    /** Primary or official religion */
     religion?: string;
   };
 
-  /** Viewer's security clearance level for access control */
-  viewerClearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  /** Security clearance level of the current viewer */
+  viewerClearanceLevel?: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
-  /** Optional flag colors for UI theming */
+  /** Custom flag colors for styling header components */
   flagColors?: {
-    /** Primary flag color (hex) */
     primary: string;
-
-    /** Secondary flag color (hex) */
     secondary: string;
-
-    /** Accent flag color (hex) */
     accent: string;
   };
 }
+
+export type WikiIntelligenceTabProps = DossierTabProps;
 
 /**
  * Configuration settings for wiki intelligence gathering.

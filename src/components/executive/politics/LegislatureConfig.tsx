@@ -222,7 +222,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   }
 
   function handleBlurChamber(index: number, value: any) {
-    const num = Math.max(10, Math.min(5000, Number(value) || 10));
+    const num = Math.max(1, Math.min(5000, Number(value) || 1));
     const updated = chambers.map((c, idx) => {
       if (idx === index) {
         return { ...c, seats: num };
@@ -239,12 +239,12 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   function handleSave() {
     const clampedChambers = chambers.map((c) => ({
       ...c,
-      seats: Math.max(10, Math.min(5000, Number(c.seats) || 10)),
+      seats: Math.max(1, Math.min(5000, Number(c.seats) || 1)),
     }));
     setChambers(clampedChambers);
 
     const computedTotal = clampedChambers.reduce((acc, c) => acc + c.seats, 0);
-    const clampedTotal = Math.max(10, Math.min(10000, computedTotal));
+    const clampedTotal = Math.max(1, Math.min(10000, computedTotal));
 
     const serializedChambers = clampedChambers
       .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}:${c.selectionMethod || "elected"}`)
@@ -312,7 +312,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
               <Label>Total Seats</Label>
               <Input
                 type="number"
-                min={10}
+                min={1}
                 max={isMultiChamber ? 10000 : 5000}
                 value={formData.totalSeats}
                 disabled={isMultiChamber}
@@ -323,14 +323,14 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                   })
                 }
                 onBlur={(e) => {
-                  const val = Math.max(10, Math.min(5000, Number(e.target.value) || 10));
+                  const val = Math.max(1, Math.min(5000, Number(e.target.value) || 1));
                   setFormData({ ...formData, totalSeats: val });
                 }}
               />
               <p className="text-muted-foreground mt-1 text-[10px]">
                 {isMultiChamber
                   ? "Calculated as sum of all chambers (up to 10,000)"
-                  : "10-5,000 seats"}
+                  : "1-5,000 seats"}
               </p>
             </div>
             <div>

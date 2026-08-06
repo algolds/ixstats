@@ -1,43 +1,51 @@
 "use client";
 
 import React from "react";
-import { Button } from "~/components/ui/button";
 import { Eye, Activity, BookOpen } from "lucide-react";
+import { FacetTabs } from "~/components/facet-ui";
+import { getFlagColors } from "~/lib/flag-color-extractor";
 
 export type TabType = "overview" | "lore" | "activity";
 
 interface CountryTabsProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  countryName?: string;
 }
 
-export function CountryTabs({ activeTab, onTabChange }: CountryTabsProps) {
+export function CountryTabs({ activeTab, onTabChange, countryName }: CountryTabsProps) {
+  const flagColors = getFlagColors(countryName || "");
+
+  const tabs = [
+    {
+      id: "overview",
+      icon: Eye,
+      label: "Factbook",
+      themeColor: flagColors.primary,
+    },
+    {
+      id: "lore",
+      icon: BookOpen,
+      label: "Dossier",
+      themeColor: flagColors.secondary,
+    },
+    {
+      id: "activity",
+      icon: Activity,
+      label: "Activity",
+      themeColor: flagColors.accent,
+    },
+  ];
+
   return (
-    <div className="glass-hierarchy-child flex gap-1 overflow-x-auto rounded-lg p-1">
-      <Button
-        variant={activeTab === "overview" ? "default" : "ghost"}
-        onClick={() => onTabChange("overview")}
-        className="min-w-[120px] flex-1"
-      >
-        <Eye className="mr-2 h-4 w-4" />
-        Overview
-      </Button>
-      <Button
-        variant={activeTab === "lore" ? "default" : "ghost"}
-        onClick={() => onTabChange("lore")}
-        className="min-w-[120px] flex-1"
-      >
-        <BookOpen className="mr-2 h-4 w-4" />
-        Dossier
-      </Button>
-      <Button
-        variant={activeTab === "activity" ? "default" : "ghost"}
-        onClick={() => onTabChange("activity")}
-        className="min-w-[120px] flex-1"
-      >
-        <Activity className="mr-2 h-4 w-4" />
-        Activity
-      </Button>
-    </div>
+    <FacetTabs
+      tabs={tabs}
+      activeTab={activeTab}
+      onChange={(tab) => onTabChange(tab as TabType)}
+      tone="neutral"
+      size="md"
+      springPreset="fluid"
+      className="facet-surface facet-refraction w-full min-w-fit rounded-xl border border-white/5"
+    />
   );
 }

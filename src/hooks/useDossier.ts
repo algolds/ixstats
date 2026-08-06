@@ -4,17 +4,17 @@
  * Custom hook for managing wiki intelligence data and state for country profiles.
  * Handles tRPC queries, cache management, data conflict detection, and section state.
  *
- * @module hooks/useWikiIntelligence
+ * @module hooks/useDossier
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
-import type { WikiIntelligenceData, WikiSettings, DataConflict } from "~/types/wiki-intelligence";
+import type { WikiIntelligenceData, WikiSettings, DataConflict } from "~/types/dossier";
 
 /**
- * Props for the useWikiIntelligence hook
+ * Props for the useDossier hook
  */
-interface UseWikiIntelligenceProps {
+interface UseDossierProps {
   /** Name of the country to fetch intelligence for */
   countryName: string;
 
@@ -37,9 +37,9 @@ interface UseWikiIntelligenceProps {
 }
 
 /**
- * Return type for the useWikiIntelligence hook
+ * Return type for the useDossier hook
  */
-interface UseWikiIntelligenceReturn {
+interface UseDossierReturn {
   /** Aggregated wiki intelligence data */
   wikiData: WikiIntelligenceData;
 
@@ -130,17 +130,17 @@ const DEFAULT_WIKI_SETTINGS: WikiSettings = {
  *   isLoading,
  *   isRefreshing,
  *   hasAccess
- * } = useWikiIntelligence({
+ * } = useDossier({
  *   countryName: "Burgundie",
  *   countryData: { ... }
  * });
  * ```
  */
-export function useWikiIntelligence({
+export function useDossier({
   countryName,
   countryData,
   initialSettings = {},
-}: UseWikiIntelligenceProps): UseWikiIntelligenceReturn {
+}: UseDossierProps): UseDossierReturn {
   // Initialize wiki settings with defaults and any initial overrides
   const [wikiSettings, setWikiSettings] = useState<WikiSettings>({
     ...DEFAULT_WIKI_SETTINGS,
@@ -363,3 +363,5 @@ export function useWikiIntelligence({
     setViewerClearanceLevel,
   };
 }
+
+export const useWikiIntelligence = useDossier;

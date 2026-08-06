@@ -10,8 +10,7 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 | --- | --- | --- |
 | `/countries` | `page.tsx` | Explore grid: searchable/filterable/sortable list of all countries |
 | `/countries/new` | `new/page.tsx` | Alternate explore entry reusing `CountriesPageModular` |
-| `/countries/[slug]` | `[slug]/page.tsx` | Public country profile (tabbed) |
-| `/countries/[slug]/profile` | `[slug]/profile/page.tsx` | Re-exports `profile-page.tsx` (refactored profile layout) |
+| `/countries/[slug]` | `[slug]/page.tsx` | Public country profile (tabbed, Facet UI) |
 | `/countries/[slug]/modeling` | `[slug]/modeling/page.tsx` | Economic modeling/scenario engine for a country |
 
 The dynamic segment is `[slug]`. The profile query accepts either a slug or an id — pages resolve `params.slug` and pass it to `api.countries.getByIdWithEconomicData` as `{ id }`.
@@ -44,7 +43,6 @@ countries/
 │   └── economy/                  # shared economic display components (see its README)
 └── [slug]/
     ├── page.tsx                  # tabbed public profile
-    ├── profile-page.tsx          # alternate refactored profile layout
     ├── _components/              # CountryHeader, CountryTabs, CountryOverviewPanel, CountryActivityPanel
     ├── _hooks/useCountryPageState.ts   # tab state, banner mode, wiki intro/infobox
     └── _utils/countryDataTransformers.ts  # vitality data derivation
@@ -58,7 +56,7 @@ countries/
 | Procedure | Used by |
 | --- | --- |
 | `api.countries.getAll` | Explore list (`page.tsx`, `new/page.tsx`) |
-| `api.countries.getByIdWithEconomicData` | Profile, profile-page, modeling |
+| `api.countries.getByIdWithEconomicData` | Profile, modeling |
 | `api.countries.getWikiInfoboxCached` / `getWikiRichIntro` | Overview wiki content (via `useCountryPageState`) |
 | `api.government.getByCountryId` | Overview government structure |
 | `api.activities.getCountryActivity` | Activity tab |

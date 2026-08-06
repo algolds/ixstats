@@ -51,43 +51,9 @@ export function useCountryPageState(country: Country | undefined) {
   const [showFullPopulation, setShowFullPopulation] = useState(false);
   const [showCountryActions, setShowCountryActions] = useState(false);
 
-  // Wiki data — fetched via tRPC (server-side cached) with localStorage placeholder
-  const richIntroCacheKey = country?.name ? `rich-intro:${country.name}` : null;
-  const infoboxCacheKey = country?.name ? `infobox:${country.name}` : null;
-
-  const { data: wikiRichIntro } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: country?.name ?? "" },
-    {
-      enabled: !!country?.name,
-      staleTime: 24 * 60 * 60_000,
-      gcTime: 48 * 60 * 60_000,
-      placeholderData: richIntroCacheKey
-        ? (getWikiCache(richIntroCacheKey) ?? undefined)
-        : undefined,
-    }
-  );
-
-  const { data: wikiInfoboxData } = api.countries.getWikiInfoboxCached.useQuery(
-    { countryName: country?.name ?? "" },
-    {
-      enabled: !!country?.name,
-      staleTime: 24 * 60 * 60_000,
-      gcTime: 48 * 60 * 60_000,
-      placeholderData: infoboxCacheKey ? (getWikiCache(infoboxCacheKey) ?? undefined) : undefined,
-    }
-  );
-
-  // Persist tRPC results to localStorage for instant future loads
-  useEffect(() => {
-    if (wikiRichIntro && richIntroCacheKey) setWikiCache(richIntroCacheKey, wikiRichIntro);
-  }, [wikiRichIntro, richIntroCacheKey]);
-
-  useEffect(() => {
-    if (wikiInfoboxData && infoboxCacheKey) setWikiCache(infoboxCacheKey, wikiInfoboxData);
-  }, [wikiInfoboxData, infoboxCacheKey]);
-
-  const wikiInfobox = (wikiInfoboxData as CountryInfobox | null) ?? null;
-  const wikiIntro = wikiRichIntro?.paragraphs ?? [];
+  // Wiki data — managed directly by useMyCountryMetrics via api.wikiCache.getCountryProfile
+  const wikiInfobox: CountryInfobox | null = null;
+  const wikiIntro: string[] = [];
 
   // Image data
   const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();

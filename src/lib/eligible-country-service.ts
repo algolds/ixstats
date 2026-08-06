@@ -18,6 +18,7 @@ import * as path from "path";
 import { getArticleWikitext, type WikiSource } from "./wiki-bridge";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-wiki-parser";
 import { withRetrySafe } from "./with-retry";
+import { DEFAULT_USER_AGENT } from "~/lib/mediawiki-config";
 import { withBasePath } from "./base-path";
 
 // ──────────────────────────────────────────────
@@ -69,7 +70,7 @@ interface MemoryCacheEntry {
 
 const IIWIKI_API = "https://iiwiki.com/api.php";
 const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
-const USER_AGENT = "IxStats-Builder";
+const USER_AGENT = DEFAULT_USER_AGENT;
 
 const CACHE_DIR = path.join(process.cwd(), "data", "cache", "eligible-countries");
 
