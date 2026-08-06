@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, Activity } from "lucide-react";
+import { TrendingUp, Activity, ChevronRight, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -219,9 +221,10 @@ export function OverviewTab({
 
           {/* Wiki intro + coat of arms */}
           {(() => {
-            const introHtml = extractWikiIntroHtml(wikiIntro as WikiIntro);
-            const coatOfArmsUrl = findCoatOfArmsUrl(wikiImages);
-            return introHtml || coatOfArmsUrl || wikiLoading ? (
+            const introHtml = extractWikiIntroHtml(wikiIntro as WikiIntro) || country?.wikiSummary || country?.description || null;
+            const coatOfArmsUrl = findCoatOfArmsUrl(wikiImages) || wikiImages?.[0]?.url || null;
+            const showLoadingSkeleton = wikiLoading && !introHtml;
+            return introHtml || coatOfArmsUrl || showLoadingSkeleton ? (
               <div className="flex gap-3">
                 {coatOfArmsUrl && (
                   <img
@@ -232,11 +235,23 @@ export function OverviewTab({
                 )}
                 <div className="min-w-0 flex-1">
                   {introHtml ? (
-                    <div
-                      className="text-foreground/80 line-clamp-4 text-[13px] leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-500 dark:[&_a]:text-blue-400"
-                      dangerouslySetInnerHTML={{ __html: introHtml }}
-                    />
-                  ) : wikiLoading ? (
+                    <div className="space-y-2">
+                      <div
+                        className="text-foreground/80 line-clamp-4 text-[13px] leading-relaxed [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-500 dark:[&_a]:text-blue-400"
+                        dangerouslySetInnerHTML={{ __html: introHtml }}
+                      />
+                      <div className="flex items-center pt-0.5">
+                        <Link
+                          href={titleToWikiOSRoute(country.wikiPageTitle || country.name)}
+                          className="group/wikilink inline-flex items-center gap-1.5 text-xs font-semibold text-blue-500 hover:text-blue-400 transition-colors"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                          <span>Read full page</span>
+                          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/wikilink:translate-x-0.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  ) : showLoadingSkeleton ? (
                     <div className="space-y-1.5">
                       <div className="bg-muted/50 h-3 w-full animate-pulse rounded" />
                       <div className="bg-muted/50 h-3 w-4/5 animate-pulse rounded" />

@@ -33,8 +33,8 @@ export function MyCountryTabsList({
       icon: BarChart3,
       label: (
         <>
-          <span className="hidden sm:inline">At a Glance</span>
-          <span className="sm:hidden">Glance</span>
+          <span className="hidden sm:inline">Factbook</span>
+          <span className="sm:hidden">Factbook</span>
         </>
       ),
       badge: 0,

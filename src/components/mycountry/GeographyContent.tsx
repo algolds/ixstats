@@ -93,48 +93,48 @@ export function GeographyContent() {
       )}
 
       {/* Header stats */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="border-border bg-card/40 rounded-lg border p-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] uppercase">
-            <Building2 className="h-3 w-3" />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+            <Building2 className="h-3 w-3 text-[var(--flag-primary)]" />
             Cities
           </div>
-          <div className="text-foreground text-lg font-semibold">{cities.length}</div>
+          <div className="text-foreground text-lg font-bold tracking-tight">{cities.length}</div>
         </div>
-        <div className="border-border bg-card/40 rounded-lg border p-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] uppercase">
-            <MapPin className="h-3 w-3" />
+        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+            <MapPin className="h-3 w-3 text-[var(--flag-secondary)]" />
             Subdivisions
           </div>
-          <div className="text-foreground text-lg font-semibold">{subdivisions.length}</div>
+          <div className="text-foreground text-lg font-bold tracking-tight">{subdivisions.length}</div>
         </div>
-        <div className="border-border bg-card/40 rounded-lg border p-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] uppercase">
-            <Pin className="h-3 w-3" />
+        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+            <Pin className="h-3 w-3 text-[var(--flag-accent)]" />
             POIs
           </div>
-          <div className="text-foreground text-lg font-semibold">{pois.length}</div>
+          <div className="text-foreground text-lg font-bold tracking-tight">{pois.length}</div>
         </div>
       </div>
 
       {/* Geographic Profile summary card */}
       {geoProfile && (
-        <div className="border-border bg-card/40 space-y-2 rounded-lg border p-3">
+        <div className="space-y-3 rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="text-foreground text-xs font-semibold">Geographic Profile</div>
+            <div className="text-foreground text-xs font-extrabold uppercase tracking-wider">Geographic Profile</div>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
           </div>
-          <div className="text-muted-foreground grid grid-cols-2 gap-2 text-[10px] sm:grid-cols-4">
-            <div>
-              <span className="text-[9px] uppercase">Land Area</span>
-              <div className="text-foreground/80 font-mono text-xs font-semibold">
+          <div className="text-muted-foreground grid grid-cols-2 gap-3 text-[10px] sm:grid-cols-4">
+            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">Land Area</span>
+              <div className="text-foreground font-mono text-xs font-bold tracking-tight">
                 {geoProfile.area.areaKm2.toLocaleString()} km²
               </div>
             </div>
-            <div>
-              <span className="text-[9px] uppercase">Climate Model</span>
+            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">Climate Model</span>
               <div
-                className="text-foreground/80 truncate text-xs font-semibold"
+                className="text-foreground truncate text-xs font-bold tracking-tight"
                 title={geoProfile.climate.dominant ?? undefined}
               >
                 {geoProfile.climate.dominant}

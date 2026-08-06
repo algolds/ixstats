@@ -98,7 +98,7 @@ export function GovernmentTab({
         {/* ── 3-Column Metric Toggle Grid ── */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {/* Metric 1: Structure */}
               <button
                 onClick={() =>
@@ -107,12 +107,12 @@ export function GovernmentTab({
                     structure: v.structure === "government" ? "state" : "government",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.structure === "government" ? "Head of Government" : "Head of State"}
                 </p>
-                <div className="mt-0.5 flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                   <AnimatePresence mode="wait">
                     <motion.p
                       key={metricView.structure}
@@ -128,7 +128,7 @@ export function GovernmentTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground truncate text-[10px] font-medium">
                   {metricView.structure === "government"
                     ? "Executive office"
                     : toTitleCase(governmentStructure?.governmentType || "Ceremonial office")}
@@ -143,13 +143,13 @@ export function GovernmentTab({
                     budget: v.budget === "percentage" ? "spending" : "percentage",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
                 </p>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="flex items-center gap-1.5"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction("government-spending", country.id);
@@ -162,7 +162,7 @@ export function GovernmentTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.15 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                      className="text-foreground text-base font-bold tracking-tight hover:underline"
                     >
                       {metricView.budget === "percentage"
                         ? `${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`
@@ -174,7 +174,7 @@ export function GovernmentTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground truncate text-[10px] font-medium">
                   {metricView.budget === "percentage"
                     ? `Public sector share`
                     : `Annual expenditure`}
@@ -189,9 +189,9 @@ export function GovernmentTab({
                     debt: v.debt === "ratio" ? "total" : "ratio",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}
                 </p>
                 <div

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useCountryData, type CardImageType } from "~/components/mycountry/primitives";
 import { extractCountryImageData } from "~/lib/country-image-engine";
 import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
+import { getWikiCache, setWikiCache } from "~/lib/wiki-local-cache";
+import { resolveImageUrl } from "~/lib/unified-wiki-parser";
 
 /**
  * Aggregates all data, query, and local UI state for the MyCountry tab system:
@@ -27,7 +29,7 @@ export function useMyCountryMetrics(activeTab: string) {
   // Fetch government structure for dynamic spending data
   const { data: governmentStructure } = api.government.getByCountryId.useQuery(
     { countryId: country?.id || "" },
-    { enabled: !!country?.id }
+    { enabled: !!country?.id, staleTime: 5 * 60_000 }
   );
 
   // Toggle state for all MyCountry tabs (persisted at parent level)
@@ -53,15 +55,51 @@ export function useMyCountryMetrics(activeTab: string) {
     debt: "total" as "total" | "ratio",
   });
 
-  // Wiki data for overview tab (fetched by country name, no wikiPageTitle gate)
-  const { data: wikiIntro, isLoading: wikiLoading } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: country?.name || "" },
-    { staleTime: 24 * 60 * 60_000, enabled: !!country?.name }
+  // Wiki intelligence data for overview tab (same 3-layer Redis/DB cached engine as Dossier)
+  const wikiTargetName = country?.wikiPageTitle || country?.name?.replace(/_/g, " ") || "";
+  const profileCacheKey = wikiTargetName ? `wiki-profile:${wikiTargetName}` : null;
+
+  const { data: profileData, isLoading: wikiLoading } = api.wikiCache.getCountryProfile.useQuery(
+    { countryName: wikiTargetName, includePageVariants: false, maxSections: 1 },
+    {
+      enabled: !!wikiTargetName,
+      staleTime: 24 * 60 * 60_000,
+      gcTime: 48 * 60 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      placeholderData: profileCacheKey
+        ? (getWikiCache(profileCacheKey) ?? undefined)
+        : undefined,
+    }
   );
-  const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(
-    { countryName: country?.name || "" },
-    { staleTime: 24 * 60 * 60_000, enabled: !!country?.name }
-  );
+
+  useEffect(() => {
+    if (profileData && profileCacheKey) setWikiCache(profileCacheKey, profileData);
+  }, [profileData, profileCacheKey]);
+
+  // Extract clean intro and coat of arms image from cached profile
+  const wikiIntro = useMemo(() => {
+    if (!profileData?.sections?.length) return null;
+    return profileData.sections[0]?.content || null;
+  }, [profileData]);
+
+  const wikiImages = useMemo(() => {
+    const infobox = profileData?.infobox as any;
+    const coatFile =
+      infobox?.image_coat ||
+      infobox?.coat_of_arms ||
+      infobox?.coatOfArms ||
+      infobox?.emblem ||
+      infobox?.symbol;
+
+    if (coatFile && typeof coatFile === "string") {
+      const resolved = resolveImageUrl(coatFile, (profileData?.wikiSource as any) || "ixwiki");
+      if (resolved) {
+        return [{ title: "Coat of Arms", url: resolved }];
+      }
+    }
+    return null;
+  }, [profileData]);
 
   // Card image upload modal state
   const [imageUploadModal, setImageUploadModal] = useState<{

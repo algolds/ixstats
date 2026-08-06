@@ -95,7 +95,7 @@ export function EconomyTab({
         {/* ── 3-Column Metric Toggle Grid ── */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {/* Metric 1: GDP */}
               <button
                 onClick={() =>
@@ -104,13 +104,13 @@ export function EconomyTab({
                     economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="flex items-center gap-1.5"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction(
@@ -126,7 +126,7 @@ export function EconomyTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ duration: 0.15 }}
-                      className="text-foreground flex items-center text-lg font-bold tracking-tight hover:underline"
+                      className="text-foreground flex items-center text-base font-bold tracking-tight hover:underline"
                     >
                       {metricView.economyGdp === "perCapita"
                         ? formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)
@@ -153,7 +153,7 @@ export function EconomyTab({
                     return <span className="text-muted-foreground text-[10px]">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
+                <p className="text-muted-foreground truncate text-[10px] font-medium">
                   {metricView.economyGdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
                     : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
@@ -168,7 +168,7 @@ export function EconomyTab({
                     fiscal: v.fiscal === "balance" ? "revenue" : "balance",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
@@ -216,9 +216,9 @@ export function EconomyTab({
                     trade: v.trade === "imports" ? "exports" : "imports",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
                 </p>
                 <div
