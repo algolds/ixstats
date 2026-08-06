@@ -20,7 +20,6 @@ import {
   Layers,
   Building2,
   Handshake,
-  Sparkles,
   Shield,
   Sword,
   Target,
@@ -678,7 +677,7 @@ function DashboardHero({
             color="text-emerald-500"
           />
           <StatPill
-            icon={Sparkles}
+            icon={Handshake}
             label="Allies"
             value={`${strongTies}`}
             color={strongTies > 0 ? "text-purple-500" : "text-slate-500"}

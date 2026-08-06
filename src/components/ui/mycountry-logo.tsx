@@ -13,6 +13,7 @@ interface MyCountryLogoProps {
   className?: string;
   mode?: "create" | "edit";
   showVersion?: boolean;
+  showSubtitle?: boolean;
 }
 
 const sizeConfig = {
@@ -60,6 +61,7 @@ export function MyCountryLogo({
   className,
   mode = "create",
   showVersion = false,
+  showSubtitle = false,
 }: MyCountryLogoProps) {
   const config = sizeConfig[size];
   const isEditMode = mode === "edit";
@@ -159,22 +161,26 @@ export function MyCountryLogo({
       >
         MyCountry
       </span>
-      <span className="flex items-center gap-1.5">
-        <span
-          className={cn(
-            "text-xs font-medium tracking-wider text-amber-600/80",
-            size === "xl" ? "text-sm" : "text-xs"
+      {(showSubtitle || showVersion) && (
+        <span className="flex items-center gap-1.5">
+          {showSubtitle && (
+            <span
+              className={cn(
+                "text-xs font-medium tracking-wider text-amber-600/80",
+                size === "xl" ? "text-sm" : "text-xs"
+              )}
+              style={{ filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))" }}
+            >
+              {isEditMode ? "EDITOR®" : "BUILDER®"}
+            </span>
           )}
-          style={{ filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))" }}
-        >
-          {isEditMode ? "EDITOR®" : "BUILDER®"}
+          {showVersion && (
+            <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 text-[9px] leading-none font-bold text-amber-400">
+              v{BUILDER_VERSION}
+            </span>
+          )}
         </span>
-        {showVersion && (
-          <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 text-[9px] leading-none font-bold text-amber-400">
-            v{BUILDER_VERSION}
-          </span>
-        )}
-      </span>
+      )}
     </motion.div>
   );
 

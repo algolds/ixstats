@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, RefreshCw, Layers, ShieldCheck, MapPin, Check, X, Sparkles } from "lucide-react";
+import { Play, RefreshCw, Layers, ShieldCheck, MapPin, Check, X, Compass } from "lucide-react";
 
 export interface MapGenConfig {
   seed: number;
@@ -60,7 +60,7 @@ export function MapPipelineControls({
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div>
           <h2 className="font-semibold text-base text-primary flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> Map Pipeline Lab
+            <Compass className="w-4 h-4" /> Map Pipeline Lab
           </h2>
           <p className="text-xs text-muted-foreground">Procedural Gen, Ingestion & Territory Claims</p>
         </div>
@@ -152,7 +152,7 @@ export function MapPipelineControls({
             {/* Mesh Engine Indicator */}
             <div className="p-2.5 rounded-md border border-primary/20 bg-primary/5 flex items-center justify-between text-xs font-medium text-foreground">
               <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" /> Mesh Engine
+                <Layers className="w-3.5 h-3.5 text-primary" /> Mesh Engine
               </span>
               <span className="text-primary font-mono text-[11px] font-semibold">100K RBF Splines</span>
             </div>

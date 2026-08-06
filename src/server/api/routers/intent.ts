@@ -21,6 +21,7 @@ import {
 } from "~/lib/intent/assemble";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft-power-brokers";
 import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
+import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
@@ -57,18 +58,28 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
 }
 
 async function cooldownStatus(db: any, countryId: string) {
-  const now = IxTime.getCurrentIxTime();
+  const now = Date.now();
+  const weekAgo = new Date(now - WEEK_MS);
   const recent = await db.intent.findMany({
-    where: { countryId, createdIxTime: { gte: now - WEEK_MS } },
-    orderBy: { createdIxTime: "desc" },
-    select: { cooldownUntil: true },
+    where: {
+      countryId,
+      status: { in: ["active", "completed"] },
+      createdAt: { gte: weekAgo },
+    },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
   });
   const usedThisWeek = recent.length;
-  const active = recent.find((i: any) => i.cooldownUntil && i.cooldownUntil > now);
-  const onCooldown = !!active || usedThisWeek >= WEEKLY_CAP;
+  const onCooldown = usedThisWeek >= WEEKLY_CAP;
+
+  let cooldownUntil: number | null = null;
+  if (onCooldown && recent.length > 0 && recent[0]?.createdAt) {
+    cooldownUntil = new Date(recent[0].createdAt).getTime() + WEEK_MS;
+  }
+
   return {
     onCooldown,
-    cooldownUntil: active?.cooldownUntil ?? null,
+    cooldownUntil,
     usedThisWeek,
     cap: WEEKLY_CAP,
     canCommit: !onCooldown,
@@ -143,6 +154,7 @@ export const intentRouter = createTRPCRouter({
           category: true,
           target: true,
           status: true,
+          changesJson: true,
           summary: true,
           parentId: true,
           createdIxTime: true,
@@ -150,6 +162,54 @@ export const intentRouter = createTRPCRouter({
         },
       });
       return intents;
+    }),
+
+  /** Update status of an intent (e.g. mark completed, abandoned). */
+  updateStatus: protectedProcedure
+    .input(z.object({ id: z.string(), status: z.enum(["active", "completed", "abandoned"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
+      if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCountryAccess(ctx, intent.countryId);
+      const updated = await ctx.db.intent.update({
+        where: { id: input.id },
+        data: { status: input.status },
+      });
+
+      if (input.status === "completed") {
+        try {
+          await generateIntentSummationDraft({
+            db: ctx.db,
+            intentId: input.id,
+            countryId: intent.countryId,
+          });
+        } catch (e) {
+          console.warn("[Intent] Failed to auto-generate ThinkPages summation draft:", e);
+        }
+      }
+
+      return updated;
+    }),
+
+  /** Explicitly generate/publish a ThinkPages summation post for an intent. */
+  generateSummationDraft: protectedProcedure
+    .input(
+      z.object({
+        intentId: z.string(),
+        countryId: z.string(),
+        visibility: z.enum(["draft", "public"]).optional(),
+        customContent: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryAccess(ctx, input.countryId);
+      return await generateIntentSummationDraft({
+        db: ctx.db,
+        intentId: input.intentId,
+        countryId: input.countryId,
+        visibility: input.visibility ?? "draft",
+        customContent: input.customContent,
+      });
     }),
 
   /** Commit a chosen package: applies it and records the Intent. */
@@ -300,5 +360,28 @@ export const intentRouter = createTRPCRouter({
       }
 
       return { intent, changes: pkg.changes, applied, summary };
+    }),
+
+  /** Return all intents for a country structured as a branching decision tree. */
+  getTree: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const intents = await ctx.db.intent.findMany({
+        where: { countryId: input.countryId },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const intentMap = new Map(intents.map((i) => [i.id, { ...i, children: [] as any[] }]));
+      const roots: any[] = [];
+
+      for (const intent of intentMap.values()) {
+        if (intent.parentId && intentMap.has(intent.parentId)) {
+          intentMap.get(intent.parentId)!.children.push(intent);
+        } else {
+          roots.push(intent);
+        }
+      }
+
+      return { roots, allIntents: Array.from(intentMap.values()) };
     }),
 });

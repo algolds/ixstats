@@ -230,4 +230,42 @@ export const thinkpagesPostsPostsQueriesRouter = createTRPCRouter({
         nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null,
       };
     }),
+
+  /** Get draft posts for a country or user accounts (for ThinkPages draft sync) */
+  getDraftPosts: rateLimitedPublicProcedure
+    .input(z.object({ countryId: z.string().optional(), clerkUserId: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      if (!input.countryId && !input.clerkUserId) return [];
+
+      const accountIds: string[] = [];
+      if (input.countryId) {
+        const accs = await db.thinkpagesAccount.findMany({
+          where: { countryId: input.countryId },
+          select: { id: true },
+        });
+        accountIds.push(...accs.map((a: any) => a.id));
+      }
+      if (input.clerkUserId) {
+        const accs = await db.thinkpagesAccount.findMany({
+          where: { clerkUserId: input.clerkUserId },
+          select: { id: true },
+        });
+        accountIds.push(...accs.map((a: any) => a.id));
+      }
+
+      if (accountIds.length === 0) return [];
+
+      const drafts = await db.thinkpagesPost.findMany({
+        where: {
+          accountId: { in: Array.from(new Set(accountIds)) },
+          visibility: "draft",
+        },
+        include: postInclude,
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+
+      return drafts.map((p: any) => transformPost(p));
+    }),
 });

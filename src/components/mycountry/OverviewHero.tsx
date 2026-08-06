@@ -12,7 +12,7 @@ import {
   Briefcase,
   Clock,
   Edit3,
-  Sparkles,
+  Command,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -473,7 +473,7 @@ export function OverviewHero({
                 onClick={() => onIssueDirective?.()}
                 className="h-8 min-w-[100px] cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Command className="h-3.5 w-3.5" />
                 Directive
               </Button>
               <Link href={createUrl("/mycountry/editor")} className="min-w-[100px]">
@@ -627,7 +627,7 @@ export function OverviewHero({
                     onClick={() => onIssueDirective?.()}
                     className="h-8 min-w-[100px] flex-1 cursor-pointer gap-1 border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Command className="h-3.5 w-3.5" />
                     Directive
                   </Button>
                 )}

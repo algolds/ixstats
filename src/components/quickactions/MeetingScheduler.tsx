@@ -79,7 +79,8 @@ export function MeetingScheduler({
   );
 
   const proposedIntents = React.useMemo(() => {
-    return (intents ?? []).filter((i: any) => i.status === "proposed");
+    const list = Array.isArray(intents) ? intents : intents?.allIntents ?? [];
+    return list.filter((i: any) => i.status === "proposed");
   }, [intents]);
 
   const { data: officials, isLoading: officialsLoading } = api.quickActions.getOfficials.useQuery(

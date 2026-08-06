@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Brain, Shield, Crown, Users, Vote, Lock, Edit2 } from "lucide-react";
+import { Brain, Shield, Crown, Users, Vote, Lock, Edit2, TrendingUp } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   LayoutDashboardIcon,
@@ -54,6 +54,7 @@ const PREMIUM_GATED_SECTIONS: Set<MyCountrySection> = new Set(["intelligence", "
 export type MyCountrySection =
   | "overview"
   | "executive"
+  | "economy"
   | "diplomacy"
   | "intelligence"
   | "defense"
@@ -69,12 +70,12 @@ export const NAV_ITEMS: {
   activeGlow: string;
 }[] = [
   {
-    id: "executive",
-    href: "/mycountry/executive",
-    icon: Crown,
-    title: "Executive",
-    gradient: "from-amber-500 to-amber-600",
-    activeGlow: "shadow-amber-500/20",
+    id: "economy",
+    href: "/mycountry/economy",
+    icon: TrendingUp,
+    title: "Economy",
+    gradient: "from-emerald-500 to-teal-600",
+    activeGlow: "shadow-emerald-500/20",
   },
   {
     id: "diplomacy",
@@ -106,6 +107,9 @@ export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
   if (pathname === "/mycountry" || pathname === "/mycountry/") return "overview";
   if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
+  if (pathname.startsWith("/mycountry/executive") || pathname.startsWith("/mycountry/economy")) {
+    return "economy";
+  }
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }

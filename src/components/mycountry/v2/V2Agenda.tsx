@@ -32,10 +32,13 @@ export function V2Agenda({
 }) {
   const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
 
-  const roots = useMemo(() => {
-    const items = tree.data ?? [];
-    return items.filter((it: any) => !it.parentId || !items.some((x: any) => x.id === it.parentId));
+  const allIntents = useMemo(() => {
+    return Array.isArray(tree.data) ? tree.data : tree.data?.allIntents ?? [];
   }, [tree.data]);
+
+  const roots = useMemo(() => {
+    return allIntents.filter((it: any) => !it.parentId || !allIntents.some((x: any) => x.id === it.parentId));
+  }, [allIntents]);
 
   const empty = roots.length === 0;
 
@@ -53,7 +56,7 @@ export function V2Agenda({
       ) : (
         <div className="space-y-2.5">
           {roots.map((root: any) => {
-            const children = (tree.data ?? []).filter((x: any) => x.parentId === root.id);
+            const children = allIntents.filter((x: any) => x.parentId === root.id);
             const tone = TIER_BADGE[root.tier] || "bg-slate-500/10 text-slate-400 border-slate-500/20";
             return (
               <button

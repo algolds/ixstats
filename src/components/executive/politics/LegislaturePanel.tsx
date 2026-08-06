@@ -16,11 +16,9 @@ import {
 } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
-import { TabHeroBanner } from "~/components/mycountry/primitives/TabHeroBanner";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { ParliamentHemicycle } from "./ParliamentHemicycle";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
 
@@ -179,75 +177,8 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
   return (
     <div className="space-y-4">
-      <TabHeroBanner
-        context="politics_legislature"
-        as
-        any
-        title="Legislature"
-        subtitle="Parliamentary configuration, political metrics, laws & governance issues"
-        icon={Landmark}
-        accentColor="indigo"
-      />
 
-      {/* ─── Current Parliament Hemicycle (shows after first election) ─── */}
-      {hasParliamentData && (
-        <>
-          <Card className="glass-hierarchy-child border-indigo-500/20">
-            <CardHeader className="pb-2">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <Landmark className="h-4 w-4 text-indigo-600" />
-                  <CardTitle className="text-base">Current Parliament</CardTitle>
-                  {activeChamberSeatsCount > 0 && (
-                    <Badge variant="outline" className="ml-auto text-[10px]">
-                      {activeChamberSeatsCount} seats
-                    </Badge>
-                  )}
-                  {/* Lore-first: show how this chamber's members are chosen when it
-                      isn't the default party-election (sortition, appointed, etc.).
-                      See plans/mycountry-lore-alignment*.md */}
-                  {activeChamberSelectionLabel && (
-                    <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${activeChamberSeatsCount > 0 ? "" : "ml-auto"}`}
-                    >
-                      {activeChamberSelectionLabel}
-                    </Badge>
-                  )}
-                </div>
-                {chambers.length > 1 && (
-                  <div className="mt-1 border-t border-slate-800 pt-2">
-                    <Tabs value={activeChamberTab} onValueChange={setActiveChamberTab}>
-                      <TabsList className="flex-wrap gap-1 bg-transparent p-0">
-                        {chambers.map((chamber: any) => (
-                          <TabsTrigger
-                            key={chamber.name}
-                            value={chamber.name}
-                            className="animate-in fade-in zoom-in h-7 border border-slate-800 bg-slate-900 px-2.5 py-1 text-[10px] duration-200 data-[state=active]:border-indigo-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white"
-                          >
-                            {chamber.name}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ParliamentHemicycle
-                seats={activeChamberSeats}
-                totalSeats={activeChamberSeatsCount}
-                partySummary={activeChamberPartySummary}
-                legislatureName={
-                  chambers.length > 1 ? activeChamberTab : parliament.legislature.name
-                }
-              />
-            </CardContent>
-          </Card>
-          <Separator />
-        </>
-      )}
+
 
       {/* ─── Legislature Setup (default: expanded) ─── */}
       <section className="space-y-3">

@@ -99,69 +99,71 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4" />
-              Overall Readiness
+          <div className="space-y-1.5">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+              <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
+              <span className="truncate">Overall Readiness</span>
             </div>
-            <div className="text-3xl font-bold">
-              <NumberFlowDisplay value={averageReadiness} format="percentage" decimalPlaces={0} />
+            <div className="text-xl font-black text-foreground font-mono">
+              {Math.min(100, Math.max(0, Math.round(averageReadiness > 1 ? averageReadiness : averageReadiness * 100)))}%
             </div>
-            <Progress value={averageReadiness} className="h-2" />
+            <Progress
+              value={averageReadiness > 1 ? averageReadiness : averageReadiness * 100}
+              className="h-1.5"
+            />
           </div>
 
-          <div className="space-y-2">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Activity className="h-4 w-4" />
-              Technology Level
+          <div className="space-y-1.5">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+              <Activity className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+              <span className="truncate">Technology Level</span>
             </div>
-            <div className="text-3xl font-bold">
-              <NumberFlowDisplay value={averageTechnology} format="percentage" decimalPlaces={0} />
+            <div className="text-xl font-black text-foreground font-mono">
+              {Math.min(100, Math.max(0, Math.round(averageTechnology > 1 ? averageTechnology : averageTechnology * 100)))}%
             </div>
-            <Progress value={averageTechnology} className="h-2" />
+            <Progress
+              value={averageTechnology > 1 ? averageTechnology : averageTechnology * 100}
+              className="h-1.5"
+            />
           </div>
 
-          <div className="space-y-2">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4" />
-              Force Morale
+          <div className="space-y-1.5">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
+              <Users className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <span className="truncate">Force Morale</span>
             </div>
-            <div className="text-3xl font-bold">
-              <NumberFlowDisplay value={averageMorale} format="percentage" decimalPlaces={0} />
+            <div className="text-xl font-black text-foreground font-mono">
+              {Math.min(100, Math.max(0, Math.round(averageMorale > 1 ? averageMorale : averageMorale * 100)))}%
             </div>
-            <Progress value={averageMorale} className="h-2" />
+            <Progress
+              value={averageMorale > 1 ? averageMorale : averageMorale * 100}
+              className="h-1.5"
+            />
           </div>
         </div>
 
-        <Separator className="my-6" />
-
-        {/* Branch Summary */}
-        {branches && branches.length > 0 && (
-          <div>
-            <h4 className="mb-3 text-sm font-semibold">Branch Status</h4>
-            <div className="space-y-2">
-              {branches.map((branch) => (
-                <div
-                  key={branch.id}
-                  className="hover:bg-accent/50 flex items-center justify-between rounded-lg p-2"
-                >
-                  <span className="text-sm">{branch.name}</span>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="text-muted-foreground">
-                      Readiness: <span className="font-medium">{branch.readinessLevel}%</span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      Budget:{" "}
-                      <span className="font-medium">
-                        ${(branch.annualBudget / 1000000).toFixed(0)}M
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              ))}
+        {/* Strategic Defense Posture Summary */}
+        <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2.5">
+          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
+            <div>
+              <p className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-wider">Defense Alert Level</p>
+              <p className="text-xs font-black text-emerald-400 mt-0.5">DEFCON 4 — NOMINAL</p>
             </div>
+            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-bold text-[10px] shrink-0">
+              🛡️
+            </span>
           </div>
-        )}
+
+          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
+            <div>
+              <p className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-wider">Force Projection</p>
+              <p className="text-xs font-black text-cyan-400 mt-0.5">REGIONAL DETERRENCE</p>
+            </div>
+            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-bold text-[10px] shrink-0">
+              🎯
+            </span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

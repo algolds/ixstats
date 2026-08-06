@@ -33,10 +33,12 @@ the live working set stays here.
 | [064-myleague-myclub-consolidated.md](064-myleague-myclub-consolidated.md) | High | DONE (verified in code v2) |
 | [065-myleague-emotional-layer.md](065-myleague-emotional-layer.md) | High | DONE |
 
-### MyCountry Core Loops
+### MyCountry Core Loops & v2 Architecture
 | Plan | Scope | Status |
 |------|-------|--------|
-| [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–5 implemented; narrative+ledger spine) | ACTIVE |
+| [mycountry-bible-v2.md](mycountry-bible-v2.md) | Design & Product Bible v2 — Executive decision simulator | DONE (Verified) |
+| [mycountry-v2-migration.md](mycountry-v2-migration.md) | IA, Layout & Component Migration (Phases 1–6 + 3 Bible Enhancements) | DONE (Verified) |
+| [mycountry-core-loops-design.md](mycountry-core-loops-design.md) | Exec / Diplomacy / Politics loop closure (Phases 1–6 implemented; narrative+ledger spine) | DONE (Verified) |
 | [050-diplomatic-goals-stances.md](archive/050-diplomatic-goals-stances.md) | Obfuscate diplomacy math, add Stances & Goals | DONE (Verified) |
 | [051-unify-narrative-spine.md](archive/051-unify-narrative-spine.md) | Route actions through `recordCountryEvent` dispatcher | DONE (Verified) |
 | [052-governance-ledger.md](archive/052-governance-ledger.md) | Country Change Log UI timeline | DONE (Verified) |

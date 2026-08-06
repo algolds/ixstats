@@ -192,54 +192,63 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
   return (
     <div
       className={cn(
-        "relative flex min-h-[110px] w-full flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md",
+        "group relative flex flex-1 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 shadow-inner backdrop-blur-md select-none text-left transition-all hover:bg-white/[0.06] cursor-pointer",
         className
       )}
+      onClick={() => {
+        if (current) onResolve(current.section);
+      }}
     >
+      {/* iOS Widget Vibrant Header */}
+      <div className="flex items-center justify-between gap-1.5 text-amber-500 text-xs font-extrabold tracking-wider uppercase mb-2 z-10">
+        <div className="flex items-center gap-1.5">
+          <Layers className="h-3.5 w-3.5" />
+          <span>Smart Stack</span>
+        </div>
+        {items.length > 0 && (
+          <span className="rounded-full bg-amber-500/20 text-amber-400 px-2 py-0.5 text-[9px] font-extrabold">
+            {activeIndex + 1} / {items.length}
+          </span>
+        )}
+      </div>
+
       {current ? (
-        <div className="flex h-full w-full flex-col sm:flex-row items-center justify-between gap-4 p-2">
-          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-            <div
-              className={cn(
-                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-sm",
-                current.borderClass
-              )}
-            >
-              <current.icon className="h-5.5 w-5.5" />
-            </div>
-            <div className="min-w-0 text-left">
-              <span className="text-muted-foreground/60 text-[9px] font-extrabold tracking-widest uppercase">
-                {current.label}
-              </span>
-              <p className="text-foreground mt-0.5 text-xs sm:text-sm font-bold leading-snug">
-                {current.text}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => onResolve(current.section)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95 shadow-sm"
-          >
-            Resolve Task <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+        <div className="flex flex-grow flex-col items-center justify-center py-2 z-10">
+          <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase flex items-center gap-1">
+            <current.icon className="h-3 w-3" />
+            <span>{current.label}</span>
+          </span>
+          <p className="text-foreground mt-1 text-center text-xs sm:text-sm font-black tracking-tight leading-snug line-clamp-2 px-4">
+            {current.text}
+          </p>
+          <span className="text-amber-400/90 group-hover:text-amber-300 mt-2 text-center text-[10px] font-bold uppercase truncate max-w-full transition-colors flex items-center justify-center gap-1">
+            Resolve Directive <ChevronRight className="h-3 w-3" />
+          </span>
         </div>
       ) : (
-        <div className="flex h-full w-full flex-col items-center justify-center py-5 px-4 text-center">
-          <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 shadow-sm">
-            <Check className="h-4.5 w-4.5 text-emerald-400" />
-          </div>
-          <span className="text-xs sm:text-sm font-bold tracking-wide text-emerald-400">All sectors operating normally</span>
-          <p className="text-muted-foreground/60 mt-0.5 text-[11px] font-medium">
-            Your daily agenda is completely clear.
-          </p>
+        <div className="flex flex-grow flex-col items-center justify-center py-3 z-10">
+          <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
+            Sectors Operational
+          </span>
+          <span className="text-foreground mt-1 text-2xl font-black tracking-tighter text-emerald-400 flex items-center gap-1">
+            <Check className="h-5 w-5" /> 0 Pending
+          </span>
+          <span className="text-muted-foreground/60 mt-2 text-center text-[10px] font-semibold uppercase">
+            All Directive Tasks Clear
+          </span>
         </div>
       )}
 
+      {/* Stack Navigation Side Controls */}
       {items.length > 1 && (
-        <div className="absolute top-0 right-2 bottom-0 z-20 flex flex-col justify-center gap-1">
+        <div
+          className="absolute top-0 right-2 bottom-0 z-20 flex flex-col justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
+            type="button"
             onClick={() => setActiveIndex((prev) => (prev - 1 + items.length) % items.length)}
-            className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
+            className="text-muted-foreground/50 hover:text-foreground p-1 transition-colors active:scale-90"
           >
             <ChevronUp className="h-3 w-3" />
           </button>
@@ -249,14 +258,15 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
                 key={idx}
                 className={cn(
                   "h-1 w-1 rounded-full transition-all duration-300",
-                  idx === activeIndex ? "scale-125 bg-amber-500" : "bg-white/20"
+                  idx === activeIndex ? "scale-125 bg-amber-400" : "bg-white/20"
                 )}
               />
             ))}
           </div>
           <button
+            type="button"
             onClick={() => setActiveIndex((prev) => (prev + 1) % items.length)}
-            className="text-muted-foreground/50 hover:text-foreground/80 p-0.5 transition-colors active:scale-90"
+            className="text-muted-foreground/50 hover:text-foreground p-1 transition-colors active:scale-90"
           >
             <ChevronDown className="h-3 w-3" />
           </button>

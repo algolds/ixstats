@@ -31,6 +31,7 @@ import { CountryProfileInfoBox } from "~/components/countries/CountryProfileInfo
 import { PublicExecutiveOverview } from "~/components/countries/PublicExecutiveOverview";
 import { CountryDataProvider } from "~/components/mycountry/primitives";
 import { MyCountryTabSystem } from "~/components/mycountry/MyCountryTabSystem";
+import { CountryChangeLogTimeline } from "~/components/executive/CountryChangeLogTimeline";
 
 interface CountryProfilePageProps {
   params: Promise<{ slug?: string; id?: string }>;
@@ -152,18 +153,32 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
 
       {/* Main Content */}
       <div className="container mx-auto space-y-8 px-4 py-8">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{country.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        {/* Breadcrumb & Owner Command Pill Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{country.name}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          {isOwnCountry && (
+            <Link href="/mycountry">
+              <Button
+                size="sm"
+                className="group flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/20 px-4 py-1.5 text-xs font-black text-amber-300 backdrop-blur-md transition-all hover:bg-amber-500/30 hover:scale-105 active:scale-95 shadow-md"
+              >
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                <span>Leader Command Surface → Edit in MyCountry</span>
+              </Button>
+            </Link>
+          )}
+        </div>
 
         {/* Vitality Rings Section - Full Width */}
         <PublicVitalityRings country={country} />
@@ -190,32 +205,10 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
               </CountryDataProvider>
             </div>
 
-            {/* Additional Sections */}
-            {country.analytics &&
-              country.analytics.riskFlags &&
-              country.analytics.riskFlags.length > 0 && (
-                <Card className="glass-hierarchy-child">
-                  <CardContent className="p-6">
-                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                      Recent Activity
-                    </h3>
-                    <div className="space-y-3">
-                      {country.analytics.riskFlags.slice(0, 3).map((flag: string, i: number) => (
-                        <div
-                          key={i}
-                          className="rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-4 dark:bg-yellow-950/20"
-                        >
-                          <p className="text-sm font-medium">{flag.replace(/_/g, " ")}</p>
-                          <p className="text-muted-foreground mt-1 text-xs">
-                            Economic planning consideration
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+            {/* Recent Activity & Governance Ledger */}
+            <div className="space-y-4 pt-2">
+              <CountryChangeLogTimeline countryId={country.id} countryName={country.name} />
+            </div>
 
             {/* Call to Action Cards */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

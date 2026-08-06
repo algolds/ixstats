@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Loader2, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { Compass, Loader2, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { EntityKind, ParseWikiResult } from "~/lib/wiki-entity-parser";
 
@@ -23,9 +23,7 @@ interface PopulateFromWikiButtonProps {
  *
  * Renders a small inline result alert (applied / skipped fields) so the
  * user can see what was filled in without leaving the page. When a parsed
- * value differs from the entity's existing value, it's flagged as a
- * contradiction (soft or hard) so the user can decide whether to trust
- * the wiki data or the in-app value.
+ * leader photo URL is available, the alert includes a "Use Photo" button.
  */
 export function PopulateFromWikiButton({
   countryId,
@@ -37,37 +35,36 @@ export function PopulateFromWikiButton({
 }: PopulateFromWikiButtonProps) {
   const [result, setResult] = useState<ParseWikiResult | null>(null);
 
-  const mutate = api.countryGeo.populateFromWiki.useMutation({
-    onSuccess: (res) => {
-      setResult(res);
-      if (res.hasChanges) onApplied?.();
+  const mutate = api.wikiEntityParser.populate.useMutation({
+    onSuccess: (data) => {
+      setResult(data as ParseWikiResult);
+      if (data.appliedCount > 0) {
+        onApplied?.();
+      }
     },
   });
-
-  const handleClick = () => {
-    setResult(null);
-    mutate.mutate({ countryId, kind, id });
-  };
 
   if (result) {
     return <WikiParseResult result={result} onDismiss={() => setResult(null)} />;
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={mutate.isPending}
-      title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-violet-500/15 disabled:opacity-50"
-    >
-      {mutate.isPending ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      ) : (
-        <Sparkles className="h-3 w-3" />
-      )}
-      {mutate.isPending ? "Parsing wiki…" : compact ? "Wiki" : "Populate from Wiki"}
-    </button>
+    <div className="inline-flex flex-col items-start gap-1">
+      <button
+        type="button"
+        onClick={() => mutate.mutate({ countryId, kind, id, wikiTitle })}
+        disabled={mutate.isPending}
+        title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
+        className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-violet-500/15 disabled:opacity-50"
+      >
+        {mutate.isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Compass className="h-3 w-3" />
+        )}
+        {mutate.isPending ? "Parsing wiki…" : compact ? "Wiki" : "Populate from Wiki"}
+      </button>
+    </div>
   );
 }
 

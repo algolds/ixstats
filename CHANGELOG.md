@@ -10,6 +10,47 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added & Refactored (MyCountry v2 Surface & Executive Command Redesign)
+
+- **MyCountry v2 Command Surface Architecture**:
+  - **Single-Page Command Shell**: Built [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx), replacing legacy multi-tab WarRooms with a unified single-page command surface. Set as default surface in [MyCountryRouter.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx).
+  - **Top Mirrored Navigation Bar**: Built `V2ModeToggle` and `V2RightPillNav` in [V2ModeToggle.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2ModeToggle.tsx), combining brand logo, operating modes (Home, Declare a Directive), domain pages (Diplomacy, Defense, Politics, Economy), and mirrored right-side **Profile** (`/countries/[slug]`) and **Editor** (`/mycountry/editor`) pills.
+  - **Automatic Viewport Scroll Positioning**: Added `navRef` and mount effect in [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx) to automatically position the initial viewport directly below the main navigation bar, with smooth scroll-up to reveal the top nav.
+- **Intent Engine & Executive Console**:
+  - **Plain-Language Directive Composer**: Built [V2Console.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Console.tsx), offering 3 pre-computed directive packages (Measured, Moderate, Extreme) + custom policy drafting with show-before-commit diff previews.
+  - **Intent tRPC Backend Router**: Created `intent` router ([intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts)) with `suggest`, `preview`, `commit`, `getTree`, and `getStatus` procedures. Implemented policy registry filtering, budget deltas, power broker acceptance checks, locked core stat lever protection, and weekly directive cooldown slot enforcement.
+  - **Commitments Agenda Rail**: Built [V2Agenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Agenda.tsx), rendering active directive trees, parent-child follow-up chains, and status badges in the right-side rail.
+- **Opportunity Briefing Hero & Priority Engine**:
+  - Created [V2OpportunityHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2OpportunityHero.tsx) as the primary notification & opportunity layer on the dashboard.
+  - Dynamically ranks and surfaces top nation opportunities across domains (`Defense/Crisis > Diplomacy/Treaty > Politics/Bills > Economy > Active Intent`) with key metrics telemetry and a 1-click **"Declare Directive to Resolve"** action button.
+- **Realtime Pulse & Weekly Agenda Surface (`V2MyAgenda`)**:
+  - Created [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx), bringing the full-scale Halo Dynamic Island Calendar & Smart Agenda directly above the Recent Activity feed (`lg:col-span-2`).
+  - Features a 7-day interactive horizon date strip, scheduled policy votes, summits, audits, and executive directive slot capacity tracking.
+  - Added a **Quick Action Dialog** modal (`Dialog`) for event briefings, telemetry previews, and 1-click directive resolution triggers.
+- **Apple-Design Quick Actions & Visual Polish**:
+  - **Compact Action Card Grid**: Standardized the 4 Quick Action cards (Diplomacy, Defense, Politics, Economy & Budget) in [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx) to an ultra-dense ~48px height compact scale.
+  - **Rescaled Background Graphics**: Rescaled ambient background SVG graphics & radial glows in [ActionCardGraphics.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/ActionCardGraphics.tsx) (`DiplomacyGraphic`, `DefenseGraphic`, `PoliticsGraphic`, `EconomyGraphic`) with SF-style optical typography, `tracking-tight` letter spacing, and tight micro-interactions (`active:scale-[0.98] hover:scale-[1.015]`).
+- **Domain Surfaces & Drill-Down Sheets**:
+  - Created [V2DomainSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DomainSurface.tsx) for dedicated domain hero and drill-down views on `/mycountry/diplomacy`, `/defense`, `/politics`, `/economy`.
+  - Created [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx) for right-side slide-over sheets covering Relations, Defense, Politics, Economy, and Intent tree details.
+- **Phase 4 — Country Profile Consolidation (`/countries/[slug]`)**:
+  - **Public Read-Only Stats & Owner Pill**: Consolidated deep stat tabs (`At a Glance`, `Economy`, `Government`, `Geography`) onto the public Country Profile route ([profile-page.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/profile-page.tsx)) and added a floating **"Leader Command Surface → Edit in MyCountry"** pill for nation leaders.
+  - **Merged Recent Activity & Governance Ledger**: Embedded [CountryChangeLogTimeline.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/CountryChangeLogTimeline.tsx) as the integrated **Recent Activity & Governance Ledger** on `/countries/[slug]`, merging direct DB change logs with storyteller effects, diplomatic events, and responded national issues. Added interactive category filter selectors (`All Activity`, `Directives & Policies`, `Diplomacy`, `Elections & Cabinet`).
+  - **Drill Sheet Navigation Bridge**: Added a **"Full Profile Depth →"** button on drill sheets linking directly to `/countries/[slug]#<kind>`.
+- **Phase 5 — Qualitative Relations & Player-Fiat Politics**:
+  - **Bands-Only Relations**: Created [relation-bands.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relation-bands.ts) mapping raw 0–100 scores to 5 qualitative standing badges (*Aligned*, *Cooperative*, *Neutral*, *Tense*, *Hostile*), refactoring [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx) to hide raw percentage math.
+  - **Executive Fiat Mode**: Updated [PoliticsDrillDown.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/PoliticsDrillDown.tsx) with an Executive Fiat banner confirming 100% authorial player control over cabinet, parties, legislature, and elections.
+- **Phase 6 — ThinkPages Narrative Summation Draft**:
+  - **Auto-Generated Summation Drafts**: Created [intent-summation.ts](file:///home/jxsig/projects/ixstats/src/lib/intent/intent-summation.ts) to generate narrative prose posts upon directive completion.
+  - **1-Click Share Confirmation Modal**: Built [ThinkPagesShareModal.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/ThinkPagesShareModal.tsx) for text editing and 1-click publishing or saving as draft. Added `getDraftPosts` tRPC procedure in [queries.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/thinkpages/posts/posts/queries.ts).
+- **Final v2 Bible Enhancements**:
+  - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (*Superpower Influence*, *Capital Imbalance*, *Resource Synergist*), mounting badges on [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
+  - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts) and built `<IntentBranchingTree />` inside `IntentDetail` in [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx) rendering parent-child decision tree lineages.
+  - **Opt-In Crisis Deliberation Flow**: Added a **"Convene Crisis Cabinet"** button to reactive briefing cards in [V2CommandBriefingHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandBriefingHero.tsx), allowing leaders to launch emergency cabinet deliberation flows on urgent national events.
+- **Dashboard Feed & UX Refinements**:
+  - Shortened initial Recent Activity (`RecordFeed`) item count to 5 items in [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx).
+  - Streamlined button typography and cleaned up icon hierarchy for distraction-free executive interface.
+
 ### Optimized & Refactored
 
 - **Full-Stack Performance Optimization Suite (Plans A, B, C)**:

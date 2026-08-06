@@ -2,40 +2,18 @@
 
 import { useState, useMemo } from "react";
 import {
-  FileClock,
   Briefcase,
   AlertTriangle,
   Clock,
   Check,
-  Layers,
-  Calendar as CalendarIcon,
-  ListTodo,
+  TrendingUp,
+  RotateCw,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
-import { useCountryData, QuickVitalityRings, createVitalityRingsFromCountry } from "../primitives";
-import { SmartStack } from "../SmartStack";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
-
-function formatCompact(num?: number | null): string {
-  if (num === undefined || num === null || !isFinite(num)) return "0";
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  return num.toLocaleString();
-}
-
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
+import { useCountryData } from "../primitives";
+import type { V2Drill } from "./V2DrillSheets";
 
 function formatRolloutRemaining(remainingMs: number): string {
   if (remainingMs <= 0) return "Finalizing";
@@ -50,10 +28,14 @@ function CivilServiceWidget({
   countryId,
   enabled,
   onNavigate,
+  onDeclare,
+  onOpenDrill,
 }: {
   countryId: string;
   enabled: boolean;
   onNavigate?: (section: MyCountrySection) => void;
+  onDeclare?: (prefilled?: string) => void;
+  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
 }) {
   const { data } = api.government.getCivilServiceStatus.useQuery(
     { countryId },
@@ -77,13 +59,40 @@ function CivilServiceWidget({
       ? "text-amber-400"
       : "text-emerald-400";
 
+  const handleWidgetClick = () => {
+    if (onDeclare) {
+      onDeclare(
+        data?.overCapacity
+          ? "Rebalance civil service staffing capacity and program allocation"
+          : "Expand civil service program capacity and administrative operations"
+      );
+    } else if (onNavigate) {
+      onNavigate("executive");
+    }
+  };
+
   return (
-    <div className="flex flex-1 min-w-0 flex-col justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
-      <div>
+    <div
+      onClick={handleWidgetClick}
+      className="group relative flex flex-1 min-w-0 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md cursor-pointer hover:bg-white/[0.06] hover:border-white/20 transition-all"
+    >
+      {/* Ambient Background Graphic & Watermark Glyph */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300">
+        <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-amber-500/10 blur-xl opacity-20 group-hover:opacity-35 transition-opacity" />
+        <Briefcase
+          className="absolute -bottom-2 -right-2 h-20 w-20 text-amber-400 opacity-[0.05] transition-all duration-300 group-hover:opacity-[0.10] group-hover:scale-105"
+          strokeWidth={1}
+        />
+      </div>
+
+      <div className="z-10">
         <button
           type="button"
-          onClick={() => onNavigate?.("executive")}
-          className="group flex w-full items-center justify-between gap-2 text-left"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleWidgetClick();
+          }}
+          className="group/btn flex w-full items-center justify-between gap-2 text-left cursor-pointer"
         >
           <div className="flex items-center gap-1.5">
             <Briefcase className="h-3.5 w-3.5 text-amber-500" />
@@ -110,7 +119,7 @@ function CivilServiceWidget({
       </div>
 
       {data.rolloutQueue.length > 0 && (
-        <div className="mt-0.5 flex flex-col gap-1.5 border-t border-white/5 pt-1.5">
+        <div className="mt-0.5 flex flex-col gap-1.5 border-t border-white/5 pt-1.5 z-10">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3 text-cyan-400" />
             <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
@@ -144,214 +153,317 @@ function CivilServiceWidget({
 export function V2CommandBriefingHero({
   countryId,
   onNavigate,
+  onOpenDrill,
+  onDeclare,
 }: {
   countryId: string;
   onNavigate?: (section: MyCountrySection) => void;
+  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onDeclare?: (prefilled?: string) => void;
 }) {
-  const { country } = useCountryData();
-  const [viewMode, setViewMode] = useState<"stack" | "widgets">("stack");
+  const { country, economyData } = useCountryData();
 
-  // Fetch canon feed for session summary
-  const feed = api.mycountry.getCanonFeed.useQuery(
-    { countryId, limit: 30 },
-    { enabled: !!countryId }
-  );
-
-  // Fetch national issues and pending count for reminders/smart stack
+  // Fetch national issues count
   const pendingIssues = api.nationalIssues.getPendingCount.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
   const pendingCount = pendingIssues.data?.count ?? 0;
 
-  const items = useMemo(() => feed.data ?? [], [feed.data]);
+  // Fetch civil service status for opportunity signals
+  const civilService = api.government.getCivilServiceStatus.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 60_000 }
+  );
+  const csData = civilService.data;
 
-  const briefing = useMemo(() => {
-    if (items.length === 0) return null;
-    const latest = items[0];
-    return {
-      latest,
-      weekCount: items.length,
-    };
-  }, [items]);
-
-  const today = useMemo(() => new Date(), []);
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const agendaItems = useMemo(() => {
-    const list: Array<{
+  // --- Proactive Opportunity Engine ---
+  // Evaluates available data and surfaces the most important context.
+  // Priority: Crises > Capacity Alerts > Economic Signals > Stability > All Clear
+  const contextCards = useMemo(() => {
+    const cards: Array<{
       id: string;
-      text: string;
+      label: string;
+      title: string;
+      subtitle: string;
+      actionText: string;
+      prefilledGoal: string;
       section: MyCountrySection;
-      borderClass: string;
-      count?: number;
-      kind: "issue" | "relations" | "executive";
+      accentCls: string;
+      badgeCls: string;
+      glowBgCls: string;
+      bgImage: string;
+      icon: any;
     }> = [];
 
+    // Priority 1: Pending Directives / National Issues
     if (pendingCount > 0) {
-      list.push({
-        id: "issues",
-        text: `${pendingCount} National Issue${pendingCount > 1 ? "s" : ""} pending`,
+      cards.push({
+        id: "pending-directives",
+        label: "PENDING DIRECTIVE",
+        title: `${pendingCount} National Issue${pendingCount > 1 ? "s" : ""} Awaiting Executive Action`,
+        subtitle: "Immediate cabinet intervention recommended to prevent stability decay.",
+        actionText: "Resolve Directives",
+        prefilledGoal: "Resolve pending national directives and restore cabinet alignment",
         section: "executive",
-        borderClass: "border-amber-500 text-amber-500",
-        count: pendingCount,
-        kind: "issue",
+        accentCls: "border-amber-500/30 text-amber-400 bg-amber-500/10",
+        badgeCls: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        glowBgCls: "bg-amber-500",
+        bgImage: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=1200&q=80",
+        icon: AlertTriangle,
       });
     }
 
-    return list;
-  }, [pendingCount]);
+    // Priority 2: Civil Service over capacity
+    if (csData?.overCapacity) {
+      cards.push({
+        id: "cs-over-capacity",
+        label: "CAPACITY ALERT",
+        title: "Civil Service Staffing Exceeded",
+        subtitle: `Programs consume ${Math.round(csData.consumedStaff)} staff against ${Math.round(csData.capacity)} available. Consider suspending or consolidating programs.`,
+        actionText: "Manage Programs",
+        prefilledGoal: "Rebalance civil service workload and consolidate active government programs",
+        section: "executive",
+        accentCls: "border-red-500/30 text-red-400 bg-red-500/10",
+        badgeCls: "bg-red-500/20 text-red-300 border-red-500/30",
+        glowBgCls: "bg-red-500",
+        bgImage: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=1200&q=80",
+        icon: AlertTriangle,
+      });
+    }
 
-  const nextEventText = agendaItems.length > 0 ? agendaItems[0].text : "No Pending Crises";
+    // Priority 3: Civil Service severely underutilized
+    if (csData && !csData.overCapacity && csData.utilizationPercent < 40 && csData.capacity > 0) {
+      cards.push({
+        id: "cs-underutilized",
+        label: "OPPORTUNITY",
+        title: `Civil Service at ${Math.round(csData.utilizationPercent)}% Utilization`,
+        subtitle: `${Math.round(csData.capacity - csData.consumedStaff)} staff slots available. Expand active programs to strengthen governance.`,
+        actionText: "Expand Programs",
+        prefilledGoal: "Expand civil service programs to utilize available administrative capacity",
+        section: "executive",
+        accentCls: "border-blue-500/30 text-blue-400 bg-blue-500/10",
+        badgeCls: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+        glowBgCls: "bg-blue-500",
+        bgImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80",
+        icon: Briefcase,
+      });
+    }
+
+    // Priority 4: Economy signals from country data
+    const gdpGrowth = country?.gdpGrowthRate ?? country?.gdpGrowth ?? null;
+    if (typeof gdpGrowth === "number" && Math.abs(gdpGrowth) > 3) {
+      const isPositive = gdpGrowth > 0;
+      cards.push({
+        id: "economic-signal",
+        label: isPositive ? "GROWTH SIGNAL" : "ECONOMIC WARNING",
+        title: isPositive
+          ? `Economy Expanding at ${gdpGrowth.toFixed(1)}% Growth`
+          : `Economy Contracting at ${gdpGrowth.toFixed(1)}%`,
+        subtitle: isPositive
+          ? "Strong growth detected. Consider investing in infrastructure or expanding programs."
+          : "Negative trend detected. Review fiscal policy and consider stabilization measures.",
+        actionText: isPositive ? "Review Fiscal Policy" : "Stabilize Economy",
+        prefilledGoal: isPositive
+          ? "Expand infrastructure and capital investment to leverage economic growth"
+          : "Implement fiscal stabilization and economic stimulus measures",
+        section: "executive",
+        accentCls: isPositive
+          ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+          : "border-red-500/30 text-red-400 bg-red-500/10",
+        badgeCls: isPositive
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+          : "bg-red-500/20 text-red-300 border-red-500/30",
+        glowBgCls: isPositive ? "bg-emerald-500" : "bg-red-500",
+        bgImage: isPositive
+          ? "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=80"
+          : "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80",
+        icon: isPositive ? TrendingUp : AlertTriangle,
+      });
+    }
+
+    // Priority 5: Political stability concern
+    const stability = country?.politicalStability ?? country?.stability ?? null;
+    if (typeof stability === "number" && stability < 50) {
+      cards.push({
+        id: "stability-warning",
+        label: "STABILITY WARNING",
+        title: `Political Stability at ${Math.round(stability)}%`,
+        subtitle: "Low stability increases risk of unrest. Prioritize domestic policy and cabinet engagement.",
+        actionText: "Review Stability",
+        prefilledGoal: "Enact domestic policy reforms to stabilize government and address public unrest",
+        section: "politics",
+        accentCls: "border-orange-500/30 text-orange-400 bg-orange-500/10",
+        badgeCls: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+        glowBgCls: "bg-orange-500",
+        bgImage: "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?w=1200&q=80",
+        icon: AlertTriangle,
+      });
+    }
+
+    // Fallback: Sector Harmony — All Clear
+    if (cards.length === 0) {
+      cards.push({
+        id: "all-clear",
+        label: "SECTOR HARMONY",
+        title: "All State Sectors Operating Normally",
+        subtitle: "No critical directives or opportunities detected. System telemetry stable.",
+        actionText: "Command Suite",
+        prefilledGoal: "Maintain stable government operations and economic growth",
+        section: "overview",
+        accentCls: "border-emerald-500/30 text-emerald-400 bg-emerald-500/10",
+        badgeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        glowBgCls: "bg-emerald-500",
+        bgImage: "https://images.unsplash.com/photo-1569974507005-6dc61f97fb5c?w=1200&q=80",
+        icon: Check,
+      });
+    }
+
+    return cards;
+  }, [pendingCount, csData, country]);
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const safeIdx = activeIdx >= contextCards.length ? 0 : activeIdx;
+  const activeCard = contextCards[safeIdx];
+  const Icon = activeCard.icon;
+
+  const handleCardClick = () => {
+    if (onDeclare) {
+      onDeclare(activeCard.prefilledGoal);
+    } else if (onNavigate) {
+      onNavigate(activeCard.section);
+    }
+  };
 
   return (
     <FacetCard depth={1} className="bg-card/30 flex flex-col gap-4 p-5 backdrop-blur-md">
-      {/* Top Bar: Session Recap & View Mode Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
-        <div className="flex items-center gap-2">
-          <FileClock className="h-4.5 w-4.5 text-amber-500 shrink-0" />
-          <div>
-            <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-              Command Briefing — Since your last session
-            </h4>
-            {briefing && (
-              <p className="text-foreground/90 text-xs leading-tight mt-0.5">
-                <span className="font-semibold">{briefing.weekCount}</span> canon events recorded.
-                Latest: <span className="font-semibold">{briefing.latest.title}</span>{" "}
-                <span className="text-muted-foreground/60 text-[11px]">
-                  ({relativeTime(briefing.latest.timestamp)})
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
+      <div className="flex w-full flex-col items-stretch justify-center gap-4 md:flex-row">
+        {/* Dynamic Context-Aware Hero Banner */}
+        <div
+          onClick={handleCardClick}
+          className={cn(
+            "group relative flex flex-1 min-w-0 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 text-xs backdrop-blur-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] cursor-pointer",
+            activeCard.accentCls
+          )}
+        >
+          {/* Cinematic Context-Aware Unsplash Background Photography Overlay */}
+          {activeCard.bgImage && (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+              <img
+                src={activeCard.bgImage}
+                alt=""
+                className="h-full w-full object-cover object-center opacity-20 dark:opacity-25 transition-transform duration-700 ease-out group-hover:scale-105 filter saturate-[1.2] brightness-90 mix-blend-overlay"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/50" />
+            </div>
+          )}
 
-        {/* View Mode Toggle Pill */}
-        <div className="border-border/60 bg-white/[0.03] flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => setViewMode("stack")}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all border border-transparent",
-              viewMode === "stack"
-                ? "border-amber-500/30 bg-amber-500/15 text-amber-400 shadow-sm"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-            )}
-          >
-            <Layers className="h-3.5 w-3.5" />
-            Smart Stack
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("widgets")}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all border border-transparent",
-              viewMode === "widgets"
-                ? "border-amber-500/30 bg-amber-500/15 text-amber-400 shadow-sm"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-            )}
-          >
-            <ListTodo className="h-3.5 w-3.5" />
-            Widgets Grid
-          </button>
-        </div>
-      </div>
-
-      {/* Main Body */}
-      {viewMode === "stack" ? (
-        <div className="flex w-full flex-col items-stretch justify-center gap-4 md:flex-row">
-          <div className="w-full flex-1">
-            <SmartStack
-              items={agendaItems}
-              onResolve={(section) => onNavigate?.(section)}
-              className="h-full min-h-[140px]"
+          {/* Ambient Background Graphic & Watermark Glyph */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300">
+            <div
+              className={cn(
+                "absolute -bottom-6 -right-6 h-36 w-36 rounded-full blur-2xl transition-opacity duration-300 opacity-20 group-hover:opacity-35",
+                activeCard.glowBgCls
+              )}
+            />
+            <Icon
+              className="absolute -bottom-2 -right-2 h-28 w-28 text-current opacity-[0.07] transition-all duration-300 group-hover:opacity-[0.14] group-hover:scale-105"
+              strokeWidth={1}
             />
           </div>
-          <CivilServiceWidget
-            countryId={countryId}
-            enabled={!!countryId}
-            onNavigate={onNavigate}
-          />
-        </div>
-      ) : (
-        <div className="flex w-full flex-col items-stretch justify-center gap-3 md:flex-row">
-          {/* iOS Calendar widget */}
-          <div className="flex flex-1 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 shadow-inner backdrop-blur-md select-none">
-            <div className="flex items-center gap-1.5 text-red-500 text-xs font-extrabold tracking-wider uppercase mb-2">
-              <CalendarIcon className="h-3.5 w-3.5" />
-              <span>{months[today.getMonth()]}</span>
-            </div>
-            <div className="flex flex-grow flex-col items-center justify-center py-3">
-              <span className="text-[10px] font-bold tracking-widest text-red-500 uppercase">
-                {days[today.getDay()]}
-              </span>
-              <span className="text-foreground mt-1 text-3xl font-black tracking-tighter">
-                {today.getDate()}
-              </span>
-              <span className="text-muted-foreground/60 mt-2 text-center text-[10px] font-semibold uppercase truncate max-w-full">
-                Up Next: {nextEventText}
+          {/* Header Row */}
+          <div className="flex items-center justify-between gap-2 z-10">
+            <div className="flex items-center gap-2">
+              <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase", activeCard.badgeCls)}>
+                <Icon className="h-3 w-3 shrink-0" />
+                {activeCard.label}
               </span>
             </div>
+
+            {/* Stack Cycle Dots if multiple contexts exist */}
+            {contextCards.length > 1 && (
+              <div
+                className="flex items-center gap-1 bg-black/20 backdrop-blur-md rounded-full px-2 py-1 border border-white/10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {contextCards.map((c, idx) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setActiveIdx(idx)}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                      idx === safeIdx ? "w-4 bg-current" : "w-1.5 bg-white/30 hover:bg-white/50"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* iOS Reminders widget */}
-          <div className="flex flex-1 min-w-0 flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
-            <div className="text-muted-foreground/60 mb-2 flex items-center justify-between text-[10px] font-extrabold tracking-wider uppercase">
-              <span>Reminders & Tasks</span>
-              <span className="text-foreground/80 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold">
-                {agendaItems.length}
+          {/* Body Content */}
+          <div className="my-3 space-y-1 z-10">
+            <h3 className="text-foreground text-sm sm:text-base font-black tracking-tight leading-snug">
+              {activeCard.title}
+            </h3>
+            <p className="text-muted-foreground text-xs font-medium leading-relaxed">
+              {activeCard.subtitle}
+            </p>
+          </div>
+
+          {/* Footer Action Row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 z-10 pt-1 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-foreground/90 group-hover:text-foreground flex items-center gap-1 transition-colors">
+                {activeCard.actionText} <Check className="h-3 w-3 opacity-60" />
               </span>
-            </div>
-            <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[120px] flex flex-col justify-center">
-              {agendaItems.length > 0 ? (
-                agendaItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => onNavigate?.(item.section)}
-                    className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-left text-xs font-medium transition-colors hover:bg-white/[0.05]"
-                  >
-                    <div
-                      className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all",
-                        item.borderClass
-                      )}
-                    >
-                      <Check className="h-2.5 w-2.5 scale-0 transition-transform group-hover:scale-100" />
-                    </div>
-                    <span className="flex-1 truncate text-xs">{item.text}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center py-4 text-center text-emerald-400">
-                  <Check className="mb-1 h-5 w-5" />
-                  <span className="text-xs font-semibold">All Tasks Complete</span>
-                </div>
+
+              {onDeclare && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeclare(`Convene Emergency Crisis Cabinet Meeting regarding ${activeCard.title}`);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 hover:bg-amber-500/30 transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  <AlertTriangle className="h-2.5 w-2.5 text-amber-400" />
+                  <span>Convene Crisis Cabinet</span>
+                </button>
               )}
             </div>
-          </div>
 
-          {/* Civil Service Capacity widget */}
-          <CivilServiceWidget
-            countryId={countryId}
-            enabled={!!countryId}
-            onNavigate={onNavigate}
-          />
+            {contextCards.length > 1 ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveIdx((prev) => (prev + 1) % contextCards.length);
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-black/25 hover:bg-black/45 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground hover:text-foreground border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Cycle to next context card"
+              >
+                <span>Cycle ({safeIdx + 1}/{contextCards.length})</span>
+                <RotateCw className="h-3 w-3 opacity-70 group-hover:rotate-180 transition-transform duration-500" />
+              </button>
+            ) : (
+              <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
+                <RotateCw className="h-2.5 w-2.5 opacity-50" /> 1/1
+              </span>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Civil Service Capacity Widget */}
+        <CivilServiceWidget
+          countryId={countryId}
+          enabled={!!countryId}
+          onNavigate={onNavigate}
+          onDeclare={onDeclare}
+          onOpenDrill={onOpenDrill}
+        />
+      </div>
     </FacetCard>
   );
 }

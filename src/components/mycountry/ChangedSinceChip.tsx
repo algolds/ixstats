@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Zap } from "lucide-react";
 import { api } from "~/trpc/react";
 
 /**
@@ -44,7 +44,7 @@ export function ChangedSinceChip({ countryId }: { countryId: string }) {
       title="Diplomatic changes since your last visit"
       className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-bold text-cyan-400"
     >
-      <Sparkles className="h-2.5 w-2.5" />
+      <Zap className="h-2.5 w-2.5" />
       {newCount} new since last visit
     </span>
   );

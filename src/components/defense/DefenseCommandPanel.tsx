@@ -2,16 +2,59 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Activity, Users, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
-import { Separator } from "~/components/ui/separator";
-import { SectionHelpIcon } from "~/components/ui/help-icon";
-import { TabHeroBanner } from "~/components/mycountry/primitives/TabHeroBanner";
+import { Shield, Target, Swords, Flame, Users, Loader2 } from "lucide-react";
+import { cn } from "~/lib/utils";
 
-// Lazy-load heavy panels (only mount when section is expanded)
+// Lazy-load heavy panels per active tab
 const CommandPanel = dynamic(
   () =>
     import("~/components/defense/CommandPanel").then((m) => ({
       default: m.CommandPanel,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
+
+const BorderThreatPanel = dynamic(
+  () =>
+    import("~/components/defense/BorderThreatPanel").then((m) => ({
+      default: m.BorderThreatPanel,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
+
+const AssetManager = dynamic(
+  () =>
+    import("~/components/defense/AssetManager").then((m) => ({
+      default: m.AssetManager,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
+
+const OperationsPanel = dynamic(
+  () =>
+    import("~/components/defense/OperationsPanel").then((m) => ({
+      default: m.OperationsPanel,
     })),
   {
     ssr: false,
@@ -43,83 +86,45 @@ interface DefenseCommandPanelProps {
 }
 
 export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
-  // Default: budget expanded, stability collapsed (lazy load pattern)
-  const [budgetExpanded, setBudgetExpanded] = useState(true);
-  const [stabilityExpanded, setStabilityExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "branches" | "threats" | "assets" | "operations" | "stability"
+  >("branches");
+
+  const tabs = [
+    { id: "branches" as const, label: "Branches & Readiness", icon: Shield },
+    { id: "threats" as const, label: "Threat Vectors", icon: Target },
+    { id: "assets" as const, label: "Forces & Arsenal", icon: Swords },
+    { id: "operations" as const, label: "Special Operations", icon: Flame },
+    { id: "stability" as const, label: "Internal Stability", icon: Users },
+  ];
 
   return (
     <div className="space-y-4">
-      <TabHeroBanner
-        context="defense"
-        title="Command Center"
-        subtitle="Budget allocation, readiness, and internal stability"
-        icon={Activity}
-        accentColor="red"
-      />
-
-      {/* ─── Budget & Readiness (default: expanded) ─── */}
-      <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
+      {/* Facet Segmented Sub-Tab Switcher */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border/30">
+        {tabs.map(({ id, label, icon: Icon }) => (
           <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
-            onClick={() => setBudgetExpanded(!budgetExpanded)}
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+              activeTab === id
+                ? "bg-red-500/20 text-red-400 border border-red-500/40 shadow-sm"
+                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+            )}
           >
-            <Activity className="h-4 w-4 text-red-600" />
-            <h3 className="text-sm font-semibold">Budget & Readiness</h3>
+            <Icon className="h-4 w-4" />
+            <span>{label}</span>
           </button>
-          <div className="flex items-center gap-1">
-            <SectionHelpIcon
-              title="Budget & Readiness"
-              content="Manage defense budget allocation, personnel distribution, and overall military readiness across branches."
-            />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
-              onClick={() => setBudgetExpanded(!budgetExpanded)}
-            >
-              {budgetExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
-              ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </div>
+        ))}
+      </div>
 
-        {budgetExpanded && <CommandPanel countryId={countryId} />}
-      </section>
-
-      <Separator />
-
-      {/* ─── Internal Stability (default: collapsed) ─── */}
-      <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
-          <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
-            onClick={() => setStabilityExpanded(!stabilityExpanded)}
-          >
-            <Users className="h-4 w-4 text-amber-600" />
-            <h3 className="text-sm font-semibold">Internal Stability</h3>
-          </button>
-          <div className="flex items-center gap-1">
-            <SectionHelpIcon
-              title="Internal Stability"
-              content="Monitor civil order, crime metrics, public order, and social cohesion. Respond to domestic security events."
-            />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
-              onClick={() => setStabilityExpanded(!stabilityExpanded)}
-            >
-              {stabilityExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
-              ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {stabilityExpanded && <StabilityPanel countryId={countryId} />}
-      </section>
+      {activeTab === "branches" && <CommandPanel countryId={countryId} />}
+      {activeTab === "threats" && <BorderThreatPanel countryId={countryId} />}
+      {activeTab === "assets" && <AssetManager countryId={countryId} />}
+      {activeTab === "operations" && <OperationsPanel countryId={countryId} />}
+      {activeTab === "stability" && <StabilityPanel countryId={countryId} />}
     </div>
   );
 }

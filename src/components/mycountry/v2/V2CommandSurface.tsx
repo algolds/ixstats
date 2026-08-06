@@ -1,29 +1,56 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useCountryData, StateSeal } from "../primitives";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useCountryData } from "../primitives";
+import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { api } from "~/trpc/react";
-import { V2ModeToggle, type V2Mode } from "./V2ModeToggle";
+import { V2ModeToggle, V2RightPillNav, type V2Mode } from "./V2ModeToggle";
 import { V2Home } from "./V2Home";
 import { V2Console } from "./V2Console";
+import { V2DomainSurface } from "./V2DomainSurface";
 import { V2DrillSheets, type V2Drill } from "./V2DrillSheets";
+import { DOMAIN_SECTIONS } from "./domain-meta";
+
+import type { MyCountrySection } from "../MyCountrySidebarNav";
 
 /**
  * The v2 command surface (migration §2). When v2 is active this replaces the
  * legacy sidebar/section war-rooms entirely:
  *   - HOME  — the action command surface (command briefing hero + action grid + feed + rail)
+ *   - DOMAIN — full-page domain surfaces for diplomacy / defense / politics / economy routes
  *   - CONSOLE — Executive mode: declare an Intent (the composer, primary)
  *   - DRILL-DOWNS — right-side sheets for depth (intent detail, relations, …)
  * Single unified navigation pill, everything ≤1 click.
  */
-export function V2CommandSurface() {
+export function V2CommandSurface({
+  section = "overview",
+  onNavigate,
+}: {
+  section?: MyCountrySection;
+  onNavigate?: (section: MyCountrySection) => void;
+} = {}) {
   const { country } = useCountryData();
   const countryId = country?.id ?? "";
 
   const [mode, setMode] = useState<V2Mode>("home");
   const [drill, setDrill] = useState<V2Drill>(null);
-  const [_goal, setGoal] = useState("");
+  const [goal, setGoal] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+
+  const navRef = useRef<HTMLDivElement>(null);
+
+  // Automatically start viewport directly below the top nav bar on mount / navigation.
+  // Scrolling up (swiping down towards top of page) reveals the nav bar above.
+  useEffect(() => {
+    if (navRef.current) {
+      const navHeight = navRef.current.getBoundingClientRect().height;
+      if (navHeight > 0) {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: navHeight + 16, behavior: "instant" });
+        });
+      }
+    }
+  }, [section, mode]);
 
   const utils = api.useUtils();
   const handleCommitted = useCallback(
@@ -43,7 +70,7 @@ export function V2CommandSurface() {
 
   const declare = useCallback(
     (prefilled?: string) => {
-      setGoal(prefilled ?? "");
+      setGoal(typeof prefilled === "string" ? prefilled : "");
       setMode("console");
     },
     []
@@ -51,34 +78,45 @@ export function V2CommandSurface() {
 
   const openDrill = useCallback((d: V2Drill) => setDrill(d), []);
 
+  const isDomainSection = DOMAIN_SECTIONS.has(section);
+
   return (
     <div className="container mx-auto space-y-5 px-3 py-3 sm:px-4 sm:py-4">
-      {/* Primary Navigation Pill */}
-      <V2ModeToggle mode={mode} onChangeMode={setMode} />
+      {/* Primary Navigation Row (Left & Right Mirrored Navigation Pills) */}
+      <div ref={navRef} className="flex flex-wrap items-center justify-between gap-3">
+        <V2ModeToggle mode={mode} onChangeMode={setMode} />
+        <V2RightPillNav onNavigate={onNavigate} />
+      </div>
 
-      {mode === "home" ? (
-        <V2Home
+      {mode === "console" ? (
+        <V2Console countryId={countryId} initialGoal={goal} onCommitted={handleCommitted} />
+      ) : isDomainSection ? (
+        <V2DomainSurface
           countryId={countryId}
-          onDeclare={() => declare()}
-          onOpenDrill={openDrill}
-          onOpenIntent={(id) => openDrill({ kind: "intent", intentId: id })}
+          section={section as "diplomacy" | "defense" | "politics" | "economy"}
+          onDeclare={declare}
         />
       ) : (
-        <V2Console countryId={countryId} onCommitted={handleCommitted} />
+        <V2Home
+          countryId={countryId}
+          onDeclare={(prefilled?: string) => declare(prefilled)}
+          onOpenDrill={openDrill}
+          onOpenIntent={(id) => openDrill({ kind: "intent", intentId: id })}
+          onNavigate={onNavigate}
+        />
       )}
 
-      <V2DrillSheets drill={drill} onClose={() => setDrill(null)} countryId={countryId} />
+      <V2DrillSheets
+        drill={drill}
+        onClose={() => setDrill(null)}
+        countryId={countryId}
+        onDeclare={declare}
+      />
 
       {/* Committed toast */}
       {toast && (
-        <div className="border-border bg-secondary animate-in fade-in slide-in-from-bottom-2 fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-start gap-2.5 rounded-xl border px-4 py-3 shadow-2xl">
-          <StateSeal
-            flagUrl={country?.flag}
-            governmentType={country?.governmentType}
-            size={24}
-            showPips={false}
-            className="mt-0.5"
-          />
+        <div className="border-border bg-secondary animate-in fade-in slide-in-from-bottom-2 fixed bottom-5 left-1/2 z-50 flex max-w-lg -translate-x-1/2 items-center gap-3 rounded-xl border px-4 py-3 shadow-2xl">
+          <MyCountryLogo size="sm" variant="icon-only" animated={true} />
           <span className="text-foreground/90 text-[13px] leading-snug">{toast}</span>
         </div>
       )}

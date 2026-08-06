@@ -80,9 +80,24 @@ const KEYWORDS: Record<Category, string[]> = {
     "troop",
     "missile",
     "border security",
+    "defense",
   ],
 
-  fiscal: ["tax", "budget", "deficit", "debt", "spend", "inflation", "subsid", "austerity"],
+  fiscal: [
+    "tax",
+    "budget",
+    "deficit",
+    "debt",
+    "spend",
+    "inflation",
+    "subsid",
+    "austerity",
+    "rebalance",
+    "fiscal",
+    "stimulus",
+    "fund",
+    "allocation",
+  ],
   economy: [
     "industr",
     "job",
@@ -95,6 +110,11 @@ const KEYWORDS: Record<Category, string[]> = {
     "trade",
     "energy",
     "manufactur",
+    "expand",
+    "economic",
+    "market",
+    "business",
+    "commerce",
   ],
   social: [
     "health",
@@ -105,6 +125,12 @@ const KEYWORDS: Record<Category, string[]> = {
     "school",
     "hospital",
     "public service",
+    "civil service",
+    "program",
+    "governance",
+    "admin",
+    "service",
+    "staff",
   ],
   infrastructure: [
     "road",
@@ -117,6 +143,8 @@ const KEYWORDS: Record<Category, string[]> = {
     "airport",
     "broadband",
     "coast",
+    "capital",
+    "utility",
   ],
   security: [
     "crime",
@@ -127,6 +155,11 @@ const KEYWORDS: Record<Category, string[]> = {
     "protest",
     "riot",
     "law and order",
+    "stabilit",
+    "reform",
+    "directive",
+    "order",
+    "cabinet",
   ],
 };
 
@@ -185,12 +218,6 @@ export function classifyGoal(goal: string): { category: Category } {
       bestHits = hits;
       best = cat;
     }
-  }
-
-  if (bestHits === 0) {
-    throw new Error(
-      "Goal not recognized. Please use standard policy keywords (e.g. tax, budget, military, jobs, trade, crime, police, health, education)."
-    );
   }
 
   const category = best ?? "economy";
@@ -430,4 +457,3 @@ export function demo() {
   assert(weightAcceptance("mid", {}) === "mid", "no broker = unchanged");
   return "ok";
 }
-if (typeof require !== "undefined" && require.main === module) console.log(demo());

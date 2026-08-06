@@ -185,7 +185,9 @@ function AgendaTree({
     abandoned: "bg-slate-500/10 text-slate-400 border-slate-500/20",
   };
 
-  if ((tree.data ?? []).length === 0) {
+  const intentsList = Array.isArray(tree.data) ? tree.data : tree.data?.allIntents ?? [];
+
+  if (intentsList.length === 0) {
     return (
       <FacetCard
         depth={1}
@@ -215,8 +217,8 @@ function AgendaTree({
     );
   }
 
-  const rootIntents = (tree.data ?? []).filter(
-    (it: any) => !it.parentId || !(tree.data ?? []).some((x: any) => x.id === it.parentId)
+  const rootIntents = intentsList.filter(
+    (it: any) => !it.parentId || !intentsList.some((x: any) => x.id === it.parentId)
   );
 
   return (
@@ -233,7 +235,7 @@ function AgendaTree({
       </div>
       <div className="space-y-4">
         {rootIntents.map((root: any) => {
-          const children = (tree.data ?? []).filter((x: any) => x.parentId === root.id);
+          const children = intentsList.filter((x: any) => x.parentId === root.id);
           const hasChildren = children.length > 0;
           const toneKey =
             root.tier === "measured" ? "good" : root.tier === "moderate" ? "mid" : "bad";

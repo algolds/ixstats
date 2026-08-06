@@ -53,7 +53,7 @@ export function BuilderHeader({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }}>
-              <MyCountryLogo size="lg" animated mode={mode} />
+              <MyCountryLogo size="lg" animated mode={mode} showSubtitle={true} />
             </motion.div>
             <Badge
               variant="outline"

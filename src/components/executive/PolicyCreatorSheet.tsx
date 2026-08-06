@@ -31,7 +31,6 @@ import {
   ChevronDown,
   ChevronRight,
   Sliders,
-  Sparkles,
   X,
   AlertTriangle,
 } from "lucide-react";
@@ -675,7 +674,7 @@ export function PolicyCreatorSheet({
             {selectedTemplateKey !== "custom" && calculatedEffects && (
               <div className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-emerald-400 uppercase">
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sliders className="h-3.5 w-3.5" />
                   Calculated Simulation Projections
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">

@@ -151,7 +151,7 @@ const CreatePostSchema = z.object({
     ),
   hashtags: z.array(z.string()).optional(),
   mentions: z.array(z.string()).optional(),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
+  visibility: z.enum(["public", "private", "unlisted", "draft"]).default("public"),
   parentPostId: z.string().optional(), // For replies
   repostOfId: z.string().optional(), // For reposts
   visualizations: z

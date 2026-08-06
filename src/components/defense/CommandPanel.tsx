@@ -14,15 +14,11 @@ export function CommandPanel({ countryId }: CommandPanelProps) {
     setEditingBudget,
     budgetData,
     currentYear,
-    branches,
     handleSaveBudget,
     handleTotalBudgetChange,
     handleCategoryChange,
     totalAllocated,
     allocationPercent,
-    averageReadiness,
-    averageTechnology,
-    averageMorale,
   } = useDefenseBudget({ countryId });
 
   return (
@@ -37,13 +33,6 @@ export function CommandPanel({ countryId }: CommandPanelProps) {
         totalAllocated={totalAllocated}
         allocationPercent={allocationPercent}
         currentYear={currentYear}
-      />
-
-      <ReadinessOverviewCard
-        averageReadiness={averageReadiness}
-        averageTechnology={averageTechnology}
-        averageMorale={averageMorale}
-        branches={branches}
       />
     </div>
   );

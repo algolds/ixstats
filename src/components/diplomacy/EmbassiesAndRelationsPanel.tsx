@@ -20,6 +20,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 import { AnimatePresence } from "motion/react";
+import { cn } from "~/lib/utils";
 
 // Hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
@@ -60,6 +61,11 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   const [showEmbassyCreator, setShowEmbassyCreator] = useState(false);
   const [selectedEmbassyId, setSelectedEmbassyId] = useState<string | null>(null);
   const [showAllianceCreator, setShowAllianceCreator] = useState(false);
+
+  // Sub-tab navigation state
+  const [activeTab, setActiveTab] = useState<
+    "embassies" | "relations" | "alliances" | "exchanges" | "events"
+  >("embassies");
 
   // Collapsible sections
   const [relationsExpanded, setRelationsExpanded] = useState(false);
@@ -138,186 +144,200 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   return (
     <div className="space-y-5">
-      {/* Stats Strip */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatCell
-          icon={Building2}
-          label="Embassies"
-          value={stats.activeEmbassies}
-          color="text-cyan-600"
-        />
-        <StatCell
-          icon={Handshake}
-          label="Relations"
-          value={stats.totalRelations}
-          color="text-blue-600"
-        />
-        <StatCell
-          icon={Users}
-          label="Alliances"
-          value={stats.allianceCount}
-          color="text-purple-600"
-        />
-        <StatCell
-          icon={Globe}
-          label="Avg Strength"
-          value={getStrengthLabel(stats.avgStrength)}
-          color="text-emerald-600"
-        />
+      {/* ─── Sub-Tab Navigation Bar ─── */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border/30">
+        <button
+          type="button"
+          onClick={() => setActiveTab("embassies")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            activeTab === "embassies"
+              ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+          )}
+        >
+          <Building2 className="h-4 w-4" />
+          <span>Embassy Network</span>
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-mono">
+            {stats.activeEmbassies}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("relations")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            activeTab === "relations"
+              ? "bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+          )}
+        >
+          <Handshake className="h-4 w-4" />
+          <span>Bilateral Relations</span>
+          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[9px] font-mono">
+            {stats.totalRelations}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("alliances")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            activeTab === "alliances"
+              ? "bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+          )}
+        >
+          <Users className="h-4 w-4" />
+          <span>Alliances & Blocs</span>
+          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[9px] font-mono">
+            {stats.allianceCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("exchanges")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            activeTab === "exchanges"
+              ? "bg-pink-500/20 text-pink-400 border border-pink-500/40 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+          )}
+        >
+          <Palette className="h-4 w-4" />
+          <span>Cultural Exchanges</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("events")}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            activeTab === "events"
+              ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+          )}
+        >
+          <FileText className="h-4 w-4" />
+          <span>Diplomatic Events</span>
+        </button>
       </div>
 
-      {/* ─── Embassy Network ─── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-cyan-600" />
-            <h3 className="text-sm font-semibold">Embassy Network</h3>
-            <SectionHelpIcon
-              title="Embassy Network"
-              content="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
-            />
+      {/* ─── Tab Content Views ─── */}
+      {activeTab === "embassies" && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-cyan-500" />
+              <h3 className="text-sm font-semibold">Embassy Network</h3>
+              <SectionHelpIcon
+                title="Embassy Network"
+                content="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
+              />
+            </div>
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowEmbassyCreator(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Establish Embassy
+              </Button>
+            )}
           </div>
-          {isOwner && (
+
+          {/* Embassy grid or empty state */}
+          {embassiesWithSynergies.length > 0 ? (
+            <EmbassyGrid
+              embassies={embassiesWithSynergies}
+              isOwner={isOwner}
+              onEmbassyClick={(id) => setSelectedEmbassyId(id)}
+            />
+          ) : (
+            <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEmbassyCreator(true)} />
+          )}
+        </section>
+      )}
+
+      {activeTab === "relations" && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Handshake className="h-4 w-4 text-blue-500" />
+            <h3 className="text-sm font-semibold">Diplomatic Relations</h3>
+          </div>
+          <DiplomaticRelationsList countryId={countryId} />
+        </section>
+      )}
+
+      {activeTab === "alliances" && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-500" />
+              <h3 className="text-sm font-semibold">Alliances & Blocs</h3>
+              <SectionHelpIcon
+                title="Alliances & Blocs"
+                content="Form and manage alliances with other nations. Alliances provide mutual defense benefits, trade advantages, and diplomatic leverage."
+              />
+            </div>
             <Button
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => setShowEmbassyCreator(true)}
+              onClick={() => setShowAllianceCreator(true)}
             >
               <Plus className="h-3.5 w-3.5" />
-              Establish Embassy
+              Create Alliance
             </Button>
-          )}
-        </div>
-
-        {/* Network overview metrics */}
-        {networkMetrics && <NetworkOverviewCard networkMetrics={networkMetrics} />}
-
-        {/* Embassy grid or empty state */}
-        {embassiesWithSynergies.length > 0 ? (
-          <EmbassyGrid
-            embassies={embassiesWithSynergies}
-            isOwner={isOwner}
-            onEmbassyClick={(id) => setSelectedEmbassyId(id)}
-          />
-        ) : (
-          <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEmbassyCreator(true)} />
-        )}
-      </section>
-
-      <Separator />
-
-      {/* ─── Diplomatic Relations (collapsible) ─── */}
-      <section className="space-y-3">
-        <button
-          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
-          onClick={() => setRelationsExpanded(!relationsExpanded)}
-        >
-          <div className="flex items-center gap-2">
-            <Handshake className="h-4 w-4 text-blue-600" />
-            <h3 className="text-sm font-semibold">Diplomatic Relations</h3>
           </div>
-          {relationsExpanded ? (
-            <ChevronDown className="text-muted-foreground h-4 w-4" />
+
+          {!alliances || alliances.length === 0 ? (
+            <div className="border-border rounded-lg border border-dashed p-6 text-center">
+              <Users className="text-muted-foreground/40 mx-auto mb-3 h-8 w-8" />
+              <p className="text-muted-foreground text-sm">
+                Not a member of any alliances. Create one or wait for an invitation.
+              </p>
+            </div>
           ) : (
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
+            <div className="space-y-3">
+              {alliances.map((alliance) => (
+                <AllianceDashboard
+                  key={alliance.id}
+                  allianceId={alliance.id}
+                  countryId={countryId}
+                  myRole={alliance.myRole}
+                  onLeave={() => void refetchAlliances()}
+                />
+              ))}
+            </div>
           )}
-        </button>
+        </section>
+      )}
 
-        {relationsExpanded && <DiplomaticRelationsList countryId={countryId} />}
-      </section>
-
-      <Separator />
-
-      {/* ─── Alliances & Blocs ─── */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
+      {activeTab === "exchanges" && (
+        <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-purple-600" />
-            <h3 className="text-sm font-semibold">Alliances & Blocs</h3>
-            <SectionHelpIcon
-              title="Alliances & Blocs"
-              content="Form and manage alliances with other nations. Alliances provide mutual defense benefits, trade advantages, and diplomatic leverage."
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowAllianceCreator(true)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Create Alliance
-          </Button>
-        </div>
-
-        {!alliances || alliances.length === 0 ? (
-          <div className="border-border rounded-lg border border-dashed p-6 text-center">
-            <Users className="text-muted-foreground/40 mx-auto mb-3 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">
-              Not a member of any alliances. Create one or wait for an invitation.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {alliances.map((alliance) => (
-              <AllianceDashboard
-                key={alliance.id}
-                allianceId={alliance.id}
-                countryId={countryId}
-                myRole={alliance.myRole}
-                onLeave={() => void refetchAlliances()}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <Separator />
-
-      {/* ─── Cultural Exchanges (collapsible) ─── */}
-      <section className="space-y-3">
-        <button
-          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
-          onClick={() => setExchangesExpanded(!exchangesExpanded)}
-        >
-          <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4 text-pink-600" />
+            <Palette className="h-4 w-4 text-pink-500" />
             <h3 className="text-sm font-semibold">Cultural Exchanges</h3>
           </div>
-          {exchangesExpanded ? (
-            <ChevronDown className="text-muted-foreground h-4 w-4" />
-          ) : (
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
-          )}
-        </button>
-
-        {exchangesExpanded && (
           <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
-        )}
-      </section>
+        </section>
+      )}
 
-      <Separator />
-
-      {/* ─── Diplomatic Events (collapsible) ─── */}
-      <section className="space-y-3">
-        <button
-          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
-          onClick={() => setEventsExpanded(!eventsExpanded)}
-        >
+      {activeTab === "events" && (
+        <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-amber-600" />
+            <FileText className="h-4 w-4 text-amber-500" />
             <h3 className="text-sm font-semibold">Diplomatic Events</h3>
           </div>
-          {eventsExpanded ? (
-            <ChevronDown className="text-muted-foreground h-4 w-4" />
-          ) : (
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
-          )}
-        </button>
-
-        {eventsExpanded && <DiplomaticEventsHub countryId={countryId} countryName={countryName} />}
-      </section>
+          <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
+        </section>
+      )}
 
       {/* ─── Sheets ─── */}
       <EmbassyCreatorSheet

@@ -55,6 +55,7 @@ export function CountryChangeLogTimeline({
 }: CountryChangeLogTimelineProps) {
   const [limit] = useState(25);
   const [offset, setOffset] = useState(0);
+  const [filterCategory, setFilterCategory] = useState<"all" | "directives" | "diplomacy" | "politics">("all");
   const [selectedEvent, setSelectedEvent] = useState<GroupedEvent | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -67,60 +68,102 @@ export function CountryChangeLogTimeline({
     { enabled: !!countryId }
   );
 
-  const groupedEvents = useMemo(() => {
-    if (!data?.logs) return [];
+  const canonFeed = api.myCountryDashboard.getCanonFeed.useQuery(
+    { countryId, limit: 30 },
+    { enabled: !!countryId }
+  );
 
+  const groupedEvents = useMemo(() => {
     const groups: Record<string, GroupedEvent> = {};
 
-    data.logs.forEach((log: any) => {
-      // Unique group key: group by sourceType + sourceId + appliedIxTime.
-      // If sourceId is null, group by sourceType + description + appliedIxTime.
-      const groupKey = log.sourceId
-        ? `${log.sourceType}-${log.sourceId}-${log.appliedIxTime}`
-        : `${log.sourceType}-${log.description}-${log.appliedIxTime}`;
+    if (data?.logs) {
+      data.logs.forEach((log: any) => {
+        // Unique group key: group by sourceType + sourceId + appliedIxTime.
+        // If sourceId is null, group by sourceType + description + appliedIxTime.
+        const groupKey = log.sourceId
+          ? `${log.sourceType}-${log.sourceId}-${log.appliedIxTime}`
+          : `${log.sourceType}-${log.description}-${log.appliedIxTime}`;
 
-      if (!groups[groupKey]) {
-        groups[groupKey] = {
-          id: log.id,
-          sourceType: log.sourceType,
-          sourceId: log.sourceId,
-          appliedIxTime: log.appliedIxTime,
-          description: log.description || "",
-          createdAt: new Date(log.createdAt),
-          consequences: [],
-        };
-      }
-
-      if (log.targetField) {
-        let prev = 0;
-        let next = 0;
-        try {
-          prev =
-            typeof log.previousValue === "string"
-              ? JSON.parse(log.previousValue)
-              : log.previousValue;
-          next = typeof log.newValue === "string" ? JSON.parse(log.newValue) : log.newValue;
-        } catch {
-          prev = Number(log.previousValue) || 0;
-          next = Number(log.newValue) || 0;
+        if (!groups[groupKey]) {
+          groups[groupKey] = {
+            id: log.id,
+            sourceType: log.sourceType,
+            sourceId: log.sourceId,
+            appliedIxTime: log.appliedIxTime,
+            description: log.description || "",
+            createdAt: new Date(log.createdAt),
+            consequences: [],
+          };
         }
 
-        groups[groupKey]!.consequences.push({
-          targetModel: log.targetModel || "",
-          targetField: log.targetField,
-          previousValue: prev,
-          newValue: next,
-          delta: log.deltaValue ?? 0,
-          description: log.description || "",
-        });
-      }
-    });
+        if (log.targetField) {
+          let prev = 0;
+          let next = 0;
+          try {
+            prev =
+              typeof log.previousValue === "string"
+                ? JSON.parse(log.previousValue)
+                : log.previousValue;
+            next = typeof log.newValue === "string" ? JSON.parse(log.newValue) : log.newValue;
+          } catch {
+            prev = Number(log.previousValue) || 0;
+            next = Number(log.newValue) || 0;
+          }
 
-    // Take only the limit number of items, sorting by appliedIxTime descending
-    return Object.values(groups)
-      .sort((a, b) => b.appliedIxTime - a.appliedIxTime)
-      .slice(0, limit);
-  }, [data, limit]);
+          groups[groupKey]!.consequences.push({
+            targetModel: log.targetModel || "",
+            targetField: log.targetField,
+            previousValue: prev,
+            newValue: next,
+            delta: log.deltaValue ?? 0,
+            description: log.description || "",
+          });
+        }
+      });
+    }
+
+    if (canonFeed.data?.items) {
+      canonFeed.data.items.forEach((item: any) => {
+        const key = `canon-${item.id}`;
+        if (!groups[key]) {
+          groups[key] = {
+            id: item.id,
+            sourceType: item.kind === "diplomacy" ? "diplomacy" : item.kind === "decision" ? "decision" : "policy",
+            sourceId: item.id,
+            appliedIxTime: item.timestamp,
+            description: item.title,
+            createdAt: new Date(item.timestamp),
+            consequences: item.targetField
+              ? [
+                  {
+                    targetModel: "simulation",
+                    targetField: item.targetField,
+                    previousValue: 0,
+                    newValue: item.deltaValue ?? 0,
+                    delta: item.deltaValue ?? 0,
+                    description: `${item.targetField} adjustment`,
+                  },
+                ]
+              : [],
+          };
+        }
+      });
+    }
+
+    const allList = Object.values(groups).sort((a, b) => b.appliedIxTime - a.appliedIxTime);
+
+    if (filterCategory === "directives") {
+      return allList.filter((e) => ["policy", "decision", "intent"].includes(e.sourceType.toLowerCase())).slice(0, limit);
+    }
+    if (filterCategory === "diplomacy") {
+      return allList.filter((e) => e.sourceType.toLowerCase() === "diplomacy").slice(0, limit);
+    }
+    if (filterCategory === "politics") {
+      return allList.filter((e) => ["election", "politics", "government"].includes(e.sourceType.toLowerCase())).slice(0, limit);
+    }
+
+    return allList.slice(0, limit);
+  }, [data, canonFeed.data, limit, filterCategory]);
 
   const hasMore = (data?.total ?? 0) > offset + limit;
 
@@ -231,18 +274,40 @@ export function CountryChangeLogTimeline({
 
   return (
     <div className="glass-panel relative mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-xl backdrop-blur-md">
-      <div className="mb-6 flex items-center justify-between border-b border-white/15 pb-4">
+      <div className="mb-6 flex flex-col gap-4 border-b border-white/15 pb-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
             <History className="h-5 w-5 text-amber-400" />
-            National Ledger & Timeline
+            Recent Activity & Governance Ledger
           </h2>
           <p className="text-muted-foreground mt-1 text-xs">
-            Historical ledger of executive decisions, issues, policy changes, and simulation
-            updates.
+            Integrated timeline of executive directives, policies, diplomatic events, and national activity.
           </p>
         </div>
-        {isFetching && <Loader2 className="h-4 w-4 animate-spin text-amber-400" />}
+
+        {/* Activity Feed Selectors */}
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+          {[
+            { id: "all" as const, label: "All Activity" },
+            { id: "directives" as const, label: "Directives & Policies" },
+            { id: "diplomacy" as const, label: "Diplomacy" },
+            { id: "politics" as const, label: "Elections & Cabinet" },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setFilterCategory(id)}
+              className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all cursor-pointer ${
+                filterCategory === id
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs"
+                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {isFetching && <Loader2 className="ml-1 h-4 w-4 animate-spin text-amber-400" />}
+        </div>
       </div>
 
       {groupedEvents.length === 0 ? (

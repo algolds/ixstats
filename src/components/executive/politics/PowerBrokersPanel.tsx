@@ -3,7 +3,7 @@
 import React from "react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Shield, Sparkles, Building2, Users2, Compass, AlertCircle } from "lucide-react";
+import { Shield, Landmark, Building2, Users2, Compass, AlertCircle } from "lucide-react";
 
 interface PowerBrokersPanelProps {
   countryId: string;
@@ -14,7 +14,7 @@ const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
   party: Users2,
   generals: Shield,
   magnates: Building2,
-  clergy: Sparkles,
+  clergy: Landmark,
 };
 
 const BROKER_COLORS: Record<string, string> = {

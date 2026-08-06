@@ -104,7 +104,8 @@ const EnhancedMapEditorContent = dynamic(
 );
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
-  executive: "Executive Command",
+  executive: "Economy & Budget",
+  economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
   intelligence: "Intelligence Dashboard",
   defense: "Defense & Security",
@@ -252,6 +253,7 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
           />
         );
       case "executive":
+      case "economy":
         return (
           <EnhancedExecutiveContent
             activeSection={activeSection}
@@ -356,7 +358,7 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
       resetKeys={[activeSection]}
     >
       {v2 ? (
-        <V2CommandSurface />
+        <V2CommandSurface section={activeSection} onNavigate={handleNavigate} />
       ) : (
         renderSection()
       )}

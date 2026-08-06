@@ -17,6 +17,7 @@ const TAB_ORDER = [
   "labor",
   "government",
   "geography",
+  "ledger",
   "demographics",
   "analytics",
 ];
@@ -28,6 +29,7 @@ const VALID_TABS = [
   "labor",
   "government",
   "geography",
+  "ledger",
   "demographics",
   "analytics",
 ];

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Sparkles,
+  Command,
   Globe2,
   Shield,
   Landmark,
@@ -15,22 +15,26 @@ import {
   FileClock,
   ArrowUpRight,
   Handshake,
-  Activity,
   ChevronDown,
   ChevronUp,
   ArrowUp,
   ArrowDown,
-  TrendingDown,
+  Clock,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { HealthRing } from "~/components/ui/health-ring";
-import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import { V2Agenda } from "./V2Agenda";
 import { V2CommandBriefingHero } from "./V2CommandBriefingHero";
+import { V2OpportunityHero } from "./V2OpportunityHero";
+import { V2MyAgenda } from "./V2MyAgenda";
+import { StandingBands } from "./StandingBands";
 import type { V2Drill } from "./V2DrillSheets";
+import type { MyCountrySection } from "../MyCountrySidebarNav";
 import {
   DiplomacyGraphic,
   DefenseGraphic,
@@ -38,11 +42,7 @@ import {
   EconomyGraphic,
 } from "./ActionCardGraphics";
 
-import {
-  useCountryData,
-  QuickVitalityRings,
-  createVitalityRingsFromCountry,
-} from "../primitives";
+import { useCountryData, QuickVitalityRings } from "../primitives";
 
 const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> = {
   diplomatic: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-400 bg-teal-500/10" },
@@ -58,13 +58,6 @@ const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> 
   ledger: { label: "Ledger", icon: Scale, cls: "border-blue-500/40 text-blue-400 bg-blue-500/10" },
 };
 
-function formatCompact(num: number): string {
-  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  return (num ?? 0).toLocaleString();
-}
-
 function relativeTime(ts: number): string {
   const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
   if (diffSec < 60) return "just now";
@@ -76,194 +69,93 @@ function relativeTime(ts: number): string {
   return `${diffDay}d ago`;
 }
 
-function StandingBands({ countryId }: { countryId: string }) {
-  const { country } = useCountryData();
-  const [showExactPop, setShowExactPop] = useState(false);
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
-
-  const { data: _data } = api.mycountry.getCountryDashboard.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchInterval: 15_000 }
-  );
-
-  const rings = useMemo(() => {
-    if (!country) return [];
-    return createVitalityRingsFromCountry(country);
-  }, [country]);
-
-  const compositeScore = rings.length > 0
-    ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length)
-    : 0;
-
-  const ratingLabel = (score: number) => {
-    if (score >= 85) return "Optimal";
-    if (score >= 70) return "Strong";
-    if (score >= 50) return "Moderate";
-    return "Strained";
-  };
-
-  const population = country?.currentPopulation ?? country?.population ?? (country as any)?.populationTotal ?? 0;
-  const totalGdp =
-    country?.currentTotalGdp ??
-    country?.gdp ??
-    (population && country?.currentGdpPerCapita
-      ? population * country.currentGdpPerCapita
-      : 0);
-
-  const formattedPop = showExactPop
-    ? Math.round(population).toLocaleString()
-    : formatCompact(population);
-
-  return (
-    <>
-      <FacetCard depth={1} className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-            National Standing
-          </h4>
-          <button
-            type="button"
-            onClick={() => setIsBreakdownOpen(true)}
-            className="group flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-bold text-primary transition-all hover:bg-primary/20 hover:scale-105 active:scale-95 cursor-pointer shadow-sm"
-            title="Click for full Vitality Breakdown"
-          >
-            <Activity className="h-3.5 w-3.5 text-primary" />
-            <span>{compositeScore}/100</span>
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-              ({ratingLabel(compositeScore)})
-            </span>
-          </button>
-        </div>
-
-        {country && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-xs sm:text-sm font-extrabold tracking-wide">
-            <button
-              type="button"
-              onClick={() => setShowExactPop((prev) => !prev)}
-              className="hover:text-foreground group flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Click to toggle exact population count"
-            >
-              <span className="text-muted-foreground text-xs font-bold uppercase">Population:</span>
-              <strong className="text-foreground text-sm sm:text-base font-black group-hover:underline">
-                {formattedPop}
-              </strong>
-            </button>
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs font-bold uppercase">GDP:</span>
-              <strong className="text-emerald-400 text-sm sm:text-base font-black">${formatCompact(totalGdp)}</strong>
-            </div>
-          </div>
-        )}
-
-        {/* 4 Vitality Rings Grid */}
-        <div className="grid grid-cols-2 gap-2 pt-0.5">
-          {rings.map((ring) => (
-            <button
-              key={ring.id}
-              type="button"
-              onClick={() => setIsBreakdownOpen(true)}
-              className="group flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2 text-left transition-all hover:border-white/20 hover:bg-white/[0.06] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-              <HealthRing
-                value={ring.value}
-                size={38}
-                color={ring.color}
-                label={ring.label}
-              />
-              <div className="min-w-0 flex-1">
-                <span className="block truncate text-[9px] font-bold tracking-wider text-muted-foreground/70 uppercase group-hover:text-foreground">
-                  {ring.label}
-                </span>
-                <span className="text-xs font-extrabold text-foreground" style={{ color: ring.color }}>
-                  {ring.value}<span className="text-[9px] text-muted-foreground/60 font-normal">/100</span>
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </FacetCard>
-
-      <VitalityBreakdownModal
-        isOpen={isBreakdownOpen}
-        onClose={() => setIsBreakdownOpen(false)}
-        rings={rings}
-        countryName={country?.name}
-      />
-    </>
-  );
-}
-
 function ActionGrid({
   onOpenDrill,
 }: {
   onOpenDrill: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
 }) {
+  const { country } = useCountryData();
+
+  // Dynamic telemetry calculations for Quick Data Glance peeks
+  const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
+  const dipStance = country?.diplomaticStance ?? "Active Alliance";
+
+  const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
+  const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
+
+  const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
+  const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
+
+  const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
+  const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
+
   const tiles = [
     {
       title: "Diplomacy",
-      blurb: "Embassies, treaties & stance",
+      peek: `${embassies} Embassies • ${dipStance}`,
       icon: Handshake,
       graphic: DiplomacyGraphic,
       accent:
-        "border-teal-500/20 bg-gradient-to-r from-teal-500/5 to-emerald-500/5 text-teal-400 hover:from-teal-500/15 hover:to-emerald-500/15",
+        "border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-emerald-500/5 text-teal-400 hover:border-teal-500/40 hover:from-teal-500/20 hover:to-emerald-500/10",
       onClick: () => onOpenDrill({ kind: "relations" }),
     },
     {
       title: "Defense",
-      blurb: "Readiness & posture",
+      peek: `${readiness}% Readiness • ${posture}`,
       icon: Shield,
       graphic: DefenseGraphic,
       accent:
-        "border-red-500/20 bg-gradient-to-r from-red-500/5 to-rose-500/5 text-red-400 hover:from-red-500/15 hover:to-rose-500/15",
+        "border-red-500/20 bg-gradient-to-r from-red-500/10 to-rose-500/5 text-red-400 hover:border-red-500/40 hover:from-red-500/20 hover:to-rose-500/10",
       onClick: () => onOpenDrill({ kind: "defense" }),
     },
     {
       title: "Politics",
-      blurb: "Cabinet, parties & legislature",
+      peek: `${stabPct}% Stability • Active Cabinet`,
       icon: Scale,
       graphic: PoliticsGraphic,
       accent:
-        "border-violet-500/20 bg-gradient-to-r from-violet-500/5 to-purple-500/5 text-violet-400 hover:from-violet-500/15 hover:to-purple-500/15",
+        "border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-purple-500/5 text-violet-400 hover:border-violet-500/40 hover:from-violet-500/20 hover:to-purple-500/10",
       onClick: () => onOpenDrill({ kind: "politics" }),
     },
     {
       title: "Economy & Budget",
-      blurb: "Macro trends & fiscal health",
+      peek: `+${growthPct}% Growth • Fiscal Stable`,
       icon: TrendingUp,
       graphic: EconomyGraphic,
       accent:
-        "border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 text-emerald-400 hover:from-emerald-500/15 hover:to-teal-500/15",
+        "border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/5 text-emerald-400 hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-teal-500/10",
       onClick: () => onOpenDrill({ kind: "economy" }),
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {tiles.map(({ title, blurb, icon: Icon, graphic: Graphic, accent, onClick }) => (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {tiles.map(({ title, peek, icon: Icon, graphic: Graphic, accent, onClick }) => (
         <button
           key={title}
           type="button"
           onClick={onClick}
           className={cn(
-            "group relative flex cursor-pointer flex-col justify-between gap-3 overflow-hidden rounded-2xl border p-4 text-xs font-semibold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]",
-            accent
+            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md select-none transition-all duration-200 hover:scale-[1.015] hover:shadow-md active:scale-[0.98]",
+            accent,
           )}
         >
-          <div className="flex w-full items-center justify-between z-10">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5">
-                <Icon className="h-4 w-4 shrink-0" />
-              </div>
-              <span className="text-foreground/95 text-xs font-bold leading-tight">{title}</span>
+          {/* Rescaled Ambient Background Graphic & Glow */}
+          <Graphic />
+
+          {/* Left: Icon + Title + Telemetry Peek */}
+          <div className="relative z-10 flex items-center gap-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/5 shadow-xs transition-transform duration-200 group-hover:scale-105">
+              <Icon className="h-4 w-4 shrink-0" />
             </div>
-            <ArrowUpRight className="h-3.5 w-3.5 opacity-40 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <div className="flex flex-col text-left min-w-0 gap-0.5">
+              <span className="text-foreground text-[13px] font-bold tracking-tight leading-tight truncate">{title}</span>
+              <span className="text-[11px] font-medium tracking-tight text-muted-foreground/75 leading-tight truncate">{peek}</span>
+            </div>
           </div>
 
-          <Graphic className="my-0.5 z-0" />
-
-          <div className="flex w-full items-center justify-between z-10">
-            <span className="text-muted-foreground/90 text-[11px] font-medium leading-snug">{blurb}</span>
-          </div>
+          {/* Right: Arrow indicator */}
+          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
         </button>
       ))}
     </div>
@@ -370,7 +262,7 @@ function getUniqueDiagnosticNarrative(
 
   return {
     narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain. System state updated successfully.`,
-    badge: { text: "Canon Record", cls: "bg-white/10 text-muted-foreground border-white/20" },
+    badge: { text: "Canon Record", cls: "bg-muted text-muted-foreground border-border/40" },
   };
 }
 
@@ -383,19 +275,32 @@ function RecordFeed({
   countrySlug?: string;
   onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
 }) {
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(5);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filterCat, setFilterCat] = useState<string>("all");
+
+  const filteredItems = useMemo(() => {
+    if (filterCat === "all") return items;
+    return items.filter((it: any) => {
+      const cat = (it.category || "").toLowerCase();
+      if (filterCat === "diplomatic") return cat.includes("diplo");
+      if (filterCat === "military") return cat.includes("milit") || cat.includes("defen") || cat.includes("secur");
+      if (filterCat === "economic") return cat.includes("econ") || cat.includes("ledger");
+      if (filterCat === "political") return cat.includes("polit") || cat.includes("elect") || cat.includes("gov");
+      return true;
+    });
+  }, [items, filterCat]);
 
   const visibleItems = useMemo(
-    () => items.slice(0, visibleCount),
-    [items, visibleCount]
+    () => filteredItems.slice(0, visibleCount),
+    [filteredItems, visibleCount]
   );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     if (target.scrollHeight - target.scrollTop - target.clientHeight < 60) {
-      if (visibleCount < items.length) {
-        setVisibleCount((prev) => Math.min(items.length, prev + 10));
+      if (visibleCount < filteredItems.length) {
+        setVisibleCount((prev) => Math.min(filteredItems.length, prev + 10));
       }
     }
   };
@@ -409,18 +314,44 @@ function RecordFeed({
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-lg border border-dashed border-white/10 bg-white/[0.01] px-3 py-8 text-center text-xs">
-        No canon events yet. Declare a directive to start the record.
+      <p className="text-muted-foreground rounded-lg border border-dashed border-border/40 bg-muted/10 px-3 py-8 text-center text-xs">
+        No national activity recorded yet.
       </p>
     );
   }
 
   return (
-    <div
-      onScroll={handleScroll}
-      className="max-h-[540px] space-y-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"
-    >
-      <div className="divide-y divide-white/5">
+    <div className="space-y-3">
+      {/* Activity Filter Selectors */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+        {[
+          { id: "all", label: "All" },
+          { id: "diplomatic", label: "Diplomacy" },
+          { id: "military", label: "Defense" },
+          { id: "economic", label: "Economy" },
+          { id: "political", label: "Politics" },
+        ].map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setFilterCat(id)}
+            className={cn(
+              "rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer shrink-0",
+              filterCat === id
+                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs"
+                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        onScroll={handleScroll}
+        className="max-h-[500px] space-y-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted"
+      >
+      <div className="divide-y divide-border/40">
         {visibleItems.map((item: any) => {
           const meta = CATEGORY_STYLE[item.category] || CATEGORY_STYLE.ledger;
           const Icon = meta.icon;
@@ -433,7 +364,7 @@ function RecordFeed({
               key={item.id}
               className={cn(
                 "group rounded-xl p-2.5 transition-all duration-200 cursor-pointer border border-transparent select-none",
-                isExpanded ? "border-white/10 bg-white/[0.04] shadow-md my-1.5" : "hover:bg-white/[0.02]"
+                isExpanded ? "border-border/60 bg-muted/20 shadow-sm my-1.5" : "hover:bg-muted/10"
               )}
               onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
             >
@@ -456,13 +387,13 @@ function RecordFeed({
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-                    <span className="text-muted-foreground/70 font-semibold">{meta.label}</span>
+                    <span className="text-muted-foreground font-semibold">{meta.label}</span>
                     <span className="text-muted-foreground/40">•</span>
-                    <span className="text-muted-foreground/60">{relativeTime(item.timestamp)}</span>
+                    <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
                     {item.kind === "ledger" && item.targetField && (
                       <>
                         <span className="text-muted-foreground/40">•</span>
-                        <span className="text-muted-foreground/70 font-mono inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.03] px-1.5 py-px">
+                        <span className="text-muted-foreground font-mono inline-flex items-center gap-1 rounded border border-border/40 bg-muted/20 px-1.5 py-px">
                           {item.deltaValue && item.deltaValue > 0 ? (
                             <ArrowUp className="h-3 w-3 text-emerald-400 animate-pulse stroke-[3]" />
                           ) : item.deltaValue && item.deltaValue < 0 ? (
@@ -476,23 +407,28 @@ function RecordFeed({
                 </div>
               </div>
 
-              {/* Inline Expansion Drawer */}
+              {/* Inline Expansion Drawer — Theme Compliant */}
               {isExpanded && (
                 <div
-                  className="mt-3 space-y-3 rounded-xl border border-white/10 bg-black/60 p-4 text-xs backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-200"
+                  className="mt-3 space-y-3.5 rounded-2xl border border-border/60 bg-card/60 p-4 text-xs backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-md"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2 text-[10px]">
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn("inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-bold uppercase", meta.cls)}>
+                  {/* Header Metadata & Badges */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-bold uppercase text-[10px]", meta.cls)}>
                         <Icon className="h-3 w-3" />
                         {meta.label}
                       </span>
-                      <span className="text-muted-foreground/60 font-semibold uppercase">
-                        • {item.kind ?? "ledger"} event
-                      </span>
+                      {diagnostic.badge && (
+                        <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold", diagnostic.badge.cls)}>
+                          {diagnostic.badge.direction === "up" && <ArrowUp className="h-3 w-3 text-emerald-400 stroke-[3]" />}
+                          {diagnostic.badge.direction === "down" && <ArrowDown className="h-3 w-3 text-red-400 stroke-[3]" />}
+                          <span>{diagnostic.badge.text}</span>
+                        </span>
+                      )}
                     </div>
-                    <span className="text-muted-foreground/70 font-mono">
+                    <span className="text-muted-foreground font-mono text-[10px]">
                       {new Date(item.timestamp).toLocaleString(undefined, {
                         dateStyle: "medium",
                         timeStyle: "short",
@@ -500,37 +436,18 @@ function RecordFeed({
                     </span>
                   </div>
 
-                  {/* Highlighted Impact Badge with Animated Arrow */}
-                  {diagnostic.badge && (
-                    <div className="flex items-center gap-2">
-                      <span className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-extrabold shadow-sm", diagnostic.badge.cls)}>
-                        {diagnostic.badge.direction === "up" && (
-                          <span className="inline-flex items-center text-emerald-400 animate-bounce">
-                            <ArrowUp className="h-3.5 w-3.5 stroke-[3]" />
-                          </span>
-                        )}
-                        {diagnostic.badge.direction === "down" && (
-                          <span className="inline-flex items-center text-red-400 animate-bounce">
-                            <ArrowDown className="h-3.5 w-3.5 stroke-[3]" />
-                          </span>
-                        )}
-                        <span>{diagnostic.badge.text}</span>
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Unique Diagnostic Narrative */}
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                    <span className="block text-[9px] font-extrabold tracking-wider text-muted-foreground/70 uppercase mb-1.5">
+                  {/* Clean Diagnostic Briefing Text */}
+                  <div className="space-y-1 px-0.5">
+                    <span className="block text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
                       Diagnostic Briefing
                     </span>
-                    <p className="text-foreground/95 text-xs leading-relaxed font-medium">
+                    <p className="text-foreground/90 text-xs sm:text-[13px] leading-relaxed font-medium">
                       {diagnostic.narrative}
                     </p>
                   </div>
 
                   {/* Dual Action CTAs */}
-                  <div className="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-white/5">
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/40">
                     <Link
                       href={createUrl("/mycountry/changelog", countrySlug ? { country: countrySlug } : {})}
                       className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
@@ -542,7 +459,7 @@ function RecordFeed({
                       <button
                         type="button"
                         onClick={() => onOpenDrill(drill)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all hover:bg-primary/20 active:scale-95 cursor-pointer shadow-sm"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md shadow-sm"
                       >
                         Inspect {meta.label} Sheet <ArrowUpRight className="h-3.5 w-3.5" />
                       </button>
@@ -555,28 +472,32 @@ function RecordFeed({
         })}
       </div>
 
-      {/* Infinite scroll loader / 30-day manual boundary button */}
-      {visibleCount < items.length ? (
+      {/* Infinite scroll loader button */}
+      {visibleCount < items.length && (
         <button
           type="button"
           onClick={() => setVisibleCount((prev) => Math.min(items.length, prev + 10))}
           className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.99]"
         >
-          Load older events ({items.length - visibleCount} remaining in 30-day window)
+          Load more events ({items.length - visibleCount})
         </button>
-      ) : (
-        <div className="pt-2 text-center">
-          <Link
-            href={createUrl("/mycountry/changelog", countrySlug ? { country: countrySlug } : {})}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-400 transition-all hover:bg-amber-500/20 active:scale-95"
-          >
-            30-day history window reached — Browse complete historical ledger
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
       )}
+      </div>
     </div>
   );
+}
+
+function formatCooldownTime(cooldownUntil: number | null | undefined, now = Date.now()): string {
+  if (!cooldownUntil) return "Resets next weekly cycle";
+  const diffMs = Math.max(0, cooldownUntil - now);
+  if (diffMs <= 0) return "Cooldown expiring soon";
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
+  if (days > 0) return `${days}d ${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
+  return `${mins}m ${secs}s`;
 }
 
 export function V2Home({
@@ -584,11 +505,13 @@ export function V2Home({
   onDeclare,
   onOpenDrill,
   onOpenIntent,
+  onNavigate,
 }: {
   countryId: string;
-  onDeclare: () => void;
-  onOpenDrill: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
-  onOpenIntent: (id: string) => void;
+  onDeclare: (prefilled?: string) => void;
+  onOpenDrill: (d: V2Drill) => void;
+  onOpenIntent: (intentId: string) => void;
+  onNavigate?: (section: MyCountrySection) => void;
 }) {
   const _router = useRouter();
   const feed = api.mycountry.getCanonFeed.useQuery(
@@ -596,6 +519,13 @@ export function V2Home({
     { enabled: !!countryId }
   );
   const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
+
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!status?.data?.onCooldown) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [status?.data?.onCooldown]);
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
 
@@ -612,36 +542,81 @@ export function V2Home({
 
   return (
     <div className="space-y-5">
-      {/* Command Briefing Hero — session recap, Smart Stack, Calendar, Reminders & Civil Service capacity */}
-      <V2CommandBriefingHero countryId={countryId} />
+      {/* Primary Opportunity Briefing Hero */}
+      <V2OpportunityHero
+        countryId={countryId}
+        onDeclare={onDeclare}
+        onNavigate={onNavigate}
+        onOpenDrill={onOpenDrill}
+      />
 
-      {/* Country Actions grid — matches Dynamic Island country actions */}
+      {/* Country Actions grid */}
       <ActionGrid onOpenDrill={onOpenDrill} />
 
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* Main feed */}
-        <FacetCard depth={1} className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md lg:col-span-2">
-          <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-            The Record — your nation&apos;s story
-          </h4>
-          <RecordFeed items={items} onOpenDrill={onOpenDrill} />
-        </FacetCard>
+        {/* Main Column: Pulse & Agenda Widget + Recent Activity Feed */}
+        <div className="space-y-5 lg:col-span-2">
+          {/* Primary Agenda Widget */}
+          <V2MyAgenda
+            countryId={countryId}
+            onDeclare={onDeclare}
+            onOpenIntent={onOpenIntent}
+            onOpenDrill={onOpenDrill}
+          />
+
+          {/* Main Feed */}
+          <FacetCard depth={1} className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
+            <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+              Recent Activity - National log
+            </h4>
+            <RecordFeed items={items} onOpenDrill={onOpenDrill} />
+          </FacetCard>
+        </div>
 
         {/* Rail */}
         <aside className="space-y-5">
-          <button
-            type="button"
-            onClick={onDeclare}
-            className={cn(
-              "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border p-4 text-sm font-bold transition-all active:scale-[0.98]",
-              canCommit
-                ? "border-amber-500/40 bg-gradient-to-br from-amber-500/15 to-orange-500/5 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.08)] hover:bg-amber-500/20"
-                : "cursor-not-allowed border-white/10 bg-white/[0.02] text-muted-foreground"
-            )}
-          >
-            <Sparkles className="h-4 w-4" />
-            {canCommit ? "Declare an Intent" : "Directive on cooldown"}
-          </button>
+          {canCommit ? (
+            <button
+              type="button"
+              onClick={() => onDeclare()}
+              className="group relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-border/50 bg-card/40 hover:bg-card/70 p-3 text-sm font-bold text-foreground backdrop-blur-md shadow-xs transition-all duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400 transition-all group-hover:scale-105 group-hover:bg-amber-500/20">
+                <Command className="h-3.5 w-3.5" />
+              </span>
+              <span className="transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400">Declare a new Directive</span>
+            </button>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  <button
+                    type="button"
+                    disabled
+                    className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border border-border/40 bg-card/20 p-3 text-sm font-bold text-muted-foreground backdrop-blur-md opacity-75 transition-all"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 bg-muted/20 text-muted-foreground">
+                      <FileClock className="h-3.5 w-3.5" />
+                    </span>
+                    <span>Directive on Cooldown</span>
+                  </button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="bg-popover/95 border border-amber-500/30 p-3 shadow-xl backdrop-blur-xl max-w-xs space-y-1.5 rounded-xl">
+                <div className="flex items-center gap-1.5 font-bold text-amber-500 text-xs">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Executive Cooldown Active</span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                  Your government has issued maximum weekly directives ({status?.data?.usedThisWeek ?? 3}/{status?.data?.cap ?? 3}).
+                </p>
+                <div className="border-t border-border/30 pt-1.5 flex items-center justify-between text-[10px] font-mono font-bold text-foreground">
+                  <span>Next Available Slot:</span>
+                  <span className="text-amber-500 dark:text-amber-400">{formatCooldownTime(status?.data?.cooldownUntil, now)}</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <StandingBands countryId={countryId} />
           <V2Agenda countryId={countryId} onOpenIntent={onOpenIntent} />

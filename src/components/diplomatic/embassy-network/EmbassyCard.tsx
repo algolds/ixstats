@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { Building2, Sparkles, ChevronRight, CreditCard } from "lucide-react";
+import { Building2, ShieldCheck, ChevronRight, CreditCard } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import Link from "next/link";
+import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
 
 /**
  * Embassy data with calculated synergies
@@ -137,20 +138,25 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="flex items-center gap-2 text-base">{embassy.name}</CardTitle>
-            <CardDescription className="mt-1 flex items-center gap-2 text-xs">
+            <CardDescription className="mt-1 flex flex-wrap items-center gap-2 text-xs">
               <span className="text-muted-foreground/60">
                 {embassy.guestCountry} ⟷ {embassy.hostCountry}
               </span>
               <span>•</span>
               <span className="capitalize">{embassy.status}</span>
               <span>•</span>
-              <span>Strength {embassy.strength}/100</span>
+              <span>Standing: {getStandingBand(embassy.strength).label}</span>
             </CardDescription>
           </div>
-          <Badge variant={embassy.totalSynergyScore > 50 ? "default" : "secondary"}>
-            <Sparkles className="mr-1 h-3 w-3" />
-            {embassy.totalSynergyScore.toFixed(0)}% Synergy
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge className={cn("border font-extrabold shadow-sm", getSynergyBand(embassy.totalSynergyScore).badgeClass)}>
+              <ShieldCheck className="mr-1 h-3 w-3" />
+              {getSynergyBand(embassy.totalSynergyScore).label} Synergy
+            </Badge>
+            <Badge className={cn("border text-[10px] font-bold shadow-xs", asymmetry.badgeColor)}>
+              {asymmetry.label}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
@@ -158,8 +164,10 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         {/* Synergy Progress */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Synergy Strength</span>
-            <span className="font-semibold">{embassy.totalSynergyScore.toFixed(0)}%</span>
+            <span className="text-muted-foreground">Standing Tier</span>
+            <span className={cn("font-bold", getSynergyBand(embassy.totalSynergyScore).textClass)}>
+              {getSynergyBand(embassy.totalSynergyScore).label}
+            </span>
           </div>
           <Progress value={embassy.totalSynergyScore} className="h-2" />
         </div>
@@ -168,19 +176,19 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         <div className="grid grid-cols-3 gap-2 text-xs">
           <div className="rounded-lg bg-green-500/10 p-2 text-center">
             <div className="font-bold text-green-600 dark:text-green-400">
-              +{embassy.economicBonus.toFixed(1)}%
+              {embassy.economicBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Economic</div>
           </div>
           <div className="rounded-lg bg-blue-500/10 p-2 text-center">
             <div className="font-bold text-blue-600 dark:text-blue-400">
-              +{embassy.diplomaticBonus.toFixed(1)}%
+              {embassy.diplomaticBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Diplomatic</div>
           </div>
           <div className="rounded-lg bg-purple-500/10 p-2 text-center">
             <div className="font-bold text-purple-600 dark:text-purple-400">
-              +{embassy.culturalBonus.toFixed(1)}%
+              {embassy.culturalBonus > 0 ? "High" : "Standard"}
             </div>
             <div className="text-muted-foreground">Cultural</div>
           </div>

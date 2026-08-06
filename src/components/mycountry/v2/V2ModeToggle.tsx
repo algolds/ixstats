@@ -1,15 +1,19 @@
 "use client";
 
+import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutGrid, Command, Handshake, Shield, Scale, TrendingUp } from "lucide-react";
+import { LayoutGrid, Command, Handshake, Shield, Scale, TrendingUp, User, Edit3 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
+import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import type { MyCountrySection } from "../MyCountrySidebarNav";
+import { useCountryData } from "../primitives";
 
 export type V2Mode = "home" | "console";
 
 /**
  * Single Unified V2 Navigation Surface Pill:
- * [ Home | Declare a Directive | (sep) | Diplomacy | Defense | Politics | Economy ]
+ * [ MyCountry Logo | Home | Declare a Directive | (sep) | Diplomacy | Defense | Politics | Economy ]
  *
  * Navigation behavior:
  *  - Operating Modes (Home / Declare a Directive): manage local V2 mode
@@ -78,7 +82,7 @@ export function V2ModeToggle({
       hoverCls: "hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/20",
     },
     {
-      href: "/mycountry/executive",
+      href: "/mycountry/economy",
       label: "Economy",
       icon: TrendingUp,
       activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-sm",
@@ -89,7 +93,11 @@ export function V2ModeToggle({
   const isHomeSection = rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
   return (
-    <div className="border-border/60 bg-card/50 flex flex-wrap items-center gap-1 rounded-xl border p-1 backdrop-blur-md w-fit">
+    <div className="border-border/60 bg-card/50 flex flex-wrap items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md w-fit">
+      {/* Official MyCountry Brand Logo Pill */}
+      <div className="flex items-center gap-2 px-2 py-0.5 border-r border-white/10 shrink-0">
+        <MyCountryLogo size="sm" variant="full" animated={true} />
+      </div>
       {/* Primary operating modes */}
       {mainNav.map(({ id, label, icon: Icon, activeCls, hoverCls }) => {
         const active = isHomeSection && mode === id;
@@ -135,6 +143,81 @@ export function V2ModeToggle({
             <Icon className="h-3.5 w-3.5" />
             {label}
           </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Mirrored Right Navigation Surface Pill:
+ * [ Profile (Public Country Profile) | (sep) | Editor (/mycountry/editor) ]
+ */
+export function V2RightPillNav({
+  onNavigate,
+}: {
+  onNavigate?: (section: MyCountrySection) => void;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const rawPath = stripBasePath(pathname ?? "");
+  const { country } = useCountryData();
+
+  const publicProfileHref = country?.slug
+    ? `/countries/${country.slug}`
+    : country?.id
+      ? `/countries/${country.id}`
+      : "/countries";
+
+  const editorHref = "/mycountry/editor";
+
+  const navItems = [
+    {
+      id: "profile" as const,
+      href: publicProfileHref,
+      label: "Profile",
+      icon: User,
+      activeCls: "bg-blue-500/20 text-blue-300 border-blue-500/30 shadow-sm",
+      hoverCls: "hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/20",
+    },
+    {
+      id: "editor" as const,
+      href: editorHref,
+      label: "Editor",
+      icon: Edit3,
+      activeCls: "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-sm",
+      hoverCls: "hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/20",
+    },
+  ];
+
+  return (
+    <div className="border-border/60 bg-card/50 flex items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md w-fit shrink-0">
+      {navItems.map(({ id, href, label, icon: Icon, activeCls, hoverCls }, idx) => {
+        const active =
+          rawPath.startsWith(href) ||
+          (id === "editor" &&
+            (rawPath.startsWith("/mycountry/editor") || rawPath.startsWith("/mycountry/map-editor")));
+        return (
+          <React.Fragment key={href}>
+            {idx > 0 && <div className="mx-0.5 h-4 w-px shrink-0 bg-white/10" />}
+            <button
+              type="button"
+              onClick={() => {
+                if (id === "editor" && onNavigate) {
+                  onNavigate("map-editor");
+                } else {
+                  router.push(withBasePath(href));
+                }
+              }}
+              className={cn(
+                "flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all border border-transparent text-muted-foreground active:scale-95 select-none",
+                active ? activeCls : hoverCls,
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span>{label}</span>
+            </button>
+          </React.Fragment>
         );
       })}
     </div>

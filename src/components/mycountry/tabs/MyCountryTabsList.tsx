@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BarChart3, TrendingUp, Building, MapPin } from "lucide-react";
+import { BarChart3, TrendingUp, Building, MapPin, History } from "lucide-react";
 import { FacetTabs } from "~/components/facet-ui";
 
 /**

@@ -5,5 +5,5 @@ import { MyCountryRouter } from "~/components/mycountry";
 export const dynamic = "force-dynamic";
 
 export default function DiplomacyPage() {
-  return <MyCountryRouter />;
+  return <MyCountryRouter v2 />;
 }

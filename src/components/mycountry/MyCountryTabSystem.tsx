@@ -27,7 +27,16 @@ import {
   GovernmentTab,
   GeographyTab,
 } from "./tabs";
+import dynamic from "next/dynamic";
 import { UpgradeTeaser } from "./premium/UpgradeTeaser";
+
+const CountryChangeLogTimeline = dynamic(
+  () =>
+    import("~/components/executive/CountryChangeLogTimeline").then((m) => ({
+      default: m.CountryChangeLogTimeline,
+    })),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+);
 
 interface MyCountryTabSystemProps {
   variant?: "unified" | "standard" | "premium";

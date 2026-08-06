@@ -144,11 +144,12 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
     }
   };
 
+  const assetsList = assets ?? [];
   const filteredAssets =
-    filterType === "all" ? assets : assets.filter((a) => a.assetType === filterType);
+    filterType === "all" ? assetsList : assetsList.filter((a) => a.assetType === filterType);
 
   // Group assets by type
-  const assetsByType = filteredAssets.reduce(
+  const assetsByType = (filteredAssets ?? []).reduce(
     (acc, asset) => {
       if (!acc[asset.assetType]) {
         acc[asset.assetType] = [];
@@ -165,7 +166,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
         <div className="flex items-center gap-3">
           <h4 className="flex items-center gap-2 text-sm font-semibold">
             <Target className="h-4 w-4" />
-            Assets ({assets.length})
+            Assets ({assetsList.length})
           </h4>
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="h-8 w-[180px]">

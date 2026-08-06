@@ -1,6 +1,6 @@
 # MyCountry v2 — IA, Layout & Component Migration Plan
 
-**Status:** draft for sign-off · **Branch:** v2 · **Target:** ship live gated behind `/mycountry/v2` · **Grounds:** design-bible v2, the labs preview (`/labs/mycountry-v2`), and the 2026-07 Discord feedback (Urcea/Kuhl/Heku on the Intent flow).
+**Status:** DONE (All 6 Phases & 3 Bible Enhancements Shipped) · **Branch:** v2 · **Target:** shipped live at `/mycountry` · **Grounds:** design-bible v2, the labs preview (`/labs/mycountry-v2`), and community feedback.
 
 > **The one-line thesis (Heku): "Super Abstraction."** Let the backend engines do their thing; make the front end very simple and straightforward. v2 is **not new engines** — it's a thin, opinionated shell over the engines that already exist. Almost everything heavy in today's MyCountry becomes a *drill-down* ("if you really want it"), not a primary surface.
 
