@@ -39,9 +39,9 @@ export const TOUR_STEPS: TourStepDetails[] = [
   },
   {
     id: 4,
-    title: "Your schedule. Unified.",
+    title: "Your control center. Unified.",
     description:
-      "Keep track of game-time timelines, calendar deadlines, and pending actions in one elegant view. Tap the clock or bell to stay ahead of what matters next.",
+      "Keep track of live notifications, quick actions, and executive context in one elegant view. Tap or glance at the Halo to stay ahead of what matters next.",
     targetElementSelector: "#command-palette",
     placement: "bottom",
   },

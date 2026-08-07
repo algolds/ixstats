@@ -10,6 +10,7 @@ import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import Link from "next/link";
 import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
+import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
 
 /**
  * Embassy data with calculated synergies
@@ -79,6 +80,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   isOwner,
   onClick,
 }: EmbassyCardProps) {
+  const asymmetry = React.useMemo(() => {
+    return calculateRelativeDevelopment(
+      (embassy as any).guestCountryTier || "DEVELOPED",
+      (embassy as any).hostCountryTier || "DEVELOPED"
+    );
+  }, [embassy]);
+
   return (
     <Card
       className={cn(

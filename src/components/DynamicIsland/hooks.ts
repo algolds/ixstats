@@ -200,7 +200,6 @@ export function useDynamicIslandState() {
         newMode === "notifications" ||
         newMode === "settings" ||
         newMode === "mycountry" ||
-        newMode === "calendar" ||
         newMode.startsWith("plugin:");
 
       if (isExpandedMode) {
@@ -699,7 +698,7 @@ export function useDynamicIslandState() {
             .catch(console.error);
           break;
         case 4:
-          switchMode("calendar");
+          switchMode("mycountry");
           break;
         case 5:
           switchMode("settings");

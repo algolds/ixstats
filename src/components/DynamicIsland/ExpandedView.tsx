@@ -5,7 +5,6 @@ import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
 import { MyCountryDIView } from "./MyCountryDIView";
-import { CalendarView } from "./CalendarView";
 import type { ExpandedViewProps, DIPlugin } from "./types";
 
 export function ExpandedView({
@@ -94,11 +93,6 @@ export function ExpandedView({
         {mode === "mycountry" && (
           <DynamicContainer key="mycountry" className="w-full">
             <MyCountryDIView onClose={onClose} />
-          </DynamicContainer>
-        )}
-        {mode === "calendar" && (
-          <DynamicContainer key="calendar" className="w-full">
-            <CalendarView onClose={onClose} />
           </DynamicContainer>
         )}
 

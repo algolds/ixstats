@@ -196,7 +196,7 @@ function AgendaTree({
       >
         <div>
           <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">
-            Your Agenda
+            Active Directives
           </h4>
           <p className="text-muted-foreground mt-0.5 text-[10px]">
             Your current active plans, directives, and goals.
@@ -228,7 +228,7 @@ function AgendaTree({
       className="bg-card/30 flex flex-col gap-4 p-5 backdrop-blur-md"
     >
       <div>
-        <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">Your Agenda</h4>
+        <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">Active Directives</h4>
         <p className="text-muted-foreground mt-0.5 text-[10px]">
           Your current active plans, directives, and goals.
         </p>

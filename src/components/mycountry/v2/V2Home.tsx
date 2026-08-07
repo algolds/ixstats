@@ -23,6 +23,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -45,43 +46,30 @@ import {
 import { useCountryData, QuickVitalityRings } from "../primitives";
 
 const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> = {
-  diplomatic: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-400 bg-teal-500/10" },
-  diplomacy: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-400 bg-teal-500/10" },
-  military: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-400 bg-red-500/10" },
-  defense: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-400 bg-red-500/10" },
-  security: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-400 bg-red-500/10" },
-  governance: { label: "Politics", icon: Landmark, cls: "border-violet-500/40 text-violet-400 bg-violet-500/10" },
-  economic: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-400 bg-emerald-500/10" },
-  economy: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-400 bg-emerald-500/10" },
-  social: { label: "Society", icon: Heart, cls: "border-cyan-500/40 text-cyan-400 bg-cyan-500/10" },
-  emergency: { label: "Crisis", icon: AlertTriangle, cls: "border-amber-500/40 text-amber-400 bg-amber-500/10" },
-  ledger: { label: "Ledger", icon: Scale, cls: "border-blue-500/40 text-blue-400 bg-blue-500/10" },
+  diplomatic: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10" },
+  diplomacy: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10" },
+  military: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
+  defense: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
+  security: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
+  governance: { label: "Politics", icon: Landmark, cls: "border-violet-500/40 text-violet-800 dark:text-violet-400 bg-violet-500/10" },
+  economic: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10" },
+  economy: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10" },
+  social: { label: "Society", icon: Heart, cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10" },
+  emergency: { label: "Crisis", icon: AlertTriangle, cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10" },
+  ledger: { label: "Ledger", icon: Scale, cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10" },
 };
 
-function relativeTime(ts: number): string {
-  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-  if (diffSec < 60) return "just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
-}
-
-function ActionGrid({
+function DomainActionTiles({
   onOpenDrill,
 }: {
   onOpenDrill: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
 }) {
   const { country } = useCountryData();
-
-  // Dynamic telemetry calculations for Quick Data Glance peeks
-  const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
-  const dipStance = country?.diplomaticStance ?? "Active Alliance";
-
   const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
   const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
+
+  const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
+  const dipStance = country?.diplomaticStance ?? "Active Alliance";
 
   const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
   const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
@@ -96,7 +84,7 @@ function ActionGrid({
       icon: Handshake,
       graphic: DiplomacyGraphic,
       accent:
-        "border-teal-500/20 bg-gradient-to-r from-teal-500/10 to-emerald-500/5 text-teal-400 hover:border-teal-500/40 hover:from-teal-500/20 hover:to-emerald-500/10",
+        "border-teal-500/30 dark:border-teal-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-teal-500/10 dark:to-emerald-500/5 text-teal-900 dark:text-teal-300 hover:border-teal-500/50 hover:bg-card/90 shadow-xs",
       onClick: () => onOpenDrill({ kind: "relations" }),
     },
     {
@@ -105,7 +93,7 @@ function ActionGrid({
       icon: Shield,
       graphic: DefenseGraphic,
       accent:
-        "border-red-500/20 bg-gradient-to-r from-red-500/10 to-rose-500/5 text-red-400 hover:border-red-500/40 hover:from-red-500/20 hover:to-rose-500/10",
+        "border-red-500/30 dark:border-red-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-red-500/10 dark:to-rose-500/5 text-red-900 dark:text-red-300 hover:border-red-500/50 hover:bg-card/90 shadow-xs",
       onClick: () => onOpenDrill({ kind: "defense" }),
     },
     {
@@ -114,7 +102,7 @@ function ActionGrid({
       icon: Scale,
       graphic: PoliticsGraphic,
       accent:
-        "border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-purple-500/5 text-violet-400 hover:border-violet-500/40 hover:from-violet-500/20 hover:to-purple-500/10",
+        "border-violet-500/30 dark:border-violet-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-violet-500/10 dark:to-purple-500/5 text-violet-900 dark:text-violet-300 hover:border-violet-500/50 hover:bg-card/90 shadow-xs",
       onClick: () => onOpenDrill({ kind: "politics" }),
     },
     {
@@ -123,7 +111,7 @@ function ActionGrid({
       icon: TrendingUp,
       graphic: EconomyGraphic,
       accent:
-        "border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/5 text-emerald-400 hover:border-emerald-500/40 hover:from-emerald-500/20 hover:to-teal-500/10",
+        "border-emerald-500/30 dark:border-emerald-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-900 dark:text-emerald-300 hover:border-emerald-500/50 hover:bg-card/90 shadow-xs",
       onClick: () => onOpenDrill({ kind: "economy" }),
     },
   ];
@@ -131,12 +119,14 @@ function ActionGrid({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {tiles.map(({ title, peek, icon: Icon, graphic: Graphic, accent, onClick }) => (
-        <button
+        <motion.button
           key={title}
           type="button"
+          whileHover={{ scale: 1.015, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+          whileTap={{ scale: 0.97 }}
           onClick={onClick}
           className={cn(
-            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md select-none transition-all duration-200 hover:scale-[1.015] hover:shadow-md active:scale-[0.98]",
+            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md select-none transition-colors duration-200",
             accent,
           )}
         >
@@ -145,21 +135,32 @@ function ActionGrid({
 
           {/* Left: Icon + Title + Telemetry Peek */}
           <div className="relative z-10 flex items-center gap-3 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/5 shadow-xs transition-transform duration-200 group-hover:scale-105">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 dark:border-white/12 bg-card/60 dark:bg-white/5 shadow-2xs transition-transform duration-200 group-hover:scale-105">
               <Icon className="h-4 w-4 shrink-0" />
             </div>
             <div className="flex flex-col text-left min-w-0 gap-0.5">
               <span className="text-foreground text-[13px] font-bold tracking-tight leading-tight truncate">{title}</span>
-              <span className="text-[11px] font-medium tracking-tight text-muted-foreground/75 leading-tight truncate">{peek}</span>
+              <span className="text-[11px] font-medium tracking-tight text-muted-foreground leading-tight truncate">{peek}</span>
             </div>
           </div>
 
           {/* Right: Arrow indicator */}
-          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
-        </button>
+          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+        </motion.button>
       ))}
     </div>
   );
+}
+
+function relativeTime(ts: number): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
 }
 
 function formatDeltaValue(val: number | null | undefined): string {
@@ -548,10 +549,11 @@ export function V2Home({
         onDeclare={onDeclare}
         onNavigate={onNavigate}
         onOpenDrill={onOpenDrill}
+        onOpenIntent={onOpenIntent}
       />
 
       {/* Country Actions grid */}
-      <ActionGrid onOpenDrill={onOpenDrill} />
+      <DomainActionTiles onOpenDrill={onOpenDrill} />
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Main Column: Pulse & Agenda Widget + Recent Activity Feed */}
@@ -619,7 +621,7 @@ export function V2Home({
           )}
 
           <StandingBands countryId={countryId} />
-          <V2Agenda countryId={countryId} onOpenIntent={onOpenIntent} />
+          <V2Agenda countryId={countryId} onOpenIntent={onOpenIntent} onDeclare={onDeclare} />
         </aside>
       </div>
     </div>

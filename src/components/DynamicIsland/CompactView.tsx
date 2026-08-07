@@ -6,8 +6,7 @@ import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Calendar, Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
+import { Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { useUser } from "~/context/auth-context";
 import { useIxTimeStore } from "~/stores/ixtime-store";
@@ -387,67 +386,6 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     className="flex items-center gap-1"
                   >
-                    {/* Time/Date — hidden when plugin is active */}
-                    {/* Time/Date — hidden when plugin is active (except MyCountry) */}
-                    {(!activePlugin || activePlugin?.id === "mycountry") &&
-                      (() => {
-                        const d = new Date(ixTimeTimestamp);
-                        const weekday = d
-                          .toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
-                          .toUpperCase();
-
-                        const selectedThemeColorClass = diPathname?.startsWith("/mycountry")
-                          ? "text-yellow-400"
-                          : diPathname?.startsWith("/admin")
-                            ? "text-indigo-400"
-                            : "text-blue-400";
-
-                        return (
-                          <motion.button
-                            layoutId="halo-date-capsule-button"
-                            onClick={() => onSwitchMode("calendar")}
-                            title="Open Calendar"
-                            className={cn(
-                              "flex cursor-pointer items-center rounded-lg border border-white/0 transition-colors hover:border-white/5 hover:bg-white/5",
-                              isOnOnomaPage ? "p-1.5" : "gap-2 px-2.5 py-1"
-                            )}
-                          >
-                            {/* Minimalist Glassy Date Capsule Badge */}
-                            <motion.div
-                              layoutId="halo-date-capsule-badge"
-                              className="flex shrink-0 items-center justify-center rounded-[4px] border border-white/10 bg-white/5 px-1 py-0.5 shadow-inner backdrop-blur-[2px]"
-                            >
-                              <motion.span
-                                layoutId="halo-date-capsule-weekday"
-                                className={cn(
-                                  "origin-center scale-90 text-[8px] leading-none font-extrabold tracking-widest antialiased",
-                                  selectedThemeColorClass
-                                )}
-                              >
-                                {weekday}
-                              </motion.span>
-                            </motion.div>
-
-                            {!isOnOnomaPage && (
-                              <motion.span
-                                layoutId="halo-date-capsule-text"
-                                className="text-foreground/80 inline text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                              >
-                                {d.toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  timeZone: "UTC",
-                                })}
-                              </motion.span>
-                            )}
-                          </motion.button>
-                        );
-                      })()}
-
-                    {/* Separator — only if no active plugin (or mycountry) and user is authenticated/loaded */}
-                    {(!activePlugin || activePlugin?.id === "mycountry") && user && (
-                      <span className="bg-border mx-0.5 h-3 w-px shrink-0" />
-                    )}
 
                     {/* Context switcher / Plugin center */}
                     {activePlugin && pluginCenter ? (

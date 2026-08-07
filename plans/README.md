@@ -11,6 +11,12 @@ the live working set stays here.
 
 ## Active Initiatives
 
+### MyCountry Statecraft — Intent Engine vs. National Issues Architecture
+| Plan | Scope | Status |
+|------|-------|--------|
+| [001-intent-vs-issues-rhythm-architecture.md](001-intent-vs-issues-rhythm-architecture.md) | Relationship of Intents/Directives & Issues, gameplay loop, ponytail architecture | PROPOSED |
+| [002-intent-vs-issues-rhythm-verified-implementation.md](002-intent-vs-issues-rhythm-verified-implementation.md) | Verified implementation: dual spawn modes + toggle, Phase 3 progress, V2IssueDetail, grounded generator, bug fixes | APPROVED |
+
 ### WikiOS Independence — extract WikiOS into a reusable wiki engine
 | Plan | Scope | Status |
 |------|-------|--------|

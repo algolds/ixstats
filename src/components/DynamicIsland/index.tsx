@@ -286,8 +286,7 @@ function CommandPaletteContent({
           mode === "search" ||
           mode === "settings" ||
           mode === "notifications" ||
-          mode === "mycountry" ||
-          mode === "calendar")
+          mode === "mycountry")
       ) {
         wasManuallyClosedRef.current = true;
       }

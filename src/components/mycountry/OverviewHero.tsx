@@ -648,27 +648,7 @@ export function OverviewHero({
                 <>
                   <div className="mt-2 mb-3">
                     {agendaViewMode === "widgets" ? (
-                      <div className="grid h-[105px] grid-cols-5 gap-2.5">
-                        {/* Left Column: iOS Calendar widget */}
-                        <div className="col-span-2 flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] shadow-inner backdrop-blur-md select-none">
-                          <div className="bg-red-500 px-1 py-0.5 text-center text-[8px] leading-none font-extrabold tracking-widest text-white uppercase">
-                            {months[today.getMonth()]}
-                          </div>
-                          <div className="flex flex-grow flex-col items-center justify-center p-1">
-                            <span className="text-[8px] leading-none font-bold tracking-wider text-red-500 uppercase">
-                              {days[today.getDay()]}
-                            </span>
-                            <span className="text-foreground mt-0.5 text-xl leading-none font-black tracking-tighter">
-                              {today.getDate()}
-                            </span>
-                            <span className="text-muted-foreground/60 mt-1 max-w-full truncate px-1 text-center text-[7px] font-semibold tracking-tight uppercase">
-                              Up Next: {nextEventText}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Right Column: iOS Reminders widget */}
-                        <div className="col-span-3 flex h-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
+                      <div className="flex h-[105px] w-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
                           <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
                             <span>Reminders</span>
                             <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
@@ -705,7 +685,6 @@ export function OverviewHero({
                             )}
                           </div>
                         </div>
-                      </div>
                     ) : (
                       // SMART STACK VIEW
                       <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />

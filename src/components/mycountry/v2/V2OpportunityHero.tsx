@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion } from "motion/react";
 import {
   Shield,
   Handshake,
@@ -8,8 +9,8 @@ import {
   TrendingUp,
   Command,
   ArrowUpRight,
-  Sparkles,
   Compass,
+  AlertTriangle,
 } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
@@ -32,6 +33,8 @@ interface Opportunity {
   badgeCls: string;
   borderCls: string;
   buttonCls: string;
+  bgImage?: string;
+  intentId?: string;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
 }
 
@@ -40,11 +43,13 @@ export function V2OpportunityHero({
   onDeclare,
   onNavigate,
   onOpenDrill,
+  onOpenIntent,
 }: {
   countryId: string;
   onDeclare?: (prefilled?: string) => void;
   onNavigate?: (section: MyCountrySection) => void;
   onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenIntent?: (intentId: string) => void;
 }) {
   const { country } = useCountryData();
 
@@ -53,6 +58,10 @@ export function V2OpportunityHero({
   const civilService = api.government.getCivilServiceStatus.useQuery(
     { countryId },
     { enabled: !!countryId }
+  );
+  const issuesData = api.nationalIssues.getMyIssues.useQuery(
+    { countryId: countryId ?? "", status: "active" },
+    { enabled: !!countryId, staleTime: 60_000 }
   );
 
   // Dynamic Priority Engine calculation
@@ -69,6 +78,32 @@ export function V2OpportunityHero({
     const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
     const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
 
+    // Custom country header/banner fallback if present
+    const customHeader = (country as any)?.headerImageUrl || (country as any)?.bannerUrl || (country as any)?.flagUrl;
+
+    // 0. Active National Issue / Crisis (Priority 0)
+    const activeIssues = issuesData.data?.issues ?? [];
+    if (activeIssues.length > 0) {
+      const topIssue = activeIssues[0];
+      return {
+        id: `issue-${topIssue.id}`,
+        domain: "politics",
+        title: `National Issue: ${topIssue.title}`,
+        subtitle: "Urgent Policy Crisis",
+        description: topIssue.description || "An urgent national issue requires immediate executive attention and cabinet policy guidance.",
+        metricLabel: "Cabinet Alert",
+        metricValue: `${activeIssues.length} Active Issue${activeIssues.length > 1 ? "s" : ""}`,
+        directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
+        icon: AlertTriangle,
+        glowCls: "from-amber-500/25 via-orange-500/10 to-transparent",
+        badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
+        borderCls: "border-amber-500/40 dark:border-amber-500/30",
+        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage: customHeader || "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        drillKind: { kind: "politics" },
+      };
+    }
+
     // 1. Defense Crisis / Low Readiness (Priority 1)
     if (readiness < 85) {
       return {
@@ -83,9 +118,10 @@ export function V2OpportunityHero({
         directiveGoal: "Rebalance military readiness and reinforce defensive border posture",
         icon: Shield,
         glowCls: "from-red-500/20 via-rose-500/10 to-transparent",
-        badgeCls: "bg-red-500/15 text-red-400 border-red-500/30",
-        borderCls: "border-red-500/30",
-        buttonCls: "bg-red-500/20 hover:bg-red-500/30 text-red-300 border-red-500/40",
+        badgeCls: "bg-red-500/15 text-red-900 dark:text-red-300 border-red-500/30",
+        borderCls: "border-red-500/40 dark:border-red-500/30",
+        buttonCls: "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-200 border-red-500/40",
+        bgImage: customHeader || "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "defense" },
       };
     }
@@ -104,9 +140,10 @@ export function V2OpportunityHero({
         directiveGoal: "Authorize civil service staffing expansion and administrative restructuring",
         icon: Scale,
         glowCls: "from-amber-500/20 via-orange-500/10 to-transparent",
-        badgeCls: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-        borderCls: "border-amber-500/30",
-        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40",
+        badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
+        borderCls: "border-amber-500/40 dark:border-amber-500/30",
+        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage: customHeader || "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "politics" },
       };
     }
@@ -132,9 +169,11 @@ export function V2OpportunityHero({
         directiveGoal: `Accelerate implementation of ${topIntent.goal}`,
         icon: Command,
         glowCls: "from-amber-500/25 via-yellow-500/10 to-transparent",
-        badgeCls: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-        borderCls: "border-amber-500/30",
-        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40",
+        badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
+        borderCls: "border-amber-500/40 dark:border-amber-500/30",
+        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage: customHeader || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        intentId: topIntent.id,
       };
     }
 
@@ -152,9 +191,10 @@ export function V2OpportunityHero({
         directiveGoal: "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
         glowCls: "from-teal-500/20 via-emerald-500/10 to-transparent",
-        badgeCls: "bg-teal-500/15 text-teal-400 border-teal-500/30",
-        borderCls: "border-teal-500/30",
-        buttonCls: "bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border-teal-500/40",
+        badgeCls: "bg-teal-500/15 text-teal-900 dark:text-teal-300 border-teal-500/30",
+        borderCls: "border-teal-500/40 dark:border-teal-500/30",
+        buttonCls: "bg-teal-500/20 hover:bg-teal-500/30 text-teal-950 dark:text-teal-200 border-teal-500/40",
+        bgImage: customHeader || "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "relations" },
       };
     }
@@ -172,12 +212,13 @@ export function V2OpportunityHero({
       directiveGoal: "Implement targeted macroeconomic development directive and tax incentive package",
       icon: TrendingUp,
       glowCls: "from-emerald-500/20 via-teal-500/10 to-transparent",
-      badgeCls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-      borderCls: "border-emerald-500/30",
-      buttonCls: "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40",
+      badgeCls: "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border-emerald-500/30",
+      borderCls: "border-emerald-500/40 dark:border-emerald-500/30",
+      buttonCls: "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-950 dark:text-emerald-200 border-emerald-500/40",
+      bgImage: customHeader || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
       drillKind: { kind: "economy" },
     };
-  }, [country, intentTree.data, civilService.data]);
+  }, [country, intentTree.data, civilService.data, issuesData.data]);
 
   const Icon = opportunity.icon;
 
@@ -185,14 +226,26 @@ export function V2OpportunityHero({
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden border p-5 backdrop-blur-xl transition-all duration-300",
+        "relative overflow-hidden border p-5 backdrop-blur-xl transition-all duration-300 shadow-lg dark:shadow-2xl bg-card/40 dark:bg-card/30",
         opportunity.borderCls
       )}
     >
+      {/* Cinematic Context-Aware Photography Background Overlay */}
+      {opportunity.bgImage && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden select-none">
+          <img
+            src={opportunity.bgImage}
+            alt=""
+            className="h-full w-full object-cover object-right sm:object-center opacity-35 dark:opacity-45 transition-all duration-700 scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/80 to-transparent dark:from-card dark:via-card/75 dark:to-transparent" />
+        </div>
+      )}
+
       {/* Ambient Radial Glow Background */}
       <div
         className={cn(
-          "pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-gradient-to-br blur-3xl opacity-40 select-none",
+          "pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-gradient-to-br blur-3xl opacity-30 dark:opacity-40 select-none",
           opportunity.glowCls
         )}
       />
@@ -208,14 +261,14 @@ export function V2OpportunityHero({
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                "flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-xs",
+                "flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-2xs",
                 opportunity.badgeCls
               )}
             >
               <span>{opportunity.subtitle}</span>
             </span>
 
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-mono font-semibold text-muted-foreground">
+            <span className="rounded-full border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/5 px-2.5 py-1 text-[10px] font-mono font-semibold text-muted-foreground shadow-2xs">
               {opportunity.metricLabel}: <strong className="text-foreground">{opportunity.metricValue}</strong>
             </span>
           </div>
@@ -224,44 +277,61 @@ export function V2OpportunityHero({
             {opportunity.title}
           </h2>
 
-          <p className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed font-normal">
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-normal">
             {opportunity.description}
           </p>
         </div>
 
-        {/* Right: Primary 1-Click Action Button & Drill Link */}
+        {/* Right: Primary 1-Click Action Button & Focused Opportunity Inspection CTA */}
         <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
-          <button
+          <motion.button
             type="button"
+            whileHover={{ scale: 1.015, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => onDeclare?.(opportunity.directiveGoal)}
             className={cn(
-              "group relative flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-extrabold transition-all duration-200 shadow-md active:scale-95 cursor-pointer",
+              "group relative flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-extrabold transition-colors cursor-pointer shadow-md",
               opportunity.buttonCls
             )}
           >
             <Command className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
             <span>Declare Directive to Resolve</span>
-            <ArrowUpRight className="h-4 w-4 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-          </button>
+            <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          </motion.button>
 
-          {opportunity.drillKind ? (
-            <button
+          {opportunity.intentId ? (
+            <motion.button
               type="button"
-              onClick={() => onOpenDrill?.(opportunity.drillKind!)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onOpenIntent?.(opportunity.intentId!)}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 transition-colors cursor-pointer shadow-xs"
             >
               <Compass className="h-3.5 w-3.5" />
-              <span>Inspect Details</span>
-            </button>
-          ) : opportunity.domain ? (
-            <button
+              <span>Inspect Directive Tree</span>
+            </motion.button>
+          ) : opportunity.drillKind ? (
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onOpenDrill?.(opportunity.drillKind!)}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-border/80 dark:border-white/10 bg-card/70 dark:bg-white/5 hover:bg-card dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-xs"
+            >
+              <Compass className="h-3.5 w-3.5" />
+              <span>Inspect {opportunity.domain === "defense" ? "Defense" : opportunity.domain === "diplomacy" ? "Relations" : opportunity.domain === "politics" ? "Politics" : "Economy"} Details</span>
+            </motion.button>
+          ) : opportunity.domain ? (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => onNavigate?.(opportunity.domain as MyCountrySection)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-border/80 dark:border-white/10 bg-card/70 dark:bg-white/5 hover:bg-card dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-xs"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>Open Domain Surface</span>
-            </button>
+            </motion.button>
           ) : null}
         </div>
       </div>

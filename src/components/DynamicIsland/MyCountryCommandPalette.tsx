@@ -2,7 +2,7 @@
 
 import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Calendar, Globe, Shield, X, Gavel } from "lucide-react";
+import { Crown, Briefcase, Globe, Shield, X, Gavel } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
@@ -34,7 +34,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
   const quickActions = [
     {
       label: "Meetings",
-      icon: Calendar,
+      icon: Briefcase,
       colors:
         "border-purple-500/20 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 text-purple-400 hover:from-purple-500/15 hover:to-indigo-500/15",
       action: () => navigateToSection("executive"),

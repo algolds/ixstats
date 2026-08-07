@@ -35,7 +35,6 @@ export type ViewMode =
   | "notifications"
   | "settings"
   | "mycountry"
-  | "calendar"
   | `plugin:${string}`;
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 
