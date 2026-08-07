@@ -35,7 +35,7 @@ export function OverviewTab({
   wikiImages: Array<{ title: string; url: string }> | null | undefined;
   wikiLoading: boolean;
   metricView: MetricView;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<MetricView>>;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   return (
     <Card className="glass-surface glass-refraction bg-gradient-overview border-border overflow-hidden">
@@ -46,7 +46,7 @@ export function OverviewTab({
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() =>
-                  setMetricViewAction((v) => ({
+                  setMetricViewAction((v: any) => ({
                     ...v,
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
@@ -95,7 +95,7 @@ export function OverviewTab({
               </button>
               <button
                 onClick={() =>
-                  setMetricViewAction((v) => ({
+                  setMetricViewAction((v: any) => ({
                     ...v,
                     population: v.population === "total" ? "density" : "total",
                   }))
@@ -144,7 +144,7 @@ export function OverviewTab({
                 onClick={
                   country.areaSqMi && country.landArea
                     ? () =>
-                        setMetricViewAction((v) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                        setMetricViewAction((v: any) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
                     : undefined
                 }
                 className={cn(

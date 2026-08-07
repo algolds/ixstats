@@ -2,7 +2,9 @@
 
 import { use, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { api } from "~/trpc/react";
+import { AlertTriangle } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,52 +13,52 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
-import { Card } from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { AlertTriangle, Users } from "lucide-react";
-import Link from "next/link";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { createUrl } from "~/lib/url-utils";
+import { Users } from "lucide-react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
+import { CountryDataProvider, useCountryData } from "~/components/mycountry/primitives";
+import { CountryHeader } from "../_components/CountryHeader";
+import { CountryTabs } from "../_components/CountryTabs";
+import { useCountryPageState } from "../_hooks/useCountryPageState";
 
-import { CountryHeader } from "./_components/CountryHeader";
-import { CountryTabs } from "./_components/CountryTabs";
-import { CountryOverviewPanel } from "./_components/CountryOverviewPanel";
-import { CountryActivityPanel } from "./_components/CountryActivityPanel";
-import { DossierTab } from "~/components/countries/DossierTab";
-
-import { useCountryPageState } from "./_hooks/useCountryPageState";
-
-import { calculateVitalityData } from "./_utils/countryDataTransformers";
-
-interface PublicCountryPageProps {
+/**
+ * CountryProfileLayout — the persistent country shell (route group `(profile)`,
+ * so `/countries/[slug]/modeling` stays untouched). Owns the country query via
+ * `CountryDataProvider`, the header, breadcrumb, and the prominent Tier-1 top
+ * bar. Renders `{children}` (factbook / dossier / activity routes).
+ */
+export default function CountryProfileLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
   params: Promise<{ slug: string }>;
+}) {
+  const { slug } = use(params);
+
+  return (
+    <CountryDataProvider userId="" countryId={slug} isPublicReadOnly>
+      <CountryProfileShell slug={slug}>{children}</CountryProfileShell>
+    </CountryDataProvider>
+  );
 }
 
-export default function PublicCountryPage({ params }: PublicCountryPageProps) {
-  const { slug } = use(params);
+function CountryProfileShell({
+  slug,
+  children,
+}: {
+  slug: string;
+  children: React.ReactNode;
+}) {
+  const { country, isLoading, error } = useCountryData();
   const { userProfile } = useUserCountry();
-
-  const {
-    data: country,
-    isLoading,
-    error,
-  } = api.countries.getByIdWithEconomicData.useQuery({
-    id: slug,
-  });
-  const { data: governmentStructure } = api.government.getByCountryId.useQuery(
-    { countryId: country?.id || "" },
-    { enabled: !!country?.id }
-  );
+  const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
 
   usePageTitle({
     title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
   });
-
-  const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
 
   const {
     activeTab,
@@ -67,26 +69,16 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     setShowCountryActions,
     toggleGdpDisplay,
     togglePopulationDisplay,
-    wikiInfobox,
-    wikiIntro,
     unsplashImageUrl,
     bannerMode,
     customBannerUrl,
     setBannerMode,
   } = useCountryPageState(country);
 
-  const isOwnCountry =
-    userProfile?.countryId && country?.id && userProfile.countryId === country.id;
-
-  const vitalityData = useMemo(() => {
-    if (!country) return null;
-    return calculateVitalityData({
-      economicTier: country.economicTier,
-      adjustedGdpGrowth: country.adjustedGdpGrowth,
-      populationGrowthRate: country.populationGrowthRate,
-      populationDensity: country.populationDensity ?? null,
-    });
-  }, [country]);
+  const isOwnCountry = useMemo(
+    () => userProfile?.countryId && country?.id && userProfile.countryId === country.id,
+    [userProfile?.countryId, country?.id]
+  );
 
   if (isLoading) {
     return (
@@ -112,7 +104,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
             <AlertTriangle className="h-6 w-6" />
             <div>
               <h3 className="font-semibold">Error Loading Country Data</h3>
-              <p className="text-muted-foreground text-sm">{error.message}</p>
+              <p className="text-muted-foreground text-sm">{error}</p>
             </div>
           </div>
         </Card>
@@ -187,49 +179,23 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
           </Button>
         </div>
 
-        <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countryName={country.name} />
+        <CountryTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          countrySlug={slug}
+        />
 
-        {activeTab === "overview" && vitalityData && (
-          <CountryOverviewPanel
-            country={country}
-            wikiIntro={wikiIntro}
-            wikiInfobox={wikiInfobox}
-            vitalityData={vitalityData}
-            governmentStructure={governmentStructure}
-            onTabChange={(tab: string) => setActiveTab(tab as typeof activeTab)}
-          />
-        )}
-
-        {activeTab === "lore" && country && (
-          <DossierTab
-            countryName={country.name}
-            countryData={{
-              currentPopulation: country.currentPopulation,
-              currentGdpPerCapita: country.currentGdpPerCapita,
-              currentTotalGdp: country.currentTotalGdp,
-              economicTier: country.economicTier,
-              continent: country.continent ?? undefined,
-              governmentType: country.governmentType ?? undefined,
-            }}
-            viewerClearanceLevel="PUBLIC"
-          />
-        )}
-
-        {activeTab === "activity" && country && (
-          <CountryActivityPanel countryId={country.id} countryName={country.name} />
-        )}
+        {children}
       </div>
 
-      {country && (
-        <CountryActionsMenu
-          targetCountryId={country.id}
-          targetCountryName={country.name}
-          viewerCountryId={userProfile?.countryId ?? undefined}
-          isOpen={showCountryActions}
-          onClose={() => setShowCountryActions(false)}
-          isOwnCountry={!!isOwnCountry}
-        />
-      )}
+      <CountryActionsMenu
+        targetCountryId={country.id}
+        targetCountryName={country.name}
+        viewerCountryId={userProfile?.countryId ?? undefined}
+        isOpen={showCountryActions}
+        onClose={() => setShowCountryActions(false)}
+        isOwnCountry={!!isOwnCountry}
+      />
     </div>
   );
 }

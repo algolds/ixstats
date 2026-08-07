@@ -8,35 +8,20 @@ import { Bell, AlertTriangle, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { AnimatedTabContent, staggerItem, CardImageUploadModal, useCountryData } from "./primitives";
+import { AnimatedTabContent, staggerItem, useCountryData } from "./primitives";
 import { useIssueCount } from "~/hooks/useNationalIssues";
-import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
-import {
-  LaborDetailsModal,
-  GovernmentSpendingModal,
-  DebtAnalysisModal,
-  DemographicsHealthModal,
-} from "~/components/modals/metric-details";
 import { useMyCountryNavigation } from "~/hooks/useMyCountryNavigation";
-import { useMyCountryMetrics } from "~/hooks/useMyCountryMetrics";
 import {
   MyCountryTabsList,
   OverviewTab,
-  EconomyLaborTab,
+  EconomyTab,
+  LaborTab,
   GovernmentTab,
   GeographyTab,
 } from "./tabs";
-import dynamic from "next/dynamic";
+import { FactbookMetricsProvider, useFactbookMetrics } from "./FactbookMetricsProvider";
+import { FactbookModals } from "./FactbookModals";
 import { UpgradeTeaser } from "./premium/UpgradeTeaser";
-
-const CountryChangeLogTimeline = dynamic(
-  () =>
-    import("~/components/executive/CountryChangeLogTimeline").then((m) => ({
-      default: m.CountryChangeLogTimeline,
-    })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
-);
 
 interface MyCountryTabSystemProps {
   variant?: "unified" | "standard" | "premium";
@@ -45,7 +30,31 @@ interface MyCountryTabSystemProps {
 
 function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCountryTabSystemProps) {
   const { activeTab, tabDirection, handleTabChange } = useMyCountryNavigation(v2);
-  const { isPublicReadOnly } = useCountryData();
+
+  return (
+    <FactbookMetricsProvider section={activeTab}>
+      <MyCountryTabSystemInner
+        variant={variant}
+        v2={v2}
+        activeTab={activeTab}
+        tabDirection={tabDirection}
+        handleTabChange={handleTabChange}
+      />
+    </FactbookMetricsProvider>
+  );
+}
+
+function MyCountryTabSystemInner({
+  variant,
+  v2,
+  activeTab,
+  tabDirection,
+  handleTabChange,
+}: MyCountryTabSystemProps & {
+  activeTab: string;
+  tabDirection: number;
+  handleTabChange: (tab: string) => void;
+}) {
   const {
     country,
     economyData,
@@ -56,14 +65,10 @@ function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCoun
     wikiIntro,
     wikiLoading,
     wikiImages,
-    imageUploadModal,
     setImageUploadModal,
-    isMetricModalOpen,
-    metricType,
-    modalCountryId,
     openMetricModal,
-    closeMetricModal,
-  } = useMyCountryMetrics(activeTab);
+  } = useFactbookMetrics();
+  const { isPublicReadOnly } = useCountryData();
 
   if (!country) return null;
 
@@ -94,9 +99,22 @@ function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCoun
           </TabsContent>
         )}
 
-        {/* Economy Tab (with internal Economy/Labor toggle) */}
+        {/* Economy Tab */}
         <TabsContent value="economy" className="space-y-4" id="economy">
-          <EconomyLaborTab
+          <EconomyTab
+            country={country}
+            economyData={economyData}
+            countryImageData={countryImageData}
+            setImageUploadModalAction={setImageUploadModal}
+            openMetricModalAction={openMetricModal}
+            metricView={metricView}
+            setMetricViewAction={setMetricView}
+          />
+        </TabsContent>
+
+        {/* Labor Tab — top-level section */}
+        <TabsContent value="labor" className="space-y-4" id="labor">
+          <LaborTab
             country={country}
             economyData={economyData}
             countryImageData={countryImageData}
@@ -135,72 +153,8 @@ function MyCountryTabSystemComponent({ variant = "unified", v2 = false }: MyCoun
       {/* Render premium upgrade teaser */}
       {!isPublicReadOnly && <UpgradeTeaser variant={variant} />}
 
-      {/* Card Image Upload Modal */}
-      {!isPublicReadOnly && (
-        <CardImageUploadModal
-          isOpen={imageUploadModal.isOpen}
-          onClose={() => setImageUploadModal({ ...imageUploadModal, isOpen: false })}
-          countryId={country?.id || ""}
-          cardType={imageUploadModal.cardType}
-        />
-      )}
-
-      {/* Metric Detail Modals */}
-      {(metricType === "gdp" || metricType === "gdp-per-capita" || metricType === "total-gdp") && (
-        <GdpDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "population" || metricType === "population-density") && (
-        <PopulationDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "labor-force" ||
-        metricType === "employment" ||
-        metricType === "unemployment") && (
-        <LaborDetailsModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {metricType === "government-spending" && (
-        <GovernmentSpendingModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {metricType === "debt" && (
-        <DebtAnalysisModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
-
-      {(metricType === "demographics-health" || metricType === "life-expectancy") && (
-        <DemographicsHealthModal
-          isOpen={isMetricModalOpen}
-          onClose={closeMetricModal}
-          countryId={modalCountryId || country?.id || ""}
-          countryName={country?.name}
-        />
-      )}
+      {/* Shared modals (upload + metric details) */}
+      <FactbookModals />
     </Tabs>
   );
 }
