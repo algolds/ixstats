@@ -6,6 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
 import { useCountryData, createVitalityRingsFromCountry } from "../primitives";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 
 function formatCompact(num: number): string {
@@ -72,9 +73,17 @@ export function StandingBands({ countryId }: { countryId: string }) {
                 National Standing
               </span>
               {country?.name && (
-                <h3 className="text-sm sm:text-base font-black tracking-tight text-foreground truncate">
-                  {country.name}
-                </h3>
+                <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                  <UnifiedCountryFlag
+                    countryName={country.name}
+                    flagUrl={(country as any)?.flagUrl || country.flag}
+                    size="md"
+                    className="shrink-0 shadow-2xs border border-border/40"
+                  />
+                  <h3 className="text-sm sm:text-base font-black tracking-tight text-foreground truncate">
+                    {country.name}
+                  </h3>
+                </div>
               )}
             </div>
             <button

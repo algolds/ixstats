@@ -1,7 +1,7 @@
 # Plan 002: Intent vs. Issues — Verified Implementation + Grounded Issue Generator
 
 **Author:** Senior Advisor (audit pass + approved implementation)  
-**Status:** APPROVED — ready to execute (branch `v2`)  
+**Status:** ✅ COMPLETE — all phases executed (Phases 0–6) and delivered in IxStates 1.2.7 "Ogma" (Beta) · branch `v2`  
 **Supersedes/extends:** [001-intent-vs-issues-rhythm-architecture.md](001-intent-vs-issues-rhythm-architecture.md)  
 **Phase 3 (intent progress):** IN SCOPE (user decision) · **Dual spawn mode:** IN SCOPE (toggleable) · **New `V2IssueDetail`:** IN SCOPE · **Bug fixes:** IN SCOPE · **Grounded generator:** IN SCOPE (focused-first)
 
@@ -43,9 +43,11 @@ What **did** check out: shared `CountryEventSpine` ledger for both systems (`int
 
 ---
 
-## 3. Phase 0 — Schema (force migration)
+## 3. Phase 0 — Schema (force migration) ✅
 
 Run `bun run db:push:force` (explicit, deliberate — 82-nation production DB).
+
+**Delivered:** `NationalIssue.intentId` + index, `Intent.riskRating`, `Intent.progress` all added to `prisma/schema/government.prisma`; force-migrated with `db:push:force`.
 
 | Model | Add | Purpose |
 |---|---|---|
@@ -57,7 +59,7 @@ No new models, no DAG — ponytail preserved.
 
 ---
 
-## 4. Phase 1 — Intent router fixes (`src/server/api/routers/intent.ts`)
+## 4. Phase 1 — Intent router fixes (`src/server/api/routers/intent.ts`) ✅
 
 1. **Delete duplicate `getTree`** (dead first copy `:143`; keep nested `{ roots, allIntents }` at `:366`).
 2. **IxTime fix:** `cooldownStatus` weekly cap + cooldown math on `createdIxTime`, not `createdAt`.
@@ -69,7 +71,7 @@ No new models, no DAG — ponytail preserved.
 
 ---
 
-## 5. Phase 2 — Spawn engine + vocabulary fix
+## 5. Phase 2 — Spawn engine + vocabulary fix ✅
 
 **New lib `src/lib/intent/resistance.ts`:**
 
@@ -91,7 +93,7 @@ No new models, no DAG — ponytail preserved.
 
 ---
 
-## 6. Phase 3 — Grounded generator (focused-first)
+## 6. Phase 3 — Grounded generator (focused-first) ✅
 
 ### A. Snapshot extensions in `buildCountrySnapshot` (`national-issues-engine.ts:295-536`; add to the existing `Promise.all`)
 
@@ -120,7 +122,7 @@ Seed ~6-8 grounded templates demonstrating the surface (landlocked-port crisis, 
 
 ---
 
-## 7. Phase 4 — Progress loop (001's Phase 3)
+## 7. Phase 4 — Progress loop (001's Phase 3) ✅
 
 - On resolve (`national-issues-consequences.ts:120`): if `issue.intentId` set, recompute + cache `Intent.progress` = resolved linked issues / total linked issues (responded + auto_resolved + dismissed count; pending/viewed excluded).
 - Add optional per-option `recommendedDirective` string to `ResponseOptionTemplate` (inside `responseOptions` JSON — no migration; mirrors `requiredPolicyKey`). `resolveIssue` returns the chosen option's directive in `ResolveResult`.
@@ -128,7 +130,7 @@ Seed ~6-8 grounded templates demonstrating the surface (landlocked-port crisis, 
 
 ---
 
-## 8. Phase 5 — V2IssueDetail (new v2 surface)
+## 8. Phase 5 — V2IssueDetail (new v2 surface) ✅
 
 - New `src/components/mycountry/v2/V2IssueDetail.tsx`, modeled on legacy `IssueDetailModal` (recon / respond / dismiss) but v2-styled and wired to `onDeclare`. Add an `issue` drill kind to `V2DrillSheets` + `V2CommandSurface` drill state.
 - **Post-resolve CTA:** "Declare Follow-Up Directive →" → `onDeclare(option.recommendedDirective ?? "Address: <issue title>")` (reuses the `V2CommandSurface.declare` pre-fill conduit at `V2CommandSurface.tsx:71-77`).
@@ -137,7 +139,7 @@ Seed ~6-8 grounded templates demonstrating the surface (landlocked-port crisis, 
 
 ---
 
-## 9. Phase 6 — Remaining bug fixes
+## 9. Phase 6 — Remaining bug fixes ✅
 
 1. Delegation window `now - 5` → IxTime-day window (`player.ts:76-81`).
 2. `activeIntents` goals computed but unused (`national-issues-engine.ts:404-407,533-534`) — expose as variables (covered by §6C).
@@ -153,6 +155,17 @@ Seed ~6-8 grounded templates demonstrating the surface (landlocked-port crisis, 
 - **`bun run audit:arch`** after edits (router file ceilings).
 - **Migration:** `bun run db:push:force` before code touching the new columns.
 
+### Delivered ✅
+
+- **Typecheck:** `typecheck:server` / `typecheck:ui` clean for all changed files (only pre-existing errors remain). `audit:arch` 12 violations all pre-existing.
+- **Tests:** 4 new test files added (26 tests, all green):
+  - `src/lib/__tests__/national-issues-consequences.test.ts` — progress recompute (100%, 50%, empty-reset, no-update) — all green.
+  - `src/lib/__tests__/national-issues-config.test.ts` — `spawnMode` config default + `completeNationalIssuesConfig` fills.
+  - `src/lib/__tests__/national-issues-evaluator.test.ts` — `count`/`any` evaluator ops.
+  - `src/lib/intent/__tests__/` — intent-category mapping table.
+  - Full suite: 120 passed / 17 failed suites, 1102 passed / 24 failed tests — the 24 failures are the exact pre-existing worldgen set, no regressions.
+- **Schema:** `NationalIssue.intentId`, `Intent.riskRating`, `Intent.progress` migrated via `db:push:force`.
+
 ---
 
 ## 11. Execution order
@@ -165,3 +178,5 @@ Phase 0 (schema) → Phase 1 (intent router) → Phase 2 (spawn engine + toggle)
 ```
 
 Biggest risk is Phase 3 breadth growth — the focused-first cut (§6) is the guardrail; do not expand snapshot scope mid-execution without a new approval.
+
+> **Status:** All phases (0–6) executed and delivered in IxStates 1.2.7 "Ogma" (Beta). See §10 Delivered for verification results. Follow-up opportunities (out of scope, not approved): demographics/military/budget grounding breadth, `national-issues-engine.ts` (1360+ lines) split or relaxation.

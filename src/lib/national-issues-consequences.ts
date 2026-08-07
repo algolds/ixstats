@@ -107,6 +107,7 @@ export interface ResolveResult {
   consequenceLog: string;
   followUpIssueIds: string[];
   ixCreditsAwarded: number;
+  recommendedDirective?: string;
   error?: string;
 }
 
@@ -163,6 +164,8 @@ export class NationalIssuesConsequences {
         result.error = `Option ${optionId} not found`;
         return result;
       }
+
+      result.recommendedDirective = chosenOption.recommendedDirective;
 
       const currentIxTime = IxTime.getCurrentIxTime();
 
@@ -314,12 +317,57 @@ export class NationalIssuesConsequences {
         }
       }
 
+      // Recompute linked intent progress (resistance resolution feeds the intent's agenda bar)
+      if (issue.intentId) {
+        try {
+          await this.recomputeIntentProgress(issue.intentId, db);
+        } catch (err) {
+          console.error(`Failed to recompute progress for intent ${issue.intentId}:`, err);
+        }
+      }
+
       result.success = true;
     } catch (err) {
       result.error = `Resolution failed: ${(err as Error).message}`;
     }
 
     return result;
+  }
+
+  /**
+   * Recompute the cached 0-100 progress of an Intent from its linked resistance
+   * issues. Resolved = responded | auto_resolved | dismissed. pending/viewed are
+   * still open. Exported for the intent router and agenda aggregation to reuse.
+   */
+  static async recomputeIntentProgress(
+    intentId: string,
+    db: PrismaClient
+  ): Promise<number> {
+    const linked = await (db as any).nationalIssue.findMany({
+      where: { intentId },
+      select: { status: true },
+    });
+
+    const total = linked.length;
+    if (total === 0) {
+      await (db as any).intent.update({
+        where: { id: intentId },
+        data: { progress: 0 },
+      });
+      return 0;
+    }
+
+    const resolved = linked.filter((issue: { status: string }) =>
+      ["responded", "auto_resolved", "dismissed"].includes(issue.status)
+    ).length;
+
+    const progress = Math.round((resolved / total) * 100);
+    await (db as any).intent.update({
+      where: { id: intentId },
+      data: { progress },
+    });
+
+    return progress;
   }
 
   /**

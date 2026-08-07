@@ -388,8 +388,35 @@ export function V2MyAgenda({
       });
     });
 
+    // Inject active national issues awaiting executive action
+    const activeIssues = issuesData.data?.issues ?? [];
+    activeIssues.forEach((iss: any) => {
+      const sev = String(iss.severity ?? "").toLowerCase();
+      const urgent = sev === "critical" || sev === "high" || iss.urgency > 70;
+      list.unshift({
+        id: `issue-ev-${iss.id}`,
+        dayOffset: 0,
+        timeLabel: urgent ? "Urgent" : "Awaiting Decision",
+        title: `National Issue: ${iss.title}`,
+        category: "politics",
+        description:
+          iss.description ||
+          "An active national issue requires immediate executive attention and cabinet policy guidance.",
+        directiveGoal: `Resolve national policy issue: ${iss.title}`,
+        statusLabel: urgent ? "PRIORITY ISSUE" : "OPEN ISSUE",
+        icon: AlertCircle,
+        accentCls: urgent
+          ? "border-red-500/30 dark:border-red-500/30 bg-red-500/5 dark:bg-red-500/10 text-red-900 dark:text-red-300"
+          : "border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300",
+        badgeCls: urgent
+          ? "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold"
+          : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold",
+        drillKind: { kind: "issue", issueId: iss.id },
+      });
+    });
+
     return list;
-  }, [intentTree.data, statecraftEvents, now]);
+  }, [intentTree.data, statecraftEvents, now, issuesData.data]);
 
   // Filter events by selected day & category chip
   const filteredEvents = useMemo(() => {
@@ -543,8 +570,8 @@ export function V2MyAgenda({
           })}
         </div>
 
-        {/* ── Event Cards & Action Items ─────────────────────────────── */}
-        <div className="space-y-2.5">
+        {/* ── Event Cards & Action Items (Inline Scrollable Container) ───────── */}
+        <div className="max-h-[380px] space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/60 dark:scrollbar-thumb-white/20">
           <AnimatePresence mode="popLayout">
             {filteredEvents.length > 0 ? (
               filteredEvents.map((item, idx) => {
@@ -686,7 +713,11 @@ export function V2MyAgenda({
                   className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-white/5 hover:bg-card/90 dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-98"
                 >
                   <Compass className="h-3.5 w-3.5" />
-                  <span>Inspect Domain Details</span>
+                  <span>
+                    {selectedEvent.drillKind.kind === "issue"
+                      ? "Open Issue Brief"
+                      : "Inspect Domain Details"}
+                  </span>
                 </button>
               ) : selectedEvent.intentId ? (
                 <button

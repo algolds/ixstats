@@ -348,9 +348,15 @@ Active policies consume Civil Service Capacity (CivCap) and accrue ongoing maint
 The National Issues system generates dynamic decisions and events for country owners. Issues appear in a player's inbox based on their country's conditions.
 
 ### Key Integration Mechanics
-- **Issue Delegation (Don't Intervene)**: Players can delegate non-urgent issues to the civil service. This consumes **15 CivCap** as a temporary reservation cost for **5 game days** (`respondedIxTime` tracking). Urgent/Crisis/High-severity issues cannot be delegated.
+- **Issue Delegation (Don't Intervene)**: Players can delegate non-urgent issues to the civil service. This consumes **15 CivCap** as a temporary reservation cost for **5 game days** (`respondedIxTime` tracking; `DELEGATION_WINDOW_MS` in `player.ts`). Urgent/Crisis/High-severity issues cannot be delegated.
 - **Risky Response Gambles**: Response options marked as "Red/Risky" carry a **40% failure chance**. Failing the gamble triggers severe Stability and Public Approval penalties, logged directly in the outcome summary.
 - **Party Platform Alignment**: Selecting choices aligned with a political party's ideology increments their polling support by **+3.0%**.
+- **Intent ↔ Issues Resistance Rhythm**: Committing a moderate/extreme executive directive (`Intent`) can spawn linked "resistance" issues via `src/lib/intent/resistance.ts`. Two spawn modes, toggled at runtime via `spawnMode` in `data/national-issues-config.json`:
+  - `"deterministic"` — linked issue spawns immediately at commit (deduped, respecting cooldown/maxActive).
+  - `"probability"` (default) — no direct spawn; the maintenance cron's risk roll boosts mapped-category templates (`INTENT_CATEGORY_TO_TEMPLATE` fixes the category vocabulary so `economy`/`fiscal`/`defense` intents actually match templates).
+  - `"off"` — intents never spawn issues.
+  Resolving or dismissing linked issues recomputes cached `Intent.progress` (`recomputeIntentProgress`), and a directive cannot be marked `completed` while open linked issues exist.
+- **Grounded Issue Generator (focused-first)**: `buildCountrySnapshot` now includes real-data geo (`CountryGeoProfile`), names (capital/largest city, languages, religion, top party, ministers), fiscal/labor, economic profile, diplomatic partners/embassies/events, and live PostGIS `ST_Touches` neighbors (gated by `ISSUES_NEIGHBORS`, 60s memo cache). Template variables resolve to real names (`{{neighborName}}`, `{{allyName}}`, `{{ministerName}}`, `{{capitalCity}}`, `{{dominantClimate}}`, `{{activeIntentGoal}}`, …), and the evaluator adds `count`/`any` ops to the safe JSON tree. Grounded templates (landlocked-port, border incident, ally-trade, legislative gridlock, union strike, drought) use the existing `triggerConditions` JSON — no new template column.
 
 ### Overview
 
@@ -368,21 +374,28 @@ The National Issues system generates dynamic decisions and events for country ow
 **Engine:**
 - `src/lib/national-issues-engine.ts` — Core engine: evaluation, condition matching, country snapshots, variable substitution, force generation
 - `src/lib/national-issues-consequences.ts` — Consequence resolver: applies effects to country models
+- `src/lib/national-issues/snapshot.ts` — Grounded `buildCountrySnapshot` (geo/names/fiscal/econ/diplomacy data)
+- `src/lib/national-issues/neighbors.ts` — Live PostGIS `ST_Touches` neighbor resolution (gated, memoized)
+- `src/lib/national-issues-config.ts` — Runtime config incl. `spawnMode` toggle
+- `src/lib/intent/resistance.ts` — `spawnIntentResistance` deterministic spawn engine
 
 **Router:**
-- `src/server/api/routers/national-issues.ts` — 937-line tRPC router with 17 procedures
+- `src/server/api/routers/national-issues/` — Split router (`index.ts` merges `engine.ts` + `player.ts` + `templates.ts`; 17+ procedures)
 
 **Components:**
-- `src/components/national-issues/IssuesInbox.tsx` — Player inbox for pending issues
+- `src/components/national-issues/IssuesInbox.tsx` — Player inbox for pending issues (legacy surfaces)
 - `src/components/national-issues/IssueCard.tsx` — Individual issue card
-- `src/components/national-issues/IssueDetailModal.tsx` — Detailed view with response options
+- `src/components/national-issues/IssueDetailModal.tsx` — Detailed view with response options (legacy surfaces)
 - `src/components/national-issues/IssueCountBadge.tsx` — Badge showing pending issue count
+- `src/components/mycountry/v2/V2IssueDetail.tsx` — **v2 Issue Brief** surface (recon / respond / dismiss / post-resolve directive CTA)
 
 ### API Procedures
 
 **Player Endpoints:** `getMyIssues`, `getIssue`, `markViewed`, `respond` (core player action), `dismiss` (non-urgent, no deadline only), `getPendingCount` (badge count), `getHistory` (paginated), `getConsequences`, `getRecentWorldIssues` (public splash/discovery).
 
 **Admin Endpoints:** `getTemplates`, `getTemplate`, `createTemplate`, `updateTemplate`, `deleteTemplate`, `toggleTemplateActive`, `previewTemplate`, `forceGenerate`, `batchCreateTemplates`, `getGenerationStats`, `triggerEvaluation`.
+
+**Intent linkage:** `intent.getLinkedIssues` (in `src/server/api/routers/intent.ts`) returns issues linked to a directive plus `resolvedCount`/`totalCount`/`progress` — drives the v2 progress bars.
 
 ### Issue Lifecycle
 

@@ -1,15 +1,19 @@
 import fs from "fs";
 import path from "path";
 
+export type SpawnMode = "probability" | "deterministic" | "off";
+
 export interface NationalIssuesConfig {
   maxIssuesPerSession: number;
   maxIssuesPerWeek: number;
+  spawnMode: SpawnMode;
 }
 
 const CONFIG_PATH = path.join(process.cwd(), "data", "national-issues-config.json");
 const DEFAULT_CONFIG: NationalIssuesConfig = {
   maxIssuesPerSession: 3,
   maxIssuesPerWeek: 5,
+  spawnMode: "probability",
 };
 
 export function getNationalIssuesConfig(): NationalIssuesConfig {
@@ -34,6 +38,9 @@ export function getNationalIssuesConfig(): NationalIssuesConfig {
         typeof parsed.maxIssuesPerWeek === "number"
           ? parsed.maxIssuesPerWeek
           : DEFAULT_CONFIG.maxIssuesPerWeek,
+      spawnMode: ["probability", "deterministic", "off"].includes(parsed.spawnMode)
+        ? parsed.spawnMode
+        : DEFAULT_CONFIG.spawnMode,
     };
   } catch (err) {
     console.error("[NationalIssuesConfig] Failed to read config, returning default:", err);
@@ -52,4 +59,11 @@ export function saveNationalIssuesConfig(config: NationalIssuesConfig): void {
     console.error("[NationalIssuesConfig] Failed to write config:", err);
     throw new Error("Failed to save national issues configuration");
   }
+}
+
+/** Fill missing fields from defaults so a partial update never drops spawnMode. */
+export function completeNationalIssuesConfig(
+  config: Partial<NationalIssuesConfig>
+): NationalIssuesConfig {
+  return { ...DEFAULT_CONFIG, ...config };
 }

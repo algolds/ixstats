@@ -28,7 +28,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 2,
-    patch: 6,
+    patch: 7,
     release: "Ogma",
     channel: "Beta" as ReleaseChannel,
   },
@@ -42,14 +42,14 @@ export const VERSIONS = {
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).
   engines: {
-    mycountry: 3, // nation-scoped deterministic sim
+    mycountry: 4, // nation-scoped deterministic sim; v4: grounded (real-data) issue generator + intent↔issues resistance rhythm
     concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
     atlas: 4, // spatial foundation (worldgen, geo, maps) — powers IxWorld; v4: UPG v2 100K RBF Spline Vector Engine
   },
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 3, // public-facing executive command UI
+    mycountry: 4, // public-facing executive command UI; v4: v2 Issue Brief surface + intent progress in agenda/drill sheets
     builder: 2,
     thinkpages: 1,
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load

@@ -99,6 +99,26 @@ export function V2Agenda({
                     {root.goal}
                   </span>
                 </div>
+                <div className="pl-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted/60 dark:bg-white/10">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          (root.progress ?? 0) >= 100
+                            ? "bg-emerald-500/80"
+                            : (root.progress ?? 0) > 0
+                              ? "bg-amber-500/80"
+                              : "bg-slate-400/40"
+                        )}
+                        style={{ width: `${Math.min(100, Math.max(0, root.progress ?? 0))}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 text-[9px] font-mono font-bold text-muted-foreground">
+                      {Math.round(root.progress ?? 0)}%
+                    </span>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 pl-0.5">
                   <span className="text-muted-foreground text-[9px] font-semibold capitalize">
                     {root.category}

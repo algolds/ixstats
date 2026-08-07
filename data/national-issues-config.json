@@ -1,4 +1,5 @@
 {
   "maxIssuesPerSession": 3,
-  "maxIssuesPerWeek": 5
+  "maxIssuesPerWeek": 5,
+  "spawnMode": "probability"
 }

@@ -326,7 +326,7 @@ const RECIPES: Record<Category, Recipe> = {
 
 const TIER_SCALE: Record<Tier, number> = { measured: 1, moderate: 2, extreme: 3.5 };
 const TIER_ACCEPT: Record<Tier, Acceptance> = { measured: "good", moderate: "mid", extreme: "bad" };
-const TIER_RISK: Record<Tier, IntentPackage["risk"]> = {
+export const TIER_RISK: Record<Tier, IntentPackage["risk"]> = {
   measured: "stable",
   moderate: "volatile",
   extreme: "high-risk",

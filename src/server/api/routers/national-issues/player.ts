@@ -29,6 +29,7 @@ const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
 const RECON_CAPACITY_COST = 20; // Capacity reserved per in-progress recon Meeting
 const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
+const DELEGATION_WINDOW_MS = 5 * 24 * 60 * 60 * 1000; // delegated issues keep consuming CivCap for 5 IxTime days
 
 /**
  * Recon context for a country: its atomic build (for the fog) + Capacity state.
@@ -77,7 +78,7 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
       where: {
         countryId,
         status: "dismissed",
-        respondedIxTime: { gte: now - 5 },
+        respondedIxTime: { gte: now - DELEGATION_WINDOW_MS },
       },
     }),
   ]);
@@ -187,6 +188,7 @@ const ResponseOptionSchema = z.object({
   outcomeText: z.string(),
   isAutoResolveDefault: z.boolean().optional(),
   triggersFollowUp: z.array(z.string()).optional(),
+  recommendedDirective: z.string().optional(),
 });
 
 const TemplateCreateSchema = z.object({
@@ -566,6 +568,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           severity: true,
           urgency: true,
           countryId: true,
+          intentId: true,
         },
       });
 
@@ -622,6 +625,17 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           respondedIxTime: currentIxTime,
         },
       });
+
+      if (issue.intentId) {
+        try {
+          await NationalIssuesConsequences.recomputeIntentProgress(
+            issue.intentId,
+            ctx.db as any
+          );
+        } catch (e) {
+          console.warn(`[NationalIssues] failed to recompute intent progress on dismiss:`, e);
+        }
+      }
 
       return { success: true };
     }),

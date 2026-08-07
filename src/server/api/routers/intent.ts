@@ -16,9 +16,11 @@ import {
   assemblePackages,
   weightAcceptance,
   CATEGORY_TO_BROKER,
+  TIER_RISK,
   type Tier,
   type Category,
 } from "~/lib/intent/assemble";
+import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft-power-brokers";
 import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
@@ -58,23 +60,23 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
 }
 
 async function cooldownStatus(db: any, countryId: string) {
-  const now = Date.now();
-  const weekAgo = new Date(now - WEEK_MS);
+  const now = IxTime.getCurrentIxTime();
+  const weekAgo = now - WEEK_MS;
   const recent = await db.intent.findMany({
     where: {
       countryId,
       status: { in: ["active", "completed"] },
-      createdAt: { gte: weekAgo },
+      createdIxTime: { gte: weekAgo },
     },
-    orderBy: { createdAt: "asc" },
-    select: { createdAt: true },
+    orderBy: { createdIxTime: "asc" },
+    select: { createdIxTime: true },
   });
   const usedThisWeek = recent.length;
   const onCooldown = usedThisWeek >= WEEKLY_CAP;
 
   let cooldownUntil: number | null = null;
-  if (onCooldown && recent.length > 0 && recent[0]?.createdAt) {
-    cooldownUntil = new Date(recent[0].createdAt).getTime() + WEEK_MS;
+  if (onCooldown && recent.length > 0 && recent[0]?.createdIxTime != null) {
+    cooldownUntil = recent[0].createdIxTime + WEEK_MS;
   }
 
   return {
@@ -139,38 +141,34 @@ export const intentRouter = createTRPCRouter({
       });
     }),
 
-  /** The dependency tree of intents for a country (flat; UI nests by parentId). */
-  getTree: publicProcedure
-    .input(z.object({ countryId: z.string(), limit: z.number().min(1).max(100).default(50) }))
-    .query(async ({ ctx, input }) => {
-      const intents = await ctx.db.intent.findMany({
-        where: { countryId: input.countryId },
-        orderBy: { createdIxTime: "desc" },
-        take: input.limit,
-        select: {
-          id: true,
-          goal: true,
-          tier: true,
-          category: true,
-          target: true,
-          status: true,
-          changesJson: true,
-          summary: true,
-          parentId: true,
-          createdIxTime: true,
-          createdAt: true,
-        },
-      });
-      return intents;
-    }),
-
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure
-    .input(z.object({ id: z.string(), status: z.enum(["active", "completed", "abandoned"]) }))
+    .input(z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) }))
     .mutation(async ({ ctx, input }) => {
       const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
       await assertCountryAccess(ctx, intent.countryId);
+
+      // Phase 3 gate: an intent with open (pending/viewed) linked resistance
+      // issues cannot be completed — the player must resolve them first.
+      if (input.status === "completed") {
+        const openResistance = await ctx.db.nationalIssue.findFirst({
+          where: {
+            countryId: intent.countryId,
+            intentId: intent.id,
+            status: { in: ["pending", "viewed"] },
+          },
+          select: { id: true },
+        });
+        if (openResistance) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "This intent still faces unresolved resistance (an open national issue). Resolve it before completing the intent.",
+          });
+        }
+      }
+
       const updated = await ctx.db.intent.update({
         where: { id: input.id },
         data: { status: input.status },
@@ -229,13 +227,8 @@ export const intentRouter = createTRPCRouter({
       const { category, target, packages } = assemblePackages(input.goal);
       const now = IxTime.getCurrentIxTime();
 
-      // Foreign policy is gated: needs a specific target (Urcea).
-      if (category === "foreign" && !target)
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Foreign-policy intents need a specific target — name who or what this is about.",
-        });
+      // Foreign policy is gated at classification time (assemble.classifyGoal throws
+      // on foreign keywords), so no runtime gate is needed here.
 
       // Handle "proposed" status creation
       if (input.tier === "proposed") {
@@ -338,6 +331,7 @@ export const intentRouter = createTRPCRouter({
             summary,
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
+            riskRating: TIER_RISK[input.tier as Tier],
           },
         });
       } else {
@@ -355,7 +349,17 @@ export const intentRouter = createTRPCRouter({
             parentId: input.parentId ?? null,
             cooldownUntil: now + COOLDOWN_MS,
             createdIxTime: now,
+            riskRating: TIER_RISK[input.tier as Tier],
           },
+        });
+      }
+
+      // Deterministic resistance spawn: never fails the commit (try/catch inside).
+      if (input.tier === "moderate" || input.tier === "extreme") {
+        await spawnIntentResistance({
+          db: ctx.db,
+          countryId: input.countryId,
+          intent: { id: intent.id, category, tier: input.tier },
         });
       }
 
@@ -383,5 +387,41 @@ export const intentRouter = createTRPCRouter({
       }
 
       return { roots, allIntents: Array.from(intentMap.values()) };
+    }),
+
+  /** Return resistance issues linked to an intent (progress traceability for the drill sheet). */
+  getLinkedIssues: protectedProcedure
+    .input(z.object({ intentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const issues = await ctx.db.nationalIssue.findMany({
+        where: { intentId: input.intentId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          severity: true,
+          domain: true,
+          deadlineIxTime: true,
+          respondedAt: true,
+          chosenOptionLabel: true,
+          createdAt: true,
+        },
+      });
+
+      const resolved = issues.filter((i) =>
+        ["responded", "auto_resolved", "dismissed"].includes(i.status)
+      ).length;
+
+      return {
+        issues,
+        resolvedCount: resolved,
+        totalCount: issues.length,
+        progress:
+          issues.length === 0
+            ? 0
+            : Math.round((resolved / issues.length) * 100),
+      };
     }),
 });

@@ -19,6 +19,7 @@ import {
   Building2,
   ExternalLink,
   GitBranch,
+  AlertTriangle,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "~/components/ui/sheet";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -28,6 +29,7 @@ import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { ThinkPagesShareModal } from "./ThinkPagesShareModal";
+import { V2IssueDetail } from "./V2IssueDetail";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -49,6 +51,7 @@ const DefenseCommandPanel = dynamic(
 export type V2Drill =
   | { kind: V2Domain }
   | { kind: "intent"; intentId: string }
+  | { kind: "issue"; issueId: string }
   | null;
 
 const TIER_BADGE: Record<string, string> = {
@@ -131,6 +134,7 @@ function IntentDetail({
   onClose?: () => void;
 }) {
   const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
+  const linked = api.intent.getLinkedIssues.useQuery({ intentId }, { enabled: !!intentId });
   const updateM = api.intent.updateStatus.useMutation({
     onSuccess: () => tree.refetch(),
   });
@@ -326,6 +330,75 @@ function IntentDetail({
         </FacetCard>
       )}
 
+      {/* Resistance Progress (linked national issues) */}
+      <FacetCard depth={1} className="bg-card/20 flex flex-col gap-3 p-4 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-500 dark:text-amber-400">
+            <Shield className="h-4 w-4" />
+            <span>Resistance Progress</span>
+          </div>
+          <span className="rounded-full border border-border/40 bg-muted/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-muted-foreground">
+            {linked.data?.resolvedCount ?? 0} / {linked.data?.totalCount ?? 0} resolved
+          </span>
+        </div>
+
+        <div className="h-2 overflow-hidden rounded-full bg-muted/50 dark:bg-white/10">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              (linked.data?.progress ?? 0) >= 100
+                ? "bg-emerald-500/80"
+                : (linked.data?.progress ?? 0) > 0
+                  ? "bg-amber-500/80"
+                  : "bg-slate-400/40"
+            )}
+            style={{ width: `${Math.min(100, Math.max(0, linked.data?.progress ?? 0))}%` }}
+          />
+        </div>
+
+        {linked.data && linked.data.issues.length > 0 ? (
+          <div className="space-y-2">
+            {linked.data.issues.map((iss: any) => {
+              const done = ["responded", "auto_resolved", "dismissed"].includes(iss.status);
+              return (
+                <div
+                  key={iss.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-card/30 px-3 py-2 text-xs"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        done ? "bg-emerald-400" : iss.status === "viewed" ? "bg-amber-400" : "bg-slate-400"
+                      )}
+                    />
+                    <span className={cn("min-w-0 truncate font-semibold", done ? "text-muted-foreground" : "text-foreground")}>
+                      {iss.title}
+                    </span>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase",
+                      done
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : iss.status === "viewed"
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                          : "border-border/60 bg-muted/20 text-muted-foreground"
+                    )}
+                  >
+                    {iss.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-[11px] font-medium">
+            No active resistance. The directive is proceeding without friction.
+          </p>
+        )}
+      </FacetCard>
+
       {/* RPG Decision Tree Visualizer */}
       <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
 
@@ -433,12 +506,26 @@ export function V2DrillSheets({
   const open = drill !== null;
 
   const kindKind = drill === null ? "relations" : drill.kind;
-  const meta = kindKind === "intent" ? null : DOMAIN_META[kindKind as V2Domain];
+  const meta = kindKind === "intent" || kindKind === "issue" ? null : DOMAIN_META[kindKind as V2Domain];
 
   const title =
-    drill === null ? "" : drill.kind === "intent" ? "Directive Detail" : meta?.sheetTitle ?? "";
-  const Icon = drill === null ? Target : drill.kind === "intent" ? Target : meta?.icon ?? Target;
-  const accent = drill === null ? "text-amber-400" : meta?.accent ?? "text-amber-400";
+    drill === null
+      ? ""
+      : drill.kind === "intent"
+        ? "Directive Detail"
+        : drill.kind === "issue"
+          ? "Issue Brief"
+          : meta?.sheetTitle ?? "";
+  const Icon =
+    drill === null
+      ? Target
+      : drill.kind === "intent"
+        ? Target
+        : drill.kind === "issue"
+          ? AlertTriangle
+          : meta?.icon ?? Target;
+  const accent =
+    drill === null ? "text-amber-400" : meta?.accent ?? "text-amber-400";
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -452,7 +539,7 @@ export function V2DrillSheets({
               <Icon className={cn("h-4 w-4", accent)} />
               {title}
             </SheetTitle>
-            {drill && drill.kind !== "intent" && (
+            {drill && drill.kind !== "intent" && drill.kind !== "issue" && (
               <Link
                 href={`/countries/${encodeURIComponent(countryId)}#${drill.kind}`}
                 target="_blank"
@@ -472,6 +559,12 @@ export function V2DrillSheets({
 
         {drill === null ? null : drill.kind === "intent" ? (
           <IntentDetail countryId={countryId} intentId={drill.intentId} onDeclare={onDeclare} onClose={onClose} />
+        ) : drill.kind === "issue" ? (
+          <V2IssueDetail
+            issueId={drill.issueId}
+            onDeclare={onDeclare}
+            onClose={onClose}
+          />
         ) : drill.kind === "relations" ? (
           <EmbassiesAndRelationsPanel countryId={countryId} />
         ) : drill.kind === "defense" ? (

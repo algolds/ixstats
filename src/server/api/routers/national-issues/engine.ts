@@ -12,7 +12,11 @@ import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
-import { getNationalIssuesConfig, saveNationalIssuesConfig } from "~/lib/national-issues-config";
+import {
+  getNationalIssuesConfig,
+  saveNationalIssuesConfig,
+  completeNationalIssuesConfig,
+} from "~/lib/national-issues-config";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
@@ -64,6 +68,7 @@ async function seedSplashShowcaseIssues(db: PrismaClient): Promise<void> {
 const ConfigUpdateSchema = z.object({
   maxIssuesPerSession: z.number().int().min(1).max(10),
   maxIssuesPerWeek: z.number().int().min(1).max(50),
+  spawnMode: z.enum(["probability", "deterministic", "off"]).optional(),
 });
 
 const ConsequenceDefinitionSchema = z.object({
@@ -89,6 +94,7 @@ const ResponseOptionSchema = z.object({
   outcomeText: z.string(),
   isAutoResolveDefault: z.boolean().optional(),
   triggersFollowUp: z.array(z.string()).optional(),
+  recommendedDirective: z.string().optional(),
 });
 
 const TemplateCreateSchema = z.object({
@@ -144,7 +150,7 @@ export const nationalIssuesEngineRouter = createTRPCRouter({
    * Update the national issues engine configuration limits.
    */
   updateEngineConfig: adminProcedure.input(ConfigUpdateSchema).mutation(async ({ input }) => {
-    saveNationalIssuesConfig(input);
+    saveNationalIssuesConfig(completeNationalIssuesConfig(input));
     return { success: true };
   }),
 

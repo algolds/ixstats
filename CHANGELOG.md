@@ -5,7 +5,7 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.1 "Ogma"**, channel Alpha), while Apps / Engines / Systems each carry a single
+**IxStates 1.2 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
@@ -118,6 +118,35 @@ capability integer. Each release entry below lists which components advanced and
     - **Depression & Sink Lake Generation**: Lakes are co-generated in `hydro-climate.ts` from land hydraulic depressions (`filledH - rawH > 1.5m`) and endorheic river sinks. Rivers flow into inland lakes and exit down slopes to coastal land cells.
     - **River Coast Termination**: Rivers terminate strictly at coastal land cells (`coastDist === 0`) and never push ocean water cells into `river.cells`.
   - **Comprehensive Engine Documentation**: Created [src/lib/worldgen/README.md](file:///home/jxsig/projects/ixstats/src/lib/worldgen/README.md) documenting UPG v2 principles, 8-stage pipeline, GeoJSON layer contracts, 9 elevation zones, API usage, and test commands.
+
+## [1.2.7 Ogma (Beta)] - 2026-08-07
+
+**Components advanced:** MyCountry Engine **3 → 4** (grounded generator + intent↔issues resistance rhythm) · MyCountry system **3 → 4** (v2 Issue Brief surface + intent progress UI)
+
+### Added
+
+- **Intent ↔ Issues Resistance Rhythm** ([plan 002](plans/002-intent-vs-issues-rhythm-verified-implementation.md)):
+  - **Dual spawn mode** (`spawnMode` runtime toggle in [data/national-issues-config.json](file:///home/jxsig/projects/ixstats/data/national-issues-config.json) and `getNationalIssuesConfig()` in [national-issues-config.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-config.ts)): `"probability"` (default, existing boosted evaluation) | `"deterministic"` (issue spawns immediately at intent commit) | `"off"`.
+  - **Deterministic spawn engine** [resistance.ts](file:///home/jxsig/projects/ixstats/src/lib/intent/resistance.ts): `spawnIntentResistance()` maps intent categories → template domains (`defense → military/security`, `fiscal/economy → economic`, `social → social`, `infrastructure → infrastructure`, `security → political/governance`), dedupes per intent+template, respects `cooldownDays`/`maxActivePerCountry`, and instantiates via `forceGenerate`. Hooked into `intent.commit` (moderate/extreme only, try/catch — never fails the commit).
+  - **Maintenance cron rework**: [policy-maintenance-cron.ts](file:///home/jxsig/projects/ixstats/src/lib/policy-maintenance-cron.ts) now has a real `spawnVolatileIssues()` covering policies (fixed matching) **and** intents (probability-mode risk roll, mapped categories).
+  - **Intent progress loop**: `recomputeIntentProgress()` in [national-issues-consequences.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-consequences.ts) recomputes cached `Intent.progress` = resolved linked issues (responded/auto_resolved/dismissed; pending/viewed excluded) ÷ total, auto-called on resolve/dismiss. New `intent.getLinkedIssues` procedure returns linked issues + `resolvedCount`/`totalCount`/`progress`.
+- **Grounded Issue Generator** (focused-first; plan 002 §6):
+  - **Real-data snapshot extensions** in `buildCountrySnapshot`: geo (`CountryGeoProfile`: landlocked/island/climate/terrain/arable/coastline/neighborCount), names (capital/largest city, languages, religion, top party, ministers), fiscal/labor, economic profile, diplomatic partners + embassy hosts/guests + world/crisis events, and **live PostGIS `ST_Touches` neighbors** (gated by env `ISSUES_NEIGHBORS` via [country-geo/bundle.ts](file:///home/jxsig/projects/ixstats/src/lib/country-geo/bundle.ts), 60s memo cache).
+  - **Evaluator ops** `count` and `any` (recursive condition over object-array elements) in the safe JSON tree — no `eval`.
+  - **Real-name variable resolvers**: `{{neighborName}}`, `{{allyName}}`, `{{rivalName}}`, `{{partnerName}}`, `{{partyName}}`, `{{oppositionParty}}`, `{{ministerName}}`, `{{officialTitle}}`, `{{capitalCity}}`, `{{cityName}}`, `{{dominantClimate}}`, `{{activeIntentGoal}}`; target-country fallback prefers neighbors/partners over a random country.
+  - **Seeded grounded templates** (landlocked-port crisis, border incident w/ real neighbor, ally-trade disruption, legislative gridlock w/ real party, union strike gated on `UNION_BASED`, drought gated on `dominantClimate`).
+- **V2 Issue Brief surface** (plan 002 §8):
+  - New [V2IssueDetail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2IssueDetail.tsx): recon commission (pending/ready), confirm/risky response options, delegate, and a **post-resolve CTA** ("Declare Follow-Up Directive →") that pre-fills the composer via `V2CommandSurface`'s `onDeclare` conduit using the chosen option's `recommendedDirective` (or `"Address: <issue title>"`).
+  - New `{ kind: "issue" }` drill in [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx); `V2OpportunityHero` top-issue button opens it; `V2MyAgenda` injects active issues as priority events (urgent red/amber).
+  - **Progress UI**: directive-root progress bar in [V2Agenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Agenda.tsx) + "Resistance Progress" card and linked-issue list in the `IntentDetail` drill.
+  - `recommendedDirective?` added to `ResponseOptionTemplate` ([national-issues-engine.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues-engine.ts)) and to admin template create/update schemas in [templates.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/templates.ts) and [engine.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/engine.ts).
+
+### Fixed
+
+- **Delegation window bug**: dismissed-issue CivCap count used `now - 5` (5 IxTime-ms ≈ all history); now a real 5-day IxTime window via `DELEGATION_WINDOW_MS` in [player.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/national-issues/player.ts).
+- **Intent vocabulary mismatch**: probability boost now uses the `INTENT_CATEGORY_TO_TEMPLATE` mapping so `economy`/`fiscal`/`defense` intents actually boost their templates (previously only 3 of 6 categories matched).
+- **Duplicate `getTree`** removed (first dead copy); `cooldownStatus` weekly cap now on `createdIxTime` not wall-clock `createdAt`; `"proposed"` added to `updateStatus` enum; dead foreign gate removed; `riskRating` persisted from `TIER_RISK` at commit.
+- **Intent completion gate**: `updateStatus("completed")` returns `PRECONDITION_FAILED` while open (`pending`/`viewed`) linked resistance issues exist.
 
 ## [1.2.6 Ogma (Beta)] - 2026-07-20
 

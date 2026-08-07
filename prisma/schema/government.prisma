@@ -705,6 +705,7 @@ model NationalIssue {
   aiConfidence        Float?    @default(75)
   parentIssueId       String?
   childIssueIds       String?   // JSON array
+  intentId            String?   // source Intent this issue resists (resistance traceability + progress)
   // Statecraft recon (S1.D): when a cabinet research Meeting was commissioned, the
   // IxTime its findings land. null = no recon; future = in progress; past = ready
   // (the hard consequences are revealed with fog). One field encodes the whole state.
@@ -725,6 +726,7 @@ model NationalIssue {
   @@index([status])
   @@index([createdIxTime])
   @@index([parentIssueId])
+  @@index([intentId])
   @@map("national_issues")
 }
 
@@ -878,9 +880,11 @@ model Intent {
   tier          String                          // "measured" | "moderate" | "extreme" | "custom"
   category      String                          // classified domain (defense/foreign/fiscal/...)
   target        String?                         // parsed FP target, if any
-  status        String   @default("active")     // "active" | "completed" | "abandoned"
+  status        String   @default("active")     // "proposed" | "active" | "completed" | "abandoned"
   changesJson   String                          // JSON: applied package line-items
   summary       String?                         // auto-generated prose (ThinkPages draft-ready)
+  riskRating    String   @default("stable")     // "stable" | "volatile" | "high-risk" (from TIER_RISK at commit)
+  progress      Float    @default(0)            // cached 0-100, updated as linked resistance issues resolve
   parentId      String?                         // tree dependency (bible: no full DAG)
   cooldownUntil Float?                           // IxTime ms — next intent allowed after this
   createdIxTime Float

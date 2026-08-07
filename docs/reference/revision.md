@@ -1,7 +1,7 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Draft v2
-**Last Updated:** July 2026
+**Last Updated:** August 2026
 
 ---
 
@@ -393,7 +393,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 2,
-    patch: 6,
+    patch: 7,
     release: "Ogma",
     channel: "Beta",
   },
@@ -405,19 +405,20 @@ export const VERSIONS = {
   },
 
   engines: {
-    mycountry: 2, // nation-scoped deterministic sim
+    mycountry: 4, // nation-scoped deterministic sim
     concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 2, // spatial foundation (worldgen, geo, maps) — powers IxWorld
+    atlas: 4, // spatial foundation (worldgen, geo, maps) — powers IxWorld
   },
 
   systems: {
-    mycountry: 2, // public-facing executive UI
-    builder: 1,
+    mycountry: 4, // public-facing executive UI
+    builder: 2,
     thinkpages: 1,
-    achievements: 1, // incl. LoreWards
+    achievements: 2, // incl. LoreWards
     stash: 1,
     repository: 2,
-    halo: 1, // global contextual overlay (was "Dynamic Island")
+    halo: 3, // global contextual overlay (was "Dynamic Island")
+    onoma: 4,
   },
 
   design: {
@@ -451,7 +452,7 @@ Release names are permanent epochs; future epochs are reserved but unscheduled.
 
 | Epoch          | Status         | Theme focus                                                                                                  |
 | -------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
-| **1.2 Ogma**   | Current (Beta) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph, waitlist onboarding |
+| **1.2 Ogma**   | Current (Beta) | Executive/diplomacy canon track, map overlays, Defense/Politics panels, adjacency graph, waitlist onboarding, intent↔issues resistance rhythm + grounded issue generator, v2 Issue Brief surface |
 | **2.0 Seshat** | Reserved       | TBD — likely real-time simulation depth, advanced economies                                                  |
 | **3.0 Thoth**  | Reserved       | TBD — large-scale diplomacy, AI-assisted systems                                                             |
 

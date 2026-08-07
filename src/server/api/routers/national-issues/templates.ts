@@ -85,6 +85,7 @@ const ResponseOptionSchema = z.object({
   outcomeText: z.string(),
   isAutoResolveDefault: z.boolean().optional(),
   triggersFollowUp: z.array(z.string()).optional(),
+  recommendedDirective: z.string().optional(),
 });
 
 const TemplateCreateSchema = z.object({

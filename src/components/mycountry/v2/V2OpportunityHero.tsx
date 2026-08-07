@@ -100,7 +100,7 @@ export function V2OpportunityHero({
         borderCls: "border-amber-500/40 dark:border-amber-500/30",
         buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
         bgImage: customHeader || "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
-        drillKind: { kind: "politics" },
+        drillKind: { kind: "issue", issueId: topIssue.id },
       };
     }
 
@@ -319,7 +319,19 @@ export function V2OpportunityHero({
               className="flex items-center justify-center gap-1.5 rounded-xl border border-border/80 dark:border-white/10 bg-card/70 dark:bg-white/5 hover:bg-card dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-xs"
             >
               <Compass className="h-3.5 w-3.5" />
-              <span>Inspect {opportunity.domain === "defense" ? "Defense" : opportunity.domain === "diplomacy" ? "Relations" : opportunity.domain === "politics" ? "Politics" : "Economy"} Details</span>
+              <span>
+                {opportunity.drillKind!.kind === "issue"
+                  ? "Open Issue Brief"
+                  : `Inspect ${
+                      opportunity.domain === "defense"
+                        ? "Defense"
+                        : opportunity.domain === "diplomacy"
+                          ? "Relations"
+                          : opportunity.domain === "politics"
+                            ? "Politics"
+                            : "Economy"
+                    } Details`}
+              </span>
             </motion.button>
           ) : opportunity.domain ? (
             <motion.button

@@ -31,6 +31,9 @@ import {
 import { mapTaxComponentTypeToId } from "./enums";
 import type { PrismaClient } from "@prisma/client";
 import { getNationalIssuesConfig } from "./national-issues-config";
+import { INTENT_CATEGORY_TO_TEMPLATE } from "./intent/resistance";
+import { buildGroundedContext } from "./national-issues/snapshot";
+import { resolveNeighbors } from "./national-issues/neighbors";
 
 // ==================== TYPES ====================
 
@@ -112,7 +115,59 @@ export interface CountrySnapshot {
   policySettings: Record<string, Record<string, number>>;
   activeIntents: string[];
   activeIntentCategories: string[];
+
+  // ── Grounded context (Phase 3, focused-first) — all optional; filled when the
+  // ── country has the data. Absent → templates that reference them won't trigger.
+  geo?: {
+    isLandlocked: boolean;
+    isIsland: boolean;
+    dominantClimate: string | null;
+    terrainRoughness: number | null;
+    arableLandPercent: number;
+    coastlineKm: number;
+    neighborCount: number;
+  };
+  identity?: {
+    capitalCity: string | null;
+    largestCity: string | null;
+    languages: string | null;
+    religion: string | null;
+  };
+  party?: {
+    name: string;
+    ideology: string;
+    support: number;
+  };
+  oppositionParty?: {
+    name: string;
+    ideology: string;
+    support: number;
+  };
+  minister?: { name: string; title: string } | null;
+  official?: { name: string; title: string } | null;
+  labor?: {
+    minimumWage: number | null;
+    youthUnemploymentRate: number | null;
+    informalEmploymentRate: number | null;
+  };
+  fiscal?: {
+    salesTaxRate: number | null;
+    corporateTaxRate: number | null;
+  };
+  economy?: {
+    topSector: string | null;
+    exportsGDPPercent: number | null;
+    economicComplexity: number | null;
+  };
+  partners?: Array<{ name: string; band: string; strength: number }>;
+  embassyPartners?: string[];
+  worldEvents?: string[];
+  crises?: string[];
+  neighbors?: Array<{ name: string; countryId: string | null }>;
+  activeIntentGoals?: string[];
 }
+
+export type ComparisonOp = ">" | ">=" | "<" | "<=" | "==" | "!=" | "in" | "between";
 
 export type TriggerCondition =
   | { and: TriggerCondition[] }
@@ -120,11 +175,13 @@ export type TriggerCondition =
   | { not: TriggerCondition }
   | {
       field: string;
-      op: ">" | ">=" | "<" | "<=" | "==" | "!=" | "in" | "between";
+      op: ComparisonOp;
       value: number | string | boolean | (number | string)[];
       value2?: number;
     }
-  | { random: number };
+  | { random: number }
+  | { count: { field: string; op: Exclude<ComparisonOp, "in" | "between">; value: number } }
+  | { any: { field: string; condition: TriggerCondition } };
 
 export interface ResponseOptionTemplate {
   id: string;
@@ -144,6 +201,7 @@ export interface ResponseOptionTemplate {
   partyAlignment?: string;
   brokerAlignment?: string;
   costMessage?: string;
+  recommendedDirective?: string;
 }
 
 export interface ConsequenceDefinition {
@@ -257,8 +315,9 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   currentYear: (s) => String(s.currentIxYear),
   // Computed random variables
   sectorName: () => randomFrom(SECTOR_NAMES),
-  cityName: () => randomFrom(CITY_DESCRIPTORS),
-  officialTitle: () => randomFrom(OFFICIAL_TITLES),
+  cityName: (s) => s.identity?.capitalCity || s.identity?.largestCity || randomFrom(CITY_DESCRIPTORS),
+  officialTitle: (s) =>
+    s.official?.title || s.minister?.title || randomFrom(OFFICIAL_TITLES),
   percentageSmall: () => String(randomBetween(3, 12)),
   percentageMedium: () => String(randomBetween(12, 30)),
   percentageLarge: () => String(randomBetween(30, 55)),
@@ -266,8 +325,30 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   amountMedium: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(5, 20) / 1000)),
   amountLarge: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(20, 80) / 1000)),
   workerCount: (s) => formatPopulation(s.currentPopulation * (randomBetween(1, 5) / 100)),
-  neighborName: () => "a neighboring state",
-  oppositionParty: () =>
+  // Grounded names (Phase 3): real values when available, descriptive fallbacks otherwise.
+  neighborName: (s) =>
+    s.neighbors?.[0]?.name ||
+    s.partners?.[0]?.name ||
+    "a neighboring state",
+  allyName: (s) => {
+    const ally = s.partners?.find((p) => p.band === "ALLY");
+    return ally?.name || s.partners?.[0]?.name || "an ally";
+  },
+  rivalName: (s) => {
+    const rival = s.partners?.find((p) => p.band === "HOSTILE" || p.band === "TENSE");
+    return rival?.name || s.neighbors?.[0]?.name || "a rival power";
+  },
+  partnerName: (s) =>
+    s.partners?.[0]?.name ||
+    s.embassyPartners?.[0] ||
+    "a partner state",
+  partyName: (s) =>
+    s.party?.name ||
+    s.oppositionParty?.name ||
+    "the ruling coalition",
+  oppositionParty: (s) =>
+    s.oppositionParty?.name ||
+    s.party?.name ||
     randomFrom([
       "the opposition coalition",
       "reform-minded lawmakers",
@@ -275,6 +356,10 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
       "progressive legislators",
       "conservative hardliners",
     ]),
+  ministerName: (s) => s.minister?.name || s.official?.name || "the cabinet",
+  capitalCity: (s) => s.identity?.capitalCity || s.identity?.largestCity || "the capital",
+  dominantClimate: (s) => s.geo?.dominantClimate || "temperate",
+  activeIntentGoal: (s) => s.activeIntentGoals?.[0] || "reform",
   mediaOutlet: () =>
     randomFrom([
       "the national press",
@@ -363,6 +448,8 @@ export class NationalIssuesEngine {
       taxComps,
       activePolicies,
       activeIntents,
+      grounded,
+      neighbors,
     ] = await Promise.all([
       (db as any).embassy.count({
         where: {
@@ -405,6 +492,8 @@ export class NationalIssuesEngine {
         where: { countryId, status: "active" },
         select: { goal: true, category: true },
       }),
+      buildGroundedContext(countryId, db as any),
+      resolveNeighbors(countryId, db as any),
     ]);
 
     const currentIxTime = IxTime.getCurrentIxTime();
@@ -532,6 +621,22 @@ export class NationalIssuesEngine {
       policySettings,
       activeIntents: activeIntents.map((i: any) => i.goal),
       activeIntentCategories: activeIntents.map((i: any) => i.category),
+      // Grounded context (Phase 3) — optional, focused-first.
+      geo: grounded?.geo ?? undefined,
+      identity: grounded?.identity ?? undefined,
+      party: grounded?.party ?? undefined,
+      oppositionParty: grounded?.oppositionParty ?? undefined,
+      minister: grounded?.minister ?? undefined,
+      official: grounded?.official ?? undefined,
+      labor: grounded?.labor ?? undefined,
+      fiscal: grounded?.fiscal ?? undefined,
+      economy: grounded?.economy ?? undefined,
+      partners: grounded?.partners ?? undefined,
+      embassyPartners: grounded?.embassyPartners ?? undefined,
+      worldEvents: grounded?.worldEvents ?? undefined,
+      crises: grounded?.crises ?? undefined,
+      neighbors,
+      activeIntentGoals: activeIntents.map((i: any) => i.goal),
     };
   }
 
@@ -552,11 +657,53 @@ export class NationalIssuesEngine {
     if ("random" in condition) {
       return Math.random() < condition.random;
     }
+    // count: array length comparison, e.g. `{ count: { field: "partners", op: ">=", value: 2 } }`
+    if ("count" in condition) {
+      const fieldValue = this.getSnapshotField(snapshot, condition.count.field);
+      if (!Array.isArray(fieldValue)) return false;
+      const n = fieldValue.length;
+      switch (condition.count.op) {
+        case ">":
+          return n > condition.count.value;
+        case ">=":
+          return n >= condition.count.value;
+        case "<":
+          return n < condition.count.value;
+        case "<=":
+          return n <= condition.count.value;
+        case "==":
+          return n === condition.count.value;
+        case "!=":
+          return n !== condition.count.value;
+        default:
+          return false;
+      }
+    }
+    // any: true if any element of an object-array satisfies a recursive condition,
+    // e.g. `{ any: { field: "partners", condition: { field: "band", op: "==", value: "HOSTILE" } } }`
+    if ("any" in condition) {
+      const fieldValue = this.getSnapshotField(snapshot, condition.any.field);
+      if (!Array.isArray(fieldValue)) return false;
+      // Each element is treated as a (partial) snapshot so the recursive condition
+      // can reference its fields directly (and nest and/or/not/count freely).
+      return fieldValue.some((el) => {
+        if (el === null || typeof el !== "object") return false;
+        return this.evaluateCondition(condition.any.condition, el as CountrySnapshot);
+      });
+    }
 
     // Field comparison
     const fieldValue = this.getSnapshotField(snapshot, condition.field);
     if (fieldValue === null || fieldValue === undefined) return false;
 
+    return this.evaluateValue(fieldValue, condition);
+  }
+
+  /** Compare a resolved value against a field-comparison condition. */
+  private static evaluateValue(
+    fieldValue: any,
+    condition: { field: string; op: ComparisonOp; value: number | string | boolean | (number | string)[]; value2?: number }
+  ): boolean {
     // Array-valued snapshot fields (e.g. activeComponents / implementingComponents)
     // support membership checks: `op: "in"` / `"=="` means "value is present",
     // `"!="` means "value is absent".
@@ -887,8 +1034,16 @@ export class NationalIssuesEngine {
         // Calculate base probability from urgency
         let probability = template.baseUrgency / 100;
 
-        // Apply dynamic multiplier if category matches an active intent category
-        if (snapshot.activeIntentCategories.includes(template.category)) {
+        // Apply dynamic multiplier if an active intent category maps to this template.
+        // Vocabulary fix: intent categories (defense/fiscal/economy/...) differ from
+        // template domains/categories (military/security/economic/...); bridge via
+        // INTENT_CATEGORY_TO_TEMPLATE so economy/fiscal/defense intents boost their templates.
+        const boosted = Object.entries(INTENT_CATEGORY_TO_TEMPLATE).some(
+          ([intentCat, tokens]) =>
+            snapshot.activeIntentCategories.includes(intentCat) &&
+            tokens.some((t) => t === template.domain || t === template.category)
+        );
+        if (boosted) {
           probability *= 2.0;
         }
 
@@ -932,6 +1087,17 @@ export class NationalIssuesEngine {
             where: { name: { mode: "insensitive", equals: targetName } },
             select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
           });
+        }
+        if (!targetCountryRecord) {
+          // Prefer grounded neighbors/partners over a random country (plan 002 §6C).
+          const preferredName =
+            snapshot.neighbors?.[0]?.name || snapshot.partners?.[0]?.name;
+          if (preferredName) {
+            targetCountryRecord = await (db as any).country.findFirst({
+              where: { name: { mode: "insensitive", equals: preferredName } },
+              select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
+            });
+          }
         }
         if (!targetCountryRecord) {
           const otherCountries = await (db as any).country.findMany({
