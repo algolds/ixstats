@@ -387,7 +387,6 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         </div>
 
         {/* 
-          EDUCATIONAL NOTE (Kistan Tour - File 2):
           1. tRPC Query: api.achievements.getCountryLeaderboard.useQuery() fetches live 145-nation data.
           2. Array Destructuring & Mapping: topThree uses .slice(0, 3) and .map() to extract top nations.
           3. Podium Rendering: topThree[0] (Gold), topThree[1] (Silver), topThree[2] (Bronze) render into Podium Cards!

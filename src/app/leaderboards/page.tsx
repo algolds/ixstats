@@ -41,8 +41,7 @@ export default function LeaderboardsPage() {
         </CutoutCard>
 
         {/* 
-          EDUCATIONAL NOTE (Kistan Tour - File 1):
-          Next.js App Router Page Shell.
+          Next.js App Router Page Shell
           Assembles the standalone <LeaderboardTab /> component inside <VaultSidebarLayout />.
         */}
         <LeaderboardTab standalone />
