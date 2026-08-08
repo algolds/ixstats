@@ -9,7 +9,7 @@ import { cn } from "~/lib/utils";
 
 export default function LeaderboardsPage() {
   useEffect(() => {
-    document.title = "Global Leaderboards - IxStats";
+    document.title = "Global Leaderboards";
   }, []);
 
   return (
@@ -33,16 +33,8 @@ export default function LeaderboardsPage() {
                   <Trophy className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-foreground">Global World Leaderboards</h1>
-                  <p className="text-xs text-muted-foreground">
-                    Comprehensive rankings and benchmark metrics across all 145 member nations.
-                  </p>
+                  <h1 className="text-2xl font-black text-foreground">Global Leaderboards</h1>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground bg-black/10 dark:bg-black/40 border border-border/50 rounded-xl px-3 py-2">
-                <Globe2 className="h-4 w-4 text-amber-500" />
-                <span>IxWorld Global Realtime Mesh</span>
               </div>
             </div>
           </CutoutCardContent>

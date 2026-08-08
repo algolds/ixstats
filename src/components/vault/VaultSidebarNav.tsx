@@ -14,7 +14,7 @@ import {
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 
-export type VaultSection = "dashboard" | "cards" | "marketplace" | "import" | "achievements";
+export type VaultSection = "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
 
 export const VAULT_NAV_ITEMS: {
   id: VaultSection;
@@ -90,6 +90,9 @@ export function getSectionFromPathname(rawPathname: string): VaultSection {
 
   // Achievements section: /achievements
   if (pathname.startsWith("/achievements")) return "achievements";
+
+  // Leaderboards section: /leaderboards
+  if (pathname.startsWith("/leaderboards")) return "leaderboards";
 
   return "dashboard";
 }
