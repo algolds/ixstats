@@ -1,7 +1,7 @@
 /**
- * LEVEL 3: Array Masterclass (.filter(), .map(), .find(), and Aggregation)
+ * LEVEL 3: Array Masterclass (.filter, .map, .find, sum, .sort, .some/.every, grouping)
  * 
- * Objective: Complete 4 core array operations used daily in IxStates full-stack development!
+ * Objective: Complete 7 core array operations used daily in IxStates full-stack development!
  */
 
 export interface NationData {
@@ -68,4 +68,50 @@ export function findNationBySlug(nations: NationData[], targetSlug: string): Nat
 export function calculateTotalGdp(nations: NationData[]): number {
   // TODO: Return total sum of nation.gdp across all nations
   return 0;
+}
+
+/**
+ * PART 3E: Array Sorting (.sort())
+ * Return a NEW array sorted by GDP either "asc" (low-to-high) or "desc" (high-to-low).
+ * 
+ * Hint: Do NOT mutate original array! Use [...nations].sort((a, b) => direction === "asc" ? a.gdp - b.gdp : b.gdp - a.gdp);
+ */
+export function sortNationsByGdp(nations: NationData[], direction: "asc" | "desc"): NationData[] {
+  // TODO: Immutably sort nations by GDP based on direction parameter
+  return [];
+}
+
+/**
+ * PART 3F: Array Validation (.some() & .every())
+ * Return an object { allStable: boolean, anyCritical: boolean } where:
+ * - allStable is true if EVERY nation has stability >= minStability
+ * - anyCritical is true if AT LEAST ONE nation has stability < 60
+ * 
+ * Hint: const allStable = nations.every((n) => n.stability >= minStability);
+ *       const anyCritical = nations.some((n) => n.stability < 60);
+ *       return { allStable, anyCritical };
+ */
+export function checkAllianceSecurity(
+  nations: NationData[],
+  minStability: number
+): { allStable: boolean; anyCritical: boolean } {
+  // TODO: Use nations.every() and nations.some()
+  return { allStable: false, anyCritical: false };
+}
+
+/**
+ * PART 3G: Array Grouping (Group by Category)
+ * Return an object grouping nations by alliance name: { [allianceName]: NationData[] }
+ * Example output: { Concord: [Faneria, Caphiria, Kistan], Neutral: [Caracua] }
+ * 
+ * Hint: const groups: Record<string, NationData[]> = {};
+ *       nations.forEach((n) => {
+ *         if (!groups[n.alliance]) groups[n.alliance] = [];
+ *         groups[n.alliance].push(n);
+ *       });
+ *       return groups;
+ */
+export function groupNationsByAlliance(nations: NationData[]): Record<string, NationData[]> {
+  // TODO: Group nations array into an object by alliance name
+  return {};
 }

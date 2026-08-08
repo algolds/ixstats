@@ -27,6 +27,9 @@ import {
   Send,
   BookOpen,
   Search,
+  ArrowUpDown,
+  ShieldAlert,
+  FolderTree,
 } from "lucide-react";
 
 // Import Kistan's 5 CS Intro Level Files
@@ -139,10 +142,11 @@ export default function SandboxPage() {
   const l2Passed = l2Exported && l2TestAdv && l2TestDev && l2TestEmerg;
   const l2LiveTier = l2Exported ? Level2.getEconomicTier(lvl2Gdp) : "";
 
-  // Level 3: Array Masterclass (.filter, .map, .find, total sum)
+  // Level 3: Array Masterclass (.filter, .map, .find, total sum, .sort, .some/.every, grouping)
   const [lvl3Alliance, setLvl3Alliance] = useState("Concord");
   const [lvl3MinStab, setLvl3MinStab] = useState(80);
   const [lvl3SearchSlug, setLvl3SearchSlug] = useState("faneria");
+  const [lvl3SortDirection, setLvl3SortDirection] = useState<"asc" | "desc">("desc");
 
   const l3ArrayExported = Array.isArray(Level3.allNations) && Level3.allNations.length >= 3;
   
@@ -168,7 +172,23 @@ export default function SandboxPage() {
   const l3TotalGdp = l3SumExported && l3ArrayExported ? Level3.calculateTotalGdp(Level3.allNations) : 0;
   const l3SumPassed = l3SumExported && l3ArrayExported && l3TotalGdp >= 1000;
 
-  const l3Passed = l3ArrayExported && l3FilterPassed && l3MapPassed && l3FindPassed && l3SumPassed;
+  // 3E: .sort()
+  const l3SortExported = typeof Level3.sortNationsByGdp === "function";
+  const rawL3Sorted = l3SortExported && l3ArrayExported ? Level3.sortNationsByGdp(Level3.allNations, lvl3SortDirection) : [];
+  const l3SortedNations = Array.isArray(rawL3Sorted) ? rawL3Sorted : [];
+  const l3SortPassed = l3SortExported && l3ArrayExported && Level3.sortNationsByGdp(Level3.allNations, "desc")[0]?.name === "Caphiria";
+
+  // 3F: .some() & .every()
+  const l3SecExported = typeof Level3.checkAllianceSecurity === "function";
+  const l3SecStatus = l3SecExported && l3ArrayExported ? Level3.checkAllianceSecurity(Level3.allNations, 70) : { allStable: false, anyCritical: false };
+  const l3SecPassed = l3SecExported && l3ArrayExported && Level3.checkAllianceSecurity(Level3.allNations, 70).anyCritical === true;
+
+  // 3G: Grouping
+  const l3GroupExported = typeof Level3.groupNationsByAlliance === "function";
+  const l3GroupedNations = l3GroupExported && l3ArrayExported ? Level3.groupNationsByAlliance(Level3.allNations) : {};
+  const l3GroupPassed = l3GroupExported && l3ArrayExported && !!l3GroupedNations["Concord"] && l3GroupedNations["Concord"].length >= 2;
+
+  const l3Passed = l3ArrayExported && l3FilterPassed && l3MapPassed && l3FindPassed && l3SumPassed && l3SortPassed && l3SecPassed && l3GroupPassed;
 
   // Level 4: Objects & Methods ('this')
   const [lvl4Reserves, setLvl4Reserves] = useState(1000);
@@ -1069,7 +1089,7 @@ const allies = nations.filter(n => n.stability >= 80);
                     <div>
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
-                        Level 3: Array Masterclass (.filter, .map, .find, aggregation)
+                        Level 3: 7-Part Array Masterclass Suite
                       </h2>
                       <p className="text-xs text-muted-foreground mt-1">
                         File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level3_arrays.ts</code>
@@ -1077,43 +1097,64 @@ const allies = nations.filter(n => n.stability >= 80);
                     </div>
                   </div>
 
-                  {/* 4 Test Status Cards */}
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                  {/* 7 Test Status Cards */}
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
                       l3FilterPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
                       {l3FilterPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Part 3A: <code>filterAllianceNations</code> (.filter)</span>
+                      <span>3A: <code>.filter()</code></span>
                     </div>
 
-                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
                       l3MapPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
                       {l3MapPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Part 3B: <code>formatNationSummaries</code> (.map)</span>
+                      <span>3B: <code>.map()</code></span>
                     </div>
 
-                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
                       l3FindPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
                       {l3FindPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Part 3C: <code>findNationBySlug</code> (.find)</span>
+                      <span>3C: <code>.find()</code></span>
                     </div>
 
-                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
                       l3SumPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
                       {l3SumPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Part 3D: <code>calculateTotalGdp</code> (Aggregation)</span>
+                      <span>3D: Total Sum</span>
+                    </div>
+
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                      l3SortPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      {l3SortPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>3E: <code>.sort()</code></span>
+                    </div>
+
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                      l3SecPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      {l3SecPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>3F: <code>.some/.every</code></span>
+                    </div>
+
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-medium sm:col-span-2 ${
+                      l3GroupPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      {l3GroupPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>3G: Grouping by Alliance</span>
                     </div>
                   </div>
 
-                  {/* Live Canvases for the 4 Operations */}
+                  {/* Live Canvases for the 7 Operations */}
                   <div className="space-y-6 border-t border-border/40 pt-5">
                     {/* 3A: Live Filter */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Alliance & Stability Filter (.filter)</h3>
+                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">3A. Live Alliance & Stability Filter (.filter)</h3>
                         <div className="flex gap-2">
                           <select
                             value={lvl3Alliance}
@@ -1149,45 +1190,70 @@ const allies = nations.filter(n => n.stability >= 80);
                       </div>
                     </div>
 
-                    {/* 3B: Live Summaries */}
-                    <div className="space-y-2">
-                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Transformed Summaries (.map)</h3>
-                      <div className="bg-background/60 border border-border/40 p-3 rounded-xl flex flex-wrap gap-2">
-                        {l3Summaries.map((summary, i) => (
-                          <span key={i} className="text-xs font-mono bg-card border border-border/60 px-2.5 py-1 rounded-lg text-primary">
-                            {summary}
-                          </span>
+                    {/* 3E: Live Sort */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                          <ArrowUpDown className="h-3.5 w-3.5 text-primary" /> 3E. Live GDP Ranking (.sort)
+                        </h3>
+                        <button
+                          onClick={() => setLvl3SortDirection(lvl3SortDirection === "desc" ? "asc" : "desc")}
+                          className="bg-card border border-border/60 px-2.5 py-1 rounded-lg text-xs font-mono text-primary flex items-center gap-1"
+                        >
+                          Direction: {lvl3SortDirection.toUpperCase()}
+                        </button>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-4">
+                        {l3SortedNations.map((n, idx) => (
+                          <div key={idx} className="bg-card border border-border/60 p-3 rounded-xl space-y-1 text-center">
+                            <span className="text-[10px] text-muted-foreground font-mono font-semibold"># {idx + 1} RANK</span>
+                            <div className="text-xs font-bold text-foreground">{n.name}</div>
+                            <div className="text-xs text-emerald-400 font-semibold">${n.gdp}B GDP</div>
+                          </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* 3C & 3D Grid */}
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {/* 3C: Search (.find) */}
-                      <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-2">
-                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Search by Slug (.find)</h3>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={lvl3SearchSlug}
-                            onChange={(e) => setLvl3SearchSlug(e.target.value)}
-                            placeholder="Search slug (e.g. faneria)..."
-                            className="w-full bg-card border border-border/60 rounded px-2.5 py-1.5 text-xs text-foreground"
-                          />
+                    {/* 3F: Security Check (.some / .every) */}
+                    <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-2">
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                        <ShieldAlert className="h-3.5 w-3.5 text-amber-500" /> 3F. Alliance Security Status (.some / .every)
+                      </h3>
+                      <div className="grid gap-3 sm:grid-cols-2 pt-1">
+                        <div className="bg-card border border-border/60 p-3 rounded-lg flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">All Nations Stable (≥70%):</span>
+                          <span className={`font-mono font-bold ${l3SecStatus.allStable ? "text-emerald-400" : "text-amber-400"}`}>
+                            {l3SecStatus.allStable ? "TRUE ✅" : "FALSE ⚠️"}
+                          </span>
                         </div>
-                        {l3FoundNation ? (
-                          <div className="text-xs text-emerald-400 font-mono pt-1">
-                            Found: {l3FoundNation.name} (${l3FoundNation.gdp}B GDP, {l3FoundNation.alliance})
-                          </div>
-                        ) : (
-                          <div className="text-xs text-muted-foreground font-mono pt-1">Result: null</div>
-                        )}
+                        <div className="bg-card border border-border/60 p-3 rounded-lg flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Critical Instability Detected (&lt;60%):</span>
+                          <span className={`font-mono font-bold ${l3SecStatus.anyCritical ? "text-destructive" : "text-emerald-400"}`}>
+                            {l3SecStatus.anyCritical ? "TRUE 🚨" : "FALSE ✅"}
+                          </span>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* 3D: Total GDP */}
-                      <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-1 text-center flex flex-col justify-center">
-                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold font-mono">TOTAL ALLIANCE GDP</span>
-                        <div className="text-3xl font-black text-emerald-400">${l3TotalGdp.toLocaleString()} Billion</div>
+                    {/* 3G: Alliance Grouping */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                        <FolderTree className="h-3.5 w-3.5 text-primary" /> 3G. Group Nations by Alliance (Category Grouping)
+                      </h3>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {Object.entries(l3GroupedNations).map(([alliance, list], i) => (
+                          <div key={i} className="bg-card border border-border/60 p-4 rounded-xl space-y-2">
+                            <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider">{alliance} ALLIANCE ({list.length})</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {list.map((n, idx) => (
+                                <span key={idx} className="bg-background border border-border/60 px-2 py-0.5 rounded text-xs font-semibold text-foreground">
+                                  {n.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
