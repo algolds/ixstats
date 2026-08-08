@@ -297,8 +297,8 @@ export function V2MyAgenda({
         directiveGoal: "Guide parliamentary coalition vote and secure policy approval",
         statusLabel: "Vote Scheduled",
         icon: Scale,
-        accentCls: "border-violet-500/30 dark:border-violet-500/30 bg-violet-500/5 dark:bg-violet-500/10 text-violet-900 dark:text-violet-300",
-        badgeCls: "bg-violet-500/15 text-violet-800 dark:text-violet-300 border-violet-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         drillKind: { kind: "politics" },
       },
       {
@@ -311,8 +311,8 @@ export function V2MyAgenda({
         directiveGoal: "Ratify bilateral trade accord and optimize import/export tariffs",
         statusLabel: "Summit Pending",
         icon: Handshake,
-        accentCls: "border-teal-500/30 dark:border-teal-500/30 bg-teal-500/5 dark:bg-teal-500/10 text-teal-900 dark:text-teal-300",
-        badgeCls: "bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         drillKind: { kind: "relations" },
       },
       {
@@ -325,8 +325,8 @@ export function V2MyAgenda({
         directiveGoal: "Conduct armed forces defense audit and upgrade logistics supply lines",
         statusLabel: "Audit Scheduled",
         icon: Shield,
-        accentCls: "border-red-500/30 dark:border-red-500/30 bg-red-500/5 dark:bg-red-500/10 text-red-900 dark:text-red-300",
-        badgeCls: "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         drillKind: { kind: "defense" },
       },
       {
@@ -339,8 +339,8 @@ export function V2MyAgenda({
         directiveGoal: "Rebalance corporate tax policy and incentivize industrial growth",
         statusLabel: "Ledger Settlement",
         icon: TrendingUp,
-        accentCls: "border-emerald-500/30 dark:border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-300",
-        badgeCls: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         drillKind: { kind: "economy" },
       },
     ];
@@ -358,8 +358,8 @@ export function V2MyAgenda({
         directiveGoal: `Address scheduled statecraft event: ${ev.label}`,
         statusLabel: "STATECRAFT EVENT",
         icon: CalendarClock,
-        accentCls: "border-cyan-500/30 dark:border-cyan-500/30 bg-cyan-500/5 dark:bg-cyan-500/10 text-cyan-900 dark:text-cyan-300",
-        badgeCls: "bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         rawIxTime: ev.ixTime,
       });
     });
@@ -382,8 +382,8 @@ export function V2MyAgenda({
         directiveGoal: `Accelerate directive rollout: ${it.goal}`,
         statusLabel: `${it.tier?.toUpperCase() ?? "ACTIVE"} DIRECTIVE`,
         icon: Command,
-        accentCls: "border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300",
-        badgeCls: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold",
+        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         intentId: it.id,
       });
     });
@@ -406,11 +406,11 @@ export function V2MyAgenda({
         statusLabel: urgent ? "PRIORITY ISSUE" : "OPEN ISSUE",
         icon: AlertCircle,
         accentCls: urgent
-          ? "border-red-500/30 dark:border-red-500/30 bg-red-500/5 dark:bg-red-500/10 text-red-900 dark:text-red-300"
-          : "border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300",
+          ? "border-red-500/40 dark:border-red-500/30 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md"
+          : "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
         badgeCls: urgent
-          ? "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold"
-          : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold",
+          ? "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40"
+          : "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
         drillKind: { kind: "issue", issueId: iss.id },
       });
     });
@@ -586,19 +586,19 @@ export function V2MyAgenda({
                     transition={{ type: "spring", stiffness: 450, damping: 30, delay: idx * 0.03 }}
                     onClick={() => setSelectedEvent(item)}
                     className={cn(
-                      "group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border p-3.5 backdrop-blur-md transition-all hover:bg-card/80 dark:hover:bg-white/[0.06] hover:border-border dark:hover:border-white/20 cursor-pointer active:scale-[0.985] shadow-xs",
+                      "group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border p-3.5 backdrop-blur-md transition-all cursor-pointer active:scale-[0.985] shadow-xs",
                       item.accentCls
                     )}
                   >
                     <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/5 shadow-inner mt-0.5 group-hover:scale-105 transition-transform">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/5 shadow-inner mt-0.5 group-hover:scale-105 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all">
                         <Icon className="h-4.5 w-4.5 shrink-0" />
                       </div>
                       <div className="flex flex-col text-left min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <span
                             className={cn(
-                              "rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase shadow-xs",
+                              "rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase shadow-xs transition-colors",
                               item.badgeCls
                             )}
                           >
@@ -608,7 +608,7 @@ export function V2MyAgenda({
                             {item.timeLabel}
                           </span>
                         </div>
-                        <h4 className="text-xs font-extrabold text-foreground leading-tight truncate">
+                        <h4 className="text-xs font-extrabold text-foreground group-hover:text-amber-950 dark:group-hover:text-amber-200 leading-tight truncate transition-colors">
                           {item.title}
                         </h4>
                         <p className="text-[11px] text-muted-foreground line-clamp-1">
@@ -624,7 +624,7 @@ export function V2MyAgenda({
                         e.stopPropagation();
                         setSelectedEvent(item);
                       }}
-                      className="flex items-center gap-1 rounded-lg border border-border/80 dark:border-white/15 bg-card dark:bg-white/10 hover:bg-accent hover:text-accent-foreground px-3 py-1.5 text-[10px] font-bold text-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
+                      className="flex items-center gap-1 rounded-lg border border-border/80 dark:border-white/15 bg-card/80 dark:bg-white/10 group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 dark:group-hover:text-amber-200 px-3 py-1.5 text-[10px] font-bold text-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
                     >
                       <span>Action</span>
                       <ArrowUpRight className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />

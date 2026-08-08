@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Activity } from "lucide-react";
+import { motion } from "motion/react";
+import { Activity, Users, DollarSign } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
 import { useCountryData, createVitalityRingsFromCountry } from "../primitives";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 
 function formatCompact(num: number): string {
   if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
@@ -55,67 +57,88 @@ export function StandingBands({ countryId }: { countryId: string }) {
     ? Math.round(population).toLocaleString()
     : formatCompact(population);
 
+  const flagUrl = (country as any)?.flagUrl || country?.flag;
+
   return (
     <>
-      <FacetCard depth={1} className="group/card bg-card/30 relative flex flex-col gap-3 p-4 backdrop-blur-md overflow-hidden">
-        {/* Country Flag Background Watermark Overlay */}
-        {country?.flag && (
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.08] filter blur-[2px] transition-all duration-500 group-hover/card:opacity-[0.14] group-hover/card:scale-105"
-            style={{ backgroundImage: `url(${country.flag})` }}
-          />
+      <FacetCard
+        depth={1}
+        className="group/card relative flex flex-col gap-3.5 p-4 backdrop-blur-xl bg-card/40 dark:bg-card/30 border border-border/70 dark:border-white/10 shadow-lg dark:shadow-2xl overflow-hidden transition-all duration-300"
+      >
+        {/* Cinematic Background Flag Watermark Scrim */}
+        {flagUrl && (
+          <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden select-none opacity-[0.14] dark:opacity-[0.20] transition-all duration-700 group-hover/card:opacity-[0.28] group-hover/card:scale-105">
+            <img
+              src={flagUrl}
+              alt=""
+              className="h-full w-full object-cover object-center filter blur-[1px] rounded-full mix-blend-luminosity dark:mix-blend-normal"
+            />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-card/75 to-card" />
+          </div>
         )}
 
-        <div className="relative z-10 flex flex-col gap-3">
+        <div className="relative z-10 flex flex-col gap-3.5">
+          {/* Header Row: Title & Vitality Pill */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-extrabold tracking-widest text-muted-foreground/70 uppercase">
+              <span className="text-[9px] font-extrabold tracking-widest text-muted-foreground/70 uppercase">
                 National Standing
               </span>
               {country?.name && (
-                <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                  <UnifiedCountryFlag
-                    countryName={country.name}
-                    flagUrl={(country as any)?.flagUrl || country.flag}
-                    size="md"
-                    className="shrink-0 shadow-2xs border border-border/40"
-                  />
-                  <h3 className="text-sm sm:text-base font-black tracking-tight text-foreground truncate">
+                <div className="flex items-center gap-2 mt-1 min-w-0">
+                  <div className="relative flex shrink-0 items-center justify-center rounded-lg border border-white/30 dark:border-white/15 bg-card/80 p-0.5 shadow-xs overflow-hidden transition-transform group-hover/card:scale-105">
+                    <UnifiedCountryFlag
+                      countryName={country.name}
+                      flagUrl={flagUrl}
+                      size="md"
+                      className="rounded-md object-cover"
+                    />
+                  </div>
+                  <h3 className="text-base font-black tracking-tight text-foreground truncate">
                     {country.name}
                   </h3>
                 </div>
               )}
             </div>
-            <button
+
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.03, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setIsBreakdownOpen(true)}
-              className="group flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-bold text-primary transition-all hover:bg-primary/20 hover:scale-105 active:scale-95 cursor-pointer shadow-sm shrink-0"
+              className="group flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 dark:bg-cyan-500/15 px-3 py-1 text-xs font-extrabold text-cyan-900 dark:text-cyan-300 transition-all hover:bg-cyan-500/20 active:scale-95 cursor-pointer shadow-xs shrink-0"
               title="Click for full Vitality Breakdown"
             >
-              <Activity className="h-3.5 w-3.5 text-primary" />
+              <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform" />
               <span>{compositeScore}/100</span>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+              <span className="text-[10px] font-mono font-semibold text-cyan-700/80 dark:text-cyan-300/80 uppercase">
                 ({ratingLabel(compositeScore)})
               </span>
-            </button>
+            </motion.button>
           </div>
 
+          {/* Telemetry Strip: Population & GDP */}
           {country && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-xs sm:text-sm font-extrabold tracking-wide">
-              <button
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] p-2.5 backdrop-blur-md shadow-2xs">
+              <motion.button
                 type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setShowExactPop((prev) => !prev)}
-                className="hover:text-foreground group flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="group flex items-center gap-1.5 transition-colors cursor-pointer text-xs"
                 title="Click to toggle exact population count"
               >
-                <span className="text-muted-foreground text-xs font-bold uppercase">Population:</span>
-                <strong className="text-foreground text-sm sm:text-base font-black group-hover:underline">
+                <Users className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-muted-foreground text-[10px] font-extrabold uppercase tracking-wider">Pop:</span>
+                <strong className="text-foreground text-xs sm:text-sm font-black group-hover:underline">
                   {formattedPop}
                 </strong>
-              </button>
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground text-xs font-bold uppercase">GDP:</span>
-                <strong className="text-emerald-400 text-sm sm:text-base font-black">${formatCompact(totalGdp)}</strong>
+              </motion.button>
+
+              <div className="flex items-center gap-1.5 text-xs">
+                <DollarSign className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                <span className="text-muted-foreground text-[10px] font-extrabold uppercase tracking-wider">GDP:</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-black">${formatCompact(totalGdp)}</strong>
               </div>
             </div>
           )}
@@ -123,11 +146,13 @@ export function StandingBands({ countryId }: { countryId: string }) {
           {/* 4 Vitality Rings Grid */}
           <div className="grid grid-cols-2 gap-2 pt-0.5">
             {rings.map((ring) => (
-              <button
+              <motion.button
                 key={ring.id}
                 type="button"
+                whileHover={{ scale: 1.025, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setIsBreakdownOpen(true)}
-                className="group/ring flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2 text-left transition-all hover:border-white/20 hover:bg-white/[0.06] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                className="group/ring flex items-center gap-2.5 rounded-2xl border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] hover:bg-card/90 dark:hover:bg-white/[0.08] p-2.5 text-left transition-all hover:border-amber-500/40 hover:shadow-md cursor-pointer"
               >
                 <HealthRing
                   value={ring.value}
@@ -136,14 +161,14 @@ export function StandingBands({ countryId }: { countryId: string }) {
                   label={ring.label}
                 />
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate text-[9px] font-bold tracking-wider text-muted-foreground/70 uppercase group-hover/ring:text-foreground">
+                  <span className="block truncate text-[9px] font-extrabold tracking-wider text-muted-foreground/70 uppercase group-hover/ring:text-foreground transition-colors">
                     {ring.label}
                   </span>
-                  <span className="text-xs font-extrabold text-foreground" style={{ color: ring.color }}>
+                  <span className="text-xs font-black text-foreground" style={{ color: ring.color }}>
                     {ring.value}<span className="text-[9px] text-muted-foreground/60 font-normal">/100</span>
                   </span>
                 </div>
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
