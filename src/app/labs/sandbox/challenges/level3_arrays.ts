@@ -64,8 +64,7 @@ export function formatNationSummaries(nations: NationData[]): string[] {
  * PART 3C: Array Search (.find())
  * Return the single nation object matching 'targetSlug', or null if not found.
  * 
- * Hint: const found = nations.find((n) => n.slug === targetSlug);
- *       return found || null;
+ * Hint: return nations.find((n) => n.slug === targetSlug) || null;
  */
 export function findNationBySlug(nations: NationData[], targetSlug: string): NationData | null {
   // TODO: Use nations.find() matching nation.slug === targetSlug
