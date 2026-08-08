@@ -1,7 +1,21 @@
 /**
- * LEVEL 3: Array Masterclass (.filter, .map, .find, sum, .sort, .some/.every, grouping)
+ * LEVEL 3: 7-Part Array Masterclass Suite
  * 
  * Objective: Complete 7 core array operations used daily in IxStates full-stack development!
+ * 
+ * 💡 KISTAN'S CORE ARRAY CHEAT NOTES:
+ * 1. Blueprint vs Data:
+ *    - 'NationData' (PascalCase) = The TypeScript Interface Blueprint (0 bytes compiled).
+ *    - 'allNations' (camelCase)  = The actual Array holding real objects in RAM!
+ * 2. No Extra Brackets:
+ *    - '.filter()' and '.map()' ALREADY return fresh arrays by themselves!
+ *    - Never wrap them in extra brackets: write `return nations.filter(...)`, NOT `return [nations.filter(...)]`.
+ * 3. Implicit Booleans:
+ *    - Comparisons like `nation.stability >= minStability` evaluate to `true` or `false` automatically.
+ *    - No `if/else` needed inside `.filter()`!
+ * 4. Destructuring is Optional:
+ *    - Standard dot notation `(nation) => nation.stability` is 100% fine and standard!
+ *    - Destructuring `({ stability }) => stability` is just optional shorthand.
  */
 
 export interface NationData {

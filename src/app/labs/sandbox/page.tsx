@@ -30,6 +30,7 @@ import {
   ArrowUpDown,
   ShieldAlert,
   FolderTree,
+  Lightbulb,
 } from "lucide-react";
 
 // Import Kistan's 5 CS Intro Level Files
@@ -693,7 +694,7 @@ export default function SandboxPage() {
                       IxStates Developer Code Cheat Sheet
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Common full-stack IxStates code patterns with 1-click copying.
+                      Common full-stack IxStates code patterns with Kistan's core mental models.
                     </p>
                   </div>
                   {copiedSnippet && (
@@ -701,6 +702,27 @@ export default function SandboxPage() {
                       Copied {copiedSnippet}! ✅
                     </div>
                   )}
+                </div>
+
+                {/* Kistan's Core Mental Models Callout Card */}
+                <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl space-y-2 text-xs text-amber-200">
+                  <div className="flex items-center gap-2 font-bold text-amber-400">
+                    <Lightbulb className="h-4 w-4" /> Kistan's Core Mental Models & Common Pitfalls
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 pt-1 text-muted-foreground">
+                    <div>
+                      <strong className="text-foreground">• Types vs Values:</strong> <code className="text-primary font-mono">NationData</code> (PascalCase) is a zero-byte compile-time blueprint. <code className="text-primary font-mono">allNations</code> (camelCase) is the real array holding data in RAM.
+                    </div>
+                    <div>
+                      <strong className="text-foreground">• No Extra Brackets:</strong> <code className="text-primary font-mono">.filter()</code> & <code className="text-primary font-mono">.map()</code> return fresh arrays automatically! Write <code className="text-primary font-mono">return nations.filter(...)</code>, NOT <code className="text-primary font-mono">return [nations.filter(...)]</code>.
+                    </div>
+                    <div>
+                      <strong className="text-foreground">• Implicit Booleans:</strong> <code className="text-primary font-mono">n.stability &gt;= 80</code> evaluates to <code className="text-primary font-mono">true/false</code> automatically—no <code className="text-primary font-mono">if...else</code> needed inside <code className="text-primary font-mono">.filter()</code>!
+                    </div>
+                    <div>
+                      <strong className="text-foreground">• Destructuring is Optional:</strong> Standard dot notation <code className="text-primary font-mono">(n) =&gt; n.stability</code> is 100% fine and standard! Destructuring is just optional shorthand.
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
@@ -757,12 +779,12 @@ const { mutate } = api.policy.create.useMutation({
                       </button>
                     </div>
                     <pre className="bg-background border border-border/60 p-3 rounded-lg text-xs font-mono text-foreground overflow-x-auto">
-{`// Filter array
+{`// Filter array (Returns array)
 const allies = nations.filter(n => n.stability >= 80);
 
 // Map objects to JSX
 {allies.map(nation => (
-  <div key={nation.id}>{nation.name}</div>
+  <div key={nation.slug}>{nation.name}</div>
 ))}`}
                     </pre>
                   </div>
@@ -946,8 +968,8 @@ const allies = nations.filter(n => n.stability >= 80);
 
                     {showHint && (
                       <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-300 text-xs space-y-1.5">
-                        <strong>💡 Hint for Level 1:</strong>
-                        <p>Open <code>level1_variables.ts</code> and return a template literal:</p>
+                        <strong>💡 Kistan's Hint for Level 1:</strong>
+                        <p>Open <code>level1_variables.ts</code> and use a template literal string with backticks:</p>
                         <code className="block bg-background/80 p-2 rounded border border-amber-500/20 font-mono text-primary">
                           return `Nation: ${`name`} | Population: ${`populationMillions`}M`;
                         </code>
