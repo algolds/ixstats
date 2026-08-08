@@ -40,7 +40,11 @@ export default function LeaderboardsPage() {
           </CutoutCardContent>
         </CutoutCard>
 
-        {/* Leaderboard Table Component (Standalone Mode) */}
+        {/* 
+          EDUCATIONAL NOTE (Kistan Tour - File 1):
+          Next.js App Router Page Shell.
+          Assembles the standalone <LeaderboardTab /> component inside <VaultSidebarLayout />.
+        */}
         <LeaderboardTab standalone />
       </div>
     </VaultSidebarLayout>

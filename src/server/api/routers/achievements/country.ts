@@ -149,7 +149,13 @@ export const achievementsCountryRouter = createTRPCRouter({
       }
     }),
 
-  // Get country leaderboard ranked by a chosen metric (GDP, population, etc.)
+  /**
+   * EDUCATIONAL NOTE (Kistan Tour - File 3):
+   * Backend tRPC Procedure with Zod Validation & Prisma Queries.
+   * 1. .input(z.object({...})) validates incoming parameters before execution.
+   * 2. ctx.db.country.findMany() queries PostgreSQL for 145 member nations.
+   * 3. .map() and .sort() transform and rank data on the Linux server!
+   */
   getCountryLeaderboard: rateLimitedPublicProcedure
     .input(
       z.object({
