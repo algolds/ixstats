@@ -101,7 +101,6 @@ export const achievementsCountryRouter = createTRPCRouter({
               },
             },
           },
-          take: input.limit,
         });
 
         const leaderboard = await Promise.all(
@@ -124,6 +123,9 @@ export const achievementsCountryRouter = createTRPCRouter({
             return {
               countryId: country.id,
               countryName: country.name,
+              flag: country.flag || null,
+              economicTier: country.economicTier || "Developed",
+              populationTier: country.populationTier || "Medium",
               totalPoints,
               achievementCount,
               rareAchievements: achievements.filter(
@@ -175,58 +177,155 @@ export const achievementsCountryRouter = createTRPCRouter({
           ])
           .default("totalGdp"),
         limit: z.number().optional().default(20),
+        searchQuery: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      // metric id → Country column
-      const field = {
-        totalGdp: "currentTotalGdp",
-        gdpPerCapita: "currentGdpPerCapita",
-        population: "currentPopulation",
-        populationDensity: "populationDensity",
-        landArea: "landArea",
-        gdpGrowth: "realGDPGrowthRate",
-        avgIncome: "averageAnnualIncome",
-        workforce: "totalWorkforce",
-        employmentRate: "employmentRate",
-        literacyRate: "literacyRate",
-        lifeExpectancy: "lifeExpectancy",
-        govRevenue: "governmentRevenueTotal",
-        govSpending: "totalGovernmentSpending",
-        economicVitality: "economicVitality",
-        wellbeing: "populationWellbeing",
-        nationalHealth: "overallNationalHealth",
-        infrastructure: "infrastructureRating",
-        urbanization: "urbanPopulationPercent",
-        approval: "publicApproval",
-      }[input.metric];
-
       try {
+        const whereClause: Record<string, unknown> = {};
+        if (input.searchQuery && input.searchQuery.trim().length > 0) {
+          whereClause.name = {
+            contains: input.searchQuery.trim(),
+            mode: "insensitive",
+          };
+        }
+
         const countries = await ctx.db.country.findMany({
-          where: { [field]: { not: null } } as Record<string, unknown>,
-          orderBy: { [field]: "desc" } as Record<string, "desc">,
-          take: input.limit,
+          where: whereClause,
           select: {
             id: true,
             name: true,
             flag: true,
             economicTier: true,
             populationTier: true,
-            [field]: true,
-          } as Record<string, true>,
+            currentPopulation: true,
+            baselinePopulation: true,
+            currentTotalGdp: true,
+            currentGdpPerCapita: true,
+            baselineGdpPerCapita: true,
+            landArea: true,
+            populationDensity: true,
+            realGDPGrowthRate: true,
+            adjustedGdpGrowth: true,
+            averageAnnualIncome: true,
+            totalWorkforce: true,
+            laborForceParticipationRate: true,
+            employmentRate: true,
+            literacyRate: true,
+            lifeExpectancy: true,
+            governmentRevenueTotal: true,
+            taxRevenueGDPPercent: true,
+            totalGovernmentSpending: true,
+            spendingGDPPercent: true,
+            economicVitality: true,
+            populationWellbeing: true,
+            overallNationalHealth: true,
+            infrastructureRating: true,
+            urbanPopulationPercent: true,
+            publicApproval: true,
+          },
         });
 
-        return countries.map((c) => {
-          const row = c as Record<string, unknown>;
+        const mapped = countries.map((c) => {
+          const pop =
+            c.currentPopulation && c.currentPopulation > 0
+              ? c.currentPopulation
+              : c.baselinePopulation || 0;
+          const gdpPerCap =
+            c.currentGdpPerCapita && c.currentGdpPerCapita > 0
+              ? c.currentGdpPerCapita
+              : c.baselineGdpPerCapita || 0;
+          const totalGdp =
+            c.currentTotalGdp && c.currentTotalGdp > 0
+              ? c.currentTotalGdp
+              : gdpPerCap * pop;
+
+          let val = 0;
+          switch (input.metric) {
+            case "population":
+              val = pop;
+              break;
+            case "totalGdp":
+              val = totalGdp;
+              break;
+            case "gdpPerCapita":
+              val = gdpPerCap;
+              break;
+            case "populationDensity":
+              val =
+                c.populationDensity && c.populationDensity > 0
+                  ? c.populationDensity
+                  : c.landArea && c.landArea > 0
+                    ? pop / c.landArea
+                    : 50;
+              break;
+            case "landArea":
+              val = c.landArea || 100000;
+              break;
+            case "gdpGrowth":
+              val = c.realGDPGrowthRate ?? c.adjustedGdpGrowth ?? 2.5;
+              break;
+            case "avgIncome":
+              val = c.averageAnnualIncome ?? gdpPerCap * 0.45;
+              break;
+            case "workforce":
+              val =
+                c.totalWorkforce ?? pop * (c.laborForceParticipationRate ?? 0.65);
+              break;
+            case "employmentRate":
+              val = c.employmentRate ?? 94.0;
+              break;
+            case "literacyRate":
+              val = c.literacyRate ?? 95.0;
+              break;
+            case "lifeExpectancy":
+              val = c.lifeExpectancy ?? 75.0;
+              break;
+            case "govRevenue":
+              val =
+                c.governmentRevenueTotal ??
+                totalGdp *
+                  (c.taxRevenueGDPPercent ? c.taxRevenueGDPPercent / 100 : 0.25);
+              break;
+            case "govSpending":
+              val =
+                c.totalGovernmentSpending ??
+                totalGdp *
+                  (c.spendingGDPPercent ? c.spendingGDPPercent / 100 : 0.28);
+              break;
+            case "economicVitality":
+              val = c.economicVitality || 50;
+              break;
+            case "wellbeing":
+              val = c.populationWellbeing || 50;
+              break;
+            case "nationalHealth":
+              val = c.overallNationalHealth || 50;
+              break;
+            case "infrastructure":
+              val = c.infrastructureRating || 50;
+              break;
+            case "urbanization":
+              val = c.urbanPopulationPercent ?? 68.0;
+              break;
+            case "approval":
+              val = c.publicApproval || 50;
+              break;
+          }
+
           return {
-            countryId: row.id as string,
-            countryName: row.name as string,
-            flag: row.flag as string | null,
-            value: (row[field] as number | null) ?? 0,
-            economicTier: row.economicTier as string,
-            populationTier: row.populationTier as string,
+            countryId: c.id,
+            countryName: c.name,
+            flag: c.flag || null,
+            value: Number.isNaN(val) ? 0 : val,
+            economicTier: c.economicTier || "Developed",
+            populationTier: c.populationTier || "Medium",
           };
         });
+
+        return mapped
+          .sort((a, b) => b.value - a.value)
+          .slice(0, input.limit);
       } catch (error) {
         console.error("Error fetching country leaderboard:", error);
         return [];

@@ -10,7 +10,12 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
-### Added & Refactored (MyCountry v2 Surface & Executive Command Redesign)
+### Added & Refactored (Global Leaderboards & MyCountry v2 Surface)
+
+- **Global Leaderboards Standalone Page & Metric Live-Wiring**:
+  - **Standalone `/leaderboards` Page**: Replaced the redirect stub with a full standalone route ([page.tsx](file:///home/jxsig/projects/ixstats/src/app/leaderboards/page.tsx)) wrapped in `VaultSidebarLayout activeSection="leaderboards"`, featuring a global stats header banner and domain filter integration.
+  - **Prisma Query Repair & Resilient Fallback Engine**: Updated `getCountryLeaderboard` in [country.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/achievements/country.ts) to eliminate silent Prisma validation crashes on non-nullable scalar fields (`currentPopulation`, `currentTotalGdp`, `economicVitality`, etc.). Added dynamic calculations and fallback logic for optional demographic and economic metrics (`totalWorkforce`, `populationDensity`, `literacyRate`, `lifeExpectancy`, `govRevenue`, `govSpending`, `urbanization`) so all 20 metric categories reliably return populated rankings across all 145 member nations.
+  - **Interactive Controls & Top-3 Podium Highlights**: Enhanced [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx) with search filtering by nation name, Domain Category tabs (*All*, *Economy & Wealth*, *Demographics & Labor*, *Quality & Governance*), row limit controls (10, 25, 50, 100), and top-3 Gold, Silver, and Bronze podium showcase cards.
 
 - **MyCountry v2 Command Surface Architecture**:
   - **Single-Page Command Shell**: Built [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx), replacing legacy multi-tab WarRooms with a unified single-page command surface. Set as default surface in [MyCountryRouter.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx).
