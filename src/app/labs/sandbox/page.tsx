@@ -26,6 +26,7 @@ import {
   Copy,
   Send,
   BookOpen,
+  Search,
 } from "lucide-react";
 
 // Import Kistan's 5 CS Intro Level Files
@@ -138,12 +139,36 @@ export default function SandboxPage() {
   const l2Passed = l2Exported && l2TestAdv && l2TestDev && l2TestEmerg;
   const l2LiveTier = l2Exported ? Level2.getEconomicTier(lvl2Gdp) : "";
 
-  // Level 3: Arrays & Iteration
+  // Level 3: Array Masterclass (.filter, .map, .find, total sum)
+  const [lvl3Alliance, setLvl3Alliance] = useState("Concord");
   const [lvl3MinStab, setLvl3MinStab] = useState(80);
+  const [lvl3SearchSlug, setLvl3SearchSlug] = useState("faneria");
+
   const l3ArrayExported = Array.isArray(Level3.allNations) && Level3.allNations.length >= 3;
-  const l3FilterExported = typeof Level3.filterHighStabilityNations === "function";
-  const l3FilteredNations = l3FilterExported && l3ArrayExported ? Level3.filterHighStabilityNations(Level3.allNations, lvl3MinStab) : [];
-  const l3Passed = l3ArrayExported && l3FilterExported && Level3.filterHighStabilityNations(Level3.allNations, 80).length > 0;
+  
+  // 3A: .filter()
+  const l3FilterExported = typeof Level3.filterAllianceNations === "function";
+  const rawL3Filtered = l3FilterExported && l3ArrayExported ? Level3.filterAllianceNations(Level3.allNations, lvl3Alliance, lvl3MinStab) : [];
+  const l3FilteredNations = Array.isArray(rawL3Filtered) ? rawL3Filtered : [];
+  const l3FilterPassed = l3FilterExported && l3ArrayExported && Level3.filterAllianceNations(Level3.allNations, "Concord", 80).length >= 2;
+
+  // 3B: .map()
+  const l3MapExported = typeof Level3.formatNationSummaries === "function";
+  const rawL3Summaries = l3MapExported && l3ArrayExported ? Level3.formatNationSummaries(Level3.allNations) : [];
+  const l3Summaries = Array.isArray(rawL3Summaries) ? rawL3Summaries : [];
+  const l3MapPassed = l3MapExported && l3ArrayExported && l3Summaries.length >= 3 && typeof l3Summaries[0] === "string" && l3Summaries[0].includes("GDP");
+
+  // 3C: .find()
+  const l3FindExported = typeof Level3.findNationBySlug === "function";
+  const l3FoundNation = l3FindExported && l3ArrayExported ? Level3.findNationBySlug(Level3.allNations, lvl3SearchSlug) : null;
+  const l3FindPassed = l3FindExported && l3ArrayExported && Level3.findNationBySlug(Level3.allNations, "faneria")?.name === "Faneria";
+
+  // 3D: Total Sum Aggregation
+  const l3SumExported = typeof Level3.calculateTotalGdp === "function";
+  const l3TotalGdp = l3SumExported && l3ArrayExported ? Level3.calculateTotalGdp(Level3.allNations) : 0;
+  const l3SumPassed = l3SumExported && l3ArrayExported && l3TotalGdp >= 1000;
+
+  const l3Passed = l3ArrayExported && l3FilterPassed && l3MapPassed && l3FindPassed && l3SumPassed;
 
   // Level 4: Objects & Methods ('this')
   const [lvl4Reserves, setLvl4Reserves] = useState(1000);
@@ -1033,7 +1058,7 @@ const allies = nations.filter(n => n.stability >= 80);
                 </div>
               )}
 
-              {/* LEVEL 3: ARRAYS */}
+              {/* LEVEL 3: ARRAY MASTERCLASS */}
               {activeLevel === "lvl3" && (
                 <FacetContainer
                   variant="builder"
@@ -1044,7 +1069,7 @@ const allies = nations.filter(n => n.stability >= 80);
                     <div>
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Layers className="h-5 w-5 text-primary" />
-                        Level 3: Alliance Stability Filter (.filter())
+                        Level 3: Array Masterclass (.filter, .map, .find, aggregation)
                       </h2>
                       <p className="text-xs text-muted-foreground mt-1">
                         File: <code className="text-primary font-mono">src/app/labs/sandbox/challenges/level3_arrays.ts</code>
@@ -1052,48 +1077,118 @@ const allies = nations.filter(n => n.stability >= 80);
                     </div>
                   </div>
 
+                  {/* 4 Test Status Cards */}
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      l3ArrayExported ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l3FilterPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {l3ArrayExported ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span>Exported <code>allNations</code> array (≥3 items)</span>
+                      {l3FilterPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Part 3A: <code>filterAllianceNations</code> (.filter)</span>
                     </div>
+
                     <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
-                      l3Passed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                      l3MapPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
                     }`}>
-                      {l3Passed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
-                      <span><code>filterHighStabilityNations</code> filters array correctly</span>
+                      {l3MapPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Part 3B: <code>formatNationSummaries</code> (.map)</span>
+                    </div>
+
+                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                      l3FindPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      {l3FindPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Part 3C: <code>findNationBySlug</code> (.find)</span>
+                    </div>
+
+                    <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs font-medium ${
+                      l3SumPassed ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-destructive/10 border-destructive/30 text-destructive"
+                    }`}>
+                      {l3SumPassed ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+                      <span>Part 3D: <code>calculateTotalGdp</code> (Aggregation)</span>
                     </div>
                   </div>
 
-                  <div className="space-y-4 border-t border-border/40 pt-5">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Filtered Nations Canvas</h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Min Stability:</span>
-                        <input
-                          type="number"
-                          value={lvl3MinStab}
-                          onChange={(e) => setLvl3MinStab(Number(e.target.value))}
-                          className="w-16 bg-card border border-border/60 rounded px-2 py-1 text-xs text-foreground"
-                        />
+                  {/* Live Canvases for the 4 Operations */}
+                  <div className="space-y-6 border-t border-border/40 pt-5">
+                    {/* 3A: Live Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Alliance & Stability Filter (.filter)</h3>
+                        <div className="flex gap-2">
+                          <select
+                            value={lvl3Alliance}
+                            onChange={(e) => setLvl3Alliance(e.target.value)}
+                            className="bg-card border border-border/60 rounded px-2 py-1 text-xs text-foreground"
+                          >
+                            <option value="Concord">Concord</option>
+                            <option value="Neutral">Neutral</option>
+                          </select>
+                          <input
+                            type="number"
+                            value={lvl3MinStab}
+                            onChange={(e) => setLvl3MinStab(Number(e.target.value))}
+                            className="w-16 bg-card border border-border/60 rounded px-2 py-1 text-xs text-foreground"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {l3FilteredNations.length > 0 ? (
+                          l3FilteredNations.map((nation, idx) => (
+                            <FacetContainer key={idx} variant="overview" depth={2} className="p-3 rounded-xl space-y-1">
+                              <span className="text-xs text-primary font-semibold">{nation.name}</span>
+                              <div className="text-[11px] text-muted-foreground">GDP: ${nation.gdp}B | Alliance: {nation.alliance}</div>
+                              <div className="text-[11px] text-emerald-400">Stability: {nation.stability}%</div>
+                            </FacetContainer>
+                          ))
+                        ) : (
+                          <div className="col-span-3 p-4 border border-dashed border-border/60 rounded-xl text-center text-xs text-muted-foreground">
+                            No nations matched filter criteria.
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      {l3FilteredNations.map((nation, idx) => (
-                        <FacetContainer
-                          key={idx}
-                          variant="overview"
-                          depth={2}
-                          className="bg-card/60 border border-border/60 p-4 rounded-xl space-y-1.5"
-                        >
-                          <span className="text-xs text-primary font-semibold">{nation.name}</span>
-                          <div className="text-xs text-muted-foreground">GDP: ${nation.gdp}B</div>
-                          <div className="text-xs text-emerald-400 font-medium">Stability: {nation.stability}%</div>
-                        </FacetContainer>
-                      ))}
+                    {/* 3B: Live Summaries */}
+                    <div className="space-y-2">
+                      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Transformed Summaries (.map)</h3>
+                      <div className="bg-background/60 border border-border/40 p-3 rounded-xl flex flex-wrap gap-2">
+                        {l3Summaries.map((summary, i) => (
+                          <span key={i} className="text-xs font-mono bg-card border border-border/60 px-2.5 py-1 rounded-lg text-primary">
+                            {summary}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3C & 3D Grid */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {/* 3C: Search (.find) */}
+                      <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-2">
+                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Live Search by Slug (.find)</h3>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={lvl3SearchSlug}
+                            onChange={(e) => setLvl3SearchSlug(e.target.value)}
+                            placeholder="Search slug (e.g. faneria)..."
+                            className="w-full bg-card border border-border/60 rounded px-2.5 py-1.5 text-xs text-foreground"
+                          />
+                        </div>
+                        {l3FoundNation ? (
+                          <div className="text-xs text-emerald-400 font-mono pt-1">
+                            Found: {l3FoundNation.name} (${l3FoundNation.gdp}B GDP, {l3FoundNation.alliance})
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground font-mono pt-1">Result: null</div>
+                        )}
+                      </div>
+
+                      {/* 3D: Total GDP */}
+                      <div className="bg-background/50 border border-border/40 p-4 rounded-xl space-y-1 text-center flex flex-col justify-center">
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold font-mono">TOTAL ALLIANCE GDP</span>
+                        <div className="text-3xl font-black text-emerald-400">${l3TotalGdp.toLocaleString()} Billion</div>
+                      </div>
                     </div>
                   </div>
                 </FacetContainer>
