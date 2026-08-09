@@ -45,7 +45,7 @@ export function useGlassPlateEditor({
   onFocus,
   onBlur,
 }: UseGlassPlateEditorProps) {
-  const [_version, setVersion] = useState(0);
+  const [version, setVersion] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
 
   // Formatting state
@@ -498,6 +498,7 @@ export function useGlassPlateEditor({
 
   return {
     editor,
+    version,
     isFocused,
     setIsFocused,
     isLinkOpen,

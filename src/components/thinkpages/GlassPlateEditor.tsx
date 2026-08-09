@@ -63,6 +63,8 @@ import {
   detectWikiUrl,
 } from "./editor/SlateSerializer";
 import { MentionMenuPortal } from "./editor/MentionMenuPortal";
+import { useGlassPlateEditor } from "./editor/useGlassPlateEditor";
+import { WikiAndStashPopovers } from "./editor/WikiAndStashPopovers";
 
 // ---------------------------------------------------------------------------
 // Slate plugins for Rich Text Formatting
@@ -129,6 +131,7 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
   ) => {
     const {
       editor,
+      version,
       isFocused,
       setIsFocused,
       isLinkOpen,
@@ -442,6 +445,39 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
 );
 
 GlassPlateEditor.displayName = "GlassPlateEditor";
+
+function ToolbarButton({
+  icon,
+  title,
+  active,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  active?: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "h-7 w-7 rounded-full p-0 transition-all duration-200",
+        active
+          ? "bg-slate-500/20 text-slate-900 ring-1 ring-slate-500/30 dark:bg-white/20 dark:text-white"
+          : "text-slate-500 hover:bg-slate-500/10 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+      )}
+      title={title}
+    >
+      {icon}
+    </Button>
+  );
+}
+
 
 
 

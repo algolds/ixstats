@@ -10,8 +10,8 @@ All components are organized into specialized domain sub-directories:
 
 ### 1. Main Orchestrators (`src/components/thinkpages/`)
 - `ThinkpagesPost.tsx` (227 lines) — Top-level post router dispatches between `<HeroPostView>` and `<StandardPostView>`.
-- `GlassCanvasComposer.tsx` (360 lines) — Modular post composer container with macOS glassmorphism styling.
-- `GlassPlateEditor.tsx` (448 lines) — Rich PlateJS Slate editor container.
+- `GlassCanvasComposer.tsx` (422 lines) — Modular post composer container with 100% pixel-perfect original UX & glassmorphism styling.
+- `GlassPlateEditor.tsx` (484 lines) — Rich PlateJS Slate editor container.
 - `AccountCreationModal.tsx` (584 lines) — Multi-step persona account creation wizard.
 - `SportsBulletinCard.tsx` (315 lines) — Apple HIG-inspired sports matchday & standings bulletin card.
 
@@ -25,9 +25,9 @@ All components are organized into specialized domain sub-directories:
 - `ReactionPills.tsx` (67 lines) — Reaction counter pills row above engagement actions.
 - `ThreadReplies.tsx` (99 lines) — Collapsible thread replies container and recursive post mapper.
 - `PostHeader.tsx` (173 lines) — Author metadata, avatar, badges, timestamp, and dropdown menu.
-- `PostBody.tsx` (92 lines) — Post body content renderer, blurb tags, and sports bulletin card dispatcher.
+- `PostBody.tsx` (93 lines) — Post body content renderer, blurb tags, and sports bulletin card dispatcher.
 - `PostMediaGrid.tsx` (68 lines) — Flexible media attachment grid with lightbox triggers.
-- `PostInlineLinkPreview.tsx` (71 lines) — Smart inline link previews for Wiki, Forum, League, and Club links.
+- `PostInlineLinkPreview.tsx` (172 lines) — Smart inline link previews for Wiki, Forum, League, and Club links.
 - `PostFooterActions.tsx` (109 lines) — Footer engagement statistics and reaction counters.
 - `PostModals.tsx` (209 lines) — Delete confirmation, flag/report dialog, reactions dialog, and image lightbox modal.
 - `PostComposers.tsx` (161 lines) — In-line edit composer and reply composer with auto-focus.
@@ -36,11 +36,11 @@ All components are organized into specialized domain sub-directories:
 ---
 
 ### 3. Composer Suite (`src/components/thinkpages/composer/`)
-- `useGlassCanvasComposer.ts` (442 lines) — Custom React hook managing composer state, live data queries, and post mutations.
-- `ComposerHeader.tsx` (100 lines) — Account selector avatar button and Discord crossposting toggle.
-- `ComposerToolbar.tsx` (114 lines) — Media attachment trigger, character count, and post submit button.
-- `ComposerVisualizationsPanel.tsx` (119 lines) — Live data card attachments (GDP, Demographics, Trade).
-- `ComposerPollModal.tsx` (156 lines) — Dynamic interactive poll creation modal.
+- `useGlassCanvasComposer.ts` (545 lines) — Custom React hook managing composer state, live data queries, and post mutations.
+- `ComposerAccountSwitcher.tsx` (132 lines) — Avatar button & floating macOS glass account switcher dropdown.
+- `ComposerLiveDataDrawer.tsx` (199 lines) — Expandable 8-tile live data chart grid drawer.
+- `ComposerActionBar.tsx` (230 lines) — Bottom action bar with character count, media triggers, GIF picker, poll button, Discord crossposting switch, and Share button.
+- `ComposerPollModal.tsx` (262 lines) — Interactive DOM portal poll configuration modal with backdrop blur.
 
 ---
 
@@ -50,7 +50,7 @@ All components are organized into specialized domain sub-directories:
 - `WikiAndStashPopovers.tsx` (314 lines) — Popover drawers for inserting Wiki links, Wiki embeds, Stashes assets, and emojis.
 - `MentionMenuPortal.tsx` (94 lines) — Portal dropdown for `@` mention autocomplete (users, leagues, clubs, countries).
 - `SlateSerializer.ts` (242 lines) — Slate-to-HTML serializer, HTML-to-Slate deserializer, and Slate node manipulators.
-- `useGlassPlateEditor.ts` (553 lines) — Custom React hook managing PlateJS editor instance and selection states.
+- `useGlassPlateEditor.ts` (554 lines) — Custom React hook managing PlateJS editor instance and selection states.
 
 ---
 

@@ -4,36 +4,26 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
-  Send,
-  Image,
-  BarChart3,
-  TrendingUp,
-  Globe,
-  Loader2,
   X,
-  Plus,
-  Sparkles,
   Repeat2,
-  Users,
   Newspaper,
   Vote,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Switch } from "~/components/ui/switch";
-import { withBasePath } from "~/lib/base-path";
-import { GifPicker } from "./GifPicker";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { LiveDataCard } from "./LiveDataCard";
 import { GlassPlateEditor } from "./GlassPlateEditor";
-import { ComposerHeader } from "./composer/ComposerHeader";
-import { ComposerVisualizationsPanel } from "./composer/ComposerVisualizationsPanel";
-import { ComposerPollModal } from "./composer/ComposerPollModal";
-import { ComposerToolbar } from "./composer/ComposerToolbar";
+
 import { useGlassCanvasComposer } from "./composer/useGlassCanvasComposer";
+import { ComposerAccountSwitcher } from "./composer/ComposerAccountSwitcher";
+import { ComposerLiveDataDrawer } from "./composer/ComposerLiveDataDrawer";
+import { ComposerActionBar } from "./composer/ComposerActionBar";
+import { ComposerPollModal } from "./composer/ComposerPollModal";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -88,11 +78,9 @@ export function GlassCanvasComposer({
     showAccountManager,
     setShowAccountManager,
     selectedImages,
-    setSelectedImages,
     showMediaModal,
     setShowMediaModal,
     isUploadingImage,
-    setIsUploadingImage,
     postToDiscord,
     setPostToDiscord,
     isEditorFocused,
@@ -105,17 +93,28 @@ export function GlassCanvasComposer({
     accountAvatarUrl,
     getAccountAvatar,
     handleInsertGif,
-    hasContent,
     showActionBar,
     hasEconomicData,
     hasHistoricalData,
     hasDiplomaticData,
     hasTradeData,
     hasVitalityData,
+    isLoadingEconomic,
+    isLoadingHistory,
+    isLoadingDiplomatic,
+    isLoadingTrade,
+    isLoadingVitality,
     createPostMutation,
     handleSubmit,
     addVisualization,
     removeVisualization,
+    handleImageSelect,
+    removeImage,
+    economicData,
+    gdpHistoryData,
+    diplomaticData,
+    tradeData,
+    vitalityData,
   } = useGlassCanvasComposer({
     account,
     countryId,
@@ -125,50 +124,21 @@ export function GlassCanvasComposer({
     repostData,
   });
 
-  const handleImageSelect = (imageUrl: string) => {
-    if (selectedImages.length >= 4) {
-      notify.error("Maximum 4 images per post");
-      return;
-    }
-    setSelectedImages((prev) => [...prev, imageUrl]);
-    setShowMediaModal(false);
-    notify.success("Image added to post");
-  };
-
-  const removeImage = (imageUrl: string) => {
-    setSelectedImages((prev) => prev.filter((url) => url !== imageUrl));
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (selectedImages.length >= 4) {
-      notify.error("Maximum 4 images per post");
-      return;
-    }
-
-    setIsUploadingImage(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(withBasePath("/api/upload/image"), {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setSelectedImages((prev) => [...prev, result.url]);
-        notify.success("Image uploaded successfully");
-      } else {
-        notify.error(result.error || "Failed to upload image");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      notify.error("Failed to upload image");
-    } finally {
-      setIsUploadingImage(false);
-    }
+  const getVisualizationPreview = (viz: any) => {
+    return (
+      <LiveDataCard
+        type={viz.type}
+        title={viz.title}
+        countryId={countryId}
+        preloadedData={{
+          economicData,
+          gdpHistoryData,
+          diplomaticData,
+          tradeData,
+          vitalityData,
+        }}
+      />
+    );
   };
 
   const characterLimit = 280;
@@ -205,156 +175,248 @@ export function GlassCanvasComposer({
     );
   }
 
+  if (!hasCountry || !account) {
+    return (
+      <Card className="glass-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
+        <TextureOverlay texture="paperGrain" opacity={0.06} />
+        <div className="mb-4 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-white/10" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-24 rounded bg-white/10" />
+            <div className="h-2 w-16 rounded bg-white/5" />
+          </div>
+        </div>
+        <div className="mb-3 h-16 w-full rounded-lg bg-white/5" />
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <div className="h-7 w-7 rounded bg-white/5" />
+            <div className="h-7 w-7 rounded bg-white/5" />
+            <div className="h-7 w-7 rounded bg-white/5" />
+          </div>
+          <div className="h-7 w-16 rounded bg-white/10" />
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card
+    <motion.div
+      layout
       ref={composerRef}
       className={cn(
-        "glass-hierarchy-child transition-all duration-300",
-        isEditorFocused && "ring-2 ring-blue-500/30 dark:ring-blue-400/30"
+        "bg-card text-card-foreground glass-hierarchy-child relative flex flex-col gap-0 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 shadow-sm"
       )}
+      transition={{
+        type: "spring",
+        stiffness: 350,
+        damping: 35,
+      }}
     >
-      <div className="p-4">
-        {/* Header */}
-        <ComposerHeader
+      <TextureOverlay texture="paperGrain" opacity={0.06} className="rounded-xl" />
+
+      <div className="relative flex gap-3">
+        {/* Left column: Avatar + Floating Switcher */}
+        <ComposerAccountSwitcher
           account={account}
           accounts={accounts}
+          accountAvatarUrl={accountAvatarUrl}
+          showAccountManager={showAccountManager}
+          setShowAccountManager={setShowAccountManager}
           onAccountSelect={onAccountSelect}
-          onAccountSettings={onAccountSettings}
           onCreateAccount={onCreateAccount}
           isOwner={isOwner}
-          postToDiscord={postToDiscord}
-          setPostToDiscord={setPostToDiscord}
+          getAccountAvatar={getAccountAvatar}
         />
 
-        {/* Repost context banner */}
-        {repostData && (
-          <div className="mb-3 rounded-lg border border-green-500/30 bg-green-500/10 p-2 text-xs text-green-400">
-            <div className="flex items-center gap-1.5 font-medium">
-              <Repeat2 className="h-3.5 w-3.5" />
-              <span>Reposting @{repostData.originalPost.account.username}'s post</span>
-            </div>
-          </div>
-        )}
-
-        {/* Rich Text Editor */}
-        <div className="min-h-[120px]">
-          <GlassPlateEditor
-            ref={editorRef}
-            placeholder={resolvedPlaceholder}
-            onChange={(html, text) => {
-              setContent(html);
-              setPlainText(text);
-            }}
-            onFocus={() => setIsEditorFocused(true)}
-            onBlur={() => setIsEditorFocused(false)}
-          />
-        </div>
-
-        {/* Selected Images Grid */}
-        {selectedImages.length > 0 && (
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {selectedImages.map((imgUrl, index) => (
-              <div key={index} className="relative group overflow-hidden rounded-lg">
-                <img src={imgUrl} alt="Attached" className="h-32 w-full object-cover" />
-                <button
-                  onClick={() => removeImage(imgUrl)}
-                  className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+        {/* Right column: Editor + Previews + Actions */}
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {repostData && (
+            <Card className="mb-1 border-green-500/30 bg-green-500/5 p-2.5">
+              <div className="mb-1.5 flex items-center gap-2 text-xs text-green-500">
+                <Repeat2 className="h-3 w-3" />
+                <span>Reposting</span>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Selected Visualizations List */}
-        {selectedVisualizations.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {selectedVisualizations.map((viz) => (
-              <div key={viz.id} className="relative group">
-                <LiveDataCard type={viz.type} title={viz.title} countryId={countryId} />
-                <button
-                  onClick={() => removeVisualization(viz.id)}
-                  className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+              <div className="mb-1.5 flex items-center gap-2">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage
+                    src={repostData.originalPost.account?.profileImageUrl}
+                    alt={repostData.originalPost.account?.displayName}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-[0.6rem] font-semibold text-white">
+                    {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs font-semibold">
+                  {repostData.originalPost.account?.displayName || "Unknown"}
+                </span>
+                <span className="text-muted-foreground text-[0.65rem]">
+                  @{repostData.originalPost.account?.username || "unknown"}
+                </span>
               </div>
-            ))}
+              <div className="text-muted-foreground line-clamp-2 text-xs">
+                {repostData.originalPost.content}
+              </div>
+            </Card>
+          )}
+
+          <div className="space-y-1.5">
+            <GlassPlateEditor
+              ref={editorRef}
+              value={content}
+              onChange={(htmlContent, rawText) => {
+                setContent(htmlContent);
+                setPlainText(rawText);
+              }}
+              placeholder={resolvedPlaceholder}
+              italicPlaceholder={resolvedPlaceholder !== placeholder}
+              onFocus={() => setIsEditorFocused(true)}
+              onBlur={() => setIsEditorFocused(false)}
+            />
           </div>
-        )}
 
-        {/* Poll Draft Preview */}
-        {pollDraft && (
-          <div className="mt-3 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-purple-400">Attached Poll</span>
-              <button onClick={() => setPollDraft(null)} className="text-purple-400 hover:text-purple-300">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mt-1 text-sm font-medium">{pollDraft.question}</p>
-
-            <div className="mt-2 space-y-1">
-              {pollDraft.options.map((opt, i) => (
-                <div key={i} className="rounded bg-white/5 px-2 py-1 text-xs text-muted-foreground">
-                  {opt}
+          {selectedImages.length > 0 && (
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              {selectedImages.map((imageUrl, index) => (
+                <div
+                  key={imageUrl}
+                  className="relative aspect-video overflow-hidden rounded-lg border border-slate-200 bg-slate-500/5 dark:border-white/10 dark:bg-white/5"
+                >
+                  <button
+                    onClick={() => removeImage(imageUrl)}
+                    className="absolute top-1.5 right-1.5 z-10 cursor-pointer rounded-full bg-black/60 p-0.5 transition-colors hover:bg-red-500/80"
+                  >
+                    <X className="h-3.5 w-3.5 text-white" />
+                  </button>
+                  <img
+                    src={imageUrl}
+                    alt={`Selected image ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Visualizations Panel */}
-        <AnimatePresence>
-          {showVisualizationPanel && (
-            <ComposerVisualizationsPanel
-              onSelect={addVisualization}
-              onClose={() => setShowVisualizationPanel(false)}
-              hasEconomicData={hasEconomicData}
-              hasHistoricalData={hasHistoricalData}
-              hasDiplomaticData={hasDiplomaticData}
-              hasTradeData={hasTradeData}
-              hasVitalityData={hasVitalityData}
-              isGenerating={isGeneratingVisualization}
-            />
           )}
-        </AnimatePresence>
 
-        {/* Composer Toolbar & Action Bar */}
-        <ComposerToolbar
-          showActionBar={showActionBar}
-          remainingChars={remainingChars}
-          hasContent={hasContent}
-          isSubmitting={createPostMutation.isPending}
-          onSubmit={handleSubmit}
-          onToggleVisualizations={() => setShowVisualizationPanel(!showVisualizationPanel)}
-          onOpenMediaModal={() => setShowMediaModal(true)}
-          onInsertGif={handleInsertGif}
-          onOpenPollModal={() => setShowPollModal(true)}
-        />
+          {selectedVisualizations.length > 0 && (
+            <div className="mt-1 space-y-1.5">
+              {selectedVisualizations.map((viz) => (
+                <div
+                  key={viz.id}
+                  className="relative rounded-lg border border-slate-200 bg-slate-500/5 p-2.5 dark:border-white/10 dark:bg-white/5"
+                >
+                  <button
+                    onClick={() => removeVisualization(viz.id)}
+                    className="absolute top-1.5 right-1.5 cursor-pointer rounded-full p-0.5 transition-colors hover:bg-red-500/20"
+                  >
+                    <X className="h-3.5 w-3.5 text-red-400" />
+                  </button>
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-medium">{viz.title}</div>
+                    {getVisualizationPreview(viz)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {pollDraft && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mt-1.5 flex items-center justify-between rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3.5"
+            >
+              <div className="flex items-center gap-2">
+                <Vote className="h-4 w-4 shrink-0 text-[#ff8a65]" />
+                <div className="min-w-0">
+                  <p className="text-foreground truncate text-xs font-semibold">
+                    {pollDraft.question || "Untitled Poll"}
+                  </p>
+                  <p className="text-muted-foreground text-[10px]">
+                    {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
+                    {pollDraft.options.filter((o) => o.trim()).length} options
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPollModal(true)}
+                  className="h-7 cursor-pointer border-[#ff8a65]/30 px-2.5 text-[10px] font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                >
+                  Edit Poll
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPollDraft(null)}
+                  className="h-7 w-7 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Live Data Drawer */}
+          <ComposerLiveDataDrawer
+            showVisualizationPanel={showVisualizationPanel}
+            isGeneratingVisualization={isGeneratingVisualization}
+            isLoadingEconomic={isLoadingEconomic}
+            isLoadingHistory={isLoadingHistory}
+            isLoadingDiplomatic={isLoadingDiplomatic}
+            isLoadingTrade={isLoadingTrade}
+            isLoadingVitality={isLoadingVitality}
+            hasEconomicData={hasEconomicData}
+            hasHistoricalData={hasHistoricalData}
+            hasDiplomaticData={hasDiplomaticData}
+            hasTradeData={hasTradeData}
+            hasVitalityData={hasVitalityData}
+            addVisualization={addVisualization}
+          />
+
+          {/* Action Bar */}
+          <ComposerActionBar
+            showActionBar={showActionBar}
+            remainingChars={remainingChars}
+            showVisualizationPanel={showVisualizationPanel}
+            setShowVisualizationPanel={setShowVisualizationPanel}
+            isGeneratingVisualization={isGeneratingVisualization}
+            setShowMediaModal={setShowMediaModal}
+            isUploadingImage={isUploadingImage}
+            selectedImages={selectedImages}
+            handleInsertGif={handleInsertGif}
+            pollDraft={pollDraft}
+            setPollDraft={setPollDraft}
+            setShowPollModal={setShowPollModal}
+            postToDiscord={postToDiscord}
+            setPostToDiscord={setPostToDiscord}
+            handleSubmit={handleSubmit}
+            isPending={createPostMutation.isPending}
+            plainText={plainText}
+            selectedVisualizations={selectedVisualizations}
+          />
+        </div>
       </div>
 
-      {/* Media Search Modal */}
-      {showMediaModal && (
-        <MediaSearchModal
-          isOpen={showMediaModal}
-          onClose={() => setShowMediaModal(false)}
-          onSelectMedia={(url) => handleImageSelect(url)}
-        />
-      )}
+      <MediaSearchModal
+        isOpen={showMediaModal}
+        onClose={() => setShowMediaModal(false)}
+        onImageSelect={handleImageSelect}
+      />
 
-      {/* Poll Creation Modal */}
-      {showPollModal && (
-        <ComposerPollModal
-          isOpen={showPollModal}
-          onClose={() => setShowPollModal(false)}
-          onSave={(poll) => {
-            setPollDraft(poll);
-            setShowPollModal(false);
-          }}
-        />
-      )}
-    </Card>
+      <ComposerPollModal
+        showPollModal={showPollModal}
+        setShowPollModal={setShowPollModal}
+        pollDraft={pollDraft}
+        setPollDraft={setPollDraft}
+        isRegularUser={isRegularUser}
+        notify={notify}
+      />
+    </motion.div>
   );
 }

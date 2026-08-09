@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { withBasePath } from "~/lib/base-path";
 
 export interface DataVisualization {
   id: string;
@@ -86,8 +87,8 @@ export function useGlassCanvasComposer({
     : "";
 
   const getAccountAvatar = (acc: any) =>
-    acc?.profileImageUrl ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(acc?.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+    acc.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
 
   const handleInsertGif = useCallback(
     (gifUrl: string) => {
@@ -100,6 +101,7 @@ export function useGlassCanvasComposer({
     },
     [selectedImages, notify]
   );
+
   const composerRef = useRef<HTMLDivElement>(null);
   const hasContent =
     plainText.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
@@ -107,26 +109,30 @@ export function useGlassCanvasComposer({
   const showActionBar = isEditorFocused || hasContent || showVisualizationPanel;
 
   // Get latest economic data for visualizations - live wired
-  const { data: economicData } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
-  const { data: gdpHistoryData } = api.historical.getCountryHistory.useQuery(
-    { countryId, limit: 30 },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
-  const { data: diplomaticData } = api.diplomaticCore.getRelationships.useQuery(
+  const { data: economicData, isLoading: isLoadingEconomic } =
+    api.countries.getByIdWithEconomicData.useQuery(
+      { id: countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
+  const { data: gdpHistoryData, isLoading: isLoadingHistory } =
+    api.historical.getCountryHistory.useQuery(
+      { countryId, limit: 30 },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
+  const { data: diplomaticData, isLoading: isLoadingDiplomatic } =
+    api.diplomaticCore.getRelationships.useQuery(
+      { countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
+  const { data: tradeData, isLoading: isLoadingTrade } = api.countries.getTradeData.useQuery(
     { countryId },
     { enabled: !!countryId, refetchOnWindowFocus: false }
   );
-  const { data: tradeData } = api.countries.getTradeData.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
-  const { data: vitalityData } = api.countries.getActivityRingsData.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
+  const { data: vitalityData, isLoading: isLoadingVitality } =
+    api.countries.getActivityRingsData.useQuery(
+      { countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
 
   const hasEconomicData = !!economicData;
   const hasHistoricalData =
@@ -314,12 +320,12 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `diplo-${Date.now()}`,
             type: "diplomatic_map",
-            title: "Global Diplomatic Stance",
-            data: diplomaticData || [],
+            title: "Diplomatic Relations Map",
+            data: diplomaticData!,
             config: {
-              mapProjection: "naturalEarth",
+              mapType: "world",
+              showRelationStrength: true,
               colorScheme: "diplomatic",
-              showLabels: true,
             },
           };
           break;
@@ -327,11 +333,12 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `trade-${Date.now()}`,
             type: "trade_flow",
-            title: "Bilateral Trade Networks",
-            data: tradeData || {},
+            title: "Trade Flow Analysis",
+            data: tradeData!,
             config: {
-              flowStyle: "curved",
-              minTradeValue: 1000000,
+              flowType: "sankey",
+              showVolumes: true,
+              timeframe: "current_quarter",
             },
           };
           break;
@@ -339,58 +346,141 @@ export function useGlassCanvasComposer({
           newVisualization = {
             id: `gdp-${Date.now()}`,
             type: "gdp_growth",
-            title: "GDP Breakdown",
-            data: economicData || {},
-            config: { showSubcategories: true },
+            title: "Economic Performance Overview",
+            data: economicData!,
+            config: {
+              metrics: ["gdp", "inflation", "unemployment"],
+              displayType: "dashboard",
+              comparison: "regional_average",
+            },
           };
           break;
         case "demographics":
           newVisualization = {
             id: `demo-${Date.now()}`,
             type: "demographics",
-            title: "Population Pyramid",
-            data: economicData || {},
-            config: { ageGroups: 5 },
+            title: "Demographics Profile",
+            data: {
+              lifeExpectancy: economicData.lifeExpectancy,
+              literacyRate: economicData.literacyRate,
+              urbanPopulationPercent: economicData.urbanPopulationPercent,
+              ruralPopulationPercent: economicData.ruralPopulationPercent,
+              population: economicData.currentPopulation || economicData.population,
+            },
+            config: {
+              displayType: "stats_grid",
+              colorScheme: "green",
+            },
           };
           break;
         case "budget_debt":
           newVisualization = {
-            id: `budget-${Date.now()}`,
+            id: `fiscal-${Date.now()}`,
             type: "budget_debt",
-            title: "Fiscal Overview",
-            data: economicData || {},
-            config: { showDebtRatio: true },
+            title: "Fiscal & Debt Analysis",
+            data: {
+              taxRevenueGDPPercent: economicData.taxRevenueGDPPercent,
+              governmentBudgetGDPPercent: economicData.governmentBudgetGDPPercent,
+              totalGovernmentSpending: economicData.totalGovernmentSpending,
+              totalDebtGDPRatio: economicData.totalDebtGDPRatio,
+              budgetDeficitSurplus: economicData.budgetDeficitSurplus,
+            },
+            config: {
+              displayType: "donut",
+              colorScheme: "amber",
+            },
           };
           break;
         case "labor_market":
           newVisualization = {
             id: `labor-${Date.now()}`,
             type: "labor_market",
-            title: "Employment Statistics",
-            data: economicData || {},
-            config: { showParticipationRate: true },
+            title: "Labor & Income Profile",
+            data: {
+              unemploymentRate: economicData.unemploymentRate,
+              incomeInequalityGini: economicData.incomeInequalityGini,
+              averageAnnualIncome: economicData.averageAnnualIncome,
+              minimumWage: economicData.minimumWage,
+            },
+            config: {
+              metrics: ["unemployment", "gini", "income"],
+              displayType: "stats_grid",
+              colorScheme: "teal",
+            },
           };
           break;
         case "national_vitality":
           newVisualization = {
             id: `vitality-${Date.now()}`,
             type: "national_vitality",
-            title: "Activity Rings",
-            data: vitalityData || {},
-            config: { showTarget: true },
+            title: "National Vitality Assessment",
+            data: vitalityData!,
+            config: {
+              metrics: ["economic", "population", "diplomatic", "government"],
+              displayType: "progress_bars",
+              colorScheme: "red",
+            },
           };
           break;
+        default:
+          setIsGeneratingVisualization(false);
+          return;
       }
 
       setSelectedVisualizations((prev) => [...prev, newVisualization]);
       setIsGeneratingVisualization(false);
-      setShowVisualizationPanel(false);
-      notify.success("Live visualization attached");
-    }, 500);
+      notify.success(`${newVisualization.title} added to post`);
+    }, 800);
   };
 
   const removeVisualization = (id: string) => {
-    setSelectedVisualizations((prev) => prev.filter((v) => v.id !== id));
+    setSelectedVisualizations((prev) => prev.filter((viz) => viz.id !== id));
+  };
+
+  const handleImageSelect = (imageUrl: string) => {
+    if (selectedImages.length >= 4) {
+      notify.error("Maximum 4 images per post");
+      return;
+    }
+    setSelectedImages((prev) => [...prev, imageUrl]);
+    setShowMediaModal(false);
+    notify.success("Image added to post");
+  };
+
+  const removeImage = (imageUrl: string) => {
+    setSelectedImages((prev) => prev.filter((url) => url !== imageUrl));
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (selectedImages.length >= 4) {
+      notify.error("Maximum 4 images per post");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(withBasePath("/api/upload/image"), {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSelectedImages((prev) => [...prev, result.url]);
+        notify.success("Image uploaded successfully");
+      } else {
+        notify.error(result.error || "Failed to upload image");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      notify.error("Failed to upload image");
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   return {
@@ -434,9 +524,22 @@ export function useGlassCanvasComposer({
     hasDiplomaticData,
     hasTradeData,
     hasVitalityData,
+    isLoadingEconomic,
+    isLoadingHistory,
+    isLoadingDiplomatic,
+    isLoadingTrade,
+    isLoadingVitality,
     createPostMutation,
     handleSubmit,
     addVisualization,
     removeVisualization,
+    handleImageSelect,
+    removeImage,
+    handleFileUpload,
+    economicData,
+    gdpHistoryData,
+    diplomaticData,
+    tradeData,
+    vitalityData,
   };
 }
