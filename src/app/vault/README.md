@@ -69,9 +69,14 @@ All registered in `src/server/api/root.ts`.
 
 ## Connections
 
-- **IxCredits economy** — `src/lib/vault-service.ts` is the single earning/spending entry point; passive dividend via cron. Full spec: `docs/systems/ixcredits.md`, `docs/systems/myvault.md`.
-- **NationStates** — deck import + public deck browsing bridge NS cards into the IxStats card pool. Spec: `docs/systems/ns-integration.md`.
 - **Achievements / ThinkPages / Diplomacy** — feed `EARN_ACTIVE` / `EARN_SOCIAL` credits through `vault-service`; nation performance drives passive income and NATION card stats.
+
+## Architecture & Security Hardening (Plans 121–123)
+
+- **Atomic Credit Ledger**: `spendCredits` executes atomic conditional updates (`credits: { gte: amount }`) inside DB transactions, preventing race conditions or negative balances under high concurrency.
+- **UTC Calendar Day Streak Math**: Daily login streak calculations (`updateLoginStreak`) normalize dates onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), ensuring exact midnight boundary rollover behavior.
+- **Type-Safe Domain Modeling**: Branded domain primitives (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) and structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`) replace loose `any` types and Prisma `(db as any)` casts across `vault-service.ts`, `card-service.ts`, and `auction-service.ts`.
+- **Perk Performance Cache**: Store item perks lookup (`getPurchasedItemsEffects`) utilizes an in-memory `userPerksCache` (5-minute TTL) with bounded transaction queries (`take: 100`).
 
 ---
 

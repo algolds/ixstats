@@ -178,8 +178,7 @@ export class AuctionService {
 
       // Trigger watchlist price alerts (fire-and-forget)
       try {
-        const dbAny = db as any;
-        const watchlists = await dbAny.cardWatchlist.findMany({
+        const watchlists = await db.cardWatchlist.findMany({
           where: {
             cardId: params.cardId,
             userId: { not: params.userId }, // Don't notify the seller

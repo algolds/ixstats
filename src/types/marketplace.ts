@@ -2,6 +2,7 @@
 // Type definitions for IxCards marketplace and auction system
 
 import type { CardRarity, CardType } from "@prisma/client";
+import type { ArtworkVariants, CardStatsData, CardEnhancementsData } from "./cards-display";
 
 /**
  * Card instance with full details
@@ -12,23 +13,23 @@ export interface CardInstance {
   title: string;
   description: string | null;
   artwork: string;
-  artworkVariants: any;
+  artworkVariants: ArtworkVariants | null;
   cardType: CardType;
   rarity: CardRarity;
   season: number;
   nsCardId: number | null;
   nsSeason: number | null;
-  nsData: any;
+  nsData: Record<string, unknown> | null;
   wikiSource: string | null;
   wikiArticleTitle: string | null;
   wikiUrl: string | null;
   countryId: string | null;
-  stats: any;
+  stats: CardStatsData | Record<string, number>;
   totalSupply: number;
   marketValue: number;
   level: number;
   evolutionStage: number;
-  enhancements: any;
+  enhancements: CardEnhancementsData | null;
   createdAt: Date;
   updatedAt: Date;
   lastTrade: Date | null;

@@ -7,6 +7,34 @@
 import type { CardRarity, CardType } from "@prisma/client";
 import type { CardStatDef } from "~/lib/card-stat-config";
 
+export type Brand<K, T extends string> = K & { readonly __brand: T };
+export type UserId = Brand<string, "UserId">;
+export type CardId = Brand<string, "CardId">;
+export type AuctionId = Brand<string, "AuctionId">;
+export type OwnershipId = Brand<string, "OwnershipId">;
+
+export interface ArtworkVariants {
+  holographicUrl?: string;
+  foilUrl?: string;
+  altArtUrl?: string;
+  [key: string]: unknown;
+}
+
+export interface CardStatsData {
+  economic?: number;
+  diplomatic?: number;
+  military?: number;
+  social?: number;
+  [statKey: string]: number | undefined;
+}
+
+export interface CardEnhancementsData {
+  level?: number;
+  statBoosts?: Record<string, number>;
+  customBorder?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Card display size options
  */
@@ -20,19 +48,19 @@ export interface CardInstance {
   title: string;
   description: string | null;
   artwork: string;
-  artworkVariants: any;
+  artworkVariants: ArtworkVariants | null;
   cardType: CardType;
   rarity: CardRarity;
   season: number;
   nsCardId: number | null;
   nsSeason: number | null;
-  nsData: any;
+  nsData: Record<string, unknown> | null;
   wikiSource: string | null;
   wikiArticleTitle: string | null;
   wikiUrl: string | null;
   countryId: string | null;
-  stats: Record<string, number>;
-  metadata?: any;
+  stats: CardStatsData | Record<string, number>;
+  metadata?: Record<string, unknown> | null;
   attributes?: Record<string, unknown>;
   ownershipId?: string;
   isLocked?: boolean;
@@ -40,7 +68,7 @@ export interface CardInstance {
   totalSupply: number;
   level: number;
   evolutionStage: number;
-  enhancements: any;
+  enhancements: CardEnhancementsData | null;
   createdAt: Date;
   updatedAt: Date;
   lastTrade: Date | null;

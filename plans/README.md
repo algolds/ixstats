@@ -89,6 +89,13 @@ the live working set stays here.
 |------|-------|--------|
 | [ixstates-community-feedback-analysis.md](ixstates-community-feedback-analysis.md) | Discord community feedback analysis (roadmap input) | REFERENCE |
 
+### IxCards & MyVault System Overhaul — Type Safety, Concurrency & UTC Calendar Fixes
+| Plan | Scope | Status |
+|------|-------|--------|
+| [121-vault-card-type-safety-domain-branding.md](121-vault-card-type-safety-domain-branding.md) | Branded types, strict card schemas, and removal of Prisma `(db as any)` casts | DONE |
+| [122-atomic-credit-ledger-concurrency-locks.md](122-atomic-credit-ledger-concurrency-locks.md) | Atomic conditional updates (`credits >= amount`) preventing negative balance race conditions | DONE |
+| [123-daily-streak-utc-boundary-store-perks.md](123-daily-streak-utc-boundary-store-perks.md) | UTC calendar day streak calculations and O(1) store perk cache lookup | DONE |
+
 ---
 
 ## Future Ideas (proposed, not started)

@@ -10,6 +10,13 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added & Refactored (IxCards & MyVault Systems)
+
+- **IxCards & MyVault System Overhaul (Plans 121–123)** (Bumped `IXVAULT_VERSION` from `1` → `2`):
+  - **Plan 121 — Domain Type Safety & Prisma Cast Removal**: Added nominal branded types (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) in [cards-display.ts](file:///home/jxsig/projects/ixstats/src/types/cards-display.ts), defined structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`), replaced loose `any` types on `CardInstance` and `CardCreationData`, and eliminated unsafe `(db as any)` Prisma casts across [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) and [auction-service.ts](file:///home/jxsig/projects/ixstats/src/lib/auction-service.ts).
+  - **Plan 122 — Atomic Credit Ledger & Concurrency Locks**: Replaced read-then-update logic in `spendCredits` with atomic conditional queries (`credits: { gte: amount }`) inside database transactions, preventing double-spending and negative IxCredits balances under concurrent requests. Verified via a 10-parallel request concurrency stress test suite ([vault-concurrency.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/vault-concurrency.test.ts)).
+  - **Plan 123 — Daily Streak UTC Boundary & Store Perk Caching**: Standardized daily login streak calculations onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), resolving streak loss/extension bugs across midnight boundaries. Added `userPerksCache` with a 5-minute TTL and 100-item query cap for `getPurchasedItemsEffects` performance.
+
 ### Added & Refactored (Global Leaderboards & MyCountry v2 Surface)
 
 - **Global Leaderboards Standalone Page & Metric Live-Wiring**:

@@ -1,10 +1,11 @@
 // src/lib/card-service.ts
 // Card service layer for IxCards Phase 1
 
-import { type PrismaClient } from "@prisma/client";
+import { type PrismaClient, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardType, CardRarity } from "~/lib/card-enums";
 import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import type { ArtworkVariants, CardStatsData, CardEnhancementsData } from "~/types/cards-display";
 
 /**
  * Card creation input interface
@@ -13,23 +14,23 @@ export interface CardCreationData {
   title: string;
   description?: string;
   artwork: string;
-  artworkVariants?: any;
+  artworkVariants?: ArtworkVariants | null;
   cardType: CardType;
   rarity?: CardRarity;
   season: number;
   nsCardId?: number;
   nsSeason?: number;
-  nsData?: any;
+  nsData?: Record<string, unknown> | null;
   wikiSource?: string;
   wikiArticleTitle?: string;
   wikiUrl?: string;
   countryId?: string;
-  stats: any;
+  stats: CardStatsData | Record<string, number>;
   totalSupply?: number;
   marketValue?: number;
   level?: number;
   evolutionStage?: number;
-  enhancements?: any;
+  enhancements?: CardEnhancementsData | null;
 }
 
 /**
@@ -147,7 +148,7 @@ export async function createCard(db: PrismaClient, cardData: CardCreationData) {
         title: cardData.title.trim(),
         description: cardData.description?.trim() || null,
         artwork: cardData.artwork.trim(),
-        artworkVariants: cardData.artworkVariants || null,
+        artworkVariants: (cardData.artworkVariants as any) || null,
         cardType: cardData.cardType,
         rarity,
         season: cardData.season,
@@ -156,11 +157,11 @@ export async function createCard(db: PrismaClient, cardData: CardCreationData) {
         wikiSource: cardData.wikiSource || null,
         wikiArticleTitle: cardData.wikiArticleTitle || null,
         countryId: cardData.countryId || null,
-        stats: cardData.stats,
+        stats: cardData.stats as any,
         totalSupply: cardData.totalSupply || 0,
         marketValue: cardData.marketValue || 0,
         level: cardData.level || 1,
-        enhancements: cardData.enhancements || null,
+        enhancements: (cardData.enhancements as any) || null,
       },
     });
 
@@ -238,7 +239,7 @@ export async function getCards(db: PrismaClient, filters: CardFilters): Promise<
     const offset = Math.max(filters.offset || 0, 0);
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.CardWhereInput = {};
 
     if (filters.season !== undefined) {
       where.season = filters.season;

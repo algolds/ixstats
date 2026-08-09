@@ -37,7 +37,7 @@ export const VERSIONS = {
   apps: {
     ixworld: 1.2,
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
-    ixvault: 1,
+    ixvault: 2, // v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).

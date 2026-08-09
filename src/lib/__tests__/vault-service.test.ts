@@ -10,6 +10,7 @@ describe("VaultService - Upgrades & Perks", () => {
 
   beforeEach(() => {
     vaultService = new VaultService();
+    vaultService.clearUserPerksCache();
     mockDb = {
       vaultTransaction: {
         findMany: jest.fn(),
@@ -62,6 +63,8 @@ describe("VaultService - Upgrades & Perks", () => {
         select: {
           metadata: true,
         },
+        orderBy: { createdAt: "desc" },
+        take: 100,
       });
       expect(mockDb.vaultStoreItem.findMany).toHaveBeenCalledWith({
         where: {
@@ -223,6 +226,80 @@ describe("VaultService - Upgrades & Perks", () => {
 
       const balance = await vaultService.getLoreTokensBalance("user_123", mockDb);
       expect(balance).toBe(0);
+    });
+  });
+
+  describe("updateLoginStreak UTC Calendar Tests", () => {
+    it("should increment streak for logins 10 minutes apart across UTC midnight", async () => {
+      const day1Night = new Date(Date.UTC(2026, 7, 8, 23, 55, 0)); // Aug 8, 23:55 UTC
+      const day2Morning = new Date(Date.UTC(2026, 7, 9, 0, 5, 0)); // Aug 9, 00:05 UTC
+
+      mockDb.user = { findFirst: jest.fn().mockResolvedValue({ id: "u1" }) };
+      mockDb.myVault = {
+        upsert: jest.fn().mockResolvedValue({
+          id: "v1",
+          userId: "u1",
+          loginStreak: 1,
+          lastLoginDate: day1Night,
+        }),
+        update: jest.fn().mockImplementation(async ({ data }: any) => data),
+      };
+
+      jest.useFakeTimers({ now: day2Morning });
+      try {
+        const streak = await vaultService.updateLoginStreak("u1", mockDb);
+        expect(streak).toBe(2);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("should increment streak for logins 47 hours apart across 1 UTC calendar day gap", async () => {
+      const day1Early = new Date(Date.UTC(2026, 7, 8, 0, 1, 0)); // Aug 8, 00:01 UTC
+      const day2Late = new Date(Date.UTC(2026, 7, 9, 23, 59, 0)); // Aug 9, 23:59 UTC (47.9h later, diff = 1 calendar day)
+
+      mockDb.user = { findFirst: jest.fn().mockResolvedValue({ id: "u1" }) };
+      mockDb.myVault = {
+        upsert: jest.fn().mockResolvedValue({
+          id: "v1",
+          userId: "u1",
+          loginStreak: 5,
+          lastLoginDate: day1Early,
+        }),
+        update: jest.fn().mockImplementation(async ({ data }: any) => data),
+      };
+
+      jest.useFakeTimers({ now: day2Late });
+      try {
+        const streak = await vaultService.updateLoginStreak("u1", mockDb);
+        expect(streak).toBe(6);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("should reset streak to 1 when a full UTC calendar day is missed", async () => {
+      const day1 = new Date(Date.UTC(2026, 7, 8, 12, 0, 0)); // Aug 8, 12:00 UTC
+      const day3 = new Date(Date.UTC(2026, 7, 10, 12, 0, 0)); // Aug 10, 12:00 UTC (missed Aug 9)
+
+      mockDb.user = { findFirst: jest.fn().mockResolvedValue({ id: "u1" }) };
+      mockDb.myVault = {
+        upsert: jest.fn().mockResolvedValue({
+          id: "v1",
+          userId: "u1",
+          loginStreak: 10,
+          lastLoginDate: day1,
+        }),
+        update: jest.fn().mockImplementation(async ({ data }: any) => data),
+      };
+
+      jest.useFakeTimers({ now: day3 });
+      try {
+        const streak = await vaultService.updateLoginStreak("u1", mockDb);
+        expect(streak).toBe(1);
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 });

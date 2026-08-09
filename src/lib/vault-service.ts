@@ -321,14 +321,25 @@ export class VaultService {
         };
       }
 
-      // Update vault and create transaction in a transaction
+      // Update vault and create transaction atomically with race condition guard
       const result = await db.$transaction(async (tx) => {
-        const updatedVault = await tx.myVault.update({
-          where: { id: vault.id },
+        const updateResult = await tx.myVault.updateMany({
+          where: {
+            id: vault.id,
+            credits: { gte: amount }, // Strict atomic condition
+          },
           data: {
             credits: { decrement: amount },
             lifetimeSpent: { increment: amount },
           },
+        });
+
+        if (updateResult.count === 0) {
+          throw new Error("INSUFFICIENT_CREDITS_RACE_CONDITION");
+        }
+
+        const updatedVault = await tx.myVault.findUniqueOrThrow({
+          where: { id: vault.id },
         });
 
         await tx.vaultTransaction.create({
@@ -354,6 +365,13 @@ export class VaultService {
 
       return { success: true, newBalance: result.credits };
     } catch (error) {
+      if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS_RACE_CONDITION") {
+        return {
+          success: false,
+          newBalance: 0,
+          message: "Insufficient credits for transaction.",
+        };
+      }
       console.error(`[Vault Service] Failed to spend credits for ${userId}:`, error);
       return { success: false, newBalance: 0, message: "Failed to spend credits" };
     }
@@ -566,7 +584,6 @@ export class VaultService {
     message?: string;
   }> {
     try {
-      const dbAny = db as any;
       const vault = await this.getOrCreateVault(userId, db);
 
       // Check if already claimed today
@@ -647,17 +664,17 @@ export class VaultService {
         };
       } else {
         // choice === "CARD"
-        const totalCardsCount = await dbAny.card.count({ where: { isRetired: false } });
+        const totalCardsCount = await db.card.count({ where: { isRetired: false } });
         let card;
         if (totalCardsCount > 0) {
           const randomOffset = Math.floor(Math.random() * totalCardsCount);
-          card = await dbAny.card.findFirst({
+          card = await db.card.findFirst({
             where: { isRetired: false },
             skip: randomOffset,
           });
         } else {
           // fallback if all cards are retired or none exist
-          const fallbackCount = await dbAny.card.count();
+          const fallbackCount = await db.card.count();
           if (fallbackCount === 0) {
             return {
               success: false,
@@ -667,7 +684,7 @@ export class VaultService {
             };
           }
           const randomOffset = Math.floor(Math.random() * fallbackCount);
-          card = await dbAny.card.findFirst({
+          card = await db.card.findFirst({
             skip: randomOffset,
           });
         }
@@ -702,7 +719,7 @@ export class VaultService {
         });
 
         // Log provenance
-        await dbAny.cardTransferEvent.create({
+        await db.cardTransferEvent.create({
           data: {
             ownershipId: ownership.id,
             toUserId: vault.userId,
@@ -764,17 +781,25 @@ export class VaultService {
       let newStreak = 1;
 
       if (lastLogin) {
-        // Calculate days between last login and now
-        const daysDiff = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
+        // Calculate calendar day difference in UTC
+        const getUTCDaySerialNumber = (date: Date) =>
+          Math.floor(
+            Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) /
+              (1000 * 60 * 60 * 24)
+          );
+
+        const lastLoginDay = getUTCDaySerialNumber(lastLogin);
+        const currentDay = getUTCDaySerialNumber(now);
+        const daysDiff = currentDay - lastLoginDay;
 
         if (daysDiff === 1) {
-          // Consecutive day - increment streak
+          // Consecutive calendar day - increment streak
           newStreak = vault.loginStreak + 1;
         } else if (daysDiff > 1) {
-          // Missed a day - reset streak
+          // Missed one or more calendar days - reset streak
           newStreak = 1;
         } else {
-          // Same day - keep current streak
+          // Same calendar day - keep current streak
           newStreak = vault.loginStreak;
         }
       }
@@ -1055,7 +1080,11 @@ export class VaultService {
   /**
    * Helper to fetch active effects from purchased store items
    */
-  async getPurchasedItemsEffects(userId: string, db: any): Promise<Record<string, any>[]> {
+  async getPurchasedItemsEffects(userId: string, db: PrismaClient): Promise<Record<string, any>[]> {
+    const cacheKey = `user_perks:${userId}`;
+    const cached = userPerksCache.get(cacheKey);
+    if (cached) return cached;
+
     try {
       const transactions = await db.vaultTransaction.findMany({
         where: {
@@ -1065,6 +1094,8 @@ export class VaultService {
         select: {
           metadata: true,
         },
+        orderBy: { createdAt: "desc" },
+        take: 100,
       });
 
       const purchasedItemCounts: Record<string, number> = {};
@@ -1085,6 +1116,7 @@ export class VaultService {
 
       const uniqueIds = Object.keys(purchasedItemCounts);
       if (uniqueIds.length === 0) {
+        userPerksCache.set(cacheKey, []);
         return [];
       }
 
@@ -1110,10 +1142,22 @@ export class VaultService {
         }
       }
 
+      userPerksCache.set(cacheKey, effectsList);
       return effectsList;
     } catch (error) {
       console.error("[Vault Service] Error getting purchased items effects:", error);
       return [];
+    }
+  }
+
+  /**
+   * Clear user perks cache (useful for testing or after store purchases)
+   */
+  clearUserPerksCache(userId?: string): void {
+    if (userId) {
+      userPerksCache.delete(`user_perks:${userId}`);
+    } else {
+      userPerksCache.clear();
     }
   }
 
@@ -1269,6 +1313,11 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
 const vaultConfigCache = new Cache({
   defaultTtlMs: 60_000,
   maxSize: 10,
+});
+
+const userPerksCache = new Cache<Record<string, any>[]>({
+  defaultTtlMs: 300_000, // 5 min TTL
+  maxSize: 500,
 });
 
 const VAULT_CONFIG_CACHE_KEY = "vault_config";
