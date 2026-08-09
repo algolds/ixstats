@@ -177,13 +177,13 @@ describe("encode and parse sports bulletin", () => {
     expect(parsed).not.toBeNull();
     expect(parsed!.matchDay).toBe(18);
     expect(parsed!.league.name).toBe("Imperial League");
-    expect(parsed!.results[0]).toMatchObject({
+    expect(parsed!.results![0]!).toMatchObject({
       home: { name: "Imperial League Team 1" },
       away: { name: "Imperial League Team 3" },
       homeScore: 2,
       awayScore: 0,
     });
-    expect(parsed!.results[1]!.away.name).toBe("Venatores");
+    expect(parsed!.results![1]!.away.name).toBe("Venatores");
     expect(parsed!.movers).toEqual([{ name: "Venatores", oldRank: 6, newRank: 8 }]);
   });
 
@@ -204,14 +204,15 @@ Collinebourg Chevaliers 2 - 0 Famichez 16
     expect(parsed).not.toBeNull();
     expect(parsed!.league.name).toBe("Ligue Yonderre");
     expect(parsed!.matchDay).toBe(21);
-    expect(parsed!.results.length).toBe(4);
-    expect(parsed!.results[0]).toMatchObject({
+    expect(parsed!.results!.length).toBe(4);
+    expect(parsed!.results![0]!).toMatchObject({
       home: { name: "Sainte-Jule-du-Mont AS" },
       away: { name: "1. FC Donnebourg" },
       homeScore: 3,
       awayScore: 0,
     });
-    expect(parsed!.results[3]).toMatchObject({
+    expect(parsed!.results![3]!).toMatchObject({
+
       home: { name: "Collinebourg Chevaliers" },
       away: { name: "Famichez 16" },
       homeScore: 2,

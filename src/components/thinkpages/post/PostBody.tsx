@@ -11,6 +11,7 @@ import {
   PostInlineLinkPreview,
   getInlinePreviewLink,
 } from "./PostInlineLinkPreview";
+import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 
 export interface PostBodyProps {
   content: string;

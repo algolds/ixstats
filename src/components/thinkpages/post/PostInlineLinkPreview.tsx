@@ -1,11 +1,110 @@
 "use client";
 
-import {
-  WikiLinkPreview,
-  ForumLinkPreview,
-  MyLeagueInlinePreview,
-  MyClubInlinePreview,
-} from "~/components/wiki/WikiLinkPreview";
+import Link from "next/link";
+import { MessageCircle } from "lucide-react";
+import { api } from "~/trpc/react";
+import { ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
+
+export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
+  const { data: leagueData } = api.sports.getLeague.useQuery(
+    { id: leagueId },
+    { enabled: !!leagueId }
+  );
+
+  return (
+    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-amber-500/35 hover:bg-amber-500/[0.08]">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="text-base">🏆</span>
+        <div className="min-w-0">
+          <div className="text-xs font-bold text-amber-300 truncate">
+            {leagueData?.name ?? "League"}
+          </div>
+          {leagueData && (
+            <div className="text-[10px] text-muted-foreground capitalize">
+              {leagueData.sportPreset} · {leagueData.archetype}
+            </div>
+          )}
+        </div>
+      </div>
+      <Link
+        href={`/myleague/${leagueId}`}
+        className="text-amber-400/80 hover:text-amber-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+      >
+        View League →
+      </Link>
+    </div>
+  );
+}
+
+export function MyClubInlinePreview({ teamId }: { teamId: string }) {
+  const { data: teamData } = api.sports.getTeam.useQuery(
+    { id: teamId },
+    { enabled: !!teamId }
+  );
+
+  return (
+    <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-blue-500/35 hover:bg-blue-500/[0.08]">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="text-base" style={{ color: teamData?.color || "#3b82f6" }}>
+          🛡️
+        </span>
+        <div className="min-w-0">
+          <div className="text-xs font-bold text-blue-300 truncate">
+            {teamData?.name ?? "Club"}
+          </div>
+          {teamData && (
+            <div className="text-[10px] text-muted-foreground">
+              Stadium Cap: {teamData.stadiumCapacity}
+            </div>
+          )}
+        </div>
+      </div>
+      <Link
+        href={`/myclub/${teamId}`}
+        className="text-blue-400/80 hover:text-blue-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+      >
+        View Club →
+      </Link>
+    </div>
+  );
+}
+
+export function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
+  const { data: thread } = api.wiki.getForumThreadPreview.useQuery(
+    { threadId },
+    { enabled: threadId > 0 }
+  );
+
+  return (
+    <ForumLinkPreview threadId={threadId}>
+      <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-indigo-500/35 hover:bg-indigo-500/[0.08]">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <MessageCircle className="h-4 w-4 text-indigo-400 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-indigo-300 truncate">
+              {thread?.title ?? "Forum Thread"}
+            </div>
+            {thread && (
+              <div className="text-[10px] text-muted-foreground">
+                {thread.forumName ? `${thread.forumName} · ` : ""}
+                {thread.replyCount ?? 0} replies
+              </div>
+            )}
+          </div>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-400/80 hover:text-indigo-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+        >
+          View Thread →
+        </a>
+      </div>
+    </ForumLinkPreview>
+  );
+}
 
 export function getInlinePreviewLink(content: string | null | undefined): string | null {
   if (!content) return null;
@@ -49,23 +148,25 @@ export function PostInlineLinkPreview({ url }: { url: string }) {
 
   if (myLeagueMatch) {
     const leagueId = myLeagueMatch[1]!;
-    return <MyLeagueInlinePreview leagueId={leagueId} url={url} />;
+    return <MyLeagueInlinePreview leagueId={leagueId} />;
   }
 
   if (myClubMatch) {
     const teamId = myClubMatch[1]!;
-    return <MyClubInlinePreview teamId={teamId} url={url} />;
+    return <MyClubInlinePreview teamId={teamId} />;
   }
 
   if (wikiMatch) {
-    const articleTitle = decodeURIComponent(wikiMatch[2]!);
-    return <WikiLinkPreview articleTitle={articleTitle} wiki={wikiMatch[1]!} url={url} />;
+    const articleTitle = decodeURIComponent(wikiMatch[2]!).replace(/_/g, " ");
+    const wikiSource = wikiMatch[1]?.includes("iiwiki") ? "iiwiki" : "ixwiki";
+    return <InlineWikiArticlePreview title={articleTitle} wiki={wikiSource} />;
   }
 
   if (forumMatch) {
-    const threadId = forumMatch[1]!;
-    return <ForumLinkPreview threadId={threadId} url={url} />;
+    const threadId = parseInt(forumMatch[1]!, 10);
+    return <InlineForumThreadPreview threadId={threadId} url={url} />;
   }
 
   return null;
 }
+
