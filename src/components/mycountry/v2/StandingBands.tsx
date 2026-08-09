@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { Activity, Users, DollarSign } from "lucide-react";
+import { Activity, Users, DollarSign, Heart, Scale, Zap } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
 import { useCountryData, createVitalityRingsFromCountry } from "../primitives";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 
 function formatCompact(num: number): string {
   if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
@@ -18,42 +17,107 @@ function formatCompact(num: number): string {
   return (num ?? 0).toLocaleString();
 }
 
-/** National Standing rail card — population/GDP telemetry + 4 vitality rings. */
-export function StandingBands({ countryId }: { countryId: string }) {
+type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
+
+function getRatingLabel(score: number): RatingLabel {
+  if (score >= 85) return "Optimal";
+  if (score >= 70) return "Strong";
+  if (score >= 50) return "Moderate";
+  return "Strained";
+}
+
+export interface StandingBandsProps {
+  countryId: string;
+}
+
+/** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
+function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
   const { country } = useCountryData();
   const [showExactPop, setShowExactPop] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
-  const { data: _data } = api.mycountry.getCountryDashboard.useQuery(
+  api.mycountry.getCountryDashboard.useQuery(
     { countryId },
     { enabled: !!countryId, refetchInterval: 15_000 }
   );
+
+  // Live Backend Telemetry Queries
+  const intentStatus = api.intent.getStatus.useQuery(
+    { countryId },
+    { enabled: !!countryId, refetchInterval: 15_000 }
+  );
+
+  const countryDetails = api.countries.getByIdAtTime.useQuery(
+    { id: countryId },
+    { enabled: !!countryId, staleTime: 30_000 }
+  );
+
+  const govStructure = api.government.getByCountryId.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 30_000 }
+  );
+
+  // 1. Live Public Approval Rating
+  const approvalPct = useMemo(() => {
+    const raw =
+      countryDetails.data?.publicApproval ??
+      country?.currentPublicApproval ??
+      country?.approvalRating ??
+      68;
+    return Math.round(raw > 1 ? raw : raw * 100);
+  }, [
+    countryDetails.data?.publicApproval,
+    country?.currentPublicApproval,
+    country?.approvalRating,
+  ]);
+
+  // 2. Live Political Stability
+  const stabilityPct = useMemo(() => {
+    const raw =
+      govStructure.data?.politicalStability ??
+      country?.currentStability ??
+      country?.stability ??
+      0.78;
+    return Math.round(raw > 1 ? raw : raw * 100);
+  }, [govStructure.data?.politicalStability, country?.currentStability, country?.stability]);
+
+  // 3. Live Statecraft Civil Capacity Throughput
+  const capacityPct = useMemo(() => {
+    const usedSlots = intentStatus.data?.usedThisWeek ?? 0;
+    const slotCap = intentStatus.data?.cap ?? 3;
+    return Math.round(Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100)));
+  }, [intentStatus.data?.usedThisWeek, intentStatus.data?.cap]);
 
   const rings = useMemo(() => {
     if (!country) return [];
     return createVitalityRingsFromCountry(country);
   }, [country]);
 
-  const compositeScore =
-    rings.length > 0 ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length) : 0;
+  const compositeScore = useMemo(() => {
+    return rings.length > 0
+      ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length)
+      : 0;
+  }, [rings]);
 
-  const ratingLabel = (score: number) => {
-    if (score >= 85) return "Optimal";
-    if (score >= 70) return "Strong";
-    if (score >= 50) return "Moderate";
-    return "Strained";
-  };
+  const ratingLabelText = useMemo(() => getRatingLabel(compositeScore), [compositeScore]);
 
-  const population =
-    country?.currentPopulation ?? country?.population ?? (country as any)?.populationTotal ?? 0;
-  const totalGdp =
-    country?.currentTotalGdp ??
-    country?.gdp ??
-    (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0);
+  const population = useMemo(() => {
+    return (
+      country?.currentPopulation ?? country?.population ?? (country as any)?.populationTotal ?? 0
+    );
+  }, [country?.currentPopulation, country?.population, (country as any)?.populationTotal]);
 
-  const formattedPop = showExactPop
-    ? Math.round(population).toLocaleString()
-    : formatCompact(population);
+  const totalGdp = useMemo(() => {
+    return (
+      country?.currentTotalGdp ??
+      country?.gdp ??
+      (population && country?.currentGdpPerCapita ? population * country.currentGdpPerCapita : 0)
+    );
+  }, [country?.currentTotalGdp, country?.gdp, country?.currentGdpPerCapita, population]);
+
+  const formattedPop = useMemo(() => {
+    return showExactPop ? Math.round(population).toLocaleString() : formatCompact(population);
+  }, [showExactPop, population]);
 
   const flagUrl = (country as any)?.flagUrl || country?.flag;
 
@@ -113,39 +177,81 @@ export function StandingBands({ countryId }: { countryId: string }) {
               <Activity className="h-3.5 w-3.5 text-cyan-600 transition-transform group-hover:scale-110 dark:text-cyan-400" />
               <span>{compositeScore}/100</span>
               <span className="font-mono text-[10px] font-semibold text-cyan-700/80 uppercase dark:text-cyan-300/80">
-                ({ratingLabel(compositeScore)})
+                ({ratingLabelText})
               </span>
             </motion.button>
           </div>
 
-          {/* Telemetry Strip: Population & GDP */}
+          {/* Single Unified Telemetry Glass Container (Pop, GDP, Approval, Stability, Capacity) */}
           {country && (
-            <div className="border-border/60 bg-card/60 flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-2.5 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03]">
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setShowExactPop((prev) => !prev)}
-                className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
-                title="Click to toggle exact population count"
-              >
-                <Users className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-colors" />
-                <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
-                  Pop:
-                </span>
-                <strong className="text-foreground text-xs font-black group-hover:underline sm:text-sm">
-                  {formattedPop}
-                </strong>
-              </motion.button>
+            <div className="border-border/60 bg-card/60 flex flex-col gap-2 rounded-2xl border p-2.5 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.03]">
+              {/* Row 1: Population & GDP */}
+              <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-2 dark:border-white/10">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowExactPop((prev) => !prev)}
+                  className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
+                  title="Click to toggle exact population count"
+                >
+                  <Users className="group-hover:text-foreground h-3.5 w-3.5 text-blue-500 transition-colors dark:text-blue-400" />
+                  <span className="text-muted-foreground text-[9px] font-extrabold tracking-wider uppercase">
+                    Pop:
+                  </span>
+                  <strong className="text-foreground text-xs font-black group-hover:underline sm:text-sm">
+                    {formattedPop}
+                  </strong>
+                </motion.button>
 
-              <div className="flex items-center gap-1.5 text-xs">
-                <DollarSign className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-                <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
-                  GDP:
-                </span>
-                <strong className="text-xs font-black text-emerald-600 sm:text-sm dark:text-emerald-400">
-                  ${formatCompact(totalGdp)}
-                </strong>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                  <span className="text-muted-foreground text-[9px] font-extrabold tracking-wider uppercase">
+                    GDP:
+                  </span>
+                  <strong className="text-xs font-black text-emerald-600 sm:text-sm dark:text-emerald-400">
+                    ${formatCompact(totalGdp)}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Row 2: Executive Governance Telemetry (Approval, Stability, Capacity) */}
+              <div className="grid grid-cols-3 gap-1 pt-0.5">
+                <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-xs">
+                  <Heart className="h-3.5 w-3.5 shrink-0 text-red-500 dark:text-red-400" />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-muted-foreground/70 text-[8px] leading-none font-extrabold tracking-wider uppercase">
+                      Approval
+                    </span>
+                    <span className="text-foreground truncate text-xs leading-tight font-black">
+                      {approvalPct}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs dark:border-white/10">
+                  <Scale className="h-3.5 w-3.5 shrink-0 text-violet-500 dark:text-violet-400" />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-muted-foreground/70 text-[8px] leading-none font-extrabold tracking-wider uppercase">
+                      Stability
+                    </span>
+                    <span className="text-foreground truncate text-xs leading-tight font-black">
+                      {stabilityPct}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-border/40 flex min-w-0 items-center gap-1.5 border-l px-1 text-xs dark:border-white/10">
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-muted-foreground/70 text-[8px] leading-none font-extrabold tracking-wider uppercase">
+                      Capacity
+                    </span>
+                    <span className="text-foreground truncate text-xs leading-tight font-black">
+                      {capacityPct}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -192,3 +298,5 @@ export function StandingBands({ countryId }: { countryId: string }) {
     </>
   );
 }
+
+export const StandingBands = React.memo(StandingBandsComponent);

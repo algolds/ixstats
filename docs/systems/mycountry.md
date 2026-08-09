@@ -90,11 +90,18 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 **Key Components & Surface Architecture:**
 
 - `src/app/mycountry/executive/page.tsx` – Executive entry page
-- `src/components/mycountry/v2/V2MyAgenda.tsx` – Primary agenda & StandBy Hero (renders CivCap material capsule bar, 7-day horizon strip, and Priority Issues sorted at the very top of the feed)
+- `src/components/mycountry/v2/V2MyAgenda.tsx` – Primary agenda & StandBy Hero (renders 7-day horizon strip, Directives Capacity Pill, and Priority Issues sorted at the very top of the feed)
+- `src/components/mycountry/v2/StandingBands.tsx` – Right-rail executive telemetry strip (Approval, Stability, Capacity) with Vitality rings and composite score breakdown modal
+- `src/components/mycountry/v2/V2Home.tsx` – Streamlined V2 Executive Home layout housing `<StandingBands />` and `<TerritoryMapWidget />` (interactive MapLibre GL map with hover-activated glass badges) in the right sidebar
 - `src/components/mycountry/primitives/IntentComposer.tsx` – Directive drafting widget (64 presets across 8 domain categories + telemetry-reactive "Surprise Me" targeting live deficits)
-- `src/components/mycountry/v2/V2IssueDetail.tsx` – Unified 4-branch resolution lifecycle (`1a` Delegate, `1b` Resolve Brief, `1c` Set Cabinet Meeting, `1d` Make Directive)
+- `src/components/mycountry/v2/V2IssueDetail.tsx` – Unified 4-branch resolution lifecycle (`1a` Delegate, `1b` Resolve Brief, `1c` Set Cabinet Meeting (+7 days), `1d` Make Directive)
 - `src/components/mycountry/v2/V2OpportunityHero.tsx` – Executive Command Spotlight hero prioritizing critical crisis issues
-- `src/components/mycountry/v2/V2Home.tsx` – Streamlined V2 Executive Home (right rail renders primary action trigger + `StandingBands` telemetry cards without duplicate directive lists)
+
+**Performance & Optimization Architecture:**
+
+- All V2 core surfaces (`StandingBands`, `V2MyAgenda`, `V2OpportunityHero`, `DomainActionTiles`, `TerritoryMapWidget`) are wrapped in `React.memo` to prevent unnecessary re-render cascades.
+- Internal telemetry calculations, population/GDP formatting, rating labels, and action tile arrays are memoized via `useMemo`.
+- Pure helpers (`getRatingLabel`, `getSeverityRank`, `formatCompact`) are extracted outside component scopes with strict return types and explicit prop interface typing.
 
 **Core Features:**
 

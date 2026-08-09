@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Calendar,
@@ -59,7 +59,7 @@ function seasonFor(month: number): { name: string; emoji: string } {
   return { name: "Autumn", emoji: "🍂" };
 }
 
-function Complication({
+function _Complication({
   icon,
   label,
   value,
@@ -107,17 +107,27 @@ function Complication({
   return content;
 }
 
-export function V2MyAgenda({
-  countryId,
-  onDeclare,
-  onOpenIntent,
-  onOpenDrill,
-}: {
+function getSeverityRank(s: string): number {
+  const sev = String(s ?? "").toLowerCase();
+  if (sev === "critical") return 4;
+  if (sev === "high") return 3;
+  if (sev === "medium") return 2;
+  return 1;
+}
+
+export interface V2MyAgendaProps {
   countryId: string;
-  onDeclare?: (prefilled?: string) => void;
+  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onIssueDirective?: (goal?: string) => void;
   onOpenIntent?: (intentId: string) => void;
-  onOpenDrill?: (d: V2Drill) => void;
-}) {
+}
+
+function V2MyAgendaComponent({
+  countryId,
+  onOpenDrill,
+  onIssueDirective,
+  onOpenIntent,
+}: V2MyAgendaProps): React.JSX.Element {
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(0);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
@@ -406,12 +416,8 @@ export function V2MyAgenda({
     // Inject active national issues awaiting executive action (Priority Issues first)
     const rawActiveIssues = issuesData.data?.issues ?? [];
     const activeIssues = [...rawActiveIssues].sort((a: any, b: any) => {
-      const aSev = String(a.severity ?? "").toLowerCase();
-      const bSev = String(b.severity ?? "").toLowerCase();
-      const sevRank = (s: string) =>
-        s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
-      const aScore = sevRank(aSev) * 100 + (a.urgency ?? 0);
-      const bScore = sevRank(bSev) * 100 + (b.urgency ?? 0);
+      const aScore = getSeverityRank(a.severity) * 100 + (a.urgency ?? 0);
+      const bScore = getSeverityRank(b.severity) * 100 + (b.urgency ?? 0);
       return bScore - aScore;
     });
 
@@ -468,7 +474,7 @@ export function V2MyAgenda({
   const slotCap = status.data?.cap ?? 3;
   const soonestEvent = statecraftEvents[0];
   const _nextEventValue = soonestEvent ? formatRelativeIxDays(soonestEvent.ixTime, now) : "—";
-  const civCapPct = Math.round(
+  const _civCapPct = Math.round(
     Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100))
   );
 
@@ -484,81 +490,38 @@ export function V2MyAgenda({
           <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-cyan-500/5 blur-2xl dark:bg-cyan-500/10" />
 
           <div className="border-border/60 relative z-10 flex flex-wrap items-center justify-between gap-3 border-b pb-3 dark:border-white/10">
-            <div className="flex items-center gap-2.5">
-              <Calendar className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-              <div className="flex items-center gap-2">
-                <span className="text-foreground text-xs font-black tracking-tight">
-                  Issues & Events — Executive Agenda
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
-                  <span>{currentSeason.emoji}</span>
-                  <span>{currentSeason.name}</span>
-                </span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 shadow-2xs backdrop-blur-md dark:border-cyan-400/20">
+                <Calendar className="h-4.5 w-4.5 text-cyan-600 dark:text-cyan-400" />
               </div>
-            </div>
-
-            {/* Directives Capacity Pill & Apple-Style CivCap Telemetry Bar */}
-            <div className="flex flex-col items-end gap-1.5">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 font-mono text-[11px] font-semibold shadow-xs backdrop-blur-md dark:border-amber-400/25 dark:bg-amber-400/10"
-              >
-                <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="text-muted-foreground">Directives:</span>
-                <span className="font-bold text-amber-800 dark:text-amber-300">
-                  {usedSlots} / {slotCap} Used
-                </span>
-              </motion.div>
-
-              {/* Apple-style Translucent CivCap Capsule Bar */}
-              <div
-                className="flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-2.5 py-1 backdrop-blur-md dark:border-white/10 dark:bg-white/5"
-                title="Civil Capacity (CivCap) administrative throughput remaining"
-              >
-                <span className="text-muted-foreground text-[9px] font-extrabold tracking-widest uppercase">
-                  CivCap
-                </span>
-                <div className="relative h-1.5 w-24 overflow-hidden rounded-full bg-black/10 shadow-inner dark:bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-amber-500 shadow-xs transition-all duration-500 ease-out dark:bg-amber-400"
-                    style={{ width: `${civCapPct}%` }}
-                  />
+              <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-foreground text-base font-black tracking-tight sm:text-lg">
+                    Issues & Events
+                  </h3>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
+                    <span>{currentSeason.emoji}</span>
+                    <span>{currentSeason.name}</span>
+                  </span>
                 </div>
-                <span className="text-foreground font-mono text-[10px] font-bold tabular-nums">
-                  {civCapPct}%
+                <span className="text-muted-foreground text-[11px] font-medium tracking-wide">
+                  Executive Agenda & Horizon Timeline
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Complications Row */}
-          <div className="relative z-10 mt-3 grid grid-cols-3 gap-2.5">
-            <Complication
-              icon={
-                governanceConfig?.icon ?? (
-                  <Gavel className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                )
-              }
-              label={governanceConfig?.label ?? "Term progress"}
-              value={governanceConfig?.value ?? resolvedTermProgress}
-              tooltip={governanceConfig?.tooltip}
-              onClick={() => onOpenDrill?.({ kind: "politics" })}
-            />
-            <Complication
-              icon={<AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />}
-              label="Active issues"
-              value={`${activeIssuesCount} Pending`}
-              tooltip="National issues and policy crises awaiting executive decision or legislative action."
-              onClick={() => onOpenDrill?.({ kind: "politics" })}
-            />
-            <Complication
-              icon={<Heart className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />}
-              label="Approval"
-              value={resolvedApproval}
-              tooltip="Public Approval Rating of the active administration."
-              onClick={() => onOpenDrill?.({ kind: "politics" })}
-            />
+            {/* Directives Capacity Pill */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 font-mono text-[11px] font-semibold shadow-xs backdrop-blur-md dark:border-amber-400/25 dark:bg-amber-400/10"
+            >
+              <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="text-muted-foreground">Directives:</span>
+              <span className="font-bold text-amber-800 dark:text-amber-300">
+                {usedSlots} / {slotCap} Used
+              </span>
+            </motion.div>
           </div>
         </div>
 
@@ -828,3 +791,5 @@ export function V2MyAgenda({
     </>
   );
 }
+
+export const V2MyAgenda = React.memo(V2MyAgendaComponent);

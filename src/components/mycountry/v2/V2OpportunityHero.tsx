@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import {
   Shield,
@@ -38,19 +38,21 @@ interface Opportunity {
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
 }
 
-export function V2OpportunityHero({
-  countryId,
-  onDeclare,
-  onNavigate,
-  onOpenDrill,
-  onOpenIntent,
-}: {
+export interface V2OpportunityHeroProps {
   countryId: string;
   onDeclare?: (prefilled?: string) => void;
   onNavigate?: (section: MyCountrySection) => void;
   onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
   onOpenIntent?: (intentId: string) => void;
-}) {
+}
+
+function V2OpportunityHeroComponent({
+  countryId,
+  onDeclare,
+  onNavigate,
+  onOpenDrill,
+  onOpenIntent,
+}: V2OpportunityHeroProps): React.JSX.Element {
   const { country } = useCountryData();
 
   // Queries for opportunity priority evaluation
@@ -393,3 +395,5 @@ export function V2OpportunityHero({
     </FacetCard>
   );
 }
+
+export const V2OpportunityHero = React.memo(V2OpportunityHeroComponent);

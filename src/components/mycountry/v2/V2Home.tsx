@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Command,
   Globe2,
@@ -22,6 +23,8 @@ import {
   Clock,
   Maximize2,
   Minimize2,
+  MapPin,
+  Edit3,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
@@ -44,6 +47,17 @@ import {
 } from "./ActionCardGraphics";
 
 import { useCountryData, QuickVitalityRings } from "../primitives";
+
+const CountryMapEmbed = dynamic(
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="bg-muted/40 h-56 animate-pulse rounded-xl" />,
+  }
+);
 
 const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> = {
   diplomatic: {
@@ -103,62 +117,65 @@ const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> 
   },
 };
 
-function DomainActionTiles({
+const DomainActionTiles = React.memo(function DomainActionTiles({
   onOpenDrill,
 }: {
   onOpenDrill: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
 }) {
   const { country } = useCountryData();
-  const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
-  const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
 
-  const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
-  const dipStance = country?.diplomaticStance ?? "Active Alliance";
+  const tiles = useMemo(() => {
+    const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
+    const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
 
-  const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
-  const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
+    const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
+    const dipStance = country?.diplomaticStance ?? "Active Alliance";
 
-  const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
-  const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
+    const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
+    const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
 
-  const tiles = [
-    {
-      title: "Diplomacy",
-      peek: `${embassies} Embassies • ${dipStance}`,
-      icon: Handshake,
-      graphic: DiplomacyGraphic,
-      accent:
-        "border-teal-500/30 dark:border-teal-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-teal-500/10 dark:to-emerald-500/5 text-teal-900 dark:text-teal-300 hover:border-teal-500/50 hover:bg-card/90 shadow-xs",
-      onClick: () => onOpenDrill({ kind: "relations" }),
-    },
-    {
-      title: "Defense",
-      peek: `${readiness}% Readiness • ${posture}`,
-      icon: Shield,
-      graphic: DefenseGraphic,
-      accent:
-        "border-red-500/30 dark:border-red-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-red-500/10 dark:to-rose-500/5 text-red-900 dark:text-red-300 hover:border-red-500/50 hover:bg-card/90 shadow-xs",
-      onClick: () => onOpenDrill({ kind: "defense" }),
-    },
-    {
-      title: "Politics",
-      peek: `${stabPct}% Stability • Active Cabinet`,
-      icon: Scale,
-      graphic: PoliticsGraphic,
-      accent:
-        "border-violet-500/30 dark:border-violet-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-violet-500/10 dark:to-purple-500/5 text-violet-900 dark:text-violet-300 hover:border-violet-500/50 hover:bg-card/90 shadow-xs",
-      onClick: () => onOpenDrill({ kind: "politics" }),
-    },
-    {
-      title: "Economy & Budget",
-      peek: `+${growthPct}% Growth • Fiscal Stable`,
-      icon: TrendingUp,
-      graphic: EconomyGraphic,
-      accent:
-        "border-emerald-500/30 dark:border-emerald-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-900 dark:text-emerald-300 hover:border-emerald-500/50 hover:bg-card/90 shadow-xs",
-      onClick: () => onOpenDrill({ kind: "economy" }),
-    },
-  ];
+    const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
+    const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
+
+    return [
+      {
+        title: "Diplomacy",
+        peek: `${embassies} Embassies • ${dipStance}`,
+        icon: Handshake,
+        graphic: DiplomacyGraphic,
+        accent:
+          "border-teal-500/30 dark:border-teal-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-teal-500/10 dark:to-emerald-500/5 text-teal-900 dark:text-teal-300 hover:border-teal-500/50 hover:bg-card/90 shadow-xs",
+        onClick: () => onOpenDrill({ kind: "relations" }),
+      },
+      {
+        title: "Defense",
+        peek: `${readiness}% Readiness • ${posture}`,
+        icon: Shield,
+        graphic: DefenseGraphic,
+        accent:
+          "border-red-500/30 dark:border-red-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-red-500/10 dark:to-rose-500/5 text-red-900 dark:text-red-300 hover:border-red-500/50 hover:bg-card/90 shadow-xs",
+        onClick: () => onOpenDrill({ kind: "defense" }),
+      },
+      {
+        title: "Politics",
+        peek: `${stabPct}% Stability • Active Cabinet`,
+        icon: Scale,
+        graphic: PoliticsGraphic,
+        accent:
+          "border-violet-500/30 dark:border-violet-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-violet-500/10 dark:to-purple-500/5 text-violet-900 dark:text-violet-300 hover:border-violet-500/50 hover:bg-card/90 shadow-xs",
+        onClick: () => onOpenDrill({ kind: "politics" }),
+      },
+      {
+        title: "Economy & Budget",
+        peek: `+${growthPct}% Growth • Fiscal Stable`,
+        icon: TrendingUp,
+        graphic: EconomyGraphic,
+        accent:
+          "border-emerald-500/30 dark:border-emerald-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-900 dark:text-emerald-300 hover:border-emerald-500/50 hover:bg-card/90 shadow-xs",
+        onClick: () => onOpenDrill({ kind: "economy" }),
+      },
+    ];
+  }, [country, onOpenDrill]);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -198,7 +215,7 @@ function DomainActionTiles({
       ))}
     </div>
   );
-}
+});
 
 function relativeTime(ts: number): string {
   const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -727,8 +744,62 @@ export function V2Home({
           )}
 
           <StandingBands countryId={countryId} />
+          <TerritoryMapWidget countryId={countryId} />
         </aside>
       </div>
     </div>
   );
 }
+
+const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
+  countryId,
+}: {
+  countryId: string;
+}) {
+  const router = useRouter();
+
+  return (
+    <FacetCard
+      depth={1}
+      interactive="hover"
+      className="group/map border-border/80 relative overflow-hidden rounded-2xl p-0 shadow-lg backdrop-blur-xl dark:border-white/10"
+    >
+      {/* Interactive Map Canvas (Full Bleed Edge-to-Edge) */}
+      <div className="relative h-60 w-full overflow-hidden">
+        <CountryMapEmbed
+          countryId={countryId}
+          height="h-60"
+          showNeighbors={true}
+          showCities={true}
+          showSubdivisions={false}
+          interactive={true}
+        />
+
+        {/* Floating Glass Badges (Revealed on Hover/Activation) */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-2.5 opacity-0 transition-opacity duration-200 group-focus-within/map:opacity-100 group-hover/map:opacity-100">
+          {/* Top-Left: Open Maps */}
+          <Link
+            href="/maps"
+            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
+            title="Open IxWorld Maps"
+          >
+            <MapPin className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
+            <span>Open Maps</span>
+            <ArrowUpRight className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+
+          {/* Top-Right: Map Editor */}
+          <button
+            type="button"
+            onClick={() => router.push("/mycountry/editor")}
+            className="bg-background/90 text-foreground hover:bg-background group pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-black/15 px-3 py-1 text-[11px] font-bold shadow-md backdrop-blur-xl transition-all hover:scale-105 active:scale-95 dark:border-white/20 dark:bg-zinc-900/90"
+            title="Open Map Editor"
+          >
+            <Edit3 className="h-3.5 w-3.5 text-emerald-600 transition-transform group-hover:scale-110 dark:text-emerald-400" />
+            <span>Map Editor</span>
+          </button>
+        </div>
+      </div>
+    </FacetCard>
+  );
+});
