@@ -45,7 +45,14 @@ function TeamName({
  * markdown wall-of-text with an organized score table + table movers + deep links.
  */
 export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
-  const [activeTab, setActiveTab] = useState<"results" | "movers" | "summary">("results");
+  const hasResults = !!(data.results && data.results.length > 0);
+  const hasMovers = !!(data.movers && data.movers.length > 0);
+  const hasSummary = !!data.llmSummary;
+
+  const defaultTab = hasResults ? "results" : hasMovers ? "movers" : "summary";
+  const [activeTab, setActiveTab] = useState<"results" | "movers" | "summary">(defaultTab);
+
+  const currentTab = (activeTab === "results" && !hasResults) || (activeTab === "movers" && !hasMovers) || (activeTab === "summary" && !hasSummary) ? defaultTab : activeTab;
   // Champion Crowned Layout
   if (data.isChampionBulletin) {
     return (
@@ -173,17 +180,11 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
             <span className="mb-1 block text-[11px] font-semibold tracking-wide text-cyan-400 uppercase">
               Round Summary
             </span>
-            <p className="text-[14px] leading-relaxed text-slate-300 italic">{data.llmSummary}</p>
           </div>
         )}
       </Card>
     );
   }
-
-  // Default Matchday Results Layout
-  const hasResults = !!(data.results && data.results.length > 0);
-  const hasMovers = !!(data.movers && data.movers.length > 0);
-  const hasSummary = !!data.llmSummary;
 
   return (
     <Card className="glass-hierarchy-child mt-2 overflow-hidden border-white/10 bg-slate-950/20 p-0 shadow-md backdrop-blur-md transition-all duration-300 hover:border-white/15">
@@ -217,7 +218,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               }}
               className={cn(
                 "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
-                activeTab === "results"
+                currentTab === "results"
                   ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
                   : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
@@ -233,7 +234,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               }}
               className={cn(
                 "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
-                activeTab === "movers"
+                currentTab === "movers"
                   ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
                   : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
@@ -249,7 +250,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
               }}
               className={cn(
                 "cursor-pointer rounded-md px-3 py-1 font-medium transition-all duration-200",
-                activeTab === "summary"
+                currentTab === "summary"
                   ? "border border-amber-500/25 bg-amber-500/15 text-amber-300"
                   : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
               )}
@@ -261,7 +262,7 @@ export function SportsBulletinCard({ data }: { data: SportsBulletinData }) {
       )}
 
       {/* Results Tab Content */}
-      {activeTab === "results" && hasResults && (
+      {currentTab === "results" && hasResults && (
         <div className="grid grid-cols-1 gap-2 bg-black/10 p-3 md:grid-cols-2">
           {data.results!.map((r, i) => {
             const homeWon = r.homeScore > r.awayScore;

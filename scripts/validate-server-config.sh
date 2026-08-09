@@ -100,7 +100,7 @@ validate_startup_script() {
 }
 
 # Navigate to project directory
-PROJECT_DIR="/ixwiki/public/projects/ixstats"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 echo "🏠 Project Directory: $PROJECT_DIR"

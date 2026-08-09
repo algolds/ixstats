@@ -27,9 +27,17 @@ function truncPosition(p: Position, factor: number): Position {
 
 function truncPositions(coords: Position[], factor: number): Position[] {
   if (!Array.isArray(coords)) return [];
-  return coords
-    .filter((p) => Array.isArray(p) && typeof p[0] === "number" && typeof p[1] === "number")
-    .map((p) => truncPosition(p, factor));
+  const len = coords.length;
+  const result: Position[] = new Array(len);
+  let count = 0;
+  for (let i = 0; i < len; i++) {
+    const p = coords[i];
+    if (p && typeof p[0] === "number" && typeof p[1] === "number") {
+      result[count++] = truncPosition(p, factor);
+    }
+  }
+  if (count < len) result.length = count;
+  return result;
 }
 
 export function truncateGeometry(geom: Geometry, decimals: number): Geometry {
@@ -64,7 +72,13 @@ export function truncateGeometry(geom: Geometry, decimals: number): Geometry {
 // ── Consecutive duplicate removal ──────────────────
 
 function posEqual(a: Position, b: Position): boolean {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
+  if (a.length !== b.length) return false;
+  if (a[0] !== b[0] || a[1] !== b[1]) return false;
+  if (a.length === 2) return true;
+  for (let i = 2; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }
 
 function dedupLine(coords: Position[]): Position[] {

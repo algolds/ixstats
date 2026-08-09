@@ -4,7 +4,7 @@ export { VitalityRings, type VitalityRingData, type RingConfig } from "./Vitalit
 export { StateSeal } from "./StateSeal";
 export { IntentComposer } from "./IntentComposer";
 export { AuthenticationGuard } from "./AuthenticationGuard";
-export { CountryDataProvider, useCountryData } from "./CountryDataProvider";
+export { CountryDataProvider, CountryDataContext, useCountryData } from "./CountryDataProvider";
 export { useMyCountryUnifiedData } from "./useMyCountryUnifiedData";
 
 // Tab animation primitives

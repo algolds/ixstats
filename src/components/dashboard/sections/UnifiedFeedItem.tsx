@@ -1,8 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -32,6 +30,7 @@ import { formatTimeAgo } from "~/lib/time-utils";
 import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
 import { cn } from "~/lib/utils";
 import { WikiAuthorPopover } from "./WikiAuthorPopover";
+import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 
 export const SOURCE_CONFIG: Record<
   string,
@@ -115,7 +114,7 @@ export function getActivityLabel(activity: any): {
   return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
 }
 
-export function UnifiedFeedItem({ activity }: { activity: any }) {
+export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { activity: ProcessedFeedItem | any }) {
   const source = activity.source ?? "activity";
   const isWiki = source === "wiki";
   const isGrouped = !!activity._grouped;
@@ -311,7 +310,7 @@ export function UnifiedFeedItem({ activity }: { activity: any }) {
       </div>
     </div>
   );
-}
+});
 
 export function FeedExternalLink({ url }: { url: string; title?: string }) {
   const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);

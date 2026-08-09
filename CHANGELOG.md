@@ -10,6 +10,24 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Added & Refactored (Dashboard Hero, Trending Topics & Blurb Widget — /apple-design)
+
+- **Dashboard Hero Flag Background & Profile Link**:
+  - **Country Flag Background**: Added country flag image background to [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) with dark/light glass scrim overlays (`bg-cover bg-center`).
+  - **Country Profile Link**: Fixed country title link in hero card to cleanly navigate to `/countries/[slug]`.
+  - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
+
+- **Trending Topics & Intelligent Sports News Bulletin Parser**:
+  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
+  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
+  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
+  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
+  - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts)).
+
+- **Standalone 'Blurb of the Day' Apple Glass Widget**:
+  - **Widget Separation**: Unembedded `<BlurbSection />` from `TrendingSectionWidget.tsx` and placed it as a standalone Apple Glass Widget directly below `Trending Topics` in [UnifiedDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/UnifiedDashboardSection.tsx).
+  - **Apple Editorial Quote Vignette**: Redesigned daily prompt box in [BlurbSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/BlurbSection.tsx) into an Editorial Quote Vignette with a 3px glowing purple left accent border (`border-l-3 border-purple-500`), subtle `Quote` watermark, `MessageSquareQuote` header icon, and Apple CTA button (`Write Response →`).
+
 ### Added & Refactored (IxCards & MyVault Systems)
 
 - **IxCards & MyVault System Overhaul (Plans 121–123)** (Bumped `IXVAULT_VERSION` from `1` → `2`):

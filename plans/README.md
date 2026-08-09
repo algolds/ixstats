@@ -96,7 +96,13 @@ the live working set stays here.
 | [122-atomic-credit-ledger-concurrency-locks.md](122-atomic-credit-ledger-concurrency-locks.md) | Atomic conditional updates (`credits >= amount`) preventing negative balance race conditions | DONE |
 | [123-daily-streak-utc-boundary-store-perks.md](123-daily-streak-utc-boundary-store-perks.md) | UTC calendar day streak calculations and O(1) store perk cache lookup | DONE |
 
+### Dashboard & Core Hub — Performance, React & TypeScript Architecture Overhaul
+| Plan | Scope | Status |
+|------|-------|--------|
+| [124-dashboard-performance-and-type-system-overhaul.md](124-dashboard-performance-and-type-system-overhaul.md) | `@ts-nocheck` elimination, 1,034-line god component decomposition, query staleTime tuning & feed item memoization | DONE |
+
 ---
+
 
 ## Future Ideas (proposed, not started)
 

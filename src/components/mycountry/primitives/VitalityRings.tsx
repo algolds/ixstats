@@ -6,6 +6,8 @@ import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { HealthRing } from "~/components/ui/health-ring";
 
+import { getAppleVitalityColor } from "./tabs/VitalityRingsDisplay";
+
 export interface VitalityRingData {
   economicVitality: number;
   populationWellbeing: number;
@@ -77,11 +79,15 @@ export function VitalityRings({
 
   // Build unified ring list: custom rings take priority, otherwise derive from data + defaults
   const resolvedRings: RingConfig[] = rings
-    ? rings
-    : DEFAULT_RING_CONFIG.map((cfg) => ({
-        ...cfg,
-        value: data?.[cfg.key] || 0,
-      }));
+    ? rings.map((r) => ({ ...r, color: r.color || getAppleVitalityColor(r.value || 0) }))
+    : DEFAULT_RING_CONFIG.map((cfg) => {
+        const val = data?.[cfg.key] || 0;
+        return {
+          ...cfg,
+          value: val,
+          color: getAppleVitalityColor(val),
+        };
+      });
 
   const renderRing = (ring: RingConfig, index: number) => {
     const value = ring.value || 0;

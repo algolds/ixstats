@@ -26,7 +26,7 @@ interface CountryDataContextValue {
   isPublicReadOnly?: boolean;
 }
 
-const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
+export const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
 
 interface CountryDataProviderProps {
   children: ReactNode;

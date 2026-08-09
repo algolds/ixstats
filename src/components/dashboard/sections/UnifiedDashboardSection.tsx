@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -31,6 +29,7 @@ import { useNotify } from "~/hooks/useNotify";
 
 import { UnifiedFeedContent, FollowingFeedContent } from "./UnifiedFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
+import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 
 // ─── Config ──────────────────────────────────────────────────────
@@ -60,7 +59,7 @@ interface UnifiedDashboardSectionProps {
 // ─── Main Component ──────────────────────────────────────────────
 
 export function UnifiedDashboardSection({
-  globalStats: _globalStats,
+  globalStats: propGlobalStats,
 }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const notify = useNotify();
@@ -77,20 +76,26 @@ export function UnifiedDashboardSection({
   const [repostingPost, setRepostingPost] = useState<any>(null);
 
   // ── World Economics ──
-  const { data: globalStats } = api.countries.getGlobalStats.useQuery({});
+  const { data: queriedGlobalStats } = api.countries.getGlobalStats.useQuery(
+    undefined,
+    { enabled: !propGlobalStats, staleTime: 300_000 }
+  );
+  const globalStats = propGlobalStats ?? queriedGlobalStats;
 
   // ── Profile / User data ──
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     enabled: !!user?.id,
+    staleTime: 300_000,
   });
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", retry: false }
+    { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", retry: false, staleTime: 60_000 }
   );
 
   // Fetch accounts user owns for posting
   const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
     enabled: !!user?.id,
+    staleTime: 120_000,
   });
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
@@ -284,11 +289,14 @@ export function UnifiedDashboardSection({
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 
+            {/* Blurb of the Day Widget */}
+            <BlurbSection />
+
             {/* Countries to Explore */}
             <CountriesToExploreCard currentUserCountryId={userProfile?.countryId ?? ""} />
 
             {/* Economic Tier Distribution */}
-            {globalStats?.economicTierDistribution && (
+            {(globalStats as any)?.economicTierDistribution && (
               <CutoutCard
                 className={cn(cutoutCardSurfaceClassName, "overflow-hidden rounded-xl")}
                 trackPointerHover={false}
@@ -307,7 +315,7 @@ export function UnifiedDashboardSection({
                 </div>
                 <CutoutCardContent className="px-4 pt-0 pb-4">
                   <div className="flex flex-wrap items-center gap-1">
-                    {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
+                    {Object.entries((globalStats as any).economicTierDistribution).map(([tier, count]) => (
                       <div
                         key={tier}
                         className="bg-muted/50 flex items-center gap-1 rounded px-2 py-0.5"

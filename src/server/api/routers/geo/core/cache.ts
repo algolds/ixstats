@@ -87,13 +87,9 @@ export function getCached(key: string): FeatureCollection | null {
 
 export function setCache(key: string, data: FeatureCollection): void {
   layerCache.set(key, { data, timestamp: Date.now() });
-  // Prevent unbounded growth
-  if (layerCache.size > 20) {
-    const now = Date.now();
-    for (const [k, v] of layerCache) {
-      const baseLayerType = k.split(":")[0] || k;
-      const ttl = CACHE_TTLS[baseLayerType] ?? DEFAULT_CACHE_TTL;
-      if (now - v.timestamp > ttl) layerCache.delete(k);
-    }
+  // Ponytail: Simple LRU size cap (max 32 entries). If full, evict oldest entry.
+  if (layerCache.size > 32) {
+    const firstKey = layerCache.keys().next().value;
+    if (firstKey) layerCache.delete(firstKey);
   }
 }

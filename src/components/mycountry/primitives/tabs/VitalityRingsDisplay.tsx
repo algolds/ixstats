@@ -276,6 +276,13 @@ export function QuickVitalityRings({
   );
 }
 
+export function getAppleVitalityColor(score: number): string {
+  if (score >= 80) return "#10B981"; // Apple Emerald Green (Optimal)
+  if (score >= 65) return "#06B6D4"; // Apple Cyan Blue (Strong)
+  if (score >= 45) return "#F59E0B"; // Apple Amber Gold (Moderate)
+  return "#EF4444"; // Apple Rose Red (Strained)
+}
+
 /**
  * Helper function to create vitality rings from country data
  */
@@ -285,36 +292,41 @@ export function createVitalityRingsFromCountry(country: {
   diplomaticStanding?: number | null;
   governmentalEfficiency?: number | null;
 }): VitalityRing[] {
+  const econ = Number(country.economicVitality) || 0;
+  const pop = Number(country.populationWellbeing) || 0;
+  const diplo = Number(country.diplomaticStanding) || 0;
+  const gov = Number(country.governmentalEfficiency) || 0;
+
   return [
     {
       id: "economic",
       label: "Economic",
-      value: Number(country.economicVitality) || 0,
-      color: "#F59E0B",
+      value: econ,
+      color: getAppleVitalityColor(econ),
       icon: DollarSign,
       description: "Economic health",
     },
     {
       id: "population",
       label: "Wellbeing",
-      value: Number(country.populationWellbeing) || 0,
-      color: "#06B6D4",
+      value: pop,
+      color: getAppleVitalityColor(pop),
       icon: Users,
       description: "Population wellbeing",
     },
     {
       id: "diplomatic",
       label: "Diplomatic",
-      value: Number(country.diplomaticStanding) || 0,
-      color: "#8B5CF6",
+      value: diplo,
+      color: getAppleVitalityColor(diplo),
       icon: Globe,
       description: "Diplomatic standing",
     },
     {
       id: "government",
       label: "Efficiency",
-      value: Number(country.governmentalEfficiency) || 0,
-      color: "#EF4444",
+      value: gov,
+      color: getAppleVitalityColor(gov),
       icon: Building,
       description: "Government efficiency",
     },

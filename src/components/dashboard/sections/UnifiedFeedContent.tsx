@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useMemo } from "react";
@@ -164,11 +162,11 @@ export function UnifiedFeedContent({
 }) {
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
     { limit: 50 },
-    { refetchInterval: 30_000, staleTime: 15_000 }
+    { refetchInterval: 60_000, staleTime: 30_000 }
   );
   const { data: wikiRecentChanges } = api.wiki.getRecentChanges.useQuery(
     { limit: 20 },
-    { refetchInterval: 30_000, staleTime: 15_000 }
+    { enabled: activeTab === "all" || activeTab === "community", refetchInterval: 60_000, staleTime: 30_000 }
   );
 
   const wikiAsFeed = useMemo(() => {
