@@ -13,7 +13,13 @@
  * 8. 7-Layer GeoJSON Export
  */
 
-import type { WorldGenParams, GeneratedWorld, WorldStats, ProgressCallback, WorldGraph } from "./types";
+import type {
+  WorldGenParams,
+  GeneratedWorld,
+  WorldStats,
+  ProgressCallback,
+  WorldGraph,
+} from "./types";
 import { DEFAULT_PARAMS } from "./config";
 import { createMesh } from "./mesh";
 import { generateTectonicPlates } from "./tectonics";
@@ -62,17 +68,29 @@ export function generateWorld(
   // ── Stage 5: Unified Hydrology & Climate ──
   report("hydro-climate", 55, "Computing wind, rain shadow, rivers & climate biomes...");
   computeHydroClimate(graph, params);
-  report("hydro-climate", 72, `${graph.rivers.length} rivers, ${graph.features.filter((f) => f.type === "lake").length} lakes`);
+  report(
+    "hydro-climate",
+    72,
+    `${graph.rivers.length} rivers, ${graph.features.filter((f) => f.type === "lake").length} lakes`
+  );
 
   // ── Stage 6: Quality Gate & Repair ──
   report("quality", 75, "Auditing world quality against scientific standards...");
   const qualityReport = validateAndRepair(graph, params);
-  report("quality", 82, `Quality Audit Score: ${qualityReport.compositeScore}% (${qualityReport.totalRepairs} repairs)`);
+  report(
+    "quality",
+    82,
+    `Quality Audit Score: ${qualityReport.compositeScore}% (${qualityReport.totalRepairs} repairs)`
+  );
 
   // ── Stage 7: Natural-Border Political Overlay ──
   report("politics", 85, "Generating cultures, settlements & natural-border countries...");
   generatePolitics(graph, params);
-  report("politics", 92, `${graph.states.length} countries, ${graph.settlements.length} settlements`);
+  report(
+    "politics",
+    92,
+    `${graph.states.length} countries, ${graph.settlements.length} settlements`
+  );
 
   // ── Stage 8: GeoJSON Export ──
   report("export", 95, "Exporting to 7-layer GeoJSON with Chaikin smoothing...");
@@ -118,4 +136,10 @@ export function generateWorld(
 }
 
 // Re-export core types
-export type { WorldGraph, WorldGenParams, GeneratedWorld, WorldStats, ProgressCallback } from "./types";
+export type {
+  WorldGraph,
+  WorldGenParams,
+  GeneratedWorld,
+  WorldStats,
+  ProgressCallback,
+} from "./types";

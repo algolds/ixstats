@@ -241,9 +241,7 @@ export const achievementsCountryRouter = createTRPCRouter({
               ? c.currentGdpPerCapita
               : c.baselineGdpPerCapita || 0;
           const totalGdp =
-            c.currentTotalGdp && c.currentTotalGdp > 0
-              ? c.currentTotalGdp
-              : gdpPerCap * pop;
+            c.currentTotalGdp && c.currentTotalGdp > 0 ? c.currentTotalGdp : gdpPerCap * pop;
 
           let val = 0;
           switch (input.metric) {
@@ -274,8 +272,7 @@ export const achievementsCountryRouter = createTRPCRouter({
               val = c.averageAnnualIncome ?? gdpPerCap * 0.45;
               break;
             case "workforce":
-              val =
-                c.totalWorkforce ?? pop * (c.laborForceParticipationRate ?? 0.65);
+              val = c.totalWorkforce ?? pop * (c.laborForceParticipationRate ?? 0.65);
               break;
             case "employmentRate":
               val = c.employmentRate ?? 94.0;
@@ -289,14 +286,12 @@ export const achievementsCountryRouter = createTRPCRouter({
             case "govRevenue":
               val =
                 c.governmentRevenueTotal ??
-                totalGdp *
-                  (c.taxRevenueGDPPercent ? c.taxRevenueGDPPercent / 100 : 0.25);
+                totalGdp * (c.taxRevenueGDPPercent ? c.taxRevenueGDPPercent / 100 : 0.25);
               break;
             case "govSpending":
               val =
                 c.totalGovernmentSpending ??
-                totalGdp *
-                  (c.spendingGDPPercent ? c.spendingGDPPercent / 100 : 0.28);
+                totalGdp * (c.spendingGDPPercent ? c.spendingGDPPercent / 100 : 0.28);
               break;
             case "economicVitality":
               val = c.economicVitality || 50;
@@ -328,9 +323,7 @@ export const achievementsCountryRouter = createTRPCRouter({
           };
         });
 
-        return mapped
-          .sort((a, b) => b.value - a.value)
-          .slice(0, input.limit);
+        return mapped.sort((a, b) => b.value - a.value).slice(0, input.limit);
       } catch (error) {
         console.error("Error fetching country leaderboard:", error);
         return [];

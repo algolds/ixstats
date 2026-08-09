@@ -21,10 +21,7 @@ import { classifyCellBoundary } from "./tectonics";
  * Generate elevation in meters for every cell based on tectonics and noise.
  * Mutates graph.cells.h, graph.cells.isLand, graph.cells.elevZone, and graph.cells.isMountainRidge in-place.
  */
-export function generateTerrain(
-  graph: WorldGraph,
-  params: WorldGenParams
-): void {
+export function generateTerrain(graph: WorldGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 20);
   const { cells, plates } = graph;
   const n = cells.n;
@@ -79,7 +76,7 @@ export function generateTerrain(
     // North Pole Soft Clamp (Arctic Ocean Basin: stable -1500m sea basin)
     if (lat > 76) {
       const northWeight = Math.min(1.0, (lat - 76) / 12);
-      elev = elev * (1 - northWeight) + (-1500) * northWeight;
+      elev = elev * (1 - northWeight) + -1500 * northWeight;
     }
 
     rawH[i] = elev;
@@ -117,9 +114,7 @@ export function generateTerrain(
       // Convergent: mountain ridge uplift with ridged noise
       const ridgeDetail = ridgedNoise(lng, lat, noiseRidge);
       const uplift =
-        TECTONIC_CONSTANTS.convergentUpliftMax *
-        distFactor *
-        (0.6 + 0.4 * ridgeDetail);
+        TECTONIC_CONSTANTS.convergentUpliftMax * distFactor * (0.6 + 0.4 * ridgeDetail);
 
       rawH[i] += uplift;
 
@@ -223,8 +218,8 @@ function normalizeElevationToOceanTarget(
   const seaLevelCutoff = sorted[cutoffIndex] ?? 0;
 
   // Find max land value and min ocean value for scaling
-  const maxRawLand = sorted[n - 1] ?? (seaLevelCutoff + 1000);
-  const minRawOcean = sorted[0] ?? (seaLevelCutoff - 3000);
+  const maxRawLand = sorted[n - 1] ?? seaLevelCutoff + 1000;
+  const minRawOcean = sorted[0] ?? seaLevelCutoff - 3000;
 
   const landRange = Math.max(1, maxRawLand - seaLevelCutoff);
   const oceanRange = Math.max(1, seaLevelCutoff - minRawOcean);

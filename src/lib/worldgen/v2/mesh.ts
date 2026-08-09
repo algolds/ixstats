@@ -105,9 +105,7 @@ export function createMesh(
   for (let i = 0; i < n; i++) {
     const poly = voronoi.cellPolygon(i);
     if (poly) {
-      cells.vertices[i] = poly.map(
-        ([x, y]: [number, number]) => [x, y] as [number, number]
-      );
+      cells.vertices[i] = poly.map(([x, y]: [number, number]) => [x, y] as [number, number]);
     } else {
       cells.vertices[i] = [[0, 0]];
     }
@@ -195,10 +193,7 @@ export function cellDistanceKm(graph: WorldGraph, a: number, b: number): number 
  *
  * @returns Flat array [lng0,lat0, lng1,lat1, ...]
  */
-function generateJitteredGrid(
-  targetCount: number,
-  rng: () => number
-): Float64Array {
+function generateJitteredGrid(targetCount: number, rng: () => number): Float64Array {
   // Calculate grid dimensions for approximately targetCount cells
   // Aspect ratio: longitude span (360°) is 2× latitude span (168° usable)
   const aspectRatio = 360 / 168;
@@ -241,11 +236,7 @@ function generateJitteredGrid(
  * Farthest-point sampling: select N well-distributed cells from the mesh.
  * Used for tectonic plate seeds and continent centers.
  */
-export function farthestPointSample(
-  graph: WorldGraph,
-  count: number,
-  rng: () => number
-): number[] {
+export function farthestPointSample(graph: WorldGraph, count: number, rng: () => number): number[] {
   const { cells } = graph;
   const n = cells.n;
   const firstCenter = Math.floor(rng() * n);

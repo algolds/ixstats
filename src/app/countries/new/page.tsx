@@ -36,23 +36,21 @@ export default function NewCountriesPage() {
   const processedCountries: CountryCardData[] = useMemo(() => {
     if (!countriesResult?.countries) return [];
 
-    return countriesResult.countries.map(
-      (country): CountryCardData => ({
-        id: country.id,
-        name: country.name,
-        currentPopulation: country.currentPopulation || 0,
-        currentGdpPerCapita: country.currentGdpPerCapita || 0,
-        currentTotalGdp: country.currentTotalGdp || 0,
-        economicTier: country.economicTier || "Unknown",
-        populationTier: country.populationTier || "Unknown",
-        landArea: country.landArea || undefined,
-        populationDensity: country.populationDensity || undefined,
-        gdpDensity: country.gdpDensity || undefined,
-        adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
-        populationGrowthRate: country.populationGrowthRate || undefined,
-        flagUrl: flagUrls[country.name] || undefined,
-      })
-    );
+    return countriesResult.countries.map((country): CountryCardData => ({
+      id: country.id,
+      name: country.name,
+      currentPopulation: country.currentPopulation || 0,
+      currentGdpPerCapita: country.currentGdpPerCapita || 0,
+      currentTotalGdp: country.currentTotalGdp || 0,
+      economicTier: country.economicTier || "Unknown",
+      populationTier: country.populationTier || "Unknown",
+      landArea: country.landArea || undefined,
+      populationDensity: country.populationDensity || undefined,
+      gdpDensity: country.gdpDensity || undefined,
+      adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
+      populationGrowthRate: country.populationGrowthRate || undefined,
+      flagUrl: flagUrls[country.name] || undefined,
+    }));
   }, [countriesResult, flagUrls]);
 
   if (error) {

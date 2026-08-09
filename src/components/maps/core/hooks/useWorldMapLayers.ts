@@ -124,7 +124,11 @@ export function useWorldMapLayers({
           data: oceanLabelsData,
           generateId: true,
         });
-        if (showOceanLabels && oceanLabelsData.features.length > 0 && !map.getLayer("ocean-labels")) {
+        if (
+          showOceanLabels &&
+          oceanLabelsData.features.length > 0 &&
+          !map.getLayer("ocean-labels")
+        ) {
           map.addLayer({
             id: "ocean-labels",
             type: "symbol",
@@ -374,8 +378,7 @@ export function useWorldMapLayers({
           if (layer.type === "country_labels") {
             labelFeaturesRef.current = layer.data;
             const existingLabelSource = map.getSource("source-country-labels") as
-              | GeoJSONSource
-              | undefined;
+              GeoJSONSource | undefined;
             if (existingLabelSource) {
               existingLabelSource.setData(layer.data as unknown as GeoJSON.GeoJSON);
               updateDistanceFade();

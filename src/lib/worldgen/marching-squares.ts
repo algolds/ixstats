@@ -57,11 +57,7 @@ function buildSpatialLookup(graph: PackedGraph): SpatialLookup {
   return { cellPositions, spatialBins };
 }
 
-function getNearestCell(
-  lng: number,
-  lat: number,
-  lookup: SpatialLookup
-): number {
+function getNearestCell(lng: number, lat: number, lookup: SpatialLookup): number {
   const { cellPositions, spatialBins } = lookup;
   const bx = Math.max(0, Math.min(binCols - 1, Math.floor((lng + 180) / BIN_SIZE)));
   const by = Math.max(0, Math.min(binRows - 1, Math.floor((lat + 90) / BIN_SIZE)));
@@ -139,7 +135,8 @@ function buildHeightfield(graph: PackedGraph, lookup: SpatialLookup): Float32Arr
               break;
             }
 
-            if (distSq < 225) { // 15-degree influence
+            if (distSq < 225) {
+              // 15-degree influence
               const w = 1 / (distSq + 0.1);
               sumW += w;
               sumH += ch * w;
@@ -189,20 +186,47 @@ function getMarchingSquaresSegments(
 
   // Linear interpolation along cell edges
   const top: Position = [MIN_LNG + (x + (threshold - v0) / (v1 - v0 || 1)) * dx, MIN_LAT + y * dy];
-  const right: Position = [MIN_LNG + (x + 1) * dx, MIN_LAT + (y + (threshold - v1) / (v2 - v1 || 1)) * dy];
-  const bottom: Position = [MIN_LNG + (x + (threshold - v3) / (v2 - v3 || 1)) * dx, MIN_LAT + (y + 1) * dy];
+  const right: Position = [
+    MIN_LNG + (x + 1) * dx,
+    MIN_LAT + (y + (threshold - v1) / (v2 - v1 || 1)) * dy,
+  ];
+  const bottom: Position = [
+    MIN_LNG + (x + (threshold - v3) / (v2 - v3 || 1)) * dx,
+    MIN_LAT + (y + 1) * dy,
+  ];
   const left: Position = [MIN_LNG + x * dx, MIN_LAT + (y + (threshold - v0) / (v3 - v0 || 1)) * dy];
 
   switch (caseIdx) {
-    case 1: case 14: return [[left, bottom]];
-    case 2: case 13: return [[bottom, right]];
-    case 3: case 12: return [[left, right]];
-    case 4: case 11: return [[top, right]];
-    case 5: return [[top, left], [bottom, right]];
-    case 6: case 9: return [[top, bottom]];
-    case 7: case 8: return [[left, top]];
-    case 10: return [[top, right], [left, bottom]];
-    default: return [];
+    case 1:
+    case 14:
+      return [[left, bottom]];
+    case 2:
+    case 13:
+      return [[bottom, right]];
+    case 3:
+    case 12:
+      return [[left, right]];
+    case 4:
+    case 11:
+      return [[top, right]];
+    case 5:
+      return [
+        [top, left],
+        [bottom, right],
+      ];
+    case 6:
+    case 9:
+      return [[top, bottom]];
+    case 7:
+    case 8:
+      return [[left, top]];
+    case 10:
+      return [
+        [top, right],
+        [left, bottom],
+      ];
+    default:
+      return [];
   }
 }
 
@@ -219,8 +243,14 @@ function smoothIsolineRing(ring: Position[], iterations = 2): Position[] {
     for (let i = 0; i < n; i++) {
       const p0 = pts[i]!;
       const p1 = pts[i + 1]!;
-      const q: Position = [round4(0.75 * p0[0] + 0.25 * p1[0]), round4(0.75 * p0[1] + 0.25 * p1[1])];
-      const r: Position = [round4(0.25 * p0[0] + 0.75 * p1[0]), round4(0.25 * p0[1] + 0.75 * p1[1])];
+      const q: Position = [
+        round4(0.75 * p0[0] + 0.25 * p1[0]),
+        round4(0.75 * p0[1] + 0.25 * p1[1]),
+      ];
+      const r: Position = [
+        round4(0.25 * p0[0] + 0.75 * p1[0]),
+        round4(0.25 * p0[1] + 0.75 * p1[1]),
+      ];
       next.push(q, r);
     }
     if (next.length > 0) {
@@ -398,8 +428,16 @@ export function generateMarchingSquaresPolitical(graph: PackedGraph): FeatureCol
   if (numStates <= 1) return { type: "FeatureCollection", features: [] };
 
   const STATE_COLORS = [
-    "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
-    "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#84cc16"
+    "#3b82f6",
+    "#ef4444",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#ec4899",
+    "#14b8a6",
+    "#f97316",
+    "#06b6d4",
+    "#84cc16",
   ];
 
   // 1. Build a continuous state ID grid by looking up the nearest cell's state ID

@@ -92,7 +92,7 @@ export function ThinkPagesShareModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl border-purple-500/30 bg-card/95 backdrop-blur-xl">
+      <DialogContent className="bg-card/95 max-w-xl border-purple-500/30 backdrop-blur-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Badge className="border-purple-500/40 bg-purple-500/20 text-purple-300">
@@ -100,21 +100,23 @@ export function ThinkPagesShareModal({
               Official Government Account
             </Badge>
           </div>
-          <DialogTitle className="text-lg font-black tracking-tight text-foreground">
+          <DialogTitle className="text-foreground text-lg font-black tracking-tight">
             Share Directive Summation to ThinkPages
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-muted-foreground text-xs">
             Confirm or tweak your executive post before publishing directly to the ThinkPages feed.
           </DialogDescription>
         </DialogHeader>
 
         {publishStatus !== "idle" ? (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-emerald-400 animate-bounce" />
-            <h3 className="text-base font-extrabold text-foreground">
-              {publishStatus === "published" ? "Published Live to ThinkPages!" : "Saved as Draft in ThinkPages!"}
+            <CheckCircle2 className="h-12 w-12 animate-bounce text-emerald-400" />
+            <h3 className="text-foreground text-base font-extrabold">
+              {publishStatus === "published"
+                ? "Published Live to ThinkPages!"
+                : "Saved as Draft in ThinkPages!"}
             </h3>
-            <p className="text-xs text-muted-foreground max-w-md">
+            <p className="text-muted-foreground max-w-md text-xs">
               {publishStatus === "published"
                 ? "Your official executive summation is now visible in the national news feed."
                 : "Your directive summation has been saved as an editable draft in ThinkPages."}
@@ -125,7 +127,7 @@ export function ThinkPagesShareModal({
               </Button>
               <Button
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer"
+                className="cursor-pointer bg-purple-600 font-bold text-white hover:bg-purple-500"
                 onClick={() => window.open("/thinkpages", "_blank")}
               >
                 <Globe className="mr-1.5 h-3.5 w-3.5" />
@@ -136,18 +138,18 @@ export function ThinkPagesShareModal({
         ) : (
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Post Prose Draft (Editable)
               </label>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={7}
-                className="font-mono text-xs border-white/10 bg-black/40 focus:border-purple-500/50"
+                className="border-white/10 bg-black/40 font-mono text-xs focus:border-purple-500/50"
               />
             </div>
 
-            <DialogFooter className="flex items-center justify-between gap-2 border-t border-border/30 pt-3">
+            <DialogFooter className="border-border/30 flex items-center justify-between gap-2 border-t pt-3">
               <Button variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
                 Cancel
               </Button>
@@ -157,7 +159,7 @@ export function ThinkPagesShareModal({
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("draft")}
-                  className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 cursor-pointer"
+                  className="cursor-pointer border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
                 >
                   <FileText className="mr-1.5 h-3.5 w-3.5" />
                   Save as Draft
@@ -166,7 +168,7 @@ export function ThinkPagesShareModal({
                   size="sm"
                   disabled={generateM.isPending}
                   onClick={() => handlePublish("public")}
-                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold cursor-pointer shadow-md"
+                  className="cursor-pointer bg-purple-600 font-bold text-white shadow-md hover:bg-purple-500"
                 >
                   <Send className="mr-1.5 h-3.5 w-3.5" />
                   Publish Now Live

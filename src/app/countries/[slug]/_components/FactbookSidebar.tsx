@@ -62,14 +62,15 @@ export function FactbookSidebar({
 
   const { hasGeometry, isLoading: mapLoading } = useCountryMapEmbed(country?.id ?? null);
 
-  const { data: activityData, isLoading: activityLoading } = api.activities.getCountryActivity.useQuery(
-    {
-      countryId: country?.id ?? "",
-      limit: 10,
-      timeRange: "90d",
-    },
-    { enabled: !!country?.id }
-  );
+  const { data: activityData, isLoading: activityLoading } =
+    api.activities.getCountryActivity.useQuery(
+      {
+        countryId: country?.id ?? "",
+        limit: 10,
+        timeRange: "90d",
+      },
+      { enabled: !!country?.id }
+    );
 
   const flagColors = React.useMemo(() => getFlagColors(country?.name || ""), [country?.name]);
   const flagThemeCSS = React.useMemo(() => generateFlagThemeCSS(flagColors), [flagColors]);
@@ -138,7 +139,7 @@ export function FactbookSidebar({
       <FacetCard
         depth={1}
         interactive="none"
-        className="group relative overflow-hidden rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md shadow-sm"
+        className="group bg-card/30 relative overflow-hidden rounded-xl border border-white/10 p-4 shadow-sm backdrop-blur-md"
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-[var(--flag-glow-primary)] opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35" />
@@ -165,10 +166,10 @@ export function FactbookSidebar({
                 className="shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">
+                <div className="text-muted-foreground/80 truncate text-[9px] font-extrabold tracking-wider uppercase">
                   {ring.label}
                 </div>
-                <div className="text-xs font-bold leading-tight" style={{ color: ring.color }}>
+                <div className="text-xs leading-tight font-bold" style={{ color: ring.color }}>
                   {Math.round(ring.value)}%
                 </div>
               </div>
@@ -182,10 +183,10 @@ export function FactbookSidebar({
         <FacetCard
           depth={1}
           interactive="none"
-          className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+          className="bg-card/30 overflow-hidden rounded-xl border border-white/10 shadow-sm backdrop-blur-md"
         >
           <CardHeader className="px-4 py-3 pb-2">
-            <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
+            <CardTitle className="text-foreground/90 flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
               <Globe className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
               Geography
             </CardTitle>
@@ -200,7 +201,7 @@ export function FactbookSidebar({
             />
           </CardContent>
           <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-muted-foreground text-[11px] font-medium">
               {country.currentPopulation
                 ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                 : ""}
@@ -219,11 +220,11 @@ export function FactbookSidebar({
       <FacetCard
         depth={1}
         interactive="none"
-        className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+        className="bg-card/30 overflow-hidden rounded-xl border border-white/10 shadow-sm backdrop-blur-md"
       >
         <CardHeader className="px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
+            <CardTitle className="text-foreground/90 flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
               <Activity className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
               Recent Activity
             </CardTitle>
@@ -290,7 +291,9 @@ export function FactbookSidebar({
                   <div
                     key={activity.id}
                     className={`flex items-start gap-2.5 ${
-                      idx < activityData.activities.length - 1 ? "border-border/50 border-b pb-3" : ""
+                      idx < activityData.activities.length - 1
+                        ? "border-border/50 border-b pb-3"
+                        : ""
                     }`}
                   >
                     <div

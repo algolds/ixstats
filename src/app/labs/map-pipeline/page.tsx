@@ -5,13 +5,16 @@ import dynamic from "next/dynamic";
 import { generateWorld } from "~/lib/worldgen/engine";
 import { normalizeAzgaarGraph, type NormalizedMapData } from "~/lib/map-pipeline/azgaar-normalizer";
 import { enrichMapDataset, type EnrichedMapPackage } from "~/lib/map-pipeline/enrichment-pipeline";
-import { MapPipelineControls, type MapGenConfig } from "~/components/labs/map-pipeline/MapPipelineControls";
+import {
+  MapPipelineControls,
+  type MapGenConfig,
+} from "~/components/labs/map-pipeline/MapPipelineControls";
 import { MapPipelineTelemetry } from "~/components/labs/map-pipeline/MapPipelineTelemetry";
 
 const IxWorldMap = dynamic(() => import("~/components/maps/core/IxWorldMap"), {
   ssr: false,
   loading: () => (
-    <div className="absolute inset-0 bg-background flex items-center justify-center text-muted-foreground text-sm">
+    <div className="bg-background text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
       Loading MapLibre Viewport...
     </div>
   ),
@@ -134,9 +137,9 @@ export default function MapPipelineLabPage() {
   }, [mapData, activeLayers]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-background text-foreground flex">
+    <div className="bg-background text-foreground relative flex h-screen w-full overflow-hidden">
       {/* Left Sidebar: Pipeline Controls & Parameter Sliders */}
-      <div className="w-80 shrink-0 h-full z-20">
+      <div className="z-20 h-full w-80 shrink-0">
         <MapPipelineControls
           config={config}
           onChangeConfig={setConfig}
@@ -154,23 +157,23 @@ export default function MapPipelineLabPage() {
       </div>
 
       {/* Center Viewport: Interactive MapLibre Renderer */}
-      <div className="flex-1 relative h-full bg-background">
+      <div className="bg-background relative h-full flex-1">
         {mapLayersProp.length > 0 ? (
           <IxWorldMap
             layers={mapLayersProp}
             projectionMode={projectionMode}
             showOceanLabels={false}
-            className="w-full h-full"
+            className="h-full w-full"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+          <div className="text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
             No map data generated yet. Click &quot;Run Map Pipeline&quot;.
           </div>
         )}
       </div>
 
       {/* Right Sidebar: Telemetry & GeoProfile Inspector */}
-      <div className="w-96 shrink-0 h-full z-20">
+      <div className="z-20 h-full w-96 shrink-0">
         <MapPipelineTelemetry
           stats={{
             generationTimeMs,

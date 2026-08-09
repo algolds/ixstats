@@ -248,12 +248,7 @@ export class UserLogger {
   static async logAuthEvent(
     context: UserLogContext,
     event:
-      | "LOGIN"
-      | "LOGOUT"
-      | "SESSION_EXPIRED"
-      | "LOGIN_FAILED"
-      | "PASSWORD_CHANGE"
-      | "ROLE_CHANGE",
+      "LOGIN" | "LOGOUT" | "SESSION_EXPIRED" | "LOGIN_FAILED" | "PASSWORD_CHANGE" | "ROLE_CHANGE",
     success: boolean,
     details?: Record<string, any>
   ): Promise<void> {

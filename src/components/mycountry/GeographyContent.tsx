@@ -67,7 +67,7 @@ export function GeographyContent() {
             <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <MapPin className="text-muted-foreground/60 h-8 w-8" />
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-foreground">Map Integration Required</h3>
+            <h3 className="text-foreground mb-2 text-lg font-semibold">Map Integration Required</h3>
             <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
               This nation has not yet established map coordinates. Map feature linkage is required
               to define cities, subdivisions, and points of interest.
@@ -94,22 +94,24 @@ export function GeographyContent() {
 
       {/* Header stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
             <Building2 className="h-3 w-3 text-[var(--flag-primary)]" />
             Cities
           </div>
           <div className="text-foreground text-lg font-bold tracking-tight">{cities.length}</div>
         </div>
-        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
             <MapPin className="h-3 w-3 text-[var(--flag-secondary)]" />
             Subdivisions
           </div>
-          <div className="text-foreground text-lg font-bold tracking-tight">{subdivisions.length}</div>
+          <div className="text-foreground text-lg font-bold tracking-tight">
+            {subdivisions.length}
+          </div>
         </div>
-        <div className="flex h-16 flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
-          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider">
+        <div className="bg-card/30 flex h-16 flex-col justify-between rounded-xl border border-white/10 p-3 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]">
+          <div className="text-muted-foreground/80 flex items-center gap-1.5 text-[9px] font-extrabold tracking-wider uppercase">
             <Pin className="h-3 w-3 text-[var(--flag-accent)]" />
             POIs
           </div>
@@ -119,20 +121,26 @@ export function GeographyContent() {
 
       {/* Geographic Profile summary card */}
       {geoProfile && (
-        <div className="space-y-3 rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md shadow-sm">
+        <div className="bg-card/30 space-y-3 rounded-xl border border-white/10 p-4 shadow-sm backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <div className="text-foreground text-xs font-extrabold uppercase tracking-wider">Geographic Profile</div>
+            <div className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+              Geographic Profile
+            </div>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
           </div>
           <div className="text-muted-foreground grid grid-cols-2 gap-3 text-[10px] sm:grid-cols-4">
             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">Land Area</span>
+              <span className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                Land Area
+              </span>
               <div className="text-foreground font-mono text-xs font-bold tracking-tight">
                 {geoProfile.area.areaKm2.toLocaleString()} km²
               </div>
             </div>
             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">Climate Model</span>
+              <span className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
+                Climate Model
+              </span>
               <div
                 className="text-foreground truncate text-xs font-bold tracking-tight"
                 title={geoProfile.climate.dominant ?? undefined}
@@ -158,7 +166,9 @@ export function GeographyContent() {
 
       {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
           capital integrity, founded-year sanity, and coordinate-bounds issues. */}
-      {!isPublicReadOnly && <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />}
+      {!isPublicReadOnly && (
+        <GeoCompliancePanel countryId={countryId} onRefresh={() => refetch()} />
+      )}
 
       {/* Cities editor */}
       <SearchableList

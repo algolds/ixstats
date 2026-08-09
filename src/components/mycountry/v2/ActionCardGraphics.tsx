@@ -2,13 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import {
-  Handshake,
-  Shield,
-  Scale,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+import { Handshake, Shield, Scale, TrendingUp, type LucideIcon } from "lucide-react";
 
 /**
  * ActionCardGraphic — Ambient gradient glow + large watermark glyph.
@@ -39,7 +33,7 @@ function ActionCardGraphic({
       {/* Ambient radial gradient glow — bottom-right */}
       <div
         className={cn(
-          "absolute -bottom-4 -right-4 h-20 w-20 rounded-full blur-xl transition-opacity duration-300 pointer-events-none select-none",
+          "pointer-events-none absolute -right-4 -bottom-4 h-20 w-20 rounded-full blur-xl transition-opacity duration-300 select-none",
           "opacity-[0.14] group-hover:opacity-[0.28]",
           glowColor
         )}
@@ -48,8 +42,8 @@ function ActionCardGraphic({
       {/* Watermark glyph — positioned bottom-right */}
       <Icon
         className={cn(
-          "absolute -bottom-1.5 -right-1.5 h-11 w-11 transition-all duration-300 pointer-events-none select-none",
-          "opacity-[0.07] group-hover:opacity-[0.15] group-hover:scale-105",
+          "pointer-events-none absolute -right-1.5 -bottom-1.5 h-11 w-11 transition-all duration-300 select-none",
+          "opacity-[0.07] group-hover:scale-105 group-hover:opacity-[0.15]",
           "text-current"
         )}
         strokeWidth={1.2}
@@ -59,41 +53,17 @@ function ActionCardGraphic({
 }
 
 export function DiplomacyGraphic({ className }: { className?: string }) {
-  return (
-    <ActionCardGraphic
-      className={className}
-      Icon={Handshake}
-      glowColor="bg-teal-400"
-    />
-  );
+  return <ActionCardGraphic className={className} Icon={Handshake} glowColor="bg-teal-400" />;
 }
 
 export function DefenseGraphic({ className }: { className?: string }) {
-  return (
-    <ActionCardGraphic
-      className={className}
-      Icon={Shield}
-      glowColor="bg-red-400"
-    />
-  );
+  return <ActionCardGraphic className={className} Icon={Shield} glowColor="bg-red-400" />;
 }
 
 export function PoliticsGraphic({ className }: { className?: string }) {
-  return (
-    <ActionCardGraphic
-      className={className}
-      Icon={Scale}
-      glowColor="bg-violet-400"
-    />
-  );
+  return <ActionCardGraphic className={className} Icon={Scale} glowColor="bg-violet-400" />;
 }
 
 export function EconomyGraphic({ className }: { className?: string }) {
-  return (
-    <ActionCardGraphic
-      className={className}
-      Icon={TrendingUp}
-      glowColor="bg-emerald-400"
-    />
-  );
+  return <ActionCardGraphic className={className} Icon={TrendingUp} glowColor="bg-emerald-400" />;
 }

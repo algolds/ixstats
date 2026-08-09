@@ -134,10 +134,7 @@ export function CollectiveActionsPanel({
                     proposeMutation.mutate({
                       allianceId,
                       actionType: actionType as
-                        | "collective_sanction"
-                        | "shared_defense"
-                        | "trade_bloc"
-                        | "joint_statement",
+                        "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement",
                       title,
                       description: description || undefined,
                     })

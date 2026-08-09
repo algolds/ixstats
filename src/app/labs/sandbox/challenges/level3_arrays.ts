@@ -1,8 +1,8 @@
 /**
  * LEVEL 3: 7-Part Array Suite
- * 
+ *
  * Objective: Complete 7 core array operations used daily in IxStates full-stack development
- * 
+ *
  * 💡 CORE ARRAY CHEAT NOTES:
  * 1. Blueprint vs Data:
  *    - 'NationData' (PascalCase) = The TypeScript Interface Blueprint (0 bytes compiled).
@@ -21,9 +21,9 @@
 export interface NationData {
   slug: string;
   name: string;
-  gdp: number;       // in billions
+  gdp: number; // in billions
   stability: number; // 0 - 100
-  alliance: string;  // e.g. "Concord", "Neutral"
+  alliance: string; // e.g. "Concord", "Neutral"
 }
 
 export const allNations: NationData[] = [
@@ -36,7 +36,7 @@ export const allNations: NationData[] = [
 /**
  * PART 3A: Array Filtering (.filter())
  * Return only nations belonging to 'targetAlliance' with stability >= minStability.
- * 
+ *
  * Hint: return nations.filter((n) => n.alliance === targetAlliance && n.stability >= minStability);
  */
 export function filterAllianceNations(
@@ -52,7 +52,7 @@ export function filterAllianceNations(
  * PART 3B: Array Transformation (.map())
  * Return an array of formatted summary strings: "NationName ($GDPB GDP)"
  * Example output: ["Faneria ($400B GDP)", "Caphiria ($900B GDP)", ...]
- * 
+ *
  * Hint: return nations.map((n) => `${n.name} ($${n.gdp}B GDP)`);
  */
 export function formatNationSummaries(nations: NationData[]): string[] {
@@ -63,7 +63,7 @@ export function formatNationSummaries(nations: NationData[]): string[] {
 /**
  * PART 3C: Array Search (.find())
  * Return the single nation object matching 'targetSlug', or null if not found.
- * 
+ *
  * Hint: return nations.find((n) => n.slug === targetSlug) || null;
  */
 export function findNationBySlug(nations: NationData[], targetSlug: string): NationData | null {
@@ -74,7 +74,7 @@ export function findNationBySlug(nations: NationData[], targetSlug: string): Nat
 /**
  * PART 3D: Array Aggregation (Total Sum)
  * Return the total combined GDP of all nations in the array.
- * 
+ *
  * Hint: let total = 0; nations.forEach(n => total += n.gdp); return total;
  *   OR: return nations.reduce((sum, n) => sum + n.gdp, 0);
  */
@@ -86,7 +86,7 @@ export function calculateTotalGdp(nations: NationData[]): number {
 /**
  * PART 3E: Array Sorting (.sort())
  * Return a NEW array sorted by GDP either "asc" (low-to-high) or "desc" (high-to-low).
- * 
+ *
  * Hint: Do NOT mutate original array! Use [...nations].sort((a, b) => direction === "asc" ? a.gdp - b.gdp : b.gdp - a.gdp);
  */
 export function sortNationsByGdp(nations: NationData[], direction: "asc" | "desc"): NationData[] {
@@ -99,7 +99,7 @@ export function sortNationsByGdp(nations: NationData[], direction: "asc" | "desc
  * Return an object { allStable: boolean, anyCritical: boolean } where:
  * - allStable is true if EVERY nation has stability >= minStability
  * - anyCritical is true if AT LEAST ONE nation has stability < 60
- * 
+ *
  * Hint: const allStable = nations.every((n) => n.stability >= minStability);
  *       const anyCritical = nations.some((n) => n.stability < 60);
  *       return { allStable, anyCritical };
@@ -116,7 +116,7 @@ export function checkAllianceSecurity(
  * PART 3G: Array Grouping (Group by Category)
  * Return an object grouping nations by alliance name: { [allianceName]: NationData[] }
  * Example output: { Concord: [Faneria, Caphiria, Kistan], Neutral: [Caracua] }
- * 
+ *
  * Hint: const groups: Record<string, NationData[]> = {};
  *       nations.forEach((n) => {
  *         if (!groups[n.alliance]) groups[n.alliance] = [];

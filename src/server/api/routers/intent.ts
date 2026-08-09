@@ -133,17 +133,17 @@ export const intentRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
 
   /** Get a single intent by ID. */
-  getIntent: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.intent.findUnique({
-        where: { id: input.id },
-      });
-    }),
+  getIntent: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    return await ctx.db.intent.findUnique({
+      where: { id: input.id },
+    });
+  }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure
-    .input(z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) }))
+    .input(
+      z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) })
+    )
     .mutation(async ({ ctx, input }) => {
       const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
@@ -216,7 +216,14 @@ export const intentRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         goal: z.string().min(2).max(200),
-        tier: z.enum(["proposed", "measured", "moderate", "extreme"]),
+        tier: z.enum([
+          "proposed",
+          "measured",
+          "moderate",
+          "extreme",
+          "broker_unlocked",
+          "structural_unlocked",
+        ]),
         parentId: z.string().optional(),
         intentId: z.string().optional(),
       })
@@ -418,10 +425,7 @@ export const intentRouter = createTRPCRouter({
         issues,
         resolvedCount: resolved,
         totalCount: issues.length,
-        progress:
-          issues.length === 0
-            ? 0
-            : Math.round((resolved / issues.length) * 100),
+        progress: issues.length === 0 ? 0 : Math.round((resolved / issues.length) * 100),
       };
     }),
 });

@@ -649,52 +649,55 @@ export function OverviewHero({
                   <div className="mt-2 mb-3">
                     {agendaViewMode === "widgets" ? (
                       <div className="flex h-[105px] w-full flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-2">
-                          <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
-                            <span>Reminders</span>
-                            <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
-                              {agendaItems.length}
-                            </span>
-                          </div>
-
-                          <div className="flex-1 scrollbar-thin space-y-1 overflow-y-auto pr-0.5">
-                            {agendaItems.length > 0 ? (
-                              agendaItems.slice(0, 3).map((item) => {
-                                return (
-                                  <button
-                                    key={item.id}
-                                    onClick={() => onNavigate?.(item.section)}
-                                    className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[9px] font-medium transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
-                                  >
-                                    <div
-                                      className={cn(
-                                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all",
-                                        item.borderClass
-                                      )}
-                                    >
-                                      <Check className="h-2 w-2 scale-0 transition-transform group-hover:scale-100" />
-                                    </div>
-                                    <span className="flex-1 truncate">{item.text}</span>
-                                  </button>
-                                );
-                              })
-                            ) : (
-                              <div className="flex h-full flex-col items-center justify-center p-1 text-center text-emerald-500/80">
-                                <Check className="mb-0.5 h-4 w-4" />
-                                <span className="text-[8px] font-medium">All Tasks Complete</span>
-                              </div>
-                            )}
-                          </div>
+                        <div className="text-muted-foreground/60 mb-1 flex items-center justify-between text-[8px] font-extrabold tracking-wider uppercase">
+                          <span>Reminders</span>
+                          <span className="text-foreground/80 rounded-full bg-white/10 px-1 text-[7px] font-bold">
+                            {agendaItems.length}
+                          </span>
                         </div>
+
+                        <div className="flex-1 scrollbar-thin space-y-1 overflow-y-auto pr-0.5">
+                          {agendaItems.length > 0 ? (
+                            agendaItems.slice(0, 3).map((item) => {
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => onNavigate?.(item.section)}
+                                  className="group text-foreground/80 hover:text-foreground flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[9px] font-medium transition-colors hover:bg-white/[0.05] active:scale-[0.98]"
+                                >
+                                  <div
+                                    className={cn(
+                                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border transition-all",
+                                      item.borderClass
+                                    )}
+                                  >
+                                    <Check className="h-2 w-2 scale-0 transition-transform group-hover:scale-100" />
+                                  </div>
+                                  <span className="flex-1 truncate">{item.text}</span>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="flex h-full flex-col items-center justify-center p-1 text-center text-emerald-500/80">
+                              <Check className="mb-0.5 h-4 w-4" />
+                              <span className="text-[8px] font-medium">All Tasks Complete</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ) : (
                       // SMART STACK VIEW
-                      <SmartStack items={agendaItems} onResolve={(section) => onNavigate?.(section)} />
+                      <SmartStack
+                        items={agendaItems}
+                        onResolve={(section) => onNavigate?.(section)}
+                      />
                     )}
                   </div>
 
                   {/* Vitality Rings Display */}
                   {hasCountry && country && (
                     <div className="mt-1 mb-2.5 flex shrink-0 items-center justify-between border-t border-white/5 pt-2.5 select-none">
-                      <div className="flex flex-col items-start text-[9px] font-extrabold tracking-wider uppercase text-muted-foreground/60 leading-tight">
+                      <div className="text-muted-foreground/60 flex flex-col items-start text-[9px] leading-tight font-extrabold tracking-wider uppercase">
                         <span>Pop: {formatCompact(stats.population)}</span>
                         <span>GDP: ${formatCompact(stats.currentTotalGdp)}</span>
                       </div>

@@ -73,7 +73,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = isSystemOwner(user.id);
   const hasAdminRole =
-    (typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role)) ||
+    (typeof user?.publicMetadata?.role === "string" &&
+      allowedRoles.has(user.publicMetadata.role)) ||
     (typeof permissionUser?.role?.name === "string" && allowedRoles.has(permissionUser.role.name));
 
   if (!isSystemOwnerUser && !hasAdminRole) {

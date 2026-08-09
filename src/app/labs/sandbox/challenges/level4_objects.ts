@@ -1,6 +1,6 @@
 /**
  * LEVEL 4: Objects, State & Methods ('this')
- * 
+ *
  * Objective: Export an object named 'NationTreasuryVault' with reserves: number,
  * a method allocateBudget(amount: number) updating this.reserves, and a method getVaultStatus().
  */
@@ -16,5 +16,5 @@ export const NationTreasuryVault = {
   getVaultStatus(): string {
     // TODO: Return `${this.nationName} Vault Reserves: $${this.reserves}M`
     return "";
-  }
+  },
 };

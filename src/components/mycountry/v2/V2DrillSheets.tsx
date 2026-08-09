@@ -21,7 +21,13 @@ import {
   GitBranch,
   AlertTriangle,
 } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "~/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -61,17 +67,55 @@ const TIER_BADGE: Record<string, string> = {
 };
 
 const CATEGORY_BROKER_MAP: Record<string, { name: string; icon: any; color: string }> = {
-  defense: { name: "Generals", icon: Shield, color: "text-red-400 bg-red-500/10 border-red-500/20" },
-  security: { name: "Generals", icon: Shield, color: "text-red-400 bg-red-500/10 border-red-500/20" },
-  fiscal: { name: "Magnates", icon: Building2, color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  economy: { name: "Magnates", icon: Building2, color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  social: { name: "Party", icon: Users2, color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
-  infrastructure: { name: "Technocrats", icon: Compass, color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
-  religion: { name: "Clergy", icon: Landmark, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
-  foreign: { name: "Cabinet Diplomatic Corps", icon: Globe2, color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
+  defense: {
+    name: "Generals",
+    icon: Shield,
+    color: "text-red-400 bg-red-500/10 border-red-500/20",
+  },
+  security: {
+    name: "Generals",
+    icon: Shield,
+    color: "text-red-400 bg-red-500/10 border-red-500/20",
+  },
+  fiscal: {
+    name: "Magnates",
+    icon: Building2,
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  },
+  economy: {
+    name: "Magnates",
+    icon: Building2,
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  },
+  social: {
+    name: "Party",
+    icon: Users2,
+    color: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  },
+  infrastructure: {
+    name: "Technocrats",
+    icon: Compass,
+    color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  },
+  religion: {
+    name: "Clergy",
+    icon: Landmark,
+    color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
+  },
+  foreign: {
+    name: "Cabinet Diplomatic Corps",
+    icon: Globe2,
+    color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  },
 };
 
-function IntentBranchingTree({ countryId, currentIntentId }: { countryId: string; currentIntentId: string }) {
+function IntentBranchingTree({
+  countryId,
+  currentIntentId,
+}: {
+  countryId: string;
+  currentIntentId: string;
+}) {
   const { data, isLoading } = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
 
   if (isLoading || !data?.roots?.length) return null;
@@ -95,23 +139,25 @@ function IntentBranchingTree({ countryId, currentIntentId }: { countryId: string
                   : "border-border/40 bg-muted/10 hover:bg-muted/20"
               )}
             >
-              <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex min-w-0 items-center gap-2.5">
                 <span
                   className={cn(
                     "flex h-2 w-2 shrink-0 rounded-full",
                     it.status === "completed"
                       ? "bg-emerald-400"
                       : it.status === "active"
-                      ? "bg-amber-400 animate-pulse"
-                      : "bg-muted-foreground"
+                        ? "animate-pulse bg-amber-400"
+                        : "bg-muted-foreground"
                   )}
                 />
                 <div className="truncate">
-                  <p className="font-semibold text-foreground/90 truncate">{it.goal}</p>
-                  <p className="text-[10px] text-muted-foreground capitalize">{it.category} • {it.tier}</p>
+                  <p className="text-foreground/90 truncate font-semibold">{it.goal}</p>
+                  <p className="text-muted-foreground text-[10px] capitalize">
+                    {it.category} • {it.tier}
+                  </p>
                 </div>
               </div>
-              <span className="text-[10px] font-mono font-bold capitalize text-muted-foreground shrink-0">
+              <span className="text-muted-foreground shrink-0 font-mono text-[10px] font-bold capitalize">
                 {it.status}
               </span>
             </div>
@@ -171,18 +217,17 @@ function IntentDetail({
 
   if (!intent) {
     return (
-      <div className="py-8 text-center text-muted-foreground text-sm">
+      <div className="text-muted-foreground py-8 text-center text-sm">
         This directive could not be loaded.
       </div>
     );
   }
 
-  const brokerInfo =
-    CATEGORY_BROKER_MAP[intent.category?.toLowerCase()] || {
-      name: "Cabinet Administration",
-      icon: Command,
-      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    };
+  const brokerInfo = CATEGORY_BROKER_MAP[intent.category?.toLowerCase()] || {
+    name: "Cabinet Administration",
+    icon: Command,
+    color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  };
   const BrokerIcon = brokerInfo.icon;
 
   const handleCopySummary = () => {
@@ -214,7 +259,7 @@ function IntentDetail({
             >
               {intent.tier} Tier
             </span>
-            <span className="rounded-full border border-border/40 bg-muted/20 px-2.5 py-0.5 text-[10px] font-extrabold text-muted-foreground uppercase">
+            <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
               {intent.category}
             </span>
             {intent.target && (
@@ -230,8 +275,8 @@ function IntentDetail({
               intent.status === "completed"
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                 : intent.status === "abandoned"
-                ? "border-red-500/30 bg-red-500/10 text-red-400"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                  ? "border-red-500/30 bg-red-500/10 text-red-400"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-400"
             )}
           >
             <span
@@ -240,8 +285,8 @@ function IntentDetail({
                 intent.status === "completed"
                   ? "bg-emerald-400"
                   : intent.status === "abandoned"
-                  ? "bg-red-400"
-                  : "bg-amber-400 animate-pulse"
+                    ? "bg-red-400"
+                    : "animate-pulse bg-amber-400"
               )}
             />
             {intent.status || "active"}
@@ -249,20 +294,25 @@ function IntentDetail({
         </div>
 
         <div>
-          <h2 className="text-foreground text-xl font-extrabold leading-snug tracking-tight">
+          <h2 className="text-foreground text-xl leading-snug font-extrabold tracking-tight">
             {intent.goal}
           </h2>
           <p className="text-muted-foreground mt-1 text-xs font-medium">
-            Enacted on {new Date(intent.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+            Enacted on{" "}
+            {new Date(intent.createdAt).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </p>
         </div>
 
         {/* Interactive Action Bar */}
-        <div className="border-t border-border/30 pt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="border-border/30 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
           <button
             type="button"
             onClick={handleChainDirective}
-            className="group inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-500 dark:text-amber-400 hover:bg-amber-500/20 transition-all cursor-pointer active:scale-95 shadow-xs"
+            className="group inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-500 shadow-xs transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <Command className="h-3.5 w-3.5" />
             <span>Build on this →</span>
@@ -273,9 +323,13 @@ function IntentDetail({
               <button
                 type="button"
                 onClick={handleCopySummary}
-                className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all cursor-pointer"
+                className="border-border/40 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all"
               >
-                {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Share2 className="h-3 w-3" />}
+                {copied ? (
+                  <Check className="h-3 w-3 text-emerald-400" />
+                ) : (
+                  <Share2 className="h-3 w-3" />
+                )}
                 <span>{copied ? "Copied" : "Share"}</span>
               </button>
             )}
@@ -285,7 +339,7 @@ function IntentDetail({
                 type="button"
                 onClick={() => updateM.mutate({ id: intent.id, status: "completed" })}
                 disabled={updateM.isPending}
-                className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition-all hover:bg-emerald-500/20"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 <span>Complete Directive</span>
@@ -295,7 +349,7 @@ function IntentDetail({
             <button
               type="button"
               onClick={() => setIsShareModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 hover:bg-purple-500/20 transition-all cursor-pointer shadow-xs active:scale-95"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span>Share to ThinkPages...</span>
@@ -324,7 +378,7 @@ function IntentDetail({
             <BookOpen className="h-4 w-4" />
             <span>Executive Narrative Summary</span>
           </div>
-          <p className="text-muted-foreground text-xs leading-relaxed font-medium pl-6">
+          <p className="text-muted-foreground pl-6 text-xs leading-relaxed font-medium">
             {intent.summary}
           </p>
         </FacetCard>
@@ -337,12 +391,12 @@ function IntentDetail({
             <Shield className="h-4 w-4" />
             <span>Resistance Progress</span>
           </div>
-          <span className="rounded-full border border-border/40 bg-muted/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-muted-foreground">
+          <span className="border-border/40 bg-muted/20 text-muted-foreground rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold">
             {linked.data?.resolvedCount ?? 0} / {linked.data?.totalCount ?? 0} resolved
           </span>
         </div>
 
-        <div className="h-2 overflow-hidden rounded-full bg-muted/50 dark:bg-white/10">
+        <div className="bg-muted/50 h-2 overflow-hidden rounded-full dark:bg-white/10">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
@@ -363,16 +417,25 @@ function IntentDetail({
               return (
                 <div
                   key={iss.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-card/30 px-3 py-2 text-xs"
+                  className="border-border/40 bg-card/30 flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
                       className={cn(
                         "h-1.5 w-1.5 shrink-0 rounded-full",
-                        done ? "bg-emerald-400" : iss.status === "viewed" ? "bg-amber-400" : "bg-slate-400"
+                        done
+                          ? "bg-emerald-400"
+                          : iss.status === "viewed"
+                            ? "bg-amber-400"
+                            : "bg-slate-400"
                       )}
                     />
-                    <span className={cn("min-w-0 truncate font-semibold", done ? "text-muted-foreground" : "text-foreground")}>
+                    <span
+                      className={cn(
+                        "min-w-0 truncate font-semibold",
+                        done ? "text-muted-foreground" : "text-foreground"
+                      )}
+                    >
                       {iss.title}
                     </span>
                   </div>
@@ -403,13 +466,21 @@ function IntentDetail({
       <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
 
       {/* Aligned Power Broker Telemetry */}
-      <FacetCard depth={1} className="bg-card/20 flex items-center justify-between p-4 backdrop-blur-md">
+      <FacetCard
+        depth={1}
+        className="bg-card/20 flex items-center justify-between p-4 backdrop-blur-md"
+      >
         <div className="flex items-center gap-3">
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl border", brokerInfo.color)}>
+          <div
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-xl border",
+              brokerInfo.color
+            )}
+          >
             <BrokerIcon className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-xs font-bold text-foreground">Aligned Power Broker</div>
+            <div className="text-foreground text-xs font-bold">Aligned Power Broker</div>
             <div className="text-muted-foreground text-[11px] font-medium">{brokerInfo.name}</div>
           </div>
         </div>
@@ -421,29 +492,35 @@ function IntentDetail({
       {/* Applied Policy Line-Items & Stat Changes */}
       {parsedChanges.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-muted-foreground text-[11px] font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+          <h4 className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-extrabold tracking-widest uppercase">
             <Sliders className="h-3.5 w-3.5 text-amber-500" />
             Applied Package Line-Items ({parsedChanges.length})
           </h4>
           <div className="space-y-2">
             {parsedChanges.map((change, idx) => (
-              <FacetCard key={idx} depth={1} className="bg-card/20 flex items-center justify-between p-3.5 text-xs backdrop-blur-md">
+              <FacetCard
+                key={idx}
+                depth={1}
+                className="bg-card/20 flex items-center justify-between p-3.5 text-xs backdrop-blur-md"
+              >
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 font-bold text-[10px]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-[10px] font-bold text-amber-500">
                     #{idx + 1}
                   </span>
-                  <span className="font-bold text-foreground">{change.label}</span>
+                  <span className="text-foreground font-bold">{change.label}</span>
                 </div>
                 {change.deltaPercent !== undefined && (
                   <span
                     className={cn(
-                      "font-mono font-bold text-xs px-2 py-0.5 rounded-md border",
+                      "rounded-md border px-2 py-0.5 font-mono text-xs font-bold",
                       change.deltaPercent > 0
                         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                         : "border-red-500/30 bg-red-500/10 text-red-400"
                     )}
                   >
-                    {change.deltaPercent > 0 ? `+${change.deltaPercent}%` : `${change.deltaPercent}%`}
+                    {change.deltaPercent > 0
+                      ? `+${change.deltaPercent}%`
+                      : `${change.deltaPercent}%`}
                   </span>
                 )}
               </FacetCard>
@@ -454,33 +531,48 @@ function IntentDetail({
 
       {/* Chained Initiative Tree (Parents & Children) */}
       {(parent || children.length > 0) && (
-        <div className="space-y-3 border-t border-border/30 pt-4">
-          <h4 className="text-muted-foreground text-[11px] font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+        <div className="border-border/30 space-y-3 border-t pt-4">
+          <h4 className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-extrabold tracking-widest uppercase">
             <Layers className="h-3.5 w-3.5 text-amber-500" />
             Chained Initiative Tree
           </h4>
 
           {parent && (
             <div className="space-y-1">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">Parent Initiative</div>
-              <FacetCard depth={1} className="bg-card/20 flex items-center justify-between p-3 text-xs backdrop-blur-md border-l-2 border-l-amber-500">
-                <span className="font-bold text-foreground">{parent.goal}</span>
-                <span className="text-[10px] font-bold text-amber-400 uppercase">{parent.tier}</span>
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
+                Parent Initiative
+              </div>
+              <FacetCard
+                depth={1}
+                className="bg-card/20 flex items-center justify-between border-l-2 border-l-amber-500 p-3 text-xs backdrop-blur-md"
+              >
+                <span className="text-foreground font-bold">{parent.goal}</span>
+                <span className="text-[10px] font-bold text-amber-400 uppercase">
+                  {parent.tier}
+                </span>
               </FacetCard>
             </div>
           )}
 
           {children.length > 0 && (
             <div className="space-y-1">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase">Follow-up Directives ({children.length})</div>
+              <div className="text-muted-foreground text-[10px] font-bold uppercase">
+                Follow-up Directives ({children.length})
+              </div>
               <div className="space-y-2">
                 {children.map((kid: any) => (
-                  <FacetCard key={kid.id} depth={1} className="bg-card/20 flex items-center justify-between p-3 text-xs backdrop-blur-md border-l-2 border-l-blue-500 pl-4">
+                  <FacetCard
+                    key={kid.id}
+                    depth={1}
+                    className="bg-card/20 flex items-center justify-between border-l-2 border-l-blue-500 p-3 pl-4 text-xs backdrop-blur-md"
+                  >
                     <div className="flex items-center gap-2">
-                      <CornerDownRight className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                      <span className="font-bold text-foreground">{kid.goal}</span>
+                      <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                      <span className="text-foreground font-bold">{kid.goal}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-blue-400 uppercase">{kid.tier}</span>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase">
+                      {kid.tier}
+                    </span>
                   </FacetCard>
                 ))}
               </div>
@@ -506,7 +598,8 @@ export function V2DrillSheets({
   const open = drill !== null;
 
   const kindKind = drill === null ? "relations" : drill.kind;
-  const meta = kindKind === "intent" || kindKind === "issue" ? null : DOMAIN_META[kindKind as V2Domain];
+  const meta =
+    kindKind === "intent" || kindKind === "issue" ? null : DOMAIN_META[kindKind as V2Domain];
 
   const title =
     drill === null
@@ -515,7 +608,7 @@ export function V2DrillSheets({
         ? "Directive Detail"
         : drill.kind === "issue"
           ? "Issue Brief"
-          : meta?.sheetTitle ?? "";
+          : (meta?.sheetTitle ?? "");
   const Icon =
     drill === null
       ? Target
@@ -523,9 +616,8 @@ export function V2DrillSheets({
         ? Target
         : drill.kind === "issue"
           ? AlertTriangle
-          : meta?.icon ?? Target;
-  const accent =
-    drill === null ? "text-amber-400" : meta?.accent ?? "text-amber-400";
+          : (meta?.icon ?? Target);
+  const accent = drill === null ? "text-amber-400" : (meta?.accent ?? "text-amber-400");
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -543,7 +635,7 @@ export function V2DrillSheets({
               <Link
                 href={`/countries/${encodeURIComponent(countryId)}#${drill.kind}`}
                 target="_blank"
-                className="group inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 hover:bg-purple-500/20 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                className="group inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95"
               >
                 <span>Full Profile Depth</span>
                 <ExternalLink className="h-3 w-3" />
@@ -558,13 +650,14 @@ export function V2DrillSheets({
         </SheetHeader>
 
         {drill === null ? null : drill.kind === "intent" ? (
-          <IntentDetail countryId={countryId} intentId={drill.intentId} onDeclare={onDeclare} onClose={onClose} />
-        ) : drill.kind === "issue" ? (
-          <V2IssueDetail
-            issueId={drill.issueId}
+          <IntentDetail
+            countryId={countryId}
+            intentId={drill.intentId}
             onDeclare={onDeclare}
             onClose={onClose}
           />
+        ) : drill.kind === "issue" ? (
+          <V2IssueDetail issueId={drill.issueId} onDeclare={onDeclare} onClose={onClose} />
         ) : drill.kind === "relations" ? (
           <EmbassiesAndRelationsPanel countryId={countryId} />
         ) : drill.kind === "defense" ? (

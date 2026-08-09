@@ -68,13 +68,10 @@ export function V2CommandSurface({
     [utils]
   );
 
-  const declare = useCallback(
-    (prefilled?: string) => {
-      setGoal(typeof prefilled === "string" ? prefilled : "");
-      setMode("console");
-    },
-    []
-  );
+  const declare = useCallback((prefilled?: string) => {
+    setGoal(typeof prefilled === "string" ? prefilled : "");
+    setMode("console");
+  }, []);
 
   const openDrill = useCallback((d: V2Drill) => setDrill(d), []);
 

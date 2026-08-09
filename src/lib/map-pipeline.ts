@@ -37,13 +37,7 @@ export interface PipelineInput {
 }
 
 export type PipelineStage =
-  | "upload"
-  | "conversion"
-  | "parsing"
-  | "enrichment"
-  | "validation"
-  | "complete"
-  | "error";
+  "upload" | "conversion" | "parsing" | "enrichment" | "validation" | "complete" | "error";
 
 export interface PipelineProgress {
   stage: PipelineStage;

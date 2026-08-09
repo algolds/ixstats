@@ -52,7 +52,8 @@ export function auditGeographicalAccuracy(
 
   for (let i = 0; i < n; i++) {
     const lat = Math.abs(cells.p[i * 2 + 1]!);
-    const isLandCell = (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
+    const isLandCell =
+      (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
 
     if (isLandCell) {
       landCellCount++;
@@ -75,9 +76,12 @@ export function auditGeographicalAccuracy(
   const landRatioScore = landRatioPercent >= 20 && landRatioPercent <= 45 ? 100 : 75;
 
   const thermalGradientScore = totalPolarCount > 0 ? (polarColdCount / totalPolarCount) * 100 : 90;
-  const arableProximityPercent = landCellCount > 0 ? (arableNearWaterCount / landCellCount) * 100 : 80;
+  const arableProximityPercent =
+    landCellCount > 0 ? (arableNearWaterCount / landCellCount) * 100 : 80;
   const earthLikeCompatibilityScore = Math.round(
-    landRatioScore * 0.4 + thermalGradientScore * 0.3 + Math.min(100, arableProximityPercent * 1.5) * 0.3
+    landRatioScore * 0.4 +
+      thermalGradientScore * 0.3 +
+      Math.min(100, arableProximityPercent * 1.5) * 0.3
   );
 
   // 2. Hydrological Flow Score (Rivers flow downhill along steepest slope)
@@ -116,7 +120,8 @@ export function auditGeographicalAccuracy(
     }
   }
 
-  const highPeakGlacierPercent = highPeakCount > 0 ? Math.round((coldHighPeakCount / highPeakCount) * 100) : 95;
+  const highPeakGlacierPercent =
+    highPeakCount > 0 ? Math.round((coldHighPeakCount / highPeakCount) * 100) : 95;
   const thermodynamicLapseScore = Math.max(85, highPeakGlacierPercent);
 
   // 4. Orogenic Rain Shadow Score
@@ -135,12 +140,14 @@ export function auditGeographicalAccuracy(
     }
   }
 
-  const rainShadowScore = rainShadowTested > 0 ? Math.round((rainShadowPassed / rainShadowTested) * 100) : 88;
+  const rainShadowScore =
+    rainShadowTested > 0 ? Math.round((rainShadowPassed / rainShadowTested) * 100) : 88;
 
   // 5. Hypsometric Elevation Curve Score
   const zoneCounts = new Array(9).fill(0);
   for (let i = 0; i < n; i++) {
-    const isLandCell = (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
+    const isLandCell =
+      (cells as any).isLand !== undefined ? (cells as any).isLand[i] === 1 : cells.h[i]! >= 51;
     if (isLandCell) {
       zoneCounts[cells.elevZone[i]!]!++;
     }

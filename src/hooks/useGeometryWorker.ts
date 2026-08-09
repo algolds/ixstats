@@ -21,7 +21,10 @@ export function useGeometryWorker() {
     if (typeof window !== "undefined" && typeof window.Worker !== "undefined") {
       try {
         const worker = new Worker(
-          new URL("../lib/worldgen/workers/geometry.worker.ts", typeof document !== "undefined" ? document.baseURI : "http://localhost"),
+          new URL(
+            "../lib/worldgen/workers/geometry.worker.ts",
+            typeof document !== "undefined" ? document.baseURI : "http://localhost"
+          ),
           { type: "module" }
         );
 

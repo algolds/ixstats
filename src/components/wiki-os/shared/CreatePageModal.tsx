@@ -16,14 +16,7 @@ interface CreatePageModalProps {
 }
 
 export type PageType =
-  | "blank"
-  | "person"
-  | "company"
-  | "history"
-  | "country"
-  | "conflict"
-  | "politics"
-  | "tech";
+  "blank" | "person" | "company" | "history" | "country" | "conflict" | "politics" | "tech";
 
 export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   const router = useRouter();

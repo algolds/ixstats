@@ -32,9 +32,9 @@ describe("national-issues-config spawnMode", () => {
   });
 
   it("preserves an explicit spawnMode override", () => {
-    expect(
-      completeNationalIssuesConfig({ spawnMode: "deterministic" }).spawnMode
-    ).toBe("deterministic");
+    expect(completeNationalIssuesConfig({ spawnMode: "deterministic" }).spawnMode).toBe(
+      "deterministic"
+    );
   });
 
   it("falls back to the default when the JSON file is missing", () => {

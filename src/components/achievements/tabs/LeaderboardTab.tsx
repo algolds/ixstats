@@ -56,24 +56,84 @@ const CATEGORIES = [
 const FILTERS = [
   { id: "achievements", label: "Achievements", icon: Trophy, fmt: "achievements", domain: "all" },
   { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency", domain: "economy" },
-  { id: "gdpPerCapita", label: "GDP per Capita", icon: DollarSign, fmt: "currency", domain: "economy" },
+  {
+    id: "gdpPerCapita",
+    label: "GDP per Capita",
+    icon: DollarSign,
+    fmt: "currency",
+    domain: "economy",
+  },
   { id: "population", label: "Population", icon: Users, fmt: "number", domain: "demographics" },
-  { id: "populationDensity", label: "Pop. Density", icon: Gauge, fmt: "number", domain: "demographics" },
+  {
+    id: "populationDensity",
+    label: "Pop. Density",
+    icon: Gauge,
+    fmt: "number",
+    domain: "demographics",
+  },
   { id: "landArea", label: "Land Area", icon: Map, fmt: "number", domain: "demographics" },
   { id: "gdpGrowth", label: "GDP Growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
   { id: "avgIncome", label: "Avg Income", icon: DollarSign, fmt: "currency", domain: "economy" },
   { id: "workforce", label: "Workforce", icon: Users, fmt: "number", domain: "demographics" },
-  { id: "employmentRate", label: "Employment", icon: Briefcase, fmt: "percent", domain: "demographics" },
-  { id: "literacyRate", label: "Literacy", icon: GraduationCap, fmt: "percent", domain: "governance" },
-  { id: "lifeExpectancy", label: "Life Expectancy", icon: Heart, fmt: "years", domain: "governance" },
+  {
+    id: "employmentRate",
+    label: "Employment",
+    icon: Briefcase,
+    fmt: "percent",
+    domain: "demographics",
+  },
+  {
+    id: "literacyRate",
+    label: "Literacy",
+    icon: GraduationCap,
+    fmt: "percent",
+    domain: "governance",
+  },
+  {
+    id: "lifeExpectancy",
+    label: "Life Expectancy",
+    icon: Heart,
+    fmt: "years",
+    domain: "governance",
+  },
   { id: "govRevenue", label: "Gov. Revenue", icon: Landmark, fmt: "currency", domain: "economy" },
   { id: "govSpending", label: "Gov. Spending", icon: Landmark, fmt: "currency", domain: "economy" },
-  { id: "economicVitality", label: "Economic Vitality", icon: Activity, fmt: "score", domain: "governance" },
+  {
+    id: "economicVitality",
+    label: "Economic Vitality",
+    icon: Activity,
+    fmt: "score",
+    domain: "governance",
+  },
   { id: "wellbeing", label: "Wellbeing", icon: Heart, fmt: "score", domain: "governance" },
-  { id: "nationalHealth", label: "National Health", icon: ShieldCheck, fmt: "score", domain: "governance" },
-  { id: "infrastructure", label: "Infrastructure", icon: Building2, fmt: "score", domain: "governance" },
-  { id: "urbanization", label: "Urbanization", icon: Building2, fmt: "percent", domain: "demographics" },
-  { id: "approval", label: "Public Approval", icon: ThumbsUp, fmt: "percent", domain: "governance" },
+  {
+    id: "nationalHealth",
+    label: "National Health",
+    icon: ShieldCheck,
+    fmt: "score",
+    domain: "governance",
+  },
+  {
+    id: "infrastructure",
+    label: "Infrastructure",
+    icon: Building2,
+    fmt: "score",
+    domain: "governance",
+  },
+  {
+    id: "urbanization",
+    label: "Urbanization",
+    icon: Building2,
+    fmt: "percent",
+    domain: "demographics",
+  },
+  {
+    id: "approval",
+    label: "Public Approval",
+    icon: ThumbsUp,
+    fmt: "percent",
+    domain: "governance",
+  },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
@@ -111,7 +171,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
       <img
         src={flag}
         alt={`Flag of ${countryName}`}
-        className="h-4 w-6 shrink-0 rounded border border-border/40 object-cover shadow-sm"
+        className="border-border/40 h-4 w-6 shrink-0 rounded border object-cover shadow-sm"
         onError={() => setHasError(true)}
       />
     );
@@ -186,10 +246,10 @@ function PodiumCard({
       <div className="mt-4 space-y-1">
         <div className="flex items-center gap-2">
           <FlagGraphic countryName={name} flag={flag} />
-          <div className="truncate text-base font-bold text-foreground">{name}</div>
+          <div className="text-foreground truncate text-base font-bold">{name}</div>
         </div>
-        <div className="text-2xl font-black text-foreground">{primary}</div>
-        <div className="text-xs text-muted-foreground">{secondary}</div>
+        <div className="text-foreground text-2xl font-black">{primary}</div>
+        <div className="text-muted-foreground text-xs">{secondary}</div>
       </div>
     </div>
   );
@@ -235,14 +295,14 @@ function Row({
         <div>
           <div className="flex items-center gap-2">
             <FlagGraphic countryName={name} flag={flag} />
-            <div className="font-bold text-foreground">{name}</div>
+            <div className="text-foreground font-bold">{name}</div>
           </div>
-          <div className="text-xs text-muted-foreground">{secondary}</div>
+          <div className="text-muted-foreground text-xs">{secondary}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
         <Star className="h-5 w-5 fill-amber-500/20 text-amber-500" />
-        <span className="text-xl font-black text-foreground">{primary}</span>
+        <span className="text-foreground text-xl font-black">{primary}</span>
       </div>
     </div>
   );
@@ -279,9 +339,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
 
   // Filter achievements locally if search query is provided
   const filteredAchievements = effectiveAchievements?.filter((entry) =>
-    searchQuery
-      ? entry.countryName.toLowerCase().includes(searchQuery.toLowerCase())
-      : true
+    searchQuery ? entry.countryName.toLowerCase().includes(searchQuery.toLowerCase()) : true
   );
 
   const topThree =
@@ -303,12 +361,12 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
 
   const mainContent = (
     <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
-      <TextureCardContent className="p-6 space-y-6">
+      <TextureCardContent className="space-y-6 p-6">
         {/* Header & Controls */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xl font-bold text-foreground">Global World Leaderboards</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="text-foreground text-xl font-bold">Global World Leaderboards</h3>
+            <p className="text-muted-foreground text-xs">
               Rankings across {active.label.toLowerCase()} • {limit} nations displayed
             </p>
           </div>
@@ -316,24 +374,24 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           <div className="flex flex-wrap items-center gap-3">
             {/* Search Input */}
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search nation..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 text-xs bg-card/60 border-border/50 h-9"
+                className="bg-card/60 border-border/50 h-9 pl-9 text-xs"
               />
             </div>
 
             {/* Limit Selector */}
-            <div className="flex items-center gap-1 bg-black/10 dark:bg-black/40 border border-border/50 rounded-lg p-1 text-xs">
+            <div className="border-border/50 flex items-center gap-1 rounded-lg border bg-black/10 p-1 text-xs dark:bg-black/40">
               {[10, 25, 50, 100].map((l) => (
                 <button
                   key={l}
                   onClick={() => setLimit(l)}
                   className={cn(
-                    "px-2.5 py-1 rounded font-bold transition-all",
+                    "rounded px-2.5 py-1 font-bold transition-all",
                     limit === l
                       ? "bg-amber-500/20 text-amber-500 dark:text-amber-400"
                       : "text-muted-foreground hover:text-foreground"
@@ -347,16 +405,16 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         </div>
 
         {/* Domain Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border/40 pb-3">
+        <div className="border-border/40 flex flex-wrap items-center gap-2 border-b pb-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveDomain(cat.id)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
                 activeDomain === cat.id
                   ? "bg-foreground text-background"
-                  : "bg-card/40 text-muted-foreground hover:text-foreground border border-border/50"
+                  : "bg-card/40 text-muted-foreground hover:text-foreground border-border/50 border"
               )}
             >
               {cat.label}
@@ -392,7 +450,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           3. Podium Rendering: topThree[0] (Gold), topThree[1] (Silver), topThree[2] (Bronze) render into Podium Cards!
         */}
         {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
             <PodiumCard
               rank={1}
               name={topThree[0].countryName}

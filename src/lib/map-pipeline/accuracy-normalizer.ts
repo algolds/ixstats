@@ -99,10 +99,13 @@ export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard 
   // 4. Evaluate Lake Coverage Share
   const lakeFeatures = layers.lakes?.features || [];
   const totalLakeArea = lakeFeatures.reduce(
-    (sum, f) => sum + Number(f.properties?.areaKm2 || f.properties?._areaSqKm || f.properties?.areaSqKm || 500),
+    (sum, f) =>
+      sum +
+      Number(f.properties?.areaKm2 || f.properties?._areaSqKm || f.properties?.areaSqKm || 500),
     0
   );
-  const lakeShare = totalLandArea > 0 && totalLakeArea > 0 ? (totalLakeArea / totalLandArea) * 100 : 2.0;
+  const lakeShare =
+    totalLandArea > 0 && totalLakeArea > 0 ? (totalLakeArea / totalLandArea) * 100 : 2.0;
 
   const lakePassed =
     lakeShare >= SAFE_GEOGRAPHIC_TARGETS.lakeLandSharePercentMin &&
@@ -120,7 +123,9 @@ export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard 
   const riverPassed = riverDensity >= 0.01 && riverDensity <= 15.0;
 
   if (!riverPassed) {
-    warnings.push(`River density (${riverDensity.toFixed(2)} rivers/country) outside target range [0.01, 15.0]`);
+    warnings.push(
+      `River density (${riverDensity.toFixed(2)} rivers/country) outside target range [0.01, 15.0]`
+    );
   }
 
   // Compute Overall Score (100 - penalties)
@@ -193,7 +198,9 @@ export function auditWorldGenerationBatch(
   const passedCount = reports.filter((r) => r.isWithinSafeTargets).length;
   const totalTested = reports.length;
   const passRatePercent = Math.round((passedCount / totalTested) * 100);
-  const averageScore = Math.round(reports.reduce((sum, r) => sum + r.overallScore, 0) / totalTested);
+  const averageScore = Math.round(
+    reports.reduce((sum, r) => sum + r.overallScore, 0) / totalTested
+  );
 
   return {
     totalTested,

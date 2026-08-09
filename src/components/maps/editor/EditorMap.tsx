@@ -118,7 +118,10 @@ interface EditorMapProps {
   lassoGeometry?: any;
   setLassoGeometry?: (geom: any) => void;
   onAddRulerPoint?: (coords: [number, number]) => void;
-  onApplyLassoSelection?: (coords: [number, number][], mode?: "replace" | "add" | "subtract") => void;
+  onApplyLassoSelection?: (
+    coords: [number, number][],
+    mode?: "replace" | "add" | "subtract"
+  ) => void;
   /** Rectangular marquee selection from screen-space bounds (Plan 120 P3). */
   onApplyRectSelection?: (
     bounds: { west: number; south: number; east: number; north: number },
@@ -1114,7 +1117,10 @@ const EditorMap = memo(
         map.dragPan.enable();
 
         const endPoint = e.point ? { x: e.point.x, y: e.point.y } : null;
-        const dragged = startPoint && endPoint ? Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y) > 4 : false;
+        const dragged =
+          startPoint && endPoint
+            ? Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y) > 4
+            : false;
 
         if (isRect) {
           if (dragged && startLngLat) {

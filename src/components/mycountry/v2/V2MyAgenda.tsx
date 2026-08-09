@@ -78,15 +78,15 @@ function Complication({
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col items-center justify-center rounded-xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] p-2.5 text-center shadow-xs backdrop-blur-md select-none transition-all hover:border-border dark:hover:border-white/20 hover:bg-card/90 dark:hover:bg-white/[0.06]",
+        "group border-border/70 bg-card/60 hover:border-border hover:bg-card/90 relative flex flex-col items-center justify-center rounded-xl border p-2.5 text-center shadow-xs backdrop-blur-md transition-all select-none dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]",
         onClick && "cursor-pointer active:scale-95"
       )}
     >
-      <div className="mb-1 flex items-center gap-1.5 text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+      <div className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-extrabold tracking-wider uppercase">
         {icon}
         <span>{label}</span>
       </div>
-      <div className="text-xs font-black tracking-tight text-foreground tabular-nums">{value}</div>
+      <div className="text-foreground text-xs font-black tracking-tight tabular-nums">{value}</div>
     </motion.div>
   );
 
@@ -94,7 +94,10 @@ function Complication({
     return (
       <Tooltip>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[210px] border border-border bg-card text-card-foreground text-[11px] backdrop-blur-xl shadow-xl">
+        <TooltipContent
+          side="bottom"
+          className="border-border bg-card text-card-foreground max-w-[210px] border text-[11px] shadow-xl backdrop-blur-xl"
+        >
           {tooltip}
         </TooltipContent>
       </Tooltip>
@@ -293,12 +296,15 @@ export function V2MyAgenda({
         timeLabel: "14:00 Today",
         title: "Parliamentary Budget & Policy Vote",
         category: "politics",
-        description: "National legislature convening to vote on proposed economic appropriation bills.",
+        description:
+          "National legislature convening to vote on proposed economic appropriation bills.",
         directiveGoal: "Guide parliamentary coalition vote and secure policy approval",
         statusLabel: "Vote Scheduled",
         icon: Scale,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-violet-500/40 dark:border-violet-500/30 bg-violet-500/10 text-foreground hover:border-violet-500/60 hover:bg-violet-500/15 hover:shadow-md",
+        badgeCls:
+          "bg-violet-500/20 text-violet-800 dark:text-violet-300 border-violet-500/40 font-bold",
         drillKind: { kind: "politics" },
       },
       {
@@ -307,12 +313,14 @@ export function V2MyAgenda({
         timeLabel: "10:00 Tomorrow",
         title: "Bilateral Trade Accord Review",
         category: "diplomacy",
-        description: "Scheduled diplomatic review for multi-national alliance and trade tariff agreements.",
+        description:
+          "Scheduled diplomatic review for multi-national alliance and trade tariff agreements.",
         directiveGoal: "Ratify bilateral trade accord and optimize import/export tariffs",
         statusLabel: "Summit Pending",
         icon: Handshake,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-teal-500/40 dark:border-teal-500/30 bg-teal-500/10 text-foreground hover:border-teal-500/60 hover:bg-teal-500/15 hover:shadow-md",
+        badgeCls: "bg-teal-500/20 text-teal-800 dark:text-teal-300 border-teal-500/40 font-bold",
         drillKind: { kind: "relations" },
       },
       {
@@ -321,12 +329,14 @@ export function V2MyAgenda({
         timeLabel: "09:00 +2 Days",
         title: "Military Readiness Audit",
         category: "defense",
-        description: "Quarterly joint command readiness evaluation and strategic border defense drill.",
+        description:
+          "Quarterly joint command readiness evaluation and strategic border defense drill.",
         directiveGoal: "Conduct armed forces defense audit and upgrade logistics supply lines",
         statusLabel: "Audit Scheduled",
         icon: Shield,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-red-500/40 dark:border-red-500/30 bg-red-500/10 text-foreground hover:border-red-500/60 hover:bg-red-500/15 hover:shadow-md",
+        badgeCls: "bg-red-500/20 text-red-800 dark:text-red-300 border-red-500/40 font-bold",
         drillKind: { kind: "defense" },
       },
       {
@@ -335,12 +345,15 @@ export function V2MyAgenda({
         timeLabel: "18:00 +3 Days",
         title: "Macroeconomic Cycle & Tax Settlement",
         category: "economy",
-        description: "Central bank economic telemetry report and corporate tax revenue ledger update.",
+        description:
+          "Central bank economic telemetry report and corporate tax revenue ledger update.",
         directiveGoal: "Rebalance corporate tax policy and incentivize industrial growth",
         statusLabel: "Ledger Settlement",
         icon: TrendingUp,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-emerald-500/40 dark:border-emerald-500/30 bg-emerald-500/10 text-foreground hover:border-emerald-500/60 hover:bg-emerald-500/15 hover:shadow-md",
+        badgeCls:
+          "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 font-bold",
         drillKind: { kind: "economy" },
       },
     ];
@@ -358,8 +371,10 @@ export function V2MyAgenda({
         directiveGoal: `Address scheduled statecraft event: ${ev.label}`,
         statusLabel: "STATECRAFT EVENT",
         icon: CalendarClock,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-amber-500/40 dark:border-amber-500/30 bg-amber-500/10 text-foreground hover:border-amber-500/60 hover:bg-amber-500/15 hover:shadow-md",
+        badgeCls:
+          "bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 font-bold",
         rawIxTime: ev.ixTime,
       });
     });
@@ -367,10 +382,8 @@ export function V2MyAgenda({
     // Inject active executive directive rollouts
     const intentsList = Array.isArray(intentTree.data)
       ? intentTree.data
-      : intentTree.data?.allIntents ?? [];
-    const activeIntents = intentsList.filter(
-      (i: any) => i.status?.toLowerCase() === "active"
-    );
+      : (intentTree.data?.allIntents ?? []);
+    const activeIntents = intentsList.filter((i: any) => i.status?.toLowerCase() === "active");
     activeIntents.forEach((it: any) => {
       list.unshift({
         id: `intent-ev-${it.id}`,
@@ -382,14 +395,26 @@ export function V2MyAgenda({
         directiveGoal: `Accelerate directive rollout: ${it.goal}`,
         statusLabel: `${it.tier?.toUpperCase() ?? "ACTIVE"} DIRECTIVE`,
         icon: Command,
-        accentCls: "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
-        badgeCls: "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+        accentCls:
+          "border-amber-500/50 dark:border-amber-500/30 bg-amber-500/10 text-foreground hover:border-amber-500/70 hover:bg-amber-500/20 hover:shadow-md",
+        badgeCls:
+          "bg-amber-500/25 text-amber-800 dark:text-amber-300 border-amber-500/40 font-bold",
         intentId: it.id,
       });
     });
 
-    // Inject active national issues awaiting executive action
-    const activeIssues = issuesData.data?.issues ?? [];
+    // Inject active national issues awaiting executive action (Priority Issues first)
+    const rawActiveIssues = issuesData.data?.issues ?? [];
+    const activeIssues = [...rawActiveIssues].sort((a: any, b: any) => {
+      const aSev = String(a.severity ?? "").toLowerCase();
+      const bSev = String(b.severity ?? "").toLowerCase();
+      const sevRank = (s: string) =>
+        s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
+      const aScore = sevRank(aSev) * 100 + (a.urgency ?? 0);
+      const bScore = sevRank(bSev) * 100 + (b.urgency ?? 0);
+      return bScore - aScore;
+    });
+
     activeIssues.forEach((iss: any) => {
       const sev = String(iss.severity ?? "").toLowerCase();
       const urgent = sev === "critical" || sev === "high" || iss.urgency > 70;
@@ -406,11 +431,11 @@ export function V2MyAgenda({
         statusLabel: urgent ? "PRIORITY ISSUE" : "OPEN ISSUE",
         icon: AlertCircle,
         accentCls: urgent
-          ? "border-red-500/40 dark:border-red-500/30 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md"
-          : "border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/[0.03] text-foreground hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:bg-amber-500/10 dark:hover:bg-amber-500/15 hover:shadow-md",
+          ? "border-rose-500/50 dark:border-rose-500/40 bg-rose-500/10 text-foreground hover:border-rose-500/70 hover:bg-rose-500/20 hover:shadow-md"
+          : "border-violet-500/40 dark:border-violet-500/30 bg-violet-500/10 text-foreground hover:border-violet-500/60 hover:bg-violet-500/15 hover:shadow-md",
         badgeCls: urgent
-          ? "bg-red-500/15 text-red-800 dark:text-red-300 border-red-500/30 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40"
-          : "bg-muted/40 dark:bg-white/10 text-muted-foreground border-border/60 font-bold group-hover:bg-amber-500/20 group-hover:text-amber-900 dark:group-hover:text-amber-300 group-hover:border-amber-500/40",
+          ? "bg-rose-500/25 text-rose-800 dark:text-rose-300 border-rose-500/40 font-extrabold animate-pulse"
+          : "bg-violet-500/20 text-violet-800 dark:text-violet-300 border-violet-500/40 font-bold",
         drillKind: { kind: "issue", issueId: iss.id },
       });
     });
@@ -418,60 +443,103 @@ export function V2MyAgenda({
     return list;
   }, [intentTree.data, statecraftEvents, now, issuesData.data]);
 
-  // Filter events by selected day & category chip
+  // Filter events by selected day & category chip, ensuring Priority Issues sort to the top of the list
   const filteredEvents = useMemo(() => {
-    return events.filter((e) => {
+    const list = events.filter((e) => {
       const matchDay = e.dayOffset === selectedDayOffset;
       const matchCat = categoryFilter === "all" || e.category === categoryFilter;
       return matchDay && matchCat;
+    });
+
+    return list.sort((a, b) => {
+      const getPriorityScore = (item: (typeof list)[0]) => {
+        if (item.statusLabel === "PRIORITY ISSUE") return 4;
+        if (item.statusLabel === "OPEN ISSUE") return 3;
+        if (item.category === "directive") return 2;
+        return 1;
+      };
+      const scoreA = getPriorityScore(a);
+      const scoreB = getPriorityScore(b);
+      return scoreB - scoreA;
     });
   }, [events, selectedDayOffset, categoryFilter]);
 
   const usedSlots = status.data?.usedThisWeek ?? 0;
   const slotCap = status.data?.cap ?? 3;
   const soonestEvent = statecraftEvents[0];
-  const nextEventValue = soonestEvent ? formatRelativeIxDays(soonestEvent.ixTime, now) : "—";
+  const _nextEventValue = soonestEvent ? formatRelativeIxDays(soonestEvent.ixTime, now) : "—";
+  const civCapPct = Math.round(
+    Math.max(10, Math.min(100, ((slotCap - usedSlots) / slotCap) * 100))
+  );
 
   return (
     <>
-      <FacetCard depth={1} className="bg-card/40 dark:bg-card/30 flex flex-col gap-4 p-4.5 backdrop-blur-md shadow-lg dark:shadow-2xl border-border/80 dark:border-white/10">
+      <FacetCard
+        depth={1}
+        className="bg-card/40 dark:bg-card/30 border-border/80 flex flex-col gap-4 p-4.5 shadow-lg backdrop-blur-md dark:border-white/10 dark:shadow-2xl"
+      >
         {/* ── StandBy Hero Clock & Telemetry Header ─────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-gradient-to-br dark:from-white/[0.06] dark:via-white/[0.02] dark:to-transparent p-4 backdrop-blur-xl shadow-xs dark:shadow-lg dark:shadow-black/20">
+        <div className="border-border/70 bg-card/60 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-gradient-to-br dark:from-white/[0.06] dark:via-white/[0.02] dark:to-transparent dark:shadow-lg dark:shadow-black/20">
           {/* Subtle Ambient Light Glow Accent */}
-          <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-cyan-500/5 dark:bg-cyan-500/10 blur-2xl" />
+          <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-cyan-500/5 blur-2xl dark:bg-cyan-500/10" />
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 dark:border-white/10 pb-3 z-10 relative">
+          <div className="border-border/60 relative z-10 flex flex-wrap items-center justify-between gap-3 border-b pb-3 dark:border-white/10">
             <div className="flex items-center gap-2.5">
               <Calendar className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black tracking-tight text-foreground">
-                  Your Executive Agenda
+                <span className="text-foreground text-xs font-black tracking-tight">
+                  Issues & Events — Executive Agenda
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-800 dark:text-cyan-300 uppercase shadow-xs">
+                <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
                   <span>{currentSeason.emoji}</span>
                   <span>{currentSeason.name}</span>
                 </span>
               </div>
             </div>
 
-            {/* Directives Capacity Pill */}
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 py-1 text-[11px] font-mono font-semibold shadow-xs"
-            >
-              <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span className="text-muted-foreground">Directives:</span>
-              <span className="text-amber-800 dark:text-amber-300 font-bold">
-                {usedSlots} / {slotCap} Used
-              </span>
-            </motion.div>
+            {/* Directives Capacity Pill & Apple-Style CivCap Telemetry Bar */}
+            <div className="flex flex-col items-end gap-1.5">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 font-mono text-[11px] font-semibold shadow-xs backdrop-blur-md dark:border-amber-400/25 dark:bg-amber-400/10"
+              >
+                <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="text-muted-foreground">Directives:</span>
+                <span className="font-bold text-amber-800 dark:text-amber-300">
+                  {usedSlots} / {slotCap} Used
+                </span>
+              </motion.div>
+
+              {/* Apple-style Translucent CivCap Capsule Bar */}
+              <div
+                className="flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-2.5 py-1 backdrop-blur-md dark:border-white/10 dark:bg-white/5"
+                title="Civil Capacity (CivCap) administrative throughput remaining"
+              >
+                <span className="text-muted-foreground text-[9px] font-extrabold tracking-widest uppercase">
+                  CivCap
+                </span>
+                <div className="relative h-1.5 w-24 overflow-hidden rounded-full bg-black/10 shadow-inner dark:bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-amber-500 shadow-xs transition-all duration-500 ease-out dark:bg-amber-400"
+                    style={{ width: `${civCapPct}%` }}
+                  />
+                </div>
+                <span className="text-foreground font-mono text-[10px] font-bold tabular-nums">
+                  {civCapPct}%
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Complications Row */}
-          <div className="mt-3 grid grid-cols-3 gap-2.5 z-10 relative">
+          <div className="relative z-10 mt-3 grid grid-cols-3 gap-2.5">
             <Complication
-              icon={governanceConfig?.icon ?? <Gavel className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+              icon={
+                governanceConfig?.icon ?? (
+                  <Gavel className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                )
+              }
               label={governanceConfig?.label ?? "Term progress"}
               value={governanceConfig?.value ?? resolvedTermProgress}
               tooltip={governanceConfig?.tooltip}
@@ -495,7 +563,7 @@ export function V2MyAgenda({
         </div>
 
         {/* ── 7-Day Horizon Strip (Apple Spring Motion & Fluid Selection) ────── */}
-        <div className="grid grid-cols-7 gap-1.5 relative">
+        <div className="relative grid grid-cols-7 gap-1.5">
           {days.map(({ offset, dayName, dayNum }) => {
             const isSelected = selectedDayOffset === offset;
             const hasEvent = events.some((e) => e.dayOffset === offset);
@@ -505,25 +573,37 @@ export function V2MyAgenda({
                 type="button"
                 onClick={() => setSelectedDayOffset(offset)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center rounded-xl p-2 text-center transition-colors cursor-pointer select-none border active:scale-[0.97]",
+                  "relative flex cursor-pointer flex-col items-center justify-center rounded-xl border p-2 text-center transition-colors select-none active:scale-[0.97]",
                   isSelected
-                    ? "border-cyan-500/50 text-cyan-950 dark:text-cyan-200 shadow-xs"
-                    : "border-border/50 dark:border-white/5 bg-card/40 dark:bg-white/[0.02] hover:bg-card/80 dark:hover:bg-white/10 text-muted-foreground"
+                    ? "border-cyan-500/50 text-cyan-950 shadow-xs dark:text-cyan-200"
+                    : "border-border/50 bg-card/40 hover:bg-card/80 text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/10"
                 )}
               >
                 {isSelected && (
                   <motion.div
                     layoutId="agenda-day-pill"
-                    className="absolute inset-0 rounded-xl bg-cyan-500/15 dark:bg-cyan-500/20 border border-cyan-500/40"
+                    className="absolute inset-0 rounded-xl border border-cyan-500/40 bg-cyan-500/15 dark:bg-cyan-500/20"
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
                   />
                 )}
-                <span className={cn("relative z-10 text-[9px] font-extrabold tracking-wider uppercase opacity-90", isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "relative z-10 text-[9px] font-extrabold tracking-wider uppercase opacity-90",
+                    isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
+                  )}
+                >
                   {dayName}
                 </span>
-                <span className={cn("relative z-10 text-xs font-black tracking-tight", isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-foreground")}>{dayNum}</span>
+                <span
+                  className={cn(
+                    "relative z-10 text-xs font-black tracking-tight",
+                    isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-foreground"
+                  )}
+                >
+                  {dayNum}
+                </span>
                 {hasEvent && (
-                  <span className="relative z-10 mt-1 h-1.5 w-1.5 rounded-full bg-cyan-500 dark:bg-cyan-400 animate-pulse" />
+                  <span className="relative z-10 mt-1 h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500 dark:bg-cyan-400" />
                 )}
               </button>
             );
@@ -531,8 +611,8 @@ export function V2MyAgenda({
         </div>
 
         {/* ── Category Filter Chips (Sliding Pill Selection) ─────────────────── */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-border/60 dark:border-white/5 pt-2.5">
-          <div className="flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase text-muted-foreground mr-1 select-none">
+        <div className="border-border/60 flex flex-wrap items-center gap-1.5 border-t pt-2.5 dark:border-white/5">
+          <div className="text-muted-foreground mr-1 flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase select-none">
             <Filter className="h-3 w-3" />
             <span>Filter:</span>
           </div>
@@ -551,27 +631,34 @@ export function V2MyAgenda({
                 type="button"
                 onClick={() => setCategoryFilter(chip.id)}
                 className={cn(
-                  "relative rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors cursor-pointer select-none active:scale-[0.97]",
+                  "relative cursor-pointer rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors select-none active:scale-[0.97]",
                   isActive
-                    ? "border-cyan-500/50 text-cyan-950 dark:text-cyan-200 font-extrabold"
-                    : "border-border/60 dark:border-white/10 bg-card/50 dark:bg-white/5 text-muted-foreground hover:bg-card/90 dark:hover:bg-white/10 hover:text-foreground"
+                    ? "border-cyan-500/50 font-extrabold text-cyan-950 dark:text-cyan-200"
+                    : "border-border/60 bg-card/50 text-muted-foreground hover:bg-card/90 hover:text-foreground dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="agenda-filter-pill"
-                    className="absolute inset-0 rounded-lg bg-cyan-500/15 dark:bg-cyan-500/20 border border-cyan-500/40"
+                    className="absolute inset-0 rounded-lg border border-cyan-500/40 bg-cyan-500/15 dark:bg-cyan-500/20"
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
                   />
                 )}
-                <span className={cn("relative z-10", isActive ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground")}>{chip.label}</span>
+                <span
+                  className={cn(
+                    "relative z-10",
+                    isActive ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
+                  )}
+                >
+                  {chip.label}
+                </span>
               </button>
             );
           })}
         </div>
 
         {/* ── Event Cards & Action Items (Inline Scrollable Container) ───────── */}
-        <div className="max-h-[380px] space-y-2.5 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted/60 dark:scrollbar-thumb-white/20">
+        <div className="scrollbar-thumb-muted/60 max-h-[380px] scrollbar-thin scrollbar-track-transparent space-y-2.5 overflow-y-auto pr-1.5 dark:scrollbar-thumb-white/20">
           <AnimatePresence mode="popLayout">
             {filteredEvents.length > 0 ? (
               filteredEvents.map((item, idx) => {
@@ -586,15 +673,15 @@ export function V2MyAgenda({
                     transition={{ type: "spring", stiffness: 450, damping: 30, delay: idx * 0.03 }}
                     onClick={() => setSelectedEvent(item)}
                     className={cn(
-                      "group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border p-3.5 backdrop-blur-md transition-all cursor-pointer active:scale-[0.985] shadow-xs",
+                      "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3.5 shadow-xs backdrop-blur-md transition-all active:scale-[0.985] sm:flex-row sm:items-center",
                       item.accentCls
                     )}
                   >
-                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/5 shadow-inner mt-0.5 group-hover:scale-105 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all">
+                    <div className="flex min-w-0 flex-1 items-start gap-3.5">
+                      <div className="border-border/60 bg-card/60 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-inner transition-all group-hover:scale-105 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 group-hover:text-amber-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:text-amber-400">
                         <Icon className="h-4.5 w-4.5 shrink-0" />
                       </div>
-                      <div className="flex flex-col text-left min-w-0 space-y-0.5">
+                      <div className="flex min-w-0 flex-col space-y-0.5 text-left">
                         <div className="flex items-center gap-2">
                           <span
                             className={cn(
@@ -604,14 +691,14 @@ export function V2MyAgenda({
                           >
                             {item.statusLabel}
                           </span>
-                          <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                          <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
                             {item.timeLabel}
                           </span>
                         </div>
-                        <h4 className="text-xs font-extrabold text-foreground group-hover:text-amber-950 dark:group-hover:text-amber-200 leading-tight truncate transition-colors">
+                        <h4 className="text-foreground truncate text-xs leading-tight font-extrabold transition-colors group-hover:text-amber-950 dark:group-hover:text-amber-200">
                           {item.title}
                         </h4>
-                        <p className="text-[11px] text-muted-foreground line-clamp-1">
+                        <p className="text-muted-foreground line-clamp-1 text-[11px]">
                           {item.description}
                         </p>
                       </div>
@@ -624,10 +711,10 @@ export function V2MyAgenda({
                         e.stopPropagation();
                         setSelectedEvent(item);
                       }}
-                      className="flex items-center gap-1 rounded-lg border border-border/80 dark:border-white/15 bg-card/80 dark:bg-white/10 group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 dark:group-hover:text-amber-200 px-3 py-1.5 text-[10px] font-bold text-foreground transition-all cursor-pointer shrink-0 active:scale-95 shadow-xs"
+                      className="border-border/80 bg-card/80 text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-[10px] font-bold shadow-xs transition-all group-hover:border-amber-500/50 group-hover:bg-amber-500/20 group-hover:text-amber-950 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:group-hover:text-amber-200"
                     >
                       <span>Action</span>
-                      <ArrowUpRight className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      <ArrowUpRight className="h-3 w-3 opacity-70 transition-opacity group-hover:opacity-100" />
                     </button>
                   </motion.div>
                 );
@@ -636,12 +723,13 @@ export function V2MyAgenda({
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center rounded-xl border border-border/50 dark:border-white/5 bg-card/30 dark:bg-white/[0.01] p-7 text-center text-muted-foreground backdrop-blur-xs"
+                className="border-border/50 bg-card/30 text-muted-foreground flex flex-col items-center justify-center rounded-xl border p-7 text-center backdrop-blur-xs dark:border-white/5 dark:bg-white/[0.01]"
               >
-                <Calendar className="mb-2 h-7 w-7 text-muted-foreground/40 animate-pulse" />
-                <div className="text-xs font-bold text-foreground">No Events Scheduled</div>
-                <div className="text-[11px] text-muted-foreground/80 max-w-xs mt-0.5">
-                  No scheduled statecraft events or active directives match the selected day and category filter.
+                <Calendar className="text-muted-foreground/40 mb-2 h-7 w-7 animate-pulse" />
+                <div className="text-foreground text-xs font-bold">No Events Scheduled</div>
+                <div className="text-muted-foreground/80 mt-0.5 max-w-xs text-[11px]">
+                  No scheduled statecraft events or active directives match the selected day and
+                  category filter.
                 </div>
               </motion.div>
             )}
@@ -652,7 +740,7 @@ export function V2MyAgenda({
       {/* Quick Action Resolution Dialog */}
       <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
         {selectedEvent && (
-          <DialogContent className="max-w-md border-border/80 dark:border-white/15 bg-card/95 p-6 backdrop-blur-2xl shadow-2xl rounded-2xl space-y-4">
+          <DialogContent className="border-border/80 bg-card/95 max-w-md space-y-4 rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/15">
             <DialogHeader className="space-y-2 text-left">
               <div className="flex items-center gap-2">
                 <span
@@ -663,25 +751,25 @@ export function V2MyAgenda({
                 >
                   {selectedEvent.statusLabel}
                 </span>
-                <span className="text-xs font-mono text-muted-foreground tabular-nums">
+                <span className="text-muted-foreground font-mono text-xs tabular-nums">
                   {selectedEvent.timeLabel}
                 </span>
               </div>
-              <DialogTitle className="text-base font-black tracking-tight text-foreground">
+              <DialogTitle className="text-foreground text-base font-black tracking-tight">
                 {selectedEvent.title}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              <DialogDescription className="text-muted-foreground text-xs leading-relaxed">
                 {selectedEvent.description}
               </DialogDescription>
             </DialogHeader>
 
             {/* Directive Goal Resolution Preview Box */}
-            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 space-y-1 shadow-inner">
+            <div className="space-y-1 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 shadow-inner">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                 <Command className="h-3.5 w-3.5" />
                 <span>Recommended Resolution Directive</span>
               </div>
-              <p className="text-xs font-semibold text-foreground leading-snug">
+              <p className="text-foreground text-xs leading-snug font-semibold">
                 "{selectedEvent.directiveGoal}"
               </p>
             </div>
@@ -695,7 +783,7 @@ export function V2MyAgenda({
                   setSelectedEvent(null);
                   onDeclare?.(goal);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 hover:bg-amber-500/30 px-4 py-2.5 text-xs font-extrabold text-amber-900 dark:text-amber-300 transition-all cursor-pointer shadow-md active:scale-95"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
               >
                 <Command className="h-4 w-4" />
                 <span>Declare Directive to Resolve</span>
@@ -710,7 +798,7 @@ export function V2MyAgenda({
                     setSelectedEvent(null);
                     onOpenDrill?.(drill);
                   }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-white/5 hover:bg-card/90 dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-98"
+                  className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>
@@ -727,7 +815,7 @@ export function V2MyAgenda({
                     setSelectedEvent(null);
                     onOpenIntent?.(id);
                   }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 dark:border-white/10 bg-card/60 dark:bg-white/5 hover:bg-card/90 dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-98"
+                  className="border-border/70 bg-card/60 hover:bg-card/90 text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-all active:scale-98 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>Inspect Directive Tree</span>

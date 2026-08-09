@@ -209,8 +209,7 @@ export function generateSectorPerformanceData(
 
   return sectors.map((sector, index) => {
     const sectorInfo = sectorData[sector] as
-      | { performance?: number; growth?: number; contribution?: number }
-      | undefined;
+      { performance?: number; growth?: number; contribution?: number } | undefined;
     const employment = employmentData[sector] || 0;
 
     // Calculate performance based on employment and contribution

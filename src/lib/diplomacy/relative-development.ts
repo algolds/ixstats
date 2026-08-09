@@ -9,7 +9,8 @@
 export interface AsymmetryAnalysis {
   ratio: number; // Partner tier / Self tier (>1 = partner higher development)
   tierDiff: number;
-  label: "Symmetrical Partner" | "Capital Imbalance" | "Resource Synergist" | "Superpower Influence";
+  label:
+    "Symmetrical Partner" | "Capital Imbalance" | "Resource Synergist" | "Superpower Influence";
   asymmetricMultiplier: number;
   tariffMultiplier: number;
   capitalFlowBonus: number;

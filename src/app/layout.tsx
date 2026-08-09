@@ -22,7 +22,6 @@ import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 
-
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";

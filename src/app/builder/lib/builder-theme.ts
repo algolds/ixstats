@@ -11,12 +11,7 @@
 // ─── Types ───
 
 export type BuilderSection =
-  | "foundation"
-  | "identity"
-  | "government"
-  | "economics"
-  | "preview"
-  | "import";
+  "foundation" | "identity" | "government" | "economics" | "preview" | "import";
 
 export type BuilderTabTheme =
   | "builder" // Overall builder theme

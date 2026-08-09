@@ -4,7 +4,11 @@ import React, { useEffect } from "react";
 import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { LeaderboardTab } from "~/components/achievements/tabs/LeaderboardTab";
 import { Trophy, Globe2 } from "lucide-react";
-import { CutoutCard, CutoutCardContent, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { cn } from "~/lib/utils";
 
 export default function LeaderboardsPage() {
@@ -33,7 +37,7 @@ export default function LeaderboardsPage() {
                   <Trophy className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-foreground">Global Leaderboards</h1>
+                  <h1 className="text-foreground text-2xl font-black">Global Leaderboards</h1>
                 </div>
               </div>
             </div>

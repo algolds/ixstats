@@ -63,11 +63,18 @@ export interface EnrichedMapPackage {
  */
 export function enrichMapDataset(
   layers: Record<string, FeatureCollection>,
-  countries: Array<{ featureId: string; name: string; areaSqKm: number; centroid: [number, number] }>,
+  countries: Array<{
+    featureId: string;
+    name: string;
+    areaSqKm: number;
+    centroid: [number, number];
+  }>,
   worldId = "default"
 ): EnrichedMapPackage {
   const log: string[] = [];
-  log.push(`[Enrichment] Starting enrichment for ${countries.length} countries under worldId: ${worldId}`);
+  log.push(
+    `[Enrichment] Starting enrichment for ${countries.length} countries under worldId: ${worldId}`
+  );
 
   // 1. Enrich Altitudes Layer with elevation metadata
   if (layers.altitudes) {
@@ -96,12 +103,32 @@ export function enrichMapDataset(
     return {
       countryFeatureId: c.featureId,
       climateDistribution: [
-        { type: "Do", name: "Temperate Oceanic", percentArea: 60, areaSqKm: Math.round(c.areaSqKm * 0.6) },
-        { type: "Cf", name: "Subtropical Humid", percentArea: 40, areaSqKm: Math.round(c.areaSqKm * 0.4) },
+        {
+          type: "Do",
+          name: "Temperate Oceanic",
+          percentArea: 60,
+          areaSqKm: Math.round(c.areaSqKm * 0.6),
+        },
+        {
+          type: "Cf",
+          name: "Subtropical Humid",
+          percentArea: 40,
+          areaSqKm: Math.round(c.areaSqKm * 0.4),
+        },
       ],
       elevationProfile: [
-        { zone: "zone_1", name: "Coastal Lowlands", percentArea: 50, areaSqKm: Math.round(c.areaSqKm * 0.5) },
-        { zone: "zone_2", name: "Low Hills", percentArea: 50, areaSqKm: Math.round(c.areaSqKm * 0.5) },
+        {
+          zone: "zone_1",
+          name: "Coastal Lowlands",
+          percentArea: 50,
+          areaSqKm: Math.round(c.areaSqKm * 0.5),
+        },
+        {
+          zone: "zone_2",
+          name: "Low Hills",
+          percentArea: 50,
+          areaSqKm: Math.round(c.areaSqKm * 0.5),
+        },
       ],
       arableLandPercent: arablePercent,
       coastlineKm,
@@ -171,10 +198,15 @@ export function enrichMapDataset(
   const polLayer = layers.political;
 
   if (polLayer && polLayer.features) {
-    const vertexMap = new Map<string, Array<{ featureId: string; ringIndex: number; vertexIndex: number }>>();
+    const vertexMap = new Map<
+      string,
+      Array<{ featureId: string; ringIndex: number; vertexIndex: number }>
+    >();
 
     polLayer.features.forEach((feat) => {
-      const featureId = String(feat.properties?._id || feat.properties?.id || feat.properties?.featureId || "unknown");
+      const featureId = String(
+        feat.properties?._id || feat.properties?.id || feat.properties?.featureId || "unknown"
+      );
       const geom = feat.geometry as Polygon | MultiPolygon;
 
       if (geom.type === "Polygon") {
@@ -202,7 +234,9 @@ export function enrichMapDataset(
     }
   }
 
-  log.push(`[Enrichment] Extracted ${sharedVertices.length} SharedVertices for border synchronization`);
+  log.push(
+    `[Enrichment] Extracted ${sharedVertices.length} SharedVertices for border synchronization`
+  );
 
   return {
     layers,

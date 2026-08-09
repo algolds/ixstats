@@ -233,8 +233,11 @@ export function AtomicEconomicEffectivenessPanel({
               </h4>
               <ul className="space-y-1.5">
                 {recommendations.warnings.map((warning: any, index: number) => (
-                  <li key={index} className="flex items-start gap-2 rounded bg-yellow-50 p-2 text-sm text-yellow-700">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-yellow-600" />
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 rounded bg-yellow-50 p-2 text-sm text-yellow-700"
+                  >
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
                     <span>{warning}</span>
                   </li>
                 ))}
@@ -250,8 +253,11 @@ export function AtomicEconomicEffectivenessPanel({
               </h4>
               <ul className="space-y-1.5">
                 {recommendations.opportunities.map((opportunity: any, index: number) => (
-                  <li key={index} className="flex items-start gap-2 rounded bg-green-50 p-2 text-sm text-green-700">
-                    <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-green-600" />
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 rounded bg-green-50 p-2 text-sm text-green-700"
+                  >
+                    <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                     <span>{opportunity}</span>
                   </li>
                 ))}

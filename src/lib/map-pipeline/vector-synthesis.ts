@@ -8,7 +8,15 @@
  * Produces smooth RFC 7946 compliant GeoJSON output.
  */
 
-import type { FeatureCollection, Feature, Geometry, Polygon, MultiPolygon, LineString, Position } from "geojson";
+import type {
+  FeatureCollection,
+  Feature,
+  Geometry,
+  Polygon,
+  MultiPolygon,
+  LineString,
+  Position,
+} from "geojson";
 import { makeRng } from "../worldgen/rng";
 import { ELEVATION_ZONES } from "../elevation-config";
 
@@ -28,7 +36,10 @@ function round4(val: number): number {
 function perturbCoord(pt: Position, seed: number, frequency = 0.08, amplitude = 2.5): Position {
   const [lng, lat] = pt;
   const n1 = Math.sin(lng * frequency + seed) * Math.cos(lat * frequency + seed * 0.5);
-  const n2 = Math.sin(lng * frequency * 2.5 - seed * 1.3) * Math.cos(lat * frequency * 2.5 + seed * 2.1) * 0.5;
+  const n2 =
+    Math.sin(lng * frequency * 2.5 - seed * 1.3) *
+    Math.cos(lat * frequency * 2.5 + seed * 2.1) *
+    0.5;
 
   const dx = (n1 + n2) * amplitude;
   const dy = (n2 - n1) * amplitude * 0.8;
@@ -52,8 +63,14 @@ function smoothVectorRing(ring: Position[], iterations = 2): Position[] {
     for (let i = 0; i < n; i++) {
       const p0 = current[i]!;
       const p1 = current[i + 1]!;
-      const q: Position = [round4(0.75 * p0[0] + 0.25 * p1[0]), round4(0.75 * p0[1] + 0.25 * p1[1])];
-      const r: Position = [round4(0.25 * p0[0] + 0.75 * p1[0]), round4(0.25 * p0[1] + 0.75 * p1[1])];
+      const q: Position = [
+        round4(0.75 * p0[0] + 0.25 * p1[0]),
+        round4(0.75 * p0[1] + 0.25 * p1[1]),
+      ];
+      const r: Position = [
+        round4(0.25 * p0[0] + 0.75 * p1[0]),
+        round4(0.25 * p0[1] + 0.75 * p1[1]),
+      ];
       next.push(q, r);
     }
     // Close the ring
@@ -113,27 +130,33 @@ export function synthesizeHybridVectorWorld(seed: number): HybridVectorWorld {
   const rng = makeRng(seed);
 
   // 1. Synthesize background (landmass)
-  const bgFeatures: Feature[] = (CONTINENTS_SEED as FeatureCollection).features.map((feat, idx) => ({
-    type: "Feature",
-    id: idx + 1,
-    properties: {
-      id: `landmass-${idx + 1}`,
-      featureId: `landmass-${idx + 1}`,
-      fill: "#e8e5da",
-      _fillColor: "#e8e5da",
-    },
-    geometry: morphGeometry(feat.geometry, seed + idx * 1.7),
-  }));
+  const bgFeatures: Feature[] = (CONTINENTS_SEED as FeatureCollection).features.map(
+    (feat, idx) => ({
+      type: "Feature",
+      id: idx + 1,
+      properties: {
+        id: `landmass-${idx + 1}`,
+        featureId: `landmass-${idx + 1}`,
+        fill: "#e8e5da",
+        _fillColor: "#e8e5da",
+      },
+      geometry: morphGeometry(feat.geometry, seed + idx * 1.7),
+    })
+  );
 
   // 2. Synthesize 9-zone elevation topography
   const elevFeatures: Feature[] = [];
   let elevId = 100;
   for (const zoneConfig of ELEVATION_ZONES) {
     const matchingSeeds = (ELEVATION_SEED as FeatureCollection).features.filter(
-      (f: any) => f.properties?.zone === zoneConfig.sortOrder || f.properties?.zone === zoneConfig.zoneId
+      (f: any) =>
+        f.properties?.zone === zoneConfig.sortOrder || f.properties?.zone === zoneConfig.zoneId
     );
 
-    const sourceFeatures = matchingSeeds.length > 0 ? matchingSeeds : (ELEVATION_SEED as FeatureCollection).features.slice(0, 2);
+    const sourceFeatures =
+      matchingSeeds.length > 0
+        ? matchingSeeds
+        : (ELEVATION_SEED as FeatureCollection).features.slice(0, 2);
 
     for (const feat of sourceFeatures) {
       elevId++;

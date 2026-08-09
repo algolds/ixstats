@@ -37,7 +37,7 @@ export interface ExportedLayers {
 import {
   generateMarchingSquaresAltitudes,
   generateMarchingSquaresBackground,
-  generateMarchingSquaresPolitical
+  generateMarchingSquaresPolitical,
 } from "./marching-squares";
 
 /**
@@ -581,8 +581,14 @@ function smoothRing(ring: Position[], iterations = 3): Position[] {
     for (let i = 0; i < n; i++) {
       const p0 = pts[i]!;
       const p1 = pts[i + 1]!;
-      const q: Position = [round4(0.75 * p0[0] + 0.25 * p1[0]), round4(0.75 * p0[1] + 0.25 * p1[1])];
-      const r: Position = [round4(0.25 * p0[0] + 0.75 * p1[0]), round4(0.25 * p0[1] + 0.75 * p1[1])];
+      const q: Position = [
+        round4(0.75 * p0[0] + 0.25 * p1[0]),
+        round4(0.75 * p0[1] + 0.25 * p1[1]),
+      ];
+      const r: Position = [
+        round4(0.25 * p0[0] + 0.75 * p1[0]),
+        round4(0.25 * p0[1] + 0.75 * p1[1]),
+      ];
       next.push(q, r);
     }
     next.push(next[0]!); // close ring

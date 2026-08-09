@@ -28,14 +28,11 @@ describe("v2/performance", () => {
     let stageTimes: Record<string, number> = {};
     let lastTime = performance.now();
 
-    generateWorld(
-      { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: 5000 },
-      (stage) => {
-        const now = performance.now();
-        stageTimes[stage] = now - lastTime;
-        lastTime = now;
-      }
-    );
+    generateWorld({ ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: 5000 }, (stage) => {
+      const now = performance.now();
+      stageTimes[stage] = now - lastTime;
+      lastTime = now;
+    });
 
     // Assert fast execution per stage for 5K mesh
     for (const [stage, timeMs] of Object.entries(stageTimes)) {

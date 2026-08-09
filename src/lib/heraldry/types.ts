@@ -3,12 +3,7 @@
 export type TinctureMetal = "or" | "argent";
 export type TinctureColour = "gules" | "azure" | "vert" | "purpure" | "sable";
 export type TinctureFur =
-  | "ermine"
-  | "vair"
-  | "counter-ermine"
-  | "counter-vair"
-  | "erminois"
-  | "pean";
+  "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
 export type TinctureStain = "tenne" | "sanguine" | "murrey";
 export type Tincture = TinctureMetal | TinctureColour | TinctureFur | TinctureStain;
 
@@ -66,13 +61,7 @@ export type OrdinaryType =
   | "lozenge-ordinary";
 
 export type ShieldShape =
-  | "heater"
-  | "kite"
-  | "round"
-  | "lozenge"
-  | "oval"
-  | "renaissance"
-  | "pointed";
+  "heater" | "kite" | "round" | "lozenge" | "oval" | "renaissance" | "pointed";
 
 export type Attitude =
   | "rampant"

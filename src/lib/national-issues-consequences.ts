@@ -339,10 +339,7 @@ export class NationalIssuesConsequences {
    * issues. Resolved = responded | auto_resolved | dismissed. pending/viewed are
    * still open. Exported for the intent router and agenda aggregation to reuse.
    */
-  static async recomputeIntentProgress(
-    intentId: string,
-    db: PrismaClient
-  ): Promise<number> {
+  static async recomputeIntentProgress(intentId: string, db: PrismaClient): Promise<number> {
     const linked = await (db as any).nationalIssue.findMany({
       where: { intentId },
       select: { status: true },

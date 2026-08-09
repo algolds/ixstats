@@ -14,7 +14,8 @@ import {
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 
-export type VaultSection = "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
+export type VaultSection =
+  "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
 
 export const VAULT_NAV_ITEMS: {
   id: VaultSection;

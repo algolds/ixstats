@@ -30,12 +30,7 @@ export interface SearchResult {
 
 // View modes — includes plugin-provided views via template literal
 export type ViewMode =
-  | "compact"
-  | "search"
-  | "notifications"
-  | "settings"
-  | "mycountry"
-  | `plugin:${string}`;
+  "compact" | "search" | "notifications" | "settings" | "mycountry" | `plugin:${string}`;
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 
 // ── Plugin System Types ─────────────────────────────────────────────

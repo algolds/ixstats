@@ -4,13 +4,10 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "~/context/auth-context";
 
-const GameProviders = dynamic(
-  () => import("./GameProviders").then((mod) => mod.GameProviders),
-  {
-    ssr: false,
-    loading: () => null,
-  }
-);
+const GameProviders = dynamic(() => import("./GameProviders").then((mod) => mod.GameProviders), {
+  ssr: false,
+  loading: () => null,
+});
 
 /**
  * Deferred provider wrapper.

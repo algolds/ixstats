@@ -71,7 +71,10 @@ export function classifyFeatures(graph: PackedGraph): void {
           break;
         }
       }
-      type = !touchesBoundary || (component.length <= 15 && !cells.boundary[component[0]!]) ? "lake" : "ocean";
+      type =
+        !touchesBoundary || (component.length <= 15 && !cells.boundary[component[0]!])
+          ? "lake"
+          : "ocean";
     } else {
       type = "land";
       // Check if land touches boundary (for metadata)

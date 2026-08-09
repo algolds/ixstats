@@ -47,13 +47,7 @@ export interface TemplateSelectorProps {
 }
 
 type TemplateGroupId =
-  | "democratic"
-  | "technocratic"
-  | "security"
-  | "social"
-  | "economic"
-  | "diplomatic"
-  | "resilience";
+  "democratic" | "technocratic" | "security" | "social" | "economic" | "diplomatic" | "resilience";
 
 interface TemplateGroupConfig {
   id: TemplateGroupId;

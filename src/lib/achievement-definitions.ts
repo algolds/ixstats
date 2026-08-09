@@ -14,12 +14,7 @@
 import { meetsScale, RARITY_PERCENTILE } from "./achievement-scaling";
 
 export type AchievementCategory =
-  | "Economic"
-  | "Military"
-  | "Diplomatic"
-  | "Government"
-  | "Social"
-  | "General";
+  "Economic" | "Military" | "Diplomatic" | "Government" | "Social" | "General";
 
 export type AchievementRarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary";
 

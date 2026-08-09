@@ -6,7 +6,6 @@
 import type { Metadata } from "next";
 import { CollectionGallery } from "~/components/cards/collections/CollectionGallery";
 
-
 export const metadata: Metadata = {
   title: "Browse Collections | IxStats",
   description: "Explore public card collections from the IxWiki community",

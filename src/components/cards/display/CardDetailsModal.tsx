@@ -918,8 +918,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {(() => {
                       const meta = card.metadata as Record<string, any> | undefined;
                       const loreStats = meta?.loreStats as
-                        | { historicalSignificance?: number; culturalImpact?: number }
-                        | undefined;
+                        { historicalSignificance?: number; culturalImpact?: number } | undefined;
                       if (!loreStats) return null;
                       return (
                         <div className="glass-hierarchy-child mb-4 rounded-lg p-4">

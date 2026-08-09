@@ -17,11 +17,7 @@ import { hashToFactbookRoute } from "~/lib/factbook-routes";
  * `/countries/[slug]/modeling` lives outside this route group and is unaffected.
  */
 
-export default function PublicCountryPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default function PublicCountryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
 

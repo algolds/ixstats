@@ -304,8 +304,8 @@ export function useGovernmentBuilder(
         }
       });
 
-      const orderedAllocations = prev.departments.map(
-        (dept, index) => allocationMap.get(index.toString())!
+      const orderedAllocations = prev.departments.map((dept, index) =>
+        allocationMap.get(index.toString())!
       );
 
       const currentTotalPercent = orderedAllocations.reduce(

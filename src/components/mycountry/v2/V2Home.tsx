@@ -29,7 +29,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
-import { V2Agenda } from "./V2Agenda";
+import { V2Agenda as _V2Agenda } from "./V2Agenda";
 import { V2CommandBriefingHero } from "./V2CommandBriefingHero";
 import { V2OpportunityHero } from "./V2OpportunityHero";
 import { V2MyAgenda } from "./V2MyAgenda";
@@ -46,17 +46,61 @@ import {
 import { useCountryData, QuickVitalityRings } from "../primitives";
 
 const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> = {
-  diplomatic: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10" },
-  diplomacy: { label: "Diplomacy", icon: Globe2, cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10" },
-  military: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
-  defense: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
-  security: { label: "Defense", icon: Shield, cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10" },
-  governance: { label: "Politics", icon: Landmark, cls: "border-violet-500/40 text-violet-800 dark:text-violet-400 bg-violet-500/10" },
-  economic: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10" },
-  economy: { label: "Economy", icon: TrendingUp, cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10" },
-  social: { label: "Society", icon: Heart, cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10" },
-  emergency: { label: "Crisis", icon: AlertTriangle, cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10" },
-  ledger: { label: "Ledger", icon: Scale, cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10" },
+  diplomatic: {
+    label: "Diplomacy",
+    icon: Globe2,
+    cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10",
+  },
+  diplomacy: {
+    label: "Diplomacy",
+    icon: Globe2,
+    cls: "border-teal-500/40 text-teal-800 dark:text-teal-400 bg-teal-500/10",
+  },
+  military: {
+    label: "Defense",
+    icon: Shield,
+    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
+  },
+  defense: {
+    label: "Defense",
+    icon: Shield,
+    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
+  },
+  security: {
+    label: "Defense",
+    icon: Shield,
+    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
+  },
+  governance: {
+    label: "Politics",
+    icon: Landmark,
+    cls: "border-violet-500/40 text-violet-800 dark:text-violet-400 bg-violet-500/10",
+  },
+  economic: {
+    label: "Economy",
+    icon: TrendingUp,
+    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
+  },
+  economy: {
+    label: "Economy",
+    icon: TrendingUp,
+    cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
+  },
+  social: {
+    label: "Society",
+    icon: Heart,
+    cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10",
+  },
+  emergency: {
+    label: "Crisis",
+    icon: AlertTriangle,
+    cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10",
+  },
+  ledger: {
+    label: "Ledger",
+    icon: Scale,
+    cls: "border-blue-500/40 text-blue-800 dark:text-blue-400 bg-blue-500/10",
+  },
 };
 
 function DomainActionTiles({
@@ -126,26 +170,30 @@ function DomainActionTiles({
           whileTap={{ scale: 0.97 }}
           onClick={onClick}
           className={cn(
-            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md select-none transition-colors duration-200",
-            accent,
+            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-colors duration-200 select-none",
+            accent
           )}
         >
           {/* Rescaled Ambient Background Graphic & Glow */}
           <Graphic />
 
           {/* Left: Icon + Title + Telemetry Peek */}
-          <div className="relative z-10 flex items-center gap-3 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 dark:border-white/12 bg-card/60 dark:bg-white/5 shadow-2xs transition-transform duration-200 group-hover:scale-105">
+          <div className="relative z-10 flex min-w-0 items-center gap-3">
+            <div className="border-border/60 bg-card/60 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 dark:border-white/12 dark:bg-white/5">
               <Icon className="h-4 w-4 shrink-0" />
             </div>
-            <div className="flex flex-col text-left min-w-0 gap-0.5">
-              <span className="text-foreground text-[13px] font-bold tracking-tight leading-tight truncate">{title}</span>
-              <span className="text-[11px] font-medium tracking-tight text-muted-foreground leading-tight truncate">{peek}</span>
+            <div className="flex min-w-0 flex-col gap-0.5 text-left">
+              <span className="text-foreground truncate text-[13px] leading-tight font-bold tracking-tight">
+                {title}
+              </span>
+              <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
+                {peek}
+              </span>
             </div>
           </div>
 
           {/* Right: Arrow indicator */}
-          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
         </motion.button>
       ))}
     </div>
@@ -176,11 +224,18 @@ function formatDeltaValue(val: number | null | undefined): string {
 function getUniqueDiagnosticNarrative(
   item: any,
   metaLabel: string
-): { narrative: string; badge?: { text: string; direction?: "up" | "down" | "neutral"; cls: string } } {
+): {
+  narrative: string;
+  badge?: { text: string; direction?: "up" | "down" | "neutral"; cls: string };
+} {
   const deltaStr = formatDeltaValue(item.deltaValue);
   const fieldName = item.targetField ?? "national indicator";
 
-  if (item.description && typeof item.description === "string" && item.description.trim().length > 10) {
+  if (
+    item.description &&
+    typeof item.description === "string" &&
+    item.description.trim().length > 10
+  ) {
     const isPositive = (item.deltaValue ?? 0) > 0;
     const isNegative = (item.deltaValue ?? 0) < 0;
     return {
@@ -188,10 +243,22 @@ function getUniqueDiagnosticNarrative(
       badge:
         item.deltaValue !== null && item.deltaValue !== undefined
           ? isPositive
-            ? { text: `${deltaStr} Net Expansion`, direction: "up", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" }
+            ? {
+                text: `${deltaStr} Net Expansion`,
+                direction: "up",
+                cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+              }
             : isNegative
-            ? { text: `${deltaStr} Contraction`, direction: "down", cls: "bg-red-500/10 text-red-400 border-red-500/20" }
-            : { text: `Neutral Shift`, direction: "neutral", cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" }
+              ? {
+                  text: `${deltaStr} Contraction`,
+                  direction: "down",
+                  cls: "bg-red-500/10 text-red-400 border-red-500/20",
+                }
+              : {
+                  text: `Neutral Shift`,
+                  direction: "neutral",
+                  cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+                }
           : undefined,
     };
   }
@@ -199,7 +266,10 @@ function getUniqueDiagnosticNarrative(
   if (item.kind === "effect") {
     return {
       narrative: `Storyteller directive logged: "${item.title}". The Executive Command Engine calculated real-time state shifts across national ${metaLabel.toLowerCase()} subsystems.`,
-      badge: { text: "Storyteller Effect", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+      badge: {
+        text: "Storyteller Effect",
+        cls: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      },
     };
   }
 
@@ -213,7 +283,10 @@ function getUniqueDiagnosticNarrative(
   if (item.kind === "decision") {
     return {
       narrative: `Executive resolution enacted: "${item.title}". Cabinet civil service departments have finalized implementation across local administrative channels.`,
-      badge: { text: "Executive Resolution", cls: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
+      badge: {
+        text: "Executive Resolution",
+        cls: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      },
     };
   }
 
@@ -285,9 +358,11 @@ function RecordFeed({
     return items.filter((it: any) => {
       const cat = (it.category || "").toLowerCase();
       if (filterCat === "diplomatic") return cat.includes("diplo");
-      if (filterCat === "military") return cat.includes("milit") || cat.includes("defen") || cat.includes("secur");
+      if (filterCat === "military")
+        return cat.includes("milit") || cat.includes("defen") || cat.includes("secur");
       if (filterCat === "economic") return cat.includes("econ") || cat.includes("ledger");
-      if (filterCat === "political") return cat.includes("polit") || cat.includes("elect") || cat.includes("gov");
+      if (filterCat === "political")
+        return cat.includes("polit") || cat.includes("elect") || cat.includes("gov");
       return true;
     });
   }, [items, filterCat]);
@@ -315,7 +390,7 @@ function RecordFeed({
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-lg border border-dashed border-border/40 bg-muted/10 px-3 py-8 text-center text-xs">
+      <p className="text-muted-foreground border-border/40 bg-muted/10 rounded-lg border border-dashed px-3 py-8 text-center text-xs">
         No national activity recorded yet.
       </p>
     );
@@ -324,7 +399,7 @@ function RecordFeed({
   return (
     <div className="space-y-3">
       {/* Activity Filter Selectors */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex scrollbar-none items-center gap-1 overflow-x-auto pb-1">
         {[
           { id: "all", label: "All" },
           { id: "diplomatic", label: "Diplomacy" },
@@ -337,10 +412,10 @@ function RecordFeed({
             type="button"
             onClick={() => setFilterCat(id)}
             className={cn(
-              "rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer shrink-0",
+              "shrink-0 cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
               filterCat === id
-                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+                ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-xs"
+                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
             )}
           >
             {label}
@@ -350,139 +425,162 @@ function RecordFeed({
 
       <div
         onScroll={handleScroll}
-        className="max-h-[500px] space-y-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted"
+        className="scrollbar-thumb-muted max-h-[500px] scrollbar-thin scrollbar-track-transparent space-y-2 overflow-y-auto pr-1"
       >
-      <div className="divide-y divide-border/40">
-        {visibleItems.map((item: any) => {
-          const meta = CATEGORY_STYLE[item.category] || CATEGORY_STYLE.ledger;
-          const Icon = meta.icon;
-          const isExpanded = expandedId === item.id;
-          const drill = getDrillForCategory(item.category);
-          const diagnostic = getUniqueDiagnosticNarrative(item, meta.label);
+        <div className="divide-border/40 divide-y">
+          {visibleItems.map((item: any) => {
+            const meta = CATEGORY_STYLE[item.category] || CATEGORY_STYLE.ledger;
+            const Icon = meta.icon;
+            const isExpanded = expandedId === item.id;
+            const drill = getDrillForCategory(item.category);
+            const diagnostic = getUniqueDiagnosticNarrative(item, meta.label);
 
-          return (
-            <div
-              key={item.id}
-              className={cn(
-                "group rounded-xl p-2.5 transition-all duration-200 cursor-pointer border border-transparent select-none",
-                isExpanded ? "border-border/60 bg-muted/20 shadow-sm my-1.5" : "hover:bg-muted/10"
-              )}
-              onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
-            >
-              <div className="flex items-start gap-3">
-                <span
-                  className={cn(
-                    "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border",
-                    meta.cls
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-foreground/90 text-[13px] font-semibold leading-snug">
-                      {item.title}
-                    </p>
-                    <span className="text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors">
-                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-                    <span className="text-muted-foreground font-semibold">{meta.label}</span>
-                    <span className="text-muted-foreground/40">•</span>
-                    <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
-                    {item.kind === "ledger" && item.targetField && (
-                      <>
-                        <span className="text-muted-foreground/40">•</span>
-                        <span className="text-muted-foreground font-mono inline-flex items-center gap-1 rounded border border-border/40 bg-muted/20 px-1.5 py-px">
-                          {item.deltaValue && item.deltaValue > 0 ? (
-                            <ArrowUp className="h-3 w-3 text-emerald-400 animate-pulse stroke-[3]" />
-                          ) : item.deltaValue && item.deltaValue < 0 ? (
-                            <ArrowDown className="h-3 w-3 text-red-400 animate-pulse stroke-[3]" />
-                          ) : null}
-                          <span>{item.targetField}: {formatDeltaValue(item.deltaValue)}</span>
-                        </span>
-                      </>
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  "group cursor-pointer rounded-xl border border-transparent p-2.5 transition-all duration-200 select-none",
+                  isExpanded ? "border-border/60 bg-muted/20 my-1.5 shadow-sm" : "hover:bg-muted/10"
+                )}
+                onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className={cn(
+                      "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border",
+                      meta.cls
                     )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Inline Expansion Drawer — Theme Compliant */}
-              {isExpanded && (
-                <div
-                  className="mt-3 space-y-3.5 rounded-2xl border border-border/60 bg-card/60 p-4 text-xs backdrop-blur-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-md"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Header Metadata & Badges */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-bold uppercase text-[10px]", meta.cls)}>
-                        <Icon className="h-3 w-3" />
-                        {meta.label}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-foreground/90 text-[13px] leading-snug font-semibold">
+                        {item.title}
+                      </p>
+                      <span className="text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors">
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
                       </span>
-                      {diagnostic.badge && (
-                        <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold", diagnostic.badge.cls)}>
-                          {diagnostic.badge.direction === "up" && <ArrowUp className="h-3 w-3 text-emerald-400 stroke-[3]" />}
-                          {diagnostic.badge.direction === "down" && <ArrowDown className="h-3 w-3 text-red-400 stroke-[3]" />}
-                          <span>{diagnostic.badge.text}</span>
-                        </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
+                      <span className="text-muted-foreground font-semibold">{meta.label}</span>
+                      <span className="text-muted-foreground/40">•</span>
+                      <span className="text-muted-foreground">{relativeTime(item.timestamp)}</span>
+                      {item.kind === "ledger" && item.targetField && (
+                        <>
+                          <span className="text-muted-foreground/40">•</span>
+                          <span className="text-muted-foreground border-border/40 bg-muted/20 inline-flex items-center gap-1 rounded border px-1.5 py-px font-mono">
+                            {item.deltaValue && item.deltaValue > 0 ? (
+                              <ArrowUp className="h-3 w-3 animate-pulse stroke-[3] text-emerald-400" />
+                            ) : item.deltaValue && item.deltaValue < 0 ? (
+                              <ArrowDown className="h-3 w-3 animate-pulse stroke-[3] text-red-400" />
+                            ) : null}
+                            <span>
+                              {item.targetField}: {formatDeltaValue(item.deltaValue)}
+                            </span>
+                          </span>
+                        </>
                       )}
                     </div>
-                    <span className="text-muted-foreground font-mono text-[10px]">
-                      {new Date(item.timestamp).toLocaleString(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </span>
-                  </div>
-
-                  {/* Clean Diagnostic Briefing Text */}
-                  <div className="space-y-1 px-0.5">
-                    <span className="block text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                      Diagnostic Briefing
-                    </span>
-                    <p className="text-foreground/90 text-xs sm:text-[13px] leading-relaxed font-medium">
-                      {diagnostic.narrative}
-                    </p>
-                  </div>
-
-                  {/* Dual Action CTAs */}
-                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/40">
-                    <Link
-                      href={createUrl("/mycountry/changelog", countrySlug ? { country: countrySlug } : {})}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Audit Full Ledger <ArrowUpRight className="h-3 w-3" />
-                    </Link>
-
-                    {onOpenDrill && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenDrill(drill)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 px-3.5 py-1.5 text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md shadow-sm"
-                      >
-                        Inspect {meta.label} Sheet <ArrowUpRight className="h-3.5 w-3.5" />
-                      </button>
-                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
 
-      {/* Infinite scroll loader button */}
-      {visibleCount < items.length && (
-        <button
-          type="button"
-          onClick={() => setVisibleCount((prev) => Math.min(items.length, prev + 10))}
-          className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.99]"
-        >
-          Load more events ({items.length - visibleCount})
-        </button>
-      )}
+                {/* Inline Expansion Drawer — Theme Compliant */}
+                {isExpanded && (
+                  <div
+                    className="border-border/60 bg-card/60 animate-in fade-in slide-in-from-top-1 mt-3 space-y-3.5 rounded-2xl border p-4 text-xs shadow-md backdrop-blur-xl duration-200"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header Metadata & Badges */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase",
+                            meta.cls
+                          )}
+                        >
+                          <Icon className="h-3 w-3" />
+                          {meta.label}
+                        </span>
+                        {diagnostic.badge && (
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold",
+                              diagnostic.badge.cls
+                            )}
+                          >
+                            {diagnostic.badge.direction === "up" && (
+                              <ArrowUp className="h-3 w-3 stroke-[3] text-emerald-400" />
+                            )}
+                            {diagnostic.badge.direction === "down" && (
+                              <ArrowDown className="h-3 w-3 stroke-[3] text-red-400" />
+                            )}
+                            <span>{diagnostic.badge.text}</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-muted-foreground font-mono text-[10px]">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Clean Diagnostic Briefing Text */}
+                    <div className="space-y-1 px-0.5">
+                      <span className="text-muted-foreground block text-[10px] font-bold tracking-widest uppercase">
+                        Diagnostic Briefing
+                      </span>
+                      <p className="text-foreground/90 text-xs leading-relaxed font-medium sm:text-[13px]">
+                        {diagnostic.narrative}
+                      </p>
+                    </div>
+
+                    {/* Dual Action CTAs */}
+                    <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+                      <Link
+                        href={createUrl(
+                          "/mycountry/changelog",
+                          countrySlug ? { country: countrySlug } : {}
+                        )}
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors"
+                      >
+                        Audit Full Ledger <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+
+                      {onOpenDrill && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenDrill(drill)}
+                          className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+                        >
+                          Inspect {meta.label} Sheet <ArrowUpRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Infinite scroll loader button */}
+        {visibleCount < items.length && (
+          <button
+            type="button"
+            onClick={() => setVisibleCount((prev) => Math.min(items.length, prev + 10))}
+            className="text-muted-foreground hover:text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.02] py-2 text-center text-xs font-semibold transition-all hover:bg-white/5 active:scale-[0.99]"
+          >
+            Load more events ({items.length - visibleCount})
+          </button>
+        )}
       </div>
     </div>
   );
@@ -568,7 +666,7 @@ export function V2Home({
 
           {/* Main Feed */}
           <FacetCard depth={1} className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
-            <h4 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+            <h4 className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
               Recent Activity - National log
             </h4>
             <RecordFeed items={items} onOpenDrill={onOpenDrill} />
@@ -581,12 +679,14 @@ export function V2Home({
             <button
               type="button"
               onClick={() => onDeclare()}
-              className="group relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-border/50 bg-card/40 hover:bg-card/70 p-3 text-sm font-bold text-foreground backdrop-blur-md shadow-xs transition-all duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
+              className="group border-border/50 bg-card/40 hover:bg-card/70 text-foreground relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400 transition-all group-hover:scale-105 group-hover:bg-amber-500/20">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all group-hover:scale-105 group-hover:bg-amber-500/20 dark:text-amber-400">
                 <Command className="h-3.5 w-3.5" />
               </span>
-              <span className="transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400">Declare a new Directive</span>
+              <span className="transition-colors group-hover:text-amber-500 dark:group-hover:text-amber-400">
+                Declare a new Directive
+              </span>
             </button>
           ) : (
             <Tooltip>
@@ -595,33 +695,38 @@ export function V2Home({
                   <button
                     type="button"
                     disabled
-                    className="flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border border-border/40 bg-card/20 p-3 text-sm font-bold text-muted-foreground backdrop-blur-md opacity-75 transition-all"
+                    className="border-border/40 bg-card/20 text-muted-foreground flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold opacity-75 backdrop-blur-md transition-all"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 bg-muted/20 text-muted-foreground">
+                    <span className="border-border/40 bg-muted/20 text-muted-foreground flex h-7 w-7 items-center justify-center rounded-lg border">
                       <FileClock className="h-3.5 w-3.5" />
                     </span>
                     <span>Directive on Cooldown</span>
                   </button>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="left" className="bg-popover/95 border border-amber-500/30 p-3 shadow-xl backdrop-blur-xl max-w-xs space-y-1.5 rounded-xl">
-                <div className="flex items-center gap-1.5 font-bold text-amber-500 text-xs">
+              <TooltipContent
+                side="left"
+                className="bg-popover/95 max-w-xs space-y-1.5 rounded-xl border border-amber-500/30 p-3 shadow-xl backdrop-blur-xl"
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
                   <Clock className="h-3.5 w-3.5" />
                   <span>Executive Cooldown Active</span>
                 </div>
                 <p className="text-muted-foreground text-[11px] leading-relaxed">
-                  Your government has issued maximum weekly directives ({status?.data?.usedThisWeek ?? 3}/{status?.data?.cap ?? 3}).
+                  Your government has issued maximum weekly directives (
+                  {status?.data?.usedThisWeek ?? 3}/{status?.data?.cap ?? 3}).
                 </p>
-                <div className="border-t border-border/30 pt-1.5 flex items-center justify-between text-[10px] font-mono font-bold text-foreground">
+                <div className="border-border/30 text-foreground flex items-center justify-between border-t pt-1.5 font-mono text-[10px] font-bold">
                   <span>Next Available Slot:</span>
-                  <span className="text-amber-500 dark:text-amber-400">{formatCooldownTime(status?.data?.cooldownUntil, now)}</span>
+                  <span className="text-amber-500 dark:text-amber-400">
+                    {formatCooldownTime(status?.data?.cooldownUntil, now)}
+                  </span>
                 </div>
               </TooltipContent>
             </Tooltip>
           )}
 
           <StandingBands countryId={countryId} />
-          <V2Agenda countryId={countryId} onOpenIntent={onOpenIntent} onDeclare={onDeclare} />
         </aside>
       </div>
     </div>

@@ -2,10 +2,7 @@ import { db } from "~/server/db";
 import { CountryEventSpine } from "./country-event-spine";
 import { NationalIssuesEngine } from "./national-issues-engine";
 import { getNationalIssuesConfig } from "./national-issues-config";
-import {
-  INTENT_CATEGORY_TO_TEMPLATE,
-  spawnResistanceForIntent,
-} from "./intent/resistance";
+import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "./intent/resistance";
 import type { Category } from "./intent/assemble";
 
 export interface PolicyMaintenanceResult {
@@ -67,9 +64,7 @@ const TEMPLATE_DOMAIN_OR_CATEGORY = new Set([
 /** Resolve the template tokens for a policy (mapping wins, policyType fills gaps). */
 function policyTemplateTokens(policy: { category: string; policyType: string }): string[] {
   const mapped = POLICY_CATEGORY_TO_TEMPLATE[policy.category] ?? [];
-  const fromType = TEMPLATE_DOMAIN_OR_CATEGORY.has(policy.policyType)
-    ? [policy.policyType]
-    : [];
+  const fromType = TEMPLATE_DOMAIN_OR_CATEGORY.has(policy.policyType) ? [policy.policyType] : [];
   return Array.from(new Set([...mapped, ...fromType]));
 }
 
@@ -126,7 +121,11 @@ export async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> 
       if (templates.length === 0) continue;
 
       const chosen = templates[Math.floor(Math.random() * templates.length)]!;
-      const issueId = await NationalIssuesEngine.forceGenerate(chosen.id, policy.countryId, db as any);
+      const issueId = await NationalIssuesEngine.forceGenerate(
+        chosen.id,
+        policy.countryId,
+        db as any
+      );
       if (issueId) {
         result.policyIssuesSpawned++;
         console.log(
@@ -183,7 +182,12 @@ export async function runPolicyMaintenanceDebits(): Promise<PolicyMaintenanceRes
     countriesProcessed: 0,
     policiesProcessed: 0,
     totalCostDebited: 0,
-    volatileSpawns: { policiesRolled: 0, policyIssuesSpawned: 0, intentsRolled: 0, intentIssuesSpawned: 0 },
+    volatileSpawns: {
+      policiesRolled: 0,
+      policyIssuesSpawned: 0,
+      intentsRolled: 0,
+      intentIssuesSpawned: 0,
+    },
   };
 
   try {

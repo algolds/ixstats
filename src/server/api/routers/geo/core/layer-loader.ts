@@ -308,9 +308,7 @@ export async function loadLayerFromDB(
     ) => {
       // Centroid stored as [lng, lat] array or { coordinates: [lng, lat] } GeoJSON Point
       const rawCentroid = layer.centroid as
-        | [number, number]
-        | { coordinates?: [number, number] }
-        | null;
+        [number, number] | { coordinates?: [number, number] } | null;
       let centroidLng = 0;
       let centroidLat = 0;
       if (Array.isArray(rawCentroid) && rawCentroid.length >= 2) {

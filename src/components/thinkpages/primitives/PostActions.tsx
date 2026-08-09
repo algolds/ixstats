@@ -644,14 +644,7 @@ export function PostActions({
             postId,
             accountId: currentUserAccountId,
             reactionType: reactionType as
-              | "like"
-              | "laugh"
-              | "angry"
-              | "sad"
-              | "fire"
-              | "thumbsup"
-              | "thumbsdown"
-              | string,
+              "like" | "laugh" | "angry" | "sad" | "fire" | "thumbsup" | "thumbsdown" | string,
           });
         }
 

@@ -790,20 +790,10 @@ export interface CountryWithEconomicData {
 
 // Economic Policy Types
 export type PolicyCategory =
-  | "fiscal"
-  | "monetary"
-  | "trade"
-  | "investment"
-  | "labor"
-  | "infrastructure";
+  "fiscal" | "monetary" | "trade" | "investment" | "labor" | "infrastructure";
 
 export type PolicyStatus =
-  | "draft"
-  | "proposed"
-  | "under_review"
-  | "approved"
-  | "rejected"
-  | "implemented";
+  "draft" | "proposed" | "under_review" | "approved" | "rejected" | "implemented";
 
 export interface EconomicPolicy {
   id: string;

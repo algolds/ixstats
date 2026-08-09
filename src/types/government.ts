@@ -124,19 +124,10 @@ export type BudgetType = "Personnel" | "Operations" | "Capital" | "Research" | "
 export type BudgetPriority = "Critical" | "High" | "Medium" | "Low";
 
 export type RevenueCategory =
-  | "Direct Tax"
-  | "Indirect Tax"
-  | "Non-Tax Revenue"
-  | "Fees and Fines"
-  | "Other";
+  "Direct Tax" | "Indirect Tax" | "Non-Tax Revenue" | "Fees and Fines" | "Other";
 
 export type OrganizationalLevel =
-  | "Ministry"
-  | "Department"
-  | "Agency"
-  | "Bureau"
-  | "Office"
-  | "Commission";
+  "Ministry" | "Department" | "Agency" | "Bureau" | "Office" | "Commission";
 
 // Government type is lore-first free text: the wiki holds bespoke forms (e.g. "Unitary
 // Quaternalist Republic", "Federal demarchy") that must not be forced into a fixed set.

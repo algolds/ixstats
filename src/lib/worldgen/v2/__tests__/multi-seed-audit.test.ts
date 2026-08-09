@@ -48,8 +48,7 @@ describe("v2/multi-seed-audit — 10-Seed Quality Audit (≥85% Threshold)", () 
 
   it("composite average score across all 10 seeds is >= 85%", () => {
     expect(reports.length).toBe(10);
-    const avgScore =
-      reports.reduce((sum, r) => sum + r.compositeScore, 0) / reports.length;
+    const avgScore = reports.reduce((sum, r) => sum + r.compositeScore, 0) / reports.length;
 
     console.log(`\n=== UPG v2 Multi-Seed Quality Audit Summary ===`);
     console.log(`Seeds audited: ${reports.length}`);

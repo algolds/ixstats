@@ -36,6 +36,8 @@ import {
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
+import { useCountryData } from "./CountryDataProvider";
+
 type Tone = "good" | "mid" | "bad" | "fog" | "info";
 
 const TONE_CLS: Record<Tone, string> = {
@@ -54,21 +56,418 @@ interface DomesticSuggestion {
 }
 
 const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
-  { category: "Economy", label: "Cool the housing market", keywords: ["housing", "market", "rent", "property", "house"], icon: "🏠" },
-  { category: "Economy", label: "Create industrial manufacturing jobs", keywords: ["job", "manufacturing", "employ", "labor", "work"], icon: "🏭" },
-  { category: "Economy", label: "Increase the minimum wage", keywords: ["wage", "minimum", "pay", "income"], icon: "💵" },
-  { category: "Fiscal", label: "Rein in inflation", keywords: ["inflation", "price", "cost"], icon: "📈" },
-  { category: "Fiscal", label: "Reduce national debt deficit", keywords: ["debt", "deficit", "spend", "tax"], icon: "📊" },
-  { category: "Social", label: "Invest in public school education", keywords: ["education", "school", "teach", "learn"], icon: "📚" },
-  { category: "Social", label: "Improve healthcare and hospital access", keywords: ["health", "hospital", "medical", "doctor"], icon: "🏥" },
-  { category: "Social", label: "Expand social welfare safety net", keywords: ["welfare", "poverty", "support", "benefit"], icon: "🤝" },
-  { category: "Infrastructure", label: "Develop national highway transit", keywords: ["road", "highway", "transit", "infrastructure", "bridge"], icon: "🛣️" },
-  { category: "Infrastructure", label: "Upgrade the national energy power grid", keywords: ["grid", "energy", "power", "electricity"], icon: "⚡" },
-  { category: "Security", label: "Reduce urban crime rates", keywords: ["crime", "police", "security", "safety", "order"], icon: "👮" },
-  { category: "Defense", label: "Modernize national defense forces", keywords: ["military", "navy", "army", "defense", "forces"], icon: "🛡️" },
+  // Economy (8 presets)
+  {
+    category: "Economy",
+    label: "Cool the housing market",
+    keywords: ["housing", "market", "rent", "property", "house"],
+    icon: "🏠",
+  },
+  {
+    category: "Economy",
+    label: "Create industrial manufacturing jobs",
+    keywords: ["job", "manufacturing", "employ", "labor", "work"],
+    icon: "🏭",
+  },
+  {
+    category: "Economy",
+    label: "Increase the minimum wage",
+    keywords: ["wage", "minimum", "pay", "income"],
+    icon: "💵",
+  },
+  {
+    category: "Economy",
+    label: "Subsidize small business innovation",
+    keywords: ["business", "innovation", "startup", "subsidy"],
+    icon: "💡",
+  },
+  {
+    category: "Economy",
+    label: "Expand agricultural export subsidies",
+    keywords: ["farm", "agriculture", "food", "export"],
+    icon: "🌾",
+  },
+  {
+    category: "Economy",
+    label: "De-regulate commercial banking sectors",
+    keywords: ["bank", "finance", "deregulate", "credit"],
+    icon: "🏦",
+  },
+  {
+    category: "Economy",
+    label: "Attract foreign direct investment",
+    keywords: ["foreign", "investment", "capital", "trade"],
+    icon: "🌐",
+  },
+  {
+    category: "Economy",
+    label: "Establish tech hub tax incentives",
+    keywords: ["tech", "digital", "incentive", "tax"],
+    icon: "💻",
+  },
+
+  // Fiscal (8 presets)
+  {
+    category: "Fiscal",
+    label: "Rein in inflation and price volatility",
+    keywords: ["inflation", "price", "cost", "consumer"],
+    icon: "📈",
+  },
+  {
+    category: "Fiscal",
+    label: "Reduce national budget deficit",
+    keywords: ["debt", "deficit", "spend", "tax"],
+    icon: "📊",
+  },
+  {
+    category: "Fiscal",
+    label: "Reform progressive corporate income tax",
+    keywords: ["tax", "corporate", "revenue", "fiscal"],
+    icon: "🏛️",
+  },
+  {
+    category: "Fiscal",
+    label: "Implement strict austerity measures",
+    keywords: ["austerity", "cut", "spending", "fiscal"],
+    icon: "✂️",
+  },
+  {
+    category: "Fiscal",
+    label: "Issue sovereign wealth investment bonds",
+    keywords: ["bond", "sovereign", "wealth", "treasury"],
+    icon: "📜",
+  },
+  {
+    category: "Fiscal",
+    label: "Audit government administrative waste",
+    keywords: ["audit", "efficiency", "waste", "spending"],
+    icon: "🔍",
+  },
+  {
+    category: "Fiscal",
+    label: "Establish rainy-day stabilization reserve",
+    keywords: ["reserve", "fund", "saving", "fiscal"],
+    icon: "🏦",
+  },
+  {
+    category: "Fiscal",
+    label: "Cap national debt-to-GDP ratio",
+    keywords: ["debt", "gdp", "ceiling", "fiscal"],
+    icon: "⚓",
+  },
+
+  // Social (8 presets)
+  {
+    category: "Social",
+    label: "Invest in public school education",
+    keywords: ["education", "school", "teach", "learn"],
+    icon: "📚",
+  },
+  {
+    category: "Social",
+    label: "Improve healthcare and hospital access",
+    keywords: ["health", "hospital", "medical", "doctor"],
+    icon: "🏥",
+  },
+  {
+    category: "Social",
+    label: "Expand social welfare safety net",
+    keywords: ["welfare", "poverty", "support", "benefit"],
+    icon: "🤝",
+  },
+  {
+    category: "Social",
+    label: "Launch universal childcare subsidies",
+    keywords: ["childcare", "family", "parent", "support"],
+    icon: "👶",
+  },
+  {
+    category: "Social",
+    label: "Modernize public pension retirement funds",
+    keywords: ["pension", "retire", "senior", "elder"],
+    icon: "👵",
+  },
+  {
+    category: "Social",
+    label: "Fund national mental health initiatives",
+    keywords: ["mental", "wellness", "health", "care"],
+    icon: "🧠",
+  },
+  {
+    category: "Social",
+    label: "Eradicate urban homelessness",
+    keywords: ["homeless", "shelter", "housing", "urban"],
+    icon: "🛖",
+  },
+  {
+    category: "Social",
+    label: "Subsidize university tuition grants",
+    keywords: ["university", "college", "tuition", "grant"],
+    icon: "🎓",
+  },
+
+  // Infrastructure (8 presets)
+  {
+    category: "Infrastructure",
+    label: "Develop national highway transit",
+    keywords: ["road", "highway", "transit", "infrastructure", "bridge"],
+    icon: "🛣️",
+  },
+  {
+    category: "Infrastructure",
+    label: "Upgrade the national energy power grid",
+    keywords: ["grid", "energy", "power", "electricity"],
+    icon: "⚡",
+  },
+  {
+    category: "Infrastructure",
+    label: "Construct high-speed rail corridor",
+    keywords: ["rail", "train", "transit", "speed"],
+    icon: "🚆",
+  },
+  {
+    category: "Infrastructure",
+    label: "Modernize deepwater shipping seaports",
+    keywords: ["port", "ship", "sea", "cargo"],
+    icon: "⚓",
+  },
+  {
+    category: "Infrastructure",
+    label: "Expand nationwide high-speed fiber internet",
+    keywords: ["internet", "broadband", "fiber", "network"],
+    icon: "📡",
+  },
+  {
+    category: "Infrastructure",
+    label: "Build renewable solar and wind farms",
+    keywords: ["solar", "wind", "renewable", "clean"],
+    icon: "🌱",
+  },
+  {
+    category: "Infrastructure",
+    label: "Upgrade urban water treatment plants",
+    keywords: ["water", "sanitation", "utility", "urban"],
+    icon: "💧",
+  },
+  {
+    category: "Infrastructure",
+    label: "Construct modern international airports",
+    keywords: ["airport", "aviation", "flight", "travel"],
+    icon: "✈️",
+  },
+
+  // Security (8 presets)
+  {
+    category: "Security",
+    label: "Reduce urban crime rates and violence",
+    keywords: ["crime", "police", "security", "safety", "order"],
+    icon: "👮",
+  },
+  {
+    category: "Security",
+    label: "Increase community policing and patrols",
+    keywords: ["police", "patrol", "community", "street"],
+    icon: "🚔",
+  },
+  {
+    category: "Security",
+    label: "Crack down on organized syndicate corruption",
+    keywords: ["gang", "corruption", "syndicate", "law"],
+    icon: "⚖️",
+  },
+  {
+    category: "Security",
+    label: "Enhance border patrol border control",
+    keywords: ["border", "patrol", "immigration", "customs"],
+    icon: "🛂",
+  },
+  {
+    category: "Security",
+    label: "Fortify national cybersecurity infrastructure",
+    keywords: ["cyber", "hacker", "security", "digital"],
+    icon: "🛡️",
+  },
+  {
+    category: "Security",
+    label: "Reform judicial court trial throughput",
+    keywords: ["court", "judge", "justice", "law"],
+    icon: "⚖️",
+  },
+  {
+    category: "Security",
+    label: "Implement anti-smuggling taskforces",
+    keywords: ["smuggling", "drugs", "customs", "enforce"],
+    icon: "🚨",
+  },
+  {
+    category: "Security",
+    label: "Expand emergency responder coverage",
+    keywords: ["fire", "ambulance", "rescue", "emergency"],
+    icon: "🚒",
+  },
+
+  // Defense (8 presets)
+  {
+    category: "Defense",
+    label: "Modernize armed forces equipment",
+    keywords: ["military", "navy", "army", "defense", "forces"],
+    icon: "🛡️",
+  },
+  {
+    category: "Defense",
+    label: "Expand naval fleet patrol capacity",
+    keywords: ["navy", "ship", "fleet", "sea"],
+    icon: "🚢",
+  },
+  {
+    category: "Defense",
+    label: "Upgrade air force fighter jet fleet",
+    keywords: ["airforce", "jet", "plane", "sky"],
+    icon: "✈️",
+  },
+  {
+    category: "Defense",
+    label: "Increase military enlistment pay and benefits",
+    keywords: ["pay", "recruit", "soldier", "enlist"],
+    icon: "🎖️",
+  },
+  {
+    category: "Defense",
+    label: "Fortify strategic coastal defense batteries",
+    keywords: ["coastal", "fortify", "bunker", "battery"],
+    icon: "🏰",
+  },
+  {
+    category: "Defense",
+    label: "Invest in autonomous defense technology",
+    keywords: ["drone", "tech", "autonomous", "robot"],
+    icon: "🤖",
+  },
+  {
+    category: "Defense",
+    label: "Expand intelligence counter-espionage ops",
+    keywords: ["intel", "spy", "secret", "recon"],
+    icon: "🕵️",
+  },
+  {
+    category: "Defense",
+    label: "Establish rapid disaster response military units",
+    keywords: ["disaster", "relief", "response", "conscript"],
+    icon: "⛑️",
+  },
+
+  // Diplomacy (8 presets)
+  {
+    category: "Diplomacy",
+    label: "Negotiate bilateral free trade treaties",
+    keywords: ["trade", "treaty", "alliance", "diplomacy"],
+    icon: "🤝",
+  },
+  {
+    category: "Diplomacy",
+    label: "Expand foreign embassy diplomatic network",
+    keywords: ["embassy", "diplomat", "foreign", "envoy"],
+    icon: "🏛️",
+  },
+  {
+    category: "Diplomacy",
+    label: "Mediate international border disputes",
+    keywords: ["peace", "dispute", "border", "negotiate"],
+    icon: "🕊️",
+  },
+  {
+    category: "Diplomacy",
+    label: "Host global economic summit",
+    keywords: ["summit", "global", "leader", "conference"],
+    icon: "🌐",
+  },
+  {
+    category: "Diplomacy",
+    label: "Offer humanitarian foreign aid packages",
+    keywords: ["aid", "humanitarian", "help", "relief"],
+    icon: "❤️",
+  },
+  {
+    category: "Diplomacy",
+    label: "Form regional mutual defense pacts",
+    keywords: ["pact", "defense", "alliance", "security"],
+    icon: "🛡️",
+  },
+  {
+    category: "Diplomacy",
+    label: "Join international climate standards",
+    keywords: ["climate", "green", "treaty", "standard"],
+    icon: "🌍",
+  },
+  {
+    category: "Diplomacy",
+    label: "Apply for international trade council seat",
+    keywords: ["council", "trade", "global", "seat"],
+    icon: "🎖️",
+  },
+
+  // Governance (8 presets)
+  {
+    category: "Governance",
+    label: "Streamline civil service bureau efficiency",
+    keywords: ["bureau", "civil", "service", "efficiency"],
+    icon: "🏛️",
+  },
+  {
+    category: "Governance",
+    label: "Enact strict anti-corruption transparency laws",
+    keywords: ["corruption", "law", "transparency", "ethics"],
+    icon: "📜",
+  },
+  {
+    category: "Governance",
+    label: "Decentralize regional administrative power",
+    keywords: ["decentralize", "region", "local", "governor"],
+    icon: "🗺️",
+  },
+  {
+    category: "Governance",
+    label: "Implement digital e-government portal",
+    keywords: ["digital", "egov", "online", "portal"],
+    icon: "🖥️",
+  },
+  {
+    category: "Governance",
+    label: "Establish independent judiciary oversight",
+    keywords: ["court", "judicial", "oversight", "law"],
+    icon: "⚖️",
+  },
+  {
+    category: "Governance",
+    label: "Reform parliamentary voting procedures",
+    keywords: ["vote", "parliament", "election", "reform"],
+    icon: "🗳️",
+  },
+  {
+    category: "Governance",
+    label: "Enforce cabinet minister performance metrics",
+    keywords: ["cabinet", "minister", "performance", "metric"],
+    icon: "📋",
+  },
+  {
+    category: "Governance",
+    label: "Launch public freedom of information act",
+    keywords: ["information", "access", "transparency", "public"],
+    icon: "📖",
+  },
 ];
 
-const DOMAIN_CATEGORIES = ["All", "Economy", "Fiscal", "Social", "Infrastructure", "Security", "Defense"];
+const DOMAIN_CATEGORIES = [
+  "All",
+  "Economy",
+  "Fiscal",
+  "Social",
+  "Infrastructure",
+  "Security",
+  "Defense",
+  "Diplomacy",
+  "Governance",
+];
 
 const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
   technocrats: Compass,
@@ -85,6 +484,7 @@ interface IntentComposerProps {
 }
 
 export function IntentComposer({ countryId, initialGoal = "", onCommitted }: IntentComposerProps) {
+  const { country } = useCountryData();
   const [q, setQ] = useState(initialGoal);
   const [goal, setGoal] = useState<string | null>(initialGoal || null);
   const [activeCategory, setActiveCategory] = useState<string>("All");
@@ -114,10 +514,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
     { enabled: !!countryId }
   );
 
-  const intentStatusQuery = api.intent.getStatus.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const intentStatusQuery = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
   const intentStatus = intentStatusQuery.data;
   const usedSlots = intentStatus?.usedThisWeek ?? 0;
   const capSlots = intentStatus?.cap ?? 3;
@@ -159,10 +556,54 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
     });
   };
 
+  /** Real-time Telemetry Reactive 'Surprise Me' engine */
   const getRandomGoal = () => {
-    const available = activeCategory === "All"
-      ? DOMESTIC_SUGGESTIONS
-      : DOMESTIC_SUGGESTIONS.filter((s) => s.category === activeCategory);
+    // Check country telemetry metrics for targeted reactive suggestions
+    if (country) {
+      const crimeRate = country.crimeRate ?? 45;
+      const readiness = country.militaryReadiness ?? country.readiness ?? 94;
+      const stability = country.currentStability ?? country.stability ?? 0.78;
+      const approval = country.publicApproval ?? 68;
+
+      if (crimeRate > 50) {
+        const item =
+          DOMESTIC_SUGGESTIONS.find((s) => s.label === "Reduce urban crime rates and violence") ??
+          DOMESTIC_SUGGESTIONS[0];
+        setQ(item.label);
+        propose(item.label);
+        return;
+      }
+      if (readiness < 80) {
+        const item =
+          DOMESTIC_SUGGESTIONS.find((s) => s.label === "Modernize armed forces equipment") ??
+          DOMESTIC_SUGGESTIONS[0];
+        setQ(item.label);
+        propose(item.label);
+        return;
+      }
+      if (stability < 0.6) {
+        const item =
+          DOMESTIC_SUGGESTIONS.find(
+            (s) => s.label === "Enact strict anti-corruption transparency laws"
+          ) ?? DOMESTIC_SUGGESTIONS[0];
+        setQ(item.label);
+        propose(item.label);
+        return;
+      }
+      if (approval < 50) {
+        const item =
+          DOMESTIC_SUGGESTIONS.find((s) => s.label === "Expand social welfare safety net") ??
+          DOMESTIC_SUGGESTIONS[0];
+        setQ(item.label);
+        propose(item.label);
+        return;
+      }
+    }
+
+    const available =
+      activeCategory === "All"
+        ? DOMESTIC_SUGGESTIONS
+        : DOMESTIC_SUGGESTIONS.filter((s) => s.category === activeCategory);
     const item = available[Math.floor(Math.random() * available.length)];
     if (item) {
       setQ(item.label);
@@ -175,16 +616,17 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
   const canCommit = (status?.canCommit ?? true) && !commitM.isPending;
   const activeBrokers = brokers?.filter((b) => b.unlocked) || [];
 
-  const filteredSuggestions = activeCategory === "All"
-    ? DOMESTIC_SUGGESTIONS
-    : DOMESTIC_SUGGESTIONS.filter((s) => s.category === activeCategory);
+  const filteredSuggestions =
+    activeCategory === "All"
+      ? DOMESTIC_SUGGESTIONS
+      : DOMESTIC_SUGGESTIONS.filter((s) => s.category === activeCategory);
 
   return (
     <div className="space-y-4">
       {/* Power Broker Telemetry Strip (Cabinet Alignment Context) */}
       {activeBrokers.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-[9px] font-extrabold tracking-wider text-muted-foreground uppercase shrink-0">
+        <div className="flex scrollbar-none items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-muted-foreground shrink-0 text-[9px] font-extrabold tracking-wider uppercase">
             Cabinet Alignments:
           </span>
           {activeBrokers.map((b) => {
@@ -204,7 +646,9 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
               >
                 <Icon className="h-3 w-3 shrink-0" />
                 <span>{b.name}</span>
-                <span className="opacity-60 text-[9px]">({Math.round((b.powerShare ?? 0) * 100)}%)</span>
+                <span className="text-[9px] opacity-60">
+                  ({Math.round((b.powerShare ?? 0) * 100)}%)
+                </span>
               </div>
             );
           })}
@@ -219,7 +663,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
           <button
             type="button"
             onClick={() => setHelpOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-500 dark:text-amber-400 backdrop-blur-md transition-all cursor-pointer shadow-2xs active:scale-95"
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-500 shadow-2xs backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <HelpCircle className="h-3 w-3 shrink-0 text-amber-500" />
             <span>Guide & Tips</span>
@@ -228,7 +672,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
           {/* Weekly Directive Slots Telemetry Badge (macOS Capsule Style) */}
           <div
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs backdrop-blur-md transition-all cursor-default",
+              "inline-flex cursor-default items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs backdrop-blur-md transition-all",
               usedSlots >= capSlots
                 ? "border-red-500/30 bg-red-500/10 text-red-400"
                 : "border-border/40 bg-card/20 text-muted-foreground hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-500 dark:hover:text-amber-400"
@@ -236,25 +680,27 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
             title={`${usedSlots}/${capSlots} weekly directive slots consumed (${availableSlots} available)`}
           >
             <FileClock className="h-3 w-3 shrink-0" />
-            <span>{usedSlots}/{capSlots} Slots Used</span>
-            <span className="opacity-60 font-mono">({availableSlots} Available)</span>
+            <span>
+              {usedSlots}/{capSlots} Slots Used
+            </span>
+            <span className="font-mono opacity-60">({availableSlots} Available)</span>
           </div>
         </div>
 
         {/* Spotlight-Style Floating Translucent Command Pill Container */}
         <div
           className={cn(
-            "group relative flex w-full min-w-0 items-center gap-3 rounded-2xl border border-white/10 dark:border-white/15 bg-background/60 dark:bg-zinc-900/60 p-3.5 shadow-lg backdrop-blur-2xl transition-all duration-300 ease-out",
-            "hover:border-amber-500/40 hover:bg-background/80 hover:shadow-xl",
-            "focus-within:border-amber-500/60 focus-within:bg-background/90 focus-within:ring-4 focus-within:ring-amber-500/10 focus-within:shadow-2xl"
+            "group bg-background/60 relative flex w-full min-w-0 items-center gap-3 rounded-2xl border border-white/10 p-3.5 shadow-lg backdrop-blur-2xl transition-all duration-300 ease-out dark:border-white/15 dark:bg-zinc-900/60",
+            "hover:bg-background/80 hover:border-amber-500/40 hover:shadow-xl",
+            "focus-within:bg-background/90 focus-within:border-amber-500/60 focus-within:shadow-2xl focus-within:ring-4 focus-within:ring-amber-500/10"
           )}
         >
           {/* Subtle Ambient Glow Effect on Focus */}
           <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-amber-500/20 opacity-0 blur-md transition-opacity duration-300 group-focus-within:opacity-100" />
 
-          <div className="relative flex w-full min-w-0 flex-wrap sm:flex-nowrap items-center gap-2">
+          <div className="relative flex w-full min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
             {/* Leading Icon with subtle status glow */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 transition-transform duration-200 group-focus-within:scale-105">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-500 transition-transform duration-200 group-focus-within:scale-105">
               <Command className="h-4.5 w-4.5" />
             </div>
 
@@ -266,19 +712,19 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                 if (e.key === "Enter") propose(q);
               }}
               placeholder="What is your country trying to achieve?"
-              className="placeholder:text-muted-foreground/50 flex-1 min-w-[160px] bg-transparent text-base sm:text-lg font-semibold text-foreground tracking-tight outline-none"
+              className="placeholder:text-muted-foreground/50 text-foreground min-w-[160px] flex-1 bg-transparent text-base font-semibold tracking-tight outline-none sm:text-lg"
             />
 
             {/* INLINE Suggested Action Quick Chips (rendered when search input is empty) */}
             {!q && (
-              <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none py-0.5 max-w-full sm:max-w-none">
+              <div className="flex max-w-full shrink-0 scrollbar-none items-center gap-1.5 overflow-x-auto py-0.5 sm:max-w-none">
                 <button
                   type="button"
                   onClick={() => {
                     setQ("Rein in inflation and stabilize prices");
                     propose("Rein in inflation and stabilize prices");
                   }}
-                  className="flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 font-bold text-amber-500 dark:text-amber-400 transition-all cursor-pointer shrink-0 active:scale-95 text-[10px]"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
                 >
                   <Zap className="h-3 w-3 text-amber-500" />
                   <span>Tackle Inflation</span>
@@ -290,7 +736,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                     setQ("Cool the housing market");
                     propose("Cool the housing market");
                   }}
-                  className="flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-1 font-bold text-cyan-400 transition-all cursor-pointer shrink-0 active:scale-95 text-[10px]"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[10px] font-bold text-cyan-400 transition-all hover:bg-cyan-500/20 active:scale-95"
                 >
                   <Building2 className="h-3 w-3 text-cyan-400" />
                   <span>Cool Housing</span>
@@ -299,7 +745,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                 <button
                   type="button"
                   onClick={getRandomGoal}
-                  className="flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-1 font-bold text-purple-400 transition-all cursor-pointer shrink-0 active:scale-95 text-[10px]"
+                  className="flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2 py-1 text-[10px] font-bold text-purple-400 transition-all hover:bg-purple-500/20 active:scale-95"
                 >
                   <Dices className="h-3 w-3 text-purple-400" />
                   <span>Surprise Me</span>
@@ -315,7 +761,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                   setQ("");
                   setGoal(null);
                 }}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer active:scale-90"
+                className="bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition-all active:scale-90"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -323,7 +769,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
 
             {/* Action Handoff Button (Apple Return Pill) */}
             {suggest.isFetching ? (
-              <div className="flex h-8 shrink-0 items-center gap-2 rounded-xl bg-amber-500/10 px-3 border border-amber-500/20 text-xs font-bold text-amber-500">
+              <div className="flex h-8 shrink-0 items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 text-xs font-bold text-amber-500">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span>Analyzing…</span>
               </div>
@@ -333,14 +779,16 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                 onClick={() => propose(q)}
                 disabled={!q.trim()}
                 className={cn(
-                  "flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95",
+                  "flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all duration-200 active:scale-95",
                   q.trim()
-                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/25 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/35"
-                    : "bg-muted/30 text-muted-foreground/40 border border-border/30 cursor-not-allowed"
+                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/20 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/30"
+                    : "border-border/30 bg-muted/30 text-muted-foreground/40 cursor-not-allowed border"
                 )}
               >
                 <span>Propose</span>
-                <span className="font-mono opacity-70 text-[10px]">⏎</span>
+                <span className="py-0.2 rounded bg-black/15 px-1 font-mono text-[9px] font-extrabold dark:bg-black/20">
+                  ⏎
+                </span>
               </button>
             )}
           </div>
@@ -355,7 +803,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
               setParentId(null);
               setChainOf(null);
             }}
-            className="ml-auto text-amber-500/70 hover:text-amber-500 cursor-pointer"
+            className="ml-auto cursor-pointer text-amber-500/70 hover:text-amber-500"
           >
             ✕
           </button>
@@ -365,14 +813,16 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
       {justCommitted && !goal && (
         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-500 dark:text-emerald-300">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span>Committed: <strong className="font-bold">{justCommitted.goal}</strong></span>
+          <span>
+            Committed: <strong className="font-bold">{justCommitted.goal}</strong>
+          </span>
           <button
             onClick={() => {
               setParentId(justCommitted.id);
               setChainOf(justCommitted.goal);
               setJustCommitted(null);
             }}
-            className="ml-auto rounded-lg border border-emerald-500/40 px-2.5 py-1 font-bold hover:bg-emerald-500/20 cursor-pointer transition-colors"
+            className="ml-auto cursor-pointer rounded-lg border border-emerald-500/40 px-2.5 py-1 font-bold transition-colors hover:bg-emerald-500/20"
           >
             Build on this →
           </button>
@@ -396,11 +846,11 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
         <div className="space-y-4">
           {/* Autocomplete Search Matches */}
           {q.trim().length > 0 && (
-            <div className="rounded-xl border border-border/50 bg-popover/95 p-3 shadow-2xl backdrop-blur-xl">
+            <div className="border-border/50 bg-popover/95 rounded-xl border p-3 shadow-2xl backdrop-blur-xl">
               <div className="text-muted-foreground px-1 py-1 text-[10px] font-extrabold tracking-widest uppercase">
                 Matching Suggestions
               </div>
-              <div className="mt-1.5 max-h-[220px] overflow-y-auto space-y-1">
+              <div className="mt-1.5 max-h-[220px] space-y-1 overflow-y-auto">
                 {DOMESTIC_SUGGESTIONS.filter(
                   (s) =>
                     s.label.toLowerCase().includes(q.toLowerCase()) ||
@@ -413,11 +863,11 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                       setErr(null);
                       propose(s.label);
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left text-xs transition-all hover:bg-amber-500/10 hover:border-amber-500/20 hover:text-amber-500"
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left text-xs transition-all hover:border-amber-500/20 hover:bg-amber-500/10 hover:text-amber-500"
                   >
                     <span className="text-sm">{s.icon}</span>
-                    <span className="font-semibold text-foreground/90">{s.label}</span>
-                    <span className="text-[9px] text-muted-foreground/70 ml-auto bg-muted/40 border border-border/30 px-2 py-0.5 rounded font-extrabold tracking-wider uppercase">
+                    <span className="text-foreground/90 font-semibold">{s.label}</span>
+                    <span className="text-muted-foreground/70 bg-muted/40 border-border/30 ml-auto rounded border px-2 py-0.5 text-[9px] font-extrabold tracking-wider uppercase">
                       {s.category}
                     </span>
                   </button>
@@ -439,22 +889,22 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
           {q.trim().length === 0 && (
             <div className="space-y-3">
               {/* Category Segmented Selector Pills */}
-              <div className="flex items-center justify-between gap-2 border-b border-border/30 pb-2">
-                <div className="text-muted-foreground text-[11px] font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+              <div className="border-border/30 flex items-center justify-between gap-2 border-b pb-2">
+                <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-extrabold tracking-widest uppercase">
                   <Compass className="h-3.5 w-3.5 text-amber-500" />
                   Suggested Goals
                 </div>
-                <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+                <div className="flex scrollbar-none items-center gap-1 overflow-x-auto">
                   {DOMAIN_CATEGORIES.map((cat) => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => setActiveCategory(cat)}
                       className={cn(
-                        "rounded-full px-2.5 py-0.5 text-[10px] font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+                        "shrink-0 cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] font-extrabold transition-all active:scale-95",
                         activeCategory === cat
-                          ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-sm"
-                          : "bg-muted/20 text-muted-foreground hover:text-foreground border border-border/30"
+                          ? "border border-amber-500/40 bg-amber-500/20 text-amber-500 shadow-sm"
+                          : "bg-muted/20 text-muted-foreground hover:text-foreground border-border/30 border"
                       )}
                     >
                       {cat}
@@ -464,10 +914,10 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                   <button
                     type="button"
                     onClick={() => setPolicyOpen(true)}
-                    className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-500 transition-all cursor-pointer shrink-0 active:scale-95 ml-1 shadow-2xs"
+                    className="ml-1 flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-500 shadow-2xs transition-all hover:bg-amber-500/25 active:scale-95"
                   >
                     <SlidersHorizontal className="h-3 w-3 text-amber-500" />
-                    <span>Custom Policy</span>
+                    <span>Tune Custom Directive</span>
                   </button>
                 </div>
               </div>
@@ -475,31 +925,37 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
               {/* Filtered Grid of Goals */}
               <div className="grid gap-3 sm:grid-cols-2">
                 {Array.from(new Set(filteredSuggestions.map((s) => s.category))).map((cat) => (
-                  <FacetCard key={cat} depth={2} className="bg-card/40 border-border/30 p-3.5 space-y-2">
-                    <div className="text-amber-500 text-[10px] font-extrabold tracking-wider uppercase border-b border-border/30 pb-1 flex items-center justify-between">
+                  <FacetCard
+                    key={cat}
+                    depth={2}
+                    className="bg-card/40 border-border/30 space-y-2 p-3.5"
+                  >
+                    <div className="border-border/30 flex items-center justify-between border-b pb-1 text-[10px] font-extrabold tracking-wider text-amber-500 uppercase">
                       <span>{cat}</span>
                       <span className="text-muted-foreground/60 text-[9px]">
                         {filteredSuggestions.filter((s) => s.category === cat).length} actions
                       </span>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      {filteredSuggestions.filter((s) => s.category === cat).map((s) => (
-                        <button
-                          key={s.label}
-                          onClick={() => {
-                            setQ(s.label);
-                            setErr(null);
-                            propose(s.label);
-                          }}
-                          className="group flex items-center justify-between rounded-lg bg-muted/20 border border-border/20 hover:border-amber-500/40 hover:bg-amber-500/10 px-3 py-2 text-left text-xs transition-all hover:text-amber-500 text-foreground/90 font-medium cursor-pointer active:scale-[0.98]"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span>{s.icon}</span>
-                            <span>{s.label}</span>
-                          </div>
-                          <ChevronRight className="h-3 w-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                        </button>
-                      ))}
+                      {filteredSuggestions
+                        .filter((s) => s.category === cat)
+                        .map((s) => (
+                          <button
+                            key={s.label}
+                            onClick={() => {
+                              setQ(s.label);
+                              setErr(null);
+                              propose(s.label);
+                            }}
+                            className="group bg-muted/20 border-border/20 text-foreground/90 flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-500 active:scale-[0.98]"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{s.icon}</span>
+                              <span>{s.label}</span>
+                            </div>
+                            <ChevronRight className="text-muted-foreground/40 h-3 w-3 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                          </button>
+                        ))}
                     </div>
                   </FacetCard>
                 ))}
@@ -514,11 +970,11 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="px-1 text-xs font-extrabold tracking-wide text-amber-500 dark:text-amber-400 uppercase flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 px-1 text-xs font-extrabold tracking-wide text-amber-500 uppercase dark:text-amber-400">
             <Command className="h-3.5 w-3.5" />
             <span>“{goal}”</span>
             {data.category && (
-              <span className="text-muted-foreground font-mono lowercase text-[11px]">
+              <span className="text-muted-foreground font-mono text-[11px] lowercase">
                 · {data.category}
               </span>
             )}
@@ -537,7 +993,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                 className="bg-card/40 border-border/40 p-4 transition-all duration-200 group-hover:border-amber-500/50 group-hover:bg-amber-500/[0.04] group-hover:shadow-xl"
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-foreground text-sm font-bold flex items-center gap-2">
+                  <div className="text-foreground flex items-center gap-2 text-sm font-bold">
                     <span>{p.title}</span>
                   </div>
                   <span
@@ -556,7 +1012,7 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                 <div className="text-muted-foreground mt-1.5 text-xs leading-relaxed font-medium">
                   {p.blurb}
                 </div>
-                <ul className="mt-3 space-y-1.5 border-t border-border/30 pt-2.5">
+                <ul className="border-border/30 mt-3 space-y-1.5 border-t pt-2.5">
                   {p.changes.map((c: any, i: number) => (
                     <li key={i} className="flex items-start gap-2 text-xs">
                       <span className="mt-[2px] text-xs font-bold text-amber-500">
@@ -575,11 +1031,11 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
                     </li>
                   ))}
                 </ul>
-                <div className="text-muted-foreground/80 mt-3 flex items-center justify-between border-t border-border/30 pt-2 text-[9px] font-extrabold tracking-wider uppercase">
+                <div className="text-muted-foreground/80 border-border/30 mt-3 flex items-center justify-between border-t pt-2 text-[9px] font-extrabold tracking-wider uppercase">
                   <span>Risk: {p.risk}</span>
-                  <div className="flex items-center gap-1 text-amber-500 font-bold">
+                  <div className="flex items-center gap-1 font-bold text-amber-500">
                     <span>Commit Directive</span>
-                    <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
                   </div>
                 </div>
               </FacetCard>
@@ -604,16 +1060,18 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
               className="border border-dashed border-amber-500/40 bg-amber-500/5 p-4 transition-all duration-200 group-hover:border-amber-500/60 group-hover:bg-amber-500/10 group-hover:shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="text-amber-500 dark:text-amber-300 text-sm font-bold flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 text-sm font-bold text-amber-500 dark:text-amber-300">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Propose as Cabinet Goal</span>
                 </div>
-                <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider text-amber-500 dark:text-amber-300 uppercase">
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider text-amber-500 uppercase dark:text-amber-300">
                   Schedule meeting
                 </span>
               </div>
               <div className="text-muted-foreground mt-1.5 text-xs leading-relaxed font-medium">
-                Add this goal to the national proposed agenda list. This allows scheduling a dedicated cabinet meeting session to deliberate and select a ministry package. (Bypasses active weekly cooldown).
+                Add this goal to the national proposed agenda list. This allows scheduling a
+                dedicated cabinet meeting session to deliberate and select a ministry package.
+                (Bypasses active weekly cooldown).
               </div>
             </FacetCard>
           </button>
@@ -634,13 +1092,13 @@ export function IntentComposer({ countryId, initialGoal = "", onCommitted }: Int
           <div className="flex items-center justify-between px-1 pt-2">
             <button
               onClick={() => setGoal(null)}
-              className="text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors cursor-pointer"
+              className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-semibold transition-colors"
             >
               ← Rethink goal
             </button>
             <button
               onClick={() => setPolicyOpen(true)}
-              className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-1"
+              className="flex cursor-pointer items-center gap-1 text-xs font-bold text-amber-500 transition-colors hover:text-amber-400"
             >
               <SlidersHorizontal className="h-3 w-3" />
               Draft custom package →
@@ -664,10 +1122,10 @@ function IntentComposerHelpModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl bg-card border-border backdrop-blur-2xl p-6 shadow-2xl">
-        <DialogHeader className="border-b border-border/40 pb-3">
+      <DialogContent className="bg-card border-border max-w-xl p-6 shadow-2xl backdrop-blur-2xl">
+        <DialogHeader className="border-border/40 border-b pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 shrink-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-500">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
@@ -683,66 +1141,91 @@ function IntentComposerHelpModal({
 
         <div className="my-4 space-y-3.5 text-xs">
           {/* Step 1 */}
-          <FacetCard depth={2} className="bg-card/40 border-border/40 p-3.5 space-y-1">
-            <div className="flex items-center gap-2 font-bold text-foreground text-sm">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">1</span>
+          <FacetCard depth={2} className="bg-card/40 border-border/40 space-y-1 p-3.5">
+            <div className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">
+                1
+              </span>
               <span>Declare Intention in Plain Language</span>
             </div>
-            <p className="text-muted-foreground leading-relaxed pl-7 font-medium">
-              Type any executive goal like <code className="text-amber-500 font-mono font-bold">"cool housing prices"</code>, <code className="text-amber-500 font-mono font-bold">"create manufacturing jobs"</code>, or <code className="text-amber-500 font-mono font-bold">"modernize defense"</code>. The intent engine parses your executive goals into policy packages.
+            <p className="text-muted-foreground pl-7 leading-relaxed font-medium">
+              Type any executive goal like{" "}
+              <code className="font-mono font-bold text-amber-500">"cool housing prices"</code>,{" "}
+              <code className="font-mono font-bold text-amber-500">
+                "create manufacturing jobs"
+              </code>
+              , or <code className="font-mono font-bold text-amber-500">"modernize defense"</code>.
+              The Statecraft engine parses your executive goals into directive packages.
             </p>
           </FacetCard>
 
           {/* Step 2 */}
-          <FacetCard depth={2} className="bg-card/40 border-border/40 p-3.5 space-y-1">
-            <div className="flex items-center gap-2 font-bold text-foreground text-sm">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">2</span>
+          <FacetCard depth={2} className="bg-card/40 border-border/40 space-y-1 p-3.5">
+            <div className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">
+                2
+              </span>
               <span>Evaluate 3 Ministry Package Tiers</span>
             </div>
-            <ul className="space-y-1.5 pl-7 text-muted-foreground font-medium">
+            <ul className="text-muted-foreground space-y-1.5 pl-7 font-medium">
               <li className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                <span><strong className="text-emerald-500 dark:text-emerald-400">Measured:</strong> Low risk, conservative changes, broad cabinet support.</span>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span>
+                  <strong className="text-emerald-500 dark:text-emerald-400">Measured:</strong> Low
+                  risk, conservative changes, broad cabinet support.
+                </span>
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                <span><strong className="text-amber-500 dark:text-amber-400">Moderate:</strong> Balanced approach with targeted policy levers and budget shifts.</span>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                <span>
+                  <strong className="text-amber-500 dark:text-amber-400">Moderate:</strong> Balanced
+                  approach with targeted policy levers and budget shifts.
+                </span>
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
-                <span><strong className="text-red-500 dark:text-red-400">Extreme:</strong> Aggressive overhaul with rapid impact but higher political risk.</span>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+                <span>
+                  <strong className="text-red-500 dark:text-red-400">Extreme:</strong> Aggressive
+                  overhaul with rapid impact but higher political risk.
+                </span>
               </li>
             </ul>
           </FacetCard>
 
           {/* Step 3 */}
-          <FacetCard depth={2} className="bg-card/40 border-border/40 p-3.5 space-y-1">
-            <div className="flex items-center gap-2 font-bold text-foreground text-sm">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">3</span>
+          <FacetCard depth={2} className="bg-card/40 border-border/40 space-y-1 p-3.5">
+            <div className="text-foreground flex items-center gap-2 text-sm font-bold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-black text-amber-500">
+                3
+              </span>
               <span>Cabinet & Power Broker Support</span>
             </div>
-            <p className="text-muted-foreground leading-relaxed pl-7 font-medium">
-              Check the <strong className="text-foreground">Cabinet Alignments</strong> strip across the top. Satisfied Power Brokers boost policy acceptance and lower civil service friction.
+            <p className="text-muted-foreground pl-7 leading-relaxed font-medium">
+              Check the <strong className="text-foreground">Cabinet Alignments</strong> strip across
+              the top. Satisfied Power Brokers boost policy acceptance and lower civil service
+              friction.
             </p>
           </FacetCard>
 
           {/* Pro Tips Banner */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-amber-500 dark:text-amber-300">
-            <Command className="h-4 w-4 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-500 dark:text-amber-300">
+            <Command className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="space-y-1">
-              <div className="font-bold text-xs">Executive Pro Tip: Chaining Directives</div>
+              <div className="text-xs font-bold">Executive Pro Tip: Chaining Directives</div>
               <div className="text-muted-foreground text-[11px] leading-relaxed font-medium">
-                After committing a directive, click <strong className="text-foreground font-bold">"Build on this →"</strong> to chain related follow-up directives into a multi-turn national reform initiative!
+                After committing a directive, click{" "}
+                <strong className="text-foreground font-bold">"Build on this →"</strong> to chain
+                related follow-up directives into a multi-turn national reform initiative!
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="border-t border-border/40 pt-3">
+        <DialogFooter className="border-border/40 border-t pt-3">
           <Button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold cursor-pointer"
+            className="w-full cursor-pointer bg-amber-500 font-bold text-black hover:bg-amber-600"
           >
             Got it, return to Executive Console
           </Button>

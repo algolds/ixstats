@@ -84,29 +84,31 @@ export function V2DomainSurface({
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
             className={cn(
-              "absolute -right-10 -top-10 h-40 w-40 rounded-full blur-3xl opacity-15",
+              "absolute -top-10 -right-10 h-40 w-40 rounded-full opacity-15 blur-3xl",
               DOMAIN_GLOW[domain]
             )}
           />
           <Icon
-            className={cn(
-              "absolute -right-3 -bottom-4 h-24 w-24 opacity-[0.06]",
-              meta.accent
-            )}
+            className={cn("absolute -right-3 -bottom-4 h-24 w-24 opacity-[0.06]", meta.accent)}
             strokeWidth={1}
           />
         </div>
 
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3.5">
-            <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-white/5", meta.accent)}>
+            <div
+              className={cn(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-white/5",
+                meta.accent
+              )}
+            >
               <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-black tracking-tight text-foreground sm:text-2xl">
+              <h1 className="text-foreground text-xl font-black tracking-tight sm:text-2xl">
                 {meta.title}
               </h1>
-              <p className="text-muted-foreground mt-0.5 max-w-xl text-xs font-medium leading-relaxed">
+              <p className="text-muted-foreground mt-0.5 max-w-xl text-xs leading-relaxed font-medium">
                 {meta.blurb}
               </p>
             </div>
@@ -115,7 +117,7 @@ export function V2DomainSurface({
           <button
             type="button"
             onClick={() => onDeclare?.(meta.prefilledGoal)}
-            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400 shadow-sm backdrop-blur-md"
+            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <span className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
               <Command className="h-3 w-3" />

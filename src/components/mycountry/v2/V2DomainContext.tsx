@@ -215,7 +215,8 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
 
     // 1. Live diplomaticRelation rows from database query DTO
     (relationsRaw ?? []).forEach((r: any) => {
-      const name = r.targetCountryName ?? r.targetCountry?.name ?? r.targetCountry ?? "Partner Nation";
+      const name =
+        r.targetCountryName ?? r.targetCountry?.name ?? r.targetCountry ?? "Partner Nation";
       const flag = r.targetCountryFlag ?? r.targetCountry?.flag ?? r.flagUrl ?? null;
       const targetId = r.targetCountryId ?? r.id;
       if (targetId) seenTargets.add(targetId);
@@ -237,8 +238,7 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
         (e.guestCountryId === countryId ? e.hostCountry : e.guestCountry) ??
         "Partner Nation";
       const partnerFlag =
-        e.countryFlag ??
-        (e.guestCountryId === countryId ? e.hostCountryFlag : e.guestCountryFlag);
+        e.countryFlag ?? (e.guestCountryId === countryId ? e.hostCountryFlag : e.guestCountryFlag);
 
       if (partnerId && !seenTargets.has(partnerId)) {
         seenTargets.add(partnerId);
@@ -333,11 +333,11 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Unified Embassy & Bilateral Network Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-3">
+      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             <Building2 className="h-3.5 w-3.5 text-cyan-400" />
-            <h4 className="text-xs font-bold text-foreground">Embassy & Bilateral Network</h4>
+            <h4 className="text-foreground text-xs font-bold">Embassy & Bilateral Network</h4>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-extrabold text-cyan-400">
@@ -351,12 +351,12 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
 
         {/* 1. Embassy Network Section */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          <div className="text-muted-foreground flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
             <span>Active Embassies</span>
             <span className="text-[9px]">{activeEmbassies.length} total</span>
           </div>
           {activeEmbassies.length === 0 ? (
-            <p className="py-1.5 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-1.5 text-center text-[11px]">
               No active embassies established.
             </p>
           ) : (
@@ -375,13 +375,19 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
                   key={emb.id}
                   className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shrink-0 overflow-hidden">
-                      <UnifiedCountryFlag countryName={partnerName} flagUrl={partnerFlag} size="xs" />
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
+                      <UnifiedCountryFlag
+                        countryName={partnerName}
+                        flagUrl={partnerFlag}
+                        size="xs"
+                      />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground truncate text-[11px]">{partnerName}</p>
-                      <p className="text-[9px] text-muted-foreground">
+                      <p className="text-foreground truncate text-[11px] font-semibold">
+                        {partnerName}
+                      </p>
+                      <p className="text-muted-foreground text-[9px]">
                         {emb.guestCountryId === countryId ? "Host Embassy" : "Guest Embassy"}
                       </p>
                     </div>
@@ -396,13 +402,13 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
         </div>
 
         {/* 2. Bilateral Relations Section */}
-        <div className="space-y-1.5 pt-1 border-t border-white/5">
-          <div className="flex items-center justify-between text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+        <div className="space-y-1.5 border-t border-white/5 pt-1">
+          <div className="text-muted-foreground flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
             <span>Bilateral Relationships</span>
             <span className="text-[9px]">{liveRelations.length} partners</span>
           </div>
           {liveRelations.length === 0 ? (
-            <p className="py-1.5 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-1.5 text-center text-[11px]">
               No diplomatic relationships recorded.
             </p>
           ) : (
@@ -411,13 +417,17 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
                 key={rel.id}
                 className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-400 shrink-0 overflow-hidden">
-                  <UnifiedCountryFlag countryName={rel.targetName} flagUrl={rel.targetFlag} size="xs" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-400">
+                  <UnifiedCountryFlag
+                    countryName={rel.targetName}
+                    flagUrl={rel.targetFlag}
+                    size="xs"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-foreground truncate">{rel.targetName}</span>
-                    <span className="font-bold text-teal-400 text-[10px]">{rel.strength}%</span>
+                    <span className="text-foreground truncate font-semibold">{rel.targetName}</span>
+                    <span className="text-[10px] font-bold text-teal-400">{rel.strength}%</span>
                   </div>
                   <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
                     <div
@@ -426,7 +436,7 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
                     />
                   </div>
                 </div>
-                <span className="shrink-0 text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                <span className="text-muted-foreground shrink-0 text-[9px] font-bold tracking-wider uppercase">
                   {rel.stance}
                 </span>
               </div>
@@ -436,11 +446,11 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Alliances & Bocs Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-2.5">
+      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-purple-400" />
-            <h4 className="text-xs font-bold text-foreground">Alliances & Blocs</h4>
+            <h4 className="text-foreground text-xs font-bold">Alliances & Blocs</h4>
           </div>
           <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-extrabold text-purple-400">
             {alliances.length} Active
@@ -449,7 +459,7 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
 
         <div className="space-y-1.5">
           {alliances.length === 0 ? (
-            <p className="py-2 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-2 text-center text-[11px]">
               Not a member of any diplomatic alliance.
             </p>
           ) : (
@@ -459,8 +469,10 @@ function DiplomacyContext({ countryId }: { countryId: string }) {
                 className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
               >
                 <div>
-                  <p className="font-semibold text-foreground text-[11px]">{ally.name ?? "Defense Pact"}</p>
-                  <p className="text-[9px] text-muted-foreground">
+                  <p className="text-foreground text-[11px] font-semibold">
+                    {ally.name ?? "Defense Pact"}
+                  </p>
+                  <p className="text-muted-foreground text-[9px]">
                     {ally.memberCount ?? ally.members?.length ?? 1} Nations
                   </p>
                 </div>
@@ -551,11 +563,11 @@ function DefenseContext({ countryId }: { countryId: string }) {
       />
 
       {/* Military Branches & Readiness Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-2.5">
+      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             <Sword className="h-3.5 w-3.5 text-red-400" />
-            <h4 className="text-xs font-bold text-foreground">Military Branches</h4>
+            <h4 className="text-foreground text-xs font-bold">Military Branches</h4>
           </div>
           <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-extrabold text-red-400">
             {branches?.length ?? 0} Active
@@ -564,7 +576,7 @@ function DefenseContext({ countryId }: { countryId: string }) {
 
         <div className="space-y-1.5">
           {!branches || branches.length === 0 ? (
-            <p className="py-2 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-2 text-center text-[11px]">
               No active military branches configured.
             </p>
           ) : (
@@ -575,13 +587,13 @@ function DefenseContext({ countryId }: { countryId: string }) {
               return (
                 <div
                   key={b.id}
-                  className="rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md space-y-1"
+                  className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-foreground truncate">
+                    <span className="text-foreground truncate font-semibold">
                       {b.name ?? b.branchType ?? "Military Branch"}
                     </span>
-                    <span className="font-bold text-red-400 text-[10px]">
+                    <span className="text-[10px] font-bold text-red-400">
                       {Math.round(readiness)}% ready · {(personnel / 1000).toFixed(1)}k personnel
                     </span>
                   </div>
@@ -599,11 +611,11 @@ function DefenseContext({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Threat Vectors Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-2.5">
+      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-            <h4 className="text-xs font-bold text-foreground">Threat Assessments</h4>
+            <h4 className="text-foreground text-xs font-bold">Threat Assessments</h4>
           </div>
           <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-400">
             {assessment?.activeThreats?.length ?? 0} Threats
@@ -612,7 +624,7 @@ function DefenseContext({ countryId }: { countryId: string }) {
 
         <div className="space-y-1.5">
           {!assessment?.activeThreats || assessment.activeThreats.length === 0 ? (
-            <p className="py-2 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-2 text-center text-[11px]">
               All threat vectors clear. Defensive alert level nominal.
             </p>
           ) : (
@@ -624,15 +636,15 @@ function DefenseContext({ countryId }: { countryId: string }) {
                   key={threat.id}
                   className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
-                  <div className="flex items-center gap-2 min-w-0 pr-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 shrink-0">
+                  <div className="flex min-w-0 items-center gap-2 pr-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
                       {critical ? (
                         <AlertTriangle className="h-3 w-3 text-red-400" />
                       ) : (
                         <ShieldAlert className="h-3 w-3 text-amber-400" />
                       )}
                     </span>
-                    <span className="font-semibold text-foreground truncate text-[11px]">
+                    <span className="text-foreground truncate text-[11px] font-semibold">
                       {threat.threatName ?? threat.name ?? "Threat Vector"}
                     </span>
                   </div>
@@ -755,13 +767,13 @@ function PoliticsContext({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Parliament Seat Allocation Card (Hemicycle Arc & Seat Breakdown) */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-3">
+      <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
-            <Building2 className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-            <h4 className="text-xs font-bold text-foreground">Parliament Seat Allocation</h4>
+            <Building2 className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+            <h4 className="text-foreground text-xs font-bold">Parliament Seat Allocation</h4>
           </div>
-          <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-extrabold text-purple-400 font-mono">
+          <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-purple-400">
             {parliament?.legislature?.totalSeats ?? legislature?.totalSeats ?? 0} Seats
           </span>
         </div>
@@ -777,7 +789,7 @@ function PoliticsContext({ countryId }: { countryId: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-center text-[10px] text-muted-foreground font-mono py-1">
+            <p className="text-muted-foreground py-1 text-center font-mono text-[10px]">
               Chamber Hemicycle ({legislature?.totalSeats ?? 100} Total Seats)
             </p>
             {parties && parties.length > 0 ? (
@@ -788,8 +800,10 @@ function PoliticsContext({ countryId }: { countryId: string }) {
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
                     <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-[11px] font-semibold text-foreground truncate">{p.name}</span>
-                      <span className="font-mono font-bold text-purple-400 text-[10px]">
+                      <span className="text-foreground truncate text-[11px] font-semibold">
+                        {p.name}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-purple-400">
                         {seats} seats ({pct.toFixed(0)}%)
                       </span>
                     </div>
@@ -797,7 +811,7 @@ function PoliticsContext({ countryId }: { countryId: string }) {
                 })}
               </div>
             ) : (
-              <p className="py-2 text-center text-[11px] text-muted-foreground">
+              <p className="text-muted-foreground py-2 text-center text-[11px]">
                 No legislature seats allocated yet.
               </p>
             )}
@@ -806,11 +820,11 @@ function PoliticsContext({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Political Parties & Factions Snapshot Card */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-2.5">
+      <FacetCard depth={1} className="bg-card/30 space-y-2.5 p-4 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-purple-400" />
-            <h4 className="text-xs font-bold text-foreground">Political Parties</h4>
+            <h4 className="text-foreground text-xs font-bold">Political Parties</h4>
           </div>
           <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-[10px] font-extrabold text-purple-400">
             {parties?.length ?? 0} Parties
@@ -819,7 +833,7 @@ function PoliticsContext({ countryId }: { countryId: string }) {
 
         <div className="space-y-1.5">
           {!parties || parties.length === 0 ? (
-            <p className="py-2 text-center text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground py-2 text-center text-[11px]">
               No registered political parties.
             </p>
           ) : (
@@ -830,16 +844,16 @@ function PoliticsContext({ countryId }: { countryId: string }) {
               return (
                 <div
                   key={party.id}
-                  className="rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md space-y-1"
+                  className="space-y-1 rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs backdrop-blur-md"
                 >
                   <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 min-w-0 pr-2">
-                      <span className="font-semibold text-foreground truncate">{party.name}</span>
-                      <span className="text-[9px] text-muted-foreground uppercase font-mono">
+                    <div className="flex min-w-0 items-center gap-1.5 pr-2">
+                      <span className="text-foreground truncate font-semibold">{party.name}</span>
+                      <span className="text-muted-foreground font-mono text-[9px] uppercase">
                         ({party.ideology?.replace(/_/g, " ") ?? "Centrist"})
                       </span>
                     </div>
-                    <span className="font-bold text-purple-400 text-[10px] shrink-0">
+                    <span className="shrink-0 text-[10px] font-bold text-purple-400">
                       {support}% support · {seats} seats
                     </span>
                   </div>
@@ -927,13 +941,7 @@ function EconomyContext({ countryId }: { countryId: string }) {
  * Replaces the shared National Standing / Your Agenda rail with per-domain KPIs and a
  * recent-activity log, so each tab shows information specific to what it manages.
  */
-export function V2DomainContext({
-  countryId,
-  domain,
-}: {
-  countryId: string;
-  domain: V2Domain;
-}) {
+export function V2DomainContext({ countryId, domain }: { countryId: string; domain: V2Domain }) {
   switch (domain) {
     case "relations":
       return <DiplomacyContext countryId={countryId} />;

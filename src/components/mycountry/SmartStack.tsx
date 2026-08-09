@@ -192,7 +192,7 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
   return (
     <div
       className={cn(
-        "group relative flex flex-1 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 shadow-inner backdrop-blur-md select-none text-left transition-all hover:bg-white/[0.06] cursor-pointer",
+        "group relative flex min-w-0 flex-1 cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left shadow-inner backdrop-blur-md transition-all select-none hover:bg-white/[0.06]",
         className
       )}
       onClick={() => {
@@ -200,37 +200,37 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
       }}
     >
       {/* iOS Widget Vibrant Header */}
-      <div className="flex items-center justify-between gap-1.5 text-amber-500 text-xs font-extrabold tracking-wider uppercase mb-2 z-10">
+      <div className="z-10 mb-2 flex items-center justify-between gap-1.5 text-xs font-extrabold tracking-wider text-amber-500 uppercase">
         <div className="flex items-center gap-1.5">
           <Layers className="h-3.5 w-3.5" />
           <span>Smart Stack</span>
         </div>
         {items.length > 0 && (
-          <span className="rounded-full bg-amber-500/20 text-amber-400 px-2 py-0.5 text-[9px] font-extrabold">
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold text-amber-400">
             {activeIndex + 1} / {items.length}
           </span>
         )}
       </div>
 
       {current ? (
-        <div className="flex flex-grow flex-col items-center justify-center py-2 z-10">
-          <span className="text-[10px] font-bold tracking-widest text-amber-500 uppercase flex items-center gap-1">
+        <div className="z-10 flex flex-grow flex-col items-center justify-center py-2">
+          <span className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-amber-500 uppercase">
             <current.icon className="h-3 w-3" />
             <span>{current.label}</span>
           </span>
-          <p className="text-foreground mt-1 text-center text-xs sm:text-sm font-black tracking-tight leading-snug line-clamp-2 px-4">
+          <p className="text-foreground mt-1 line-clamp-2 px-4 text-center text-xs leading-snug font-black tracking-tight sm:text-sm">
             {current.text}
           </p>
-          <span className="text-amber-400/90 group-hover:text-amber-300 mt-2 text-center text-[10px] font-bold uppercase truncate max-w-full transition-colors flex items-center justify-center gap-1">
+          <span className="mt-2 flex max-w-full items-center justify-center gap-1 truncate text-center text-[10px] font-bold text-amber-400/90 uppercase transition-colors group-hover:text-amber-300">
             Resolve Directive <ChevronRight className="h-3 w-3" />
           </span>
         </div>
       ) : (
-        <div className="flex flex-grow flex-col items-center justify-center py-3 z-10">
+        <div className="z-10 flex flex-grow flex-col items-center justify-center py-3">
           <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
             Sectors Operational
           </span>
-          <span className="text-foreground mt-1 text-2xl font-black tracking-tighter text-emerald-400 flex items-center gap-1">
+          <span className="text-foreground mt-1 flex items-center gap-1 text-2xl font-black tracking-tighter text-emerald-400">
             <Check className="h-5 w-5" /> 0 Pending
           </span>
           <span className="text-muted-foreground/60 mt-2 text-center text-[10px] font-semibold uppercase">

@@ -45,13 +45,7 @@ export default function CountryProfileLayout({
   );
 }
 
-function CountryProfileShell({
-  slug,
-  children,
-}: {
-  slug: string;
-  children: React.ReactNode;
-}) {
+function CountryProfileShell({ slug, children }: { slug: string; children: React.ReactNode }) {
   const { country, isLoading, error } = useCountryData();
   const { userProfile } = useUserCountry();
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
@@ -167,7 +161,7 @@ function CountryProfileShell({
           <Button
             size="sm"
             onClick={() => setShowCountryActions(true)}
-            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-md"
+            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-md transition-all hover:scale-105 active:scale-95"
             style={{
               borderColor: "var(--flag-border-primary)",
               color: "var(--flag-primary)",
@@ -179,11 +173,7 @@ function CountryProfileShell({
           </Button>
         </div>
 
-        <CountryTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          countrySlug={slug}
-        />
+        <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countrySlug={slug} />
 
         {children}
       </div>

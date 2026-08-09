@@ -149,8 +149,13 @@ export function GovernmentStep({
 
   // Auto-allocate standard departments if empty in standard mode
   useEffect(() => {
-    if (viewMode === "standard" && (!governmentStructure.departments || governmentStructure.departments.length === 0)) {
-      const totalBudget = governmentStructure.structure?.totalBudget || (economicInputs?.coreIndicators?.nominalGDP || 1000000000) * 0.35;
+    if (
+      viewMode === "standard" &&
+      (!governmentStructure.departments || governmentStructure.departments.length === 0)
+    ) {
+      const totalBudget =
+        governmentStructure.structure?.totalBudget ||
+        (economicInputs?.coreIndicators?.nominalGDP || 1000000000) * 0.35;
       const defaultDepts = [
         {
           name: "Department of Finance",
@@ -237,9 +242,9 @@ export function GovernmentStep({
       const defaultAllocations = [
         { departmentId: "0", allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
         { departmentId: "1", allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
-        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
-        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
-        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
+        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
       ];
 
       onGovernmentStructureChange({

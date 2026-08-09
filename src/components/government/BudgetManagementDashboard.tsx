@@ -75,7 +75,10 @@ export function BudgetManagementDashboard({
   // Calculate budget summary
   const budgetSummary: BudgetSummary = useMemo(() => {
     const currentYearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
-    const totalAllocated = currentYearAllocations.reduce((sum, a) => sum + (a.allocatedAmount ?? 0), 0);
+    const totalAllocated = currentYearAllocations.reduce(
+      (sum, a) => sum + (a.allocatedAmount ?? 0),
+      0
+    );
     const totalSpent = currentYearAllocations.reduce((sum, a) => sum + (a.spentAmount ?? 0), 0);
     const totalAvailable = totalAllocated - totalSpent;
     const utilizationRate = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
@@ -191,12 +194,28 @@ export function BudgetManagementDashboard({
       revenueSummary.totalRevenue > 0 ? (deficit / revenueSummary.totalRevenue) * 100 : 0;
 
     if (deficitPercent > 5)
-      return { status: "surplus", color: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono", label: "Surplus" };
+      return {
+        status: "surplus",
+        color: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono",
+        label: "Surplus",
+      };
     if (deficitPercent > -3)
-      return { status: "balanced", color: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono", label: "Balanced" };
+      return {
+        status: "balanced",
+        color: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono",
+        label: "Balanced",
+      };
     if (deficitPercent > -10)
-      return { status: "moderate", color: "bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono", label: "Moderate Deficit" };
-    return { status: "deficit", color: "bg-red-500/10 text-red-400 border border-red-500/30 font-mono", label: "High Deficit" };
+      return {
+        status: "moderate",
+        color: "bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono",
+        label: "Moderate Deficit",
+      };
+    return {
+      status: "deficit",
+      color: "bg-red-500/10 text-red-400 border border-red-500/30 font-mono",
+      label: "High Deficit",
+    };
   };
 
   const budgetHealth = getBudgetHealthStatus();
@@ -206,30 +225,36 @@ export function BudgetManagementDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground">
+          <h1 className="text-foreground text-2xl font-black tracking-tight">
             {governmentStructure?.governmentName ?? "National"} Fiscal Budget
           </h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} • {selectedYear}{" "}
-            {governmentStructure?.fiscalYear ?? "FY"}
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} •{" "}
+            {selectedYear} {governmentStructure?.fiscalYear ?? "FY"}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="rounded-xl border border-border/40 bg-card/60 px-3 py-1.5 text-xs font-extrabold font-mono text-foreground backdrop-blur-xl outline-none transition-all hover:border-border/60 focus:ring-2 focus:ring-emerald-500/30 cursor-pointer"
+            className="border-border/40 bg-card/60 text-foreground hover:border-border/60 cursor-pointer rounded-xl border px-3 py-1.5 font-mono text-xs font-extrabold backdrop-blur-xl transition-all outline-none focus:ring-2 focus:ring-emerald-500/30"
           >
             {Array.from({ length: 5 }, (_, i) => {
               const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();
               return currentIxYear - i;
             }).map((year) => (
-              <option key={year} value={year} className="bg-popover text-popover-foreground font-mono">
+              <option
+                key={year}
+                value={year}
+                className="bg-popover text-popover-foreground font-mono"
+              >
                 {year}
               </option>
             ))}
           </select>
-          <Badge className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${budgetHealth.color}`}>
+          <Badge
+            className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${budgetHealth.color}`}
+          >
             {budgetHealth.label}
           </Badge>
         </div>
@@ -237,39 +262,39 @@ export function BudgetManagementDashboard({
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-card/40 p-4 backdrop-blur-xl shadow-lg transition-transform duration-200 active:scale-[0.98]">
+        <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
+              <p className="text-muted-foreground text-[10px] font-extrabold tracking-widest uppercase">
                 Total Budget
               </p>
               <p className="mt-1 font-mono text-xl font-black tracking-tight text-emerald-400">
                 {formatNumber(budgetSummary.totalBudget)}
               </p>
             </div>
-            <DollarSign className="h-6 w-6 text-emerald-400 shrink-0" />
+            <DollarSign className="h-6 w-6 shrink-0 text-emerald-400" />
           </div>
           <div className="mt-2">
-            <p className="text-[11px] font-mono text-muted-foreground">
+            <p className="text-muted-foreground font-mono text-[11px]">
               {formatCurrency(budgetSummary.totalBudget)}
             </p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-card/40 p-4 backdrop-blur-xl shadow-lg transition-transform duration-200 active:scale-[0.98]">
+        <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
+              <p className="text-muted-foreground text-[10px] font-extrabold tracking-widest uppercase">
                 Allocated
               </p>
               <p className="mt-1 font-mono text-xl font-black tracking-tight text-cyan-400">
                 {formatNumber(budgetSummary.totalAllocated)}
               </p>
             </div>
-            <Target className="h-6 w-6 text-cyan-400 shrink-0" />
+            <Target className="h-6 w-6 shrink-0 text-cyan-400" />
           </div>
           <div className="mt-2">
-            <p className="text-[11px] font-mono text-muted-foreground">
+            <p className="text-muted-foreground font-mono text-[11px]">
               {budgetSummary.totalBudget > 0
                 ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1)
                 : 0}
@@ -278,39 +303,39 @@ export function BudgetManagementDashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-card/40 p-4 backdrop-blur-xl shadow-lg transition-transform duration-200 active:scale-[0.98]">
+        <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
+              <p className="text-muted-foreground text-[10px] font-extrabold tracking-widest uppercase">
                 Utilized
               </p>
               <p className="mt-1 font-mono text-xl font-black tracking-tight text-amber-400">
                 {formatNumber(budgetSummary.totalSpent)}
               </p>
             </div>
-            <TrendingUp className="h-6 w-6 text-amber-400 shrink-0" />
+            <TrendingUp className="h-6 w-6 shrink-0 text-amber-400" />
           </div>
           <div className="mt-2">
-            <p className="text-[11px] font-mono text-muted-foreground">
+            <p className="text-muted-foreground font-mono text-[11px]">
               {budgetSummary.utilizationRate.toFixed(1)}% utilization
             </p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-card/40 p-4 backdrop-blur-xl shadow-lg transition-transform duration-200 active:scale-[0.98]">
+        <div className="bg-card/40 rounded-2xl border border-white/10 p-4 shadow-lg backdrop-blur-xl transition-transform duration-200 active:scale-[0.98]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">
+              <p className="text-muted-foreground text-[10px] font-extrabold tracking-widest uppercase">
                 Revenue
               </p>
               <p className="mt-1 font-mono text-xl font-black tracking-tight text-purple-400">
                 {formatNumber(revenueSummary.totalRevenue)}
               </p>
             </div>
-            <BarChart3 className="h-6 w-6 text-purple-400 shrink-0" />
+            <BarChart3 className="h-6 w-6 shrink-0 text-purple-400" />
           </div>
           <div className="mt-2">
-            <p className="text-[11px] font-mono text-muted-foreground">
+            <p className="text-muted-foreground font-mono text-[11px]">
               {revenueSummary.totalTaxRevenue > 0
                 ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1)
                 : 0}
@@ -323,11 +348,31 @@ export function BudgetManagementDashboard({
       {/* Main Content Tabs — Apple Segmented Control */}
       <Tabs value={selectedView} onValueChange={(value: any) => setSelectedView(value)}>
         <div className="mb-4 flex items-center justify-between">
-          <TabsList className="grid w-full grid-cols-4 gap-1 p-1 rounded-2xl bg-card/60 backdrop-blur-xl border border-border/40 shadow-inner">
-            <TabsTrigger value="overview" className="rounded-xl text-xs font-extrabold data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border data-[state=active]:border-emerald-500/40">Overview</TabsTrigger>
-            <TabsTrigger value="departments" className="rounded-xl text-xs font-extrabold data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border data-[state=active]:border-emerald-500/40">Departments</TabsTrigger>
-            <TabsTrigger value="revenue" className="rounded-xl text-xs font-extrabold data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border data-[state=active]:border-emerald-500/40">Revenue</TabsTrigger>
-            <TabsTrigger value="analysis" className="rounded-xl text-xs font-extrabold data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border data-[state=active]:border-emerald-500/40">Analysis</TabsTrigger>
+          <TabsList className="bg-card/60 border-border/40 grid w-full grid-cols-4 gap-1 rounded-2xl border p-1 shadow-inner backdrop-blur-xl">
+            <TabsTrigger
+              value="overview"
+              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/40 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="departments"
+              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/40 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400"
+            >
+              Departments
+            </TabsTrigger>
+            <TabsTrigger
+              value="revenue"
+              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/40 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400"
+            >
+              Revenue
+            </TabsTrigger>
+            <TabsTrigger
+              value="analysis"
+              className="rounded-xl text-xs font-extrabold data-[state=active]:border data-[state=active]:border-emerald-500/40 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/25 data-[state=active]:to-teal-500/20 data-[state=active]:text-emerald-400"
+            >
+              Analysis
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -335,19 +380,24 @@ export function BudgetManagementDashboard({
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Togglable Budget Allocation vs Historical Trend Chart */}
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  {overviewChartMode === "allocation" ? "Budget Allocation by Department" : "Budget vs Revenue Historical Trend"}
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 flex items-center justify-between border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  {overviewChartMode === "allocation"
+                    ? "Budget Allocation by Department"
+                    : "Budget vs Revenue Historical Trend"}
                 </h4>
-                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/20 border border-border/30">
+                <div className="bg-muted/20 border-border/30 flex items-center gap-1 rounded-lg border p-0.5">
                   <button
                     type="button"
                     onClick={() => setOverviewChartMode("allocation")}
                     className={cn(
-                      "px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer select-none",
+                      "cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-bold transition-all select-none",
                       overviewChartMode === "allocation"
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -357,9 +407,9 @@ export function BudgetManagementDashboard({
                     type="button"
                     onClick={() => setOverviewChartMode("trend")}
                     className={cn(
-                      "px-2 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer select-none",
+                      "cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-bold transition-all select-none",
                       overviewChartMode === "trend"
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -393,7 +443,11 @@ export function BudgetManagementDashboard({
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={budgetTrendData}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                      <XAxis dataKey="year" stroke="currentColor" className="text-muted-foreground text-[10px]" />
+                      <XAxis
+                        dataKey="year"
+                        stroke="currentColor"
+                        className="text-muted-foreground text-[10px]"
+                      />
                       <YAxis stroke="currentColor" className="text-muted-foreground text-[10px]" />
                       <Tooltip formatter={(value) => formatCurrency(value as number)} />
                       <Legend />
@@ -425,15 +479,24 @@ export function BudgetManagementDashboard({
             </FacetCard>
 
             {/* Revenue Sources Chart */}
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Revenue Sources</h4>
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Revenue Sources
+                </h4>
               </div>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={revenueChartData}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="name" stroke="currentColor" className="text-muted-foreground text-[10px]" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="currentColor"
+                      className="text-muted-foreground text-[10px]"
+                    />
                     <YAxis stroke="currentColor" className="text-muted-foreground text-[10px]" />
                     <Tooltip formatter={(value) => formatCurrency(value as number)} />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
@@ -452,7 +515,11 @@ export function BudgetManagementDashboard({
         <TabsContent value="departments" className="space-y-3">
           <div className="grid grid-cols-1 gap-3">
             {budgetSummary.topSpendingDepartments.map(({ department, allocation }) => (
-              <FacetCard key={department.id} depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
+              <FacetCard
+                key={department.id}
+                depth={1}
+                className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
@@ -460,20 +527,18 @@ export function BudgetManagementDashboard({
                       style={{ backgroundColor: department.color }}
                     />
                     <div>
-                      <h3 className="font-extrabold text-foreground text-sm">
-                        {department.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
+                      <h3 className="text-foreground text-sm font-extrabold">{department.name}</h3>
+                      <p className="text-muted-foreground text-xs">
                         {department.category} • {department.ministerTitle}:{" "}
                         {department.minister || "Vacant"}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-base font-black font-mono text-emerald-400">
+                    <p className="font-mono text-base font-black text-emerald-400">
                       {formatNumber(allocation.allocatedAmount)}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono">
+                    <p className="text-muted-foreground font-mono text-xs">
                       {allocation.allocatedPercent.toFixed(1)}% of budget
                     </p>
                   </div>
@@ -482,7 +547,7 @@ export function BudgetManagementDashboard({
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground font-medium">Budget Utilization</span>
-                    <span className="font-bold font-mono text-foreground">
+                    <span className="text-foreground font-mono font-bold">
                       {allocation.allocatedAmount > 0
                         ? ((allocation.spentAmount / allocation.allocatedAmount) * 100).toFixed(1)
                         : 0}
@@ -497,18 +562,28 @@ export function BudgetManagementDashboard({
                     }
                     className="h-1.5"
                   />
-                  <div className="grid grid-cols-3 gap-3 text-xs pt-1">
-                    <div className="rounded-lg bg-muted/15 p-2 border border-border/20">
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase">Allocated</p>
-                      <p className="font-mono font-bold text-foreground mt-0.5">{formatNumber(allocation.allocatedAmount)}</p>
+                  <div className="grid grid-cols-3 gap-3 pt-1 text-xs">
+                    <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
+                      <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Allocated
+                      </p>
+                      <p className="text-foreground mt-0.5 font-mono font-bold">
+                        {formatNumber(allocation.allocatedAmount)}
+                      </p>
                     </div>
-                    <div className="rounded-lg bg-muted/15 p-2 border border-border/20">
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase">Spent</p>
-                      <p className="font-mono font-bold text-amber-400 mt-0.5">{formatNumber(allocation.spentAmount)}</p>
+                    <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
+                      <p className="text-muted-foreground text-[10px] font-bold uppercase">Spent</p>
+                      <p className="mt-0.5 font-mono font-bold text-amber-400">
+                        {formatNumber(allocation.spentAmount)}
+                      </p>
                     </div>
-                    <div className="rounded-lg bg-muted/15 p-2 border border-border/20">
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase">Remaining</p>
-                      <p className="font-mono font-bold text-cyan-400 mt-0.5">{formatNumber(allocation.availableAmount)}</p>
+                    <div className="bg-muted/15 border-border/20 rounded-lg border p-2">
+                      <p className="text-muted-foreground text-[10px] font-bold uppercase">
+                        Remaining
+                      </p>
+                      <p className="mt-0.5 font-mono font-bold text-cyan-400">
+                        {formatNumber(allocation.availableAmount)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -520,23 +595,26 @@ export function BudgetManagementDashboard({
         {/* Revenue Tab */}
         <TabsContent value="revenue" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Tax vs Non-Tax Revenue</h4>
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Tax vs Non-Tax Revenue
+                </h4>
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-3">
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-3">
                   <div>
-                    <p className="font-extrabold text-foreground text-xs">Tax Revenue</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Direct & Indirect Taxes
-                    </p>
+                    <p className="text-foreground text-xs font-extrabold">Tax Revenue</p>
+                    <p className="text-muted-foreground text-[11px]">Direct & Indirect Taxes</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-base font-black font-mono text-emerald-400">
+                    <p className="font-mono text-base font-black text-emerald-400">
                       {formatNumber(revenueSummary.totalTaxRevenue)}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono">
+                    <p className="text-muted-foreground font-mono text-xs">
                       {revenueSummary.totalRevenue > 0
                         ? (
                             (revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) *
@@ -548,20 +626,16 @@ export function BudgetManagementDashboard({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-3">
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-3">
                   <div>
-                    <p className="font-extrabold text-foreground text-xs">
-                      Non-Tax Revenue
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Fees, Fines & Other Sources
-                    </p>
+                    <p className="text-foreground text-xs font-extrabold">Non-Tax Revenue</p>
+                    <p className="text-muted-foreground text-[11px]">Fees, Fines & Other Sources</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-base font-black font-mono text-cyan-400">
+                    <p className="font-mono text-base font-black text-cyan-400">
                       {formatNumber(revenueSummary.totalNonTaxRevenue)}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono">
+                    <p className="text-muted-foreground font-mono text-xs">
                       {revenueSummary.totalRevenue > 0
                         ? (
                             (revenueSummary.totalNonTaxRevenue / revenueSummary.totalRevenue) *
@@ -575,31 +649,35 @@ export function BudgetManagementDashboard({
               </div>
             </FacetCard>
 
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Top Revenue Sources</h4>
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Top Revenue Sources
+                </h4>
               </div>
               <div className="space-y-2.5 text-xs">
                 {revenueSummary.topRevenueSources.map((source, index) => (
-                  <div key={source.id} className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2">
+                  <div
+                    key={source.id}
+                    className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2"
+                  >
                     <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
                         {index + 1}
                       </span>
                       <div>
-                        <p className="font-bold text-foreground text-xs">
-                          {source.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {source.category}
-                        </p>
+                        <p className="text-foreground text-xs font-bold">{source.name}</p>
+                        <p className="text-muted-foreground text-[10px]">{source.category}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold font-mono text-foreground text-xs">
+                      <p className="text-foreground font-mono text-xs font-bold">
                         {formatNumber(source.revenueAmount)}
                       </p>
-                      <p className="text-[10px] text-muted-foreground font-mono">
+                      <p className="text-muted-foreground font-mono text-[10px]">
                         {source.revenuePercent.toFixed(1)}%
                       </p>
                     </div>
@@ -613,18 +691,27 @@ export function BudgetManagementDashboard({
         {/* Analysis Tab */}
         <TabsContent value="analysis" className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Budget Health Indicators</h4>
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Budget Health Indicators
+                </h4>
               </div>
               <div className="space-y-2.5 text-xs">
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-2.5">
-                  <span className="font-semibold text-muted-foreground">Fiscal Balance</span>
-                  <Badge className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${budgetHealth.color}`}>{budgetHealth.label}</Badge>
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
+                  <span className="text-muted-foreground font-semibold">Fiscal Balance</span>
+                  <Badge
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${budgetHealth.color}`}
+                  >
+                    {budgetHealth.label}
+                  </Badge>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-2.5">
-                  <span className="font-semibold text-muted-foreground">Budget Utilization</span>
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
+                  <span className="text-muted-foreground font-semibold">Budget Utilization</span>
                   <span
                     className={`font-mono font-bold ${budgetSummary.utilizationRate > 90 ? "text-emerald-400" : budgetSummary.utilizationRate > 70 ? "text-amber-400" : "text-red-400"}`}
                   >
@@ -632,8 +719,8 @@ export function BudgetManagementDashboard({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-2.5">
-                  <span className="font-semibold text-muted-foreground">Revenue Adequacy</span>
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
+                  <span className="text-muted-foreground font-semibold">Revenue Adequacy</span>
                   <span
                     className={`font-bold ${revenueSummary.totalRevenue > budgetSummary.totalAllocated ? "text-emerald-400" : "text-red-400"}`}
                   >
@@ -643,21 +730,26 @@ export function BudgetManagementDashboard({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl bg-muted/15 border border-border/20 p-2.5">
-                  <span className="font-semibold text-muted-foreground">Departments</span>
-                  <span className="font-mono font-bold text-foreground">
+                <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-xl border p-2.5">
+                  <span className="text-muted-foreground font-semibold">Departments</span>
+                  <span className="text-foreground font-mono font-bold">
                     {budgetSummary.departmentCount} Active
                   </span>
                 </div>
               </div>
             </FacetCard>
 
-            <FacetCard depth={1} className="bg-card/40 backdrop-blur-xl border border-border/30 shadow-lg p-4 space-y-3">
-              <div className="border-b border-border/20 pb-2">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Budget Efficiency Score</h4>
+            <FacetCard
+              depth={1}
+              className="bg-card/40 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            >
+              <div className="border-border/20 border-b pb-2">
+                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Budget Efficiency Score
+                </h4>
               </div>
               <div className="space-y-4 text-center">
-                <div className="text-4xl font-black font-mono text-emerald-400">
+                <div className="font-mono text-4xl font-black text-emerald-400">
                   {Math.min(
                     100,
                     Math.round(
@@ -668,19 +760,25 @@ export function BudgetManagementDashboard({
                     )
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground font-semibold">Overall Administrative Efficiency Score</p>
+                <p className="text-muted-foreground text-xs font-semibold">
+                  Overall Administrative Efficiency Score
+                </p>
                 <div className="space-y-2 text-left text-xs">
-                  <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2">
+                  <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
                     <span className="text-muted-foreground font-medium">Utilization Rate</span>
-                    <span className="font-mono font-bold text-foreground">{budgetSummary.utilizationRate.toFixed(1)}%</span>
+                    <span className="text-foreground font-mono font-bold">
+                      {budgetSummary.utilizationRate.toFixed(1)}%
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2">
+                  <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
                     <span className="text-muted-foreground font-medium">Fiscal Health</span>
                     <span className="font-bold text-emerald-400">{budgetHealth.label}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2">
+                  <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2">
                     <span className="text-muted-foreground font-medium">Department Coverage</span>
-                    <span className="font-mono font-bold text-cyan-400">{budgetSummary.departmentCount} depts</span>
+                    <span className="font-mono font-bold text-cyan-400">
+                      {budgetSummary.departmentCount} depts
+                    </span>
                   </div>
                 </div>
               </div>

@@ -54,12 +54,7 @@ export function fptpAllocation(
 // Stored as the 4th positional field of the serialized chamberType blob. Keep in sync with
 // the copy in routers/elections/legislature.ts. See plans/mycountry-lore-alignment*.md.
 export type SelectionMethod =
-  | "elected"
-  | "appointed"
-  | "sortition"
-  | "hereditary"
-  | "ex-officio"
-  | "corporatist";
+  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
 export interface ChamberConfig {
   name: string;
@@ -114,8 +109,7 @@ export function parseChambers(
 }
 
 export type SimulateElectionResult =
-  | { ok: true; election: any }
-  | { ok: false; reason: "not_found" | "insufficient_candidates" };
+  { ok: true; election: any } | { ok: false; reason: "not_found" | "insufficient_candidates" };
 
 /**
  * Run a full election simulation: vote shares → seat allocation → results, seat

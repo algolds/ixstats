@@ -16,7 +16,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, cachedProtectedProcedure, premiumProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  cachedProtectedProcedure,
+  premiumProcedure,
+} from "~/server/api/trpc";
 import { evaluateThresholds } from "../alerts";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notification-api";

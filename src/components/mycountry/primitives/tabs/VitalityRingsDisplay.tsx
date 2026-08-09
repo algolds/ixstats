@@ -249,7 +249,7 @@ export function QuickVitalityRings({
         type="button"
         onClick={() => setIsOpen(true)}
         className={cn(
-          "group flex items-center gap-2 rounded-xl p-1 transition-all hover:bg-white/[0.06] hover:scale-[1.03] active:scale-[0.98] cursor-pointer",
+          "group flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-all hover:scale-[1.03] hover:bg-white/[0.06] active:scale-[0.98]",
           className
         )}
         title="Click for Vitality Index Breakdown"

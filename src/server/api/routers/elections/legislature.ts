@@ -12,12 +12,7 @@ import { notificationAPI } from "~/lib/notification-api";
 // ex-officio). Stored as the 4th positional field of the serialized chamberType blob.
 // See plans/mycountry-lore-alignment*.md.
 export type SelectionMethod =
-  | "elected"
-  | "appointed"
-  | "sortition"
-  | "hereditary"
-  | "ex-officio"
-  | "corporatist";
+  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
 export interface ChamberConfig {
   name: string;

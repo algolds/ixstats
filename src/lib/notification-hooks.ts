@@ -427,11 +427,7 @@ export async function onTaxSystemChange(params: {
   userId?: string;
   countryId: string;
   changeType:
-    | "created"
-    | "updated"
-    | "revenue_projection_change"
-    | "effectiveness_change"
-    | "bracket_change";
+    "created" | "updated" | "revenue_projection_change" | "effectiveness_change" | "bracket_change";
   systemName: string;
   previousValue?: number;
   newValue?: number;

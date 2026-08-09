@@ -44,7 +44,10 @@ describe("NationalIssuesConsequences.recomputeIntentProgress", () => {
       { status: "dismissed" },
     ]);
 
-    const progress = await NationalIssuesConsequences.recomputeIntentProgress("intent-1", db as any);
+    const progress = await NationalIssuesConsequences.recomputeIntentProgress(
+      "intent-1",
+      db as any
+    );
 
     expect(progress).toBe(100);
     expect(db.intent.update).toHaveBeenCalledWith({
@@ -62,7 +65,10 @@ describe("NationalIssuesConsequences.recomputeIntentProgress", () => {
       { status: "dismissed" },
     ]);
 
-    const progress = await NationalIssuesConsequences.recomputeIntentProgress("intent-1", db as any);
+    const progress = await NationalIssuesConsequences.recomputeIntentProgress(
+      "intent-1",
+      db as any
+    );
 
     expect(progress).toBe(50);
     expect(db.intent.update).toHaveBeenCalledWith({
@@ -75,7 +81,10 @@ describe("NationalIssuesConsequences.recomputeIntentProgress", () => {
     const db = makeDb();
     (db.nationalIssue.findMany as jest.Mock).mockResolvedValue([]);
 
-    const progress = await NationalIssuesConsequences.recomputeIntentProgress("intent-1", db as any);
+    const progress = await NationalIssuesConsequences.recomputeIntentProgress(
+      "intent-1",
+      db as any
+    );
 
     expect(progress).toBe(0);
     expect(db.intent.update).toHaveBeenCalledWith({
@@ -88,7 +97,10 @@ describe("NationalIssuesConsequences.recomputeIntentProgress", () => {
     const db = makeDb();
     (db.nationalIssue.findMany as jest.Mock).mockResolvedValue([]);
 
-    const progress = await NationalIssuesConsequences.recomputeIntentProgress("intent-1", db as any);
+    const progress = await NationalIssuesConsequences.recomputeIntentProgress(
+      "intent-1",
+      db as any
+    );
 
     expect(progress).toBe(0);
   });

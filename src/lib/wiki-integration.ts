@@ -12,11 +12,7 @@ import type { LucideIcon } from "lucide-react";
 
 /** Possible shapes returned by the `getWikiRichIntro` query. */
 export type WikiIntro =
-  | { paragraphs?: string[]; wikiUrl?: string }
-  | string
-  | string[]
-  | null
-  | undefined;
+  { paragraphs?: string[]; wikiUrl?: string } | string | string[] | null | undefined;
 
 /**
  * Extracts the first intro paragraph HTML from the variety of shapes the

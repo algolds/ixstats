@@ -362,17 +362,15 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
       ) : (
         renderSection()
       )}
-      {country?.id &&
-        complianceSections.length > 0 &&
-        (v2 || activeSection === "overview") && (
-          <MyCountryComplianceModal
-            isOpen={showComplianceModal}
-            sections={complianceSections}
-            onReview={handleReview}
-            onRemindLater={handleRemindLater}
-            onDismiss={handleRemindLater}
-          />
-        )}
+      {country?.id && complianceSections.length > 0 && (v2 || activeSection === "overview") && (
+        <MyCountryComplianceModal
+          isOpen={showComplianceModal}
+          sections={complianceSections}
+          onReview={handleReview}
+          onRemindLater={handleRemindLater}
+          onDismiss={handleRemindLater}
+        />
+      )}
     </DashboardErrorBoundary>
   );
 }

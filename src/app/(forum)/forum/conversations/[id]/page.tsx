@@ -3,7 +3,6 @@
 
 import { redirect } from "next/navigation";
 
-
 export default function ForumConversationRedirect() {
   redirect("/messages");
 }

@@ -1,6 +1,6 @@
 /**
  * LEVEL 5: Functions, Promises & Async/Await
- * 
+ *
  * Objective: Export an async function named 'fetchNationIntelReport' taking a nationSlug (string)
  * and returning a Promise resolving to { nation: string, intelScore: number, status: string }.
  */

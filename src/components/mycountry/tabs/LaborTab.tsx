@@ -10,7 +10,12 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { SectorBreakdownCard, MetricCardGrid, type CardImageType, useCountryData } from "../primitives";
+import {
+  SectorBreakdownCard,
+  MetricCardGrid,
+  type CardImageType,
+  useCountryData,
+} from "../primitives";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -103,7 +108,7 @@ export function LaborTab({
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.workforce === "participation"
@@ -147,7 +152,7 @@ export function LaborTab({
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
@@ -202,7 +207,7 @@ export function LaborTab({
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}

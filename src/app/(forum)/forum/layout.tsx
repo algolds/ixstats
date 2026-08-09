@@ -6,7 +6,6 @@ import { type Metadata } from "next";
 import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
 import { ForumDIPlugin } from "~/components/DynamicIsland/plugins/ForumDIPlugin";
 
-
 export const metadata: Metadata = {
   title: {
     template: "%s — IxForum",

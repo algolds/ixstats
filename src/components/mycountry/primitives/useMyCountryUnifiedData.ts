@@ -375,10 +375,7 @@ function buildExecutiveIntelligencePayload(
     title: action.title,
     description: action.description,
     category: (action.category ?? "governance") as
-      | "economic"
-      | "population"
-      | "diplomatic"
-      | "governance",
+      "economic" | "population" | "diplomatic" | "governance",
     priority: (action.priority ?? "high") as "critical" | "high" | "medium" | "low",
     urgency: (action.urgency ?? "important") as "urgent" | "important" | "routine" | "future",
     difficulty: (action.difficulty ?? "moderate") as "easy" | "moderate" | "complex" | "major",

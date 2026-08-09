@@ -10,7 +10,12 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { SectorBreakdownCard, MetricCardGrid, type CardImageType, useCountryData } from "../primitives";
+import {
+  SectorBreakdownCard,
+  MetricCardGrid,
+  type CardImageType,
+  useCountryData,
+} from "../primitives";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -107,7 +112,7 @@ export function GovernmentTab({
                     structure: v.structure === "government" ? "state" : "government",
                   }))
                 }
-                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.structure === "government" ? "Head of Government" : "Head of State"}
@@ -143,7 +148,7 @@ export function GovernmentTab({
                     budget: v.budget === "percentage" ? "spending" : "percentage",
                   }))
                 }
-                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.budget === "percentage" ? "Spending % of GDP" : "Total Spending"}
@@ -189,7 +194,7 @@ export function GovernmentTab({
                     debt: v.debt === "ratio" ? "total" : "ratio",
                   }))
                 }
-                className="flex h-24 flex-col justify-between cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.debt === "ratio" ? "Debt to GDP Ratio" : "Total Public Debt"}

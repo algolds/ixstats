@@ -11,7 +11,7 @@
  * assemblePackages() asserts this; forbiddenFieldsUsed() is the runtime guard.
  */
 
-export type Tier = "measured" | "moderate" | "extreme";
+export type Tier = "measured" | "moderate" | "extreme" | "broker_unlocked" | "structural_unlocked";
 export type Acceptance = "good" | "mid" | "bad";
 
 export interface ChangeLine {
@@ -34,8 +34,13 @@ export interface IntentPackage {
   changes: ChangeLine[];
   consequences: IntentConsequence[];
   acceptance: Acceptance;
-  risk: "stable" | "volatile" | "high-risk";
+  risk: "stable" | "volatile" | "high-risk" | "unlocked";
   civCapCost: number;
+  unlockedRequirement?: {
+    kind: "broker" | "component";
+    name: string;
+    description: string;
+  };
 }
 
 // Core stats an Intent may never move — Editor-only (locked levers).
@@ -60,13 +65,7 @@ export function forbiddenFieldsUsed(pkgs: IntentPackage[]): string[] {
   return hits;
 }
 
-export type Category =
-  | "defense"
-  | "fiscal"
-  | "economy"
-  | "social"
-  | "infrastructure"
-  | "security";
+export type Category = "defense" | "fiscal" | "economy" | "social" | "infrastructure" | "security";
 
 const KEYWORDS: Record<Category, string[]> = {
   defense: [
@@ -200,7 +199,23 @@ export function classifyGoal(goal: string): { category: Category } {
   const g = goal.toLowerCase();
 
   // Enforce domestic policy goals only (block diplomatic/foreign affairs keywords)
-  const FOREIGN_KEYWORDS = ["ally", "alliance", "treaty", "diplomat", "foreign", "embassy", "relations with", "war with", "trade deal", "relations", "summit", "envoy", "ambassador", "burgundie", "urcea"];
+  const FOREIGN_KEYWORDS = [
+    "ally",
+    "alliance",
+    "treaty",
+    "diplomat",
+    "foreign",
+    "embassy",
+    "relations with",
+    "war with",
+    "trade deal",
+    "relations",
+    "summit",
+    "envoy",
+    "ambassador",
+    "burgundie",
+    "urcea",
+  ];
   if (
     FOREIGN_KEYWORDS.some((k) => g.includes(k)) ||
     goal.match(/\b(?:with|against|toward|to)\s+([A-Z][A-Za-z'\- ]{2,30})/)
@@ -324,14 +339,34 @@ const RECIPES: Record<Category, Recipe> = {
   },
 };
 
-const TIER_SCALE: Record<Tier, number> = { measured: 1, moderate: 2, extreme: 3.5 };
-const TIER_ACCEPT: Record<Tier, Acceptance> = { measured: "good", moderate: "mid", extreme: "bad" };
+const TIER_SCALE: Record<Tier, number> = {
+  measured: 1,
+  moderate: 2,
+  extreme: 3.5,
+  broker_unlocked: 2.2,
+  structural_unlocked: 2.5,
+};
+const TIER_ACCEPT: Record<Tier, Acceptance> = {
+  measured: "good",
+  moderate: "mid",
+  extreme: "bad",
+  broker_unlocked: "good",
+  structural_unlocked: "good",
+};
 export const TIER_RISK: Record<Tier, IntentPackage["risk"]> = {
   measured: "stable",
   moderate: "volatile",
   extreme: "high-risk",
+  broker_unlocked: "unlocked",
+  structural_unlocked: "unlocked",
 };
-const TIER_CIVCAP: Record<Tier, number> = { measured: 5, moderate: 12, extreme: 25 };
+const TIER_CIVCAP: Record<Tier, number> = {
+  measured: 5,
+  moderate: 12,
+  extreme: 25,
+  broker_unlocked: 8,
+  structural_unlocked: 10,
+};
 
 function scale(c: IntentConsequence, f: number): IntentConsequence {
   return { ...c, value: Math.round(c.value * f * 100) / 100 };
@@ -360,6 +395,20 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
       label: r.statement,
       detail: "low-cost, high-acceptance",
     });
+  } else if (tier === "broker_unlocked") {
+    changes.push({
+      kind: "policy",
+      label: `Broker Partnership: Leverage ${r.budgetLine} Network`,
+      detail: "Private-sector & stakeholder co-investment deal",
+    });
+    consequences.push(scale(r.improve, 1.8));
+  } else if (tier === "structural_unlocked") {
+    changes.push({
+      kind: "policy",
+      label: `Institutional Framework: ${r.policyName}`,
+      detail: "High-efficiency structural deployment protocol",
+    });
+    consequences.push(scale(r.improve, 2.2));
   } else {
     changes.push({
       kind: "policy",
@@ -386,11 +435,17 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     measured: "Measured",
     moderate: "Moderate",
     extreme: "Extreme",
+    broker_unlocked: "Broker Option: Private Sector & Stakeholder Deal",
+    structural_unlocked: "Structural Option: Institutional Framework Protocol",
   };
   const blurbs: Record<Tier, string> = {
     measured: "Lowest impact, easiest for stakeholders to accept.",
     moderate: "Balanced impact and acceptance — the workhorse option.",
     extreme: "Big changes, unlikely to be adopted without a fight.",
+    broker_unlocked:
+      "Unlocked by Power Broker alignment. Offloads strain onto private partners with strong mutual backing.",
+    structural_unlocked:
+      "Unlocked by specialized government components. High direct effectiveness with minimal administrative friction.",
   };
   return {
     tier,
@@ -409,9 +464,14 @@ export function assemblePackages(goal: string): {
   packages: IntentPackage[];
 } {
   const { category } = classifyGoal(goal);
-  const packages = (["measured", "moderate", "extreme"] as Tier[]).map((t) =>
-    buildPackage(t, category, goal)
-  );
+  const baseTiers: Tier[] = [
+    "measured",
+    "moderate",
+    "extreme",
+    "broker_unlocked",
+    "structural_unlocked",
+  ];
+  const packages = baseTiers.map((t) => buildPackage(t, category, goal));
   const bad = forbiddenFieldsUsed(packages);
   if (bad.length) throw new Error(`Intent package touched locked core stats: ${bad.join(", ")}`);
   return { category, packages };
@@ -444,10 +504,7 @@ export function demo() {
   assert(house.category === "economy", "housing→economy");
   // budget change carries structured dept + delta
   const b = def.packages[1]!.changes.find((c) => c.kind === "budget")!;
-  assert(
-    b.deptCategory === "Defense" && (b.deltaPercent ?? 0) > 0,
-    "budget change is structured"
-  );
+  assert(b.deptCategory === "Defense" && (b.deltaPercent ?? 0) > 0, "budget change is structured");
   // acceptance weighting: aligned unlocked broker bumps a hard-sell toward contested
   assert(
     weightAcceptance("bad", { brokerUnlocked: true }) === "mid",

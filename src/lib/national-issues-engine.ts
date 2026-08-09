@@ -315,9 +315,9 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   currentYear: (s) => String(s.currentIxYear),
   // Computed random variables
   sectorName: () => randomFrom(SECTOR_NAMES),
-  cityName: (s) => s.identity?.capitalCity || s.identity?.largestCity || randomFrom(CITY_DESCRIPTORS),
-  officialTitle: (s) =>
-    s.official?.title || s.minister?.title || randomFrom(OFFICIAL_TITLES),
+  cityName: (s) =>
+    s.identity?.capitalCity || s.identity?.largestCity || randomFrom(CITY_DESCRIPTORS),
+  officialTitle: (s) => s.official?.title || s.minister?.title || randomFrom(OFFICIAL_TITLES),
   percentageSmall: () => String(randomBetween(3, 12)),
   percentageMedium: () => String(randomBetween(12, 30)),
   percentageLarge: () => String(randomBetween(30, 55)),
@@ -326,10 +326,7 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
   amountLarge: (s) => formatCurrency(s.currentTotalGdp * (randomBetween(20, 80) / 1000)),
   workerCount: (s) => formatPopulation(s.currentPopulation * (randomBetween(1, 5) / 100)),
   // Grounded names (Phase 3): real values when available, descriptive fallbacks otherwise.
-  neighborName: (s) =>
-    s.neighbors?.[0]?.name ||
-    s.partners?.[0]?.name ||
-    "a neighboring state",
+  neighborName: (s) => s.neighbors?.[0]?.name || s.partners?.[0]?.name || "a neighboring state",
   allyName: (s) => {
     const ally = s.partners?.find((p) => p.band === "ALLY");
     return ally?.name || s.partners?.[0]?.name || "an ally";
@@ -338,14 +335,8 @@ const BUILT_IN_VARIABLES: Record<string, VariableResolver> = {
     const rival = s.partners?.find((p) => p.band === "HOSTILE" || p.band === "TENSE");
     return rival?.name || s.neighbors?.[0]?.name || "a rival power";
   },
-  partnerName: (s) =>
-    s.partners?.[0]?.name ||
-    s.embassyPartners?.[0] ||
-    "a partner state",
-  partyName: (s) =>
-    s.party?.name ||
-    s.oppositionParty?.name ||
-    "the ruling coalition",
+  partnerName: (s) => s.partners?.[0]?.name || s.embassyPartners?.[0] || "a partner state",
+  partyName: (s) => s.party?.name || s.oppositionParty?.name || "the ruling coalition",
   oppositionParty: (s) =>
     s.oppositionParty?.name ||
     s.party?.name ||
@@ -702,7 +693,12 @@ export class NationalIssuesEngine {
   /** Compare a resolved value against a field-comparison condition. */
   private static evaluateValue(
     fieldValue: any,
-    condition: { field: string; op: ComparisonOp; value: number | string | boolean | (number | string)[]; value2?: number }
+    condition: {
+      field: string;
+      op: ComparisonOp;
+      value: number | string | boolean | (number | string)[];
+      value2?: number;
+    }
   ): boolean {
     // Array-valued snapshot fields (e.g. activeComponents / implementingComponents)
     // support membership checks: `op: "in"` / `"=="` means "value is present",
@@ -963,8 +959,8 @@ export class NationalIssuesEngine {
         isActive: true,
         NOT: [
           { domain: { in: ["diplomatic", "foreign"] } },
-          { category: { in: ["DIPLOMATIC", "diplomatic"] } }
-        ]
+          { category: { in: ["DIPLOMATIC", "diplomatic"] } },
+        ],
       };
       if (options?.forceDomain) {
         whereClause.domain = options.forceDomain;
@@ -1090,8 +1086,7 @@ export class NationalIssuesEngine {
         }
         if (!targetCountryRecord) {
           // Prefer grounded neighbors/partners over a random country (plan 002 §6C).
-          const preferredName =
-            snapshot.neighbors?.[0]?.name || snapshot.partners?.[0]?.name;
+          const preferredName = snapshot.neighbors?.[0]?.name || snapshot.partners?.[0]?.name;
           if (preferredName) {
             targetCountryRecord = await (db as any).country.findFirst({
               where: { name: { mode: "insensitive", equals: preferredName } },
@@ -1121,7 +1116,9 @@ export class NationalIssuesEngine {
           if (targetCountryRecord) {
             issueVars.targetCountryName = targetCountryRecord.name;
             issueVars.targetCountryLeader = targetCountryRecord.leader || "the Foreign Leader";
-            issueVars.targetCountryGdpPerCapita = formatCurrency(targetCountryRecord.currentGdpPerCapita);
+            issueVars.targetCountryGdpPerCapita = formatCurrency(
+              targetCountryRecord.currentGdpPerCapita
+            );
             issueVars.targetCountryContinent = targetCountryRecord.continent || "the region";
           } else {
             issueVars.targetCountryName = "a neighboring state";

@@ -145,20 +145,20 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   return (
     <div className="space-y-5">
       {/* ─── Sub-Tab Navigation Bar ─── */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border/30">
+      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
         <button
           type="button"
           onClick={() => setActiveTab("embassies")}
           className={cn(
-            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "embassies"
-              ? "bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+              ? "border border-amber-500/40 bg-amber-500/20 text-amber-500 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <Building2 className="h-4 w-4" />
           <span>Embassy Network</span>
-          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-mono">
+          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[9px]">
             {stats.activeEmbassies}
           </span>
         </button>
@@ -167,15 +167,15 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           type="button"
           onClick={() => setActiveTab("relations")}
           className={cn(
-            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "relations"
-              ? "bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+              ? "border border-blue-500/40 bg-blue-500/20 text-blue-400 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <Handshake className="h-4 w-4" />
           <span>Bilateral Relations</span>
-          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[9px] font-mono">
+          <span className="rounded-full bg-blue-500/20 px-2 py-0.5 font-mono text-[9px]">
             {stats.totalRelations}
           </span>
         </button>
@@ -184,15 +184,15 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           type="button"
           onClick={() => setActiveTab("alliances")}
           className={cn(
-            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "alliances"
-              ? "bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+              ? "border border-purple-500/40 bg-purple-500/20 text-purple-400 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <Users className="h-4 w-4" />
           <span>Alliances & Blocs</span>
-          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[9px] font-mono">
+          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 font-mono text-[9px]">
             {stats.allianceCount}
           </span>
         </button>
@@ -201,10 +201,10 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           type="button"
           onClick={() => setActiveTab("exchanges")}
           className={cn(
-            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "exchanges"
-              ? "bg-pink-500/20 text-pink-400 border border-pink-500/40 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+              ? "border border-pink-500/40 bg-pink-500/20 text-pink-400 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <Palette className="h-4 w-4" />
@@ -215,10 +215,10 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           type="button"
           onClick={() => setActiveTab("events")}
           className={cn(
-            "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+            "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
             activeTab === "events"
-              ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm"
-              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+              ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-sm"
+              : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
           )}
         >
           <FileText className="h-4 w-4" />

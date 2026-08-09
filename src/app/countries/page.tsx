@@ -63,40 +63,38 @@ export default function CountriesPage() {
   const processedCountries: CountryCardData[] = useMemo(() => {
     if (!countriesResult?.countries) return [];
 
-    return countriesResult.countries.map(
-      (country): CountryCardData => ({
-        id: country.id,
-        name: country.name,
-        slug: (country as any).slug || country.name.replace(/\s+/g, "_"),
-        currentPopulation: country.currentPopulation || 0,
-        currentGdpPerCapita: country.currentGdpPerCapita || 0,
-        currentTotalGdp: country.currentTotalGdp || 0,
-        economicTier: country.economicTier || "Unknown",
-        populationTier: country.populationTier || "Unknown",
-        landArea: country.landArea || undefined,
-        populationDensity: country.populationDensity || undefined,
-        gdpDensity: country.gdpDensity || undefined,
-        adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
-        populationGrowthRate: country.populationGrowthRate || undefined,
-        // Use cached flag first, then database flag, then undefined
-        flagUrl: flagUrls[country.name] || (country as any).flag || undefined,
-        // Identity & Governance
-        continent: (country as any).continent || undefined,
-        region: (country as any).region || undefined,
-        governmentType: (country as any).governmentType || undefined,
-        leader: (country as any).leader || undefined,
-        religion: (country as any).religion || undefined,
-        // Social Indicators
-        lifeExpectancy: (country as any).lifeExpectancy || undefined,
-        literacyRate: (country as any).literacyRate || undefined,
-        unemploymentRate: (country as any).unemploymentRate || undefined,
-        inflationRate: (country as any).inflationRate || undefined,
-        povertyRate: (country as any).povertyRate || undefined,
-        // Fiscal
-        totalDebtGDPRatio: (country as any).totalDebtGDPRatio || undefined,
-        realGDPGrowthRate: (country as any).realGDPGrowthRate || undefined,
-      })
-    );
+    return countriesResult.countries.map((country): CountryCardData => ({
+      id: country.id,
+      name: country.name,
+      slug: (country as any).slug || country.name.replace(/\s+/g, "_"),
+      currentPopulation: country.currentPopulation || 0,
+      currentGdpPerCapita: country.currentGdpPerCapita || 0,
+      currentTotalGdp: country.currentTotalGdp || 0,
+      economicTier: country.economicTier || "Unknown",
+      populationTier: country.populationTier || "Unknown",
+      landArea: country.landArea || undefined,
+      populationDensity: country.populationDensity || undefined,
+      gdpDensity: country.gdpDensity || undefined,
+      adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
+      populationGrowthRate: country.populationGrowthRate || undefined,
+      // Use cached flag first, then database flag, then undefined
+      flagUrl: flagUrls[country.name] || (country as any).flag || undefined,
+      // Identity & Governance
+      continent: (country as any).continent || undefined,
+      region: (country as any).region || undefined,
+      governmentType: (country as any).governmentType || undefined,
+      leader: (country as any).leader || undefined,
+      religion: (country as any).religion || undefined,
+      // Social Indicators
+      lifeExpectancy: (country as any).lifeExpectancy || undefined,
+      literacyRate: (country as any).literacyRate || undefined,
+      unemploymentRate: (country as any).unemploymentRate || undefined,
+      inflationRate: (country as any).inflationRate || undefined,
+      povertyRate: (country as any).povertyRate || undefined,
+      // Fiscal
+      totalDebtGDPRatio: (country as any).totalDebtGDPRatio || undefined,
+      realGDPGrowthRate: (country as any).realGDPGrowthRate || undefined,
+    }));
   }, [countriesResult, flagUrls]);
 
   if (error) {

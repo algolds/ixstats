@@ -461,11 +461,7 @@ export function VaultAuctionsTab() {
       minPrice: filters.minPrice ? parseInt(filters.minPrice) : undefined,
       maxPrice: filters.maxPrice ? parseInt(filters.maxPrice) : undefined,
       sortBy: (filters.sortBy || "ending_soon") as
-        | "ending_soon"
-        | "newest"
-        | "price_low"
-        | "price_high"
-        | undefined,
+        "ending_soon" | "newest" | "price_low" | "price_high" | undefined,
     }),
     [filters]
   );

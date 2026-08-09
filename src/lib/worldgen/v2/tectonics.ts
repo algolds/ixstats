@@ -19,10 +19,7 @@ import { bfsAssign } from "./helpers/flood-fill";
  * Generate tectonic plates, assign cell plate IDs, velocity vectors, and boundary distances.
  * Mutates graph.cells.plate, graph.cells.plateDist, and populates graph.plates in-place.
  */
-export function generateTectonicPlates(
-  graph: WorldGraph,
-  params: WorldGenParams
-): void {
+export function generateTectonicPlates(graph: WorldGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 10);
   const { cells } = graph;
   const n = cells.n;

@@ -43,7 +43,7 @@ export default function FactbookLayout({
       <div className="space-y-4">
         {/* Tier 2 — inner section pills (link mode) */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground/70">
+          <span className="text-muted-foreground/70 text-[10px] font-extrabold tracking-[0.2em] uppercase">
             Factbook
           </span>
           <div className="min-w-0 flex-1">

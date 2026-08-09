@@ -63,7 +63,7 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
                 "group relative flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-all duration-200 active:scale-[0.98]",
                 isActive
                   ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/25"
-                  : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
               )}
               style={
                 isActive

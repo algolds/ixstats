@@ -28,10 +28,7 @@ function enabled(): boolean {
  * gated off, when the country has no political map layer, or on any spatial error.
  * Cached for 60s per country.
  */
-export async function resolveNeighbors(
-  countryId: string,
-  db: PrismaClient
-): Promise<Neighbor[]> {
+export async function resolveNeighbors(countryId: string, db: PrismaClient): Promise<Neighbor[]> {
   if (!enabled()) return [];
 
   const cached = cache.get(countryId);

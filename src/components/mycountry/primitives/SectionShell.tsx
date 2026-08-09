@@ -50,8 +50,11 @@ export function SectionShell({
   const { country } = useCountryData();
 
   // Hero collapse — persisted per country; v2 defaults to collapsed (actions-first).
-  const { collapsed: heroCollapsed, setCollapsed: persistCollapsed, hasStoredPref } =
-    useHeroCollapsed(v2, country?.id);
+  const {
+    collapsed: heroCollapsed,
+    setCollapsed: persistCollapsed,
+    hasStoredPref,
+  } = useHeroCollapsed(v2, country?.id);
 
   // v1 legacy: collapse by default for a valid-but-unmapped country. Applied once
   // and only when the user hasn't recorded a preference; never fights a stored choice.

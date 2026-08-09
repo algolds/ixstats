@@ -325,8 +325,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
         source: input.source,
         svgContent: input.svgContent,
         worldGenParams: input.worldGenParams as
-          | import("~/lib/worldgen/types").WorldGenParams
-          | undefined,
+          import("~/lib/worldgen/types").WorldGenParams | undefined,
         targetLayers: input.targetLayers,
       });
 

@@ -23,7 +23,8 @@ export const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
     bgClass: "bg-emerald-500/10",
     textClass: "text-emerald-400",
     borderClass: "border-emerald-500/30",
-    description: "Deep strategic alignment, shared diplomatic goals, and strong institutional ties.",
+    description:
+      "Deep strategic alignment, shared diplomatic goals, and strong institutional ties.",
   },
   cooperative: {
     key: "cooperative",
@@ -50,7 +51,8 @@ export const STANDING_BANDS: Record<StandingBandKey, StandingBandInfo> = {
     bgClass: "bg-amber-500/10",
     textClass: "text-amber-400",
     borderClass: "border-amber-500/30",
-    description: "Friction on key diplomatic issues, heightened caution, and active dispute monitoring.",
+    description:
+      "Friction on key diplomatic issues, heightened caution, and active dispute monitoring.",
   },
   hostile: {
     key: "hostile",

@@ -49,15 +49,64 @@ export interface ElevationZone {
  * Heights in meters. Zone 0 = lowest, zone 8 = highest.
  */
 export const ELEVATION_ZONES: ElevationZone[] = [
-  { id: 0, zoneId: "zone_0", name: "Coastal Lowlands", minMeters: 0, maxMeters: 99, color: "#a8c995ff" },
-  { id: 1, zoneId: "zone_1", name: "Low Hills", minMeters: 100, maxMeters: 349, color: "#c3d3a1ff" },
-  { id: 2, zoneId: "zone_2", name: "Rolling Hills", minMeters: 350, maxMeters: 499, color: "#dcdcacff" },
+  {
+    id: 0,
+    zoneId: "zone_0",
+    name: "Coastal Lowlands",
+    minMeters: 0,
+    maxMeters: 99,
+    color: "#a8c995ff",
+  },
+  {
+    id: 1,
+    zoneId: "zone_1",
+    name: "Low Hills",
+    minMeters: 100,
+    maxMeters: 349,
+    color: "#c3d3a1ff",
+  },
+  {
+    id: 2,
+    zoneId: "zone_2",
+    name: "Rolling Hills",
+    minMeters: 350,
+    maxMeters: 499,
+    color: "#dcdcacff",
+  },
   { id: 3, zoneId: "zone_3", name: "Uplands", minMeters: 500, maxMeters: 999, color: "#f7e6b8ff" },
-  { id: 4, zoneId: "zone_4", name: "Low Mountains", minMeters: 1000, maxMeters: 1999, color: "#dac497ff" },
-  { id: 5, zoneId: "zone_5", name: "Mid Mountains", minMeters: 2000, maxMeters: 2999, color: "#bea276ff" },
-  { id: 6, zoneId: "zone_6", name: "High Mountains", minMeters: 3000, maxMeters: 3999, color: "#9c7b50ff" },
+  {
+    id: 4,
+    zoneId: "zone_4",
+    name: "Low Mountains",
+    minMeters: 1000,
+    maxMeters: 1999,
+    color: "#dac497ff",
+  },
+  {
+    id: 5,
+    zoneId: "zone_5",
+    name: "Mid Mountains",
+    minMeters: 2000,
+    maxMeters: 2999,
+    color: "#bea276ff",
+  },
+  {
+    id: 6,
+    zoneId: "zone_6",
+    name: "High Mountains",
+    minMeters: 3000,
+    maxMeters: 3999,
+    color: "#9c7b50ff",
+  },
   { id: 7, zoneId: "zone_7", name: "Alpine", minMeters: 4000, maxMeters: 4999, color: "#7a5c34ff" },
-  { id: 8, zoneId: "zone_8", name: "Glacial Peaks", minMeters: 5000, maxMeters: 9000, color: "#f0f0f0ff" },
+  {
+    id: 8,
+    zoneId: "zone_8",
+    name: "Glacial Peaks",
+    minMeters: 5000,
+    maxMeters: 9000,
+    color: "#f0f0f0ff",
+  },
 ];
 
 /**
@@ -111,24 +160,24 @@ export const QUALITY_THRESHOLDS = {
 
   // Check 2: Continent shape diversity
   maxConvexity: 0.85,
-  aspectRatioSimilarityThreshold: 0.20,
+  aspectRatioSimilarityThreshold: 0.2,
 
   // Check 3: Mountain placement
-  mountainBoundaryCorrelation: 0.80,
+  mountainBoundaryCorrelation: 0.8,
   mountainBoundaryMaxDist: 10,
 
   // Check 4: River drainage quality
   riverDownhillFlowMin: 1.0,
   riverMountainCrossingMax: 0.0,
-  riverReachesWaterMin: 0.90,
+  riverReachesWaterMin: 0.9,
 
   // Check 5: Climate coherence
-  rainShadowPresence: 0.70,
-  equatorialTropicalMin: 0.60,
-  polarTundraMin: 0.60,
+  rainShadowPresence: 0.7,
+  equatorialTropicalMin: 0.6,
+  polarTundraMin: 0.6,
 
   // Check 6: Lake placement
-  lakesInDepressionMin: 0.80,
+  lakesInDepressionMin: 0.8,
 
   // Check 7: Coastline complexity
   coastlineFractalDimMin: 1.15,
@@ -142,7 +191,7 @@ export const QUALITY_THRESHOLDS = {
   minZonesPerLargeContinent: 5,
 
   // Natural border thresholds (politics)
-  naturalBorderMin: 0.60,
+  naturalBorderMin: 0.6,
   riverBorderStrength: 0.8,
   mountainBorderStrength: 1.0,
   coastBorderStrength: 1.0,

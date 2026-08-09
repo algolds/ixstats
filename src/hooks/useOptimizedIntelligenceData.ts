@@ -107,10 +107,7 @@ export function useOptimizedIntelligenceData({
           category: "security" as const,
           type: "alert" as const,
           priority: ((item as IntelligenceItem & { priority?: string }).priority || "medium") as
-            | "low"
-            | "medium"
-            | "high"
-            | "critical",
+            "low" | "medium" | "high" | "critical",
           severity: "important" as const,
           deliveryMethod: "dynamic-island" as const,
           actionable: true,

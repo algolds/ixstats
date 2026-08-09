@@ -11,13 +11,7 @@ interface NumberFlowDisplayProps {
   suffix?: string;
   decimalPlaces?: number;
   format?:
-    | "default"
-    | "currency"
-    | "population"
-    | "percentage"
-    | "financial"
-    | "compact"
-    | "decimal";
+    "default" | "currency" | "population" | "percentage" | "financial" | "compact" | "decimal";
   duration?: number;
   trend?: "up" | "down" | "stable";
   locale?: string;

@@ -22,7 +22,7 @@ export function V2Console({
   onCommitted: (res: any) => void;
 }) {
   return (
-    <FacetCard depth={1} className="bg-card/40 border-border/40 p-5 backdrop-blur-xl w-full">
+    <FacetCard depth={1} className="bg-card/40 border-border/40 w-full p-5 backdrop-blur-xl">
       <IntentComposer countryId={countryId} initialGoal={initialGoal} onCommitted={onCommitted} />
     </FacetCard>
   );

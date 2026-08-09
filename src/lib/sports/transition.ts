@@ -668,8 +668,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         archetype: season.league.archetype as ArchetypeType,
         teamCount: teamIds.length,
         raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
-          | number
-          | undefined,
+          number | undefined,
       });
       const races = Array.isArray(schedule) ? schedule : [];
       for (const race of races) {

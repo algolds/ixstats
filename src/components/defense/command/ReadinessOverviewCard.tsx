@@ -101,11 +101,18 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         <div className="grid grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
-              <Shield className="h-3.5 w-3.5 text-red-400 shrink-0" />
+              <Shield className="h-3.5 w-3.5 shrink-0 text-red-400" />
               <span className="truncate">Overall Readiness</span>
             </div>
-            <div className="text-xl font-black text-foreground font-mono">
-              {Math.min(100, Math.max(0, Math.round(averageReadiness > 1 ? averageReadiness : averageReadiness * 100)))}%
+            <div className="text-foreground font-mono text-xl font-black">
+              {Math.min(
+                100,
+                Math.max(
+                  0,
+                  Math.round(averageReadiness > 1 ? averageReadiness : averageReadiness * 100)
+                )
+              )}
+              %
             </div>
             <Progress
               value={averageReadiness > 1 ? averageReadiness : averageReadiness * 100}
@@ -115,11 +122,18 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
 
           <div className="space-y-1.5">
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
-              <Activity className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+              <Activity className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
               <span className="truncate">Technology Level</span>
             </div>
-            <div className="text-xl font-black text-foreground font-mono">
-              {Math.min(100, Math.max(0, Math.round(averageTechnology > 1 ? averageTechnology : averageTechnology * 100)))}%
+            <div className="text-foreground font-mono text-xl font-black">
+              {Math.min(
+                100,
+                Math.max(
+                  0,
+                  Math.round(averageTechnology > 1 ? averageTechnology : averageTechnology * 100)
+                )
+              )}
+              %
             </div>
             <Progress
               value={averageTechnology > 1 ? averageTechnology : averageTechnology * 100}
@@ -129,11 +143,15 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
 
           <div className="space-y-1.5">
             <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
-              <Users className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <Users className="h-3.5 w-3.5 shrink-0 text-amber-400" />
               <span className="truncate">Force Morale</span>
             </div>
-            <div className="text-xl font-black text-foreground font-mono">
-              {Math.min(100, Math.max(0, Math.round(averageMorale > 1 ? averageMorale : averageMorale * 100)))}%
+            <div className="text-foreground font-mono text-xl font-black">
+              {Math.min(
+                100,
+                Math.max(0, Math.round(averageMorale > 1 ? averageMorale : averageMorale * 100))
+              )}
+              %
             </div>
             <Progress
               value={averageMorale > 1 ? averageMorale : averageMorale * 100}
@@ -143,23 +161,27 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         </div>
 
         {/* Strategic Defense Posture Summary */}
-        <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2.5">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 border-t border-white/10 pt-3">
           <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
             <div>
-              <p className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-wider">Defense Alert Level</p>
-              <p className="text-xs font-black text-emerald-400 mt-0.5">DEFCON 4 — NOMINAL</p>
+              <p className="text-muted-foreground text-[9px] font-extrabold tracking-wider uppercase">
+                Defense Alert Level
+              </p>
+              <p className="mt-0.5 text-xs font-black text-emerald-400">DEFCON 4 — NOMINAL</p>
             </div>
-            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-bold text-[10px] shrink-0">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-400">
               🛡️
             </span>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
             <div>
-              <p className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-wider">Force Projection</p>
-              <p className="text-xs font-black text-cyan-400 mt-0.5">REGIONAL DETERRENCE</p>
+              <p className="text-muted-foreground text-[9px] font-extrabold tracking-wider uppercase">
+                Force Projection
+              </p>
+              <p className="mt-0.5 text-xs font-black text-cyan-400">REGIONAL DETERRENCE</p>
             </div>
-            <span className="flex h-6 w-6 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-bold text-[10px] shrink-0">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/10 text-[10px] font-bold text-cyan-400">
               🎯
             </span>
           </div>

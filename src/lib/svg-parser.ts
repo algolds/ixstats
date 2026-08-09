@@ -550,14 +550,12 @@ export function parseSvgToGeoJson(
   // Build FeatureCollection
   const featureCollection: FeatureCollection = {
     type: "FeatureCollection",
-    features: features.map(
-      (f): Feature => ({
-        type: "Feature",
-        id: f.featureId,
-        geometry: f.geometry,
-        properties: f.properties,
-      })
-    ),
+    features: features.map((f): Feature => ({
+      type: "Feature",
+      id: f.featureId,
+      geometry: f.geometry,
+      properties: f.properties,
+    })),
   };
 
   return {

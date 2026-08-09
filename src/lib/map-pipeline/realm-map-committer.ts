@@ -8,7 +8,11 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { EnrichedMapPackage } from "./enrichment-pipeline";
-import type { NormalizedCountryPayload, NormalizedCityPayload, NormalizedRiverPayload } from "./azgaar-normalizer";
+import type {
+  NormalizedCountryPayload,
+  NormalizedCityPayload,
+  NormalizedRiverPayload,
+} from "./azgaar-normalizer";
 
 export interface CommitRealmMapInput {
   realmId: string;
@@ -38,7 +42,14 @@ export async function commitRealmMapToDatabase(
   db: PrismaClient,
   input: CommitRealmMapInput
 ): Promise<CommitRealmMapResult> {
-  const { realmId, enrichedPackage, countries, cities = [], rivers = [], replaceExisting = true } = input;
+  const {
+    realmId,
+    enrichedPackage,
+    countries,
+    cities = [],
+    rivers = [],
+    replaceExisting = true,
+  } = input;
   const log: string[] = [...enrichedPackage.log];
   log.push(`[RealmCommitter] Committing map package for realm: ${realmId}`);
 
@@ -58,7 +69,9 @@ export async function commitRealmMapToDatabase(
       await tx.sharedVertex.deleteMany({
         where: { worldId: realmId },
       });
-      log.push(`[RealmCommitter] Cleared existing MapLayers and SharedVertices for realm: ${realmId}`);
+      log.push(
+        `[RealmCommitter] Cleared existing MapLayers and SharedVertices for realm: ${realmId}`
+      );
     }
 
     // 2. Commit MapLayers (all 7 GeoJSON feature collections)
@@ -67,7 +80,9 @@ export async function commitRealmMapToDatabase(
 
       for (const feat of collection.features) {
         const props = feat.properties || {};
-        const featureId = String(props.id || props.featureId || props._id || `${layerType}_${layersCommitted}`);
+        const featureId = String(
+          props.id || props.featureId || props._id || `${layerType}_${layersCommitted}`
+        );
 
         await tx.mapLayer.create({
           data: {
@@ -77,7 +92,8 @@ export async function commitRealmMapToDatabase(
             properties: props as any,
             displayName: String(props.name || props._displayName || featureId),
             areaSqKm: Number(props.areaSqKm || props._areaSqKm || 0) || null,
-            centroid: props._centroidLng !== undefined ? [props._centroidLng, props._centroidLat] : null,
+            centroid:
+              props._centroidLng !== undefined ? [props._centroidLng, props._centroidLat] : null,
             boundingBox: props.boundingBox || null,
             worldId: realmId,
             isActive: true,
@@ -92,7 +108,10 @@ export async function commitRealmMapToDatabase(
     const countryMap = new Map<string, string>(); // featureId -> Country.id
 
     for (const c of countries) {
-      const slug = c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const slug = c.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
       const countryRecord = await tx.country.upsert({
         where: {
@@ -128,7 +147,9 @@ export async function commitRealmMapToDatabase(
       });
 
       // Upsert CountryGeoProfile
-      const profileData = enrichedPackage.geoProfiles.find((p) => p.countryFeatureId === c.featureId);
+      const profileData = enrichedPackage.geoProfiles.find(
+        (p) => p.countryFeatureId === c.featureId
+      );
       if (profileData) {
         await tx.countryGeoProfile.upsert({
           where: { countryId: countryRecord.id },
@@ -172,7 +193,9 @@ export async function commitRealmMapToDatabase(
       }
 
       // Upsert GeographicResources
-      const countryResources = enrichedPackage.resources.filter((r) => r.countryFeatureId === c.featureId);
+      const countryResources = enrichedPackage.resources.filter(
+        (r) => r.countryFeatureId === c.featureId
+      );
       for (const res of countryResources) {
         await tx.geographicResource.create({
           data: {
@@ -189,7 +212,9 @@ export async function commitRealmMapToDatabase(
         resourcesCommitted++;
       }
     }
-    log.push(`[RealmCommitter] Committed ${countriesCommitted} Countries and ${resourcesCommitted} GeographicResources`);
+    log.push(
+      `[RealmCommitter] Committed ${countriesCommitted} Countries and ${resourcesCommitted} GeographicResources`
+    );
 
     // 4. Commit Cities
     for (const city of cities) {

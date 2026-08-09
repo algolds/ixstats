@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Briefcase,
-  AlertTriangle,
-  Clock,
-  Check,
-  TrendingUp,
-  RotateCw,
-} from "lucide-react";
+import { Briefcase, AlertTriangle, Clock, Check, TrendingUp, RotateCw } from "lucide-react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
@@ -74,13 +67,13 @@ function CivilServiceWidget({
   return (
     <div
       onClick={handleWidgetClick}
-      className="group relative flex flex-1 min-w-0 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md cursor-pointer hover:bg-white/[0.06] hover:border-white/20 transition-all"
+      className="group relative flex min-w-0 flex-1 cursor-pointer flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.06]"
     >
       {/* Ambient Background Graphic & Watermark Glyph */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300">
-        <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-amber-500/10 blur-xl opacity-20 group-hover:opacity-35 transition-opacity" />
+        <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-amber-500/10 opacity-20 blur-xl transition-opacity group-hover:opacity-35" />
         <Briefcase
-          className="absolute -bottom-2 -right-2 h-20 w-20 text-amber-400 opacity-[0.05] transition-all duration-300 group-hover:opacity-[0.10] group-hover:scale-105"
+          className="absolute -right-2 -bottom-2 h-20 w-20 text-amber-400 opacity-[0.05] transition-all duration-300 group-hover:scale-105 group-hover:opacity-[0.10]"
           strokeWidth={1}
         />
       </div>
@@ -92,7 +85,7 @@ function CivilServiceWidget({
             e.stopPropagation();
             handleWidgetClick();
           }}
-          className="group/btn flex w-full items-center justify-between gap-2 text-left cursor-pointer"
+          className="group/btn flex w-full cursor-pointer items-center justify-between gap-2 text-left"
         >
           <div className="flex items-center gap-1.5">
             <Briefcase className="h-3.5 w-3.5 text-amber-500" />
@@ -119,7 +112,7 @@ function CivilServiceWidget({
       </div>
 
       {data.rolloutQueue.length > 0 && (
-        <div className="mt-0.5 flex flex-col gap-1.5 border-t border-white/5 pt-1.5 z-10">
+        <div className="z-10 mt-0.5 flex flex-col gap-1.5 border-t border-white/5 pt-1.5">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3 text-cyan-400" />
             <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
@@ -222,7 +215,8 @@ export function V2CommandBriefingHero({
         title: "Civil Service Staffing Exceeded",
         subtitle: `Programs consume ${Math.round(csData.consumedStaff)} staff against ${Math.round(csData.capacity)} available. Consider suspending or consolidating programs.`,
         actionText: "Manage Programs",
-        prefilledGoal: "Rebalance civil service workload and consolidate active government programs",
+        prefilledGoal:
+          "Rebalance civil service workload and consolidate active government programs",
         section: "executive",
         accentCls: "border-red-500/30 text-red-400 bg-red-500/10",
         badgeCls: "bg-red-500/20 text-red-300 border-red-500/30",
@@ -289,9 +283,11 @@ export function V2CommandBriefingHero({
         id: "stability-warning",
         label: "STABILITY WARNING",
         title: `Political Stability at ${Math.round(stability)}%`,
-        subtitle: "Low stability increases risk of unrest. Prioritize domestic policy and cabinet engagement.",
+        subtitle:
+          "Low stability increases risk of unrest. Prioritize domestic policy and cabinet engagement.",
         actionText: "Review Stability",
-        prefilledGoal: "Enact domestic policy reforms to stabilize government and address public unrest",
+        prefilledGoal:
+          "Enact domestic policy reforms to stabilize government and address public unrest",
         section: "politics",
         accentCls: "border-orange-500/30 text-orange-400 bg-orange-500/10",
         badgeCls: "bg-orange-500/20 text-orange-300 border-orange-500/30",
@@ -342,7 +338,7 @@ export function V2CommandBriefingHero({
         <div
           onClick={handleCardClick}
           className={cn(
-            "group relative flex flex-1 min-w-0 flex-col justify-between overflow-hidden rounded-2xl border p-4.5 text-xs backdrop-blur-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] cursor-pointer",
+            "group relative flex min-w-0 flex-1 cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4.5 text-xs backdrop-blur-xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99]",
             activeCard.accentCls
           )}
         >
@@ -352,10 +348,10 @@ export function V2CommandBriefingHero({
               <img
                 src={activeCard.bgImage}
                 alt=""
-                className="h-full w-full object-cover object-center opacity-20 dark:opacity-25 transition-transform duration-700 ease-out group-hover:scale-105 filter saturate-[1.2] brightness-90 mix-blend-overlay"
+                className="h-full w-full object-cover object-center opacity-20 mix-blend-overlay brightness-90 saturate-[1.2] filter transition-transform duration-700 ease-out group-hover:scale-105 dark:opacity-25"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/60 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/50" />
+              <div className="from-background/90 via-background/60 absolute inset-0 bg-gradient-to-t to-transparent" />
+              <div className="from-background/80 to-background/50 absolute inset-0 bg-gradient-to-r via-transparent" />
             </div>
           )}
 
@@ -363,19 +359,24 @@ export function V2CommandBriefingHero({
           <div className="pointer-events-none absolute inset-0 overflow-hidden transition-all duration-300">
             <div
               className={cn(
-                "absolute -bottom-6 -right-6 h-36 w-36 rounded-full blur-2xl transition-opacity duration-300 opacity-20 group-hover:opacity-35",
+                "absolute -right-6 -bottom-6 h-36 w-36 rounded-full opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35",
                 activeCard.glowBgCls
               )}
             />
             <Icon
-              className="absolute -bottom-2 -right-2 h-28 w-28 text-current opacity-[0.07] transition-all duration-300 group-hover:opacity-[0.14] group-hover:scale-105"
+              className="absolute -right-2 -bottom-2 h-28 w-28 text-current opacity-[0.07] transition-all duration-300 group-hover:scale-105 group-hover:opacity-[0.14]"
               strokeWidth={1}
             />
           </div>
           {/* Header Row */}
-          <div className="flex items-center justify-between gap-2 z-10">
+          <div className="z-10 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase", activeCard.badgeCls)}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase",
+                  activeCard.badgeCls
+                )}
+              >
                 <Icon className="h-3 w-3 shrink-0" />
                 {activeCard.label}
               </span>
@@ -384,7 +385,7 @@ export function V2CommandBriefingHero({
             {/* Stack Cycle Dots if multiple contexts exist */}
             {contextCards.length > 1 && (
               <div
-                className="flex items-center gap-1 bg-black/20 backdrop-blur-md rounded-full px-2 py-1 border border-white/10"
+                className="flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2 py-1 backdrop-blur-md"
                 onClick={(e) => e.stopPropagation()}
               >
                 {contextCards.map((c, idx) => (
@@ -393,7 +394,7 @@ export function V2CommandBriefingHero({
                     type="button"
                     onClick={() => setActiveIdx(idx)}
                     className={cn(
-                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                      "h-1.5 cursor-pointer rounded-full transition-all duration-300",
                       idx === safeIdx ? "w-4 bg-current" : "w-1.5 bg-white/30 hover:bg-white/50"
                     )}
                   />
@@ -403,19 +404,19 @@ export function V2CommandBriefingHero({
           </div>
 
           {/* Body Content */}
-          <div className="my-3 space-y-1 z-10">
-            <h3 className="text-foreground text-sm sm:text-base font-black tracking-tight leading-snug">
+          <div className="z-10 my-3 space-y-1">
+            <h3 className="text-foreground text-sm leading-snug font-black tracking-tight sm:text-base">
               {activeCard.title}
             </h3>
-            <p className="text-muted-foreground text-xs font-medium leading-relaxed">
+            <p className="text-muted-foreground text-xs leading-relaxed font-medium">
               {activeCard.subtitle}
             </p>
           </div>
 
           {/* Footer Action Row */}
-          <div className="flex flex-wrap items-center justify-between gap-2 z-10 pt-1 border-t border-white/10">
+          <div className="z-10 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-1">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-foreground/90 group-hover:text-foreground flex items-center gap-1 transition-colors">
+              <span className="text-foreground/90 group-hover:text-foreground flex items-center gap-1 text-[11px] font-bold transition-colors">
                 {activeCard.actionText} <Check className="h-3 w-3 opacity-60" />
               </span>
 
@@ -424,9 +425,11 @@ export function V2CommandBriefingHero({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeclare(`Convene Emergency Crisis Cabinet Meeting regarding ${activeCard.title}`);
+                    onDeclare(
+                      `Convene Emergency Crisis Cabinet Meeting regarding ${activeCard.title}`
+                    );
                   }}
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 hover:bg-amber-500/30 transition-all cursor-pointer shadow-xs active:scale-95"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-300 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95"
                 >
                   <AlertTriangle className="h-2.5 w-2.5 text-amber-400" />
                   <span>Convene Crisis Cabinet</span>
@@ -441,14 +444,16 @@ export function V2CommandBriefingHero({
                   e.stopPropagation();
                   setActiveIdx((prev) => (prev + 1) % contextCards.length);
                 }}
-                className="flex items-center gap-1.5 rounded-full bg-black/25 hover:bg-black/45 px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground hover:text-foreground border border-white/10 transition-all cursor-pointer shadow-sm active:scale-95"
+                className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-black/25 px-2.5 py-0.5 text-[10px] font-bold shadow-sm transition-all hover:bg-black/45 active:scale-95"
                 title="Cycle to next context card"
               >
-                <span>Cycle ({safeIdx + 1}/{contextCards.length})</span>
-                <RotateCw className="h-3 w-3 opacity-70 group-hover:rotate-180 transition-transform duration-500" />
+                <span>
+                  Cycle ({safeIdx + 1}/{contextCards.length})
+                </span>
+                <RotateCw className="h-3 w-3 opacity-70 transition-transform duration-500 group-hover:rotate-180" />
               </button>
             ) : (
-              <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
+              <span className="text-muted-foreground/40 flex items-center gap-1 font-mono text-[10px]">
                 <RotateCw className="h-2.5 w-2.5 opacity-50" /> 1/1
               </span>
             )}

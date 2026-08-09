@@ -2,7 +2,16 @@
 
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutGrid, Command, Handshake, Shield, Scale, TrendingUp, User, Edit3 } from "lucide-react";
+import {
+  LayoutGrid,
+  Command,
+  Handshake,
+  Shield,
+  Scale,
+  TrendingUp,
+  User,
+  Edit3,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
@@ -90,12 +99,13 @@ export function V2ModeToggle({
     },
   ];
 
-  const isHomeSection = rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
+  const isHomeSection =
+    rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
   return (
-    <div className="border-border/60 bg-card/50 flex flex-wrap items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md w-fit">
+    <div className="border-border/60 bg-card/50 flex w-fit flex-wrap items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md">
       {/* Official MyCountry Brand Logo Pill */}
-      <div className="flex items-center gap-2 px-2 py-0.5 border-r border-white/10 shrink-0">
+      <div className="flex shrink-0 items-center gap-2 border-r border-white/10 px-2 py-0.5">
         <MyCountryLogo size="sm" variant="full" animated={true} />
       </div>
       {/* Primary operating modes */}
@@ -114,7 +124,7 @@ export function V2ModeToggle({
               }
             }}
             className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all border border-transparent text-muted-foreground",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold transition-all",
               active ? activeCls : hoverCls
             )}
           >
@@ -136,7 +146,7 @@ export function V2ModeToggle({
             type="button"
             onClick={() => router.push(withBasePath(href))}
             className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-transparent text-muted-foreground",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold transition-all",
               active ? activeCls : hoverCls
             )}
           >
@@ -191,12 +201,13 @@ export function V2RightPillNav({
   ];
 
   return (
-    <div className="border-border/60 bg-card/50 flex items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md w-fit shrink-0">
+    <div className="border-border/60 bg-card/50 flex w-fit shrink-0 items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md">
       {navItems.map(({ id, href, label, icon: Icon, activeCls, hoverCls }, idx) => {
         const active =
           rawPath.startsWith(href) ||
           (id === "editor" &&
-            (rawPath.startsWith("/mycountry/editor") || rawPath.startsWith("/mycountry/map-editor")));
+            (rawPath.startsWith("/mycountry/editor") ||
+              rawPath.startsWith("/mycountry/map-editor")));
         return (
           <React.Fragment key={href}>
             {idx > 0 && <div className="mx-0.5 h-4 w-px shrink-0 bg-white/10" />}
@@ -210,8 +221,8 @@ export function V2RightPillNav({
                 }
               }}
               className={cn(
-                "flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all border border-transparent text-muted-foreground active:scale-95 select-none",
-                active ? activeCls : hoverCls,
+                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold transition-all select-none active:scale-95",
+                active ? activeCls : hoverCls
               )}
             >
               <Icon className="h-3.5 w-3.5" />

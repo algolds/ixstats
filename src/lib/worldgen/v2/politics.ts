@@ -10,7 +10,13 @@
  * 6. Markov naming: names states and cultures using language families
  */
 
-import type { WorldGraph, WorldGenParams, PoliticalState, CulturalRegion, Settlement } from "./types";
+import type {
+  WorldGraph,
+  WorldGenParams,
+  PoliticalState,
+  CulturalRegion,
+  Settlement,
+} from "./types";
 import { QUALITY_THRESHOLDS } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
@@ -22,10 +28,7 @@ import { getLanguageFamilies } from "../../procedural-archive/language-families"
  * Generate cultures, settlements, and political states with natural borders.
  * Mutates graph.cells.culture, graph.cells.state, and populates entity arrays in-place.
  */
-export function generatePolitics(
-  graph: WorldGraph,
-  params: WorldGenParams
-): void {
+export function generatePolitics(graph: WorldGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 50);
   const { cells } = graph;
   const n = cells.n;
@@ -89,7 +92,12 @@ export function generatePolitics(
     return 1.0 + resistance * 8.0; // flatland cost ~ 1.8, river ~ 7.4, mountain ~ 9.0
   };
 
-  const { sourceId } = dijkstraMultiSource(graph, sources, edgeCostFn, (c) => cells.isLand[c] === 1);
+  const { sourceId } = dijkstraMultiSource(
+    graph,
+    sources,
+    edgeCostFn,
+    (c) => cells.isLand[c] === 1
+  );
 
   for (let i = 0; i < n; i++) {
     if (cells.isLand[i]) {
@@ -192,12 +200,12 @@ function generateSettlements(
     // Coastal bonus
     if (cells.coastDist[c]! === 0) score += 0.25;
     // River bonus
-    if (cells.river[c]! > 0) score += 0.20;
+    if (cells.river[c]! > 0) score += 0.2;
     // Temperate climate bonus
     const temp = cells.temp[c]!;
     if (temp >= 12 && temp <= 25) score += 0.15;
     // Lowland bonus
-    if (cells.elevZone[c]! <= 2) score += 0.10;
+    if (cells.elevZone[c]! <= 2) score += 0.1;
     // Aridity penalty
     if (cells.aridity[c]! > 0.6) score -= 0.25;
 
@@ -210,9 +218,7 @@ function generateSettlements(
   const chosen = scores.slice(0, targetCount);
 
   const families = getLanguageFamilies();
-  const generators = families.map(
-    (f, idx) => new MarkovNameGenerator(f, params.seed + 700 + idx)
-  );
+  const generators = families.map((f, idx) => new MarkovNameGenerator(f, params.seed + 700 + idx));
 
   let burgId = 1;
   for (let i = 0; i < chosen.length; i++) {
@@ -392,9 +398,7 @@ function buildStateEntities(
   const { cells, features } = graph;
 
   const families = getLanguageFamilies();
-  const generators = families.map(
-    (f, idx) => new MarkovNameGenerator(f, params.seed + 800 + idx)
-  );
+  const generators = families.map((f, idx) => new MarkovNameGenerator(f, params.seed + 800 + idx));
 
   for (let s = 0; s < capitals.length; s++) {
     const stateId = s + 1;

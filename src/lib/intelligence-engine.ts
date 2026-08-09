@@ -50,12 +50,7 @@ export interface TrendAnalysis {
   metric: string;
   category: string;
   trend:
-    | "accelerating_up"
-    | "accelerating_down"
-    | "steady_up"
-    | "steady_down"
-    | "volatile"
-    | "stable";
+    "accelerating_up" | "accelerating_down" | "steady_up" | "steady_down" | "volatile" | "stable";
   velocity: number; // Rate of change
   momentum: number; // Change in rate of change
   forecast: {

@@ -95,9 +95,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   }) => {
     if (editingLoreDoc?.id) {
       const updated = nativeDocs.map((d) =>
-        d.id === editingLoreDoc.id
-          ? { ...d, ...doc, updatedAt: new Date().toISOString() }
-          : d
+        d.id === editingLoreDoc.id ? { ...d, ...doc, updatedAt: new Date().toISOString() } : d
       );
       saveNativeDocs(updated);
     } else {
@@ -111,7 +109,13 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     setEditingLoreDoc(null);
   };
 
-  const handleImportSections = (sections: Array<{ title: string; content: string; classification: "PUBLIC" | "ALLIANCE" | "PRIVATE" }>) => {
+  const handleImportSections = (
+    sections: Array<{
+      title: string;
+      content: string;
+      classification: "PUBLIC" | "ALLIANCE" | "PRIVATE";
+    }>
+  ) => {
     const imported = sections.map((s, idx) => ({
       id: `imported_${Date.now()}_${idx}`,
       title: s.title,
@@ -244,8 +248,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
             transition={{ duration: 0.3 }}
           >
             {/* Sections View (Dossier) */}
-            {activeView === "sections" && (
-              activeSections.length > 0 || wikiData.infobox ? (
+            {activeView === "sections" &&
+              (activeSections.length > 0 || wikiData.infobox ? (
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
                   {/* Main Content - Dossier Sections */}
                   <div className="space-y-4 xl:col-span-3">
@@ -298,30 +302,34 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                     <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                       <BookOpen className="text-muted-foreground/60 h-8 w-8" />
                     </div>
-                    <h3 className="mb-2 text-lg font-semibold text-foreground">Dossier Pending</h3>
+                    <h3 className="text-foreground mb-2 text-lg font-semibold">Dossier Pending</h3>
                     <p className="text-muted-foreground mb-6 max-w-md text-xs leading-relaxed">
                       There is no active WikiOS database entry for <strong>{countryName}</strong>.
-                      Under standard diplomatic protocols, a public dossier is generated once a wiki article is initialized.
+                      Under standard diplomatic protocols, a public dossier is generated once a wiki
+                      article is initialized.
                     </p>
-                    <Button asChild variant="outline" className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                    >
                       <Link href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}>
                         Create Page on WikiOS
                       </Link>
                     </Button>
                   </CardContent>
                 </Card>
-              )
-            )}
+              ))}
 
             {/* Native Canvas Lore View */}
             {activeView === "native_lore" && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">
+                    <h3 className="text-foreground text-sm font-extrabold tracking-wider uppercase">
                       Native Canvas Lore Hub
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Direct non-wiki documents created via WikiOS Canvas Editor or file import
                     </p>
                   </div>
@@ -330,7 +338,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                       size="sm"
                       variant="outline"
                       onClick={() => setShowFileImport(!showFileImport)}
-                      className="border-white/10 text-xs font-bold gap-1.5"
+                      className="gap-1.5 border-white/10 text-xs font-bold"
                     >
                       <Upload className="h-3.5 w-3.5" />
                       Import File (.md)
@@ -341,7 +349,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         setEditingLoreDoc(null);
                         setIsCanvasModalOpen(true);
                       }}
-                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold gap-1.5 shadow-md"
+                      className="gap-1.5 bg-blue-600 text-xs font-bold text-white shadow-md hover:bg-blue-500"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       New Canvas Document
@@ -357,14 +365,18 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 )}
 
                 {nativeDocs.length === 0 ? (
-                  <Card className="glass-surface border-white/10 overflow-hidden">
+                  <Card className="glass-surface overflow-hidden border-white/10">
                     <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                      <div className="bg-blue-500/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full text-blue-400">
+                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
                         <BookOpen className="h-8 w-8" />
                       </div>
-                      <h3 className="mb-2 text-lg font-semibold text-foreground">No Native Lore Documents</h3>
+                      <h3 className="text-foreground mb-2 text-lg font-semibold">
+                        No Native Lore Documents
+                      </h3>
                       <p className="text-muted-foreground mb-6 max-w-md text-xs leading-relaxed">
-                        Create custom dossier documents directly using the WikiOS Canvas Editor or import Markdown files to store non-wiki lore for <strong>{countryName}</strong>.
+                        Create custom dossier documents directly using the WikiOS Canvas Editor or
+                        import Markdown files to store non-wiki lore for{" "}
+                        <strong>{countryName}</strong>.
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
@@ -373,7 +385,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                             setEditingLoreDoc(null);
                             setIsCanvasModalOpen(true);
                           }}
-                          className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold gap-1.5"
+                          className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           Create First Canvas Document
@@ -386,23 +398,23 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                     {nativeDocs.map((doc) => (
                       <div
                         key={doc.id}
-                        className="group relative flex flex-col justify-between rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.05]"
+                        className="group bg-card/30 relative flex flex-col justify-between rounded-xl border border-white/10 p-4 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.05]"
                       >
                         <div>
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="mb-2 flex items-center justify-between">
                             <span
-                              className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${
+                              className={`rounded px-2 py-0.5 text-[9px] font-extrabold tracking-wider uppercase ${
                                 doc.clearance === "PUBLIC"
-                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
                                   : doc.clearance === "ALLIANCE"
-                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                  : "bg-red-500/20 text-red-400 border border-red-500/30"
+                                    ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
+                                    : "border border-red-500/30 bg-red-500/20 text-red-400"
                               }`}
                             >
                               {doc.clearance}
                             </span>
 
-                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -412,7 +424,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                                 }}
                                 className="h-7 w-7 p-0"
                               >
-                                <Edit3 className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                <Edit3 className="text-muted-foreground hover:text-foreground h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 size="sm"
@@ -420,22 +432,22 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                                 onClick={() => {
                                   saveNativeDocs(nativeDocs.filter((d) => d.id !== doc.id));
                                 }}
-                                className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                className="h-7 w-7 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
 
-                          <h4 className="text-sm font-bold text-foreground mb-1 group-hover:text-blue-400 transition-colors">
+                          <h4 className="text-foreground mb-1 text-sm font-bold transition-colors group-hover:text-blue-400">
                             {doc.title}
                           </h4>
-                          <p className="line-clamp-3 text-xs text-muted-foreground leading-relaxed">
+                          <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed">
                             {doc.content.replace(/<[^>]*>?/gm, "").slice(0, 200)}...
                           </p>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-muted-foreground">
+                        <div className="text-muted-foreground mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[10px]">
                           <span>Updated {new Date(doc.updatedAt).toLocaleDateString()}</span>
                           <Button
                             variant="ghost"

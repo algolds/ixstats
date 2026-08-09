@@ -115,11 +115,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     createOperation.mutate({
       countryId,
       operationType: operationType as
-        | "peacekeeping"
-        | "defense_pact"
-        | "blockade"
-        | "intervention"
-        | "training",
+        "peacekeeping" | "defense_pact" | "blockade" | "intervention" | "training",
       name,
       description: description || undefined,
       targetCountryId: targetCountryId || undefined,

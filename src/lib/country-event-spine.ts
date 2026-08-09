@@ -96,13 +96,7 @@ export interface RecordEventParams {
   newsTemplate?: NewsEventType;
   newsVars?: Record<string, any>;
   activityCategory?:
-    | "game"
-    | "diplomatic"
-    | "government"
-    | "economic"
-    | "security"
-    | "social"
-    | "user";
+    "game" | "diplomatic" | "government" | "economic" | "security" | "social" | "user";
   activityHookName?: string;
   activityHookArgs?: any[];
 }

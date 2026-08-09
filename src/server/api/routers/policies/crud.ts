@@ -179,9 +179,7 @@ export const policiesCrudRouter = createTRPCRouter({
       const customAttrs = getCustomPolicyAttributes(baseInput.priority);
       let policyRiskRating = customAttrs.riskRating as "stable" | "volatile" | "high-risk";
       let policyOrigin = (origin || customAttrs.origin) as
-        | "personal"
-        | "crisis_response"
-        | "broker_request";
+        "personal" | "crisis_response" | "broker_request";
       let policyCivCapCost = customAttrs.civCapCost;
 
       if (!decretalKey) {
@@ -218,13 +216,9 @@ export const policiesCrudRouter = createTRPCRouter({
           taxRevenueEffect = results.taxRevenueEffect;
 
           policyRiskRating = (decretal.riskRating ?? "stable") as
-            | "stable"
-            | "volatile"
-            | "high-risk";
+            "stable" | "volatile" | "high-risk";
           policyOrigin = (origin ?? decretal.origin ?? "personal") as
-            | "personal"
-            | "crisis_response"
-            | "broker_request";
+            "personal" | "crisis_response" | "broker_request";
           policyCivCapCost = decretal.civCapCost ?? 0;
 
           calculatedEffectsJson = JSON.stringify({

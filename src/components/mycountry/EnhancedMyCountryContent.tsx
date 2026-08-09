@@ -185,7 +185,7 @@ function AgendaTree({
     abandoned: "bg-slate-500/10 text-slate-400 border-slate-500/20",
   };
 
-  const intentsList = Array.isArray(tree.data) ? tree.data : tree.data?.allIntents ?? [];
+  const intentsList = Array.isArray(tree.data) ? tree.data : (tree.data?.allIntents ?? []);
 
   if (intentsList.length === 0) {
     return (
@@ -228,7 +228,9 @@ function AgendaTree({
       className="bg-card/30 flex flex-col gap-4 p-5 backdrop-blur-md"
     >
       <div>
-        <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">Active Directives</h4>
+        <h4 className="text-xs font-bold tracking-widest text-amber-500 uppercase">
+          Active Directives
+        </h4>
         <p className="text-muted-foreground mt-0.5 text-[10px]">
           Your current active plans, directives, and goals.
         </p>

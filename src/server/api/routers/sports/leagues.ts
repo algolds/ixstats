@@ -813,8 +813,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             archetype: season.league.archetype as any,
             teamCount: teamIds.length,
             raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
-              | number
-              | undefined,
+              number | undefined,
           });
           const races = Array.isArray(schedule) ? schedule : [];
           for (const race of races) {

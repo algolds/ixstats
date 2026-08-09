@@ -4,12 +4,7 @@ import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 
 export type TextureVariant =
-  | "fabric-of-squares"
-  | "grid-noise"
-  | "inflicted"
-  | "debut-light"
-  | "groovepaper"
-  | "none";
+  "fabric-of-squares" | "grid-noise" | "inflicted" | "debut-light" | "groovepaper" | "none";
 
 interface BackgroundImageTextureProps {
   variant?: TextureVariant;

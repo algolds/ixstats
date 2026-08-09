@@ -18,12 +18,7 @@ import { Landmark, Save, CheckCircle } from "lucide-react";
 import { api } from "~/trpc/react";
 
 type SelectionMethod =
-  | "elected"
-  | "appointed"
-  | "sortition"
-  | "hereditary"
-  | "ex-officio"
-  | "corporatist";
+  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
 const SELECTION_METHOD_LABELS: Record<SelectionMethod, string> = {
   elected: "Elected",

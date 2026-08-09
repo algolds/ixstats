@@ -171,7 +171,10 @@ export async function buildGroundedContext(
         take: 30,
       }),
       (db as any).embassy.findMany({
-        where: { OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }], status: "active" },
+        where: {
+          OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
+          status: "active",
+        },
         select: { hostCountryId: true, guestCountryId: true },
         take: 30,
       }),
@@ -197,7 +200,9 @@ export async function buildGroundedContext(
           select: { id: true, name: true },
         })
       : [];
-    const nameById = new Map((countryNames as Array<{ id: string; name: string }>).map((c) => [c.id, c.name]));
+    const nameById = new Map(
+      (countryNames as Array<{ id: string; name: string }>).map((c) => [c.id, c.name])
+    );
 
     // Resolve embassy partners similarly.
     const embassyOtherIds = embassies.map((e: any) =>
@@ -214,7 +219,9 @@ export async function buildGroundedContext(
     );
 
     // Active world events that involve this country.
-    const worldEvents = (worldEventRows as Array<{ name: string; affectedCountries: Array<{ countryId: string }> }>)
+    const worldEvents = (
+      worldEventRows as Array<{ name: string; affectedCountries: Array<{ countryId: string }> }>
+    )
       .filter((e) => e.affectedCountries.some((c) => c.countryId === countryId))
       .map((e) => e.name);
 
@@ -270,9 +277,7 @@ export async function buildGroundedContext(
             title: departments[0].ministerTitle || "Minister",
           }
         : null,
-      official: officials[0]
-        ? { name: officials[0].name, title: officials[0].title }
-        : null,
+      official: officials[0] ? { name: officials[0].name, title: officials[0].title } : null,
       labor: laborRow
         ? {
             minimumWage: laborRow.medianWage ?? null,
@@ -297,9 +302,7 @@ export async function buildGroundedContext(
         .map((r: any) => {
           const otherId = r.country1 === countryId ? r.country2 : r.country1;
           const name = nameById.get(otherId);
-          return name
-            ? { name, band: bandFor(r.relationship), strength: r.strength ?? 0 }
-            : null;
+          return name ? { name, band: bandFor(r.relationship), strength: r.strength ?? 0 } : null;
         })
         .filter(Boolean) as Array<{ name: string; band: string; strength: number }>,
       embassyPartners: embassies

@@ -73,13 +73,10 @@ export function MeetingScheduler({
     { enabled: open }
   );
 
-  const { data: intents } = api.intent.getTree.useQuery(
-    { countryId },
-    { enabled: open }
-  );
+  const { data: intents } = api.intent.getTree.useQuery({ countryId }, { enabled: open });
 
   const proposedIntents = React.useMemo(() => {
-    const list = Array.isArray(intents) ? intents : intents?.allIntents ?? [];
+    const list = Array.isArray(intents) ? intents : (intents?.allIntents ?? []);
     return list.filter((i: any) => i.status === "proposed");
   }, [intents]);
 

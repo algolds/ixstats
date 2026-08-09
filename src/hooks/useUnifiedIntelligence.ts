@@ -24,11 +24,7 @@ export type IntelligenceTab =
   | "analytics";
 
 export type ClassificationLevel =
-  | "PUBLIC"
-  | "RESTRICTED"
-  | "CONFIDENTIAL"
-  | "SECRET"
-  | "TOP_SECRET";
+  "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET" | "TOP_SECRET";
 export type PriorityLevel = "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
 export type CategoryFilter =
   | "all"

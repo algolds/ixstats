@@ -828,19 +828,13 @@ export function EconomyBuilderPage({
             existingConfiguration.structure?.economicTier as any
           )
             ? (existingConfiguration.structure.economicTier as
-                | "Developing"
-                | "Emerging"
-                | "Developed"
-                | "Advanced")
+                "Developing" | "Emerging" | "Developed" | "Advanced")
             : "Developing",
           growthStrategy: (
             ["Export-Led", "Import-Substitution", "Balanced", "Innovation-Driven"] as const
           ).includes(existingConfiguration.structure?.growthStrategy as any)
             ? (existingConfiguration.structure.growthStrategy as
-                | "Export-Led"
-                | "Import-Substitution"
-                | "Balanced"
-                | "Innovation-Driven")
+                "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven")
             : "Balanced",
         },
         sectors: {

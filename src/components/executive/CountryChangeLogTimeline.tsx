@@ -55,7 +55,9 @@ export function CountryChangeLogTimeline({
 }: CountryChangeLogTimelineProps) {
   const [limit] = useState(25);
   const [offset, setOffset] = useState(0);
-  const [filterCategory, setFilterCategory] = useState<"all" | "directives" | "diplomacy" | "politics">("all");
+  const [filterCategory, setFilterCategory] = useState<
+    "all" | "directives" | "diplomacy" | "politics"
+  >("all");
   const [selectedEvent, setSelectedEvent] = useState<GroupedEvent | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -128,7 +130,12 @@ export function CountryChangeLogTimeline({
         if (!groups[key]) {
           groups[key] = {
             id: item.id,
-            sourceType: item.kind === "diplomacy" ? "diplomacy" : item.kind === "decision" ? "decision" : "policy",
+            sourceType:
+              item.kind === "diplomacy"
+                ? "diplomacy"
+                : item.kind === "decision"
+                  ? "decision"
+                  : "policy",
             sourceId: item.id,
             appliedIxTime: item.timestamp,
             description: item.title,
@@ -153,13 +160,17 @@ export function CountryChangeLogTimeline({
     const allList = Object.values(groups).sort((a, b) => b.appliedIxTime - a.appliedIxTime);
 
     if (filterCategory === "directives") {
-      return allList.filter((e) => ["policy", "decision", "intent"].includes(e.sourceType.toLowerCase())).slice(0, limit);
+      return allList
+        .filter((e) => ["policy", "decision", "intent"].includes(e.sourceType.toLowerCase()))
+        .slice(0, limit);
     }
     if (filterCategory === "diplomacy") {
       return allList.filter((e) => e.sourceType.toLowerCase() === "diplomacy").slice(0, limit);
     }
     if (filterCategory === "politics") {
-      return allList.filter((e) => ["election", "politics", "government"].includes(e.sourceType.toLowerCase())).slice(0, limit);
+      return allList
+        .filter((e) => ["election", "politics", "government"].includes(e.sourceType.toLowerCase()))
+        .slice(0, limit);
     }
 
     return allList.slice(0, limit);
@@ -281,12 +292,13 @@ export function CountryChangeLogTimeline({
             Recent Activity & Governance Ledger
           </h2>
           <p className="text-muted-foreground mt-1 text-xs">
-            Integrated timeline of executive directives, policies, diplomatic events, and national activity.
+            Integrated timeline of executive directives, policies, diplomatic events, and national
+            activity.
           </p>
         </div>
 
         {/* Activity Feed Selectors */}
-        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           {[
             { id: "all" as const, label: "All Activity" },
             { id: "directives" as const, label: "Directives & Policies" },
@@ -297,10 +309,10 @@ export function CountryChangeLogTimeline({
               key={id}
               type="button"
               onClick={() => setFilterCategory(id)}
-              className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all ${
                 filterCategory === id
-                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground border border-white/10"
+                  ? "border border-amber-500/40 bg-amber-500/20 text-amber-400 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground border border-white/10 bg-white/5 hover:bg-white/10"
               }`}
             >
               {label}

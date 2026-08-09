@@ -24,10 +24,7 @@ import { refineCoastlines } from "./coastlines";
  * Validate the generated world against 9 quality standards.
  * Performs in-place repairs for any failing checks and returns a detailed QualityReport.
  */
-export function validateAndRepair(
-  graph: WorldGraph,
-  params: WorldGenParams
-): QualityReport {
+export function validateAndRepair(graph: WorldGraph, params: WorldGenParams): QualityReport {
   const checks: QualityCheckResult[] = [];
   let totalRepairs = 0;
 
@@ -93,10 +90,7 @@ export function validateAndRepair(
 // Check 1: Continent Count
 // ──────────────────────────────────────────────
 
-function checkContinentCount(
-  graph: WorldGraph,
-  params: WorldGenParams
-): QualityCheckResult {
+function checkContinentCount(graph: WorldGraph, params: WorldGenParams): QualityCheckResult {
   const continents = graph.features.filter((f) => f.type === "continent");
   const count = continents.length;
   const targetMin = params.continentCount ? Math.max(2, params.continentCount - 2) : 3;
@@ -180,7 +174,10 @@ function checkContinentShapeDiversity(
 
   let aspectRatios: number[] = [];
   for (const cont of continents) {
-    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    let minLng = Infinity,
+      maxLng = -Infinity,
+      minLat = Infinity,
+      maxLat = -Infinity;
     for (let i = 0; i < graph.cells.n; i++) {
       if (graph.cells.feature[i] === cont.id) {
         const lng = cellLng(graph, i);
@@ -201,7 +198,7 @@ function checkContinentShapeDiversity(
   for (let i = 0; i < aspectRatios.length; i++) {
     for (let j = i + 1; j < aspectRatios.length; j++) {
       const diff = Math.abs(aspectRatios[i]! - aspectRatios[j]!) / aspectRatios[i]!;
-      if (diff < 0.10) duplicates++;
+      if (diff < 0.1) duplicates++;
     }
   }
 
@@ -323,7 +320,10 @@ function checkRiverDrainage(graph: WorldGraph): QualityCheckResult {
     repairAction = `Fixed ${downhillViolations} downhill violations and ${ridgeCrossingViolations} ridge crossings in river paths`;
   }
 
-  const score = totalSegments > 0 ? Math.round(Math.max(0, 100 - (totalViolations / totalSegments) * 500)) : 100;
+  const score =
+    totalSegments > 0
+      ? Math.round(Math.max(0, 100 - (totalViolations / totalSegments) * 500))
+      : 100;
   return {
     name: "River Drainage Quality",
     passed: passed || repaired,
@@ -377,7 +377,10 @@ function checkClimateCoherence(graph: WorldGraph): QualityCheckResult {
     repairAction = `Reclassified ${impossibleBiomes} climatically impossible land cells`;
   }
 
-  const score = totalLandCells > 0 ? Math.round(Math.max(0, 100 - (impossibleBiomes / totalLandCells) * 1000)) : 100;
+  const score =
+    totalLandCells > 0
+      ? Math.round(Math.max(0, 100 - (impossibleBiomes / totalLandCells) * 1000))
+      : 100;
   return {
     name: "Climate Zone Coherence",
     passed: passed || repaired,
@@ -409,10 +412,7 @@ function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
 // Check 7: Coastline Complexity
 // ──────────────────────────────────────────────
 
-function checkCoastlineComplexity(
-  graph: WorldGraph,
-  _params: WorldGenParams
-): QualityCheckResult {
+function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): QualityCheckResult {
   // Count coastal land cells
   let coastalLandCount = 0;
   for (let i = 0; i < graph.cells.n; i++) {
@@ -436,10 +436,7 @@ function checkCoastlineComplexity(
 // Check 8: Land/Ocean Ratio
 // ──────────────────────────────────────────────
 
-function checkLandOceanRatio(
-  graph: WorldGraph,
-  params: WorldGenParams
-): QualityCheckResult {
+function checkLandOceanRatio(graph: WorldGraph, params: WorldGenParams): QualityCheckResult {
   let landCount = 0;
   for (let i = 0; i < graph.cells.n; i++) {
     if (graph.cells.isLand[i]) landCount++;

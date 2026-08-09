@@ -76,31 +76,31 @@ export function WikiSectionCard({
       <FacetCard
         depth={1}
         interactive="none"
-        className="overflow-hidden rounded-2xl border border-white/10 bg-card/30 backdrop-blur-xl shadow-sm transition-all hover:border-white/20"
+        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl transition-all hover:border-white/20"
       >
         {/* Section Header Accordion Trigger */}
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-white/[0.03] active:scale-[0.995] transition-all border-b border-white/5">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 shadow-sm">
+          <div className="flex cursor-pointer items-center justify-between border-b border-white/5 p-4 transition-all hover:bg-white/[0.03] active:scale-[0.995] sm:p-5">
+            <div className="flex min-w-0 items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-500/25 bg-blue-500/15 text-blue-400 shadow-sm">
                 <SectionIcon className="h-5 w-5" />
               </div>
 
               <div className="min-w-0">
-                <h3 className="text-base font-extrabold text-foreground tracking-tight truncate flex items-center gap-2">
+                <h3 className="text-foreground flex items-center gap-2 truncate text-base font-extrabold tracking-tight">
                   {section.title}
                 </h3>
-                <p className="text-[11px] text-muted-foreground truncate">
+                <p className="text-muted-foreground truncate text-[11px]">
                   {section.wordCount} words • {section.images?.length || 0} media assets
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               {/* Classification Badge */}
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider",
+                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase",
                   CLASSIFICATION_STYLES[
                     section.classification as keyof typeof CLASSIFICATION_STYLES
                   ]?.color || CLASSIFICATION_STYLES.PUBLIC.color
@@ -112,16 +112,19 @@ export function WikiSectionCard({
               {/* Importance Badge */}
               <span
                 className={cn(
-                  "hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider",
+                  "hidden items-center rounded-full border px-2.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase sm:inline-flex",
                   section.importance ? getImportanceBadgeClass(section.importance) : ""
                 )}
               >
                 {section.importance?.toUpperCase() ?? "MEDIUM"}
               </span>
 
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] text-muted-foreground transition-transform">
+              <div className="text-muted-foreground flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] transition-transform">
                 <ChevronDown
-                  className={cn("h-4 w-4 transition-transform duration-200", isOpen && "rotate-180")}
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    isOpen && "rotate-180"
+                  )}
                 />
               </div>
             </div>
@@ -130,9 +133,9 @@ export function WikiSectionCard({
 
         {/* Section Content */}
         <CollapsibleContent>
-          <div className="p-4 sm:p-6 space-y-5">
+          <div className="space-y-5 p-4 sm:p-6">
             {/* Parsed Wiki Body Content */}
-            <div className="prose prose-sm prose-invert max-w-none text-xs sm:text-sm leading-relaxed text-muted-foreground/90 font-normal">
+            <div className="prose prose-sm prose-invert text-muted-foreground/90 max-w-none text-xs leading-relaxed font-normal sm:text-sm">
               {parseWikiContent(truncated, handleWikiLinkClick)}
             </div>
 
@@ -150,7 +153,7 @@ export function WikiSectionCard({
                       id: section.id,
                     })
                   }
-                  className="rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 font-bold text-xs gap-1.5 active:scale-[0.98] transition-all"
+                  className="gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs font-bold text-blue-400 transition-all hover:bg-blue-500/20 hover:text-blue-300 active:scale-[0.98]"
                 >
                   Read Full Section <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -159,8 +162,8 @@ export function WikiSectionCard({
 
             {/* Immersive Apple Media Gallery */}
             {section.images && section.images.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-white/5">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground font-extrabold uppercase tracking-wider">
+              <div className="space-y-2 border-t border-white/5 pt-2">
+                <div className="text-muted-foreground flex items-center justify-between text-[11px] font-extrabold tracking-wider uppercase">
                   <span className="flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5 text-blue-400" />
                     Section Media ({section.images.length})
@@ -188,7 +191,7 @@ export function WikiSectionCard({
                             window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
                           }
                         }}
-                        className="group relative aspect-video overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm cursor-pointer hover:border-white/30 hover:shadow-lg transition-all"
+                        className="group relative aspect-video cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-sm transition-all hover:border-white/30 hover:shadow-lg"
                       >
                         <img
                           src={resolvedSrc}
@@ -198,11 +201,11 @@ export function WikiSectionCard({
                             (e.currentTarget.style.display = "none")
                           }
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-2">
-                          <span className="text-[9px] font-mono text-white truncate max-w-[80%]">
+                        <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="max-w-[80%] truncate font-mono text-[9px] text-white">
                             {fileName}
                           </span>
-                          <Maximize2 className="h-3 w-3 text-white shrink-0" />
+                          <Maximize2 className="h-3 w-3 shrink-0 text-white" />
                         </div>
                       </div>
                     );
@@ -212,14 +215,14 @@ export function WikiSectionCard({
             )}
 
             {/* Apple Action Toolbar & External Links */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
               <div className="flex items-center gap-2">
                 {wikiSource === "ixwiki" ? (
                   <Button
                     variant="outline"
                     size="sm"
                     asChild
-                    className="h-8 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-white/[0.06] active:scale-[0.98] transition-all gap-1.5"
+                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-all hover:bg-white/[0.06] active:scale-[0.98]"
                   >
                     <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
                       <ExternalLink className="h-3.5 w-3.5" /> View WikiOS Source
@@ -230,7 +233,7 @@ export function WikiSectionCard({
                     variant="outline"
                     size="sm"
                     asChild
-                    className="h-8 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-white/[0.06] active:scale-[0.98] transition-all gap-1.5"
+                    className="text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-xs font-bold transition-all hover:bg-white/[0.06] active:scale-[0.98]"
                   >
                     <a
                       href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}
@@ -244,13 +247,13 @@ export function WikiSectionCard({
               </div>
 
               {/* Section Metadata Footer */}
-              <div className="flex items-center gap-4 text-[10px] font-mono text-muted-foreground/80">
+              <div className="text-muted-foreground/80 flex items-center gap-4 font-mono text-[10px]">
                 <span>{section.wordCount} words</span>
                 {section.lastModified && (
                   <span>Updated {new Date(section.lastModified).toLocaleDateString()}</span>
                 )}
                 {section.content.includes("[") && (
-                  <span className="text-blue-400 font-bold">
+                  <span className="font-bold text-blue-400">
                     {section.content.match(/\[\[[^\]]*\]\]/g)?.length || 0} wiki links
                   </span>
                 )}

@@ -219,8 +219,6 @@ describe("spawnIntentResistance (mode-aware wrapper)", () => {
     const db = makeDb();
     db.nationalIssueTemplate.findMany.mockRejectedValue(new Error("boom"));
 
-    await expect(
-      spawnIntentResistance({ db, countryId: "country-1", intent })
-    ).resolves.toBeNull();
+    await expect(spawnIntentResistance({ db, countryId: "country-1", intent })).resolves.toBeNull();
   });
 });

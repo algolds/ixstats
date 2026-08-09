@@ -288,12 +288,18 @@ export function useWorldMapInteractions({
         if (nextFeatureId !== null) {
           if (map.getSource("source-political")) {
             try {
-              map.setFeatureState({ source: "source-political", id: nextFeatureId }, { hover: true });
+              map.setFeatureState(
+                { source: "source-political", id: nextFeatureId },
+                { hover: true }
+              );
             } catch (_) {}
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
-          const hoveredId = (nextFeature.properties?._countryId as string) || (nextFeature.properties?._id as string) || String(nextFeatureId);
+          const hoveredId =
+            (nextFeature.properties?._countryId as string) ||
+            (nextFeature.properties?._id as string) ||
+            String(nextFeatureId);
           transientMapStore.setHoveredFeatureId(hoveredId);
           if (e.lngLat) {
             transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);

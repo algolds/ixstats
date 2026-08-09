@@ -25,7 +25,8 @@ export const DOMAIN_META: Record<
     sheetTitle: "Foreign Relations",
     icon: Globe2,
     accent: "text-teal-400",
-    blurb: "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence",
+    blurb:
+      "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence",
     section: "diplomacy",
     href: "/mycountry/diplomacy",
     prefilledGoal: "Advance our foreign policy and strengthen diplomatic relations",
@@ -35,7 +36,8 @@ export const DOMAIN_META: Record<
     sheetTitle: "National Security",
     icon: Shield,
     accent: "text-red-400",
-    blurb: "Deploy military forces, monitor regional threat vectors, fortify defenses, and maintain strategic warfare readiness.",
+    blurb:
+      "Deploy military forces, monitor regional threat vectors, fortify defenses, and maintain strategic warfare readiness.",
     section: "defense",
     href: "/mycountry/defense",
     prefilledGoal: "Strengthen national defense and military readiness",
@@ -45,7 +47,8 @@ export const DOMAIN_META: Record<
     sheetTitle: "Governance Configuration",
     icon: Landmark,
     accent: "text-purple-400",
-    blurb: "Enact legislative policies, manage political faction dynamics, shape governance structures, and secure electoral dominance.",
+    blurb:
+      "Enact legislative policies, manage political faction dynamics, shape governance structures, and secure electoral dominance.",
     section: "politics",
     href: "/mycountry/politics",
     prefilledGoal: "Reform domestic governance and political institutions",
@@ -55,7 +58,8 @@ export const DOMAIN_META: Record<
     sheetTitle: "Economy & Budget",
     icon: TrendingUp,
     accent: "text-emerald-400",
-    blurb: "Manage national budget allocation, optimize trade revenue, control inflation, and build a booming powerhouse economy.",
+    blurb:
+      "Manage national budget allocation, optimize trade revenue, control inflation, and build a booming powerhouse economy.",
     section: "economy",
     href: "/mycountry/economy",
     prefilledGoal: "Stabilize the national economy and improve the fiscal outlook",

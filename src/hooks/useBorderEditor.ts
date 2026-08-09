@@ -51,13 +51,7 @@ import type { TraceFeature } from "~/lib/border-trace";
 // ──────────────────────────────────────────────
 
 export type BorderEditMode =
-  | "select"
-  | "vertex_edit"
-  | "freehand"
-  | "split"
-  | "merge"
-  | "trace"
-  | "brush";
+  "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace" | "brush";
 
 export interface BorderEditorState {
   mode: BorderEditMode;

@@ -45,8 +45,7 @@ interface ValidationResult {
 const args = process.argv.slice(2);
 const wikiArg = args.indexOf("--wiki");
 const wikiSource: "ixwiki" | "iiwiki" = (wikiArg >= 0 ? args[wikiArg + 1] : "ixwiki") as
-  | "ixwiki"
-  | "iiwiki";
+  "ixwiki" | "iiwiki";
 const countArg = args.indexOf("--count");
 const targetCount = countArg >= 0 ? parseInt(args[countArg + 1], 10) : 5;
 

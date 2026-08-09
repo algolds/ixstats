@@ -1,7 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
 import { withBasePath } from "~/lib/base-path";
 
-
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
 export default function Page() {

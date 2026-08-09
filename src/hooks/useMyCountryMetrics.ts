@@ -67,9 +67,7 @@ export function useMyCountryMetrics(activeTab: string) {
       gcTime: 48 * 60 * 60_000,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
-      placeholderData: profileCacheKey
-        ? (getWikiCache(profileCacheKey) ?? undefined)
-        : undefined,
+      placeholderData: profileCacheKey ? (getWikiCache(profileCacheKey) ?? undefined) : undefined,
     }
   );
 

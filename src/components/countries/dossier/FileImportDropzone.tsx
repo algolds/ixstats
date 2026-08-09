@@ -110,12 +110,12 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
     <FacetCard
       depth={1}
       interactive="none"
-      className="overflow-hidden rounded-xl border border-white/10 bg-card/30 p-6 backdrop-blur-md"
+      className="bg-card/30 overflow-hidden rounded-xl border border-white/10 p-6 backdrop-blur-md"
     >
-      <div className="flex items-center justify-between pb-4 border-b border-white/10">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div className="flex items-center gap-2">
           <Upload className="h-4 w-4 text-blue-400" />
-          <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">
+          <h3 className="text-foreground text-sm font-extrabold tracking-wider uppercase">
             Import Document to Dossier
           </h3>
         </div>
@@ -137,17 +137,17 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           className={cn(
             "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all",
             isDragging
-              ? "border-blue-500 bg-blue-500/10 scale-[0.99]"
+              ? "scale-[0.99] border-blue-500 bg-blue-500/10"
               : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]"
           )}
         >
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
             <FileText className="h-6 w-6" />
           </div>
-          <p className="text-sm font-bold text-foreground mb-1">
+          <p className="text-foreground mb-1 text-sm font-bold">
             Drag & drop Markdown or Text file
           </p>
-          <p className="text-xs text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-4 text-xs">
             Supports .md, .txt, .json files (auto-parses headings into sections)
           </p>
           <label className="cursor-pointer">
@@ -157,7 +157,11 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
               onChange={handleFileChange}
               className="hidden"
             />
-            <Button size="sm" variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 pointer-events-none">
+            <Button
+              size="sm"
+              variant="outline"
+              className="pointer-events-none border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+            >
               Browse Files
             </Button>
           </label>
@@ -170,10 +174,10 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
         </div>
       ) : (
         <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>
-              Parsed <strong className="text-foreground">{parsedSections.length} section(s)</strong> from{" "}
-              <code className="text-blue-400">{fileName}</code>
+              Parsed <strong className="text-foreground">{parsedSections.length} section(s)</strong>{" "}
+              from <code className="text-blue-400">{fileName}</code>
             </span>
             <Button
               variant="ghost"
@@ -194,7 +198,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                 key={idx}
                 className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs"
               >
-                <div className="flex items-center justify-between font-bold text-foreground mb-1">
+                <div className="text-foreground mb-1 flex items-center justify-between font-bold">
                   <span>{sec.title}</span>
                   <select
                     value={sec.classification}
@@ -204,14 +208,14 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                         prev.map((s, i) => (i === idx ? { ...s, classification: val } : s))
                       );
                     }}
-                    className="rounded bg-black/40 px-2 py-0.5 text-[10px] text-muted-foreground border border-white/10"
+                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-[10px]"
                   >
                     <option value="PUBLIC">PUBLIC</option>
                     <option value="ALLIANCE">ALLIANCE</option>
                     <option value="PRIVATE">PRIVATE</option>
                   </select>
                 </div>
-                <p className="line-clamp-2 text-muted-foreground text-[11px] font-mono">
+                <p className="text-muted-foreground line-clamp-2 font-mono text-[11px]">
                   {sec.content}
                 </p>
               </div>
@@ -230,7 +234,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
             <Button
               size="sm"
               onClick={() => onImportSections(parsedSections)}
-              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold gap-1.5"
+              className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
             >
               <Check className="h-3.5 w-3.5" />
               Import {parsedSections.length} Section(s)

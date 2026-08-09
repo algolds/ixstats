@@ -57,12 +57,7 @@ export type SpringPreset = "tight" | "bouncy" | "gentle" | "fluid";
 
 /** The current state of the swipeable row's interaction */
 export type SwipeState =
-  | "closed"
-  | "dragging"
-  | "revealing"
-  | "emphasized"
-  | "committing"
-  | "expanded";
+  "closed" | "dragging" | "revealing" | "emphasized" | "committing" | "expanded";
 
 /** Which side is currently active during a drag */
 export type SwipeSide = "leading" | "trailing" | null;

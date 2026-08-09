@@ -386,7 +386,6 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     className="flex items-center gap-1"
                   >
-
                     {/* Context switcher / Plugin center */}
                     {activePlugin && pluginCenter ? (
                       pluginViewKey ? (

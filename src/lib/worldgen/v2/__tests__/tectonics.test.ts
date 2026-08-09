@@ -11,7 +11,12 @@ const TEST_CELLS = 3000;
 
 describe("v2/tectonics", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
 
   it("populates the graph.plates array with requested plate count", () => {
     expect(graph.plates.length).toBe(8);

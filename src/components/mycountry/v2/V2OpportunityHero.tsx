@@ -79,18 +79,31 @@ export function V2OpportunityHero({
     const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
 
     // Custom country header/banner fallback if present
-    const customHeader = (country as any)?.headerImageUrl || (country as any)?.bannerUrl || (country as any)?.flagUrl;
+    const customHeader =
+      (country as any)?.headerImageUrl || (country as any)?.bannerUrl || (country as any)?.flagUrl;
 
-    // 0. Active National Issue / Crisis (Priority 0)
-    const activeIssues = issuesData.data?.issues ?? [];
+    // 0. Active National Issue / Crisis (Priority 0 - Critical & Urgent issues first)
+    const rawActiveIssues = issuesData.data?.issues ?? [];
+    const activeIssues = [...rawActiveIssues].sort((a: any, b: any) => {
+      const aSev = String(a.severity ?? "").toLowerCase();
+      const bSev = String(b.severity ?? "").toLowerCase();
+      const sevRank = (s: string) =>
+        s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
+      const scoreA = sevRank(aSev) * 100 + (a.urgency ?? 0);
+      const scoreB = sevRank(bSev) * 100 + (b.urgency ?? 0);
+      return scoreB - scoreA;
+    });
+
     if (activeIssues.length > 0) {
-      const topIssue = activeIssues[0];
+      const topIssue = activeIssues[0]!;
       return {
         id: `issue-${topIssue.id}`,
         domain: "politics",
         title: `National Issue: ${topIssue.title}`,
         subtitle: "Urgent Policy Crisis",
-        description: topIssue.description || "An urgent national issue requires immediate executive attention and cabinet policy guidance.",
+        description:
+          topIssue.description ||
+          "An urgent national issue requires immediate executive attention and cabinet policy guidance.",
         metricLabel: "Cabinet Alert",
         metricValue: `${activeIssues.length} Active Issue${activeIssues.length > 1 ? "s" : ""}`,
         directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
@@ -98,8 +111,11 @@ export function V2OpportunityHero({
         glowCls: "from-amber-500/25 via-orange-500/10 to-transparent",
         badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
         borderCls: "border-amber-500/40 dark:border-amber-500/30",
-        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
-        bgImage: customHeader || "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        buttonCls:
+          "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage:
+          customHeader ||
+          "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "issue", issueId: topIssue.id },
       };
     }
@@ -120,8 +136,11 @@ export function V2OpportunityHero({
         glowCls: "from-red-500/20 via-rose-500/10 to-transparent",
         badgeCls: "bg-red-500/15 text-red-900 dark:text-red-300 border-red-500/30",
         borderCls: "border-red-500/40 dark:border-red-500/30",
-        buttonCls: "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-200 border-red-500/40",
-        bgImage: customHeader || "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        buttonCls:
+          "bg-red-500/20 hover:bg-red-500/30 text-red-950 dark:text-red-200 border-red-500/40",
+        bgImage:
+          customHeader ||
+          "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "defense" },
       };
     }
@@ -137,13 +156,17 @@ export function V2OpportunityHero({
           "Administrative personnel utilization is over-capacity. Executive policy direction is required to expand operational slots or rebalance staff allocations.",
         metricLabel: "Staff Utilization",
         metricValue: `${civilService.data.utilizationPercent}% Over-Capacity`,
-        directiveGoal: "Authorize civil service staffing expansion and administrative restructuring",
+        directiveGoal:
+          "Authorize civil service staffing expansion and administrative restructuring",
         icon: Scale,
         glowCls: "from-amber-500/20 via-orange-500/10 to-transparent",
         badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
         borderCls: "border-amber-500/40 dark:border-amber-500/30",
-        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
-        bgImage: customHeader || "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        buttonCls:
+          "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage:
+          customHeader ||
+          "https://images.unsplash.com/photo-1555848962-6e79363ec58f?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "politics" },
       };
     }
@@ -151,10 +174,8 @@ export function V2OpportunityHero({
     // 3. Active Intent Directive in Progress (Priority 3)
     const intentsList = Array.isArray(intentTree.data)
       ? intentTree.data
-      : intentTree.data?.allIntents ?? [];
-    const activeIntents = intentsList.filter(
-      (i: any) => i.status?.toLowerCase() === "active"
-    );
+      : (intentTree.data?.allIntents ?? []);
+    const activeIntents = intentsList.filter((i: any) => i.status?.toLowerCase() === "active");
     if (activeIntents.length > 0) {
       const topIntent = activeIntents[0];
       return {
@@ -171,8 +192,11 @@ export function V2OpportunityHero({
         glowCls: "from-amber-500/25 via-yellow-500/10 to-transparent",
         badgeCls: "bg-amber-500/15 text-amber-900 dark:text-amber-300 border-amber-500/30",
         borderCls: "border-amber-500/40 dark:border-amber-500/30",
-        buttonCls: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
-        bgImage: customHeader || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        buttonCls:
+          "bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-amber-500/40",
+        bgImage:
+          customHeader ||
+          "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         intentId: topIntent.id,
       };
     }
@@ -188,13 +212,17 @@ export function V2OpportunityHero({
           "Regional diplomatic conditions favor establishing strategic bilateral accords and expanding international trade pacts across allied nations.",
         metricLabel: "Active Embassies",
         metricValue: `${embassies} Embassies • ${dipStance}`,
-        directiveGoal: "Establish bilateral economic trade agreement and expand diplomatic alliances",
+        directiveGoal:
+          "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
         glowCls: "from-teal-500/20 via-emerald-500/10 to-transparent",
         badgeCls: "bg-teal-500/15 text-teal-900 dark:text-teal-300 border-teal-500/30",
         borderCls: "border-teal-500/40 dark:border-teal-500/30",
-        buttonCls: "bg-teal-500/20 hover:bg-teal-500/30 text-teal-950 dark:text-teal-200 border-teal-500/40",
-        bgImage: customHeader || "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+        buttonCls:
+          "bg-teal-500/20 hover:bg-teal-500/30 text-teal-950 dark:text-teal-200 border-teal-500/40",
+        bgImage:
+          customHeader ||
+          "https://images.unsplash.com/photo-1529180979161-06b8b6d6f2be?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
         drillKind: { kind: "relations" },
       };
     }
@@ -209,13 +237,17 @@ export function V2OpportunityHero({
         "National economic telemetry indicates favorable conditions for targeted industrial investment and fiscal policy stimulus.",
       metricLabel: "GDP Growth",
       metricValue: `+${growthPct}% Growth (${stabPct}% Stability)`,
-      directiveGoal: "Implement targeted macroeconomic development directive and tax incentive package",
+      directiveGoal:
+        "Implement targeted macroeconomic development directive and tax incentive package",
       icon: TrendingUp,
       glowCls: "from-emerald-500/20 via-teal-500/10 to-transparent",
       badgeCls: "bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 border-emerald-500/30",
       borderCls: "border-emerald-500/40 dark:border-emerald-500/30",
-      buttonCls: "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-950 dark:text-emerald-200 border-emerald-500/40",
-      bgImage: customHeader || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
+      buttonCls:
+        "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-950 dark:text-emerald-200 border-emerald-500/40",
+      bgImage:
+        customHeader ||
+        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&crop=entropy&w=1600&h=600&q=80",
       drillKind: { kind: "economy" },
     };
   }, [country, intentTree.data, civilService.data, issuesData.data]);
@@ -226,7 +258,7 @@ export function V2OpportunityHero({
     <FacetCard
       depth={2}
       className={cn(
-        "relative overflow-hidden border p-5 backdrop-blur-xl transition-all duration-300 shadow-lg dark:shadow-2xl bg-card/40 dark:bg-card/30",
+        "bg-card/40 dark:bg-card/30 relative overflow-hidden border p-5 shadow-lg backdrop-blur-xl transition-all duration-300 dark:shadow-2xl",
         opportunity.borderCls
       )}
     >
@@ -236,76 +268,81 @@ export function V2OpportunityHero({
           <img
             src={opportunity.bgImage}
             alt=""
-            className="h-full w-full object-cover object-right sm:object-center opacity-35 dark:opacity-45 transition-all duration-700 scale-105"
+            className="h-full w-full scale-105 object-cover object-right opacity-35 transition-all duration-700 sm:object-center dark:opacity-45"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/80 to-transparent dark:from-card dark:via-card/75 dark:to-transparent" />
+          <div className="from-card via-card/80 dark:from-card dark:via-card/75 absolute inset-0 bg-gradient-to-r to-transparent dark:to-transparent" />
         </div>
       )}
 
       {/* Ambient Radial Glow Background */}
       <div
         className={cn(
-          "pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-gradient-to-br blur-3xl opacity-30 dark:opacity-40 select-none",
+          "pointer-events-none absolute -top-12 -right-12 h-64 w-64 rounded-full bg-gradient-to-br opacity-30 blur-3xl select-none dark:opacity-40",
           opportunity.glowCls
         )}
       />
 
       {/* Ambient Watermark Glyph */}
-      <Icon
-        className="pointer-events-none absolute -bottom-6 -right-6 h-40 w-40 text-foreground opacity-[0.04] select-none stroke-[1]"
-      />
+      <Icon className="text-foreground pointer-events-none absolute -right-6 -bottom-6 h-40 w-40 stroke-[1] opacity-[0.04] select-none" />
 
       <div className="relative z-10 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         {/* Left: Badge, Title & Description */}
-        <div className="space-y-2.5 max-w-2xl">
+        <div className="max-w-2xl space-y-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                "flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase backdrop-blur-md shadow-2xs",
+                "flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-wider uppercase shadow-2xs backdrop-blur-md",
                 opportunity.badgeCls
               )}
             >
               <span>{opportunity.subtitle}</span>
             </span>
 
-            <span className="rounded-full border border-border/60 dark:border-white/10 bg-card/60 dark:bg-white/5 px-2.5 py-1 text-[10px] font-mono font-semibold text-muted-foreground shadow-2xs">
-              {opportunity.metricLabel}: <strong className="text-foreground">{opportunity.metricValue}</strong>
+            <span className="border-border/60 bg-card/60 text-muted-foreground rounded-full border px-2.5 py-1 font-mono text-[10px] font-semibold shadow-2xs dark:border-white/10 dark:bg-white/5">
+              {opportunity.metricLabel}:{" "}
+              <strong className="text-foreground">{opportunity.metricValue}</strong>
             </span>
           </div>
 
-          <h2 className="text-lg font-black tracking-tight text-foreground sm:text-xl leading-snug">
+          <h2 className="text-foreground text-lg leading-snug font-black tracking-tight sm:text-xl">
             {opportunity.title}
           </h2>
 
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-normal">
+          <p className="text-muted-foreground text-xs leading-relaxed font-normal sm:text-sm">
             {opportunity.description}
           </p>
         </div>
 
         {/* Right: Primary 1-Click Action Button & Focused Opportunity Inspection CTA */}
-        <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
+        <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row lg:flex-col">
           <motion.button
             type="button"
-            whileHover={{ scale: 1.015, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+            whileHover={{
+              scale: 1.015,
+              transition: { type: "spring", stiffness: 450, damping: 25 },
+            }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onDeclare?.(opportunity.directiveGoal)}
             className={cn(
-              "group relative flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-extrabold transition-colors cursor-pointer shadow-md",
+              "group relative flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-extrabold shadow-md transition-colors",
               opportunity.buttonCls
             )}
           >
             <Command className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
             <span>Declare Directive to Resolve</span>
-            <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            <ArrowUpRight className="h-4 w-4 shrink-0 opacity-70 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
           </motion.button>
 
           {opportunity.intentId ? (
             <motion.button
               type="button"
-              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileHover={{
+                scale: 1.01,
+                transition: { type: "spring", stiffness: 450, damping: 25 },
+              }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onOpenIntent?.(opportunity.intentId!)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 transition-colors cursor-pointer shadow-xs"
+              className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-900 shadow-xs transition-colors hover:bg-amber-500/20 dark:text-amber-300"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>Inspect Directive Tree</span>
@@ -313,10 +350,13 @@ export function V2OpportunityHero({
           ) : opportunity.drillKind ? (
             <motion.button
               type="button"
-              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileHover={{
+                scale: 1.01,
+                transition: { type: "spring", stiffness: 450, damping: 25 },
+              }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onOpenDrill?.(opportunity.drillKind!)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-border/80 dark:border-white/10 bg-card/70 dark:bg-white/5 hover:bg-card dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-xs"
+              className="border-border/80 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold shadow-xs transition-colors dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>
@@ -336,10 +376,13 @@ export function V2OpportunityHero({
           ) : opportunity.domain ? (
             <motion.button
               type="button"
-              whileHover={{ scale: 1.01, transition: { type: "spring", stiffness: 450, damping: 25 } }}
+              whileHover={{
+                scale: 1.01,
+                transition: { type: "spring", stiffness: 450, damping: 25 },
+              }}
               whileTap={{ scale: 0.97 }}
               onClick={() => onNavigate?.(opportunity.domain as MyCountrySection)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-border/80 dark:border-white/10 bg-card/70 dark:bg-white/5 hover:bg-card dark:hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-xs"
+              className="border-border/80 bg-card/70 hover:bg-card text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold shadow-xs transition-colors dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
               <Compass className="h-3.5 w-3.5" />
               <span>Open Domain Surface</span>

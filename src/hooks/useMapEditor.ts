@@ -204,15 +204,7 @@ export type EditorMode =
   | "pan";
 
 export type FeatureType =
-  | "city"
-  | "subdivision"
-  | "poi"
-  | "storyPin"
-  | "mapLabel"
-  | "route"
-  | "peak"
-  | "river"
-  | "lake";
+  "city" | "subdivision" | "poi" | "storyPin" | "mapLabel" | "route" | "peak" | "river" | "lake";
 
 export interface EditorFeature {
   id: string;
@@ -426,9 +418,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     (updater: (old: any) => any) => {
       if (!countryId) return;
       mapEditorMeasRef.current.patches++;
-      utils.geoCore.getCountryFeatures.setData({ countryId }, (old) =>
-        old ? updater(old) : old
-      );
+      utils.geoCore.getCountryFeatures.setData({ countryId }, (old) => (old ? updater(old) : old));
       utils.countryGeo.getCountryGeoBundle.setData({ countryId }, (old) =>
         old ? updater(old) : old
       );
@@ -2174,8 +2164,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           title: feature.name,
           content: (feature.properties.content as string) ?? "",
           contentFormat: ((feature.properties.contentFormat as string) ?? "plain") as
-            | "plain"
-            | "markdown",
+            "plain" | "markdown",
           category: (feature.properties.category as string) ?? "cultural",
           importance: (feature.properties.importance as number) ?? 0,
           ixTimeYear: (feature.properties.ixTimeYear as number | undefined) ?? undefined,
@@ -3884,10 +3873,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           }
         } else if (feature.geometry) {
           try {
-            if (
-              feature.geometry.type === "Polygon" ||
-              feature.geometry.type === "MultiPolygon"
-            ) {
+            if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
               if (booleanIntersects(selectionFeature, feature.geometry as any)) {
                 hits.add(feature.id);
               }
@@ -3939,7 +3925,10 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   /** Rectangular marquee selection from screen-space corners (Plan 120 P3). */
   const applyRectSelection = useCallback(
-    (bounds: { west: number; south: number; east: number; north: number }, mode: "replace" | "add" | "subtract" = "replace") => {
+    (
+      bounds: { west: number; south: number; east: number; north: number },
+      mode: "replace" | "add" | "subtract" = "replace"
+    ) => {
       const ring: [number, number][] = [
         [bounds.west, bounds.north],
         [bounds.east, bounds.north],

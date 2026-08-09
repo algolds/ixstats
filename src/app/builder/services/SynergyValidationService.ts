@@ -12,11 +12,7 @@ export interface SynergyValidationResult {
   componentA: string;
   componentB: string;
   system:
-    | "economy-economy"
-    | "economy-government"
-    | "economy-tax"
-    | "government-economy"
-    | "tax-economy";
+    "economy-economy" | "economy-government" | "economy-tax" | "government-economy" | "tax-economy";
   expectedSynergy: boolean;
   actualSynergy: boolean;
   expectedConflict: boolean;
@@ -32,11 +28,7 @@ export interface ConflictValidationResult {
   componentA: string;
   componentB: string;
   system:
-    | "economy-economy"
-    | "economy-government"
-    | "economy-tax"
-    | "government-economy"
-    | "tax-economy";
+    "economy-economy" | "economy-government" | "economy-tax" | "government-economy" | "tax-economy";
   expectedConflict: boolean;
   actualConflict: boolean;
   validationPassed: boolean;

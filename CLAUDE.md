@@ -54,16 +54,16 @@ bun run db:sync:prod-to-dev    # pull production snapshot into local
 
 ## Architecture
 
-| Layer | Location | Notes |
-|-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 210+ routes |
-| Components | `src/components/` | 750+ UI components (Facet glass design system) |
-| API (tRPC) | `src/server/api/routers/` | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**; register new ones in `root.ts` |
-| Database | `prisma/schema/` | 296 models across 15 `.prisma` files |
-| Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers |
-| Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 90+ custom React hooks |
-| Lib | `src/lib/` | Pure utilities, rate limiter, memory config, map pipeline |
+| Layer         | Location                  | Notes                                                                                                                             |
+| ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Pages         | `src/app/`                | Next.js 16.2 App Router, 210+ routes                                                                                              |
+| Components    | `src/components/`         | 750+ UI components (Facet glass design system)                                                                                    |
+| API (tRPC)    | `src/server/api/routers/` | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**; register new ones in `root.ts` |
+| Database      | `prisma/schema/`          | 296 models across 15 `.prisma` files                                                                                              |
+| Middleware    | `src/proxy.ts`            | Clerk auth + CSP + security headers                                                                                               |
+| Custom server | `server.mjs`              | WebSocket (Socket.IO) + cron jobs (production only)                                                                               |
+| Hooks         | `src/hooks/`              | 90+ custom React hooks                                                                                                            |
+| Lib           | `src/lib/`                | Pure utilities, rate limiter, memory config, map pipeline                                                                         |
 
 ### Import direction (strictly enforced — see arch.md)
 
@@ -94,20 +94,24 @@ Routers must only: define endpoints, validate input, call service layer, return 
 ## Key File Locations
 
 **Middleware & Security:**
+
 - `src/proxy.ts` — Clerk auth + CSP (`generateCSP()`) + security headers
 - `src/lib/system-owner-constants.ts` — system owner constants
 - `src/lib/production-optimizations.ts` — production optimization config
 
 **API Layer:**
+
 - `src/server/api/root.ts` — tRPC root router (registers all 90 routers with `safeRouter()` wrapper)
 - `src/server/api/routers/` — flat `.ts` files + `geo/`, `diplomacy/`, `intelligence/`, `countries/`, `admin/`, `activities/`, `sports/`, `thinkpages/`, `security/` subdirectories
 - `src/server/api/trpc.ts` — exports `createTRPCRouter`, `mergeRouters`, `publicProcedure`, `protectedProcedure`
 
 **Database:**
+
 - `prisma/schema/*.prisma` — 12 schema files (core, economy, diplomacy, military, maps, social, sports, wiki, etc.)
 - `prisma.config.ts` — Prisma configuration
 
 **Maps & IxWorld:**
+
 - `src/lib/map-config.ts` — layer config and projection settings
 - `src/components/maps/core/IxWorldMap.tsx` — core map component
 - `src/server/api/routers/geo/` — 6 files (~11,558 lines, 102 endpoints)
@@ -115,13 +119,16 @@ Routers must only: define endpoints, validate input, call service layer, return 
 - `ecosystem.ixworld.config.cjs` — PM2 config for maps.ixwiki.com
 
 **Time System:**
+
 - `src/lib/ixtime.ts` — IxTime (2× real-time speed), synchronized with Discord bot
 
 **Versioning:**
+
 - `src/lib/buildVersion.ts` — single source of truth for all version strings
 - `docs/reference/revision.md` — full versioning spec
 
 **Configuration:**
+
 - `next.config.js` — base path logic (empty in dev, `/projects/ixstates` in prod)
 - `start-development.sh` — dev startup (env loading, DB push, Redis, Turbopack)
 - `ecosystem.config.cjs` — PM2 production config
@@ -132,12 +139,12 @@ Routers must only: define endpoints, validate input, call service layer, return 
 
 MyCountry, Vault, ThinkPages, and Dashboard avoid Next.js route transitions using a central `*Router.tsx` component with `useState` + `window.history.pushState()`. All sub-page `page.tsx` files render the same Router. A `popstate` listener handles back/forward.
 
-| Router | Location | Sections |
-|--------|----------|----------|
-| `MyCountryRouter` | `src/components/mycountry/MyCountryRouter.tsx` | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
-| `VaultRouter` | `src/components/vault/VaultRouter.tsx` | Dashboard, Cards, Acquire, Create, Import |
-| `ThinkPagesRouter` | `src/components/thinkpages/ThinkPagesRouter.tsx` | Feed, ThinkTanks, ThinkShare |
-| `DashboardRouter` | `src/components/dashboard/DashboardRouter.tsx` | Main, Diplomacy, Feed, Trends |
+| Router             | Location                                         | Sections                                                        |
+| ------------------ | ------------------------------------------------ | --------------------------------------------------------------- |
+| `MyCountryRouter`  | `src/components/mycountry/MyCountryRouter.tsx`   | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
+| `VaultRouter`      | `src/components/vault/VaultRouter.tsx`           | Dashboard, Cards, Acquire, Create, Import                       |
+| `ThinkPagesRouter` | `src/components/thinkpages/ThinkPagesRouter.tsx` | Feed, ThinkTanks, ThinkShare                                    |
+| `DashboardRouter`  | `src/components/dashboard/DashboardRouter.tsx`   | Main, Diplomacy, Feed, Trends                                   |
 
 ### Modular Component Architecture
 
@@ -168,7 +175,8 @@ Large flat routers are split into a domain subdirectory and recombined with `mer
 Current release: **IxStates 1.1.1 "Ogma"** (channel: Alpha). Version source of truth: `src/lib/buildVersion.ts`. After any major change, check `docs/reference/revision.md` and ask whether the platform version, component capability integer, channel, or changelog need updating.
 
 **Apps** (independent capability integer): IxWorld, WikiOS (with Canvas), IxVault  
-**Engines** (sim cores): MyCountry, Concord (time/diplomacy/crises/NPCs), Atlas (geo/worldgen)  
+**Engines** (sim cores): MyCountry, Statecraft (executive intent parsing, power brokers, CivCap throughput, recon research), Concord (time/diplomacy/crises/NPCs), Atlas (geo/worldgen)  
+**UI / Feature Systems**: Directives ★ (universal user-facing executive command & resolution brand), MyCountry, ThinkPages, Achievements, Stash, Repository, Halo  
 **Design system**: Facet (formerly "Glass Physics")  
 **Inherits platform version**: IxForum, IxTime/IxnayID, Labs, Nav Hubs
 
@@ -182,7 +190,7 @@ Current release: **IxStates 1.1.1 "Ogma"** (channel: Alpha). Version source of t
 
 ## External Wiki Access
 
-- **Allowlisted UA**: all outbound calls to community wikis use `User-Agent: IxStats-Builder`. iiwiki sits behind a **Cloudflare JS challenge** — a normal browser UA does *not* pass, but `IxStats-Builder` is allowlisted and clears it. Used by every `src/app/api/mediawiki/*` proxy route and `scripts/onoma/extract-corpus.ts`.
+- **Allowlisted UA**: all outbound calls to community wikis use `User-Agent: IxStats-Builder`. iiwiki sits behind a **Cloudflare JS challenge** — a normal browser UA does _not_ pass, but `IxStats-Builder` is allowlisted and clears it. Used by every `src/app/api/mediawiki/*` proxy route and `scripts/onoma/extract-corpus.ts`.
 - **API endpoints**: iiwiki = `https://iiwiki.com/api.php` (NOT `/mediawiki/api.php` — that 404s), althistory = `https://althistory.fandom.com/api.php`, ixwiki = local MariaDB (db `ixwiki`, no table prefix) or `https://ixwiki.com/api.php`.
 - **MW 1.43–1.45 schema**: `categorylinks`/`templatelinks` are normalized — the title lives in `linktarget` (`lt_id`/`lt_title`); join via `*_target_id`. There is no `cl_to`/`tl_title`.
 - **Typed name extraction**: to get pages of a given type, list pages transcluding the relevant `Infobox_*` template — SQL `templatelinks→linktarget` locally, or API `list=embeddedin&eititle=Template:Infobox_country` remotely.

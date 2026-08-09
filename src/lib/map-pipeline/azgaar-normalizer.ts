@@ -58,7 +58,10 @@ import { exportToGeoJSON as exportToGeoJSONV2 } from "../worldgen/v2/export";
 
 export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
   // 1. Export 7 GeoJSON layers sharing 100% identical cell topology & boundary alignment
-  const isV2Graph = graph && graph.cells && ((graph.cells as any).isLand !== undefined || (graph.cells as any).plate !== undefined);
+  const isV2Graph =
+    graph &&
+    graph.cells &&
+    ((graph.cells as any).isLand !== undefined || (graph.cells as any).plate !== undefined);
   const rawLayers = isV2Graph ? exportToGeoJSONV2(graph as any) : exportToGeoJSON(graph);
 
   // 2. Extract country metadata from states and political layer
@@ -68,7 +71,9 @@ export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedM
   if (politicalLayer && politicalLayer.features) {
     for (const feat of politicalLayer.features) {
       const props = feat.properties || {};
-      const featureId = String(props.id || props.featureId || props._id || `state_${countries.length}`);
+      const featureId = String(
+        props.id || props.featureId || props._id || `state_${countries.length}`
+      );
       const name = String(props.name || props._displayName || `Nation ${countries.length + 1}`);
       const color = String(props.fill || props._fillColor || "#3b82f6");
       const areaSqKm = Number(props.areaSqKm || props._areaSqKm || 50000);
@@ -110,7 +115,9 @@ export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedM
   const burgList = (graph as any).settlements || graph.burgs || [];
   for (const burg of burgList) {
     if (!burg || !burg.name) continue;
-    const countryFeatureId = burg.state ? `state_${burg.state}` : countries[0]?.featureId || "unclaimed";
+    const countryFeatureId = burg.state
+      ? `state_${burg.state}`
+      : countries[0]?.featureId || "unclaimed";
     cities.push({
       name: burg.name,
       type: burg.isCapital ? "national_capital" : "city",

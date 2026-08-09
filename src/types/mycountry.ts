@@ -394,10 +394,7 @@ export interface ExportConfig {
 
 // Utility types
 export type MyCountryEventType =
-  | "data-update"
-  | "achievement-unlocked"
-  | "alert-generated"
-  | "action-executed";
+  "data-update" | "achievement-unlocked" | "alert-generated" | "action-executed";
 
 export interface MyCountryEvent {
   type: MyCountryEventType;

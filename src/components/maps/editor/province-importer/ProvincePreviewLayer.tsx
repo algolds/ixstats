@@ -176,14 +176,12 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
       console.log("[ProvincePreview] Passthrough mode (coords already geographic)");
       return {
         type: "FeatureCollection",
-        features: included.map(
-          (p, i): Feature => ({
-            type: "Feature",
-            id: i,
-            geometry: normalizeGeometry(p.geometry),
-            properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
-          })
-        ),
+        features: included.map((p, i): Feature => ({
+          type: "Feature",
+          id: i,
+          geometry: normalizeGeometry(p.geometry),
+          properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
+        })),
       };
     }
 
@@ -248,18 +246,16 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
 
     return {
       type: "FeatureCollection",
-      features: included.map(
-        (p, i): Feature => ({
-          type: "Feature",
-          id: i,
-          geometry: normalizeGeometry(transformGeom(p.geometry)),
-          properties: {
-            name: p.name,
-            color: p.color || "#6366f1",
-            sourceId: p.sourceId,
-          },
-        })
-      ),
+      features: included.map((p, i): Feature => ({
+        type: "Feature",
+        id: i,
+        geometry: normalizeGeometry(transformGeom(p.geometry)),
+        properties: {
+          name: p.name,
+          color: p.color || "#6366f1",
+          sourceId: p.sourceId,
+        },
+      })),
     };
   }, [provinces, countryBorder]);
 

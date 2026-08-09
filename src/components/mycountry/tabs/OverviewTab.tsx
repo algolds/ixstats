@@ -51,7 +51,7 @@ export function OverviewTab({
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
@@ -100,7 +100,7 @@ export function OverviewTab({
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="cursor-pointer rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 hover:bg-bg-accent/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
@@ -144,14 +144,17 @@ export function OverviewTab({
                 onClick={
                   country.areaSqMi && country.landArea
                     ? () =>
-                        setMetricViewAction((v: any) => ({ ...v, area: v.area === "km" ? "mi" : "km" }))
+                        setMetricViewAction((v: any) => ({
+                          ...v,
+                          area: v.area === "km" ? "mi" : "km",
+                        }))
                     : undefined
                 }
                 className={cn(
-                  "rounded-xl border border-border-secondary/30 bg-bg-accent/5 p-3 text-left transition-colors duration-200 dark:bg-white/[0.02]",
+                  "border-border-secondary/30 bg-bg-accent/5 rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02]",
                   country.areaSqMi &&
                     country.landArea &&
-                    "cursor-pointer hover:bg-bg-accent/10 dark:hover:bg-white/[0.05]"
+                    "hover:bg-bg-accent/10 cursor-pointer dark:hover:bg-white/[0.05]"
                 )}
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
@@ -221,7 +224,11 @@ export function OverviewTab({
 
           {/* Wiki intro + coat of arms */}
           {(() => {
-            const introHtml = extractWikiIntroHtml(wikiIntro as WikiIntro) || country?.wikiSummary || country?.description || null;
+            const introHtml =
+              extractWikiIntroHtml(wikiIntro as WikiIntro) ||
+              country?.wikiSummary ||
+              country?.description ||
+              null;
             const coatOfArmsUrl = findCoatOfArmsUrl(wikiImages) || wikiImages?.[0]?.url || null;
             const showLoadingSkeleton = wikiLoading && !introHtml;
             return introHtml || coatOfArmsUrl || showLoadingSkeleton ? (
@@ -243,7 +250,7 @@ export function OverviewTab({
                       <div className="flex items-center pt-0.5">
                         <Link
                           href={titleToWikiOSRoute(country.wikiPageTitle || country.name)}
-                          className="group/wikilink inline-flex items-center gap-1.5 text-xs font-semibold text-blue-500 hover:text-blue-400 transition-colors"
+                          className="group/wikilink inline-flex items-center gap-1.5 text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400"
                         >
                           <BookOpen className="h-3.5 w-3.5" />
                           <span>Read full page</span>
@@ -276,7 +283,7 @@ export function OverviewTab({
                     return (
                       <div
                         key={f.key}
-                        className="flex items-center gap-2 rounded-lg border border-border-secondary/20 bg-bg-accent/5 px-3 py-2 dark:bg-white/[0.02]"
+                        className="border-border-secondary/20 bg-bg-accent/5 flex items-center gap-2 rounded-lg border px-3 py-2 dark:bg-white/[0.02]"
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">

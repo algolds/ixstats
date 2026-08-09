@@ -252,10 +252,7 @@ export function LiveDataIntegration({
           description: event.description || "New diplomatic development",
           countries: event.countries || [effectiveCountryId],
           significance: (event.significance || "moderate") as
-            | "minor"
-            | "moderate"
-            | "major"
-            | "historic",
+            "minor" | "moderate" | "major" | "historic",
           timestamp: event.timestamp || Date.now(),
           relatedData: event,
         };

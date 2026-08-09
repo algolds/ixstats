@@ -22,10 +22,7 @@ import { getElevationZone } from "./config";
  * Refine coastline features and classify all cells into geographic features.
  * Mutates graph.cells and populates graph.features in-place.
  */
-export function refineCoastlines(
-  graph: WorldGraph,
-  params: WorldGenParams
-): void {
+export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 30);
   const { cells } = graph;
   const n = cells.n;
@@ -149,7 +146,7 @@ function classifyGeographicFeatures(graph: WorldGraph): void {
 
       for (const nb of cells.neighbors[cell]!) {
         if (visited[nb]) continue;
-        if ((!cells.isLand[nb]) !== isWater) continue; // must match water/land type
+        if (!cells.isLand[nb] !== isWater) continue; // must match water/land type
 
         visited[nb] = 1;
         queue.push(nb);

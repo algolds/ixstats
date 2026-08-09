@@ -187,17 +187,17 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   // Fetch economy configuration, diplomatic relationships, and country select list
   const { data: econConfig } = api.economics.getEconomyConfiguration.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const { data: diplomaticRelations } = api.diplomacy.getRelationships.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const { data: selectCountries } = api.countries.getSelectList.useQuery(
     { limit: 12 },
-    { staleTime: 60_000 },
+    { staleTime: 60_000 }
   );
 
   const profile = econConfig?.economicProfile;
@@ -291,7 +291,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         });
       }, 800);
     },
-    [countryId, fiscal?.salesTaxRate, sectors, updateCountryMutation],
+    [countryId, fiscal?.salesTaxRate, sectors, updateCountryMutation]
   );
 
   const handleTariffChange = useCallback((key: string, value: number) => {
@@ -304,7 +304,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       setTariffs(next);
       persistTariffs(next);
     },
-    [tariffs, persistTariffs],
+    [tariffs, persistTariffs]
   );
 
   // Weighted average tariff rate across active custom commodity sectors
@@ -366,7 +366,8 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       diplomaticRelations.forEach((rel) => {
         const name = rel.targetCountryName || rel.targetCountry;
         const flagUrl = rel.targetCountryFlag || rel.flagUrl;
-        const vol = rel.tradeVolume > 0 ? rel.tradeVolume : annualTradeVolume * (rel.strength / 350);
+        const vol =
+          rel.tradeVolume > 0 ? rel.tradeVolume : annualTradeVolume * (rel.strength / 350);
         const relMult =
           rel.relationship === "ALLIED"
             ? 0.2
@@ -413,11 +414,13 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   return (
     <div className="space-y-4">
       {/* ── Section 1: Customs & Sector Tariff Controls Grid ── */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/20 pb-3">
+      <FacetCard depth={1} className="bg-card/30 space-y-4 p-4 backdrop-blur-md">
+        <div className="border-border/20 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
           <div className="flex items-center gap-2">
             <Percent className="h-4 w-4 text-cyan-400" />
-            <h4 className="text-sm font-bold text-foreground">Customs & Sector Tariff Rate Controls</h4>
+            <h4 className="text-foreground text-sm font-bold">
+              Customs & Sector Tariff Rate Controls
+            </h4>
           </div>
 
           <div className="flex items-center gap-3">
@@ -425,19 +428,19 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
             <button
               type="button"
               onClick={() => setIsManageOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-400 hover:bg-cyan-500/20 transition-all cursor-pointer active:scale-95"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-400 transition-all hover:bg-cyan-500/20 active:scale-95"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>Manage Sectors & Commodities</span>
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Est. Customs Yield:
               </span>
-              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 text-sm sm:text-base font-black font-mono text-cyan-400 shadow-md shadow-cyan-500/10 tracking-tight">
-                <CurrencyFlow value={estimatedCustomsYield} className="text-cyan-400 font-black" />
-                <span className="text-cyan-400/70 text-xs font-bold ml-1">/ yr</span>
+              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 font-mono text-sm font-black tracking-tight text-cyan-400 shadow-md shadow-cyan-500/10 sm:text-base">
+                <CurrencyFlow value={estimatedCustomsYield} className="font-black text-cyan-400" />
+                <span className="ml-1 text-xs font-bold text-cyan-400/70">/ yr</span>
               </span>
             </div>
           </div>
@@ -459,15 +462,18 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* ── Section 2: Bilateral Trade Partner Matrix ── */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Handshake className="h-4 w-4 text-emerald-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <Handshake className="h-4 w-4 shrink-0 text-emerald-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Bilateral Trade Partner Matrix
             </h4>
           </div>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-400 font-mono">
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-extrabold text-emerald-400">
             {tradePartners.length} Active Partners
           </span>
         </div>
@@ -476,35 +482,39 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           {tradePartners.slice(0, 3).map((partner) => (
             <div
               key={partner.id}
-              className="rounded-xl border border-border/30 bg-muted/15 p-3 space-y-2 backdrop-blur-md hover:border-border/60 transition-all duration-200"
+              className="border-border/30 bg-muted/15 hover:border-border/60 space-y-2 rounded-xl border p-3 backdrop-blur-md transition-all duration-200"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
                   <UnifiedCountryFlag
                     flagUrl={partner.flagUrl}
                     countryName={partner.name}
-                    className="h-4 w-6 rounded-xs object-cover border border-white/20 shrink-0"
+                    className="h-4 w-6 shrink-0 rounded-xs border border-white/20 object-cover"
                   />
-                  <p className="text-xs font-bold text-foreground truncate">{partner.name}</p>
+                  <p className="text-foreground truncate text-xs font-bold">{partner.name}</p>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
+                <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
                   {partner.strength}% Trust
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/10">
-                <span className="text-[10px] text-muted-foreground font-medium uppercase">Annual Volume</span>
-                <span className="font-mono font-black text-foreground">
+              <div className="border-border/10 flex items-center justify-between border-t pt-1 text-xs">
+                <span className="text-muted-foreground text-[10px] font-medium uppercase">
+                  Annual Volume
+                </span>
+                <span className="text-foreground font-mono font-black">
                   <CurrencyFlow value={partner.volume} decimalPlaces={1} />
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[10px] text-muted-foreground font-medium uppercase">Bilateral Balance</span>
+                <span className="text-muted-foreground text-[10px] font-medium uppercase">
+                  Bilateral Balance
+                </span>
                 <span
                   className={cn(
-                    "font-mono font-bold text-[11px]",
-                    partner.balance >= 0 ? "text-emerald-400" : "text-rose-400",
+                    "font-mono text-[11px] font-bold",
+                    partner.balance >= 0 ? "text-emerald-400" : "text-rose-400"
                   )}
                 >
                   {partner.balance >= 0 ? "+" : "-"}
@@ -518,12 +528,15 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
 
       {/* ── Section 3: Dynamic Commodity Export Breakdown & Customs Status ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-          <div className="border-b border-border/20 pb-2 flex justify-between items-center">
-            <h4 className="text-xs font-extrabold text-foreground uppercase tracking-wider">
+        <FacetCard
+          depth={1}
+          className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+        >
+          <div className="border-border/20 flex items-center justify-between border-b pb-2">
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Top Export Commodities ({sectors.length} Sectors)
             </h4>
-            <span className="text-[10px] font-mono text-muted-foreground font-semibold">
+            <span className="text-muted-foreground font-mono text-[10px] font-semibold">
               Total Exports: ${formatCompact(totalExports)}
             </span>
           </div>
@@ -535,22 +548,24 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
               return (
                 <div
                   key={sec.key}
-                  className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2.5"
+                  className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5"
                 >
                   <div className="flex items-center gap-2">
-                    <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", ACCENT_BG[sec.accent])} />
+                    <div
+                      className={cn("h-2.5 w-2.5 shrink-0 rounded-full", ACCENT_BG[sec.accent])}
+                    />
                     <div>
-                      <p className="font-bold text-foreground">{sec.label}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">
+                      <p className="text-foreground font-bold">{sec.label}</p>
+                      <p className="text-muted-foreground font-mono text-[10px]">
                         Tariff Rate: {tariffs[sec.key] ?? sec.defaultTariff}%
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={cn("font-mono font-black text-sm", accentCls)}>
+                    <span className={cn("font-mono text-sm font-black", accentCls)}>
                       <PercentageFlow value={sec.defaultShare} decimalPlaces={1} />
                     </span>
-                    <p className="text-[10px] font-mono text-muted-foreground">
+                    <p className="text-muted-foreground font-mono text-[10px]">
                       (<CurrencyFlow value={exportVal} decimalPlaces={1} />)
                     </p>
                   </div>
@@ -560,33 +575,38 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           </div>
         </FacetCard>
 
-        <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-          <div className="border-b border-border/20 pb-2 flex justify-between items-center">
-            <h4 className="text-xs font-extrabold text-foreground uppercase tracking-wider">
+        <FacetCard
+          depth={1}
+          className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+        >
+          <div className="border-border/20 flex items-center justify-between border-b pb-2">
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Customs Controls & Trade Blocs
             </h4>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
               Active Commerce
             </span>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2.5">
-              <span className="font-semibold text-muted-foreground">Weighted Tariff Rate</span>
+            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5">
+              <span className="text-muted-foreground font-semibold">Weighted Tariff Rate</span>
               <span className="font-mono font-black text-purple-400">
                 <PercentageFlow value={weightedTariff} decimalPlaces={2} />
               </span>
             </div>
-            <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2.5">
-              <span className="font-semibold text-muted-foreground">Most-Favored-Nation (MFN) Status</span>
+            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5">
+              <span className="text-muted-foreground font-semibold">
+                Most-Favored-Nation (MFN) Status
+              </span>
               <span className="font-bold text-emerald-400">Active Global MFN</span>
             </div>
-            <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2.5">
-              <span className="font-semibold text-muted-foreground">Customs Clearance Time</span>
+            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5">
+              <span className="text-muted-foreground font-semibold">Customs Clearance Time</span>
               <span className="font-mono font-bold text-cyan-400">1.4 Days Avg</span>
             </div>
-            <div className="flex items-center justify-between rounded-lg bg-muted/15 border border-border/20 p-2.5">
-              <span className="font-semibold text-muted-foreground">Regional Trade Deals</span>
+            <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5">
+              <span className="text-muted-foreground font-semibold">Regional Trade Deals</span>
               <span className="font-mono font-bold text-amber-400">3 Bilateral Blocs</span>
             </div>
           </div>
@@ -613,7 +633,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
   const { country } = useCountryData();
   const { data: econConfig } = api.economics.getEconomyConfiguration.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const profile = econConfig?.economicProfile;
@@ -629,20 +649,23 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
 
   return (
     <div className="space-y-4">
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Globe2 className="h-4 w-4 text-cyan-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <Globe2 className="h-4 w-4 shrink-0 text-cyan-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Trade Openness & Balance
             </h4>
           </div>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 text-[10px] font-extrabold font-mono",
+              "rounded-full border px-2 py-0.5 font-mono text-[10px] font-extrabold",
               tradeBalance >= 0
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                : "border-rose-500/30 bg-rose-500/10 text-rose-400",
+                : "border-rose-500/30 bg-rose-500/10 text-rose-400"
             )}
           >
             {tradeBalance >= 0 ? "Surplus" : "Deficit"}
@@ -651,36 +674,42 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Trade Openness Index</span>
+            <span className="text-muted-foreground text-xs font-semibold">
+              Trade Openness Index
+            </span>
             <span className="font-mono text-base font-black text-cyan-400">
               <PercentageFlow value={opennessIndex} decimalPlaces={1} />
             </span>
           </div>
 
           {/* Dual Split Bar: Exports vs Imports */}
-          <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted/20 border border-border/20">
+          <div className="bg-muted/20 border-border/20 flex h-3 w-full overflow-hidden rounded-full border">
             <div
-              className="bg-emerald-500 transition-all duration-500 ease-out h-full"
-              style={{ width: `${Math.min((totalExports / (annualTradeVolume || 1)) * 100, 100)}%` }}
+              className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+              style={{
+                width: `${Math.min((totalExports / (annualTradeVolume || 1)) * 100, 100)}%`,
+              }}
               title={`Exports: ${((totalExports / (annualTradeVolume || 1)) * 100).toFixed(1)}%`}
             />
             <div
-              className="bg-cyan-500 transition-all duration-500 ease-out h-full"
-              style={{ width: `${Math.min((totalImports / (annualTradeVolume || 1)) * 100, 100)}%` }}
+              className="h-full bg-cyan-500 transition-all duration-500 ease-out"
+              style={{
+                width: `${Math.min((totalImports / (annualTradeVolume || 1)) * 100, 100)}%`,
+              }}
               title={`Imports: ${((totalImports / (annualTradeVolume || 1)) * 100).toFixed(1)}%`}
             />
           </div>
 
-          <div className="flex justify-between text-[10px] font-mono">
+          <div className="flex justify-between font-mono text-[10px]">
             <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-emerald-400 font-bold">
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span className="font-bold text-emerald-400">
                 Exports: <CurrencyFlow value={totalExports} decimalPlaces={1} />
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 shrink-0" />
-              <span className="text-cyan-400 font-bold">
+              <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+              <span className="font-bold text-cyan-400">
                 Imports: <CurrencyFlow value={totalImports} decimalPlaces={1} />
               </span>
             </div>
@@ -688,30 +717,33 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
         </div>
       </FacetCard>
 
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Ship className="h-4 w-4 text-amber-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <Ship className="h-4 w-4 shrink-0 text-amber-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Commercial Telemetry
             </h4>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-border/20 bg-muted/15 p-2 text-center">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">Trade Volume</p>
-            <p className="text-sm font-black font-mono text-foreground mt-0.5">
+          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+            <p className="text-muted-foreground text-[9px] font-bold uppercase">Trade Volume</p>
+            <p className="text-foreground mt-0.5 font-mono text-sm font-black">
               <CurrencyFlow value={annualTradeVolume} decimalPlaces={1} />
             </p>
           </div>
 
-          <div className="rounded-xl border border-border/20 bg-muted/15 p-2 text-center">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">Net Balance</p>
+          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+            <p className="text-muted-foreground text-[9px] font-bold uppercase">Net Balance</p>
             <p
               className={cn(
-                "text-sm font-black font-mono mt-0.5",
-                tradeBalance >= 0 ? "text-emerald-400" : "text-rose-400",
+                "mt-0.5 font-mono text-sm font-black",
+                tradeBalance >= 0 ? "text-emerald-400" : "text-rose-400"
               )}
             >
               {tradeBalance >= 0 ? "+" : "-"}
@@ -761,38 +793,47 @@ function TariffRateCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl border bg-muted/10 p-3 space-y-2.5 backdrop-blur-md transition-all duration-200 shadow-sm",
-        isLocked
-          ? borderCls
-          : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30",
+        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-all duration-200",
+        isLocked ? borderCls : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30"
       )}
     >
       {/* Header: lock toggle + label + rate */}
       <div className="flex items-center justify-between pt-0.5">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={handleToggleLock}
-            title={isLocked ? "Locked (Saved) — click to edit tariff" : "Editing — click to save & lock tariff"}
+            title={
+              isLocked
+                ? "Locked (Saved) — click to edit tariff"
+                : "Editing — click to save & lock tariff"
+            }
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer active:scale-95 select-none shrink-0",
+              "flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-all duration-200 select-none active:scale-95",
               isLocked
                 ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
-                : "border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30 animate-pulse",
+                : "animate-pulse border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
             )}
           >
             {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
-          <span className="text-[11px] font-bold text-muted-foreground truncate">{sector.shortLabel}</span>
+          <span className="text-muted-foreground truncate text-[11px] font-bold">
+            {sector.shortLabel}
+          </span>
         </div>
 
-        <span className={cn("text-base font-black font-mono tabular-nums shrink-0", accentCls)}>
+        <span className={cn("shrink-0 font-mono text-base font-black tabular-nums", accentCls)}>
           <PercentageFlow value={tariff} decimalPlaces={1} />
         </span>
       </div>
 
       {/* Radix Slider */}
-      <div className={cn("relative transition-opacity duration-200", isLocked && "opacity-50 pointer-events-none")}>
+      <div
+        className={cn(
+          "relative transition-opacity duration-200",
+          isLocked && "pointer-events-none opacity-50"
+        )}
+      >
         <Slider
           min={sector.min}
           max={sector.max}
@@ -801,17 +842,14 @@ function TariffRateCard({
           disabled={isLocked}
           onValueChange={([v]) => v !== undefined && onChange(v)}
           onValueCommit={([v]) => v !== undefined && onCommit(v)}
-          className={cn(
-            "w-full",
-            `[&_[data-slot=slider-range]]:${bgCls}`,
-          )}
+          className={cn("w-full", `[&_[data-slot=slider-range]]:${bgCls}`)}
         />
       </div>
 
       {/* Yield preview */}
-      <div className="flex items-center justify-between text-[10px] pt-0.5">
+      <div className="flex items-center justify-between pt-0.5 text-[10px]">
         <span className="text-muted-foreground font-medium">Customs Yield</span>
-        <span className={cn("font-bold font-mono", accentCls)}>
+        <span className={cn("font-mono font-bold", accentCls)}>
           <CurrencyFlow value={estimatedYield} decimalPlaces={1} className={accentCls} />
         </span>
       </div>
@@ -871,37 +909,42 @@ function ManageSectorsModal({
     setItems((prev) =>
       prev.map((s) => ({
         ...s,
-        defaultShare: Math.round(((s.defaultShare / totalShare) * 100) * 10) / 10,
-      })),
+        defaultShare: Math.round((s.defaultShare / totalShare) * 100 * 10) / 10,
+      }))
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <FacetCard depth={2} className="w-full max-w-2xl bg-card/95 p-5 border border-border/40 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md duration-200">
+      <FacetCard
+        depth={2}
+        className="bg-card/95 border-border/40 flex max-h-[90vh] w-full max-w-2xl flex-col space-y-4 border p-5 shadow-2xl"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/20 pb-3 shrink-0">
+        <div className="border-border/20 flex shrink-0 items-center justify-between border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-base font-extrabold text-foreground">Manage Economic Sectors & Commodities</h3>
+            <h3 className="text-foreground text-base font-extrabold">
+              Manage Economic Sectors & Commodities
+            </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer rounded-lg p-1 transition-all"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Share Total Banner */}
-        <div className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/20 px-3.5 py-2 text-xs shrink-0">
+        <div className="border-border/30 bg-muted/20 flex shrink-0 items-center justify-between rounded-xl border px-3.5 py-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-muted-foreground">Export Share Distribution:</span>
+            <span className="text-muted-foreground font-bold">Export Share Distribution:</span>
             <span
               className={cn(
-                "font-mono font-black text-sm",
-                Math.abs(totalShare - 100) < 0.5 ? "text-emerald-400" : "text-amber-400",
+                "font-mono text-sm font-black",
+                Math.abs(totalShare - 100) < 0.5 ? "text-emerald-400" : "text-amber-400"
               )}
             >
               {totalShare.toFixed(1)}% / 100%
@@ -910,7 +953,7 @@ function ManageSectorsModal({
           <button
             type="button"
             onClick={handleNormalize}
-            className="flex items-center gap-1 text-[11px] font-bold text-cyan-400 hover:underline cursor-pointer"
+            className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-cyan-400 hover:underline"
           >
             <RotateCcw className="h-3 w-3" />
             <span>Balance to 100%</span>
@@ -918,41 +961,54 @@ function ManageSectorsModal({
         </div>
 
         {/* Sector Edit List */}
-        <div className="space-y-3 overflow-y-auto pr-1 flex-1 text-xs">
+        <div className="flex-1 space-y-3 overflow-y-auto pr-1 text-xs">
           {items.map((sec) => (
             <div
               key={sec.id}
-              className="rounded-xl border border-border/30 bg-muted/15 p-3 space-y-2.5 backdrop-blur-md"
+              className="border-border/30 bg-muted/15 space-y-2.5 rounded-xl border p-3 backdrop-blur-md"
             >
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-12 items-center">
+              <div className="grid grid-cols-1 items-center gap-2.5 sm:grid-cols-12">
                 {/* Sector Name */}
-                <div className="sm:col-span-5 space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Sector Name</label>
+                <div className="space-y-1 sm:col-span-5">
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Sector Name
+                  </label>
                   <input
                     type="text"
                     value={sec.label}
-                    onChange={(e) => handleUpdate(sec.id, { label: e.target.value, shortLabel: e.target.value.slice(0, 14) })}
-                    className="w-full rounded-lg border border-border/30 bg-background/50 px-2.5 py-1.5 font-bold text-foreground focus:border-cyan-500 focus:outline-none"
+                    onChange={(e) =>
+                      handleUpdate(sec.id, {
+                        label: e.target.value,
+                        shortLabel: e.target.value.slice(0, 14),
+                      })
+                    }
+                    className="border-border/30 bg-background/50 text-foreground w-full rounded-lg border px-2.5 py-1.5 font-bold focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 {/* Export Share % */}
-                <div className="sm:col-span-3 space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Export Share %</label>
+                <div className="space-y-1 sm:col-span-3">
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Export Share %
+                  </label>
                   <input
                     type="number"
                     min={1}
                     max={100}
                     step={0.5}
                     value={sec.defaultShare}
-                    onChange={(e) => handleUpdate(sec.id, { defaultShare: Number(e.target.value) || 0 })}
-                    className="w-full rounded-lg border border-border/30 bg-background/50 px-2.5 py-1.5 font-mono font-bold text-foreground focus:border-cyan-500 focus:outline-none"
+                    onChange={(e) =>
+                      handleUpdate(sec.id, { defaultShare: Number(e.target.value) || 0 })
+                    }
+                    className="border-border/30 bg-background/50 text-foreground w-full rounded-lg border px-2.5 py-1.5 font-mono font-bold focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
 
                 {/* Accent Color Picker */}
-                <div className="sm:col-span-3 space-y-1">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Accent Color</label>
+                <div className="space-y-1 sm:col-span-3">
+                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                    Accent Color
+                  </label>
                   <div className="flex items-center gap-1.5 pt-1">
                     {accentsList.map((c) => (
                       <button
@@ -960,9 +1016,11 @@ function ManageSectorsModal({
                         type="button"
                         onClick={() => handleUpdate(sec.id, { accent: c })}
                         className={cn(
-                          "h-5 w-5 rounded-full border transition-all cursor-pointer",
+                          "h-5 w-5 cursor-pointer rounded-full border transition-all",
                           ACCENT_BG[c],
-                          sec.accent === c ? "border-white scale-110 shadow-sm" : "border-transparent opacity-60 hover:opacity-100",
+                          sec.accent === c
+                            ? "scale-110 border-white shadow-sm"
+                            : "border-transparent opacity-60 hover:opacity-100"
                         )}
                       />
                     ))}
@@ -970,12 +1028,12 @@ function ManageSectorsModal({
                 </div>
 
                 {/* Delete Button */}
-                <div className="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
+                <div className="flex justify-end pt-3 sm:col-span-1 sm:pt-0">
                   <button
                     type="button"
                     onClick={() => handleDelete(sec.id)}
                     disabled={items.length <= 1}
-                    className="rounded-lg p-1.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-30 cursor-pointer"
+                    className="cursor-pointer rounded-lg p-1.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-30"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -986,11 +1044,11 @@ function ManageSectorsModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-border/20 pt-3 shrink-0">
+        <div className="border-border/20 flex shrink-0 items-center justify-between border-t pt-3">
           <button
             type="button"
             onClick={handleAdd}
-            className="flex items-center gap-1.5 rounded-lg border border-border/30 bg-muted/20 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted transition-all cursor-pointer"
+            className="border-border/30 bg-muted/20 text-foreground hover:bg-muted flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all"
           >
             <Plus className="h-4 w-4 text-emerald-400" />
             <span>Add Custom Commodity Sector</span>
@@ -1000,14 +1058,14 @@ function ManageSectorsModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              className="text-muted-foreground hover:text-foreground cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={() => onSave(items)}
-              className="flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/20 px-4 py-1.5 text-xs font-bold text-cyan-400 hover:bg-cyan-500/30 transition-all cursor-pointer active:scale-95"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/20 px-4 py-1.5 text-xs font-bold text-cyan-400 transition-all hover:bg-cyan-500/30 active:scale-95"
             >
               <Check className="h-4 w-4" />
               <span>Save & Apply to Country</span>

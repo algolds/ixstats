@@ -306,8 +306,14 @@ export function FacetTabs({
       const relativeX = ((pointerX - indicatorLeft) / indicatorWidth) * 100;
       const relativeY = (pointerY / rect.height) * 100;
 
-      container.style.setProperty("--sheen-x", `${Math.max(0, Math.min(100, relativeX)).toFixed(1)}%`);
-      container.style.setProperty("--sheen-y", `${Math.max(0, Math.min(100, relativeY)).toFixed(1)}%`);
+      container.style.setProperty(
+        "--sheen-x",
+        `${Math.max(0, Math.min(100, relativeX)).toFixed(1)}%`
+      );
+      container.style.setProperty(
+        "--sheen-y",
+        `${Math.max(0, Math.min(100, relativeY)).toFixed(1)}%`
+      );
       container.style.setProperty("--sheen-active", "1");
     }
   };
@@ -331,11 +337,13 @@ export function FacetTabs({
         metrics.container,
         className
       )}
-      style={{
-        "--sheen-x": "50%",
-        "--sheen-y": "50%",
-        "--sheen-active": "0",
-      } as React.CSSProperties}
+      style={
+        {
+          "--sheen-x": "50%",
+          "--sheen-y": "50%",
+          "--sheen-active": "0",
+        } as React.CSSProperties
+      }
     >
       {/* 1. Underlying background color & raw sheens (Z-0) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">

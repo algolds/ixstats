@@ -101,17 +101,17 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
   return (
     <div className="space-y-4">
       {/* Facet Segmented Sub-Tab Switcher */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border/30">
+      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
               activeTab === id
-                ? "bg-red-500/20 text-red-400 border border-red-500/40 shadow-sm"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+                ? "border border-red-500/40 bg-red-500/20 text-red-400 shadow-sm"
+                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
             )}
           >
             <Icon className="h-4 w-4" />

@@ -44,8 +44,18 @@ describe("enrichment-pipeline", () => {
 
     const layers = { political: mockPolitical };
     const countries = [
-      { featureId: "country_1", name: "Alpha", areaSqKm: 100000, centroid: [0.5, 0.5] as [number, number] },
-      { featureId: "country_2", name: "Beta", areaSqKm: 80000, centroid: [1.5, 0.5] as [number, number] },
+      {
+        featureId: "country_1",
+        name: "Alpha",
+        areaSqKm: 100000,
+        centroid: [0.5, 0.5] as [number, number],
+      },
+      {
+        featureId: "country_2",
+        name: "Beta",
+        areaSqKm: 80000,
+        centroid: [1.5, 0.5] as [number, number],
+      },
     ];
 
     const result = enrichMapDataset(layers, countries, "test_realm");

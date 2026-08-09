@@ -157,7 +157,12 @@ export const EmbassyCard = React.memo(function EmbassyCard({
             </CardDescription>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <Badge className={cn("border font-extrabold shadow-sm", getSynergyBand(embassy.totalSynergyScore).badgeClass)}>
+            <Badge
+              className={cn(
+                "border font-extrabold shadow-sm",
+                getSynergyBand(embassy.totalSynergyScore).badgeClass
+              )}
+            >
               <ShieldCheck className="mr-1 h-3 w-3" />
               {getSynergyBand(embassy.totalSynergyScore).label} Synergy
             </Badge>

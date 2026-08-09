@@ -199,8 +199,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         const { calculateArea, calculateCentroid, calculateBBox } =
           await import("~/lib/border-editor");
         const geom = input.proposedGeometry as unknown as
-          | import("geojson").Polygon
-          | import("geojson").MultiPolygon;
+          import("geojson").Polygon | import("geojson").MultiPolygon;
         await validateGeometryValid(ctx.db, input.proposedGeometry);
         const centroid = calculateCentroid(geom);
         const bbox = calculateBBox(geom);
@@ -238,8 +237,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             const neighborRow = neighborByFeatureId.get(nUpdate.featureId);
             if (!neighborRow) continue;
             const nGeom = nUpdate.geometry as unknown as
-              | import("geojson").Polygon
-              | import("geojson").MultiPolygon;
+              import("geojson").Polygon | import("geojson").MultiPolygon;
             await validateGeometryValid(ctx.db, nUpdate.geometry);
             const nCentroid = calculateCentroid(nGeom);
             const nBbox = calculateBBox(nGeom);
@@ -343,8 +341,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
         await import("~/lib/border-editor");
       const geometry = feature.geometry as unknown as
-        | import("geojson").Polygon
-        | import("geojson").MultiPolygon;
+        import("geojson").Polygon | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
 
       if (!result) {
@@ -518,8 +515,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const { sanitizeRegionShape } = await import("~/lib/border-editor");
       const geom = input.geometry as unknown as
-        | import("geojson").Polygon
-        | import("geojson").MultiPolygon;
+        import("geojson").Polygon | import("geojson").MultiPolygon;
       const { geometry, issues } = sanitizeRegionShape(geom, geom);
       return { geometry, issues };
     }),

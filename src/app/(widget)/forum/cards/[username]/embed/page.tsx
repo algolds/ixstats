@@ -10,7 +10,6 @@ import { rarityRank, formatValue, getRarityColors } from "~/shared/forum-utils";
 import { styles } from "../widget-styles";
 import { withBasePath } from "~/lib/base-path";
 
-
 const EMBED_CARD_LIMIT = 3;
 
 export default async function ForumPostEmbed({

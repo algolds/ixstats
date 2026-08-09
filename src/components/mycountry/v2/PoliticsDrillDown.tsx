@@ -68,11 +68,12 @@ export function PoliticsDrillDown({ countryId }: { countryId: string }) {
       {/* Player Fiat Banner */}
       <div className="flex items-center justify-between rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 text-xs">
         <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 text-purple-400 shrink-0" />
+          <Crown className="h-4 w-4 shrink-0 text-purple-400" />
           <div>
-            <span className="font-extrabold text-foreground">Executive Fiat Mode</span>
-            <p className="text-[11px] text-muted-foreground">
-              Political structure, party seats, cabinet posts, and legislative rules are 100% player configurable.
+            <span className="text-foreground font-extrabold">Executive Fiat Mode</span>
+            <p className="text-muted-foreground text-[11px]">
+              Political structure, party seats, cabinet posts, and legislative rules are 100% player
+              configurable.
             </p>
           </div>
         </div>
@@ -82,17 +83,17 @@ export function PoliticsDrillDown({ countryId }: { countryId: string }) {
       </div>
 
       {/* Facet Segmented Sub-Tab Switcher */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border/30">
+      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer shrink-0 active:scale-95",
+              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
               activeTab === id
-                ? "bg-purple-500/20 text-purple-400 border border-purple-500/40 shadow-sm"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-border/30"
+                ? "border border-purple-500/40 bg-purple-500/20 text-purple-400 shadow-sm"
+                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
             )}
           >
             <Icon className="h-4 w-4" />

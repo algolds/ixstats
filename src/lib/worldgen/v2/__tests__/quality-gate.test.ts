@@ -15,12 +15,31 @@ const TEST_CELLS = 3000;
 
 describe("v2/quality-gate", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
-  generateTerrain(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, oceanPercentage: 0.65 });
-  refineCoastlines(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, coastlineComplexity: 0.8 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
+  generateTerrain(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    oceanPercentage: 0.65,
+  });
+  refineCoastlines(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    coastlineComplexity: 0.8,
+  });
   computeHydroClimate(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
 
-  const report = validateAndRepair(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
+  const report = validateAndRepair(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+  });
 
   it("returns a report with 9 checks", () => {
     expect(report.checks.length).toBe(9);
@@ -47,7 +66,11 @@ describe("v2/quality-gate", () => {
   });
 
   it("quality gate runs deterministically on second pass", () => {
-    const report2 = validateAndRepair(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
+    const report2 = validateAndRepair(graph, {
+      ...DEFAULT_PARAMS,
+      seed: TEST_SEED,
+      cellCount: TEST_CELLS,
+    });
     expect(report2.compositeScore).toBe(report.compositeScore);
   });
 });

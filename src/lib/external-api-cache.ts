@@ -18,12 +18,7 @@ import { db } from "~/server/db";
 import { createHash } from "crypto";
 
 export type CacheService =
-  | "mediawiki"
-  | "unsplash"
-  | "flagcdn"
-  | "restcountries"
-  | "wikimedia"
-  | "custom";
+  "mediawiki" | "unsplash" | "flagcdn" | "restcountries" | "wikimedia" | "custom";
 
 export type CacheType =
   | "infobox"

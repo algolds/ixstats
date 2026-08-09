@@ -628,10 +628,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
 
       if (issue.intentId) {
         try {
-          await NationalIssuesConsequences.recomputeIntentProgress(
-            issue.intentId,
-            ctx.db as any
-          );
+          await NationalIssuesConsequences.recomputeIntentProgress(issue.intentId, ctx.db as any);
         } catch (e) {
           console.warn(`[NationalIssues] failed to recompute intent progress on dismiss:`, e);
         }

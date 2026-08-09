@@ -947,7 +947,10 @@ class UnifiedFlagService {
         metadataPath = path.join(process.cwd(), "public", "flags", "metadata.json");
 
         try {
-          const metadataContent = await fs.readFile(/*turbopackIgnore: true*/ metadataPath, "utf-8");
+          const metadataContent = await fs.readFile(
+            /*turbopackIgnore: true*/ metadataPath,
+            "utf-8"
+          );
           const serverMetadata = JSON.parse(metadataContent);
           if (serverMetadata.flags) {
             this.localMetadata = serverMetadata.flags;

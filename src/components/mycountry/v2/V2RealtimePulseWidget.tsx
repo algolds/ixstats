@@ -89,7 +89,8 @@ export function V2RealtimePulseWidget({
         timeLabel: "14:00 Today",
         title: "Parliamentary Budget & Policy Vote",
         category: "politics",
-        description: "National legislature convening to vote on proposed economic appropriation bills.",
+        description:
+          "National legislature convening to vote on proposed economic appropriation bills.",
         directiveGoal: "Guide parliamentary coalition vote and secure policy approval",
         statusLabel: "Vote Scheduled",
         icon: Scale,
@@ -103,7 +104,8 @@ export function V2RealtimePulseWidget({
         timeLabel: "10:00 Tomorrow",
         title: "Bilateral Trade Accord Review",
         category: "diplomacy",
-        description: "Scheduled diplomatic review for multi-national alliance and trade tariff agreements.",
+        description:
+          "Scheduled diplomatic review for multi-national alliance and trade tariff agreements.",
         directiveGoal: "Ratify bilateral trade accord and optimize import/export tariffs",
         statusLabel: "Summit Pending",
         icon: Handshake,
@@ -117,7 +119,8 @@ export function V2RealtimePulseWidget({
         timeLabel: "09:00 +2 Days",
         title: "Military Readiness Audit",
         category: "defense",
-        description: "Quarterly joint command readiness evaluation and strategic border defense drill.",
+        description:
+          "Quarterly joint command readiness evaluation and strategic border defense drill.",
         directiveGoal: "Conduct armed forces defense audit and upgrade logistics supply lines",
         statusLabel: "Audit Scheduled",
         icon: Shield,
@@ -131,7 +134,8 @@ export function V2RealtimePulseWidget({
         timeLabel: "18:00 +3 Days",
         title: "Macroeconomic Cycle & Tax Settlement",
         category: "economy",
-        description: "Central bank economic telemetry report and corporate tax revenue ledger update.",
+        description:
+          "Central bank economic telemetry report and corporate tax revenue ledger update.",
         directiveGoal: "Rebalance corporate tax policy and incentivize industrial growth",
         statusLabel: "Ledger Settlement",
         icon: TrendingUp,
@@ -144,10 +148,8 @@ export function V2RealtimePulseWidget({
     // Add active directive rollouts if present
     const intentsList = Array.isArray(intentTree.data)
       ? intentTree.data
-      : intentTree.data?.allIntents ?? [];
-    const activeIntents = intentsList.filter(
-      (i: any) => i.status?.toLowerCase() === "active"
-    );
+      : (intentTree.data?.allIntents ?? []);
+    const activeIntents = intentsList.filter((i: any) => i.status?.toLowerCase() === "active");
     activeIntents.forEach((it: any) => {
       list.unshift({
         id: `intent-ev-${it.id}`,
@@ -184,15 +186,15 @@ export function V2RealtimePulseWidget({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-cyan-400" />
-            <h3 className="text-xs font-black tracking-widest uppercase text-foreground">
+            <h3 className="text-foreground text-xs font-black tracking-widest uppercase">
               Your Weekly Agenda
             </h3>
           </div>
 
           {/* Executive Directives Capacity Pill */}
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-mono font-semibold">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] font-semibold">
             <span className="text-muted-foreground">Directives:</span>
-            <span className="text-amber-400 font-bold">
+            <span className="font-bold text-amber-400">
               {usedSlots} / {slotCap} Used
             </span>
           </div>
@@ -209,18 +211,18 @@ export function V2RealtimePulseWidget({
                 type="button"
                 onClick={() => setSelectedDayOffset(offset)}
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-xl p-2 text-center transition-all cursor-pointer select-none border",
+                  "flex cursor-pointer flex-col items-center justify-center rounded-xl border p-2 text-center transition-all select-none",
                   isSelected
                     ? "border-cyan-500/50 bg-cyan-500/20 text-cyan-200 shadow-sm"
-                    : "border-white/5 bg-white/[0.02] hover:bg-white/10 text-muted-foreground"
+                    : "text-muted-foreground border-white/5 bg-white/[0.02] hover:bg-white/10"
                 )}
               >
                 <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">
                   {dayName}
                 </span>
-                <span className="text-xs font-black text-foreground">{dayNum}</span>
+                <span className="text-foreground text-xs font-black">{dayNum}</span>
                 {hasEvent && (
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="mt-1 h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
                 )}
               </button>
             );
@@ -236,15 +238,15 @@ export function V2RealtimePulseWidget({
                 key={item.id}
                 onClick={() => setSelectedEvent(item)}
                 className={cn(
-                  "group relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border p-3 backdrop-blur-md transition-all hover:bg-white/[0.06] cursor-pointer active:scale-[0.99]",
+                  "group relative flex cursor-pointer flex-col items-start justify-between gap-3 rounded-xl border p-3 backdrop-blur-md transition-all hover:bg-white/[0.06] active:scale-[0.99] sm:flex-row sm:items-center",
                   item.accentCls
                 )}
               >
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 shadow-inner mt-0.5">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 shadow-inner">
                     <Icon className="h-4 w-4 shrink-0" />
                   </div>
-                  <div className="flex flex-col text-left min-w-0 space-y-0.5">
+                  <div className="flex min-w-0 flex-col space-y-0.5 text-left">
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
@@ -254,14 +256,14 @@ export function V2RealtimePulseWidget({
                       >
                         {item.statusLabel}
                       </span>
-                      <span className="text-[10px] font-mono text-muted-foreground/80">
+                      <span className="text-muted-foreground/80 font-mono text-[10px]">
                         {item.timeLabel}
                       </span>
                     </div>
-                    <h4 className="text-xs font-extrabold text-foreground leading-tight truncate">
+                    <h4 className="text-foreground truncate text-xs leading-tight font-extrabold">
                       {item.title}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                    <p className="text-muted-foreground line-clamp-1 text-[11px]">
                       {item.description}
                     </p>
                   </div>
@@ -274,10 +276,10 @@ export function V2RealtimePulseWidget({
                     e.stopPropagation();
                     setSelectedEvent(item);
                   }}
-                  className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 hover:bg-white/20 px-2.5 py-1 text-[10px] font-bold text-foreground transition-all cursor-pointer shrink-0 active:scale-95"
+                  className="text-foreground flex shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold transition-all hover:bg-white/20 active:scale-95"
                 >
                   <span>Action</span>
-                  <ArrowUpRight className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+                  <ArrowUpRight className="h-3 w-3 opacity-60 transition-opacity group-hover:opacity-100" />
                 </button>
               </div>
             );
@@ -288,7 +290,7 @@ export function V2RealtimePulseWidget({
       {/* Quick Action Dialog */}
       <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
         {selectedEvent && (
-          <DialogContent className="max-w-md border-border/80 bg-card/95 p-6 backdrop-blur-2xl shadow-2xl rounded-2xl space-y-4">
+          <DialogContent className="border-border/80 bg-card/95 max-w-md space-y-4 rounded-2xl p-6 shadow-2xl backdrop-blur-2xl">
             <DialogHeader className="space-y-2 text-left">
               <div className="flex items-center gap-2">
                 <span
@@ -299,25 +301,25 @@ export function V2RealtimePulseWidget({
                 >
                   {selectedEvent.statusLabel}
                 </span>
-                <span className="text-xs font-mono text-muted-foreground">
+                <span className="text-muted-foreground font-mono text-xs">
                   {selectedEvent.timeLabel}
                 </span>
               </div>
-              <DialogTitle className="text-base font-black tracking-tight text-foreground">
+              <DialogTitle className="text-foreground text-base font-black tracking-tight">
                 {selectedEvent.title}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              <DialogDescription className="text-muted-foreground text-xs leading-relaxed">
                 {selectedEvent.description}
               </DialogDescription>
             </DialogHeader>
 
             {/* Directive Goal Resolution Preview Box */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-1">
+            <div className="space-y-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
                 <Command className="h-3.5 w-3.5" />
                 <span>Recommended Resolution Directive</span>
               </div>
-              <p className="text-xs font-semibold text-foreground/90 leading-snug">
+              <p className="text-foreground/90 text-xs leading-snug font-semibold">
                 "{selectedEvent.directiveGoal}"
               </p>
             </div>
@@ -331,7 +333,7 @@ export function V2RealtimePulseWidget({
                   setSelectedEvent(null);
                   onDeclare?.(goal);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 hover:bg-amber-500/30 px-4 py-2.5 text-xs font-extrabold text-amber-300 transition-all cursor-pointer shadow-md active:scale-95"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-300 shadow-md transition-all hover:bg-amber-500/30 active:scale-95"
               >
                 <Command className="h-4 w-4" />
                 <span>Declare Directive to Resolve</span>
@@ -346,7 +348,7 @@ export function V2RealtimePulseWidget({
                     setSelectedEvent(null);
                     onOpenDrill?.(drill);
                   }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold transition-all hover:bg-white/10"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>Inspect Domain Details</span>
@@ -359,7 +361,7 @@ export function V2RealtimePulseWidget({
                     setSelectedEvent(null);
                     onOpenIntent?.(id);
                   }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold transition-all hover:bg-white/10"
                 >
                   <Compass className="h-3.5 w-3.5" />
                   <span>Inspect Directive Tree</span>

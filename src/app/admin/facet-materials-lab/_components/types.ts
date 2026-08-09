@@ -13,11 +13,7 @@ export type VariantType =
   | "forum"
   | "builder";
 export type InteractivityType =
-  | "none"
-  | "interactive"
-  | "hierarchy-interactive"
-  | "magnetic-3d"
-  | "glow-accent";
+  "none" | "interactive" | "hierarchy-interactive" | "magnetic-3d" | "glow-accent";
 export type TemplateType =
   | "material-block"
   | "facet-card"

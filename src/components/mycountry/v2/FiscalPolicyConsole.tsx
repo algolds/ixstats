@@ -197,7 +197,7 @@ function parseRateFromJson(raw: string | null | undefined, fallback: number): nu
 function deriveSectorWeights(
   sectors: Array<{ name?: string; percentage?: number; gdpContribution?: number }> | undefined,
   exportsGdpPct: number | null | undefined,
-  importsGdpPct: number | null | undefined,
+  importsGdpPct: number | null | undefined
 ): Record<string, number> {
   const weights: Record<string, number> = {};
 
@@ -208,28 +208,33 @@ function deriveSectorWeights(
   }
 
   // Sum total sector percentages for normalization
-  const totalPct = sectors.reduce(
-    (sum, s) => sum + (s.percentage ?? s.gdpContribution ?? 0),
-    0,
-  );
+  const totalPct = sectors.reduce((sum, s) => sum + (s.percentage ?? s.gdpContribution ?? 0), 0);
   const norm = totalPct > 0 ? totalPct / 100 : 1;
 
   // Classify sectors into primary/secondary/tertiary for weighting
-  let primaryPct = 0;     // agriculture, mining, extraction
-  let secondaryPct = 0;   // manufacturing, construction, industry
-  let tertiaryPct = 0;    // services, finance, tech, retail
+  let primaryPct = 0; // agriculture, mining, extraction
+  let secondaryPct = 0; // manufacturing, construction, industry
+  let tertiaryPct = 0; // services, finance, tech, retail
 
   for (const s of sectors) {
     const pct = (s.percentage ?? s.gdpContribution ?? 0) / norm;
     const name = (s.name ?? "").toLowerCase();
     if (
-      name.includes("agri") || name.includes("mining") || name.includes("extract") ||
-      name.includes("fish") || name.includes("forestry") || name.includes("primary")
+      name.includes("agri") ||
+      name.includes("mining") ||
+      name.includes("extract") ||
+      name.includes("fish") ||
+      name.includes("forestry") ||
+      name.includes("primary")
     ) {
       primaryPct += pct;
     } else if (
-      name.includes("manufactur") || name.includes("construct") || name.includes("industr") ||
-      name.includes("secondary") || name.includes("energy") || name.includes("utilit")
+      name.includes("manufactur") ||
+      name.includes("construct") ||
+      name.includes("industr") ||
+      name.includes("secondary") ||
+      name.includes("energy") ||
+      name.includes("utilit")
     ) {
       secondaryPct += pct;
     } else {
@@ -250,23 +255,23 @@ function deriveSectorWeights(
   }
 
   // Corporate tax revenue correlates with corporate profit share (secondary + tertiary heavy)
-  weights.corporate = ((secondaryPct * 0.15 + tertiaryPct * 0.12) / 100);
+  weights.corporate = (secondaryPct * 0.15 + tertiaryPct * 0.12) / 100;
 
   // Income tax base is workforce in services + industry (tertiary-heavy economies have higher income tax yield)
-  weights.income = ((tertiaryPct * 0.25 + secondaryPct * 0.15 + primaryPct * 0.05) / 100);
+  weights.income = (tertiaryPct * 0.25 + secondaryPct * 0.15 + primaryPct * 0.05) / 100;
 
   // VAT tracks consumption (higher in service-heavy economies)
-  weights.vat = ((tertiaryPct * 0.2 + secondaryPct * 0.12 + primaryPct * 0.05) / 100);
+  weights.vat = (tertiaryPct * 0.2 + secondaryPct * 0.12 + primaryPct * 0.05) / 100;
 
   // Tariff rate ties to trade openness
   const tradeOpenness = ((exportsGdpPct ?? 30) + (importsGdpPct ?? 30)) / 200; // 0-1 scale
-  weights.tariff = Math.max(0.02, tradeOpenness * 0.10);
+  weights.tariff = Math.max(0.02, tradeOpenness * 0.1);
 
   // Wealth tax (small, tied to financial sector size in tertiary)
   weights.wealth = Math.max(0.01, (tertiaryPct * 0.05) / 100);
 
   // Capital gains (financial markets, tertiary-heavy)
-  weights.capGains = Math.max(0.02, (tertiaryPct * 0.10) / 100);
+  weights.capGains = Math.max(0.02, (tertiaryPct * 0.1) / 100);
 
   return weights;
 }
@@ -282,7 +287,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   // Fetch economy config (includes fiscalSystem, economicProfile, etc.)
   const { data: econConfig } = api.economics.getEconomyConfiguration.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const fiscal = econConfig?.fiscalSystem;
@@ -325,9 +330,9 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
       deriveSectorWeights(
         econConfig?.sectors as any,
         profile?.exportsGDPPercent ?? (econConfig as any)?.economicProfile?.exportsGDPPercent,
-        profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent,
+        profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent
       ),
-    [econConfig?.sectors, profile?.exportsGDPPercent, profile?.importsGDPPercent],
+    [econConfig?.sectors, profile?.exportsGDPPercent, profile?.importsGDPPercent]
   );
 
   // ---------------------------------------------------------------------------
@@ -382,19 +387,16 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
         });
       }, 800);
     },
-    [countryId, taxEfficiency, updateMutation],
+    [countryId, taxEfficiency, updateMutation]
   );
 
   // Slider change handler
-  const handleRateChange = useCallback(
-    (key: string, value: number) => {
-      setRates((prev) => {
-        const next = { ...prev, [key]: value };
-        return next;
-      });
-    },
-    [],
-  );
+  const handleRateChange = useCallback((key: string, value: number) => {
+    setRates((prev) => {
+      const next = { ...prev, [key]: value };
+      return next;
+    });
+  }, []);
 
   // Slider commit handler (fires on drag end)
   const handleRateCommit = useCallback(
@@ -403,7 +405,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
       setRates(newRates);
       persistRates(newRates);
     },
-    [rates, persistRates],
+    [rates, persistRates]
   );
 
   // ---------------------------------------------------------------------------
@@ -448,19 +450,19 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   return (
     <div className="space-y-4">
       {/* ── Section 1: Tax Rate Control Grid ── */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-md space-y-4">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard depth={1} className="bg-card/30 space-y-4 p-4 backdrop-blur-md">
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <Percent className="h-4 w-4 text-emerald-400" />
-            <h4 className="text-sm font-bold text-foreground">National Tax Rate Controls</h4>
+            <h4 className="text-foreground text-sm font-bold">National Tax Rate Controls</h4>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Total Revenue:
             </span>
-            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-sm sm:text-base font-black font-mono text-emerald-400 shadow-md shadow-emerald-500/10 tracking-tight">
-              <CurrencyFlow value={yields._total ?? 0} className="text-emerald-400 font-black" />
-              <span className="text-emerald-400/70 text-xs font-bold ml-1">/ yr</span>
+            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-black tracking-tight text-emerald-400 shadow-md shadow-emerald-500/10 sm:text-base">
+              <CurrencyFlow value={yields._total ?? 0} className="font-black text-emerald-400" />
+              <span className="ml-1 text-xs font-bold text-emerald-400/70">/ yr</span>
             </span>
           </div>
         </div>
@@ -481,38 +483,39 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* ── Section 2: Revenue Yield Matrix ── */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Landmark className="h-4 w-4 text-emerald-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground">
-              Tax Revenue Projections
-            </h4>
+            <Landmark className="h-4 w-4 shrink-0 text-emerald-400" />
+            <h4 className="text-foreground text-xs font-extrabold">Tax Revenue Projections</h4>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 text-xs">
+        <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 md:grid-cols-6">
           {TAX_CHANNELS.map((ch) => (
             <div
               key={ch.key}
               className={cn(
-                "rounded-xl border border-border/20 bg-muted/15 p-2.5 space-y-1 backdrop-blur-md",
-                ACCENT_BORDER[ch.accent] ?? "border-border/20",
+                "border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5 backdrop-blur-md",
+                ACCENT_BORDER[ch.accent] ?? "border-border/20"
               )}
             >
-              <p className="text-[10px] font-bold text-muted-foreground uppercase">
+              <p className="text-muted-foreground text-[10px] font-bold uppercase">
                 {ch.shortLabel} Yield
               </p>
-              <p className={cn("text-base font-black font-mono", ch.accentClass)}>
+              <p className={cn("font-mono text-base font-black", ch.accentClass)}>
                 <CurrencyFlow value={yields[ch.key] ?? 0} decimalPlaces={2} />
               </p>
-              <p className="text-[10px] text-muted-foreground font-mono">
+              <p className="text-muted-foreground font-mono text-[10px]">
                 <PercentageFlow
                   value={((yields[ch.key] ?? 0) / (yields._total || 1)) * 100}
                   decimalPlaces={1}
                   className="text-muted-foreground"
-                />
-                {" "}of total
+                />{" "}
+                of total
               </p>
             </div>
           ))}
@@ -530,7 +533,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
   const { country } = useCountryData();
   const { data: econConfig } = api.economics.getEconomyConfiguration.useQuery(
     { countryId },
-    { enabled: !!countryId, staleTime: 30_000 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const fiscal = econConfig?.fiscalSystem;
@@ -538,23 +541,26 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
   const taxEfficiency = fiscal?.taxEfficiency ?? 0.85;
 
-  const rates = useMemo(() => ({
-    corporate: parseRateFromJson(fiscal?.corporateTaxRates, 21),
-    income: parseRateFromJson(fiscal?.personalIncomeTaxRates, 24),
-    vat: fiscal?.salesTaxRate ?? 15,
-    tariff: parseRateFromJson(fiscal?.exciseTaxRates, 4.5),
-    wealth: fiscal?.wealthTaxRate ?? 1.5,
-    capGains: parseRateFromJson(fiscal?.exciseTaxRates, 15),
-  }), [fiscal]);
+  const rates = useMemo(
+    () => ({
+      corporate: parseRateFromJson(fiscal?.corporateTaxRates, 21),
+      income: parseRateFromJson(fiscal?.personalIncomeTaxRates, 24),
+      vat: fiscal?.salesTaxRate ?? 15,
+      tariff: parseRateFromJson(fiscal?.exciseTaxRates, 4.5),
+      wealth: fiscal?.wealthTaxRate ?? 1.5,
+      capGains: parseRateFromJson(fiscal?.exciseTaxRates, 15),
+    }),
+    [fiscal]
+  );
 
   const sectorWeights = useMemo(
     () =>
       deriveSectorWeights(
         econConfig?.sectors as any,
         profile?.exportsGDPPercent ?? (econConfig as any)?.economicProfile?.exportsGDPPercent,
-        profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent,
+        profile?.importsGDPPercent ?? (econConfig as any)?.economicProfile?.importsGDPPercent
       ),
-    [econConfig?.sectors, profile?.exportsGDPPercent, profile?.importsGDPPercent],
+    [econConfig?.sectors, profile?.exportsGDPPercent, profile?.importsGDPPercent]
   );
 
   const yields = useMemo(() => {
@@ -603,28 +609,33 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
   return (
     <div className="space-y-4">
       {/* Tax Burden Analysis */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-amber-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <BarChart3 className="h-4 w-4 shrink-0 text-amber-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Tax Burden Analysis
             </h4>
           </div>
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-extrabold text-amber-400 font-mono">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-400">
             Macro Index
           </span>
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-semibold">Effective GDP Tax Burden</span>
+            <span className="text-muted-foreground text-xs font-semibold">
+              Effective GDP Tax Burden
+            </span>
             <span className="font-mono text-base font-black text-amber-400">
               <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
             </span>
           </div>
 
-          <div className="relative h-2.5 rounded-full bg-muted/30 overflow-hidden border border-border/20">
+          <div className="bg-muted/30 border-border/20 relative h-2.5 overflow-hidden rounded-full border">
             <div
               className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
               style={{
@@ -638,36 +649,39 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               }}
             />
             <div
-              className="absolute inset-y-0 border-l border-r border-emerald-400/40 bg-emerald-400/10"
+              className="absolute inset-y-0 border-r border-l border-emerald-400/40 bg-emerald-400/10"
               style={{ left: "30%", width: "20%" }}
             />
           </div>
-          <div className="flex justify-between text-[10px] text-muted-foreground/70 font-mono">
+          <div className="text-muted-foreground/70 flex justify-between font-mono text-[10px]">
             <span>0%</span>
-            <span className="text-emerald-400 font-extrabold">Optimal Zone (15-35%)</span>
+            <span className="font-extrabold text-emerald-400">Optimal Zone (15-35%)</span>
             <span>50%+</span>
           </div>
         </div>
       </FacetCard>
 
       {/* Revenue Composition */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-cyan-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <Activity className="h-4 w-4 shrink-0 text-cyan-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Revenue Stream Composition
             </h4>
           </div>
         </div>
 
-        <div className="flex h-3.5 rounded-full overflow-hidden bg-muted/20 border border-border/20">
+        <div className="bg-muted/20 border-border/20 flex h-3.5 overflow-hidden rounded-full border">
           {revenueComposition.map((seg) => (
             <div
               key={seg.key}
               className={cn(
                 "transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full",
-                ACCENT_BG[seg.accent],
+                ACCENT_BG[seg.accent]
               )}
               style={{ width: `${seg.pct}%` }}
               title={`${seg.key}: ${seg.pct.toFixed(1)}%`}
@@ -679,14 +693,17 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
           {revenueComposition.map((seg) => {
             const ch = TAX_CHANNELS.find((c) => c.key === seg.key)!;
             return (
-              <div key={seg.key} className="flex items-center justify-between rounded-lg border border-border/20 bg-muted/15 px-2 py-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <div className={cn("h-2 w-2 rounded-full shrink-0", ACCENT_BG[seg.accent])} />
-                  <span className="text-[11px] text-muted-foreground font-semibold truncate">
+              <div
+                key={seg.key}
+                className="border-border/20 bg-muted/15 flex items-center justify-between rounded-lg border px-2 py-1"
+              >
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <div className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])} />
+                  <span className="text-muted-foreground truncate text-[11px] font-semibold">
                     {ch.shortLabel}
                   </span>
                 </div>
-                <span className={cn("text-[11px] font-black font-mono shrink-0", ch.accentClass)}>
+                <span className={cn("shrink-0 font-mono text-[11px] font-black", ch.accentClass)}>
                   <PercentageFlow value={seg.pct} decimalPlaces={1} />
                 </span>
               </div>
@@ -696,49 +713,52 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
       </FacetCard>
 
       {/* Fiscal Health */}
-      <FacetCard depth={1} className="bg-card/30 p-4 backdrop-blur-xl border border-border/30 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-border/20 pb-2">
+      <FacetCard
+        depth={1}
+        className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+      >
+        <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
-            <h4 className="text-xs font-extrabold text-foreground tracking-wider uppercase">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
               Fiscal Health & Telemetry
             </h4>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl border border-border/20 bg-muted/15 p-2 text-center">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">Efficiency</p>
-            <p className="text-base font-black font-mono text-emerald-400 mt-0.5">
+          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+            <p className="text-muted-foreground text-[9px] font-bold uppercase">Efficiency</p>
+            <p className="mt-0.5 font-mono text-base font-black text-emerald-400">
               <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
             </p>
           </div>
-          <div className="rounded-xl border border-border/20 bg-muted/15 p-2 text-center">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">Budget Δ</p>
+          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+            <p className="text-muted-foreground text-[9px] font-bold uppercase">Budget Δ</p>
             <p
               className={cn(
-                "text-base font-black font-mono mt-0.5",
-                budgetImpact >= 0 ? "text-emerald-400" : "text-rose-400",
+                "mt-0.5 font-mono text-base font-black",
+                budgetImpact >= 0 ? "text-emerald-400" : "text-rose-400"
               )}
             >
               {budgetImpact >= 0 ? (
-                <TrendingUp className="inline h-3 w-3 mr-0.5 -mt-0.5" />
+                <TrendingUp className="-mt-0.5 mr-0.5 inline h-3 w-3" />
               ) : (
-                <TrendingDown className="inline h-3 w-3 mr-0.5 -mt-0.5" />
+                <TrendingDown className="-mt-0.5 mr-0.5 inline h-3 w-3" />
               )}
               <PercentageFlow value={Math.abs(budgetImpact)} decimalPlaces={1} />
             </p>
           </div>
-          <div className="rounded-xl border border-border/20 bg-muted/15 p-2 text-center">
-            <p className="text-[9px] font-bold text-muted-foreground uppercase">Burden</p>
+          <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
+            <p className="text-muted-foreground text-[9px] font-bold uppercase">Burden</p>
             <p
               className={cn(
-                "text-xs font-black font-mono mt-1",
+                "mt-1 font-mono text-xs font-black",
                 lafferPosition === "optimal"
                   ? "text-emerald-400"
                   : lafferPosition === "below-optimal"
                     ? "text-amber-400"
-                    : "text-rose-400",
+                    : "text-rose-400"
               )}
             >
               {lafferPosition === "optimal"
@@ -790,10 +810,10 @@ function TaxRateCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl border bg-muted/10 p-3 space-y-2.5 backdrop-blur-md transition-all duration-200 shadow-sm",
+        "bg-muted/10 relative space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-md transition-all duration-200",
         isLocked
           ? (ACCENT_BORDER[channel.accent] ?? "border-border/30")
-          : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30",
+          : "border-amber-500/50 bg-amber-500/[0.03] ring-1 ring-amber-500/30"
       )}
     >
       {/* Header: lock toggle + label + rate */}
@@ -802,37 +822,42 @@ function TaxRateCard({
           <button
             type="button"
             onClick={handleToggleLock}
-            title={isLocked ? "Locked (Saved) — click to edit rate" : "Editing — click to save & lock rate"}
+            title={
+              isLocked
+                ? "Locked (Saved) — click to edit rate"
+                : "Editing — click to save & lock rate"
+            }
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer active:scale-95 select-none",
+              "flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border transition-all duration-200 select-none active:scale-95",
               isLocked
                 ? "border-border/40 bg-muted/30 text-muted-foreground/70 hover:border-border/70 hover:text-foreground"
-                : "border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30 animate-pulse",
+                : "animate-pulse border-amber-500/50 bg-amber-500/20 text-amber-400 shadow-xs shadow-amber-500/30"
             )}
           >
-            {isLocked ? (
-              <Lock className="h-3 w-3" />
-            ) : (
-              <Unlock className="h-3 w-3" />
-            )}
+            {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
-          <span className="text-[11px] font-bold text-muted-foreground">{channel.label}</span>
+          <span className="text-muted-foreground text-[11px] font-bold">{channel.label}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
           {!isLocked && (
-            <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider animate-pulse">
+            <span className="animate-pulse text-[9px] font-bold tracking-wider text-amber-400 uppercase">
               Editing
             </span>
           )}
-          <span className={cn("text-base font-black font-mono tabular-nums", channel.accentClass)}>
+          <span className={cn("font-mono text-base font-black tabular-nums", channel.accentClass)}>
             <PercentageFlow value={rate} decimalPlaces={1} />
           </span>
         </div>
       </div>
 
       {/* Radix Slider */}
-      <div className={cn("relative transition-opacity duration-200", isLocked && "opacity-50 pointer-events-none")}>
+      <div
+        className={cn(
+          "relative transition-opacity duration-200",
+          isLocked && "pointer-events-none opacity-50"
+        )}
+      >
         <Slider
           min={channel.min}
           max={channel.max}
@@ -844,13 +869,13 @@ function TaxRateCard({
           className={cn(
             "w-full",
             SLIDER_RANGE_COLOR[channel.accent],
-            SLIDER_THUMB_COLOR[channel.accent],
+            SLIDER_THUMB_COLOR[channel.accent]
           )}
         />
       </div>
 
       {/* Internal Weight Progress Bar */}
-      <div className="h-1 w-full overflow-hidden rounded-full bg-muted/20">
+      <div className="bg-muted/20 h-1 w-full overflow-hidden rounded-full">
         <div
           className={cn("h-full transition-all duration-500 ease-out", ACCENT_BG[channel.accent])}
           style={{ width: `${Math.min(contributionPct, 100)}%` }}
@@ -860,7 +885,7 @@ function TaxRateCard({
       {/* Yield preview */}
       <div className="flex items-center justify-between text-[10px]">
         <span className="text-muted-foreground font-medium">Yield Contribution</span>
-        <span className={cn("font-bold font-mono", channel.accentClass)}>
+        <span className={cn("font-mono font-bold", channel.accentClass)}>
           <CurrencyFlow value={yieldValue} decimalPlaces={1} className={channel.accentClass} />
         </span>
       </div>

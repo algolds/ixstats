@@ -131,8 +131,7 @@ export function useBorderEditorLayers({
     (sourceId: string, data: FeatureCollection) => {
       if (!map) return false;
       const source = map.getSource(sourceId) as
-        | { setData?: (d: FeatureCollection) => void }
-        | undefined;
+        { setData?: (d: FeatureCollection) => void } | undefined;
       if (!source?.setData) return false;
       source.setData(data);
       return true;

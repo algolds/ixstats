@@ -49,19 +49,55 @@ function categorizeTitle(title: string, source: "wiki" | "native"): string {
   if (source === "native") return "Native Canvas Lore";
 
   const lower = title.toLowerCase();
-  if (lower.includes("geograph") || lower.includes("climat") || lower.includes("demograph") || lower.includes("populat") || lower.includes("land") || lower.includes("territor")) {
+  if (
+    lower.includes("geograph") ||
+    lower.includes("climat") ||
+    lower.includes("demograph") ||
+    lower.includes("populat") ||
+    lower.includes("land") ||
+    lower.includes("territor")
+  ) {
     return "Geography & Demographics";
   }
-  if (lower.includes("govern") || lower.includes("politi") || lower.includes("execut") || lower.includes("foreign") || lower.includes("diploma") || lower.includes("law") || lower.includes("constitut")) {
+  if (
+    lower.includes("govern") ||
+    lower.includes("politi") ||
+    lower.includes("execut") ||
+    lower.includes("foreign") ||
+    lower.includes("diploma") ||
+    lower.includes("law") ||
+    lower.includes("constitut")
+  ) {
     return "Government & Politics";
   }
-  if (lower.includes("econom") || lower.includes("trad") || lower.includes("financ") || lower.includes("currenc") || lower.includes("industr") || lower.includes("infrastruct")) {
+  if (
+    lower.includes("econom") ||
+    lower.includes("trad") ||
+    lower.includes("financ") ||
+    lower.includes("currenc") ||
+    lower.includes("industr") ||
+    lower.includes("infrastruct")
+  ) {
     return "Economy & Infrastructure";
   }
-  if (lower.includes("histor") || lower.includes("cultur") || lower.includes("religi") || lower.includes("languag") || lower.includes("ethni") || lower.includes("societ")) {
+  if (
+    lower.includes("histor") ||
+    lower.includes("cultur") ||
+    lower.includes("religi") ||
+    lower.includes("languag") ||
+    lower.includes("ethni") ||
+    lower.includes("societ")
+  ) {
     return "History & Culture";
   }
-  if (lower.includes("militar") || lower.includes("defens") || lower.includes("securit") || lower.includes("force") || lower.includes("navy") || lower.includes("army")) {
+  if (
+    lower.includes("militar") ||
+    lower.includes("defens") ||
+    lower.includes("securit") ||
+    lower.includes("force") ||
+    lower.includes("navy") ||
+    lower.includes("army")
+  ) {
     return "Military & Defense";
   }
   return "General Dossier Sections";
@@ -173,8 +209,7 @@ export function DossierTocSidebar({
         (item.category && item.category.toLowerCase().includes(query)) ||
         (item.pageTitle && item.pageTitle.toLowerCase().includes(query));
 
-      const matchesSource =
-        sourceFilter === "all" || item.source === sourceFilter;
+      const matchesSource = sourceFilter === "all" || item.source === sourceFilter;
 
       return matchesSearch && matchesSource;
     });
@@ -209,44 +244,49 @@ export function DossierTocSidebar({
     }
   };
 
-  const flagUrl = infobox?.image_flag || infobox?.flag
-    ? resolveImageUrl(infobox.image_flag || infobox.flag, wikiSource)
-    : undefined;
+  const flagUrl =
+    infobox?.image_flag || infobox?.flag
+      ? resolveImageUrl(infobox.image_flag || infobox.flag, wikiSource)
+      : undefined;
 
-  const coatUrl = infobox?.image_coat || infobox?.coat
-    ? resolveImageUrl(infobox.image_coat || infobox.coat, wikiSource)
-    : undefined;
+  const coatUrl =
+    infobox?.image_coat || infobox?.coat
+      ? resolveImageUrl(infobox.image_coat || infobox.coat, wikiSource)
+      : undefined;
 
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="space-y-4 sticky top-6">
+    <div className="sticky top-6 space-y-4">
       {/* Searchable Dynamic Dossier Table of Contents */}
       <FacetCard
         depth={1}
         interactive="none"
-        className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+        className="bg-card/30 overflow-hidden rounded-xl border border-white/10 shadow-sm backdrop-blur-md"
       >
-        <CardHeader className="px-4 py-3 pb-2 border-b border-white/10">
+        <CardHeader className="border-b border-white/10 px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground">
+            <CardTitle className="text-foreground flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
               <Layers className="h-4 w-4 text-blue-400" />
-              Dossier 
+              Dossier
             </CardTitle>
-            <Badge variant="outline" className="text-[9px] font-mono border-white/10 text-muted-foreground">
+            <Badge
+              variant="outline"
+              className="text-muted-foreground border-white/10 font-mono text-[9px]"
+            >
               {totalEntries} Entries
             </Badge>
           </div>
 
           {/* Search Input */}
           <div className="relative mt-2.5">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pages & subfolders..."
-              className="w-full rounded-lg border border-white/10 bg-white/[0.04] pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-blue-500 focus:outline-none"
+              className="text-foreground placeholder:text-muted-foreground/60 w-full rounded-lg border border-white/10 bg-white/[0.04] py-1.5 pr-3 pl-8 text-xs focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -256,9 +296,9 @@ export function DossierTocSidebar({
               <button
                 key={mode}
                 onClick={() => setSourceFilter(mode)}
-                className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded transition-colors ${
+                className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase transition-colors ${
                   sourceFilter === mode
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -268,9 +308,9 @@ export function DossierTocSidebar({
           </div>
         </CardHeader>
 
-        <CardContent className="p-2 max-h-96 overflow-y-auto space-y-2">
+        <CardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
           {Object.keys(groupedFolders).length === 0 ? (
-            <div className="p-4 text-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground p-4 text-center text-xs">
               No dossier folders or pages found.
             </div>
           ) : (
@@ -282,9 +322,9 @@ export function DossierTocSidebar({
                   {/* Folder Header Button */}
                   <button
                     onClick={() => toggleFolder(folderName)}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 text-left text-xs font-bold text-foreground hover:bg-white/[0.04] transition-colors"
+                    className="text-foreground flex w-full items-center justify-between px-2.5 py-1.5 text-left text-xs font-bold transition-colors hover:bg-white/[0.04]"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex min-w-0 items-center gap-2">
                       {isOpen ? (
                         <FolderOpen className="h-3.5 w-3.5 shrink-0 text-amber-400" />
                       ) : (
@@ -293,36 +333,36 @@ export function DossierTocSidebar({
                       <span className="truncate">{folderName}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-mono text-muted-foreground bg-black/40 px-1.5 py-0.5 rounded border border-white/5">
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="text-muted-foreground rounded border border-white/5 bg-black/40 px-1.5 py-0.5 font-mono text-[10px]">
                         {items.length}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
                       ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
                       )}
                     </div>
                   </button>
 
                   {/* Subfolder Item List (Pages & Sections) */}
                   {isOpen && (
-                    <div className="pl-4 pr-1 pb-1 space-y-0.5 border-t border-white/5 pt-1">
+                    <div className="space-y-0.5 border-t border-white/5 pt-1 pr-1 pb-1 pl-4">
                       {items.map((item) => {
                         const isSelected = activeSectionId === item.id;
                         return (
                           <button
                             key={item.id}
                             onClick={() => handleItemClick(item)}
-                            className={`w-full flex items-center justify-between rounded px-2 py-1 text-left transition-all text-xs ${
+                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-all ${
                               isSelected
-                                ? "bg-blue-500/20 text-blue-400 font-bold"
+                                ? "bg-blue-500/20 font-bold text-blue-400"
                                 : item.isPage
-                                ? "hover:bg-blue-500/10 text-foreground hover:text-blue-300 font-medium"
-                                : "hover:bg-white/[0.05] text-muted-foreground hover:text-foreground"
+                                  ? "text-foreground font-medium hover:bg-blue-500/10 hover:text-blue-300"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex min-w-0 items-center gap-2">
                               {item.isPage ? (
                                 <Globe className="h-3 w-3 shrink-0 text-blue-400" />
                               ) : item.source === "wiki" ? (
