@@ -91,53 +91,49 @@ export function VaultWidget() {
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+      className={cn(
+        cutoutCardSurfaceClassName,
+        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-all duration-200"
+      )}
       trackPointerHover={false}
       texture="dots"
-      textureOpacity={0.06}
+      textureOpacity={0.05}
     >
-      {/* Cutout tab header */}
-      <div className="relative bg-yellow-500/10 px-2.5 pt-2.5 pb-4">
-        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
-          <svg
-            className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-          </svg>
-          MyVault
+      {/* Sleek Apple-style header bar */}
+      <div className="relative flex items-center justify-between border-b border-amber-500/15 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-3 py-2.5 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/20 shadow-sm shadow-amber-500/10 backdrop-blur-sm">
+            <Wallet className="h-3 w-3 text-amber-400" />
+          </div>
+          <span className="text-xs font-bold tracking-tight text-amber-300">
+            IxVault
+          </span>
         </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+        <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-semibold tracking-wider text-amber-400/90 uppercase">
+          Wallet
+        </span>
       </div>
-      <CutoutCardContent className="space-y-2.5 p-2.5 pt-1">
+      <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         <div className="space-y-2.5">
           {!isMainVaultPage && (
             <>
               {/* Balance */}
               <div>
-                <p className="text-muted-foreground text-xs">IxCredits</p>
-                <div className="flex items-center gap-1.5">
-                  <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                <p className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">IxCredits</p>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <IxCreditsSymbol className="h-4 w-4 shrink-0 text-amber-400 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+                  <p className="text-lg font-extrabold tracking-tight text-amber-400 tabular-nums drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                     {balanceLoading ? (
                       <span className="animate-pulse">...</span>
                     ) : (
-                      (balanceData?.credits.toLocaleString() ?? 0)
+                      Math.round(balanceData?.credits ?? 0).toLocaleString()
                     )}
                   </p>
                   {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                     <button
                       onClick={() => setShowPassiveIncome((prev) => !prev)}
-                      className={`rounded p-0.5 text-blue-500 transition-colors hover:bg-blue-500/10 hover:text-blue-400 focus:ring-1 focus:ring-blue-500/30 focus:outline-none dark:text-blue-400 dark:hover:text-blue-300 ${
-                        showPassiveIncome ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : ""
+                      className={`rounded-md p-1 text-blue-400 backdrop-blur-sm transition-all duration-150 hover:bg-blue-500/15 focus:ring-1 focus:ring-blue-500/30 focus:outline-none active:scale-[0.92] ${
+                        showPassiveIncome ? "bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30" : ""
                       }`}
                       title={
                         showPassiveIncome
@@ -171,19 +167,21 @@ export function VaultWidget() {
               {/* Today's Earnings */}
               {todayEarnings && todayEarnings.sources.length > 0 && (
                 <div>
-                  <p className="text-muted-foreground mb-1 text-xs">Today&apos;s Earnings</p>
-                  <div className="space-y-0.5 text-xs">
+                  <p className="text-muted-foreground mb-1 text-[10px] font-medium tracking-tight">Today&apos;s Earnings</p>
+                  <div className="space-y-1 text-xs">
                     {todayEarnings.sources.map((source) => (
-                      <div key={source.type} className="text-muted-foreground flex justify-between">
+                      <div key={source.type} className="text-muted-foreground flex justify-between text-[11px] tracking-tight">
                         <span>{source.label}</span>
-                        <span className="text-green-600 dark:text-green-400">+{source.amount}</span>
+                        <span className="font-semibold text-emerald-400 tabular-nums">
+                          +{Math.round(source.amount).toLocaleString()}
+                        </span>
                       </div>
                     ))}
-                    <div className="border-border flex justify-between border-t pt-1 font-semibold">
+                    <div className="border-border/30 flex justify-between border-t pt-1 font-semibold text-[11px] tracking-tight">
                       <span className="text-foreground">Total</span>
-                      <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400">
+                      <span className="flex items-center gap-0.5 font-bold text-amber-400 tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                        {todayEarnings.total}
+                        {Math.round(todayEarnings.total).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -192,8 +190,8 @@ export function VaultWidget() {
 
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                <div className="animate-in fade-in slide-in-from-top-1 rounded-lg border border-blue-300 bg-blue-50 p-2 duration-200 dark:border-blue-500/30 dark:bg-blue-900/20">
-                  <p className="mb-1 flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-300">
+                <div className="animate-in fade-in slide-in-from-top-1 rounded-xl border border-blue-500/25 bg-blue-500/10 p-2.5 shadow-sm backdrop-blur-md duration-200">
+                  <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-blue-300">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
@@ -204,41 +202,41 @@ export function VaultWidget() {
                     </svg>
                     Treasury Revenue
                   </p>
-                  <div className="text-muted-foreground space-y-0.5 text-xs">
-                    <div className="flex justify-between">
+                  <div className="text-muted-foreground space-y-1 text-xs">
+                    <div className="flex justify-between text-[11px] tracking-tight">
                       <span>Daily</span>
-                      <span className="flex items-center gap-0.5 font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="flex items-center gap-0.5 font-semibold text-blue-400 tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                        {passiveIncomeData.dailyDividend.toFixed(2)}
+                        {Math.round(passiveIncomeData.dailyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[0.65rem]">
+                    <div className="flex justify-between text-[10px] tracking-tight">
                       <span className="text-muted-foreground">Weekly</span>
-                      <span className="text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                        {passiveIncomeData.weeklyDividend.toFixed(2)}
+                        {Math.round(passiveIncomeData.weeklyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[0.65rem]">
+                    <div className="flex justify-between text-[10px] tracking-tight">
                       <span className="text-muted-foreground">Monthly</span>
-                      <span className="text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                        {passiveIncomeData.monthlyDividend.toFixed(2)}
+                        {Math.round(passiveIncomeData.monthlyDividend).toLocaleString()}
                       </span>
                     </div>
                   </div>
 
                   {/* Budget Multiplier Bonus */}
                   {budgetMultiplierData && (
-                    <div className="mt-1.5 rounded border border-yellow-300 bg-yellow-50 p-1.5 dark:border-yellow-500/30 dark:bg-yellow-900/20">
-                      <div className="flex items-center justify-between text-[0.65rem]">
-                        <span className="text-yellow-700 dark:text-yellow-300">Budget Bonus</span>
+                    <div className="mt-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 p-1.5 backdrop-blur-sm">
+                      <div className="flex items-center justify-between text-[10px] tracking-tight">
+                        <span className="text-amber-300 font-medium">Budget Bonus</span>
                         <span
-                          className={`font-semibold ${
+                          className={`font-semibold tabular-nums ${
                             budgetMultiplierData.percentChange > 0
-                              ? "text-green-600 dark:text-green-400"
+                              ? "text-emerald-400"
                               : budgetMultiplierData.percentChange < 0
-                                ? "text-red-600 dark:text-red-400"
+                                ? "text-red-400"
                                 : "text-muted-foreground"
                           }`}
                         >
@@ -261,7 +259,7 @@ export function VaultWidget() {
             <div
               className={cn(
                 "mt-1.5 space-y-1 pt-3",
-                !isMainVaultPage && "border-t border-slate-200 dark:border-white/5"
+                !isMainVaultPage && "border-t border-white/10"
               )}
             >
               {[
@@ -272,10 +270,10 @@ export function VaultWidget() {
                   icon: Wallet,
                   isActive: pathname === "/vault" || pathname === "/vault/",
                   gradient:
-                    "from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 hover:from-purple-500/15 hover:to-pink-500/15 dark:hover:from-purple-500/30 dark:hover:to-pink-500/30",
+                    "from-purple-500/15 to-pink-500/15 hover:from-purple-500/25 hover:to-pink-500/25",
                   activeBorder: "border-purple-500/30",
                   activeGlow: "shadow-purple-500/10",
-                  activeText: "text-purple-600 dark:text-purple-400",
+                  activeText: "text-purple-300",
                 },
                 {
                   id: "cards" as const,
@@ -290,10 +288,10 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/lore-gallery") ||
                     pathname.startsWith("/vault/ns-library"),
                   gradient:
-                    "from-amber-500/10 to-yellow-500/10 dark:from-amber-500/20 dark:to-yellow-500/20 hover:from-amber-500/15 hover:to-yellow-500/15 dark:hover:from-amber-500/30 dark:hover:to-yellow-500/30",
+                    "from-amber-500/15 to-yellow-500/15 hover:from-amber-500/25 hover:to-yellow-500/25",
                   activeBorder: "border-amber-500/30",
                   activeGlow: "shadow-amber-500/10",
-                  activeText: "text-amber-600 dark:text-amber-400",
+                  activeText: "text-amber-300",
                 },
                 {
                   id: "marketplace" as const,
@@ -308,10 +306,10 @@ export function VaultWidget() {
                     pathname.startsWith("/vault/trading") ||
                     pathname.startsWith("/vault/market"),
                   gradient:
-                    "from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 hover:from-blue-500/15 hover:to-cyan-500/15 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30",
+                    "from-blue-500/15 to-cyan-500/15 hover:from-blue-500/25 hover:to-cyan-500/25",
                   activeBorder: "border-blue-500/30",
                   activeGlow: "shadow-blue-500/10",
-                  activeText: "text-blue-600 dark:text-blue-400",
+                  activeText: "text-blue-300",
                 },
                 {
                   id: "import" as const,
@@ -320,10 +318,10 @@ export function VaultWidget() {
                   icon: Download,
                   isActive: pathname.startsWith("/vault/import"),
                   gradient:
-                    "from-rose-500/10 to-orange-500/10 dark:from-rose-500/20 dark:to-orange-500/20 hover:from-rose-500/15 hover:to-orange-500/15 dark:hover:from-rose-500/30 dark:hover:to-rose-500/30",
+                    "from-rose-500/15 to-orange-500/15 hover:from-rose-500/25 hover:to-rose-500/25",
                   activeBorder: "border-rose-500/30",
                   activeGlow: "shadow-rose-500/10",
-                  activeText: "text-rose-600 dark:text-rose-400",
+                  activeText: "text-rose-300",
                 },
                 {
                   id: "achievements" as const,
@@ -332,10 +330,10 @@ export function VaultWidget() {
                   icon: Trophy,
                   isActive: pathname.startsWith("/achievements"),
                   gradient:
-                    "from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 hover:from-amber-500/15 hover:to-orange-500/15 dark:hover:from-amber-500/30 dark:hover:to-orange-500/30",
+                    "from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25",
                   activeBorder: "border-amber-500/30",
                   activeGlow: "shadow-amber-500/10",
-                  activeText: "text-amber-600 dark:text-amber-400",
+                  activeText: "text-amber-300",
                 },
               ]
                 .filter((item) => {
@@ -349,23 +347,23 @@ export function VaultWidget() {
                       key={item.id}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold backdrop-blur-sm transition-all duration-205",
+                        "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs font-semibold backdrop-blur-md transition-all duration-150 active:scale-[0.97]",
                         item.isActive
                           ? cn(
-                              "bg-gradient-to-r",
+                              "bg-gradient-to-r shadow-md",
                               item.gradient,
                               item.activeBorder,
                               item.activeGlow,
                               item.activeText
                             )
-                          : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/5"
+                          : "text-muted-foreground hover:text-foreground border-transparent hover:bg-white/[0.06]"
                       )}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
                       <PreText
                         font="12px Inter, sans-serif"
                         lineHeight={14}
-                        className="flex-1 truncate text-[11px] leading-tight font-semibold select-none"
+                        className="flex-1 truncate text-[11px] leading-tight font-semibold tracking-tight select-none"
                       >
                         {item.title}
                       </PreText>
@@ -374,10 +372,10 @@ export function VaultWidget() {
                 })}
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 pt-0.5">
               <Link
                 href="/vault"
-                className="block text-center text-[0.65rem] text-blue-600 transition-colors hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                className="block text-center text-xs font-medium tracking-tight text-amber-400 transition-all duration-150 hover:text-amber-300 hover:underline active:scale-[0.97]"
               >
                 View Full Vault →
               </Link>

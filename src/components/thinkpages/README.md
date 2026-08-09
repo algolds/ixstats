@@ -1,30 +1,65 @@
-# ThinkPages Component Suite
+# Thinkpages Component Architecture & Modular Blueprint
 
-**Last updated:** May 2026
+High-performance, Apple-polished social knowledge sharing suite built for Next.js 16 and React 19.
 
-Components in this folder power the ThinkPages social and collaboration experience.
+---
 
-## Highlights
-| Component | Description |
-| --- | --- |
-| `ThinkpagesSocialPlatform.tsx` | Top-level feed container (lists posts, trending content) |
-| `ThinkpagesPost.tsx` | Post card with reactions, metadata, and contextual actions |
-| `PostComposer.tsx` | Rich text composer for new posts (uses `RichTextEditor.tsx`) |
-| `ThinktankGroups.tsx` | ThinkTank discovery and management UI |
-| `LiveEventsFeed.tsx` | Live activity ticker (subscribes to social events) |
-| `AccountCreationModal.tsx` / `AccountSettingsModal.tsx` | Onboarding and profile management |
-| `EnhancedAccountManager.tsx` | Admin/DM tools for managing ThinkPages users |
-| `ReactionPopup.tsx`, `ReactionsDialog.tsx` | Reaction interaction patterns |
-| `WikiSearch.tsx`, `WikiImageSearch.tsx` | Integrated wiki lookups for referencing content |
-| `GlassCanvasComposer.tsx` | Visual canvas for collaborative storytelling experiments |
+## Folder & Component Taxonomy
 
-Support modules:
-- `primitives/` – Shared layout pieces, hover cards, drawers
-- `RichTextEditor.tsx` – Editor built on tiptap/lexical style primitives
+All components are organized into specialized domain sub-directories:
 
-## Usage Tips
-- Keep new components inside `primitives/` when they are generic enough to reuse within ThinkPages
-- Shared functionality that could benefit other domains should graduate to `src/components/shared`
-- Update `/help/social/*` and `docs/systems/social.md` when adding new user-facing capabilities
+### 1. Main Orchestrators (`src/components/thinkpages/`)
+- `ThinkpagesPost.tsx` (227 lines) — Top-level post router dispatches between `<HeroPostView>` and `<StandardPostView>`.
+- `GlassCanvasComposer.tsx` (360 lines) — Modular post composer container with macOS glassmorphism styling.
+- `GlassPlateEditor.tsx` (448 lines) — Rich PlateJS Slate editor container.
+- `AccountCreationModal.tsx` (584 lines) — Multi-step persona account creation wizard.
+- `SportsBulletinCard.tsx` (315 lines) — Apple HIG-inspired sports matchday & standings bulletin card.
 
-This README should be updated whenever major components are added or renamed.
+---
+
+### 2. Post Suite (`src/components/thinkpages/post/`)
+- `ThinkpagesPostUtils.tsx` (103 lines) — Centralized domain primitives (`ACCOUNT_TYPE_ICONS`, `ACCOUNT_TYPE_COLORS`, `REACTION_ICONS`, `getDiscordEmojiUrl`, `proxyDiscordUrl`, `<RelativeTimestamp>`).
+- `StandardPostView.tsx` (594 lines) — Standard feed post item card renderer.
+- `HeroPostView.tsx` (383 lines) — Dedicated hero view renderer for featured and detail posts.
+- `RepostCard.tsx` (92 lines) — Quote post card layout, author header, and quote media grid.
+- `ReactionPills.tsx` (67 lines) — Reaction counter pills row above engagement actions.
+- `ThreadReplies.tsx` (99 lines) — Collapsible thread replies container and recursive post mapper.
+- `PostHeader.tsx` (173 lines) — Author metadata, avatar, badges, timestamp, and dropdown menu.
+- `PostBody.tsx` (92 lines) — Post body content renderer, blurb tags, and sports bulletin card dispatcher.
+- `PostMediaGrid.tsx` (68 lines) — Flexible media attachment grid with lightbox triggers.
+- `PostInlineLinkPreview.tsx` (71 lines) — Smart inline link previews for Wiki, Forum, League, and Club links.
+- `PostFooterActions.tsx` (109 lines) — Footer engagement statistics and reaction counters.
+- `PostModals.tsx` (209 lines) — Delete confirmation, flag/report dialog, reactions dialog, and image lightbox modal.
+- `PostComposers.tsx` (161 lines) — In-line edit composer and reply composer with auto-focus.
+- `useThinkpagesPost.ts` (457 lines) — Custom React hook encapsulating state, tRPC mutations, and handlers.
+
+---
+
+### 3. Composer Suite (`src/components/thinkpages/composer/`)
+- `useGlassCanvasComposer.ts` (442 lines) — Custom React hook managing composer state, live data queries, and post mutations.
+- `ComposerHeader.tsx` (100 lines) — Account selector avatar button and Discord crossposting toggle.
+- `ComposerToolbar.tsx` (114 lines) — Media attachment trigger, character count, and post submit button.
+- `ComposerVisualizationsPanel.tsx` (119 lines) — Live data card attachments (GDP, Demographics, Trade).
+- `ComposerPollModal.tsx` (156 lines) — Dynamic interactive poll creation modal.
+
+---
+
+### 4. Editor Suite (`src/components/thinkpages/editor/`)
+- `EditorPlugins.tsx` (133 lines) — Slate plugins for formatting, embeds, and rich elements.
+- `EditorToolbar.tsx` (154 lines) — Formatting toolbar (Bold, Italic, Lists, Links, Emoji).
+- `WikiAndStashPopovers.tsx` (314 lines) — Popover drawers for inserting Wiki links, Wiki embeds, Stashes assets, and emojis.
+- `MentionMenuPortal.tsx` (94 lines) — Portal dropdown for `@` mention autocomplete (users, leagues, clubs, countries).
+- `SlateSerializer.ts` (242 lines) — Slate-to-HTML serializer, HTML-to-Slate deserializer, and Slate node manipulators.
+- `useGlassPlateEditor.ts` (553 lines) — Custom React hook managing PlateJS editor instance and selection states.
+
+---
+
+### 5. Account Suite (`src/components/thinkpages/account/`)
+- `AccountTypeSelector.tsx` (126 lines) — Persona selection cards (Government, Media, Citizen).
+- `AccountDetailsForm.tsx` (170 lines) — Account form inputs (displayName, username check, bio, profile image picker).
+
+---
+
+### 6. Primitives & Helpers (`src/components/thinkpages/primitives/`)
+- `PostActions.tsx` (700 lines) — Engagement bar (Like, Repost, Reply, Share, Reactions).
+- `ReactionCacheUpdater.ts` (159 lines) — Optimistic React Query cache update helpers.

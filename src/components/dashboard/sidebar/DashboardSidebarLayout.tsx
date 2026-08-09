@@ -174,7 +174,7 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "sticky top-6 space-y-4 transition-all duration-300 ease-in-out",
+                  "sticky top-6 space-y-3.5 transition-all duration-300 ease-in-out",
                   variant === "rail"
                     ? "translate-x-0 opacity-100"
                     : isCollapsedNow
@@ -198,7 +198,7 @@ export function DashboardSidebarLayout({
                 {!disableCollapse && variant !== "rail" && (
                   <button
                     onClick={handleToggleSidebar}
-                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border border-white/5 bg-white/5 px-3 py-2 text-[10px] font-semibold transition-all hover:bg-white/10 active:scale-[0.98]"
+                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-medium tracking-tight shadow-sm backdrop-blur-md transition-all duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
                     title="Collapse sidebar"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -214,7 +214,7 @@ export function DashboardSidebarLayout({
               {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
                 <button
                   onClick={handleToggleSidebar}
-                  className="text-muted-foreground hover:text-foreground fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/60 shadow-lg backdrop-blur-md transition-all hover:scale-105 hover:bg-black/80"
+                  className="text-muted-foreground hover:text-foreground fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 shadow-xl backdrop-blur-xl transition-all duration-150 hover:scale-105 hover:bg-black/60 active:scale-[0.95]"
                   title="Expand sidebar"
                 >
                   <ChevronRight className="h-4 w-4" />

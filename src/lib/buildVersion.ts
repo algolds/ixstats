@@ -51,7 +51,7 @@ export const VERSIONS = {
   systems: {
     mycountry: 4, // public-facing executive command UI; v4: v2 Issue Brief surface + intent progress in agenda/drill sheets
     builder: 2,
-    thinkpages: 1,
+    thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer

@@ -211,6 +211,9 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **NS image proxy**: NationStates images go through `/api/proxy-ns-image` (hotlinking restrictions).
 - **Zod v4 migration**: Schema syntax differs from v3. Check existing routers for patterns.
 - **Tailwind v4**: Uses `@theme` directives, not `tailwind.config.js`. Config is CSS-based.
+- **Multi-branch Component Rendering**: Large monolith UI components (e.g. `ThinkpagesPost.tsx`, `UnifiedFeedItem.tsx`) have multiple conditional render branches (hero view, standard feed list item view, repost view, detail modal view). When adding custom embeds or card formatters, ensure ALL render paths are updated.
+- **JS Regex Unicode Range Flag**: In JavaScript non-unicode regexes (`/[\u1F300-\u1F9FF]/g` without `/u`), range bounds match Latin ASCII letters (`A-Z`, `a-z`) and erase standard text! Always use the `/u` flag (`/[\u{1F300}-\u{1F9FF}]/gu`) or explicit character sets when matching emojis.
+- **Blurb Tag Stripping**: Thinkpages social posts contain leading `[blurb:slug|Title]` header tags. Content parsers (e.g., `parseSportsBulletin`) must strip `^\[blurb:[^\]]+\]\s*` before inspecting line-0 headers.
 
 ## Code Conventions
 

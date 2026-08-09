@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   ChevronUp,
   ClipboardList,
-  Layers,
+  CalendarCheck,
   Users,
   DollarSign,
   Map as MapIcon,
@@ -95,18 +95,18 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
   if (profileLoading) {
     return (
       <CutoutCard
-        className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+        className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl shadow-lg")}
         trackPointerHover={false}
       >
-        <div className="relative flex min-h-[80px] flex-col items-center justify-center bg-indigo-500/10 px-3 pt-3 pb-6">
-          <Skeleton className="h-4 w-24 rounded-sm" />
+        <div className="relative flex min-h-[90px] flex-col items-center justify-center bg-indigo-500/10 px-3 pt-3 pb-6 backdrop-blur-md">
+          <Skeleton className="h-4 w-24 rounded-full" />
           <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
           <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
         </div>
-        <CutoutCardContent className="space-y-2.5 p-3 pt-0">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-28" />
+        <CutoutCardContent className="space-y-2.5 p-3 pt-1">
+          <Skeleton className="h-4 w-24 rounded-md" />
+          <Skeleton className="h-4 w-20 rounded-md" />
+          <Skeleton className="h-4 w-28 rounded-md" />
         </CutoutCardContent>
       </CutoutCard>
     );
@@ -125,15 +125,18 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "group relative w-48 overflow-hidden rounded-xl")}
+      className={cn(
+        cutoutCardSurfaceClassName,
+        "group relative w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-all duration-200"
+      )}
       trackPointerHover={false}
       texture="dots"
-      textureOpacity={0.06}
+      textureOpacity={0.05}
     >
       {/* Neon Frame Overlay */}
-      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-xl" />
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-2xl" />
       {/* Cutout tab header */}
-      <div className="relative flex min-h-[90px] flex-col items-center justify-center overflow-hidden bg-indigo-500/10 px-3 pt-3 pb-6">
+      <div className="relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-indigo-500/15 via-indigo-900/20 to-transparent px-3 pt-3.5 pb-6 backdrop-blur-md">
         {/* Background flag filling the top */}
         {userProfile?.country?.name && (
           <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
@@ -143,10 +146,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               fitContainer={true}
               showTooltip={false}
               rounded={false}
-              className="h-full w-full object-cover opacity-45 brightness-75 transition-all duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover opacity-40 brightness-90 transition-transform duration-500 ease-out group-hover:scale-105"
             />
             {/* Soft overlay gradient to ensure text readability */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/10 via-black/25 to-black/50" />
+            <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-black/40 to-black/70" />
           </div>
         )}
 
@@ -154,7 +157,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         <AvatarGlow
           avatarGlow={avatarGlow}
           roundedClass="rounded-full"
-          className="relative z-20 mb-1.5 h-8 w-8 bg-indigo-950/60 shadow-md backdrop-blur-sm"
+          className="relative z-20 mb-1.5 h-9 w-9 bg-indigo-950/70 shadow-lg backdrop-blur-md ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105"
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
@@ -176,7 +179,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {/* Country Name Link */}
         <Link
           href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
-          className="relative z-20 flex items-center justify-center gap-1 text-center text-sm font-bold tracking-wide text-white drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] hover:text-white/80 hover:underline"
+          className="relative z-20 flex items-center justify-center gap-1 text-center text-sm font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-colors hover:text-indigo-200"
         >
           <span>{userProfile?.country?.name ?? "My Country"}</span>
           {chatBadge.enabled && (
@@ -191,7 +194,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <span
                 key={ach.key}
                 title={ach.description}
-                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/10 bg-white/10 px-1.5 py-0.5 text-[8px] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] backdrop-blur-md transition-colors hover:bg-white/20"
+                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-[8px] font-medium text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>
@@ -210,29 +213,29 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {/* Condensed hero stats — visible when hero is collapsed */}
         {heroCollapsed && (
           <>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                  <Users className="h-3 w-3 text-blue-500 dark:text-blue-400" /> Pop
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-tight">
+                  <Users className="h-3 w-3 text-blue-400" /> Pop
                 </span>
-                <span className="text-foreground text-[10px] font-semibold">
+                <span className="text-foreground font-semibold tabular-nums">
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                  <DollarSign className="h-3 w-3 text-emerald-500 dark:text-emerald-400" /> GDP
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-tight">
+                  <DollarSign className="h-3 w-3 text-emerald-400" /> GDP
                 </span>
-                <span className="text-foreground text-[10px] font-semibold">
+                <span className="text-foreground font-semibold tabular-nums">
                   {formatCompactCurrency((country as any)?.newStats?.currentTotalGdp ?? 0)}
                 </span>
               </div>
               {(country as any)?.newStats?.landArea && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                    <MapIcon className="h-3 w-3 text-amber-500 dark:text-amber-400" /> Area
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-tight">
+                    <MapIcon className="h-3 w-3 text-amber-400" /> Area
                   </span>
-                  <span className="text-foreground text-[10px] font-semibold">
+                  <span className="text-foreground font-semibold tabular-nums">
                     {Math.round((country as any)?.newStats?.landArea).toLocaleString()} km²
                   </span>
                 </div>
@@ -240,107 +243,107 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             </div>
             <button
               onClick={onHeroExpand}
-              className="text-muted-foreground hover:text-foreground bg-muted/40 flex w-full cursor-pointer items-center justify-center gap-1 rounded-md px-2 py-1 text-[9px] transition-colors"
+              className="text-muted-foreground hover:text-foreground bg-white/[0.04] hover:bg-white/[0.08] flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-white/5 py-1 text-[9px] font-medium tracking-tight backdrop-blur-md transition-all active:scale-[0.97]"
             >
               <ChevronUp className="h-3 w-3 rotate-180" />
               Expand
             </button>
-            <div className="border-border/40 border-t" />
+            <div className="border-border/30 border-t" />
           </>
         )}
 
         {/* Compact horizontal row of quick-action icons */}
-        <div className="grid grid-cols-3 gap-1.5 pt-2">
+        <div className="grid grid-cols-3 gap-1.5 pt-1.5">
           {/* Messages */}
           <Link
             href="/messages"
-            className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-2 py-2.5 transition-all hover:scale-105 hover:bg-indigo-500/20"
+            className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-500/10 px-1.5 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] hover:bg-indigo-500/20 active:scale-[0.94]"
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
                 : "No unread messages"
             }
           >
-            <Mail className="h-4 w-4 text-indigo-600 transition-colors dark:text-indigo-400" />
+            <Mail className="h-4 w-4 text-indigo-400 transition-transform duration-150 group-hover/icon:scale-110" />
             {totalUnreadMessages > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-bold text-white shadow-sm">
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-bold text-white shadow-md tabular-nums animate-in fade-in zoom-in-75">
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1.5 text-[9px] font-semibold tracking-normal text-indigo-600 uppercase dark:text-indigo-400">
+            <span className="mt-1.5 text-[9px] font-semibold tracking-tight text-indigo-400">
               Mail
             </span>
           </Link>
 
-          {/* Issues */}
+          {/* Directives */}
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
-              className="group/icon relative flex flex-col items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-2.5 transition-all hover:scale-105 hover:bg-amber-500/20"
-              title={`${issueCount} pending issues (${urgentCount} urgent)`}
+              className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/10 px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] hover:bg-amber-500/20 active:scale-[0.94]"
+              title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
-              <ClipboardList className="h-4 w-4 text-amber-600 transition-colors dark:text-amber-500" />
+              <ClipboardList className="h-4 w-4 text-amber-400 transition-transform duration-150 group-hover/icon:scale-110" />
               {(issueCount > 0 || urgentCount > 0) && (
                 <span
                   className={cn(
-                    "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm",
+                    "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-md tabular-nums animate-in fade-in zoom-in-75",
                     urgentCount > 0 ? "animate-pulse bg-red-500" : "bg-amber-500"
                   )}
                 >
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1.5 text-[9px] font-semibold tracking-normal text-amber-600 uppercase dark:text-amber-500">
-                Issues
+              <span className="mt-1.5 max-w-full truncate text-[8.5px] font-semibold tracking-tight text-amber-400">
+                Directives
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-2 py-2.5 opacity-35">
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-white/5 bg-white/[0.03] px-1 py-2.5 opacity-35">
               <ClipboardList className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 text-[9px] font-semibold tracking-normal uppercase">
-                Issues
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[8.5px] font-medium tracking-tight">
+                Directives
               </span>
             </div>
           )}
 
-          {/* Actions */}
+          {/* Agenda */}
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive")}
               className={cn(
-                "group/icon relative flex flex-col items-center justify-center rounded-lg px-2 py-2.5 transition-all hover:scale-105",
+                "group/icon relative flex flex-col items-center justify-center rounded-xl px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] active:scale-[0.94]",
                 pendingActions > 0
-                  ? "border border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20"
-                  : "border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/20"
+                  ? "border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/20"
+                  : "border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20"
               )}
-              title={pendingActions > 0 ? `${pendingActions} pending actions` : "All actions clear"}
+              title={pendingActions > 0 ? `${pendingActions} pending agenda items` : "All agenda clear"}
             >
-              <Layers
+              <CalendarCheck
                 className={cn(
-                  "h-4 w-4 transition-colors",
-                  pendingActions > 0 ? "text-orange-500" : "text-emerald-600 dark:text-emerald-400"
+                  "h-4 w-4 transition-transform duration-150 group-hover/icon:scale-110",
+                  pendingActions > 0 ? "text-orange-400" : "text-emerald-400"
                 )}
               />
               <span
                 className={cn(
-                  "absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-sm",
+                  "absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-md ring-2 ring-background",
                   pendingActions > 0 ? "bg-orange-500" : "bg-emerald-500"
                 )}
               />
               <span
                 className={cn(
-                  "mt-1.5 text-[9px] font-semibold tracking-normal uppercase",
-                  pendingActions > 0 ? "text-orange-500" : "text-emerald-600 dark:text-emerald-400"
+                  "mt-1.5 max-w-full truncate text-[8.5px] font-semibold tracking-tight",
+                  pendingActions > 0 ? "text-orange-400" : "text-emerald-400"
                 )}
               >
-                Actions
+                Agenda
               </span>
             </Link>
           ) : (
-            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-lg border border-white/5 bg-white/5 px-2 py-2.5 opacity-35">
-              <Layers className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 text-[9px] font-semibold tracking-normal uppercase">
-                Actions
+            <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-white/5 bg-white/[0.03] px-1 py-2.5 opacity-35">
+              <CalendarCheck className="text-muted-foreground h-4 w-4" />
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[8.5px] font-medium tracking-tight">
+                Agenda
               </span>
             </div>
           )}
@@ -348,16 +351,14 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
         {/* Active Crises Warning Banner */}
         {crisesCount > 0 && (
-          <div className="mt-1 border-t border-red-500/15 pt-2">
+          <div className="mt-1 border-t border-red-500/20 pt-2">
             <Link
               href={createUrl("/mycountry/executive")}
-              className="flex animate-pulse items-center justify-center gap-1.5 rounded border border-red-500/10 bg-red-500/5 py-1 text-red-500 transition-colors hover:bg-red-500/10"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-1.5 text-red-400 font-semibold tracking-tight text-[9px] uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-all duration-150 hover:bg-red-500/20 active:scale-[0.96]"
               title={`${crisesCount} active crises! Click to view.`}
             >
-              <AlertTriangle className="h-3.5 w-3.5" />
-              <span className="text-[9px] font-bold tracking-wider uppercase">
-                {crisesCount} Crises Active
-              </span>
+              <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-400" />
+              <span>{crisesCount} Crises Active</span>
             </Link>
           </div>
         )}

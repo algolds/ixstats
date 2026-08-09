@@ -47,41 +47,11 @@ const REACTION_COLORS: { [key: string]: string } = {
   thumbsdown: "text-gray-500",
 };
 
-const DISCORD_EMOJI_REACTIONS = [
-  { name: "ixnay", url: "https://cdn.discordapp.com/emojis/559232409451888640.png" },
-  { name: "heky_boi", url: "https://cdn.discordapp.com/emojis/580813300733157376.png" },
-  { name: "pog", url: "https://cdn.discordapp.com/emojis/739969522139209748.png" },
-];
-
-function getDiscordEmojiUrl(
-  reactionType: string,
-  apiEmojis?: Array<{ name: string; url: string }>
-): string | null {
-  if (!reactionType.startsWith("discord:")) return null;
-  const parts = reactionType.split(":");
-  const emojiId = parts[2] || "";
-  if (emojiId) {
-    return `https://cdn.discordapp.com/emojis/${emojiId}.png`;
-  }
-  const emojiName = parts[1] || reactionType.replace("discord:", "");
-  const hardcoded = DISCORD_EMOJI_REACTIONS.find((e) => e.name === emojiName);
-  if (hardcoded) return hardcoded.url;
-  const fromApi = apiEmojis?.find((e) => e.name === emojiName);
-  if (fromApi) return fromApi.url;
-  return null;
-}
-
-const ACCOUNT_TYPE_ICONS = {
-  government: Crown,
-  media: Newspaper,
-  citizen: Users,
-};
-
-const ACCOUNT_TYPE_COLORS = {
-  government: "text-amber-500 bg-amber-500/20",
-  media: "text-blue-500 bg-blue-500/20",
-  citizen: "text-green-500 bg-green-500/20",
-};
+import {
+  ACCOUNT_TYPE_ICONS,
+  ACCOUNT_TYPE_COLORS,
+  getDiscordEmojiUrl,
+} from "./post/ThinkpagesPostUtils";
 
 export function ReactionsDialog({
   postId,

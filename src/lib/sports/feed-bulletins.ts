@@ -48,12 +48,15 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
 }
 
 function cleanNameAndId(rawName: string): { name: string; id?: string } {
-  // Strip trophies and bold tags first
-  let clean = rawName.replace(/🏆/g, "").replace(/\*\*/g, "").trim();
-  // Check if it matches markdown link: [Name](/path/id)
+  let clean = rawName
+    .replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "")
+    .trim();
+
   const linkMatch = clean.match(/\[([^\]]+)\]\(([^)]+)\)/);
   if (linkMatch) {
-    const name = linkMatch[1]!.trim();
+    const name = linkMatch[1]!
+      .replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "")
+      .trim();
     const url = linkMatch[2]!;
     const idMatch = url.match(/\/(?:myclub|myleague)\/([a-zA-Z0-9_-]+)/);
     return {
@@ -64,8 +67,53 @@ function cleanNameAndId(rawName: string): { name: string; id?: string } {
   return { name: clean };
 }
 
+/**
+ * Parse a single result line using dash-relative score extraction.
+ * Guarantees correct home/away scores even when team names contain digits (e.g. "Imperial League Team 11").
+ */
+function parseResultLineFromText(line: string): {
+  home: { name: string; id?: string };
+  away: { name: string; id?: string };
+  homeScore: number;
+  awayScore: number;
+  isUpset?: boolean;
+} | null {
+  const dashMatch = line.match(/(.*?)\b(\d+)\s*[-–—]\s*(\d+)\b(.*)/);
+  if (!dashMatch) return null;
+
+  const leftPart = dashMatch[1]!.trim();
+  const homeScore = Number(dashMatch[2]);
+  const awayScore = Number(dashMatch[3]);
+  const rightPart = dashMatch[4]!.trim();
+
+  const homeInfo = cleanNameAndId(leftPart);
+  const awayInfo = cleanNameAndId(rightPart);
+
+  if (!homeInfo.name || !awayInfo.name || Number.isNaN(homeScore) || Number.isNaN(awayScore)) {
+    return null;
+  }
+
+  const isUpset = line.includes("⭐") || leftPart.includes("🏆") || rightPart.includes("🏆");
+
+  return {
+    home: {
+      name: homeInfo.name,
+      ...(homeInfo.id ? { id: homeInfo.id } : {}),
+    },
+    away: {
+      name: awayInfo.name,
+      ...(awayInfo.id ? { id: awayInfo.id } : {}),
+    },
+    homeScore,
+    awayScore,
+    ...(isUpset ? { isUpset: true } : {}),
+  };
+}
+
 export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
   if (!content) return null;
+
+  // 1. Primary: JSON comment marker
   const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
   if (match) {
     try {
@@ -75,163 +123,185 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
     }
   }
 
-  // Detect Champion Bulletin
-  const lines = content.split(/\r?\n/);
-  const firstLine = lines[0] || "";
-  const champHeaderMatch = firstLine.match(
-    /^(?:([^\s*]+)\s+)?🏆\s+(?:\*\*)?(.+?)\s+CHAMPION CROWNED!(?:\*\*)?/i
-  );
-  if (champHeaderMatch) {
-    const sportEmoji = champHeaderMatch[1] || "";
-    const leagueInfo = cleanNameAndId(champHeaderMatch[2]!);
-    const leagueName = leagueInfo.name;
-    const leagueId = leagueInfo.id;
+  // Strip blurb header wrapper if present: [blurb:slug|Title]\n\n...
+  const cleanStr = content.replace(/^\[blurb:[^\]]+\]\s*/i, "").trim();
 
-    let championName = "";
-    let championId = "";
-    let llmSummary = "";
-    let inSummary = false;
-    const summaryLines: string[] = [];
+  const lines = cleanStr.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
 
-    for (const raw of lines.slice(1)) {
-      const line = raw.trim();
-      if (!line || /^═+$/.test(line) || /^---+$/.test(line)) continue;
-
-      const congratMatch = line.match(/Congratulations to\s+(.+?)\s+for winning/i);
-      if (congratMatch) {
-        const champInfo = cleanNameAndId(congratMatch[1]!);
-        championName = champInfo.name;
-        championId = champInfo.id || "";
-        continue;
-      }
-
-      if (line.includes("Season Summary")) {
-        inSummary = true;
-        continue;
-      }
-
-      if (inSummary) {
-        summaryLines.push(line);
-      }
+  // Helper to extract optional leading emoji and clean league name
+  const extractHeaderInfo = (rawLeft: string) => {
+    let str = rawLeft.trim();
+    const emojiMatch = str.match(/^([\u1F300-\u1F9FF\u2600-\u26FF\u2700-\u27BF])\s*/);
+    let sportEmoji = "🏆";
+    if (emojiMatch) {
+      sportEmoji = emojiMatch[1]!;
+      str = str.substring(emojiMatch[0].length).trim();
     }
+    const leagueInfo = cleanNameAndId(str);
+    return { sportEmoji, leagueInfo };
+  };
 
-    if (summaryLines.length > 0) {
-      llmSummary = summaryLines.join("\n");
+  // 2. Detect Champion Bulletin: line containing "CHAMPION CROWNED!"
+  for (let i = 0; i < Math.min(lines.length, 3); i++) {
+    const line = lines[i]!;
+    const champMatch = line.match(/\s+CHAMPION CROWNED!\s*$/i) || line.match(/CHAMPION CROWNED!/i);
+    if (champMatch) {
+      const rawLeft = line.substring(0, champMatch.index).trim();
+      const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
+
+      let championName = "";
+      let championId = "";
+      let llmSummary = "";
+      let inSummary = false;
+      const summaryLines: string[] = [];
+
+      for (const rawLine of lines.slice(i + 1)) {
+        if (!rawLine || /^═+$/.test(rawLine) || /^---+$/.test(rawLine)) continue;
+
+        const congratMatch = rawLine.match(/Congratulations to\s+(.+?)\s+for winning/i);
+        if (congratMatch) {
+          const champInfo = cleanNameAndId(congratMatch[1]!);
+          championName = champInfo.name;
+          championId = champInfo.id || "";
+          continue;
+        }
+
+        if (rawLine.includes("Season Summary")) {
+          inSummary = true;
+          continue;
+        }
+
+        if (inSummary) {
+          summaryLines.push(rawLine);
+        }
+      }
+
+      if (summaryLines.length > 0) {
+        llmSummary = summaryLines.join("\n");
+      }
+
+      return {
+        league: { name: leagueInfo.name, id: leagueInfo.id },
+        sportEmoji,
+        isChampionBulletin: true,
+        championName: championName || undefined,
+        championId: championId || undefined,
+        llmSummary: llmSummary || undefined,
+      };
     }
-
-    return {
-      league: { name: leagueName, id: leagueId },
-      sportEmoji,
-      isChampionBulletin: true,
-      championName: championName || undefined,
-      championId: championId || undefined,
-      llmSummary: llmSummary || undefined,
-    };
   }
 
-  // Detect Playoff Bulletin
-  const playoffHeaderMatch = firstLine.match(
-    /^(?:([^\s*]+)\s+)?(?:\*\*)?(.+?)\s+Playoff\s+(.+?)\s+Results(?:\*\*)?/i
-  );
-  if (playoffHeaderMatch) {
-    const sportEmoji = playoffHeaderMatch[1] || "";
-    const leagueInfo = cleanNameAndId(playoffHeaderMatch[2]!.replace(/\s+Playoff$/i, "").trim());
-    const leagueName = leagueInfo.name;
-    const leagueId = leagueInfo.id;
-    const roundName = playoffHeaderMatch[3]!;
+  // 3. Detect Playoff Bulletin: line containing "Playoff <Round> Results"
+  for (let i = 0; i < Math.min(lines.length, 3); i++) {
+    const line = lines[i]!;
+    const playoffMatch = line.match(/\s+Playoff\s+(.+?)\s+Results(?:\*\*)?\s*$/i);
+    if (playoffMatch) {
+      const roundName = playoffMatch[1]!.trim();
+      const rawLeft = line.substring(0, playoffMatch.index).trim();
+      const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
 
-    const results: SportsBulletinData["results"] = [];
-    let llmSummary = "";
-    let inSummary = false;
-    const summaryLines: string[] = [];
+      const results: SportsBulletinData["results"] = [];
+      let llmSummary = "";
+      let inSummary = false;
+      const summaryLines: string[] = [];
 
-    for (const raw of lines.slice(1)) {
-      const line = raw.trim();
-      if (!line || /^═+$/.test(line) || /^---+$/.test(line)) continue;
+      for (const rawLine of lines.slice(i + 1)) {
+        if (!rawLine || /^═+$/.test(rawLine) || /^---+$/.test(rawLine)) continue;
 
-      if (line.includes("Round Summary") || line.includes("Matchday Summary")) {
-        inSummary = true;
-        continue;
+        if (rawLine.includes("Round Summary") || rawLine.includes("Matchday Summary")) {
+          inSummary = true;
+          continue;
+        }
+
+        if (inSummary) {
+          summaryLines.push(rawLine);
+          continue;
+        }
+
+        const parsedLine = parseResultLineFromText(rawLine);
+        if (parsedLine) {
+          results.push(parsedLine);
+        }
       }
 
-      if (inSummary) {
-        summaryLines.push(line);
-        continue;
+      if (summaryLines.length > 0) {
+        llmSummary = summaryLines.join("\n");
       }
 
-      // Parse score line
-      const scoreRegex = /\s+(\d+)\s*[-–—]\s*(\d+)\s+/;
-      const scoreMatch = line.match(scoreRegex);
-      if (!scoreMatch) continue;
-
-      const scoreIndex = scoreMatch.index!;
-      const scoreLength = scoreMatch[0].length;
-      const leftPart = line.substring(0, scoreIndex).trim();
-      const rightPart = line.substring(scoreIndex + scoreLength).trim();
-
-      const homeScore = Number(scoreMatch[1]);
-      const awayScore = Number(scoreMatch[2]);
-
-      const homeInfo = cleanNameAndId(leftPart);
-      const awayInfo = cleanNameAndId(rightPart);
-
-      if (homeInfo.name && awayInfo.name && !Number.isNaN(homeScore) && !Number.isNaN(awayScore)) {
-        results.push({
-          home: { name: homeInfo.name, id: homeInfo.id },
-          away: { name: awayInfo.name, id: awayInfo.id },
-          homeScore,
-          awayScore,
-        });
-      }
+      return {
+        league: { name: leagueInfo.name, id: leagueInfo.id },
+        sportEmoji,
+        isPlayoffBulletin: true,
+        roundName,
+        results: results.length > 0 ? results : undefined,
+        llmSummary: llmSummary || undefined,
+      };
     }
-
-    if (summaryLines.length > 0) {
-      llmSummary = summaryLines.join("\n");
-    }
-
-    return {
-      league: { name: leagueName, id: leagueId },
-      sportEmoji,
-      isPlayoffBulletin: true,
-      roundName,
-      results: results.length > 0 ? results : undefined,
-      llmSummary: llmSummary || undefined,
-    };
   }
 
-  // Fallback to matchday parser
-  return parseMarkdownBulletin(content);
+  // 4. Single Match Bulletin: line containing "📢 [MyLeague Bulletin]"
+  for (let i = 0; i < Math.min(lines.length, 3); i++) {
+    const line = lines[i]!;
+    const singleMatch = line.match(/^📢?\s*\[MyLeague Bulletin\]\s*(.*)/i);
+    if (singleMatch) {
+      const resultText = singleMatch[1]!.trim();
+      const parsedLine = parseResultLineFromText(resultText);
+      if (parsedLine) {
+        let leagueName = "MyLeague";
+        const homeName = parsedLine.home.name;
+        const leagueMatch = homeName.match(/^(.*?)\s+Team\s+\d+$/i);
+        if (leagueMatch) {
+          leagueName = leagueMatch[1]!;
+        }
+
+        return {
+          league: { name: leagueName },
+          sportEmoji: "⚽",
+          results: [parsedLine],
+        };
+      }
+    }
+  }
+
+  // 5. Fallback: Matchday Bulletin
+  return parseMarkdownBulletin(lines, extractHeaderInfo);
 }
 
-/**
- * Reconstruct bulletin data from the deterministic `formatMatchDayBulletin`
- * markdown (header + score lines + optional table movers). ids are unrecoverable
- * from text, so cards from this path render without deep links.
- *
- * ponytail: heuristic text parse; splits scores on the " – " en-dash. Breaks only
- * if a team name literally contains " – " (none do). Marker-encoded posts skip this.
- */
-function parseMarkdownBulletin(content: string): SportsBulletinData | null {
-  const lines = content.split(/\r?\n/);
-  const header = lines[0]?.match(
-    /^(?:([^\s*]+)\s+)?(?:\*\*)?([^*]+?)(?:\*\*)?\s+—\s+Matchday\s+(\d+)/
-  );
-  if (!header) return null;
+function parseMarkdownBulletin(
+  lines: string[],
+  extractHeaderInfo: (rawLeft: string) => { sportEmoji: string; leagueInfo: { name: string; id?: string } }
+): SportsBulletinData | null {
+  let matchdayMatchIndex = -1;
+  let matchDay = 0;
+  let rawLeft = "";
 
-  const leagueInfo = cleanNameAndId(header[2]!);
+  for (let i = 0; i < Math.min(lines.length, 3); i++) {
+    const line = lines[i]!;
+    const m = line.match(/[-–—]\s*Matchday\s+(\d+)/i);
+    if (m) {
+      matchdayMatchIndex = i;
+      matchDay = Number(m[1]);
+      rawLeft = line.substring(0, m.index).trim();
+      break;
+    }
+  }
+
+  if (matchdayMatchIndex === -1 || !rawLeft) return null;
+
+  const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
   const results: SportsBulletinData["results"] = [];
   const movers: NonNullable<SportsBulletinData["movers"]> = [];
   let inMovers = false;
 
-  for (const raw of lines.slice(1)) {
-    const line = raw.trim();
-    if (!line || /^═+$/.test(line) || /^---+$/.test(line)) continue;
+  for (const line of lines.slice(matchdayMatchIndex + 1)) {
+    if (/^═+$/.test(line) || /^---+$/.test(line)) continue;
     if (line.includes("Table Movers")) {
       inMovers = true;
       continue;
     }
     if (inMovers) {
-      const m = line.match(/^•\s+(.+?)\s+[▲▼]\d+\s+\((\d+)\w+\s+→\s+(\d+)\w+\)/);
+      const m = line.match(/^(?:•|\*|-)?\s*(.+?)\s+[▲▼]\d+\s+\((\d+)\w*\s*→\s*(\d+)\w*\)/);
       if (m) {
         const moverInfo = cleanNameAndId(m[1]!);
         movers.push({
@@ -243,39 +313,18 @@ function parseMarkdownBulletin(content: string): SportsBulletinData | null {
       }
       continue;
     }
-    if (line.startsWith("⭐") || line.startsWith("•") || line.startsWith("📝")) continue;
 
-    // Robust score line matching: Home Score - Score Away (supports standard hyphen, en-dash, and em-dash)
-    const scoreRegex = /\s+(\d+)\s*[-–—]\s*(\d+)\s+/;
-    const scoreMatch = line.match(scoreRegex);
-    if (!scoreMatch) continue;
-
-    const scoreIndex = scoreMatch.index!;
-    const scoreLength = scoreMatch[0].length;
-    const leftPart = line.substring(0, scoreIndex).trim();
-    const rightPart = line.substring(scoreIndex + scoreLength).trim();
-
-    const homeScore = Number(scoreMatch[1]);
-    const awayScore = Number(scoreMatch[2]);
-
-    const homeInfo = cleanNameAndId(leftPart);
-    const awayInfo = cleanNameAndId(rightPart);
-
-    if (Number.isNaN(homeScore) || Number.isNaN(awayScore) || !homeInfo.name || !awayInfo.name)
-      continue;
-    results.push({
-      home: { name: homeInfo.name, id: homeInfo.id },
-      away: { name: awayInfo.name, id: awayInfo.id },
-      homeScore,
-      awayScore,
-    });
+    const parsedLine = parseResultLineFromText(line);
+    if (parsedLine) {
+      results.push(parsedLine);
+    }
   }
 
   if (results.length === 0) return null;
   return {
     league: { name: leagueInfo.name, id: leagueInfo.id },
-    sportEmoji: header[1] || "",
-    matchDay: Number(header[3]),
+    sportEmoji,
+    matchDay,
     results,
     movers: movers.length > 0 ? movers : undefined,
   };

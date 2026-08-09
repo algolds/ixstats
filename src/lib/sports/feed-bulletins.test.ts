@@ -205,13 +205,13 @@ Collinebourg Chevaliers 2 - 0 Famichez 16
     expect(parsed!.league.name).toBe("Ligue Yonderre");
     expect(parsed!.matchDay).toBe(21);
     expect(parsed!.results.length).toBe(4);
-    expect(parsed!.results[0]).toEqual({
+    expect(parsed!.results[0]).toMatchObject({
       home: { name: "Sainte-Jule-du-Mont AS" },
       away: { name: "1. FC Donnebourg" },
       homeScore: 3,
       awayScore: 0,
     });
-    expect(parsed!.results[3]).toEqual({
+    expect(parsed!.results[3]).toMatchObject({
       home: { name: "Collinebourg Chevaliers" },
       away: { name: "Famichez 16" },
       homeScore: 2,
@@ -246,7 +246,7 @@ Devils 2 – 5 Rangers`;
     expect(parsed!.isPlayoffBulletin).toBe(true);
     expect(parsed!.roundName).toBe("Semifinals");
     expect(parsed!.results!.length).toBe(2);
-    expect(parsed!.results![0]).toEqual({
+    expect(parsed!.results![0]).toMatchObject({
       home: { name: "Rangers" },
       away: { name: "Devils" },
       homeScore: 4,

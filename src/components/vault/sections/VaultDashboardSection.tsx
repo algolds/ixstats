@@ -424,21 +424,21 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
                           <span className="text-muted-foreground">Daily Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-blue-600 dark:text-blue-400">
                             +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                            {passiveIncomeData?.dailyDividend?.toFixed(2) ?? "0.00"}
+                            {passiveIncomeData?.dailyDividend ? Math.round(passiveIncomeData.dailyDividend).toLocaleString() : "0"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Weekly Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-slate-700 dark:text-slate-300">
                             ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                            {passiveIncomeData?.weeklyDividend?.toFixed(2) ?? "0.00"}
+                            {passiveIncomeData?.weeklyDividend ? Math.round(passiveIncomeData.weeklyDividend).toLocaleString() : "0"}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Monthly Treasury Yield</span>
                           <span className="flex items-center gap-0.5 font-mono font-bold text-slate-700 dark:text-slate-300">
                             ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                            {passiveIncomeData?.monthlyDividend?.toFixed(2) ?? "0.00"}
+                            {passiveIncomeData?.monthlyDividend ? Math.round(passiveIncomeData.monthlyDividend).toLocaleString() : "0"}
                           </span>
                         </div>
                       </div>

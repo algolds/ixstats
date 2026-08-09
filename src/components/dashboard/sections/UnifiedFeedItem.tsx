@@ -18,6 +18,7 @@ import {
   MessageCircle,
   ChevronDown,
 } from "lucide-react";
+import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import {
@@ -26,11 +27,19 @@ import {
   WikiHtmlContent,
 } from "~/components/wiki/WikiLinkPreview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
+import { resolveImageUrl, getImageUrl } from "~/lib/wiki-image-url";
+import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
+import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
 import { cn } from "~/lib/utils";
 import { WikiAuthorPopover } from "./WikiAuthorPopover";
+import { FeedItemHeader } from "./feed/FeedItemHeader";
+import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
+import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
+
+export { parseWikitextToHtml, InlineWikiArticlePreview };
 
 export const SOURCE_CONFIG: Record<
   string,
@@ -148,169 +157,236 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
 
   const descHtml = activity.content?.description
     ? formatThinkpagesContentForDisplay(activity.content.description)
-    : "";
+    : activity.post?.content
+      ? formatThinkpagesContentForDisplay(activity.post.content as string)
+      : "";
+
+  const rawContentText = [
+    activity.content?.title,
+    activity.content?.description,
+    activity.post?.content,
+  ]
+    .filter((x): x is string => typeof x === "string" && x.length > 0)
+    .join("\n");
+
+  const sportsBulletin = useMemo(
+    () => parseSportsBulletin(rawContentText),
+    [rawContentText]
+  );
 
   return (
-    <div className="group glass-hierarchy-child hover:glass-hierarchy-interactive p-3 shadow-sm transition-all duration-300">
+    <div className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-sm transition-all duration-200 hover:border-white/15 hover:bg-white/[0.06]">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div
           className={cn(
-            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-            isWiki ? "bg-teal-500/10" : resolvedConfig.bg
+            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-transform duration-200 group-hover:scale-105",
+            isWiki ? "border-teal-500/20 bg-teal-500/10" : cn(resolvedConfig.bg, "border-white/10")
           )}
         >
           {isWiki ? (
-            <img src="https://cdn.simpleicons.org/wikipedia/teal" alt="Wiki" className="h-4 w-4" />
+            <img src="https://cdn.simpleicons.org/wikipedia/teal" alt="Wiki" className="h-4.5 w-4.5" />
           ) : (
-            <Icon className={cn("h-4 w-4", resolvedConfig.color)} />
+            <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
           )}
         </div>
-        <div className="min-w-0 flex-1">
-          {/* Title row */}
-          <div className="mb-1 flex items-center gap-2">
-            {/* Wiki: clickable page title */}
-            {isWiki && wikiPageTitle ? (
-              <Link
-                href={wikiHref ?? "#"}
-                className="text-foreground truncate text-sm font-medium hover:underline"
-              >
-                {wikiPageTitle}
-              </Link>
-            ) : (
-              <WikiHtmlContent
-                html={titleHtml}
-                as="span"
-                className="text-foreground truncate text-sm font-medium"
-              />
-            )}
-            {/* Badge — wiki shows nothing, others show dynamic label */}
-            {!isWiki && (
-              <Badge
-                variant="outline"
-                className={cn("shrink-0 text-[10px]", resolvedConfig.color, "border-current/30")}
-              >
-                {resolvedConfig.label}
-              </Badge>
-            )}
-            {activity._isNew && (
-              <Badge className="shrink-0 border-teal-500/30 bg-teal-500/15 text-[9px] text-teal-500">
-                NEW
-              </Badge>
-            )}
-          </div>
 
-          {/* Grouped summary (wiki edits or IxStats activity batches) */}
-          {isGrouped ? (
-            <div>
-              {isWiki ? (
-                /* Wiki: byte-count summary */
-                <p className="text-muted-foreground text-xs">
-                  <span className="text-foreground font-medium">{activity._editCount}</span> edits
-                  by{" "}
-                  <span className="text-foreground font-medium">
-                    {activity._editors.length === 1
-                      ? activity._editors[0]
-                      : `${activity._editors.length} editors`}
-                  </span>
-                  {" · "}
-                  <span
-                    className={cn(
-                      "font-medium",
-                      activity._totalBytes > 0
-                        ? "text-emerald-500"
-                        : activity._totalBytes < 0
-                          ? "text-red-500"
-                          : "text-muted-foreground"
-                    )}
-                  >
-                    {activity._totalBytes > 0 ? "+" : ""}
-                    {activity._totalBytes} bytes
-                  </span>
-                </p>
+        <div className="min-w-0 flex-1 space-y-1.5">
+          {/* Header Row: Title on Left, Badges / Timestamp / Open Link on Right */}
+          <FeedItemHeader
+            activity={activity}
+            resolvedConfig={resolvedConfig}
+            isWiki={isWiki}
+            isGrouped={isGrouped}
+            sportsBulletin={sportsBulletin}
+            wikiPageTitle={wikiPageTitle}
+            wikiHref={wikiHref}
+            displayTitle={displayTitle}
+            titleHtml={titleHtml}
+            externalUrl={externalUrl}
+          />
+
+          {/* Subtitle / Author Row */}
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-tight text-muted-foreground">
+            {isGrouped ? (
+              isWiki ? (
+                <span>
+                  <span className="font-semibold text-foreground">{activity._editCount}</span> edits by{" "}
+                  {activity._editors.map((editor: string, idx: number) => (
+                    <span key={editor}>
+                      {idx > 0 && ", "}
+                      <WikiAuthorPopover username={editor} />
+                    </span>
+                  ))}
+                </span>
               ) : (
-                /* IxStats activity: count summary */
-                <p className="text-muted-foreground text-xs">
-                  <span className="text-foreground font-medium">{activity._editCount}</span> updates
-                  by{" "}
-                  <span className="text-foreground font-medium">
-                    {activity._editors?.[0] ?? "unknown"}
+                <span>
+                  <span className="font-semibold text-foreground">{activity._editCount}</span> updates by{" "}
+                  <span className="font-semibold text-foreground">{activity._editors?.[0] ?? "unknown"}</span>
+                </span>
+              )
+            ) : (
+              activity.user?.name && (
+                isWiki ? (
+                  <span className="flex items-center gap-1">
+                    <span>by</span> <WikiAuthorPopover username={activity.user.name} />
                   </span>
-                </p>
-              )}
-              {/* Expandable sub-items */}
-              {activity._subEdits.length > 1 && (
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="text-muted-foreground hover:text-foreground mt-1 flex cursor-pointer items-center gap-0.5 text-[10px] transition-colors"
-                >
-                  <ChevronDown
-                    className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")}
-                  />
-                  {expanded ? "Hide" : "Show"} {activity._subEdits.length}{" "}
-                  {isWiki ? "edits" : "items"}
-                </button>
-              )}
-              {expanded && (
-                <div className="border-border/20 mt-1.5 space-y-0.5 border-l-2 pl-2">
-                  {activity._subEdits.map((sub: any, i: number) => {
-                    const subTitle = sub.content?.title ?? "";
-                    const subDesc = sub.content?.description ?? "";
-                    const display = isWiki ? subDesc.slice(0, 80) : subTitle.slice(0, 80);
-                    return (
-                      <div key={i} className="text-muted-foreground text-[10px]">
-                        <span className="text-foreground/70 font-medium">
-                          {sub.user?.name ?? "?"}
-                        </span>
-                        {" · "}
-                        <span>{display}</span>
-                        {" · "}
-                        <span>{formatTimeAgo(new Date(sub.timestamp))}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ) : activity.poll ? (
-            <FeedPollWidget poll={activity.poll} />
-          ) : descHtml ? (
-            <WikiHtmlContent
-              html={descHtml}
-              className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
-            />
-          ) : null}
-
-          {/* Footer metadata */}
-          <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatTimeAgo(new Date(activity.timestamp))}
-            </span>
-            {!isGrouped &&
-              activity.user?.name &&
-              (isWiki ? (
-                <WikiAuthorPopover username={activity.user.name} />
-              ) : activity.poll && activity.user.name === "User" ? null : (
-                <span>by {activity.user.name}</span>
-              ))}
-            {isGrouped && activity._editors.length <= 3 && (
-              <span className="flex items-center gap-1">
-                {activity._editors.map((editor: string, idx: number) => (
-                  <span key={editor}>
-                    {idx > 0 && ", "}
-                    <WikiAuthorPopover username={editor} />
-                  </span>
-                ))}
-              </span>
+                ) : activity.poll && activity.user.name === "User" ? null : (
+                  <span>by <span className="font-semibold text-foreground/90">{activity.user.name}</span></span>
+                )
+              )
             )}
-            {externalUrl && <FeedExternalLink url={externalUrl} title={activity.content?.title} />}
           </div>
+
+          {/* Inline Wiki Article Lead Snippet Preview */}
+          {isWiki && wikiPageTitle && (
+            <InlineWikiArticlePreview title={wikiPageTitle} wiki="ixwiki" />
+          )}
+
+          {/* Body Content / Poll / Sports Card / Description (non-wiki items) */}
+          {!isWiki && !isGrouped && (
+            activity.poll ? (
+              <FeedPollWidget poll={activity.poll} />
+            ) : sportsBulletin ? (
+              <SportsBulletinCard data={sportsBulletin} />
+            ) : descHtml ? (
+              <WikiHtmlContent
+                html={descHtml}
+                className="pt-0.5 text-xs leading-relaxed tracking-tight text-muted-foreground/90 whitespace-pre-wrap break-words"
+              />
+            ) : null
+          )}
+
+          {/* Grouped sub-items expandable drawer */}
+          {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
         </div>
       </div>
     </div>
   );
 });
+
+export function parseWikitextToHtml(wikitext: string, wikiSource: string = "ixwiki"): string {
+  if (!wikitext) return "";
+
+  let text = wikitext;
+
+  // 1. Strip ref tags: <ref>...</ref> or <ref ... />
+  text = text.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>/gi, "");
+  text = text.replace(/<ref\b[^>]*\/>/gi, "");
+
+  // 2. Strip templates: {{...}}
+  text = text.replace(/\{\{[\s\S]*?\}\}/g, "");
+
+  // 3. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
+  text = text.replace(/\[\[(?:File|Image):([^\]]+)\]\]/gi, (_match, content) => {
+    const parts = content.split("|").map((p: string) => p.trim());
+    if (parts.length === 0 || !parts[0]) return "";
+
+    const rawFileName = parts[0];
+    const imageUrl = resolveImageUrl(rawFileName, wikiSource as any) ?? getImageUrl(rawFileName);
+    if (!imageUrl) return "";
+
+    const captionParts = parts.slice(1).filter((p: string) => {
+      const lower = p.toLowerCase();
+      if (
+        lower === "thumb" ||
+        lower === "thumbnail" ||
+        lower === "frame" ||
+        lower === "framed" ||
+        lower === "frameless" ||
+        lower === "border" ||
+        lower === "left" ||
+        lower === "right" ||
+        lower === "center" ||
+        lower === "none" ||
+        /^\d+px$/i.test(lower) ||
+        /^upright(=[\d.]+)?$/i.test(lower) ||
+        lower.startsWith("alt=") ||
+        lower.startsWith("link=")
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    const caption = captionParts.join(" | ");
+
+    return `<figure class="my-2.5 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-md backdrop-blur-md transition-all">
+      <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy" />
+      ${caption ? `<figcaption class="p-2 text-[10px] text-muted-foreground/90 font-medium tracking-tight bg-white/[0.03] border-t border-white/5 leading-tight">${caption}</figcaption>` : ""}
+    </figure>`;
+  });
+
+  // 4. Convert wikitext bold+italic: '''''text'''''
+  text = text.replace(/'''''((?:(?!''''')[\s\S])+)'''''/g, "<strong><em>$1</em></strong>");
+
+  // 5. Convert wikitext bold: '''text'''
+  text = text.replace(/'''((?:(?!''')[\s\S])+)'''/g, "<strong>$1</strong>");
+
+  // 6. Convert wikitext italic: ''text''
+  text = text.replace(/''((?:(?!'')[\s\S])+)''/g, "<em>$1</em>");
+
+  // 7. Convert wikitext piped internal links: [[Target Page|Display Label]]
+  text = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (_match, page, label) => {
+    const route = titleToWikiOSRoute(page.trim());
+    return `<a href="${route}" class="text-teal-400 font-semibold hover:underline">${label.trim()}</a>`;
+  });
+
+  // 8. Convert wikitext simple internal links: [[Target Page]]
+  text = text.replace(/\[\[([^\]]+)\]\]/g, (_match, page) => {
+    const p = page.trim();
+    const route = titleToWikiOSRoute(p);
+    return `<a href="${route}" class="text-teal-400 font-semibold hover:underline">${p}</a>`;
+  });
+
+  // 9. Convert wikitext external links: [http://example.com Display Label]
+  text = text.replace(
+    /\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-teal-400 hover:underline">$2</a>'
+  );
+
+  return text.trim();
+}
+
+export function InlineWikiArticlePreview({
+  title,
+  wiki = "ixwiki",
+}: {
+  title: string;
+  wiki?: "ixwiki" | "iiwiki";
+}) {
+  const { data: intro } = api.wiki.getIntro.useQuery(
+    { title, wiki },
+    { enabled: !!title, staleTime: 30 * 60_000 }
+  );
+
+  const formattedHtml = useMemo(() => {
+    if (!intro?.text) return "";
+    return parseWikitextToHtml(intro.text, wiki);
+  }, [intro?.text, wiki]);
+
+  if (!formattedHtml) return null;
+
+  const wikiHref = titleToWikiOSRoute(title);
+
+  return (
+    <div className="group/preview mt-2 flex items-start gap-2.5 rounded-xl border border-teal-500/20 bg-teal-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-teal-500/35 hover:bg-teal-500/[0.08]">
+      <div className="mt-0.5 h-full min-h-[2rem] w-0.5 shrink-0 rounded-full bg-teal-500/60 group-hover/preview:bg-teal-400" />
+      <div className="min-w-0 flex-1">
+        <WikiHtmlContent
+          html={formattedHtml}
+          className="line-clamp-2 text-[11px] leading-relaxed font-normal tracking-tight text-foreground/80 group-hover/preview:text-foreground [&_a]:transition-colors"
+        />
+      </div>
+      <Link
+        href={wikiHref}
+        className="text-teal-400/80 hover:text-teal-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+      >
+        Read →
+      </Link>
+    </div>
+  );
+}
 
 export function FeedExternalLink({ url }: { url: string; title?: string }) {
   const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
@@ -320,10 +396,10 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-white/10 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
-      Open
+      <span>Open</span>
     </a>
   );
   if (wikiMatch)
