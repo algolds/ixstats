@@ -1,109 +1,112 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useCountryData } from "../primitives";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useCountryData } from "./primitives";
+import { useTheme } from "~/context/theme-context";
+import { cn } from "~/lib/utils";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { api } from "~/trpc/react";
-import { V2ModeToggle, V2RightPillNav, type V2Mode } from "./V2ModeToggle";
-import { V2Home } from "./V2Home";
-import { V2Console } from "./V2Console";
-import { V2DomainSurface } from "./V2DomainSurface";
-import { V2DrillSheets, type V2Drill } from "./V2DrillSheets";
+import { CommandNavToggle, CommandRightPillNav, type CommandNavMode } from "./CommandNavToggle";
+import { ExecutiveHome } from "./ExecutiveHome";
+import { ExecutiveConsole } from "./ExecutiveConsole";
+import { DomainSurface } from "./DomainSurface";
+import { DrillSheets, type DrillSheetKind } from "./DrillSheets";
 import { DOMAIN_SECTIONS } from "./domain-meta";
 
-import type { MyCountrySection } from "../MyCountrySidebarNav";
+export interface CommandSurfaceProps {
+  section?: string;
+  onNavigate?: (section: any) => void;
+}
 
-/**
- * The v2 command surface (migration §2). When v2 is active this replaces the
- * legacy sidebar/section war-rooms entirely:
- *   - HOME  — the action command surface (command briefing hero + action grid + feed + rail)
- *   - DOMAIN — full-page domain surfaces for diplomacy / defense / politics / economy routes
- *   - CONSOLE — Executive mode: declare an Intent (the composer, primary)
- *   - DRILL-DOWNS — right-side sheets for depth (intent detail, relations, …)
- * Single unified navigation pill, everything ≤1 click.
- */
-export function V2CommandSurface({
+function CommandSurfaceComponent({
   section = "overview",
   onNavigate,
-}: {
-  section?: MyCountrySection;
-  onNavigate?: (section: MyCountrySection) => void;
-} = {}) {
+}: CommandSurfaceProps): React.JSX.Element {
   const { country } = useCountryData();
+  const { compactMode } = useTheme();
   const countryId = country?.id ?? "";
 
-  const [mode, setMode] = useState<V2Mode>("home");
-  const [drill, setDrill] = useState<V2Drill>(null);
+  const [mode, setMode] = useState<CommandNavMode>("home");
+  const [drill, setDrill] = useState<DrillSheetKind>(null);
   const [goal, setGoal] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Automatically start viewport directly below the top nav bar on mount / navigation.
-  // Scrolling up (swiping down towards top of page) reveals the nav bar above.
+  // Sync mode with route section
   useEffect(() => {
-    if (navRef.current) {
-      const navHeight = navRef.current.getBoundingClientRect().height;
-      if (navHeight > 0) {
-        requestAnimationFrame(() => {
-          window.scrollTo({ top: navHeight + 16, behavior: "instant" });
-        });
-      }
+    if (section === "executive") {
+      setMode("executive");
+    } else {
+      setMode("home");
     }
-  }, [section, mode]);
-
-  const utils = api.useUtils();
-  const handleCommitted = useCallback(
-    (res: any) => {
-      const body = (res?.summary as string) ?? "Directive committed.";
-      setToast(body);
-      setTimeout(() => setToast(null), 4500);
-      // Invalidate the surfaces that reflect a committed directive.
-      void utils.mycountry.getCanonFeed.invalidate();
-      void utils.mycountry.getChangeLog.invalidate();
-      void utils.mycountry.getCountryDashboard.invalidate();
-      void utils.intent.getStatus.invalidate();
-      void utils.intent.getTree.invalidate();
-    },
-    [utils]
-  );
+  }, [section]);
 
   const declare = useCallback((prefilled?: string) => {
-    setGoal(typeof prefilled === "string" ? prefilled : "");
-    setMode("console");
+    if (prefilled) setGoal(prefilled);
+    setMode("executive");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const openDrill = useCallback((d: V2Drill) => setDrill(d), []);
+  const openIntent = useCallback((intentId: string) => {
+    setDrill({ kind: "intent", intentId });
+  }, []);
 
-  const isDomainSection = DOMAIN_SECTIONS.has(section);
+  const openDrill = useCallback((d: Exclude<DrillSheetKind, { kind: "intent" } | null>) => {
+    setDrill(d);
+  }, []);
 
   return (
-    <div className="container mx-auto space-y-5 px-3 py-3 sm:px-4 sm:py-4">
-      {/* Primary Navigation Row (Left & Right Mirrored Navigation Pills) */}
-      <div ref={navRef} className="flex flex-wrap items-center justify-between gap-3">
-        <V2ModeToggle mode={mode} onChangeMode={setMode} />
-        <V2RightPillNav onNavigate={onNavigate} />
+    <div
+      className={cn(
+        "mx-auto w-full transition-all duration-300 ease-out",
+        compactMode
+          ? "max-w-6xl space-y-5 px-4 py-4 sm:px-6 sm:py-5"
+          : "max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
+      )}
+    >
+      {/* Top Mirrored Pill Bar */}
+      <div ref={navRef} className="flex items-center justify-between gap-3">
+        <CommandNavToggle
+          mode={mode}
+          activeSection={section}
+          onChangeMode={(m) => {
+            setMode(m);
+            if (m === "home") onNavigate?.("overview");
+          }}
+          onNavigate={onNavigate}
+        />
+        <CommandRightPillNav country={country} />
       </div>
 
-      {mode === "console" ? (
-        <V2Console countryId={countryId} initialGoal={goal} onCommitted={handleCommitted} />
-      ) : isDomainSection ? (
-        <V2DomainSurface
+      {/* Main Surface Body */}
+      {mode === "executive" ? (
+        <ExecutiveConsole
           countryId={countryId}
-          section={section as "diplomacy" | "defense" | "politics" | "economy"}
-          onDeclare={declare}
+          initialGoal={goal}
+          onDone={(msg) => {
+            setMode("home");
+            setGoal("");
+            if (msg) {
+              setToast(msg);
+              setTimeout(() => setToast(null), 5000);
+            }
+          }}
         />
+      ) : DOMAIN_SECTIONS.has(section) ? (
+        <DomainSurface countryId={countryId} section={section as any} onDeclare={declare} />
       ) : (
-        <V2Home
+        <ExecutiveHome
           countryId={countryId}
-          onDeclare={(prefilled?: string) => declare(prefilled)}
+          onDeclare={declare}
+          onOpenIntent={openIntent}
           onOpenDrill={openDrill}
-          onOpenIntent={(id) => openDrill({ kind: "intent", intentId: id })}
           onNavigate={onNavigate}
         />
       )}
 
-      <V2DrillSheets
+      {/* Drill Sheets */}
+      <DrillSheets
         drill={drill}
         onClose={() => setDrill(null)}
         countryId={countryId}
@@ -120,3 +123,5 @@ export function V2CommandSurface({
     </div>
   );
 }
+
+export const CommandSurface = React.memo(CommandSurfaceComponent);

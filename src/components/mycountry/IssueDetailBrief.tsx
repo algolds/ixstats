@@ -60,15 +60,15 @@ interface ResponseOption {
  * the right-side drill sheet with recon / respond / dismiss, and a post-resolve
  * "Declare Follow-Up Directive" CTA wired to the composer pre-fill conduit.
  */
-export function V2IssueDetail({
-  issueId,
-  onDeclare,
-  onClose,
-}: {
+export interface IssueDetailBriefProps {
   issueId: string;
   onDeclare?: (prefilledGoal?: string) => void;
   onClose?: () => void;
-}) {
+}
+
+export type V2IssueDetailProps = IssueDetailBriefProps;
+
+export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBriefProps) {
   const notify = useNotify();
   const [confirmingOptionId, setConfirmingOptionId] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
@@ -658,3 +658,5 @@ function EffectBadge({
 
   return null;
 }
+
+export const V2IssueDetail = IssueDetailBrief;

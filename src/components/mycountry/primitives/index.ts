@@ -7,9 +7,6 @@ export { AuthenticationGuard } from "./AuthenticationGuard";
 export { CountryDataProvider, useCountryData } from "./CountryDataProvider";
 export { useMyCountryUnifiedData } from "./useMyCountryUnifiedData";
 
-// Hero primitives
-export { AmbientBackground, HeroMetrics, HeroMetricsCompact, HeroSection } from "./hero";
-
 // Tab animation primitives
 export {
   AnimatedTabContent,
@@ -65,18 +62,10 @@ export {
   type InteractiveMetricProps,
 } from "./tabs";
 
-// Section header background
-export { SectionHeaderBackground } from "./SectionHeaderBackground";
-
 // Tab hero banner
 export { TabHeroBanner } from "./TabHeroBanner";
 
-// Unified section hero for gameplay pillars
-export { SectionHero, type StatusBadgeConfig } from "./SectionHero";
-
-// ── v2 refactor primitives (shared section template) ──
-export { SectionShell } from "./SectionShell";
-export { CompactSectionHero } from "./CompactSectionHero";
+// Refactor primitives
 export {
   SectionContextWidget,
   type ContextStat,
@@ -88,11 +77,3 @@ export { SearchableList, type SearchableListProps } from "./SearchableList";
 
 // Card background image components
 export { CardBackgroundImage, useCardImage, useAllCardImages } from "./CardBackgroundImage";
-
-export { CardImageUploadModal } from "./CardImageUploadModal";
-
-// Enhanced metric tooltip for clickable cards
-export { EnhancedMetricTooltip, type EnhancedMetricTooltipProps } from "./EnhancedMetricTooltip";
-
-// Re-export card image types for convenience
-export type { CardImageType } from "~/lib/card-image-presets";

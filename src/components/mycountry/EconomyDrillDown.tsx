@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   TrendingUp,
@@ -13,7 +11,7 @@ import {
   Scale,
 } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { useCountryData } from "../primitives";
+import { useCountryData } from "./primitives";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -62,11 +60,15 @@ const TradeCommerceConsole = dynamic(
   }
 );
 
+export interface EconomyDrillDownProps {
+  countryId: string;
+}
+
 /**
  * Economy drill-down — 5-Pillar IRL-Grade Ministry of Finance & Planning Suite.
  * Shared between the v2 right-side drill sheet and the full-page economy surface.
  */
-export function EconomyDrillDown({ countryId }: { countryId: string }) {
+function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<"macro" | "fiscal" | "monetary" | "trade">("macro");
 
   const { country } = useCountryData();
@@ -86,43 +88,56 @@ export function EconomyDrillDown({ countryId }: { countryId: string }) {
 
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
-  const tabs = [
-    { id: "macro" as const, label: "Economic Report", icon: TrendingUp },
-    { id: "fiscal" as const, label: "National Budget", icon: Landmark },
-    { id: "monetary" as const, label: "Fiscal Policy", icon: Coins },
-    { id: "trade" as const, label: "Trade & Commerce", icon: Globe2 },
-  ];
+  const tabs = useMemo(
+    () => [
+      { id: "macro" as const, label: "Economic Report", icon: TrendingUp },
+      { id: "fiscal" as const, label: "National Budget", icon: Landmark },
+      { id: "monetary" as const, label: "Fiscal Policy", icon: Coins },
+      { id: "trade" as const, label: "Trade & Commerce", icon: Globe2 },
+    ],
+    []
+  );
 
-  const metrics = [
-    {
-      label: "GDP (Total)",
-      value: country?.currentTotalGdp ? `$${(country.currentTotalGdp / 1e9).toFixed(2)}B` : "—",
-      sub: "Gross Domestic Product",
-      accent: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-    },
-    {
-      label: "GDP Growth",
-      value:
-        country?.realGdpGrowthRate != null
-          ? `${(country.realGdpGrowthRate * 100).toFixed(2)}%`
-          : "—",
-      sub: "Annual real rate",
-      accent: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
-    },
-    {
-      label: "Economic Vitality",
-      value: dashboard?.economicVitality != null ? `${dashboard.economicVitality}/100` : "—",
-      sub: "National vitality band",
-      accent: "text-amber-400 border-amber-500/20 bg-amber-500/5",
-    },
-    {
-      label: "Government Efficiency",
-      value:
-        dashboard?.governmentalEfficiency != null ? `${dashboard.governmentalEfficiency}/100` : "—",
-      sub: "Administrative capacity",
-      accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
-    },
-  ];
+  const metrics = useMemo(
+    () => [
+      {
+        label: "GDP (Total)",
+        value: country?.currentTotalGdp ? `$${(country.currentTotalGdp / 1e9).toFixed(2)}B` : "—",
+        sub: "Gross Domestic Product",
+        accent: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+      },
+      {
+        label: "GDP Growth",
+        value:
+          country?.realGdpGrowthRate != null
+            ? `${(country.realGdpGrowthRate * 100).toFixed(2)}%`
+            : "—",
+        sub: "Annual real rate",
+        accent: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5",
+      },
+      {
+        label: "Economic Vitality",
+        value: dashboard?.economicVitality != null ? `${dashboard.economicVitality}/100` : "—",
+        sub: "National vitality band",
+        accent: "text-amber-400 border-amber-500/20 bg-amber-500/5",
+      },
+      {
+        label: "Government Efficiency",
+        value:
+          dashboard?.governmentalEfficiency != null
+            ? `${dashboard.governmentalEfficiency}/100`
+            : "—",
+        sub: "Administrative capacity",
+        accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+      },
+    ],
+    [
+      country?.currentTotalGdp,
+      country?.realGdpGrowthRate,
+      dashboard?.economicVitality,
+      dashboard?.governmentalEfficiency,
+    ]
+  );
 
   return (
     <div className="space-y-4">
@@ -393,3 +408,5 @@ export function EconomyDrillDown({ countryId }: { countryId: string }) {
     </div>
   );
 }
+
+export const EconomyDrillDown = React.memo(EconomyDrillDownComponent);

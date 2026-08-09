@@ -24,15 +24,19 @@ const STATUS_BADGE: Record<string, string> = {
  * Active Directives sidebar rail — active executive intents + slot usage + quick declare trigger.
  * Replaces legacy "Your Agenda" title to eliminate overlap with the main V2MyAgenda tab.
  */
-export function V2Agenda({
-  countryId,
-  onOpenIntent,
-  onDeclare,
-}: {
+export interface CommitmentsAgendaRailProps {
   countryId: string;
   onOpenIntent?: (id: string) => void;
   onDeclare?: (prefilled?: string) => void;
-}) {
+}
+
+export type V2AgendaProps = CommitmentsAgendaRailProps;
+
+export function CommitmentsAgendaRail({
+  countryId,
+  onOpenIntent,
+  onDeclare,
+}: CommitmentsAgendaRailProps) {
   const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
   const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
 
@@ -165,3 +169,5 @@ export function V2Agenda({
     </FacetCard>
   );
 }
+
+export const V2Agenda = CommitmentsAgendaRail;

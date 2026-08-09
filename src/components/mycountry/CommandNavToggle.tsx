@@ -15,28 +15,27 @@ import {
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
-import { useCountryData } from "../primitives";
+import { useTheme } from "~/context/theme-context";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
+import { useCountryData } from "./primitives";
 
-export type V2Mode = "home" | "console";
+export type CommandNavMode = "home" | "executive";
+export type V2Mode = CommandNavMode;
 
-/**
- * Single Unified V2 Navigation Surface Pill:
- * [ MyCountry Logo | Home | Declare a Directive | (sep) | Diplomacy | Defense | Politics | Economy ]
- *
- * Navigation behavior:
- *  - Operating Modes (Home / Declare a Directive): manage local V2 mode
- *  - Domain Links (Diplomacy, Defense, Politics, Economy): navigate to full standalone pages
- */
-export function V2ModeToggle({
+export function CommandNavToggle({
   mode = "home",
+  activeSection = "overview",
   onChangeMode,
+  onNavigate,
 }: {
-  mode?: V2Mode;
-  onChangeMode?: (mode: V2Mode) => void;
+  mode?: CommandNavMode;
+  activeSection?: string;
+  onChangeMode?: (mode: CommandNavMode) => void;
+  onNavigate?: (section: any) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { compactMode } = useTheme();
   const rawPath = stripBasePath(pathname ?? "");
 
   const mainNav: {
@@ -124,7 +123,8 @@ export function V2ModeToggle({
               }
             }}
             className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold transition-all",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
+              compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
               active ? activeCls : hoverCls
             )}
           >
@@ -146,7 +146,8 @@ export function V2ModeToggle({
             type="button"
             onClick={() => router.push(withBasePath(href))}
             className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold transition-all",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
+              compactMode ? "px-2.5 py-1.25 text-xs" : "px-3 py-1.5 text-xs",
               active ? activeCls : hoverCls
             )}
           >
@@ -163,20 +164,24 @@ export function V2ModeToggle({
  * Mirrored Right Navigation Surface Pill:
  * [ Profile (Public Country Profile) | (sep) | Editor (/mycountry/editor) ]
  */
-export function V2RightPillNav({
+export function CommandRightPillNav({
+  country,
   onNavigate,
 }: {
+  country?: any;
   onNavigate?: (section: MyCountrySection) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { compactMode } = useTheme();
   const rawPath = stripBasePath(pathname ?? "");
-  const { country } = useCountryData();
+  const { country: ctxCountry } = useCountryData();
+  const activeCountry = country ?? ctxCountry;
 
-  const publicProfileHref = country?.slug
-    ? `/countries/${country.slug}`
-    : country?.id
-      ? `/countries/${country.id}`
+  const publicProfileHref = activeCountry?.slug
+    ? `/countries/${activeCountry.slug}`
+    : activeCountry?.id
+      ? `/countries/${activeCountry.id}`
       : "/countries";
 
   const editorHref = "/mycountry/editor";
@@ -221,7 +226,8 @@ export function V2RightPillNav({
                 }
               }}
               className={cn(
-                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent px-3.5 py-1.5 text-xs font-semibold transition-all select-none active:scale-95",
+                "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all select-none active:scale-95",
+                compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
                 active ? activeCls : hoverCls
               )}
             >
@@ -234,3 +240,6 @@ export function V2RightPillNav({
     </div>
   );
 }
+
+export const V2ModeToggle = CommandNavToggle;
+export const V2RightPillNav = CommandRightPillNav;

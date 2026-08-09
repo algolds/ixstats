@@ -33,7 +33,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
-import type { V2Drill } from "./V2DrillSheets";
+import type { DrillSheetKind } from "./DrillSheets";
 
 interface AgendaEvent {
   id: string;
@@ -115,19 +115,21 @@ function getSeverityRank(s: string): number {
   return 1;
 }
 
-export interface V2MyAgendaProps {
+export interface ExecutiveAgendaProps {
   countryId: string;
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
   onIssueDirective?: (goal?: string) => void;
   onOpenIntent?: (intentId: string) => void;
 }
 
-function V2MyAgendaComponent({
+export type V2MyAgendaProps = ExecutiveAgendaProps;
+
+function ExecutiveAgendaComponent({
   countryId,
   onOpenDrill,
   onIssueDirective,
   onOpenIntent,
-}: V2MyAgendaProps): React.JSX.Element {
+}: ExecutiveAgendaProps): React.JSX.Element {
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(0);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
@@ -792,4 +794,5 @@ function V2MyAgendaComponent({
   );
 }
 
-export const V2MyAgenda = React.memo(V2MyAgendaComponent);
+export const ExecutiveAgenda = React.memo(ExecutiveAgendaComponent);
+export const V2MyAgenda = ExecutiveAgenda;

@@ -6,7 +6,7 @@ import { Activity, Users, DollarSign, Heart, Scale, Zap } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
-import { useCountryData, createVitalityRingsFromCountry } from "../primitives";
+import { useCountryData, createVitalityRingsFromCountry } from "./primitives";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 

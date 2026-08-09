@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
@@ -17,9 +17,9 @@ import {
   Shield,
   Landmark,
   Building2,
-  ExternalLink,
   GitBranch,
   AlertTriangle,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   Sheet,
@@ -35,7 +35,7 @@ import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { ThinkPagesShareModal } from "./ThinkPagesShareModal";
-import { V2IssueDetail } from "./V2IssueDetail";
+import { IssueDetailBrief } from "./IssueDetailBrief";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -54,11 +54,16 @@ const DefenseCommandPanel = dynamic(
 );
 
 /** A v2 drill-down surface. Phase 3 connects deep domain panels directly inside right-side sheets. */
-export type V2Drill =
-  | { kind: V2Domain }
+export type DrillSheetKind =
   | { kind: "intent"; intentId: string }
   | { kind: "issue"; issueId: string }
+  | { kind: "relations" }
+  | { kind: "defense" }
+  | { kind: "politics" }
+  | { kind: "economy" }
   | null;
+
+export type V2Drill = DrillSheetKind;
 
 const TIER_BADGE: Record<string, string> = {
   measured: "text-emerald-300 bg-emerald-500/10 border-emerald-400/20",
@@ -584,17 +589,21 @@ function IntentDetail({
   );
 }
 
-export function V2DrillSheets({
+export interface DrillSheetsProps {
+  drill: DrillSheetKind;
+  onClose: () => void;
+  countryId: string;
+  onDeclare?: (prefilledGoal?: string) => void;
+}
+
+export type V2DrillSheetsProps = DrillSheetsProps;
+
+function DrillSheetsComponent({
   drill,
   onClose,
   countryId,
   onDeclare,
-}: {
-  drill: V2Drill;
-  onClose: () => void;
-  countryId: string;
-  onDeclare?: (prefilledGoal?: string) => void;
-}) {
+}: DrillSheetsProps): React.JSX.Element {
   const open = drill !== null;
 
   const kindKind = drill === null ? "relations" : drill.kind;
@@ -637,8 +646,8 @@ export function V2DrillSheets({
                 target="_blank"
                 className="group inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold text-purple-400 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95"
               >
-                <span>Full Profile Depth</span>
-                <ExternalLink className="h-3 w-3" />
+                <span>Open Page</span>
+                <ArrowUpRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             )}
           </div>
@@ -657,7 +666,7 @@ export function V2DrillSheets({
             onClose={onClose}
           />
         ) : drill.kind === "issue" ? (
-          <V2IssueDetail issueId={drill.issueId} onDeclare={onDeclare} onClose={onClose} />
+          <IssueDetailBrief issueId={drill.issueId} onDeclare={onDeclare} onClose={onClose} />
         ) : drill.kind === "relations" ? (
           <EmbassiesAndRelationsPanel countryId={countryId} />
         ) : drill.kind === "defense" ? (
@@ -671,3 +680,6 @@ export function V2DrillSheets({
     </Sheet>
   );
 }
+
+export const DrillSheets = React.memo(DrillSheetsComponent);
+export const V2DrillSheets = DrillSheets;

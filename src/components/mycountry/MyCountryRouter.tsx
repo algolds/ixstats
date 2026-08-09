@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "./primitives";
 import { AtomicStateProvider } from "~/components/atomic/AtomicStateProvider";
@@ -10,34 +9,12 @@ import { MobileOptimized } from "~/app/mycountry/components/MobileOptimizations"
 import { getSectionFromPathname, type MyCountrySection } from "./MyCountrySidebarNav";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
-import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
-import { usePremium } from "~/hooks/usePremium";
-import { PremiumPreviewFrame } from "~/components/mycountry/primitives";
-import { useAbility } from "~/components/providers/AbilityProvider";
-import { Crown, ArrowRight } from "lucide-react";
-import { GlassButton } from "~/components/ui/glass-button";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
-import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { createUrl } from "~/lib/url-utils";
-import { V2CommandSurface } from "./v2/V2CommandSurface";
+import { CommandSurface } from "./CommandSurface";
 
-// Loading skeleton for dynamically loaded sections
-function SectionSkeleton() {
-  return (
-    <div className="animate-pulse space-y-4 p-6">
-      <div className="h-8 w-48 rounded bg-white/5" />
-      <div className="h-64 rounded-xl bg-white/5" />
-      <div className="grid grid-cols-2 gap-4">
-        <div className="h-32 rounded-lg bg-white/5" />
-        <div className="h-32 rounded-lg bg-white/5" />
-      </div>
-    </div>
-  );
-}
-
-// Error fallback for failed section loads
 function SectionErrorFallback({ sectionName, retry }: { sectionName: string; retry: () => void }) {
   return (
     <div className="space-y-4 p-6">
@@ -71,37 +48,6 @@ function createSectionFallback(sectionName: string) {
   };
 }
 
-// Core gameplay sections — eagerly imported for instant tab switching
-import { EnhancedMyCountryContent } from "./EnhancedMyCountryContent";
-import { EnhancedExecutiveContent } from "./EnhancedExecutiveContent";
-import { EnhancedDiplomacyContent } from "./EnhancedDiplomacyContent";
-import { EnhancedPoliticsContent } from "./EnhancedPoliticsContent";
-
-// Rarely-visited sections — lazy-loaded to keep initial bundle smaller
-const EnhancedIntelligenceContent = dynamic(
-  () =>
-    import("./EnhancedIntelligenceContent").then((m) => ({
-      default: m.EnhancedIntelligenceContent,
-    })),
-  {
-    loading: () => <SectionSkeleton />,
-    ssr: false,
-  }
-);
-const EnhancedDefenseContent = dynamic(
-  () => import("./EnhancedDefenseContent").then((m) => ({ default: m.EnhancedDefenseContent })),
-  {
-    loading: () => <SectionSkeleton />,
-    ssr: false,
-  }
-);
-const EnhancedMapEditorContent = dynamic(
-  () => import("./EnhancedMapEditorContent").then((m) => ({ default: m.EnhancedMapEditorContent })),
-  {
-    loading: () => <SectionSkeleton />,
-    ssr: false,
-  }
-);
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
   executive: "Economy & Budget",
@@ -115,12 +61,9 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
 
 /**
  * MyCountryRouter - Single-page hub for all MyCountry sections.
- *
- * Instead of separate routes, all sections are rendered here and switched
- * via client-side state for instant navigation. URL is synced with
- * history.pushState for deep linking and back/forward support.
+ * Renders CommandSurface as the sole production command shell.
  */
-function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
+function MyCountryRouterInner() {
   const { country } = useCountryData();
   const pathname = usePathname();
   const router = useRouter();
@@ -130,15 +73,8 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
     getSectionFromPathname(pathname)
   );
 
-  // Notification counts for sidebar indicators
-  const notifications = useMyCountryNotifications(country?.id);
-
   // Push national issue alerts to Dynamic Island toast queue
   useNationalIssuesToast(country?.id);
-
-  // Premium feature access
-  const { features: _premiumFeatures, isLoading: _premiumLoading } = usePremium();
-  const ability = useAbility();
 
   // Compliance modal (overview only)
   const {
@@ -239,117 +175,6 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
         : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
   }, [country?.name, activeSection]);
 
-  // Render active section content
-  const renderSection = () => {
-    switch (activeSection) {
-      case "overview":
-        return (
-          <EnhancedMyCountryContent
-            variant="unified"
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-            v2={v2}
-          />
-        );
-      case "executive":
-      case "economy":
-        return (
-          <EnhancedExecutiveContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-            v2={v2}
-          />
-        );
-      case "diplomacy":
-        return (
-          <EnhancedDiplomacyContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
-        );
-      case "intelligence":
-        return (
-          <PremiumPreviewFrame
-            feature="intelligence"
-            locked={!ability.can("access", "MyCountryFeature", "intelligence")}
-          >
-            <EnhancedIntelligenceContent
-              activeSection={activeSection}
-              onNavigate={handleNavigate}
-              notifications={notifications}
-            />
-          </PremiumPreviewFrame>
-        );
-      case "defense":
-        return (
-          <PremiumPreviewFrame
-            feature="defense"
-            locked={!ability.can("access", "MyCountryFeature", "defense")}
-          >
-            <EnhancedDefenseContent
-              activeSection={activeSection}
-              onNavigate={handleNavigate}
-              notifications={notifications}
-            />
-          </PremiumPreviewFrame>
-        );
-      case "politics":
-        return (
-          <EnhancedPoliticsContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
-        );
-      case "map-editor":
-        if (!ability.can("access", "MyCountryFeature", "map-editor")) {
-          return (
-            <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
-              <div className="glass-panel animate-fade-in max-w-md space-y-6 rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-amber-600/5 p-8 shadow-xl backdrop-blur-md">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 p-4 shadow-lg">
-                  <Crown className="h-8 w-8 animate-pulse text-white" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-foreground text-2xl font-bold tracking-tight">Map Editor</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Shape your nation's territory, establish subdivisions, build cities, and mark
-                    points of interest. This feature is exclusive to MyCountry Premium members.
-                  </p>
-                </div>
-                <GlassButton
-                  variant="primary"
-                  className="group w-full"
-                  onClick={() => router.push(withBasePath("/help/getting-started/welcome"))}
-                >
-                  <Crown className="mr-2 h-4 w-4" />
-                  Upgrade to Premium
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </GlassButton>
-                <button
-                  onClick={() => handleNavigate("overview")}
-                  className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return (
-          <EnhancedMapEditorContent
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            notifications={notifications}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <DashboardErrorBoundary
       fallback={createSectionFallback(SECTION_TITLES[activeSection])}
@@ -357,12 +182,9 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
       description="This section could not be loaded. Try again or refresh the page."
       resetKeys={[activeSection]}
     >
-      {v2 ? (
-        <V2CommandSurface section={activeSection} onNavigate={handleNavigate} />
-      ) : (
-        renderSection()
-      )}
-      {country?.id && complianceSections.length > 0 && (v2 || activeSection === "overview") && (
+      <CommandSurface section={activeSection} onNavigate={handleNavigate} />
+
+      {country?.id && complianceSections.length > 0 && activeSection === "overview" && (
         <MyCountryComplianceModal
           isOpen={showComplianceModal}
           sections={complianceSections}
@@ -375,7 +197,7 @@ function MyCountryRouterInner({ v2 = false }: { v2?: boolean }) {
   );
 }
 
-export function MyCountryRouter({ v2 = false }: { v2?: boolean } = {}) {
+export function MyCountryRouter({ v2: _v2 }: { v2?: boolean } = {}) {
   const { user } = useUser();
 
   return (
@@ -383,7 +205,7 @@ export function MyCountryRouter({ v2 = false }: { v2?: boolean } = {}) {
       <AuthenticationGuard redirectPath="/mycountry">
         <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
           <AtomicStateProviderWrapper>
-            <MyCountryRouterInner v2={v2} />
+            <MyCountryRouterInner />
           </AtomicStateProviderWrapper>
         </CountryDataProvider>
       </AuthenticationGuard>

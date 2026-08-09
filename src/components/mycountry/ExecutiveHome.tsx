@@ -32,13 +32,13 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
-import { V2Agenda as _V2Agenda } from "./V2Agenda";
-import { V2CommandBriefingHero } from "./V2CommandBriefingHero";
-import { V2OpportunityHero } from "./V2OpportunityHero";
-import { V2MyAgenda } from "./V2MyAgenda";
+import { CommitmentsAgendaRail as _CommitmentsAgendaRail } from "./CommitmentsAgendaRail";
+import { CommandBriefingHero } from "./CommandBriefingHero";
+import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
+import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
-import type { V2Drill } from "./V2DrillSheets";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
+import type { DrillSheetKind } from "./DrillSheets";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
 import {
   DiplomacyGraphic,
   DefenseGraphic,
@@ -46,7 +46,7 @@ import {
   EconomyGraphic,
 } from "./ActionCardGraphics";
 
-import { useCountryData, QuickVitalityRings } from "../primitives";
+import { useCountryData, QuickVitalityRings } from "./primitives";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -616,7 +616,7 @@ function formatCooldownTime(cooldownUntil: number | null | undefined, now = Date
   return `${mins}m ${secs}s`;
 }
 
-export function V2Home({
+export function ExecutiveHomeComponent({
   countryId,
   onDeclare,
   onOpenDrill,
@@ -625,7 +625,7 @@ export function V2Home({
 }: {
   countryId: string;
   onDeclare: (prefilled?: string) => void;
-  onOpenDrill: (d: V2Drill) => void;
+  onOpenDrill: (d: DrillSheetKind) => void;
   onOpenIntent: (intentId: string) => void;
   onNavigate?: (section: MyCountrySection) => void;
 }) {
@@ -659,7 +659,7 @@ export function V2Home({
   return (
     <div className="space-y-5">
       {/* Primary Opportunity Briefing Hero */}
-      <V2OpportunityHero
+      <ExecutiveOpportunityHero
         countryId={countryId}
         onDeclare={onDeclare}
         onNavigate={onNavigate}
@@ -674,7 +674,7 @@ export function V2Home({
         {/* Main Column: Pulse & Agenda Widget + Recent Activity Feed */}
         <div className="space-y-5 lg:col-span-2">
           {/* Primary Agenda Widget */}
-          <V2MyAgenda
+          <ExecutiveAgenda
             countryId={countryId}
             onDeclare={onDeclare}
             onOpenIntent={onOpenIntent}
@@ -803,3 +803,6 @@ const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
     </FacetCard>
   );
 });
+
+export const ExecutiveHome = React.memo(ExecutiveHomeComponent);
+export const V2Home = ExecutiveHome;

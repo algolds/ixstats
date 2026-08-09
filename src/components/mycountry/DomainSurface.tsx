@@ -1,14 +1,13 @@
-"use client";
-
+import React from "react";
 import dynamic from "next/dynamic";
 import { Command, ArrowUpRight } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
-import { PremiumPreviewFrame } from "../primitives";
+import { PremiumPreviewFrame } from "./primitives";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
-import { V2DomainContext } from "./V2DomainContext";
+import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 
 const EmbassiesAndRelationsPanel = dynamic(
@@ -56,15 +55,19 @@ const DOMAIN_BORDER: Record<V2Domain, string> = {
  * v2 drill content inline as the primary body, with the shared v2 rail alongside.
  * Defense stays premium-gated via PremiumPreviewFrame.
  */
-export function V2DomainSurface({
+export interface DomainSurfaceProps {
+  countryId: string;
+  section: string;
+  onDeclare?: (prefilled?: string) => void;
+}
+
+export type V2DomainSurfaceProps = DomainSurfaceProps;
+
+function DomainSurfaceComponent({
   countryId,
   section,
   onDeclare,
-}: {
-  countryId: string;
-  section: "diplomacy" | "defense" | "politics" | "economy" | "executive";
-  onDeclare?: (prefilled?: string) => void;
-}) {
+}: DomainSurfaceProps): React.JSX.Element {
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];
   const meta = DOMAIN_META[domain];
@@ -149,9 +152,12 @@ export function V2DomainSurface({
 
         {/* Rail — per-domain contextual KPIs + recent activity */}
         <aside className="space-y-5">
-          <V2DomainContext countryId={countryId} domain={domain} />
+          <DomainContextRail countryId={countryId} domain={domain} />
         </aside>
       </div>
     </div>
   );
 }
+
+export const DomainSurface = React.memo(DomainSurfaceComponent);
+export const V2DomainSurface = DomainSurface;

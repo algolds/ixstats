@@ -1,8 +1,10 @@
-export { MyCountryTabSystem } from "./MyCountryTabSystem";
-export { EnhancedIntelligenceContent } from "./EnhancedIntelligenceContent";
-export { MyCountrySidebarNav } from "./MyCountrySidebarNav";
-export { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
 export { MyCountryRouter } from "./MyCountryRouter";
-// Only re-export symbols actually imported through this barrel
-// (full primitives available via direct import from "./primitives")
+export { CommandSurface } from "./CommandSurface";
+export { ExecutiveHome } from "./ExecutiveHome";
+export { ExecutiveAgenda } from "./ExecutiveAgenda";
+export { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
+export { DomainSurface } from "./DomainSurface";
+export { DrillSheets } from "./DrillSheets";
+export { StandingBands } from "./StandingBands";
+export { MyCountrySidebarNav } from "./MyCountrySidebarNav";
 export { useCountryData, CountryDataProvider } from "./primitives";

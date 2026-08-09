@@ -5,8 +5,8 @@ import { Briefcase, AlertTriangle, Clock, Check, TrendingUp, RotateCw } from "lu
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
-import { useCountryData } from "../primitives";
-import type { V2Drill } from "./V2DrillSheets";
+import { useCountryData } from "./primitives";
+import type { DrillSheetKind } from "./DrillSheets";
 
 function formatRolloutRemaining(remainingMs: number): string {
   if (remainingMs <= 0) return "Finalizing";

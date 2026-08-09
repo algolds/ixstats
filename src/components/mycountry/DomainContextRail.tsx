@@ -1,6 +1,4 @@
-"use client";
-
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Building2,
   Handshake,
@@ -25,7 +23,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
 import { computeApproval } from "~/lib/approval";
-import { useCountryData } from "../primitives";
+import { useCountryData } from "./primitives";
 import type { V2Domain } from "./domain-meta";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { ReadinessOverviewCard } from "~/components/defense/command/ReadinessOverviewCard";
@@ -941,7 +939,17 @@ function EconomyContext({ countryId }: { countryId: string }) {
  * Replaces the shared National Standing / Your Agenda rail with per-domain KPIs and a
  * recent-activity log, so each tab shows information specific to what it manages.
  */
-export function V2DomainContext({ countryId, domain }: { countryId: string; domain: V2Domain }) {
+export interface DomainContextRailProps {
+  countryId: string;
+  domain: V2Domain;
+}
+
+export type V2DomainContextProps = DomainContextRailProps;
+
+function DomainContextRailComponent({
+  countryId,
+  domain,
+}: DomainContextRailProps): React.JSX.Element {
   switch (domain) {
     case "relations":
       return <DiplomacyContext countryId={countryId} />;
@@ -953,3 +961,6 @@ export function V2DomainContext({ countryId, domain }: { countryId: string; doma
       return <EconomyContext countryId={countryId} />;
   }
 }
+
+export const DomainContextRail = React.memo(DomainContextRailComponent);
+export const V2DomainContext = DomainContextRail;

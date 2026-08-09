@@ -513,3 +513,28 @@ Template → Evaluation → [pending] → [viewed] → [responded] → Consequen
 ### Splash Showcase
 
 `getRecentWorldIssues` seeds up to 18 showcase issues across different nations for the guest splash page. Runs idempotently — once seeded, the same showcase issues persist.
+
+---
+
+## Single Production Command Surface & V1 Cleanup (August 2026)
+
+MyCountry has fully transitioned to the single production **Command Surface** (`CommandSurface.tsx`), consolidating all sections into an action-first executive hub.
+
+### File & Symbol Structure (`src/components/mycountry/`)
+
+- `CommandSurface.tsx` — Main single-page command shell & viewport wrapper (`CommandSurface`).
+- `ExecutiveHome.tsx` — Executive Command Home dashboard (`ExecutiveHome`).
+- `ExecutiveAgenda.tsx` — Realtime IxTime horizon calendar & agenda feed (`ExecutiveAgenda`).
+- `ExecutiveOpportunityHero.tsx` — Crisis priority briefing hero spotlight (`ExecutiveOpportunityHero`).
+- `DomainSurface.tsx` — Full-page domain view for Diplomacy, Defense, Politics, Economy (`DomainSurface`).
+- `DomainContextRail.tsx` — Contextual KPI & activity log sidebar rail (`DomainContextRail`).
+- `DrillSheets.tsx` — Slide-over drill sheets for deep domain inspection (`DrillSheets`).
+- `IssueDetailBrief.tsx` — 4-branch issue resolution brief modal/panel (`IssueDetailBrief`).
+- `CommandNavToggle.tsx` — Top mirrored header navigation bar (`CommandNavToggle`, `CommandRightPillNav`).
+- `ExecutiveConsole.tsx` — Directive package composer & diff preview console (`ExecutiveConsole`).
+- `CommitmentsAgendaRail.tsx` — Active directive rollout tree rail (`CommitmentsAgendaRail`).
+- `RealtimePulseWidget.tsx` — Realtime statecraft pulse telemetry widget (`RealtimePulseWidget`).
+
+### Legacy V1 Deprecation
+
+All 14 obsolete V1 components (`Enhanced*Content.tsx`, `OverviewHero.tsx`, `PillarCards.tsx`, `MyCountryTabSystem.tsx`, `MyCountrySidebarLayout.tsx`, `SectionShell.tsx`) and temporary lab routes (`/mycountry/v2`, `/labs/mycountry-v2`) have been removed from the repository.

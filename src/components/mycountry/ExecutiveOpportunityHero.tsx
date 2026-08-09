@@ -15,9 +15,9 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { useCountryData } from "../primitives";
-import type { V2Drill } from "./V2DrillSheets";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
+import { useCountryData } from "./primitives";
+import type { DrillSheetKind } from "./DrillSheets";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface Opportunity {
   id: string;
@@ -38,21 +38,23 @@ interface Opportunity {
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
 }
 
-export interface V2OpportunityHeroProps {
+export interface ExecutiveOpportunityHeroProps {
   countryId: string;
   onDeclare?: (prefilled?: string) => void;
   onNavigate?: (section: MyCountrySection) => void;
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
   onOpenIntent?: (intentId: string) => void;
 }
 
-function V2OpportunityHeroComponent({
+export type V2OpportunityHeroProps = ExecutiveOpportunityHeroProps;
+
+function ExecutiveOpportunityHeroComponent({
   countryId,
   onDeclare,
   onNavigate,
   onOpenDrill,
   onOpenIntent,
-}: V2OpportunityHeroProps): React.JSX.Element {
+}: ExecutiveOpportunityHeroProps): React.JSX.Element {
   const { country } = useCountryData();
 
   // Queries for opportunity priority evaluation
@@ -396,4 +398,5 @@ function V2OpportunityHeroComponent({
   );
 }
 
-export const V2OpportunityHero = React.memo(V2OpportunityHeroComponent);
+export const ExecutiveOpportunityHero = React.memo(ExecutiveOpportunityHeroComponent);
+export const V2OpportunityHero = ExecutiveOpportunityHero;

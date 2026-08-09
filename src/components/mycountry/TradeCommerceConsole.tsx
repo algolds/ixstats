@@ -26,7 +26,7 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
-import { useCountryData } from "../primitives";
+import { useCountryData } from "./primitives";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";

@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Users, Scale, Building2, FileText, Crown } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -45,23 +43,30 @@ const PowerBrokersPanel = dynamic(
   { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
 );
 
+export interface PoliticsDrillDownProps {
+  countryId: string;
+}
+
 /**
  * Politics drill-down — cabinet / parties / legislature / bills / power brokers (player fiat).
  * Shared between the v2 right-side drill sheet and the full-page politics surface.
  * (v2 Design Bible §6: Politics is 100% player fiat; sim informs but never overrides)
  */
-export function PoliticsDrillDown({ countryId }: { countryId: string }) {
+function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<
     "cabinet" | "parties" | "legislature" | "bills" | "power"
   >("cabinet");
 
-  const tabs = [
-    { id: "cabinet" as const, label: "Cabinet", icon: Users },
-    { id: "parties" as const, label: "Parties", icon: Scale },
-    { id: "legislature" as const, label: "Legislature", icon: Building2 },
-    { id: "bills" as const, label: "Bills & Reforms", icon: FileText },
-    { id: "power" as const, label: "Power Brokers", icon: Crown },
-  ];
+  const tabs = useMemo(
+    () => [
+      { id: "cabinet" as const, label: "Cabinet", icon: Users },
+      { id: "parties" as const, label: "Parties", icon: Scale },
+      { id: "legislature" as const, label: "Legislature", icon: Building2 },
+      { id: "bills" as const, label: "Bills & Reforms", icon: FileText },
+      { id: "power" as const, label: "Power Brokers", icon: Crown },
+    ],
+    []
+  );
 
   return (
     <div className="space-y-4">
@@ -110,3 +115,5 @@ export function PoliticsDrillDown({ countryId }: { countryId: string }) {
     </div>
   );
 }
+
+export const PoliticsDrillDown = React.memo(PoliticsDrillDownComponent);
