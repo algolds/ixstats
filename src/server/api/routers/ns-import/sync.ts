@@ -11,7 +11,22 @@ import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 
-import { activeRunningJobs, processRegionNationsInBackground } from "~/lib/ns-sync-processor";
+import { activeRunningJobs, processRegionCardsFromDump } from "~/lib/ns-sync-processor";
+
+/**
+ * Default set of NS trading-card seasons to include when none are specified.
+ * Region syncs are sourced from the official season card dumps
+ * (`cardlist_S{season}.xml.gz`) rather than per-nation API calls, per the
+ * NationStates API terms. Admins can override with an explicit list.
+ */
+const DEFAULT_SYNC_SEASONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+function normalizeSeasons(input: number[] | undefined): number[] {
+  if (!input || input.length === 0) return DEFAULT_SYNC_SEASONS;
+  return Array.from(new Set(input.filter((n) => Number.isInteger(n) && n > 0 && n <= 100))).sort(
+    (a, b) => a - b
+  );
+}
 
 export const nsImportSyncRouter = createTRPCRouter({
   /**
@@ -69,11 +84,15 @@ export const nsImportSyncRouter = createTRPCRouter({
   /**
    * Admin: Fetch and import all cards from specific NS regions (comma-separated names)
    * Returns immediately — processing runs in parallel in the background
+   *
+   * Card definitions are sourced from the official Trading Cards Daily Dumps,
+   * filtered to the requested regions, not from per-nation API calls.
    */
   fetchRegionCards: adminProcedure
     .input(
       z.object({
         regionNames: z.string().min(1),
+        seasons: z.array(z.number().int().min(1).max(100)).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -89,21 +108,12 @@ export const nsImportSyncRouter = createTRPCRouter({
         });
       }
 
+      const seasons = normalizeSeasons(input.seasons);
+
       const results = [];
       for (const regionName of regions) {
-        let nations;
-        try {
-          nations = await nsApiClient.fetchRegionNations(regionName);
-        } catch (err) {
-          console.error(`Failed to fetch nations for region ${regionName}:`, err);
-          continue;
-        }
-
-        if (!nations || nations.length === 0) {
-          continue;
-        }
-
-        // Create sync log entry for tracking
+        // Create sync log entry for tracking (nations are no longer enumerated;
+        // the card dump is filtered by region instead).
         const syncLog = await ctx.db.syncLog.create({
           data: {
             syncType: `NS_REGION_${regionName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`,
@@ -112,10 +122,10 @@ export const nsImportSyncRouter = createTRPCRouter({
             itemsProcessed: 0,
             itemsFailed: 0,
             metadata: {
-              regionName,
-              totalNations: nations.length,
-              nations, // Store full list so we can resume
-              nationsProcessed: 0,
+              regionNames: regions,
+              seasons,
+              totalCards: 0,
+              cardsProcessed: 0,
               cardsCreated: 0,
               cardsUpdated: 0,
               errorCount: 0,
@@ -127,33 +137,35 @@ export const nsImportSyncRouter = createTRPCRouter({
         });
 
         // Fire-and-forget background processing
-        processRegionNationsInBackground(
+        processRegionCardsFromDump(
           ctx.db as unknown as PrismaClient,
           syncLog.id,
-          nations,
-          regionName
+          regions,
+          seasons
         ).catch((error) => {
-          console.error(`[NS Import] Background region fetch failed:`, error);
+          console.error(`[NS Import] Background region sync failed:`, error);
         });
 
         results.push({
           regionName,
           syncLogId: syncLog.id,
-          nationsFound: nations.length,
+          seasons,
         });
       }
 
       if (results.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "No nations found in any of the specified regions",
+          message: "No valid regions provided",
         });
       }
 
       return {
         success: true,
         results,
-        message: `Started importing cards for ${results.map((r) => `"${r.regionName}" (${r.nationsFound} nations)`).join(", ")}`,
+        message: `Started syncing card data for ${results
+          .map((r) => `"${r.regionName}" (seasons ${r.seasons.join(",")})`)
+          .join(", ")} from the NationStates card dumps.`,
       };
     }),
 
@@ -189,8 +201,9 @@ export const nsImportSyncRouter = createTRPCRouter({
         cardsCreated: log.cardsCreated ?? 0,
         cardsUpdated: log.cardsUpdated ?? 0,
         errorCount: log.itemsFailed,
-        totalNations: (meta.totalNations as number) ?? 0,
-        regionName: (meta.regionName as string) ?? null,
+        totalCards: (meta.totalCards as number) ?? 0,
+        regionNames: (meta.regionNames as string[]) ?? [],
+        seasons: (meta.seasons as number[]) ?? [],
         startedAt: log.startedAt,
         completedAt: log.completedAt,
         errorMessage: log.errorMessage,
@@ -213,12 +226,15 @@ export const nsImportSyncRouter = createTRPCRouter({
 
     return jobs.map((job) => {
       const meta = (job.metadata as Record<string, any>) || {};
+      const regionNames = (meta.regionNames as string[]) ?? [];
       return {
         id: job.id,
         syncType: job.syncType,
-        regionName: (meta.regionName as string) ?? "Unknown",
-        totalNations: (meta.totalNations as number) ?? 0,
-        nationsProcessed: job.itemsProcessed ?? 0,
+        regionName: regionNames[0] ?? "Unknown",
+        regionNames,
+        seasons: (meta.seasons as number[]) ?? [],
+        totalCards: (meta.totalCards as number) ?? 0,
+        cardsProcessed: job.itemsProcessed ?? 0,
         cardsCreated: job.cardsCreated ?? 0,
         cardsUpdated: job.cardsUpdated ?? 0,
         errorCount: job.itemsFailed ?? 0,
@@ -257,8 +273,7 @@ export const nsImportSyncRouter = createTRPCRouter({
 
       return {
         success: true,
-        message:
-          "Pause requested. The job will pause after the current nation finishes processing.",
+        message: "Pause requested. The job will pause after the current card finishes processing.",
       };
     }),
 
@@ -294,20 +309,24 @@ export const nsImportSyncRouter = createTRPCRouter({
       }
 
       const meta = syncLog.metadata as Record<string, any> | null;
-      const nations = meta?.nations as string[] | undefined;
-      const regionName = meta?.regionName as string | undefined;
+      const regionNames = meta?.regionNames as string[] | undefined;
+      const seasons = normalizeSeasons(meta?.seasons as number[] | undefined);
 
-      if (!nations || !Array.isArray(nations) || nations.length === 0 || !regionName) {
+      if (!regionNames || !Array.isArray(regionNames) || regionNames.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Job metadata is missing the nation list — cannot resume.",
+          message: "Job metadata is missing the region list — cannot resume.",
         });
       }
 
       const lastProcessedIndex = (meta?.lastProcessedIndex as number) ?? -1;
       const resumeFromIndex = lastProcessedIndex + 1;
 
-      if (resumeFromIndex >= nations.length) {
+      // The dump filter rebuilds the card list up-front; if the prior job
+      // already completed its card count, treat it as done (re-running is a
+      // no-op because cards are upserted by nsCardId+nsSeason).
+      const totalCards = (meta?.totalCards as number) ?? 0;
+      if (resumeFromIndex >= totalCards && totalCards > 0) {
         await ctx.db.syncLog.update({
           where: { id: syncLog.id },
           data: { status: "SUCCESS", completedAt: new Date() },
@@ -327,15 +346,15 @@ export const nsImportSyncRouter = createTRPCRouter({
       });
 
       console.log(
-        `[NS Import] Resuming region "${regionName}" from nation ${resumeFromIndex}/${nations.length}`
+        `[NS Import] Resuming region sync "${regionNames.join(",")}" from card ${resumeFromIndex}/${totalCards}`
       );
 
       // Fire-and-forget background processing
-      processRegionNationsInBackground(
+      processRegionCardsFromDump(
         ctx.db as unknown as PrismaClient,
         syncLog.id,
-        nations,
-        regionName,
+        regionNames,
+        seasons,
         resumeFromIndex,
         {
           cardsCreated: syncLog.cardsCreated ?? 0,
@@ -349,7 +368,7 @@ export const nsImportSyncRouter = createTRPCRouter({
       return {
         success: true,
         syncLogId: syncLog.id,
-        message: `Resumed import for region "${regionName}".`,
+        message: `Resumed card sync for region "${regionNames.join(", ")}".`,
         resumed: true,
       };
     }),

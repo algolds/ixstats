@@ -41,20 +41,16 @@ export default function FactbookLayout({
   return (
     <FactbookMetricsProvider section={section}>
       <div className="space-y-4">
-        {/* Tier 2 — inner section pills (link mode) */}
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground/70 text-[10px] font-extrabold tracking-[0.2em] uppercase">
-            Factbook
-          </span>
-          <div className="min-w-0 flex-1">
-            <MyCountryTabsList
-              activeTab={section}
-              onChangeAction={() => {}}
-              govComponentCount={0}
-              baseHref={`/countries/${slug}/factbook`}
-              showGovSetupBadge={false}
-            />
-          </div>
+        {/* Tier 2 — inner section pills (minimalist text rail + sliding underline) */}
+        <div className="min-w-0 w-full">
+          <MyCountryTabsList
+            activeTab={section}
+            onChangeAction={() => {}}
+            govComponentCount={0}
+            baseHref={`/countries/${slug}/factbook`}
+            showGovSetupBadge={false}
+            variant="underline"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

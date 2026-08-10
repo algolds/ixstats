@@ -22,6 +22,11 @@ export interface PostBodyProps {
     promptSlug?: string;
   };
   sportsBulletin?: SportsBulletinData | null;
+  account?: {
+    displayName?: string;
+    username?: string;
+    profileImageUrl?: string;
+  } | null;
   poll?: any;
   visualizations?: any[];
   inlinePreview?: React.ReactNode;
@@ -34,6 +39,7 @@ export function PostBody({
   cleanContent,
   blurbMeta,
   sportsBulletin: inputSportsBulletin,
+  account,
   poll,
   inlinePreview,
   isHero = false,
@@ -66,7 +72,7 @@ export function PostBody({
 
       {/* Main Body Content: Sports Card or Wikitext/HTML */}
       {sportsBulletin ? (
-        <SportsBulletinCard data={sportsBulletin} />
+        <SportsBulletinCard data={sportsBulletin} author={account} />
       ) : (
         <div
           className={

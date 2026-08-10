@@ -8,6 +8,8 @@ import { api } from "~/trpc/react";
 import { Loader2, ExternalLink, TrendingUp, ImageOff } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import Image from "next/image";
+import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
+import { getRarityTheme } from "~/components/vault/vault-theme";
 
 export default function NSDeckPage() {
   const params = useParams();
@@ -45,18 +47,6 @@ export default function NSDeckPage() {
   if (!data) {
     return null;
   }
-
-  const getRarityColor = (rarity: string) => {
-    const colors: Record<string, string> = {
-      COMMON: "bg-gray-500",
-      UNCOMMON: "bg-green-500",
-      RARE: "bg-blue-500",
-      ULTRA_RARE: "bg-purple-500",
-      EPIC: "bg-pink-500",
-      LEGENDARY: "bg-amber-500",
-    };
-    return colors[rarity] || "bg-gray-500";
-  };
 
   return (
     <div className="container mx-auto max-w-7xl space-y-6 py-8">
@@ -142,7 +132,7 @@ export default function NSDeckPage() {
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
-                      <Badge className={`${getRarityColor(card.rarity)} text-white`}>
+                      <Badge variant="outline" className={getRarityTheme(card.rarity).badgeStyle}>
                         {card.rarity.replace("_", " ")}
                       </Badge>
                       {card.quantity && card.quantity > 1 && (
@@ -219,6 +209,7 @@ export default function NSDeckPage() {
               <strong>Note:</strong> Cards marked with "x#" indicate multiple copies owned.
             </p>
           )}
+          <NationStatesAttribution className="pt-2" />
         </CardContent>
       </Card>
     </div>

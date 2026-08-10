@@ -121,11 +121,11 @@ import { CardCarousel } from "~/components/cards/display";
 
 ### CardDetailsModal
 
-Expanded card view with full stats and market data.
+Expanded card view with full stats, artwork, and market data (decomposed into `src/components/cards/display/modal/`: `CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`).
 
 **Features:**
 - Full card stats display (all 4 attributes)
-- Market history chart (placeholder)
+- NationStates attribution widget (`NationStatesAttribution`)
 - Ownership information
 - Quick actions (Trade, List, View Collection)
 - Glass modal depth level
@@ -152,6 +152,15 @@ import { CardDetailsModal } from "~/components/cards/display";
 - `onTrade` ((card) => void): Trade action
 - `onList` ((card) => void): List on market
 - `onViewCollection` ((countryId) => void): View collection
+
+### NationStatesAttribution
+
+Widget providing compliance attribution and direct links for NationStates imported cards.
+
+**Features:**
+- Displays original NS season, card ID, and card rarity tier
+- Includes link back to NationStates card page
+- Respects NS API attribution guidelines
 
 ### CardContainer3D
 

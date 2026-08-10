@@ -53,7 +53,7 @@ export function CommandNavToggle({
       hoverCls: "hover:bg-white/5 hover:text-foreground",
     },
     {
-      id: "console",
+      id: "executive",
       label: "Declare a Directive",
       icon: Command,
       activeCls: "border-amber-500/30 bg-amber-500/20 text-amber-400 shadow-sm",

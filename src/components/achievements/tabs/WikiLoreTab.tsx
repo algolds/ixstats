@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { TabsContent } from "~/components/ui/tabs";
 import { TextureCard, TextureCardContent } from "~/components/ui/texture-card";
 import { Button } from "~/components/ui/button";
 import { CutoutCard, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
@@ -238,7 +237,7 @@ export function WikiLoreTab({
   });
 
   return (
-    <TabsContent value="wiki-lore" className="space-y-6 outline-none">
+    <div className="space-y-6">
       {/* Sub-tabs Navigation */}
       <div className="border-border/40 flex justify-center border-b pb-px dark:border-white/5">
         <div className="flex flex-wrap justify-center gap-2 md:gap-4">
@@ -979,6 +978,6 @@ export function WikiLoreTab({
         entry={selectedDayEntry}
         isAdmin={isAdmin}
       />
-    </TabsContent>
+    </div>
   );
 }

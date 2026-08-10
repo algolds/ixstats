@@ -10,12 +10,40 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
+
+- **Country Profile & Directory HIG Redesign (/apple-design)**:
+  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (*Overview*, *Factbook*, *Governance*, *Community*).
+  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers ([countryDataTransformers.ts](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_utils/countryDataTransformers.ts)).
+  - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesFocusGridModular.tsx), and [CountryFocusCard.tsx](file:///home/jxsig/projects/ixstats/src/components/countries/CountryFocusCard.tsx) with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
+  - **Design Specs**: Documented full architecture spec in [2026-08-10-countries-apple-design-redesign.md](file:///home/jxsig/projects/ixstats/docs/specs/2026-08-10-countries-apple-design-redesign.md).
+
+### Refactored & Modularized (IxCards & IxVault Architecture Decomposition)
+
+- **Monolithic Vault Component Decomposition**:
+  - **Cards Section Modularization**: Decomposed [VaultCardsSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultCardsSection.tsx) into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`).
+  - **Dashboard Section Modularization**: Decomposed [VaultDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultDashboardSection.tsx) into focused modules under `src/components/vault/sections/dashboard/`.
+  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultStoreTab.tsx) and [VaultAuctionsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultAuctionsTab.tsx) into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`.
+  - **Card Modal Decomposition**: Modularized [CardDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDetailsModal.tsx) into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`).
+  - **Vault Service Modularization**: Split [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) into domain services under `src/lib/vault/` (`vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts`).
+  - **NationStates Integration**: Added [NSCardSettingsCard.tsx](file:///home/jxsig/projects/ixstats/src/app/settings/_components/NSCardSettingsCard.tsx) settings control, [NationStatesAttribution.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/NationStatesAttribution.tsx) attribution widget, image proxy route ([proxy-ns-image/route.ts](file:///home/jxsig/projects/ixstats/src/app/api/proxy-ns-image/route.ts)), and updated [ns-integration.md](file:///home/jxsig/projects/ixstats/docs/systems/ns-integration.md).
+
+### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
+
+- **Achievements Header Streamlining (`/achievements`)**:
+  - **Visual Hierarchy Refinement**: Simplified [page.tsx](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/FloatingRibbonRack.tsx) and [ForumRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/ForumRibbonRack.tsx) for displaying achievement ribbons across user profiles and forum embeds.
+  - **Documentation**: Updated [src/app/achievements/README.md](file:///home/jxsig/projects/ixstats/src/app/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
+
 ### Refactored (Thinkpages Social Knowledge Suite — Component Modularization & Architecture Audit)
 
 - **Thinkpages Monolith Decomposition & Architecture Audit**:
   - **Decomposed Monolith Components**: Modularized large thinkpages components down into focused, high-performance domain sub-components under `src/components/thinkpages/post/`, `src/components/thinkpages/composer/`, `src/components/thinkpages/editor/`, and `src/components/thinkpages/account/`.
     - `ThinkpagesPost.tsx`: Reduced from **2,247 lines → 227 lines** by extracting `<HeroPostView>` (383 lines), `<StandardPostView>` (594 lines), and `useThinkpagesPost` (457 lines).
     - `GlassCanvasComposer.tsx`: Reduced from **1,438 lines → 422 lines** while preserving 100% of original UX, layout, CSS classes, spring animations, avatar account switcher dropdown, and portal modals by extracting `useGlassCanvasComposer` (545 lines), `ComposerAccountSwitcher` (132 lines), `ComposerLiveDataDrawer` (199 lines), `ComposerActionBar` (230 lines), and `ComposerPollModal` (262 lines).
+  - **Apple HIG Design Polish & Theme Compliance (/apple-design)**:
+    - **Icon-Only Theme-Compliant Wiki Button**: Converted the composer's Wiki popover trigger in [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx) to an icon-only button (`w-7 h-7 rounded-xl`) featuring the official Wikipedia `FaWikipediaW` icon, styled with the official IxWiki brand hex `#1d4e89` (from `public/images/ix-logo.svg`), and fixed input background/placeholder theme contrast for 100% legibility in light and dark modes.
+    - **Theme-Compliant Sports Embed Card**: Upgraded [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx) with theme-adaptive glass surfaces (`bg-white/70 dark:bg-slate-900/60 backdrop-blur-2xl border-black/10 dark:border-white/10 shadow-xl`), clean right-aligned `Open League →` footer button, UFC-style rankings layout (`#<rank>` left badges + `▲`/`▼` delta pills + `Rank #<rank>` right markers per `/apple-design`), active press scale (`active:scale-[0.98]`), and optical typography (`tracking-tight font-bold`).
     - `GlassPlateEditor.tsx`: Reduced from **1,767 lines → 484 lines** by extracting `useGlassPlateEditor` (554 lines), `EditorPlugins` (133 lines), `EditorToolbar` (154 lines), `WikiAndStashPopovers` (314 lines), `MentionMenuPortal` (94 lines), and `SlateSerializer` (242 lines).
     - `AccountCreationModal.tsx`: Reduced from **894 lines → 584 lines** by extracting `AccountTypeSelector` (126 lines) and `AccountDetailsForm` (170 lines).
     - `StandardPostView.tsx`: Further decomposed from 785 lines → 594 lines by extracting `RepostCard` (92 lines), `ReactionPills` (67 lines), and `ThreadReplies` (99 lines).

@@ -9,6 +9,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImportWizard } from "~/components/cards/ns-import";
+import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 
 export default function NSImportPage() {
   const router = useRouter();
@@ -133,6 +134,8 @@ export default function NSImportPage() {
                 Back to MyVault
               </button>
             </div>
+
+            <NationStatesAttribution className="text-center" />
           </div>
         ) : (
           <ImportWizard onComplete={handleImportComplete} onCancel={handleCancel} />

@@ -33,9 +33,10 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 
 | Path | Contents |
 | --- | --- |
-| `page.tsx`, `*/page.tsx` | Thin entry points, each rendering `<MyCountryRouter />` (except `editor/`). |
+| `page.tsx`, `*/page.tsx` | Thin entry points, each rendering `<MyCountryRouter />` (CommandSurface entry). |
 | `layout.tsx` | Demo/dev providers, banners, `MyCountryDIPlugin` (Dynamic Island). |
 | `components/MobileOptimizations.tsx` | `MobileOptimized` wrapper (touch gestures). |
+| `primitives/` | `IntentComposer.tsx` (modularized into `composer/DirectivePresetsCatalog`, `DirectiveTuningControls`, `DirectiveDiffPreview`). |
 | `diplomacy/_components/` | `DiplomaticEventsHub`. |
 | `intelligence/_components/` | `AnalyticsDashboard`, `DiplomaticAnalytics`, `PolicyAnalytics`, `AlertThresholdSettings`. |
 | `editor/page.tsx`, `editor/hooks/` | Country editor (BuilderRouter); `usePendingLocks`. |
@@ -43,7 +44,7 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 | `utils/` | `keyValidation.ts`, `liveDataTransformers.ts`. |
 | `types/` | `intelligence.ts` payload types. |
 
-Section content lives in `src/components/mycountry/` as `Enhanced*Content` components (`EnhancedMyCountryContent`, `EnhancedExecutiveContent`, `EnhancedDiplomacyContent`, `EnhancedPoliticsContent`, plus lazy `EnhancedIntelligenceContent`, `EnhancedDefenseContent`, `EnhancedMapEditorContent`). Each receives `activeSection`, `onNavigate`, and `notifications` props.
+Section content lives in `src/components/mycountry/` as `CommandSurface` (sole production shell across all entry points) wrapping domain views (`ExecutiveHome`, `DiplomacyView`, `PoliticsView`, `DefenseView`, `EconomyView`). Directive primitives under `primitives/composer/` provide preset catalogs, tuning controls, and diff previews.
 
 Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryNotifications`, `useNationalIssuesToast`, `usePremium`, `useUserCountry`.
 

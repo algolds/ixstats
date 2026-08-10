@@ -1,6 +1,6 @@
 # Countries / Explore
 
-**Last updated:** June 2026
+**Last updated:** August 2026
 
 Public, read-only nation profiles plus the browse/explore experience. Anyone (signed in or not) can list all countries, search/filter/sort them, and open an individual country's public profile. Owner-side editing lives in MyCountry, not here.
 
@@ -9,8 +9,8 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 | Route | File | Purpose |
 | --- | --- | --- |
 | `/countries` | `page.tsx` | Explore grid: searchable/filterable/sortable list of all countries |
-| `/countries/new` | `new/page.tsx` | Alternate explore entry reusing `CountriesPageModular` |
-| `/countries/[slug]` | `[slug]/page.tsx` | Public country profile (tabbed, Facet UI) |
+| `/countries/new` | `new/page.tsx` | Alternate explore entry re-using `CountriesPageModular` |
+| `/countries/[slug]` | `[slug]/page.tsx` | Public country profile (tabbed Apple HIG, Facet UI) |
 | `/countries/[slug]/modeling` | `[slug]/modeling/page.tsx` | Economic modeling/scenario engine for a country |
 
 The dynamic segment is `[slug]`. The profile query accepts either a slug or an id — pages resolve `params.slug` and pass it to `api.countries.getByIdWithEconomicData` as `{ id }`.
@@ -22,8 +22,9 @@ Defined in `[slug]/_components/CountryTabs.tsx` (`TabType`), rendered by `[slug]
 | Tab | Component | Content |
 | --- | --- | --- |
 | Overview | `CountryOverviewPanel` | Vitality rings, headline economic stats, government summary, map embed, wiki intro/infobox |
-| Dossier (`lore`) | `WikiIntelligenceTab` | Wiki-sourced intelligence dossier (clearance `PUBLIC`) |
-| Activity | `CountryActivityPanel` | Recent country activity feed |
+| Factbook | `FactbookSidebar` | Factbook parameters, demography, geographic stats, and reference data |
+| Governance | `CountryGovernancePanel` | Executive structure, cabinet, political parties, and active laws |
+| Community | `CountryActivityPanel` | Recent country governance timeline, diplomatic events, and community feed |
 
 Deeper economic detail (indicators, labor, fiscal, demographics, comparisons, modeling) is provided by the shared economy components — see `_components/economy/README.md`.
 
@@ -34,7 +35,7 @@ countries/
 ├── page.tsx, new/page.tsx        # explore entry points
 ├── _components/                  # explore + shared profile UI
 │   ├── CountriesPageModular.tsx  # explore page orchestrator
-│   ├── CountriesFocusGridModular / CountriesGrid / CountryListCard
+│   ├── CountriesFocusGridModular / CountriesGrid / CountryFocusCard
 │   ├── CountriesFilterSidebar / CountriesSearch / CountriesSortBar
 │   ├── CountriesHeader / CountriesPageHeader / CountriesStats
 │   ├── CountriesCommandPalette.tsx
@@ -43,9 +44,10 @@ countries/
 │   └── economy/                  # shared economic display components (see its README)
 └── [slug]/
     ├── page.tsx                  # tabbed public profile
-    ├── _components/              # CountryHeader, CountryTabs, CountryOverviewPanel, CountryActivityPanel
+    ├── _components/              # CountryHeader, CountryTabs, FactbookSidebar, CountryActivityPanel
     ├── _hooks/useCountryPageState.ts   # tab state, banner mode, wiki intro/infobox
-    └── _utils/countryDataTransformers.ts  # vitality data derivation
+    ├── _types/                   # domain types for profile pages
+    └── _utils/countryDataTransformers.ts  # vitality data derivation and transformer helpers
 ```
 
 - Explore page (`page.tsx`) fetches all countries, prefetches flags via `unifiedFlagService` / `useBulkFlagCache`, and maps results into `CountryCardData` for `CountriesPageModular`.

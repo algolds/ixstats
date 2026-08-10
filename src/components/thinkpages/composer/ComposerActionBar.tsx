@@ -68,8 +68,8 @@ export function ComposerActionBar({
       }}
       transition={{
         type: "spring",
-        stiffness: 350,
-        damping: 35,
+        stiffness: 380,
+        damping: 30,
       }}
       className={cn("overflow-hidden", !showActionBar && "pointer-events-none")}
     >
@@ -77,12 +77,12 @@ export function ComposerActionBar({
         <div className="flex justify-end text-[0.65rem]">
           <span
             className={cn(
-              "font-medium",
+              "font-semibold tracking-tight transition-colors duration-150",
               remainingChars < 20
-                ? "text-red-400"
+                ? "text-red-500 font-bold"
                 : remainingChars < 50
-                  ? "text-orange-400"
-                  : "text-muted-foreground"
+                  ? "text-amber-500"
+                  : "text-slate-400 dark:text-slate-500"
             )}
           >
             {remainingChars} characters remaining
@@ -90,7 +90,7 @@ export function ComposerActionBar({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -98,9 +98,10 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
                   className={cn(
-                    "h-8 w-8 cursor-pointer p-0 text-blue-600 transition-colors hover:bg-slate-500/5 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-white/5 dark:hover:text-blue-300",
-                    showVisualizationPanel && "bg-slate-500/10 dark:bg-white/10"
+                    "h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300",
+                    showVisualizationPanel && "bg-blue-500/15 ring-1 ring-blue-500/30"
                   )}
+                  aria-label="Add live data chart"
                 >
                   {isGeneratingVisualization ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,7 +110,7 @@ export function ComposerActionBar({
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Add live data chart</TooltipContent>
+              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add live data chart</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -119,7 +120,8 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowMediaModal(true)}
                   disabled={isUploadingImage || selectedImages.length >= 4}
-                  className="h-8 w-8 cursor-pointer p-0 text-emerald-600 transition-colors hover:bg-slate-500/5 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-white/5 dark:hover:text-emerald-300"
+                  className="h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300"
+                  aria-label="Add media or images"
                 >
                   {isUploadingImage ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -129,7 +131,7 @@ export function ComposerActionBar({
                       {selectedImages.length > 0 && (
                         <Badge
                           variant="secondary"
-                          className="border-background absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border bg-green-500 p-0 text-[7px] leading-none font-bold text-white"
+                          className="absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-background bg-emerald-500 p-0 text-[7px] font-bold text-white shadow-sm"
                         >
                           {selectedImages.length}
                         </Badge>
@@ -138,7 +140,7 @@ export function ComposerActionBar({
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Add media / images</TooltipContent>
+              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add media / images</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -148,7 +150,7 @@ export function ComposerActionBar({
                   disabled={selectedImages.length >= 4}
                 />
               </TooltipTrigger>
-              <TooltipContent side="top">Insert GIF</TooltipContent>
+              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Insert GIF</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -168,27 +170,28 @@ export function ComposerActionBar({
                     setShowPollModal(true);
                   }}
                   className={cn(
-                    "h-8 w-8 cursor-pointer p-0 text-[#ff8a65] transition-colors hover:bg-slate-500/5 hover:text-[#ff8a65] dark:text-[#ff8a65] dark:hover:bg-white/5 dark:hover:text-[#ff8a65]/90",
-                    pollDraft && "bg-slate-500/10 dark:bg-white/10"
+                    "h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-[#ff8a65] hover:bg-[#ff8a65]/10 hover:text-[#ff8a65]",
+                    pollDraft && "bg-[#ff8a65]/15 ring-1 ring-[#ff8a65]/30"
                   )}
+                  aria-label="Add Poll"
                 >
                   <Vote className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Add Poll</TooltipContent>
+              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add Poll</TooltipContent>
             </Tooltip>
 
-            <div className="flex h-5 items-center gap-2 border-l border-slate-200 px-2 dark:border-white/10">
+            <div className="flex h-5 items-center gap-2 border-l border-black/10 dark:border-white/10 px-2.5">
               <Switch
                 id="share-to-discord-toggle"
                 checked={postToDiscord}
                 onCheckedChange={setPostToDiscord}
                 tone="discord"
-                className="border-slate-200 dark:border-white/10"
+                className="scale-90"
               />
               <label
                 htmlFor="share-to-discord-toggle"
-                className="flex cursor-pointer items-center gap-1.5 text-[10px] text-slate-500 transition-colors select-none hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+                className="flex cursor-pointer items-center gap-1.5 text-[10px] font-semibold tracking-tight text-slate-500 dark:text-neutral-400 select-none hover:text-slate-800 dark:hover:text-neutral-200 transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -214,7 +217,7 @@ export function ComposerActionBar({
                 selectedVisualizations.length === 0 &&
                 selectedImages.length === 0)
             }
-            className="h-7 cursor-pointer bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
+            className="h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.97] px-4 text-xs font-bold text-white shadow-md transition-all duration-150 tracking-tight"
           >
             {isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

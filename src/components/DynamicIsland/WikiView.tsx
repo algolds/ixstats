@@ -81,7 +81,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     navigateToSection,
     narratorState,
     narratorActions,
-  } = useWikiContext() as any;
+  } = useWikiContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [recentOpen, setRecentOpen] = useState(false);
@@ -171,7 +171,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     { staleTime: 60_000 }
   );
 
-  const visibleToc = useMemo(() => tocEntries.filter((e: any) => e.level <= 3), [tocEntries]);
+  const visibleToc = useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
   const handleNavigateToArticle = useCallback(
     (title: string) => {
@@ -299,7 +299,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const activeEntry = visibleToc.find((e: any) => e.id === activeSectionId);
+  const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
   const activeSectionTitle = activeEntry?.text ?? "";
 
   const isNarratorActive = !!(
@@ -528,7 +528,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
                 />
 
                 {/* Section Ticks (Dots) */}
-                {visibleToc.map((entry: any) => {
+                {visibleToc.map((entry) => {
                   const offset = sectionOffsets[entry.id] ?? 0;
                   const isActive = activeSectionId === entry.id;
                   return (

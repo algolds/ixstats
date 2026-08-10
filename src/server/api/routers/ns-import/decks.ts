@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 import { getVaultConfig, vaultService } from "~/lib/vault-service";
 import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault-bonus";
+import { generateNSImportDescription } from "~/lib/ns-import-service";
 
 export const nsImportDecksRouter = createTRPCRouter({
   /**
@@ -274,15 +275,12 @@ export const nsImportDecksRouter = createTRPCRouter({
           }
 
           if (!card) {
-            // Create new card definition
-            const description =
-              nsCard.description ||
-              nsCard.slogan ||
-              nsCard.motto ||
-              `${nsCard.category || "Unknown"} from ${nsCard.region || "Unknown"}`;
+            // Create new card definition with an original description
+            // (never copy NationStates-authored card text verbatim)
+            const description = generateNSImportDescription(nsCard);
 
             // Use NS flag as artwork, fallback to placeholder
-            const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
+            const artwork = nsCard.flag || "/images/cards/lore-placeholder.svg";
 
             card = await ctx.db.card.create({
               data: {

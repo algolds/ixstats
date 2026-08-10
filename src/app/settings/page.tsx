@@ -18,6 +18,7 @@ import {
   Scale,
   Bell,
   Gem,
+  Flag,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -35,6 +36,7 @@ import {
   PrivacySecurityCard,
   GeographicReconciliationCard,
   NotificationSettingsCard,
+  NSCardSettingsCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
@@ -65,6 +67,7 @@ function ProfileContent() {
   const [showThinkpages, setShowThinkpages] = useState(false);
   const [showIxnayID, setShowIxnayID] = useState(false);
   const [showGeoReconciliation, setShowGeoReconciliation] = useState(false);
+  const [showNSCards, setShowNSCards] = useState(false);
   const [heroCollapsed, setHeroCollapsed] = useState(true);
 
   const profileSettings = useProfileSettings({
@@ -269,6 +272,12 @@ function ProfileContent() {
                     <IxnayIDCard hasDiscordAccount={hasDiscordAccount} />
                   </div>
                 )}
+
+                {showNSCards && (
+                  <div id="ns-cards-section">
+                    <NSCardSettingsCard />
+                  </div>
+                )}
               </div>
               <div className="h-fit lg:sticky lg:top-6 lg:col-span-4">
                 <CutoutCard
@@ -469,6 +478,45 @@ function ProfileContent() {
                         className={cn(
                           "h-1.5 w-1.5 rounded-full transition-all",
                           showIxnayID
+                            ? "scale-110 animate-pulse bg-indigo-600 dark:bg-indigo-400"
+                            : "bg-slate-300 dark:bg-slate-700"
+                        )}
+                      />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const next = !showNSCards;
+                        setShowNSCards(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("ns-cards-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className={cn(
+                        "group flex w-full cursor-pointer items-center justify-between rounded-lg border-0 bg-transparent px-3 py-2 text-left text-xs transition-colors outline-none hover:bg-white/5",
+                        showNSCards
+                          ? "bg-white/10 font-bold text-slate-900 dark:bg-white/5 dark:text-white"
+                          : "font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Flag
+                          className={cn(
+                            "mr-3 h-4 w-4 shrink-0 transition-colors",
+                            showNSCards ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"
+                          )}
+                        />
+                        NationStates Card Opt-Out
+                      </div>
+                      <div
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-all",
+                          showNSCards
                             ? "scale-110 animate-pulse bg-indigo-600 dark:bg-indigo-400"
                             : "bg-slate-300 dark:bg-slate-700"
                         )}

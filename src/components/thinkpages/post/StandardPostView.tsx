@@ -346,6 +346,7 @@ export function StandardPostView({
                 cleanContent={cleanPostContent}
                 blurbMeta={blurbMeta}
                 sportsBulletin={sportsBulletin}
+                account={post.account}
                 isHero={false}
               />
             )}

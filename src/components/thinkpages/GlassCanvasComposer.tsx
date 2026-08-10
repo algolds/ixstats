@@ -204,15 +204,15 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "bg-card text-card-foreground glass-hierarchy-child relative flex flex-col gap-0 rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 shadow-sm"
+        "relative flex flex-col gap-0 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl"
       )}
       transition={{
         type: "spring",
-        stiffness: 350,
-        damping: 35,
+        stiffness: 380,
+        damping: 30,
       }}
     >
-      <TextureOverlay texture="paperGrain" opacity={0.06} className="rounded-xl" />
+      <TextureOverlay texture="paperGrain" opacity={0.04} className="rounded-2xl" />
 
       <div className="relative flex gap-3">
         {/* Left column: Avatar + Floating Switcher */}

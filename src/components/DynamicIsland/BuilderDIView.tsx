@@ -58,16 +58,18 @@ function getHighResFlagUrl(url: string | null | undefined): string | null | unde
   return url;
 }
 
+import type { ViewMode } from "./types";
+
 interface BuilderDIViewProps {
   onClose: () => void;
-  onSwitchMode?: (mode: any) => void;
-  filter: any; // Passed from BuilderDIPlugin closure
-  context: any; // Passed from BuilderDIPlugin closure
+  onSwitchMode?: (mode: ViewMode) => void;
+  filter?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 interface BuilderProgressViewProps {
-  filter: any;
-  context: any;
+  filter?: Record<string, unknown>;
+  context?: Record<string, unknown> | null;
   onClose: () => void;
 }
 

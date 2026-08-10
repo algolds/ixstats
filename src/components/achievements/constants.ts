@@ -192,3 +192,72 @@ export const getRarityBg = (rarity: string, isUnlocked = true) => {
       return "bg-muted border-border/50 dark:bg-white/5 dark:border-white/10";
   }
 };
+
+export type TrophyTier = "platinum" | "gold" | "silver" | "bronze";
+
+export const getTrophyTier = (rarity: string): TrophyTier => {
+  switch (rarity) {
+    case "Legendary":
+      return "platinum";
+    case "Epic":
+      return "gold";
+    case "Rare":
+      return "silver";
+    default:
+      return "bronze";
+  }
+};
+
+export interface ForumRibbon {
+  id: string;
+  title: string;
+  category: string;
+  stripeGradient: string;
+  borderStyle: string;
+  badgeLabel: string;
+}
+
+export const FORUM_RIBBONS: ForumRibbon[] = [
+  {
+    id: "wiki-archivist",
+    title: "WikiOS Grand Archivist Ribbon",
+    category: "Community Wiki",
+    stripeGradient: "from-emerald-700 via-teal-400 to-emerald-700",
+    borderStyle: "border-emerald-300/60 shadow-emerald-500/30",
+    badgeLabel: "WIKI",
+  },
+  {
+    id: "forum-pioneer",
+    title: "Community Forum Pioneer Ribbon",
+    category: "Community Forum",
+    stripeGradient: "from-amber-600 via-yellow-400 to-amber-600",
+    borderStyle: "border-amber-300/60 shadow-amber-500/30",
+    badgeLabel: "FORUM",
+  },
+  {
+    id: "map-cartographer",
+    title: "Master Cartographer Ribbon",
+    category: "Map & Atlas",
+    stripeGradient: "from-blue-700 via-sky-400 to-blue-700",
+    borderStyle: "border-sky-300/60 shadow-sky-500/30",
+    badgeLabel: "ATLAS",
+  },
+  {
+    id: "community-veteran",
+    title: "Community Veteran Commendation",
+    category: "Platform Service",
+    stripeGradient: "from-purple-700 via-fuchsia-400 to-purple-700",
+    borderStyle: "border-purple-300/60 shadow-purple-500/30",
+    badgeLabel: "VETERAN",
+  },
+  {
+    id: "lore-historian",
+    title: "Grand Lore Historian Order",
+    category: "Canon & Lore",
+    stripeGradient: "from-rose-700 via-pink-400 to-rose-700",
+    borderStyle: "border-rose-300/60 shadow-rose-500/30",
+    badgeLabel: "CANON",
+  },
+];
+
+

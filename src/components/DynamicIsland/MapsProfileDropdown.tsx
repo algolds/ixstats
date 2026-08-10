@@ -7,10 +7,17 @@ import { getNationUrl } from "~/lib/slug-utils";
 import { useRouter } from "next/navigation";
 import { Crown, LogIn, Map, User } from "lucide-react";
 
+import type { UserProfile } from "./types";
+
 interface MapsProfileDropdownProps {
-  user: any;
+  user: {
+    id?: string;
+    imageUrl?: string | null;
+    fullName?: string | null;
+    primaryEmailAddress?: { emailAddress?: string } | null;
+  } | null | undefined;
   isLoaded: boolean;
-  userProfile: any;
+  userProfile?: UserProfile | null;
   greeting: string;
 }
 

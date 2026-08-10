@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Command, Dices, Search, Tag, Sparkles } from "lucide-react";
+import { Command, Dices, Search, Tag, Sparkles, Check } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export interface DomesticSuggestion {
@@ -167,7 +167,7 @@ export const DOMESTIC_SUGGESTIONS: DomesticSuggestion[] = [
     category: "Infrastructure",
     label: "Develop national highway transit",
     keywords: ["road", "highway", "transit", "infrastructure", "bridge"],
-    icon: "cat",
+    icon: "🛣️",
   },
   {
     category: "Infrastructure",
@@ -426,16 +426,19 @@ export const CATEGORIES = [
 ] as const;
 
 export interface DirectivePresetsCatalogProps {
+  activeGoal?: string;
+  searchQuery?: string;
   onSelectGoal: (goal: string) => void;
-  onSurpriseMe: () => void;
+  onSurpriseMe?: () => void;
 }
 
 export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatalog({
+  activeGoal,
+  searchQuery = "",
   onSelectGoal,
   onSurpriseMe,
 }: DirectivePresetsCatalogProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPresets = useMemo(() => {
     return DOMESTIC_SUGGESTIONS.filter((item) => {
@@ -450,76 +453,76 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
 
   return (
     <div className="space-y-4">
-      {/* Search & Category Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Command className="h-4 w-4 text-amber-500" />
-          <h3 className="text-foreground text-sm font-extrabold tracking-tight">
-            Directive Catalog & Presets
-          </h3>
+      {/* Category Pill Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
+        <div className="flex flex-wrap gap-1.5">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={cn(
+                "rounded-xl border px-3 py-1.5 text-[11px] font-extrabold transition-all duration-150 select-none active:scale-95",
+                selectedCategory === cat
+                  ? "border-amber-500/50 bg-amber-500/20 text-amber-950 shadow-sm dark:text-amber-300"
+                  : "border-border/40 bg-card/40 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
-        <button
-          type="button"
-          onClick={onSurpriseMe}
-          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-800 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Surprise Me</span>
-        </button>
-      </div>
-
-      {/* Search input */}
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Filter presets by keyword or category..."
-          className="border-border/60 bg-card/60 text-foreground placeholder:text-muted-foreground w-full rounded-xl border py-1.5 pr-3 pl-9 text-xs focus:ring-1 focus:ring-amber-500/50 focus:outline-hidden"
-        />
-      </div>
-
-      {/* Category Tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {CATEGORIES.map((cat) => (
+        {onSurpriseMe && (
           <button
-            key={cat}
             type="button"
-            onClick={() => setSelectedCategory(cat)}
-            className={cn(
-              "rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all select-none",
-              selectedCategory === cat
-                ? "border-amber-500/40 bg-amber-500/20 text-amber-900 shadow-xs dark:text-amber-300"
-                : "border-border/40 bg-card/30 text-muted-foreground hover:bg-card hover:text-foreground"
-            )}
+            onClick={onSurpriseMe}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-300"
           >
-            {cat}
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Surprise Me</span>
           </button>
-        ))}
+        )}
       </div>
 
       {/* Presets Grid */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredPresets.map((item, idx) => (
-          <button
-            key={`${item.category}-${idx}`}
-            type="button"
-            onClick={() => onSelectGoal(item.label)}
-            className="group border-border/50 bg-card/40 hover:bg-card/80 flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all hover:border-amber-500/30 active:scale-[0.98]"
-          >
-            <span className="text-base">{item.icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-foreground text-xs font-bold group-hover:text-amber-500">
-                {item.label}
-              </p>
-              <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-                {item.category}
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredPresets.map((item, idx) => {
+          const isSelected = activeGoal === item.label;
+          return (
+            <button
+              key={`${item.category}-${idx}`}
+              type="button"
+              onClick={() => onSelectGoal(item.label)}
+              className={cn(
+                "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 active:scale-[0.98]",
+                isSelected
+                  ? "border-amber-500 bg-amber-500/15 shadow-md ring-2 ring-amber-500/40"
+                  : "border-border/50 bg-card/60 hover:border-amber-500/40 hover:bg-card hover:shadow-sm"
+              )}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/40 text-lg shadow-xs">
+                {item.icon}
               </span>
-            </div>
-          </button>
-        ))}
+              <div className="min-w-0 flex-1">
+                <p
+                  className={cn(
+                    "text-xs font-bold leading-snug transition-colors",
+                    isSelected
+                      ? "text-amber-800 dark:text-amber-300"
+                      : "text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"
+                  )}
+                >
+                  {item.label}
+                </p>
+                <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase opacity-80">
+                  {item.category}
+                </span>
+              </div>
+              {isSelected && <Check className="h-4 w-4 shrink-0 text-amber-500" />}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

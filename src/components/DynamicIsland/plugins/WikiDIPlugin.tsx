@@ -11,6 +11,7 @@ import React, { useMemo, useState } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { PlayPauseMorph } from "~/components/DynamicIsland/PlayPauseMorph";
 import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
+import type { DIViewProps } from "~/components/DynamicIsland/types";
 import { WikiView } from "~/components/DynamicIsland/WikiView";
 import { WikiProfileButton } from "~/components/DynamicIsland/WikiProfileButton";
 import { WikiProfileView } from "~/components/DynamicIsland/WikiProfileView";
@@ -41,11 +42,11 @@ function WikiBreadcrumb() {
     themeColors,
     narratorState,
     narratorActions,
-  } = useWikiContext() as any;
+  } = useWikiContext();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const activeSectionName = activeSectionId
-    ? (tocEntries.find((e: any) => e.id === activeSectionId)?.text ?? null)
+    ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
   return (
@@ -139,8 +140,8 @@ function WikiBreadcrumb() {
             >
               <div className="max-h-[200px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto select-none">
                 {tocEntries
-                  .filter((e: any) => e.level <= 3)
-                  .map((entry: any) => {
+                  .filter((e) => e.level <= 3)
+                  .map((entry) => {
                     const isActive = activeSectionId === entry.id;
                     return (
                       <button
@@ -194,7 +195,7 @@ export function WikiDIPlugin() {
       center: articleTitle ? <WikiBreadcrumb /> : <WikiProfileButton />,
       expandedViews: (articleTitle ? { wiki: WikiView } : { profile: WikiProfileView }) as Record<
         string,
-        React.ComponentType<any>
+        React.ComponentType<DIViewProps>
       >,
       accentColor: "#3b82f6",
       stickyLabel: "Wiki",

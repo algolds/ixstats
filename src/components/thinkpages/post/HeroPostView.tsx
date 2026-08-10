@@ -255,6 +255,7 @@ export function HeroPostView({
         cleanContent={cleanPostContent}
         blurbMeta={blurbMeta}
         sportsBulletin={sportsBulletin}
+        account={post.account}
         isHero={true}
       />
 

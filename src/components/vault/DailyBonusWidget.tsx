@@ -105,15 +105,15 @@ export const DailyBonusWidget: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-xs font-black text-amber-500 shadow-md shadow-amber-500/5 transition-all hover:bg-amber-500/15"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-black text-amber-800 shadow-sm transition-all hover:bg-amber-500/25 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15"
           >
-            <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+            <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <span className="flex-1 text-left text-[11px] leading-tight select-none">
               Daily Reward
             </span>
             {balanceData?.loginStreak > 0 && (
-              <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-500 opacity-90">
-                <Flame className="h-2.5 w-2.5 fill-amber-500/25 text-amber-500" />
+              <span className="flex items-center gap-0.5 text-[9px] font-black text-amber-700 opacity-90 dark:text-amber-400">
+                <Flame className="h-2.5 w-2.5 fill-amber-500/25 text-amber-600 dark:text-amber-400" />
                 {balanceData.loginStreak}d
               </span>
             )}

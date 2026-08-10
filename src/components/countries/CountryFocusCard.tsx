@@ -11,6 +11,21 @@ import { TrendingUpIcon } from "~/components/ui/trending-up";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 
+export type Brand<T, B extends string> = T & { readonly __brand: B };
+export type CountryId = Brand<string, "CountryId">;
+export type CountrySlug = Brand<string, "CountrySlug">;
+
+export type EconomicTier =
+  | "Extravagant"
+  | "Very Strong"
+  | "Strong"
+  | "Healthy"
+  | "Developed"
+  | "Developing"
+  | "Impoverished"
+  | "Unknown"
+  | (string & {});
+
 export interface CountryCardData {
   id: string;
   name: string;
@@ -18,7 +33,7 @@ export interface CountryCardData {
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
-  economicTier: string;
+  economicTier: EconomicTier;
   populationTier: string;
   landArea?: number;
   populationDensity?: number;
@@ -46,10 +61,17 @@ export interface CountryCardData {
 interface CountryFocusCardProps {
   country: CountryCardData;
   index: number;
-  hovered: number | null;
-  setHovered: React.Dispatch<React.SetStateAction<number | null>>;
-  expanded: number | null;
-  setExpanded: React.Dispatch<React.SetStateAction<number | null>>;
+  hovered?: number | null;
+  setHovered?: React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
+  expanded?: number | null;
+  setExpanded?: React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
+  // Selective boolean state props for React.memo optimization
+  isHovered?: boolean;
+  isExpanded?: boolean;
+  isOtherHovered?: boolean;
+  isOtherExpanded?: boolean;
+  onHoverToggle?: (index: number | null) => void;
+  onExpandToggle?: (index: number | null) => void;
   onCountryClick?: (countryId: string, countryName: string) => void;
   viewerCountryId?: string;
   size?: "default" | "small";
@@ -63,13 +85,19 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     setHovered,
     expanded,
     setExpanded,
+    isHovered: propIsHovered,
+    isExpanded: propIsExpanded,
+    isOtherHovered: propIsOtherHovered,
+    isOtherExpanded: propIsOtherExpanded,
+    onHoverToggle,
+    onExpandToggle,
     onCountryClick,
     viewerCountryId,
   }) => {
-    const isHovered = hovered === index;
-    const isExpanded = expanded === index;
-    const isOtherHovered = hovered !== null && hovered !== index;
-    const isOtherExpanded = expanded !== null && expanded !== index;
+    const isHovered = propIsHovered ?? (hovered === index);
+    const isExpanded = propIsExpanded ?? (expanded === index);
+    const isOtherHovered = propIsOtherHovered ?? (hovered !== null && hovered !== index);
+    const isOtherExpanded = propIsOtherExpanded ?? (expanded !== null && expanded !== index);
     const isOwnCountry = !!viewerCountryId && viewerCountryId === country.id;
 
     // Icon refs for controlling animations
@@ -77,10 +105,10 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     const trendingIconRef = useRef<any>(null);
 
     const handleCardClick = () => {
-      if (isExpanded) {
-        setExpanded(null);
-      } else {
-        setExpanded(index);
+      if (onExpandToggle) {
+        onExpandToggle(isExpanded ? null : index);
+      } else if (setExpanded) {
+        setExpanded(isExpanded ? null : index);
       }
     };
 
@@ -92,37 +120,47 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     return (
       <motion.div
         className={cn(
-          "country-focus-card relative cursor-pointer",
-          isOtherHovered && !isExpanded && "transition-all duration-300"
+          "country-focus-card relative cursor-pointer transition-all duration-300",
+          isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
         )}
         onMouseEnter={() => {
-          setHovered(index);
+          if (onHoverToggle) {
+            onHoverToggle(index);
+          } else {
+            setHovered?.(index);
+          }
           usersIconRef.current?.startAnimation();
           trendingIconRef.current?.startAnimation();
         }}
         onMouseLeave={() => {
-          setHovered(null);
+          if (onHoverToggle) {
+            onHoverToggle(null);
+          } else {
+            setHovered?.(null);
+          }
           usersIconRef.current?.stopAnimation();
           trendingIconRef.current?.stopAnimation();
         }}
         onClick={handleCardClick}
         animate={{
-          scale: isOtherHovered && !isExpanded ? 0.95 : 1,
-          opacity: isOtherExpanded ? 0.7 : 1,
+          scale: isExpanded ? 1.02 : isHovered ? 1.015 : isOtherHovered ? 0.98 : 1,
+          opacity: isOtherExpanded ? 0.6 : isOtherHovered ? 0.85 : 1,
+          y: isExpanded ? -4 : isHovered ? -6 : 0,
         }}
         transition={{
           type: "spring",
-          stiffness: 300,
-          damping: 25,
+          stiffness: 380,
+          damping: 28,
         }}
       >
         <div
           className={cn(
-            "glass-floating glass-refraction glass-interactive relative overflow-hidden",
+            "glass-floating glass-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-all duration-300",
             isExpanded
-              ? "flex h-auto flex-col"
-              : "h-60 transition-all duration-500 ease-out md:h-96",
-            isOtherHovered && !isExpanded && "scale-[0.98] blur-sm"
+              ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
+              : isHovered
+                ? "h-60 border-purple-400/40 shadow-[0_20px_40px_rgba(0,0,0,0.35)] md:h-96"
+                : "h-60 md:h-96"
           )}
         >
           {/* Flag Background — blurred when expanded for readability */}

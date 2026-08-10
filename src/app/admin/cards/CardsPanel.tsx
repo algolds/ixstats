@@ -148,7 +148,10 @@ export default function CardAdminDashboardPage() {
 
   // Modal confirmation states
   const [confirmFetchRegions, setConfirmFetchRegions] = useState<string | null>(null);
+  const [fetchSeasons, setFetchSeasons] = useState("1-13");
   const [confirmStopJobId, setConfirmStopJobId] = useState<string | null>(null);
+  const [takedownCardId, setTakedownCardId] = useState("");
+  const [takedownSeason, setTakedownSeason] = useState("");
 
   // ─── Queries ──────────────────────────────────────────────────
   const {
@@ -193,6 +196,25 @@ export default function CardAdminDashboardPage() {
     },
   });
 
+  // Parse a "1-13" / "1,3,5" / "12" seasons string into a number[].
+  const parseSeasonsInput = (value: string): number[] => {
+    const seasons = new Set<number>();
+    for (const part of value.split(",")) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const range = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (range) {
+        const start = Math.min(parseInt(range[1], 10), parseInt(range[2], 10));
+        const end = Math.max(parseInt(range[1], 10), parseInt(range[2], 10));
+        for (let s = start; s <= end; s++) seasons.add(s);
+      } else {
+        const num = parseInt(trimmed, 10);
+        if (!isNaN(num)) seasons.add(num);
+      }
+    }
+    return Array.from(seasons).sort((a, b) => a - b);
+  };
+
   const discoverRegionsMutation = api.nsImport.discoverTopRegions.useMutation({
     onSuccess: (data) => {
       setDiscoveredRegions(data.regions);
@@ -200,6 +222,35 @@ export default function CardAdminDashboardPage() {
     onError: (error) => {
       notify.error("Discovery failed", error.message);
     },
+  });
+
+  const hideNSCardMutation = api.nsImport.hideNSCard.useMutation({
+    onSuccess: (data) => {
+      notify.success("Card hidden", data.message);
+      setTakedownCardId("");
+      setTakedownSeason("");
+      void hiddenCardsRefetch();
+    },
+    onError: (error) => {
+      notify.error("Takedown failed", error.message);
+    },
+  });
+
+  const restoreNSCardMutation = api.nsImport.restoreNSCard.useMutation({
+    onSuccess: (data) => {
+      notify.success("Card restored", data.message);
+      void hiddenCardsRefetch();
+    },
+    onError: (error) => {
+      notify.error("Restore failed", error.message);
+    },
+  });
+
+  const {
+    data: hiddenCards,
+    refetch: hiddenCardsRefetch,
+  } = api.nsImport.listHiddenNSCards.useQuery(undefined, {
+    enabled: activeTab === "sync",
   });
 
   const pauseJobMutation = api.nsImport.pauseRegionFetch.useMutation({
@@ -378,8 +429,8 @@ export default function CardAdminDashboardPage() {
                 <div className="space-y-4">
                   {activeJobs.map((job) => {
                     const pct =
-                      job.totalNations > 0
-                        ? Math.round((job.nationsProcessed / job.totalNations) * 100)
+                      job.totalCards > 0
+                        ? Math.round((job.cardsProcessed / job.totalCards) * 100)
                         : 0;
                     return (
                       <div
@@ -416,7 +467,7 @@ export default function CardAdminDashboardPage() {
                           </div>
                           <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
                             <span>
-                              Nations: {job.nationsProcessed}/{job.totalNations} ({pct}%)
+                              Cards: {job.cardsProcessed}/{job.totalCards} ({pct}%)
                             </span>
                             <span>Cards Created: +{job.cardsCreated}</span>
                             <span>Cards Updated: +{job.cardsUpdated}</span>
@@ -511,6 +562,107 @@ export default function CardAdminDashboardPage() {
                 </div>
               </div>
             )}
+
+            {/* ─── NS Card Takedown (flag-owner opt-out) ─────────── */}
+            <div className="glass-card-child rounded-xl border border-red-500/20 p-6">
+              <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+                NS Card Takedown (flag-owner opt-out)
+              </h3>
+              <p className="text-muted-foreground mb-4 text-sm text-balance">
+                If a nation&apos;s flag owner objects to their flag being served, hide the card by
+                NS card ID and season. The artwork is cleared and the card is retired so re-syncs
+                will not restore it. This is the compliance mechanism for NationStates content
+                takedown requests.
+              </p>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    value={takedownCardId}
+                    onChange={(e) => setTakedownCardId(e.target.value.replace(/\D/g, ""))}
+                    placeholder="NS Card ID"
+                    inputMode="numeric"
+                    className="border-border/60 bg-background/50 text-foreground w-36 rounded-md border px-3 py-2 text-sm"
+                  />
+                  <input
+                    value={takedownSeason}
+                    onChange={(e) => setTakedownSeason(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Season"
+                    inputMode="numeric"
+                    className="border-border/60 bg-background/50 text-foreground w-24 rounded-md border px-3 py-2 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={
+                      hideNSCardMutation.isPending ||
+                      !takedownCardId ||
+                      !takedownSeason
+                    }
+                    onClick={() =>
+                      hideNSCardMutation.mutate({
+                        nsCardId: parseInt(takedownCardId, 10),
+                        nsSeason: parseInt(takedownSeason, 10),
+                      })
+                    }
+                  >
+                    Hide Card
+                  </Button>
+                </div>
+              </div>
+              {hiddenCards && hiddenCards.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-muted-foreground mb-2 text-sm font-medium">
+                    Hidden ({hiddenCards.length})
+                  </div>
+                  <div className="space-y-2">
+                    {hiddenCards.map((card) => (
+                      <div
+                        key={card.cardId}
+                        className="border-border/60 bg-background/40 flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
+                      >
+                        <div className="min-w-0 truncate">
+                          <span className="text-foreground font-medium">
+                            {card.title || `#${card.nsCardId}`}
+                          </span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            {card.nsCardId} S{card.nsSeason}
+                          </span>
+                          {card.selfService && (
+                            <span className="ml-2 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-400">
+                              flag-owner request
+                            </span>
+                          )}
+                          {card.reason && (
+                            <span className="text-muted-foreground ml-2 hidden truncate text-xs md:inline">
+                              — {card.reason}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="text-muted-foreground text-xs">
+                            {card.retiredAt ? new Date(card.retiredAt).toLocaleDateString() : ""}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={restoreNSCardMutation.isPending}
+                            onClick={() =>
+                              restoreNSCardMutation.mutate({
+                                nsCardId: card.nsCardId ?? 0,
+                                nsSeason: card.nsSeason ?? 0,
+                              })
+                            }
+                          >
+                            Restore
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ─── Bulk Import Operations ─────────────────────────── */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -800,12 +952,28 @@ export default function CardAdminDashboardPage() {
                     Fetch Region Cards?
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to fetch trading cards from the region(s):{" "}
+                    Are you sure you want to fetch trading cards for the region(s):{" "}
                     <span className="text-foreground font-mono font-bold">
                       {confirmFetchRegions}
                     </span>
-                    ? This will query all decks in the region in the background using the
-                    NationStates API (~800ms per nation).
+                    ? Card data is sourced from the official NationStates Trading Cards Daily
+                    Dump (cardlist_S{`{season}`}.xml.gz), filtered to these regions — no per-nation
+                    API calls are made.
+                    <div className="mt-3">
+                      <label
+                        htmlFor="fetch-seasons"
+                        className="text-foreground mb-1 block text-xs font-semibold"
+                      >
+                        Seasons (e.g. "1-13" or "1,3,5")
+                      </label>
+                      <input
+                        id="fetch-seasons"
+                        value={fetchSeasons}
+                        onChange={(e) => setFetchSeasons(e.target.value)}
+                        className="border-border bg-background text-foreground w-full rounded-md border px-3 py-1.5 font-mono text-sm outline-none focus:ring-2 focus:ring-blue-500/40"
+                        placeholder="1-13"
+                      />
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -815,7 +983,10 @@ export default function CardAdminDashboardPage() {
                   <Button
                     onClick={() => {
                       if (confirmFetchRegions) {
-                        fetchRegionMutation.mutate({ regionNames: confirmFetchRegions });
+                        fetchRegionMutation.mutate({
+                          regionNames: confirmFetchRegions,
+                          seasons: parseSeasonsInput(fetchSeasons),
+                        });
                       }
                     }}
                     disabled={fetchRegionMutation.isPending}
@@ -840,7 +1011,7 @@ export default function CardAdminDashboardPage() {
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently abort the background import job. Any progress made so far
-                    will be saved, but the remaining nations will not be fetched.
+                    will be saved, but the remaining cards will not be synced.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

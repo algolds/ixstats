@@ -50,7 +50,7 @@ function createSectionFallback(sectionName: string) {
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
-  executive: "Economy & Budget",
+  executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
   intelligence: "Intelligence Dashboard",

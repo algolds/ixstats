@@ -1,6 +1,5 @@
 "use client";
 
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, type PanInfo } from "motion/react";
@@ -298,10 +297,15 @@ function CommandPaletteContent({
   const prevIsStickyRef = useRef(activeIsSticky);
   useEffect(() => {
     if (activePlugin?.id === "builder") {
+      const selectedTemplate =
+        activePlugin.filter && typeof activePlugin.filter === "object"
+          ? (activePlugin.filter as Record<string, unknown>).selectedTemplate
+          : undefined;
+
       if (activeIsSticky && !prevIsStickyRef.current && isExpanded) {
         switchMode("compact");
       } else if (!activeIsSticky && prevIsStickyRef.current && !isExpanded) {
-        if (!wasManuallyClosedRef.current && !activePlugin?.filter?.selectedTemplate) {
+        if (!wasManuallyClosedRef.current && !selectedTemplate) {
           switchMode("plugin:builder");
         }
       }
@@ -313,8 +317,12 @@ function CommandPaletteContent({
   const lastProcessedTriggerRef = useRef(0);
   useEffect(() => {
     if (activePlugin?.id === "builder") {
-      const pluginTrigger = activePlugin?.filter?.diExpansionTrigger;
-      if (pluginTrigger !== undefined) {
+      const pluginTrigger =
+        activePlugin.filter && typeof activePlugin.filter === "object"
+          ? (activePlugin.filter as Record<string, unknown>).diExpansionTrigger
+          : undefined;
+
+      if (typeof pluginTrigger === "number") {
         if (pluginTrigger > lastProcessedTriggerRef.current) {
           lastProcessedTriggerRef.current = pluginTrigger;
           wasManuallyClosedRef.current = false; // Reset on trigger expansion

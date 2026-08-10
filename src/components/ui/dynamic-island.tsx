@@ -471,19 +471,21 @@ const isCompactSize = (size: SizePresets | undefined): boolean => {
   );
 };
 
+interface DynamicIslandContentProps
+  extends Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "id"> {
+  children: React.ReactNode;
+  id: string;
+  screenSize: string;
+  willChange?: ReturnType<typeof useWillChange>;
+}
+
 const DynamicIslandContent = ({
   children,
   id,
   willChange,
   screenSize,
   ...props
-}: {
-  children: React.ReactNode;
-  id: string;
-  willChange: any;
-  screenSize: string;
-  [key: string]: any;
-}) => {
+}: DynamicIslandContentProps) => {
   const { state, presets } = useHaloSize();
   const currentSize = presets[state.size] ?? DynamicIslandSizePresets.default;
   const isCompact = isCompactSize(state.size);

@@ -309,12 +309,12 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               />
               {card.cardType &&
                 (card.cardType === "NS_IMPORT" ? (
-                  <img
-                    src="https://www.nationstates.net/images/island_small.png"
-                    alt="NationStates"
-                    className="h-5 w-5 rounded-sm shadow-lg"
+                  <span
+                    className="inline-flex items-center gap-1 rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400"
                     title="NationStates Import"
-                  />
+                  >
+                    NS
+                  </span>
                 ) : (
                   <span
                     className={cn(

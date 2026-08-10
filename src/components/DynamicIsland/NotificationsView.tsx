@@ -49,8 +49,29 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   error: AlertCircle,
 };
 
-function getIcon(n: any) {
-  return ICON_MAP[n.category] ?? ICON_MAP[n.type] ?? Bell;
+interface NotificationItem {
+  id: string;
+  title: string;
+  message?: string | null;
+  description?: string | null;
+  category?: string | null;
+  type?: string | null;
+  priority?: string | null;
+  severity?: string | null;
+  status?: string | null;
+  timestamp?: number | string | Date | null;
+  createdAt?: number | string | Date | null;
+  actionUrl?: string | null;
+  href?: string | null;
+  metadata?: Record<string, unknown> | string | null;
+  read?: boolean | null;
+  dismissed?: boolean | null;
+  source?: string | null;
+  deliveryMethod?: string | null;
+}
+
+function getIcon(n: NotificationItem) {
+  return (n.category ? ICON_MAP[n.category] : undefined) ?? (n.type ? ICON_MAP[n.type] : undefined) ?? Bell;
 }
 
 const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
@@ -63,9 +84,9 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
   info: { bg: "bg-blue-500/15", text: "text-blue-400" },
 };
 
-function getColors(n: any) {
+function getColors(n: NotificationItem) {
   const level = n.priority ?? n.severity ?? n.type;
-  return PRIORITY_COLORS[level] ?? PRIORITY_COLORS.info!;
+  return (level ? PRIORITY_COLORS[level] : undefined) ?? PRIORITY_COLORS.info!;
 }
 
 function relativeTime(ts: string | number | Date): string {
@@ -82,14 +103,14 @@ function relativeTime(ts: string | number | Date): string {
 
 // ─── NotificationRow Component (powered by Glass SwipeableRow) ────────────────
 interface NotificationRowProps {
-  n: any;
+  n: NotificationItem;
   isRead: boolean;
   colors: { bg: string; text: string };
   Icon: React.ComponentType<{ className?: string }>;
-  handleMarkRead: (n: any) => void;
-  handleDismiss: (n: any) => void;
-  handleClick: (n: any) => void;
-  relativeTime: (ts: any) => string;
+  handleMarkRead: (n: NotificationItem) => void;
+  handleDismiss: (n: NotificationItem) => void;
+  handleClick: (n: NotificationItem) => void;
+  relativeTime: (ts: string | number | Date) => string;
   isExpanded: boolean;
   onExpandToggle: () => void;
 }
@@ -322,30 +343,30 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
-  const standardList = (notificationsData?.notifications || [])
-    .filter((n: any) => !n.dismissed && !locallyDismissedIds.has(n.id))
-    .map((n: any) => ({
+  const standardList: NotificationItem[] = (notificationsData?.notifications || [])
+    .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
+    .map((n) => ({
       ...n,
       source: "standard",
     }));
-  const executiveList = (isExecutiveMode ? executiveNotifications || [] : [])
-    .filter((n: any) => n?.id && !locallyDismissedIds.has(n.id))
-    .map((n: any) => ({ ...n, source: "executive" }));
-  const enhancedList = (enhancedNotifications || [])
-    .filter((n: any) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
-    .map((n: any) => ({ ...n, source: "enhanced" }));
+  const executiveList: NotificationItem[] = (isExecutiveMode ? executiveNotifications || [] : [])
+    .filter((n) => n?.id && !locallyDismissedIds.has(n.id))
+    .map((n) => ({ ...n, source: "executive" }));
+  const enhancedList: NotificationItem[] = (enhancedNotifications || [])
+    .filter((n) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
+    .map((n) => ({ ...n, source: "enhanced" }));
 
-  const allNotifications = [...enhancedList, ...executiveList, ...standardList]
-    .filter((n: any) => n?.id && n?.title)
+  const allNotifications: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
+    .filter((n) => n?.id && n?.title)
     // Deduplicate
-    .reduce((acc: any[], n: any) => {
+    .reduce((acc: NotificationItem[], n: NotificationItem) => {
       const key = `${n.source}-${n.id}`;
-      if (!acc.some((x: any) => `${x.source}-${x.id}` === key)) acc.push(n);
+      if (!acc.some((x: NotificationItem) => `${x.source}-${x.id}` === key)) acc.push(n);
       return acc;
     }, [])
-    .sort((a: any, b: any) => {
-      const at = new Date(a.timestamp || a.createdAt || 0).getTime();
-      const bt = new Date(b.timestamp || b.createdAt || 0).getTime();
+    .sort((a: NotificationItem, b: NotificationItem) => {
+      const at = new Date(a.timestamp ?? a.createdAt ?? 0).getTime();
+      const bt = new Date(b.timestamp ?? b.createdAt ?? 0).getTime();
       return bt - at;
     });
 
@@ -355,27 +376,27 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       id: "unread-messages",
       source: "messages",
       title: "Unread Messages",
-      description: `You have ${messageUnreadCount} unread message${messageUnreadCount > 1 ? "s" : ""}`,
+      message: `You have ${messageUnreadCount} unread message${messageUnreadCount > 1 ? "s" : ""}`,
       timestamp: Date.now(),
       priority: "high",
       category: "social",
-      href: "/messages",
+      actionUrl: "/messages",
       read: false,
       type: "info",
     });
   }
 
   // Group by time
-  const groups: { label: string; items: any[] }[] = [];
+  const groups: { label: string; items: NotificationItem[] }[] = [];
   const buckets = {
-    Recent: [] as any[],
-    "Earlier Today": [] as any[],
-    "This Week": [] as any[],
-    Earlier: [] as any[],
+    Recent: [] as NotificationItem[],
+    "Earlier Today": [] as NotificationItem[],
+    "This Week": [] as NotificationItem[],
+    Earlier: [] as NotificationItem[],
   };
 
   for (const n of allNotifications) {
-    const hrs = (Date.now() - new Date(n.timestamp || n.createdAt || 0).getTime()) / 3600000;
+    const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
     if (hrs < 1) buckets.Recent.push(n);
     else if (hrs < 24) buckets["Earlier Today"].push(n);
     else if (hrs < 168) buckets["This Week"].push(n);
@@ -388,7 +409,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   // ─── Actions ───────────────────────────────────────────────────────────
 
-  const handleMarkRead = (n: any) => {
+  const handleMarkRead = (n: NotificationItem) => {
     if (n.source === "enhanced") {
       markEnhancedAsRead(n.id);
       recordEngagement(n.id, "read");
@@ -399,7 +420,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     }
   };
 
-  const handleDismiss = (n: any) => {
+  const handleDismiss = (n: NotificationItem) => {
     setLocallyDismissedIds((prev) => {
       const next = new Set(prev);
       next.add(n.id);
@@ -422,10 +443,11 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     if (enhancedUnreadCount > 0) markAllEnhancedAsRead();
   };
 
-  const handleClick = (n: any) => {
+  const handleClick = (n: NotificationItem) => {
     const isRead = n.status === "read" || n.read;
     if (!isRead) handleMarkRead(n);
-    if (n.href) window.location.href = createAbsoluteUrl(n.href);
+    const targetUrl = n.actionUrl || n.href;
+    if (targetUrl) window.location.href = createAbsoluteUrl(targetUrl);
     if (n.source === "enhanced") recordEngagement(n.id, "click");
   };
 
@@ -528,10 +550,10 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                       className="space-y-1 overflow-hidden"
                     >
                       <SwipeableGroup>
-                        {group.items.map((n: any, i: number) => {
+                        {group.items.map((n: NotificationItem, i: number) => {
                           const Icon = getIcon(n);
                           const colors = getColors(n);
-                          const isRead = n.status === "read" || n.read;
+                          const isRead = n.status === "read" || Boolean(n.read);
                           const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
 
                           return (

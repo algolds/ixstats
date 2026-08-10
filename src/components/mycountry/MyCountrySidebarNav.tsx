@@ -107,9 +107,8 @@ export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
   if (pathname === "/mycountry" || pathname === "/mycountry/") return "overview";
   if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
-  if (pathname.startsWith("/mycountry/executive") || pathname.startsWith("/mycountry/economy")) {
-    return "economy";
-  }
+  if (pathname.startsWith("/mycountry/executive")) return "executive";
+  if (pathname.startsWith("/mycountry/economy")) return "economy";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }

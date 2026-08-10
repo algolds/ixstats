@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { QuestPathCard } from "../QuestPathCard";
 import { QUEST_PATHS, getRarityColor, getRarityBg } from "../constants";
@@ -15,7 +14,7 @@ export function QuestTreesTab({ achievements }: QuestTreesTabProps) {
   const pathsToRender = showAllPaths ? QUEST_PATHS : QUEST_PATHS.slice(0, 4);
 
   return (
-    <TabsContent value="quest-trees" className="space-y-6 outline-none">
+    <div className="space-y-6">
       <div className="space-y-6">
         {pathsToRender.map((path) => (
           <QuestPathCard
@@ -33,12 +32,12 @@ export function QuestTreesTab({ achievements }: QuestTreesTabProps) {
           <Button
             variant="outline"
             onClick={() => setShowAllPaths(!showAllPaths)}
-            className="border-border/50 hover:bg-muted text-muted-foreground hover:text-foreground h-10 px-5 font-semibold"
+            className="border-white/10 bg-white/5 hover:bg-white/10 text-slate-200 h-10 px-5 font-bold rounded-full active:scale-95 transition-all"
           >
             {showAllPaths ? "See Less" : `See All Quest Paths (${QUEST_PATHS.length})`}
           </Button>
         </div>
       )}
-    </TabsContent>
+    </div>
   );
 }

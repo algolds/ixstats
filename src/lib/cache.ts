@@ -27,8 +27,8 @@ export interface CacheStats {
   newestEntryAge: number;
 }
 
-export class Cache {
-  private store = new Map<string, CacheEntry<unknown>>();
+export class Cache<V = unknown> {
+  private store = new Map<string, CacheEntry<V>>();
   private opts: Required<CacheOptions>;
 
   constructor(opts?: CacheOptions) {
@@ -39,7 +39,7 @@ export class Cache {
     };
   }
 
-  set<T>(key: string, value: T, ttlMs?: number): void {
+  set(key: string, value: V, ttlMs?: number): void {
     this.evictIfNeeded();
     const effectiveTtl = ttlMs ?? this.opts.defaultTtlMs;
     this.store.set(key, {
@@ -50,7 +50,7 @@ export class Cache {
     });
   }
 
-  get<T>(key: string): T | undefined {
+  get(key: string): V | undefined {
     const entry = this.store.get(key);
     if (!entry) return undefined;
     if (Date.now() > entry.expires) {
@@ -62,7 +62,7 @@ export class Cache {
     // Move to tail (LRU — most recently used)
     this.store.delete(key);
     this.store.set(key, entry);
-    return entry.data as T;
+    return entry.data;
   }
 
   has(key: string): boolean {
@@ -91,7 +91,7 @@ export class Cache {
     return this.store.keys();
   }
 
-  forEach(fn: (value: unknown, key: string) => void): void {
+  forEach(fn: (value: V, key: string) => void): void {
     this.store.forEach((entry, key) => fn(entry.data, key));
   }
 
@@ -126,6 +126,6 @@ export class Cache {
   }
 }
 
-export function createCache(opts?: CacheOptions): Cache {
-  return new Cache(opts);
+export function createCache<V = unknown>(opts?: CacheOptions): Cache<V> {
+  return new Cache<V>(opts);
 }

@@ -11,7 +11,7 @@ export interface StoreItem {
   name: string;
   description: string;
   price: number;
-  icon: any; // Lucide icon component
+  icon: React.ComponentType<{ className?: string }>;
   glowColor: string;
   quality: string; // "LEGENDARY" | "EPIC" | "RARE" | "COMMON"
   badgeText: string;
@@ -110,17 +110,15 @@ export function StoreItemCard({
           colors.border,
           isPreviewing && "border-cyan-500/60 shadow-[0_0_15px_var(--glow)]"
         )}
-        style={
-          {
-            transformStyle: "preserve-3d" as any,
-            rotateX,
-            rotateY,
-            scale,
-            y: translateY,
-            perspective: "1000px",
-            "--glow": item.glowColor,
-          } as any
-        }
+        style={{
+          transformStyle: "preserve-3d",
+          rotateX,
+          rotateY,
+          scale,
+          y: translateY,
+          perspective: "1000px",
+          ["--glow" as string]: item.glowColor,
+        }}
       >
         {/* Quality indicator glow line */}
         <div

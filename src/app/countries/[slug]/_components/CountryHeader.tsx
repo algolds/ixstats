@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -23,7 +22,8 @@ import {
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 import { cn } from "~/lib/utils";
-import type { BannerMode } from "../_hooks/useCountryPageState";
+import type { BannerMode, BannerOption } from "../_types";
+import { FloatingRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
@@ -54,12 +54,7 @@ interface CountryHeaderProps {
   onBannerModeChange: (mode: BannerMode, customUrl?: string) => void;
 }
 
-const bannerOptions: Array<{
-  mode: BannerMode;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
+const bannerOptions = [
   {
     mode: "dynamic",
     label: "Dynamic Image",
@@ -79,7 +74,7 @@ const bannerOptions: Array<{
     description: "Choose from media library",
     icon: ImageIcon,
   },
-];
+] satisfies BannerOption[];
 
 // Uppercase micro-label treatment shared by all header stat badges.
 const microLabel = "text-[10px] font-extrabold uppercase tracking-wider";
@@ -101,6 +96,21 @@ const badgeTint = (
         backgroundColor: `color-mix(in srgb, var(--flag-${color}) 12%, transparent)`,
       };
 
+function formatTotalGdpVerbose(gdp: number): string {
+  if (!gdp || isNaN(gdp)) return "$0 GDP";
+  const absGdp = Math.abs(gdp);
+  if (absGdp >= 1e12) {
+    return `$${(gdp / 1e12).toFixed(1)} Trillion GDP`;
+  }
+  if (absGdp >= 1e9) {
+    return `$${(gdp / 1e9).toFixed(1)} Billion GDP`;
+  }
+  if (absGdp >= 1e6) {
+    return `$${(gdp / 1e6).toFixed(1)} Million GDP`;
+  }
+  return formatCurrency(gdp) + " GDP";
+}
+
 export function CountryHeader({
   country,
   flagUrl,
@@ -113,7 +123,7 @@ export function CountryHeader({
   customBannerUrl,
   onToggleGdpDisplay,
   onTogglePopulationDisplay,
-  onCountryActionsClick,
+  onCountryActionsClick: _onCountryActionsClick,
   onBannerModeChange,
 }: CountryHeaderProps) {
   const [showBannerPicker, setShowBannerPicker] = useState(false);
@@ -158,20 +168,20 @@ export function CountryHeader({
       <FacetCard
         depth={1}
         interactive="none"
-        className="relative overflow-hidden rounded-none border-0 border-b border-white/10"
+        className="relative overflow-hidden rounded-none border-0 border-b border-white/10 shadow-lg"
         style={flagThemeCSS}
       >
         {/* Banner image area */}
         <div
           className={cn(
-            "relative h-64 w-full overflow-hidden md:h-80 lg:h-96",
+            "relative h-64 w-full overflow-hidden transition-all duration-300 md:h-80 lg:h-96",
             !hasImage && "from-primary/10 via-muted/30 to-accent/10 bg-gradient-to-br"
           )}
         >
           {/* Background Image */}
           {hasImage ? (
             <div
-              className="absolute inset-0 bg-center bg-no-repeat"
+              className="absolute inset-0 bg-center bg-no-repeat transition-all duration-500"
               style={{
                 backgroundImage: `url(${resolvedBannerUrl})`,
                 backgroundSize: bannerMode === "flag" ? "100% auto" : "cover",
@@ -197,16 +207,16 @@ export function CountryHeader({
             }}
           />
 
-          {/* Frosted glass bar behind content for readability */}
+          {/* Apple Design Frosted glass bar behind content */}
           {hasImage && (
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-black/40 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] backdrop-blur-md md:h-36" />
+            <div className="absolute inset-x-0 bottom-0 h-32 border-t border-white/10 bg-black/40 backdrop-blur-xl saturate-180 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] md:h-36" />
           )}
 
           {/* Country Header Content */}
           <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-8">
             <div className="flex items-center gap-4 md:gap-6">
               {/* Flag (state seal emblem) */}
-              <div className="h-14 w-14 shrink-0 md:h-16 md:w-16 lg:h-20 lg:w-20">
+              <div className="h-14 w-14 shrink-0 transition-transform duration-200 hover:scale-105 md:h-16 md:w-16 lg:h-20 lg:w-20">
                 <UnifiedCountryFlag
                   countryName={country.name}
                   size="xl"
@@ -222,20 +232,24 @@ export function CountryHeader({
 
               {/* Country Name and Basic Info */}
               <div className="min-w-0 flex-1">
-                <h1
-                  className={cn(
-                    "mb-1 text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl",
-                    hasImage
-                      ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
-                      : "text-foreground"
-                  )}
-                >
-                  {country.name.replace(/_/g, " ")}
-                </h1>
+                <div className="mb-1 flex flex-wrap items-center gap-3">
+                  <h1
+                    className={cn(
+                      "text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl",
+                      hasImage
+                        ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
+                        : "text-foreground"
+                    )}
+                  >
+                    {country.name.replace(/_/g, " ")}
+                  </h1>
+                  <FloatingRibbonRack />
+                </div>
                 <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
+
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-all active:scale-95",
+                      "cursor-pointer font-semibold transition-transform duration-100 ease-out active:scale-[0.96]",
                       microLabel
                     )}
                     style={badgeTint("primary", hasImage)}
@@ -249,7 +263,7 @@ export function CountryHeader({
 
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-all active:scale-95",
+                      "cursor-pointer font-semibold transition-transform duration-100 ease-out active:scale-[0.96]",
                       microLabel
                     )}
                     style={badgeTint("secondary", hasImage)}
@@ -258,7 +272,7 @@ export function CountryHeader({
                     <TrendingUp className="mr-1.5 h-3 w-3" />
                     {showGdpPerCapita
                       ? `${formatCurrency(country.currentGdpPerCapita)}/capita`
-                      : formatCurrency(country.currentTotalGdp)}
+                      : formatTotalGdpVerbose(country.currentTotalGdp)}
                   </Badge>
 
                   {country.landArea && (
@@ -267,32 +281,9 @@ export function CountryHeader({
                       style={badgeTint("accent", hasImage)}
                     >
                       <MapPin className="mr-1.5 h-3 w-3" />
-                      {country.landArea.toLocaleString()} km²
+                      {Math.round(country.landArea).toLocaleString()} km²
                     </Badge>
                   )}
-
-                  <Badge
-                    className={cn(
-                      "font-semibold",
-                      microLabel,
-                      hasImage
-                        ? (country.adjustedGdpGrowth ?? 0) > 0
-                          ? "border-emerald-400/30 bg-emerald-600/85 text-white backdrop-blur-md"
-                          : "border-red-400/30 bg-red-600/85 text-white backdrop-blur-md"
-                        : (country.adjustedGdpGrowth ?? 0) > 0
-                          ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-200"
-                          : "border-red-200 bg-red-100 text-red-800 dark:border-red-500/30 dark:bg-red-500/20 dark:text-red-200"
-                    )}
-                  >
-                    <GrowthArrow
-                      value={(country.adjustedGdpGrowth ?? 0) * 100}
-                      size={12}
-                      iconOnly
-                      inheritColor
-                      className="mr-1.5"
-                    />
-                    {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}% growth
-                  </Badge>
 
                   {country.continent && (
                     <Badge
@@ -310,16 +301,16 @@ export function CountryHeader({
           </div>
         </div>
 
-        {/* Banner Change Button (owner-only) - outside overflow-hidden */}
+        {/* Banner Change Button (owner-only) */}
         {isOwnCountry && (
           <div className="absolute top-4 right-4 z-20">
             <Popover open={showBannerPicker} onOpenChange={setShowBannerPicker}>
               <PopoverTrigger
                 className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium shadow-lg backdrop-blur-md transition-colors",
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-xl transition-all duration-100 active:scale-[0.96]",
                   hasImage
-                    ? "border border-white/20 bg-black/50 text-white hover:bg-black/70"
-                    : "border-border bg-background/80 text-foreground hover:bg-muted border"
+                    ? "border border-white/25 bg-black/50 text-white hover:bg-black/70"
+                    : "border-border bg-background/80 text-foreground hover:bg-muted"
                 )}
               >
                 <Camera className="h-3.5 w-3.5" />
@@ -331,7 +322,7 @@ export function CountryHeader({
                 className="glass-off border-border z-[100011] w-72 rounded-xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
               >
                 <div className="space-y-1">
-                  <p className="text-muted-foreground px-2 py-1.5 text-xs font-semibold">
+                  <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wider">
                     Banner Style
                   </p>
                   {bannerOptions.map((option) => {
@@ -343,8 +334,8 @@ export function CountryHeader({
                         type="button"
                         onClick={() => handleModeSelect(option.mode)}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                          isActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.98]",
+                          isActive ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted"
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />

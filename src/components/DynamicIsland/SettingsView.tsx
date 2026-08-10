@@ -121,7 +121,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const promises: Promise<any>[] = [refetchCountries()];
+      const promises: Promise<unknown>[] = [refetchCountries()];
       if (isSignedIn && user?.id) {
         promises.push(refetchNotifications());
       }

@@ -77,3 +77,5 @@ export { SearchableList, type SearchableListProps } from "./SearchableList";
 
 // Card background image components
 export { CardBackgroundImage, useCardImage, useAllCardImages } from "./CardBackgroundImage";
+export { CardImageUploadModal } from "./CardImageUploadModal";
+

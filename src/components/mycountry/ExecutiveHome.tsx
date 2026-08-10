@@ -33,11 +33,11 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import { CommitmentsAgendaRail as _CommitmentsAgendaRail } from "./CommitmentsAgendaRail";
-import { CommandBriefingHero } from "./CommandBriefingHero";
+import { V2CommandBriefingHero as CommandBriefingHero } from "./CommandBriefingHero";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
-import type { DrillSheetKind } from "./DrillSheets";
+import type { DrillSheetKind, V2Drill } from "./DrillSheets";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 import {
   DiplomacyGraphic,
@@ -563,8 +563,9 @@ function RecordFeed({
                     <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                       <Link
                         href={createUrl(
-                          "/mycountry/changelog",
-                          countrySlug ? { country: countrySlug } : {}
+                          countrySlug
+                            ? `/mycountry/changelog?country=${countrySlug}`
+                            : "/mycountry/changelog"
                         )}
                         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-[11px] font-semibold transition-colors"
                       >
@@ -676,7 +677,7 @@ export function ExecutiveHomeComponent({
           {/* Primary Agenda Widget */}
           <ExecutiveAgenda
             countryId={countryId}
-            onDeclare={onDeclare}
+            onIssueDirective={onDeclare}
             onOpenIntent={onOpenIntent}
             onOpenDrill={onOpenDrill}
           />

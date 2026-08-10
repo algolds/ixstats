@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Store, ShoppingCart, ArrowRightLeft } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { VaultSubTabNav } from "~/components/vault/VaultSubTabNav";
 import { VaultStoreTab } from "./marketplace/VaultStoreTab";
 import { VaultAuctionsTab } from "./marketplace/VaultAuctionsTab";
 import { VaultTradingTab } from "./marketplace/VaultTradingTab";
@@ -41,42 +41,13 @@ export function VaultMarketplaceSection({ initialTab }: VaultMarketplaceSectionP
   return (
     <div className="space-y-6">
       {/* Tab Switcher */}
-      <div className="glass-surface glass-refraction border-border/40 relative flex gap-1 overflow-hidden rounded-xl border p-1 shadow-sm backdrop-blur-md">
-        <motion.div
-          className="absolute inset-y-1 rounded-lg bg-slate-200/60 dark:bg-white/8"
-          layout
-          layoutId="marketplace-tab-indicator"
-          style={{
-            width: `${100 / SUB_TABS.length}%`,
-            left: `${(SUB_TABS.findIndex((t) => t.id === activeTab) / SUB_TABS.length) * 100}%`,
-          }}
-          transition={{ type: "spring", stiffness: 350, damping: 30 }}
-        />
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={cn(
-                "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-none bg-transparent px-3 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors duration-205",
-                isActive
-                  ? "font-bold text-amber-600 dark:text-amber-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon
-                className={cn(
-                  "h-3.5 w-3.5 transition-colors duration-205",
-                  isActive && "text-amber-500"
-                )}
-              />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <VaultSubTabNav
+        tabs={SUB_TABS}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        maxWidthClass="w-full"
+        layoutId="marketplace-tab-indicator"
+      />
 
       {/* Tabs Content */}
       <AnimatePresence mode="wait">

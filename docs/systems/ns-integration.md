@@ -1,16 +1,18 @@
 # NationStates Integration
 
-**Last updated:** May 2026 (Phase 1)
-**Status:** Development - Phase 1 Implementation
+**Last updated:** August 2026
+**Status:** Production Ready — Phase 2 Implementation
 
-The NationStates (NS) integration allows IxStats users to import their existing NationStates card collections and synchronize NS cards into the IxStats card ecosystem. This creates a bridge between the two platforms while respecting NS's API rate limiting and data policies.
+The NationStates (NS) integration allows IxStats users to import their existing NationStates card collections and synchronize NS cards into the IxStats card ecosystem. This creates a bridge between the two platforms while respecting NS's API rate limiting, image hotlinking guidelines, and data policies.
 
 ## Overview
 
 NS Integration provides:
-- **Daily Card Sync** - Automated sync of NS card dump data
-- **Collection Import** - Import user's NS deck with verification
-- **Rate Limit Compliance** - Respectful API usage within NS guidelines
+- **Daily Card Sync & Sync Status Processor** - Automated sync of NS card dump data with async status tracking (`ns-sync-processor.ts`, `ns-import/sync`)
+- **Collection & Deck Import** - Import user's NS deck with checksum verification (`/vault/ns-deck/[nation]`, `/vault/collections/[slug]`)
+- **Image Proxying** - Secure image proxy endpoint (`/api/proxy-ns-image`) to prevent hotlinking issues
+- **Settings & Attribution** - User settings toggle (`NSCardSettingsCard.tsx`) and card attribution component (`NationStatesAttribution.tsx`)
+- **Rate Limit Compliance** - Respectful API usage within NS guidelines (50 requests per 30 seconds)
 - **Dual Platform Support** - Cards work in both NS and IxStats ecosystems
 - **Market Watch** - Track NS auction data for arbitrage opportunities
 
@@ -758,6 +760,38 @@ To prevent invalid queries to the NationStates World API (`q=regionsbytag`), cat
 2. **Handle Empty Lists**: Returns empty list gracefully instead of raising internal errors if the query yields no regions.
 3. **Resolve Size Candidates**: Queries first 30 region candidates alphabetically/identifiably using `cgi-bin/api.cgi?region={regionName}&q=name+numnations` with an 800ms rate-limiting throttle to fetch nation counts.
 4. **Sort and Slice**: Sorts by nation count descending and returns the top regions matching the user's limit request.
+
+## NationStates Compliance
+
+This section documents the compliance stance of the IxStats ↔ NationStates integration. It exists so the stance survives person-to-person handoffs and can be referenced in any future ToS or takedown discussion.
+
+### Copyright position
+
+- **Nation flags**: Submissions on NationStates remain the property of their authors. Users grant NationStates a license, not a transfer — so users are free to use their own flags elsewhere, and IxStats mirrors them with attribution.
+- **Card frame / card text**: The NS card frame and NS-authored card descriptions are © Max Barry. We do **not** copy NS card descriptions verbatim; we generate original card copy from the underlying facts (slogan, motto, government, region, category).
+- **Card values / metadata / ranks**: Raw facts are not copyrightable and are used freely.
+
+### API / ToS rules we follow
+
+- **Daily Dumps over live API calls**: Region card sync sources from the official daily card dumps (`cardlist_S{season}.xml.gz`) instead of per-nation `deck` API calls, per NS guidance to "use Daily Dumps rather than dozens/hundreds/thousands of real-time API requests."
+- **User-Agent identification**: All requests identify us as `IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)` ("Be Transparent" rule).
+- **Rate limiting**: 800ms+ spacing between real-time requests, exponential backoff on rate-limit errors. Full terms are bundled in `src/components/cards/display/nationstates-api.md`.
+- **No Referer spoofing**: The image proxy no longer fakes a NationStates Referer to defeat hotlink protection. On an NS non-OK response it redirects to the local placeholder artwork.
+
+### Attribution
+
+- Reusable `NationStatesAttribution` component shows on import surfaces and NS card details: "NationStates © Max Barry; nation flags remain the property of their authors. Not affiliated with or endorsed by NationStates.net."
+- NS header/banner images are served through the proxied image endpoint rather than hotlinked directly.
+
+### Flag-owner opt-out / takedown
+
+- Admins can hide any NS card via the Cards admin panel (or `nsImport.hideNSCard`): the card is retired and its artwork cleared, so the flag stops being served.
+- Hidden cards are excluded from future syncs: `upsertNSCardDefinition` skips retired cards, so a re-sync will not restore the artwork.
+- A flag owner who objects to their flag being served can request removal by providing their nation name to IxStats support; admins then run the takedown.
+
+### No real-money angle
+
+IxStats has no real-money features. IxCredits are in-game only; there is no purchase, payout, or sale of NS content.
 
 ## API Reference
 

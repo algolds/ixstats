@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Bookmark, Loader2, Plus, Globe } from "lucide-react";
+import { Sparkles, Bookmark, Loader2, Plus } from "lucide-react";
+import { FaWikipediaW } from "react-icons/fa";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -85,37 +86,37 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 rounded-lg px-2 text-xs font-semibold transition-all duration-200",
+              "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
               isWikiOpen
-                ? "bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30"
-                : "text-slate-400 hover:bg-white/10 hover:text-white"
+                ? "bg-[#1d4e89]/15 text-[#1d4e89] dark:text-[#3b82f6] ring-1 ring-[#1d4e89]/30"
+                : "text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d4e89] dark:hover:text-[#3b82f6]"
             )}
             title="Insert Wiki Link or Embed"
+            aria-label="Insert Wiki Link or Embed"
           >
-            <Globe className="mr-1 h-3.5 w-3.5 text-purple-400" />
-            Wiki
+            <FaWikipediaW className="h-3.5 w-3.5 text-[#1d4e89] dark:text-[#3b82f6]" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
           side="bottom"
           align="start"
           sideOffset={8}
-          className="z-50 w-80 space-y-3 rounded-xl border border-white/10 bg-slate-900/95 p-3 text-white shadow-2xl backdrop-blur-xl"
+          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-3.5 text-slate-900 dark:text-white shadow-2xl backdrop-blur-2xl"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-white">
-              <Globe className="h-3.5 w-3.5 text-purple-400" />
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+              <FaWikipediaW className="h-3.5 w-3.5 text-[#1d4e89] dark:text-[#3b82f6]" />
               Wiki Link / Embed
             </span>
-            <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5">
+            <div className="flex items-center gap-1 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 p-0.5">
               <button
                 type="button"
                 onClick={() => setWikiInsertMode("link")}
                 className={cn(
-                  "rounded-md px-2 py-0.5 text-[10px] font-bold transition-all",
+                  "rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all active:scale-95",
                   wikiInsertMode === "link"
-                    ? "bg-purple-600 text-white"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-[#1d4e89] text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
                 Inline Link
@@ -124,10 +125,10 @@ export function WikiAndStashPopovers({
                 type="button"
                 onClick={() => setWikiInsertMode("embed")}
                 className={cn(
-                  "rounded-md px-2 py-0.5 text-[10px] font-bold transition-all",
+                  "rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all active:scale-95",
                   wikiInsertMode === "embed"
-                    ? "bg-purple-600 text-white"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-[#1d4e89] text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 )}
               >
                 Card Embed
@@ -141,10 +142,10 @@ export function WikiAndStashPopovers({
               type="button"
               onClick={() => setWikiSource("ixwiki")}
               className={cn(
-                "flex-1 rounded-lg border py-1 text-center text-xs font-semibold transition-all",
+                "flex-1 rounded-xl border py-1.5 text-center text-xs font-bold transition-all active:scale-[0.98]",
                 wikiSource === "ixwiki"
-                  ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
-                  : "border-white/10 bg-white/5 text-slate-400 hover:text-white"
+                  ? "border-[#1d4e89] bg-[#1d4e89] text-white shadow-sm"
+                  : "border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               IxWiki
@@ -153,10 +154,10 @@ export function WikiAndStashPopovers({
               type="button"
               onClick={() => setWikiSource("iiwiki")}
               className={cn(
-                "flex-1 rounded-lg border py-1 text-center text-xs font-semibold transition-all",
+                "flex-1 rounded-xl border py-1.5 text-center text-xs font-bold transition-all active:scale-[0.98]",
                 wikiSource === "iiwiki"
-                  ? "border-blue-500/50 bg-blue-500/20 text-blue-300"
-                  : "border-white/10 bg-white/5 text-slate-400 hover:text-white"
+                  ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                  : "border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               IIWiki
@@ -164,27 +165,27 @@ export function WikiAndStashPopovers({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+            <Label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
               Article Title
             </Label>
             <Input
               value={wikiTarget}
               onChange={(e) => setWikiTarget(e.target.value)}
               placeholder="e.g. Empire of Ixnay"
-              className="h-8 border-white/10 bg-black/40 text-xs text-white placeholder:text-slate-500"
+              className="h-8.5 rounded-xl border-black/10 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-[#1d4e89]/50"
             />
           </div>
 
           {wikiInsertMode === "link" && (
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+              <Label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                 Display Text (Optional)
               </Label>
               <Input
                 value={wikiLabel}
                 onChange={(e) => setWikiLabel(e.target.value)}
                 placeholder="Defaults to article title"
-                className="h-8 border-white/10 bg-black/40 text-xs text-white placeholder:text-slate-500"
+                className="h-8.5 rounded-xl border-black/10 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-[#1d4e89]/50"
               />
             </div>
           )}
@@ -193,7 +194,7 @@ export function WikiAndStashPopovers({
             size="sm"
             onClick={insertWikiLink}
             disabled={!wikiTarget.trim()}
-            className="w-full bg-purple-600 text-xs font-bold text-white hover:bg-purple-500"
+            className="w-full h-8.5 rounded-xl bg-[#1d4e89] hover:bg-[#184275] active:scale-[0.98] text-xs font-bold text-white transition-all shadow-md"
           >
             {wikiInsertMode === "embed" ? "Insert Card Embed" : "Insert Wiki Link"}
           </Button>
@@ -208,10 +209,10 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-full p-0 transition-all duration-200",
+              "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
               isStashesOpen
-                ? "bg-amber-500/30 text-amber-300 ring-1 ring-amber-500/40"
-                : "text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+                ? "bg-amber-500/20 text-amber-600 dark:text-amber-300 ring-1 ring-amber-500/40"
+                : "text-amber-500 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-300"
             )}
             title="Insert Stashed Assets"
           >
@@ -222,19 +223,19 @@ export function WikiAndStashPopovers({
           side="bottom"
           align="center"
           sideOffset={8}
-          className="z-50 w-80 space-y-3 rounded-xl border border-white/10 bg-slate-900/95 p-3 text-white shadow-2xl backdrop-blur-xl"
+          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-3.5 text-slate-900 dark:text-white shadow-2xl backdrop-blur-2xl"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-white">
-              <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+              <Sparkles className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
               Insert Stash Assets
             </span>
           </div>
 
           {/* Folder Switcher */}
           {stashes.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                 Select Folder
               </label>
               <div className="thin-scrollbar grid max-h-24 grid-cols-2 gap-1 overflow-y-auto">
@@ -243,10 +244,10 @@ export function WikiAndStashPopovers({
                     key={stash.id}
                     onClick={() => setSelectedStashId(stash.id)}
                     className={cn(
-                      "truncate rounded-md border px-2 py-1 text-left text-[11px] transition-colors",
+                      "truncate rounded-xl border px-2 py-1 text-left text-[11px] font-medium transition-all active:scale-95",
                       activeStashId === stash.id
-                        ? "border-blue-500/40 bg-blue-500/20 text-blue-300 font-bold"
-                        : "border-transparent text-slate-400 hover:bg-white/5 hover:text-white"
+                        ? "border-blue-500/40 bg-blue-500/20 text-blue-600 dark:text-blue-300 font-bold shadow-sm"
+                        : "border-black/5 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                     )}
                   >
                     📁 {stash.name}
@@ -260,7 +261,7 @@ export function WikiAndStashPopovers({
           <div className="thin-scrollbar max-h-52 overflow-y-auto pr-1">
             {stashesQuery.isLoading || stashItemsQuery.isLoading ? (
               <div className="flex h-24 items-center justify-center">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
               </div>
             ) : imageItems.length > 0 ? (
               <div className="grid grid-cols-3 gap-1.5">
@@ -275,7 +276,7 @@ export function WikiAndStashPopovers({
                     <div
                       key={item.id}
                       onClick={() => insertStashedImage(url, cleanTitle)}
-                      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/10 bg-black/40 transition-all duration-200 hover:border-blue-500"
+                      className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-black/40 transition-all duration-200 hover:border-blue-500 active:scale-95"
                       title={cleanTitle}
                     >
                       <img
@@ -291,7 +292,7 @@ export function WikiAndStashPopovers({
                 })}
               </div>
             ) : (
-              <div className="py-6 text-center text-xs text-slate-500">
+              <div className="py-6 text-center text-xs text-slate-500 font-medium">
                 {activeStashId
                   ? "No stashed Commons images in this folder."
                   : "Please create or select a folder."}
@@ -302,7 +303,7 @@ export function WikiAndStashPopovers({
       </Popover>
 
       {/* Emoji Picker */}
-      <div className="mx-0.5 h-4 w-px bg-white/10" />
+      <div className="mx-0.5 h-4 w-px bg-black/10 dark:bg-white/10" />
       <EmojiPicker
         onSelectEmoji={handleSelectEmoji}
         disabled={disabled}

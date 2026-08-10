@@ -1,6 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
-// Refactored from main CountryPage - transforms country data for various components
+/**
+ * Country Data Transformers — transforms database models into formatted telemetry & economics structures
+ */
 
 import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import type {
@@ -10,17 +10,7 @@ import type {
   FiscalSystemData,
   GovernmentSpendingData,
 } from "~/types/economics";
-
-interface CountryData {
-  id: string;
-  name: string;
-  currentPopulation: number;
-  currentTotalGdp: number;
-  currentGdpPerCapita: number;
-  adjustedGdpGrowth: number | null;
-  economicTier: string;
-  populationTier: string;
-}
+import type { BaseCountryData, VitalityData, MetricCardData } from "../_types";
 
 export interface EconomicsData {
   core: CoreEconomicIndicatorsData;
@@ -31,9 +21,26 @@ export interface EconomicsData {
 }
 
 /**
+ * Map of economic tier strings to baseline vitality score
+ */
+const ECONOMIC_TIER_SCORES: Record<string, number> = {
+  Extravagant: 95,
+  "Very Strong": 85,
+  Strong: 75,
+  Healthy: 65,
+  Developed: 50,
+  Developing: 35,
+};
+
+/**
  * Transform country database data into format required by economics components
  */
-export function transformCountryEconomicsData(country: CountryData): EconomicsData {
+export function transformCountryEconomicsData(
+  country: Pick<
+    BaseCountryData,
+    "currentPopulation" | "currentTotalGdp" | "currentGdpPerCapita" | "adjustedGdpGrowth"
+  >
+): EconomicsData {
   const coreIndicators: CoreEconomicIndicatorsData = {
     totalPopulation: country.currentPopulation,
     nominalGDP: country.currentTotalGdp,
@@ -244,22 +251,14 @@ export function transformCountryEconomicsData(country: CountryData): EconomicsDa
 /**
  * Calculate vitality metrics for country overview display
  */
-export function calculateVitalityData(country: {
-  economicTier: string;
-  adjustedGdpGrowth: number | null;
-  populationGrowthRate: number | null;
-  populationDensity: number | null;
-}) {
+export function calculateVitalityData(
+  country: Pick<
+    BaseCountryData,
+    "economicTier" | "adjustedGdpGrowth" | "populationGrowthRate" | "populationDensity"
+  >
+): VitalityData {
   // Economic Vitality (based on GDP per capita and growth)
-  const economicTierScore =
-    {
-      Extravagant: 95,
-      "Very Strong": 85,
-      Strong: 75,
-      Healthy: 65,
-      Developed: 50,
-      Developing: 35,
-    }[country.economicTier] || 25;
+  const economicTierScore = ECONOMIC_TIER_SCORES[country.economicTier] ?? 25;
 
   const gdpGrowthBonus = Math.min(20, Math.max(-20, (country.adjustedGdpGrowth ?? 0) * 400));
   const economicVitality = Math.min(100, Math.max(0, economicTierScore + gdpGrowthBonus));
@@ -288,16 +287,19 @@ export function calculateVitalityData(country: {
 /**
  * Prepare metrics for CountryMetricsGrid display
  */
-export function transformCountryMetrics(country: {
-  currentPopulation: number;
-  currentGdpPerCapita: number;
-  currentTotalGdp: number;
-  adjustedGdpGrowth: number | null;
-  economicTier: string;
-  populationTier: string;
-  landArea: number | null;
-  populationDensity: number | null;
-}) {
+export function transformCountryMetrics(
+  country: Pick<
+    BaseCountryData,
+    | "currentPopulation"
+    | "currentGdpPerCapita"
+    | "currentTotalGdp"
+    | "adjustedGdpGrowth"
+    | "economicTier"
+    | "populationTier"
+    | "landArea"
+    | "populationDensity"
+  >
+): MetricCardData[] {
   return [
     {
       label: "Population",

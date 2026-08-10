@@ -3,7 +3,9 @@
 import React from "react";
 import { BarChart3, TrendingUp, Building, MapPin, History } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { FacetTabs } from "~/components/facet-ui";
+import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 
 /**
@@ -32,6 +34,7 @@ export function MyCountryTabsList({
   v2 = false,
   baseHref,
   showGovSetupBadge = true,
+  variant = "boxed",
 }: {
   activeTab: string;
   onChangeAction: (value: string) => void;
@@ -39,6 +42,7 @@ export function MyCountryTabsList({
   v2?: boolean;
   baseHref?: string;
   showGovSetupBadge?: boolean;
+  variant?: "boxed" | "rail" | "underline";
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -156,15 +160,77 @@ export function MyCountryTabsList({
     return activeTab;
   }, [baseHref, pathname, activeTab]);
 
+  if (variant === "underline") {
+    return (
+      <div className="relative flex items-center gap-1 sm:gap-2 border-b border-white/10 pb-0.5 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none">
+        {resolvedTabs.map((tab) => {
+          const isActive = resolvedActiveTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleChange(tab.id)}
+              className={cn(
+                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-150 active:scale-[0.97]",
+                isActive
+                  ? tab.activeTextClassName || "text-foreground font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                  isActive ? tab.activeIconClassName || "text-foreground" : "text-muted-foreground"
+                )}
+              />
+              <span>{tab.label}</span>
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span
+                  className={cn(
+                    "ml-1 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] leading-none font-bold",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "bg-black/10 text-slate-600 dark:bg-white/10 dark:text-slate-400"
+                  )}
+                >
+                  {tab.badge}
+                </span>
+              )}
+              {isActive && (
+                <motion.div
+                  layoutId="factbookUnderline"
+                  className={cn(
+                    "absolute bottom-0 inset-x-2 h-0.5 rounded-full shadow-sm",
+                    tab.id === "overview" && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]",
+                    tab.id === "economy" && "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]",
+                    tab.id === "labor" && "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]",
+                    tab.id === "government" && "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]",
+                    tab.id === "geography" && "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                  )}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto p-0.5">
+    <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-0.5">
       <FacetTabs
         tabs={resolvedTabs}
         activeTab={resolvedActiveTab}
         onChange={handleChange}
         tone="mycountry"
         size="sm"
-        className="facet-surface facet-refraction w-full min-w-fit rounded-xl border border-white/5 p-1"
+        className={cn(
+          "w-full min-w-fit rounded-xl p-1 transition-all duration-200",
+          variant === "rail"
+            ? "border-0 bg-black/10 dark:bg-white/[0.03] shadow-none backdrop-blur-md"
+            : "facet-surface facet-refraction border border-white/5"
+        )}
       />
     </div>
   );

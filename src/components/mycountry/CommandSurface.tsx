@@ -33,26 +33,32 @@ function CommandSurfaceComponent({
 
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Sync mode with route section
+  // Sync mode with route section: set executive mode if on executive section, or reset to home when navigating to a specific domain surface
   useEffect(() => {
     if (section === "executive") {
       setMode("executive");
-    } else {
+    } else if (DOMAIN_SECTIONS.has(section)) {
       setMode("home");
     }
   }, [section]);
 
-  const declare = useCallback((prefilled?: string) => {
-    if (prefilled) setGoal(prefilled);
-    setMode("executive");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  const declare = useCallback(
+    (prefilled?: string) => {
+      if (prefilled) setGoal(prefilled);
+      setMode("executive");
+      if (section !== "overview") {
+        onNavigate?.("overview");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [onNavigate, section]
+  );
 
   const openIntent = useCallback((intentId: string) => {
     setDrill({ kind: "intent", intentId });
   }, []);
 
-  const openDrill = useCallback((d: Exclude<DrillSheetKind, { kind: "intent" } | null>) => {
+  const openDrill = useCallback((d: DrillSheetKind) => {
     setDrill(d);
   }, []);
 
@@ -72,7 +78,9 @@ function CommandSurfaceComponent({
           activeSection={section}
           onChangeMode={(m) => {
             setMode(m);
-            if (m === "home") onNavigate?.("overview");
+            if (m === "home" || m === "executive") {
+              onNavigate?.("overview");
+            }
           }}
           onNavigate={onNavigate}
         />

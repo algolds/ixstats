@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -18,8 +16,6 @@ import {
   Globe,
   Zap,
   ChevronDown,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  ExternalLink,
   Rss,
   BookOpen,
 } from "lucide-react";
@@ -28,6 +24,7 @@ import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { escapeHtml, sanitizeUserContent } from "~/lib/sanitize-html";
+import type { ActivityFilter, ActivityTimeRange, CountryActivityItem } from "../_types";
 
 /**
  * Render text that may contain Discord custom emoji markup.
@@ -36,7 +33,6 @@ import { escapeHtml, sanitizeUserContent } from "~/lib/sanitize-html";
  */
 function renderWithEmojis(text: string): string {
   if (!text) return "";
-  // Extract Discord emoji markup before escaping to preserve the <:name:id> pattern
   const emojis: { placeholder: string; imgTag: string }[] = [];
   let idx = 0;
   const withPlaceholders = text.replace(
@@ -49,9 +45,7 @@ function renderWithEmojis(text: string): string {
       return placeholder;
     }
   );
-  // Escape HTML on the remaining text (safe — placeholders have no HTML chars)
   let result = escapeHtml(withPlaceholders);
-  // Restore emoji img tags
   for (const { placeholder, imgTag } of emojis) {
     result = result.replace(placeholder, imgTag);
   }
@@ -66,20 +60,23 @@ function safeDate(value: unknown): Date {
   return isValid(d) ? d : new Date();
 }
 
-type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "social";
-
 interface CountryActivityPanelProps {
   countryId: string;
   countryName: string;
 }
 
+interface FilterOption {
+  value: ActivityFilter;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
 export function CountryActivityPanel({ countryId, countryName }: CountryActivityPanelProps) {
   const [filter, setFilter] = useState<ActivityFilter>("all");
-  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [timeRange, setTimeRange] = useState<ActivityTimeRange>("30d");
   const [showMore, setShowMore] = useState(false);
 
   // Single backend query — same endpoint used by the dashboard feed.
-  // Already merges ActivityFeed entries + ThinkPages posts server-side.
   const { data: activityData, isLoading } = api.activities.getCountryActivity.useQuery({
     countryId,
     limit: showMore ? 50 : 20,
@@ -87,21 +84,20 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
   });
 
   // Normalize and filter the backend response
-  const feed = useMemo(() => {
+  const feed: CountryActivityItem[] = useMemo(() => {
     if (!activityData?.activities) return [];
 
-    const items = activityData.activities.map((activity) => ({
+    const items: CountryActivityItem[] = activityData.activities.map((activity) => ({
       id: activity.id,
-      type: activity.type as string,
-      source: activity.source as string,
+      type: activity.type,
+      source: activity.source,
       title: activity.title,
       description: activity.description,
       timestamp: safeDate(activity.timestamp),
       engagement: activity.engagement,
-      metadata: activity.metadata,
+      metadata: activity.metadata as Record<string, unknown> | null,
     }));
 
-    // Apply client-side filter
     if (filter === "all") return items;
     if (filter === "posts")
       return items.filter((i) => i.type === "social" || i.source === "thinkpages");
@@ -112,11 +108,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
     return items;
   }, [activityData, filter]);
 
-  const filterOptions: Array<{
-    value: ActivityFilter;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
+  const filterOptions: FilterOption[] = [
     { value: "all", label: "All", icon: Activity },
     { value: "posts", label: "Posts", icon: Rss },
     { value: "economic", label: "Economic", icon: TrendingUp },
@@ -166,12 +158,10 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
     switch (source) {
       case "thinkpages":
         return (
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-[10px] font-bold">
             ThinkPages
           </Badge>
         );
-      case "activity":
-        return null;
       default:
         return null;
     }
@@ -183,26 +173,26 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
         {/* Main Feed */}
         <div className="space-y-4 lg:col-span-3">
           {/* Header */}
-          <Card className="bg-card/50 backdrop-blur-sm">
+          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
             <CardHeader className="pb-3">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-base font-extrabold tracking-tight">
+                    <Activity className="h-5 w-5 text-primary" />
                     Activity Feed
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs">
                     Posts, events, and milestones from {countryName.replace(/_/g, " ")}
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {(["7d", "30d", "90d"] as const).map((range) => (
                     <Button
                       key={range}
                       variant={timeRange === range ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setTimeRange(range)}
-                      className="text-xs"
+                      className="h-7 px-2.5 text-xs font-semibold transition-transform duration-100 active:scale-95"
                     >
                       {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
                     </Button>
@@ -220,7 +210,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                       variant={filter === opt.value ? "default" : "outline"}
                       size="sm"
                       onClick={() => setFilter(opt.value)}
-                      className="text-xs"
+                      className="h-7 px-3 text-xs font-semibold transition-transform duration-100 active:scale-95"
                     >
                       <Icon className="mr-1.5 h-3 w-3" />
                       {opt.label}
@@ -233,7 +223,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
           {/* Feed Items */}
           {isLoading ? (
-            <Card className="bg-card/50 backdrop-blur-sm">
+            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
               <CardContent className="space-y-4 pt-6">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex animate-pulse items-start gap-3">
@@ -248,13 +238,13 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               </CardContent>
             </Card>
           ) : feed.length > 0 ? (
-            <Card className="bg-card/50 backdrop-blur-sm">
+            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
               <CardContent className="space-y-1 pt-6">
                 {feed.map((item, idx) => (
                   <div
                     key={item.id}
-                    className={`flex items-start gap-3 py-3 ${
-                      idx < feed.length - 1 ? "border-border/50 border-b" : ""
+                    className={`flex items-start gap-3 py-3 rounded-xl px-2 transition-colors duration-150 hover:bg-white/[0.03] ${
+                      idx < feed.length - 1 ? "border-border/40 border-b" : ""
                     }`}
                   >
                     <div
@@ -265,7 +255,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                           {getItemIcon(item.type, item.source)}
                           <p
-                            className="truncate text-sm font-medium"
+                            className="truncate text-sm font-semibold"
                             dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.title) }}
                           />
                         </div>
@@ -276,7 +266,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                           dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }}
                         />
                       </p>
-                      <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-xs">
+                      <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[11px]">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {isValid(item.timestamp)
@@ -285,21 +275,21 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                         </div>
                         {item.engagement && (
                           <>
-                            {item.engagement.likes > 0 && (
+                            {(item.engagement.likes ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
+                                <Heart className="h-3 w-3 text-rose-500" />
                                 {item.engagement.likes}
                               </span>
                             )}
-                            {item.engagement.comments > 0 && (
+                            {(item.engagement.comments ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3 w-3" />
+                                <MessageSquare className="h-3 w-3 text-sky-500" />
                                 {item.engagement.comments}
                               </span>
                             )}
-                            {item.engagement.shares > 0 && (
+                            {item.engagement.shares && item.engagement.shares > 0 && (
                               <span className="flex items-center gap-1">
-                                <Share2 className="h-3 w-3" />
+                                <Share2 className="h-3 w-3 text-emerald-500" />
                                 {item.engagement.shares}
                               </span>
                             )}
@@ -316,7 +306,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowMore(true)}
-                      className="text-xs"
+                      className="text-xs font-semibold transition-transform duration-100 active:scale-95"
                     >
                       <ChevronDown className="mr-1 h-3 w-3" />
                       Load more activity
@@ -326,10 +316,10 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-card/50 backdrop-blur-sm">
+            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
               <CardContent className="py-12 text-center">
                 <Activity className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm font-semibold">
                   No activity found for this time period.
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs">
@@ -343,30 +333,32 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Quick Stats */}
-          <Card className="bg-card/50 backdrop-blur-sm">
+          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Activity Summary</CardTitle>
+              <CardTitle className="text-xs font-extrabold uppercase tracking-wider">
+                Activity Summary
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Total Items</span>
-                <span className="text-sm font-semibold">{feed.length}</span>
+                <span className="text-sm font-extrabold">{feed.length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Posts</span>
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-bold">
                   {feed.filter((i) => i.type === "social" || i.source === "thinkpages").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Economic</span>
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-bold">
                   {feed.filter((i) => i.type === "economic").length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Diplomatic</span>
-                <span className="text-sm font-semibold">
+                <span className="text-sm font-bold">
                   {feed.filter((i) => i.type === "diplomatic").length}
                 </span>
               </div>
@@ -374,12 +366,12 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
           </Card>
 
           {/* Wiki Link */}
-          <Card className="bg-card/50 backdrop-blur-sm">
+          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]">
             <CardContent className="pt-6">
               <WikiLinkPreview title={countryName}>
                 <Link
                   href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
-                  className="text-primary flex items-center gap-2 text-sm hover:underline"
+                  className="text-primary flex items-center gap-2 text-sm font-bold hover:underline"
                 >
                   <BookOpen className="h-4 w-4" />
                   View on IxWiki

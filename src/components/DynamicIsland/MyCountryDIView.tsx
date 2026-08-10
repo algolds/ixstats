@@ -62,9 +62,11 @@ const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number =
   return diffDays;
 };
 
+import type { ViewMode } from "./types";
+
 interface MyCountryDIViewProps {
   onClose: () => void;
-  onSwitchMode?: (mode: any) => void;
+  onSwitchMode?: (mode: ViewMode) => void;
 }
 
 export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {

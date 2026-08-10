@@ -2,7 +2,7 @@
 
 import { use, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Users } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
 import {
@@ -14,7 +14,6 @@ import {
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
 import { Button } from "~/components/ui/button";
-import { Users } from "lucide-react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
@@ -22,12 +21,12 @@ import { CountryDataProvider, useCountryData } from "~/components/mycountry/prim
 import { CountryHeader } from "../_components/CountryHeader";
 import { CountryTabs } from "../_components/CountryTabs";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
+import { toCountrySlug } from "../_types";
 
 /**
- * CountryProfileLayout — the persistent country shell (route group `(profile)`,
- * so `/countries/[slug]/modeling` stays untouched). Owns the country query via
- * `CountryDataProvider`, the header, breadcrumb, and the prominent Tier-1 top
- * bar. Renders `{children}` (factbook / dossier / activity routes).
+ * CountryProfileLayout — persistent country shell (route group `(profile)`).
+ * Owns the country query via `CountryDataProvider`, header, breadcrumbs,
+ * and the prominent Tier-1 top bar.
  */
 export default function CountryProfileLayout({
   children,
@@ -36,7 +35,8 @@ export default function CountryProfileLayout({
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = use(params);
+  const { slug: rawSlug } = use(params);
+  const slug = toCountrySlug(rawSlug);
 
   return (
     <CountryDataProvider userId="" countryId={slug} isPublicReadOnly>
@@ -77,13 +77,13 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Skeleton className="mb-4 h-8 w-1/2" />
-        <Skeleton className="mb-8 h-4 w-1/4" />
+        <Skeleton className="mb-4 h-8 w-1/2 rounded-lg" />
+        <Skeleton className="mb-8 h-4 w-1/4 rounded-lg" />
         <div className="space-y-6">
-          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <Skeleton className="h-96 rounded-xl lg:col-span-2" />
-            <Skeleton className="h-96 rounded-xl" />
+            <Skeleton className="h-96 rounded-2xl lg:col-span-2" />
+            <Skeleton className="h-96 rounded-2xl" />
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="border-destructive/50 p-8">
+        <Card className="border-destructive/50 p-8 rounded-2xl backdrop-blur-xl">
           <div className="text-destructive flex items-center gap-3">
             <AlertTriangle className="h-6 w-6" />
             <div>
@@ -109,7 +109,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (!country) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="p-8 text-center">
+        <Card className="p-8 text-center rounded-2xl backdrop-blur-xl">
           <AlertTriangle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <h3 className="mb-2 text-xl font-semibold">Country Not Found</h3>
           <p className="text-muted-foreground">The requested country could not be found.</p>
@@ -161,7 +161,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           <Button
             size="sm"
             onClick={() => setShowCountryActions(true)}
-            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+            className="group flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black shadow-md backdrop-blur-xl transition-all duration-100 ease-out hover:scale-105 active:scale-95"
             style={{
               borderColor: "var(--flag-border-primary)",
               color: "var(--flag-primary)",

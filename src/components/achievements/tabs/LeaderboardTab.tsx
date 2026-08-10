@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TabsContent } from "~/components/ui/tabs";
-import { TextureCard, TextureCardContent } from "~/components/ui/texture-card";
+import { motion } from "motion/react";
 import {
   Star,
   Trophy,
@@ -15,10 +14,6 @@ import {
   GraduationCap,
   Heart,
   Landmark,
-  Activity,
-  ShieldCheck,
-  Building2,
-  ThumbsUp,
   Search,
   Crown,
   Medal,
@@ -29,6 +24,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface AchievementEntry {
   countryId: string;
@@ -56,128 +52,51 @@ const CATEGORIES = [
 const FILTERS = [
   { id: "achievements", label: "Achievements", icon: Trophy, fmt: "achievements", domain: "all" },
   { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency", domain: "economy" },
-  {
-    id: "gdpPerCapita",
-    label: "GDP per Capita",
-    icon: DollarSign,
-    fmt: "currency",
-    domain: "economy",
-  },
+  { id: "gdpPerCapita", label: "GDP per Capita", icon: DollarSign, fmt: "currency", domain: "economy" },
   { id: "population", label: "Population", icon: Users, fmt: "number", domain: "demographics" },
-  {
-    id: "populationDensity",
-    label: "Pop. Density",
-    icon: Gauge,
-    fmt: "number",
-    domain: "demographics",
-  },
+  { id: "populationDensity", label: "Pop. Density", icon: Gauge, fmt: "number", domain: "demographics" },
   { id: "landArea", label: "Land Area", icon: Map, fmt: "number", domain: "demographics" },
   { id: "gdpGrowth", label: "GDP Growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
   { id: "avgIncome", label: "Avg Income", icon: DollarSign, fmt: "currency", domain: "economy" },
   { id: "workforce", label: "Workforce", icon: Users, fmt: "number", domain: "demographics" },
-  {
-    id: "employmentRate",
-    label: "Employment",
-    icon: Briefcase,
-    fmt: "percent",
-    domain: "demographics",
-  },
-  {
-    id: "literacyRate",
-    label: "Literacy",
-    icon: GraduationCap,
-    fmt: "percent",
-    domain: "governance",
-  },
-  {
-    id: "lifeExpectancy",
-    label: "Life Expectancy",
-    icon: Heart,
-    fmt: "years",
-    domain: "governance",
-  },
+  { id: "employmentRate", label: "Employment", icon: Briefcase, fmt: "percent", domain: "demographics" },
+  { id: "literacyRate", label: "Literacy", icon: GraduationCap, fmt: "percent", domain: "governance" },
+  { id: "lifeExpectancy", label: "Life Expectancy", icon: Heart, fmt: "years", domain: "governance" },
   { id: "govRevenue", label: "Gov. Revenue", icon: Landmark, fmt: "currency", domain: "economy" },
   { id: "govSpending", label: "Gov. Spending", icon: Landmark, fmt: "currency", domain: "economy" },
-  {
-    id: "economicVitality",
-    label: "Economic Vitality",
-    icon: Activity,
-    fmt: "score",
-    domain: "governance",
-  },
-  { id: "wellbeing", label: "Wellbeing", icon: Heart, fmt: "score", domain: "governance" },
-  {
-    id: "nationalHealth",
-    label: "National Health",
-    icon: ShieldCheck,
-    fmt: "score",
-    domain: "governance",
-  },
-  {
-    id: "infrastructure",
-    label: "Infrastructure",
-    icon: Building2,
-    fmt: "score",
-    domain: "governance",
-  },
-  {
-    id: "urbanization",
-    label: "Urbanization",
-    icon: Building2,
-    fmt: "percent",
-    domain: "demographics",
-  },
-  {
-    id: "approval",
-    label: "Public Approval",
-    icon: ThumbsUp,
-    fmt: "percent",
-    domain: "governance",
-  },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]["id"];
-type FmtKind = (typeof FILTERS)[number]["fmt"];
 
-const abbr = (n: number) =>
-  n >= 1e12
-    ? `${(n / 1e12).toFixed(2)}T`
-    : n >= 1e9
-      ? `${(n / 1e9).toFixed(2)}B`
-      : n >= 1e6
-        ? `${(n / 1e6).toFixed(2)}M`
-        : Math.round(n).toLocaleString();
-
-const fmt = (kind: FmtKind, n: number) => {
-  switch (kind) {
-    case "currency":
-      return n >= 1e6 ? `$${abbr(n)}` : `$${Math.round(n).toLocaleString()}`;
-    case "percent":
-      return `${n.toFixed(1)}%`;
-    case "years":
-      return `${n.toFixed(1)} yrs`;
-    case "score":
-      return n.toFixed(1);
-    default:
-      return abbr(n);
+function fmt(type: string, val?: number | null) {
+  if (val === undefined || val === null) return "—";
+  if (type === "currency") {
+    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
+    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
+    return `$${val.toLocaleString()}`;
   }
-};
+  if (type === "percent") return `${val.toFixed(1)}%`;
+  if (type === "years") return `${val.toFixed(1)} yrs`;
+  if (type === "number") {
+    if (val >= 1e9) return `${(val / 1e9).toFixed(2)}B`;
+    if (val >= 1e6) return `${(val / 1e6).toFixed(2)}M`;
+    return val.toLocaleString();
+  }
+  return String(val);
+}
 
 function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string | null }) {
-  const [hasError, setHasError] = useState(false);
-
-  if (flag && !hasError && (flag.startsWith("/") || flag.startsWith("http"))) {
+  if (flag && (flag.startsWith("/") || flag.startsWith("http"))) {
     return (
       <img
         src={flag}
         alt={`Flag of ${countryName}`}
-        className="border-border/40 h-4 w-6 shrink-0 rounded border object-cover shadow-sm"
-        onError={() => setHasError(true)}
+        className="h-5 w-7 shrink-0 rounded border border-white/10 object-cover shadow-sm"
       />
     );
   }
-
-  return <EnhancedCountryFlag countryName={countryName} size="sm" />;
+  return <EnhancedCountryFlag countryName={countryName} size="sm" className="h-5 w-7 rounded shadow-sm object-cover" />;
 }
 
 function PodiumCard({
@@ -195,24 +114,24 @@ function PodiumCard({
 }) {
   const styles = {
     1: {
-      badgeBg: "bg-amber-500/20 text-amber-500 border-amber-500/30",
-      cardBg: "from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30",
+      badgeBg: "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]",
+      cardBg: "from-amber-500/15 via-amber-500/5 to-slate-950/80 border-amber-500/30",
       icon: Crown,
-      iconColor: "text-amber-400",
+      iconColor: "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]",
       label: "Gold Champion",
     },
     2: {
-      badgeBg: "bg-slate-400/20 text-slate-300 border-slate-400/30",
-      cardBg: "from-slate-400/15 via-slate-400/5 to-transparent border-slate-400/30",
+      badgeBg: "bg-slate-400/20 text-slate-200 border-slate-400/40",
+      cardBg: "from-slate-400/15 via-slate-400/5 to-slate-950/80 border-slate-400/30",
       icon: Medal,
       iconColor: "text-slate-300",
       label: "Silver Runner-Up",
     },
     3: {
-      badgeBg: "bg-amber-700/20 text-amber-600 border-amber-700/30 dark:text-amber-500",
-      cardBg: "from-amber-700/15 via-amber-700/5 to-transparent border-amber-700/30",
+      badgeBg: "bg-amber-700/25 text-amber-400 border-amber-700/40",
+      cardBg: "from-amber-700/15 via-amber-700/5 to-slate-950/80 border-amber-700/30",
       icon: Award,
-      iconColor: "text-amber-600 dark:text-amber-500",
+      iconColor: "text-amber-500",
       label: "Bronze Podium",
     },
   }[rank];
@@ -220,38 +139,42 @@ function PodiumCard({
   const Icon = styles.icon;
 
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 350, damping: 25 }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-gradient-to-b p-5 backdrop-blur-md transition-all duration-300 hover:scale-[1.02]",
+        "relative overflow-hidden rounded-3xl border bg-gradient-to-b p-5 shadow-2xl backdrop-blur-2xl transition-all border-t-white/20",
         styles.cardBg
       )}
     >
-      <div className="flex items-center justify-between">
+      <TextureOverlay texture="dots" opacity={0.03} />
+      <div className="relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black",
+              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black backdrop-blur-md",
               styles.badgeBg
             )}
           >
             #{rank}
           </span>
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+          <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             {styles.label}
           </span>
         </div>
         <Icon className={cn("h-5 w-5", styles.iconColor)} />
       </div>
 
-      <div className="mt-4 space-y-1">
+      <div className="relative z-10 mt-4 space-y-1">
         <div className="flex items-center gap-2">
           <FlagGraphic countryName={name} flag={flag} />
-          <div className="text-foreground truncate text-base font-bold">{name}</div>
+          <div className="truncate text-base font-bold text-slate-100">{name}</div>
         </div>
-        <div className="text-foreground text-2xl font-black">{primary}</div>
-        <div className="text-muted-foreground text-xs">{secondary}</div>
+        <div className="font-mono text-2xl font-black text-slate-100">{primary}</div>
+        <div className="text-xs text-slate-400">{secondary}</div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -269,25 +192,32 @@ function Row({
   flag?: string | null;
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.2,
+        delay: Math.min(index * 0.02, 0.2),
+        ease: [0.23, 1, 0.32, 1],
+      }}
       className={cn(
-        "flex items-center justify-between rounded-xl border p-4 backdrop-blur-md transition-all duration-300 hover:border-amber-500/30",
+        "flex items-center justify-between rounded-2xl border p-4 backdrop-blur-2xl transition-all border-t-white/10 hover:border-white/20",
         index < 3
-          ? "border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent dark:from-amber-500/5 dark:to-transparent"
-          : "border-border/50 bg-card/45 dark:border-white/5 dark:bg-black/20"
+          ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-slate-950/70 to-slate-950/70"
+          : "border-white/10 bg-slate-950/60 dark:bg-black/40"
       )}
     >
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            "w-8 text-center text-2xl font-black",
+            "w-8 font-mono text-center text-xl font-black",
             index === 0
-              ? "text-amber-500"
+              ? "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]"
               : index === 1
-                ? "text-slate-400"
+                ? "text-slate-300"
                 : index === 2
-                  ? "text-amber-700 dark:text-amber-600"
-                  : "text-muted-foreground"
+                  ? "text-amber-600"
+                  : "text-slate-500"
           )}
         >
           {index + 1}
@@ -295,16 +225,16 @@ function Row({
         <div>
           <div className="flex items-center gap-2">
             <FlagGraphic countryName={name} flag={flag} />
-            <div className="text-foreground font-bold">{name}</div>
+            <div className="font-bold text-slate-100">{name}</div>
           </div>
-          <div className="text-muted-foreground text-xs">{secondary}</div>
+          <div className="text-xs text-slate-400">{secondary}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Star className="h-5 w-5 fill-amber-500/20 text-amber-500" />
-        <span className="text-foreground text-xl font-black">{primary}</span>
+        <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-400" />
+        <span className="font-mono text-lg font-black text-slate-100">{primary}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -314,7 +244,6 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [limit, setLimit] = useState<number>(25);
 
-  // Get achievements leaderboard if not passed via props
   const { data: achievementsData } = api.achievements.getLeaderboard.useQuery(
     { limit },
     { enabled: !leaderboard && filter === "achievements" }
@@ -332,12 +261,10 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
   );
 
   const active = FILTERS.find((f) => f.id === filter)!;
-
   const visibleFilters = FILTERS.filter(
     (f) => activeDomain === "all" || f.domain === activeDomain || f.id === "achievements"
   );
 
-  // Filter achievements locally if search query is provided
   const filteredAchievements = effectiveAchievements?.filter((entry) =>
     searchQuery ? entry.countryName.toLowerCase().includes(searchQuery.toLowerCase()) : true
   );
@@ -360,41 +287,40 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
-      <TextureCardContent className="space-y-6 p-6">
-        {/* Header & Controls */}
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all border-t-white/20 dark:bg-black/60 dark:border-white/12">
+      <TextureOverlay texture="dots" opacity={0.03} />
+
+      <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-foreground text-xl font-bold">Global World Leaderboards</h3>
-            <p className="text-muted-foreground text-xs">
+            <h3 className="text-xl font-bold text-slate-100 tracking-tight">Global World Leaderboards</h3>
+            <p className="text-xs text-slate-400 font-medium">
               Rankings across {active.label.toLowerCase()} • {limit} nations displayed
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
             <div className="relative w-full sm:w-64">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search nation..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-card/60 border-border/50 h-9 pl-9 text-xs"
+                className="h-9 border-white/10 bg-slate-900/80 pl-9 text-xs font-medium text-slate-200 rounded-full focus:border-purple-500/50"
               />
             </div>
 
-            {/* Limit Selector */}
-            <div className="border-border/50 flex items-center gap-1 rounded-lg border bg-black/10 p-1 text-xs dark:bg-black/40">
+            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-900/80 p-1 text-xs backdrop-blur-md">
               {[10, 25, 50, 100].map((l) => (
                 <button
                   key={l}
                   onClick={() => setLimit(l)}
                   className={cn(
-                    "rounded px-2.5 py-1 font-bold transition-all",
+                    "rounded-full px-2.5 py-0.5 font-bold transition-all active:scale-95",
                     limit === l
-                      ? "bg-amber-500/20 text-amber-500 dark:text-amber-400"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
+                      : "text-slate-400 hover:text-slate-200"
                   )}
                 >
                   {l}
@@ -404,17 +330,16 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           </div>
         </div>
 
-        {/* Domain Tabs */}
-        <div className="border-border/40 flex flex-wrap items-center gap-2 border-b pb-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveDomain(cat.id)}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+                "rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95",
                 activeDomain === cat.id
-                  ? "bg-foreground text-background"
-                  : "bg-card/40 text-muted-foreground hover:text-foreground border-border/50 border"
+                  ? "bg-slate-100 text-slate-950 shadow-md"
+                  : "border border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
               )}
             >
               {cat.label}
@@ -422,7 +347,6 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           ))}
         </div>
 
-        {/* Filter chips */}
         <div className="flex flex-wrap gap-2">
           {visibleFilters.map((f) => {
             const Icon = f.icon;
@@ -431,10 +355,10 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all",
+                  "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all active:scale-95",
                   filter === f.id
-                    ? "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                    : "border-border/50 text-muted-foreground hover:text-foreground bg-card/40"
+                    ? "border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20"
+                    : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -444,86 +368,40 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           })}
         </div>
 
-        {/* 
-          1. tRPC Query: api.achievements.getCountryLeaderboard.useQuery() fetches live 145-nation data.
-          2. Array Destructuring & Mapping: topThree uses .slice(0, 3) and .map() to extract top nations.
-          3. Podium Rendering: topThree[0] (Gold), topThree[1] (Silver), topThree[2] (Bronze) render into Podium Cards!
-        */}
         {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
           <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-            <PodiumCard
-              rank={1}
-              name={topThree[0].countryName}
-              primary={topThree[0].primary}
-              secondary={topThree[0].secondary}
-              flag={topThree[0].flag}
-            />
-            <PodiumCard
-              rank={2}
-              name={topThree[1].countryName}
-              primary={topThree[1].primary}
-              secondary={topThree[1].secondary}
-              flag={topThree[1].flag}
-            />
-            <PodiumCard
-              rank={3}
-              name={topThree[2].countryName}
-              primary={topThree[2].primary}
-              secondary={topThree[2].secondary}
-              flag={topThree[2].flag}
-            />
+            <PodiumCard rank={1} name={topThree[0].countryName} primary={topThree[0].primary} secondary={topThree[0].secondary} flag={topThree[0].flag} />
+            <PodiumCard rank={2} name={topThree[1].countryName} primary={topThree[1].primary} secondary={topThree[1].secondary} flag={topThree[1].flag} />
+            <PodiumCard rank={3} name={topThree[2].countryName} primary={topThree[2].primary} secondary={topThree[2].secondary} flag={topThree[2].flag} />
           </div>
         )}
 
-        {/* Leaderboard Table / List */}
         {filter === "achievements" ? (
           filteredAchievements && filteredAchievements.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {filteredAchievements.map((entry, index) => (
-                <Row
-                  key={entry.countryId}
-                  index={index}
-                  name={entry.countryName}
-                  flag={entry.flag}
-                  primary={`${entry.totalPoints} pts`}
-                  secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`}
-                />
+                <Row key={entry.countryId} index={index} name={entry.countryName} flag={entry.flag} primary={`${entry.totalPoints} pts`} secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`} />
               ))}
             </div>
           ) : (
-            <div className="text-muted-foreground py-12 text-center text-sm">
-              No achievement data available for search query
-            </div>
+            <div className="py-12 text-center text-xs text-slate-400">No achievement data available for search query</div>
           )
         ) : isLoading ? (
           <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
           </div>
         ) : countryBoard && countryBoard.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {countryBoard.map((entry, index) => (
-              <Row
-                key={entry.countryId}
-                index={index}
-                name={entry.countryName}
-                flag={entry.flag}
-                primary={fmt(active.fmt, entry.value)}
-                secondary={`${entry.economicTier} • ${entry.populationTier}`}
-              />
+              <Row key={entry.countryId} index={index} name={entry.countryName} flag={entry.flag} primary={fmt(active.fmt, entry.value)} secondary={`${entry.economicTier} • ${entry.populationTier}`} />
             ))}
           </div>
         ) : (
-          <div className="text-muted-foreground py-12 text-center text-sm">
-            No nation metrics found matching your criteria
-          </div>
+          <div className="py-12 text-center text-xs text-slate-400">No nation metrics found matching your criteria</div>
         )}
-      </TextureCardContent>
-    </TextureCard>
+      </div>
+    </div>
   );
 
-  if (standalone) {
-    return mainContent;
-  }
-
-  return <TabsContent value="leaderboard">{mainContent}</TabsContent>;
+  return mainContent;
 }

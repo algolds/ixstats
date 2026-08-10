@@ -25,10 +25,11 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult } from "./types";
+import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 
 // Development-only logger to suppress Dynamic Island logs in production
-const devLog = (...args: any[]) => {
+const devLog = (...args: unknown[]) => {
   if (process.env.NODE_ENV !== "production") {
     console.log(...args);
   }
@@ -304,9 +305,8 @@ export function useDynamicIslandState() {
   );
 
   const countryIndex = useMemo(() => {
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries;
-    if (!list) return [];
-    return (list as any[]).map((c: any) => ({ ...c, _lower: (c.name as string).toLowerCase() }));
+    const list = extractCountriesList(countriesData);
+    return list.map((c) => ({ ...c, _lower: c.name.toLowerCase() }));
   }, [countriesData]);
 
   // Generate search results based on query and filter

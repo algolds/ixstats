@@ -5,6 +5,10 @@ export interface CommandPaletteProps {
   scrollY?: number;
 }
 
+// Branded string type helper for plugin & view identifiers
+export type Brand<T, B extends string> = T & { readonly __brand: B };
+export type PluginId = Brand<string, "PluginId">;
+
 // User Profile interface
 export interface UserProfile {
   id: string;
@@ -23,14 +27,16 @@ export interface SearchResult {
   title: string;
   subtitle?: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   icon?: React.ComponentType<{ className?: string }>;
   action: () => void;
 }
 
 // View modes — includes plugin-provided views via template literal
-export type ViewMode =
-  "compact" | "search" | "notifications" | "settings" | "mycountry" | `plugin:${string}`;
+export type BuiltinViewMode = "compact" | "search" | "notifications" | "settings" | "mycountry";
+export type PluginViewMode = `plugin:${string}`;
+export type ViewMode = BuiltinViewMode | PluginViewMode;
+
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 
 // ── Plugin System Types ─────────────────────────────────────────────
@@ -40,7 +46,7 @@ export interface DIViewProps {
   onClose: () => void;
   onSwitchMode?: (mode: ViewMode) => void;
   filter?: Record<string, any>;
-  context?: any;
+  context?: unknown;
 }
 
 /** An action button a plugin can inject into the pill */
@@ -69,7 +75,7 @@ export interface DIPlugin {
   accentColor?: string;
   stickyLabel?: string;
   filter?: Record<string, any>;
-  context?: any;
+  context?: unknown;
 }
 
 // Current time state interface
@@ -99,36 +105,42 @@ export interface CompactViewProps {
   pluginBadge?: DIBadge;
 }
 
+export type CountrySummary = {
+  id: string;
+  name: string;
+  slug?: string;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
+  economicTier?: string;
+  currentGdpPerCapita?: number | null;
+};
+
 export type CountriesData =
-  | Array<{
-      id: string;
-      name: string;
-      slug?: string;
-      flagUrl?: string;
-      coatOfArmsUrl?: string;
-      economicTier?: string;
-      currentGdpPerCapita?: number | null;
-    }>
+  | CountrySummary[]
   | {
-      countries: Array<{
-        id: string;
-        name: string;
-        slug?: string;
-        flagUrl?: string;
-        coatOfArmsUrl?: string;
-        economicTier?: string;
-        currentGdpPerCapita?: number | null;
-      }>;
+      countries: CountrySummary[];
     };
+
+/** Type guard to safely extract a list of country summaries from CountriesData */
+export function extractCountriesList(data: CountriesData | undefined): CountrySummary[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return data.countries ?? [];
+}
+
+/** Type guard to check if a mode string is a plugin-provided view mode */
+export function isPluginViewMode(mode: string): mode is PluginViewMode {
+  return mode.startsWith("plugin:");
+}
 
 export interface SearchViewProps {
   searchQuery: string;
-  setSearchQuery?: (query: string) => void; // Made optional
+  setSearchQuery?: (query: string) => void;
   searchFilter: SearchFilter;
-  setSearchFilter?: (filter: SearchFilter) => void; // Made optional
+  setSearchFilter?: (filter: SearchFilter) => void;
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
-  countriesData?: CountriesData; // Made optional as it might not always be present
+  countriesData?: CountriesData;
   closeDropdown: () => void;
 }
 
@@ -151,4 +163,6 @@ export interface ExpandedViewProps {
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
   countriesData?: CountriesData;
+  activePlugin?: DIPlugin | null;
 }
+

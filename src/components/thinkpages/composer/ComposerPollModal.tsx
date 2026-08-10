@@ -49,18 +49,19 @@ export function ComposerPollModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setShowPollModal(false)}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          className="absolute inset-0 bg-black/60 backdrop-blur-2xl"
         />
 
-        {/* Modal Container */}
+        {/* Modal Sheet Container (Apple HIG Control Surface) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="text-foreground relative z-10 w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-slate-900/95 p-5 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/95"
+          exit={{ opacity: 0, scale: 0.94, y: 16 }}
+          transition={{ type: "spring", stiffness: 420, damping: 30 }}
+          className="text-foreground relative z-10 w-full max-w-md space-y-4 rounded-3xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl backdrop-blur-2xl"
         >
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-white/10">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#ff8a65]">
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-sm font-bold tracking-tight text-[#ff8a65]">
               <Vote className="h-4 w-4" />
               <span>Configure Poll Draft</span>
             </div>
@@ -68,15 +69,15 @@ export function ComposerPollModal({
               variant="ghost"
               size="icon"
               onClick={() => setShowPollModal(false)}
-              className="h-7 w-7 cursor-pointer rounded-full text-slate-400 hover:bg-slate-500/10 hover:text-slate-200"
+              className="h-7 w-7 rounded-full text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-slate-200 active:scale-95 transition-all"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Poll Question */}
-          <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
               Question / Topic *
             </label>
             <Input
@@ -84,15 +85,15 @@ export function ComposerPollModal({
               placeholder="Ask a question..."
               value={pollDraft.question}
               onChange={(e) => setPollDraft({ ...pollDraft, question: e.target.value })}
-              className="bg-background/50 w-full focus-visible:ring-[#ff8a65]/50"
+              className="rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-medium focus-visible:ring-[#ff8a65]/50"
               required
             />
           </div>
 
           {/* Poll Type & Multiple Options */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+            <div className="space-y-1.5">
+              <label className="mb-1 block text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                 Poll Type
               </label>
               <Select
@@ -104,10 +105,10 @@ export function ComposerPollModal({
                   })
                 }
               >
-                <SelectTrigger className="bg-background/50 h-8 w-full border border-slate-200 text-xs focus:border-[#ff8a65]/50 dark:border-white/10">
+                <SelectTrigger className="h-8 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-semibold focus:border-[#ff8a65]/50">
                   <SelectValue placeholder="Select Poll Type" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-[100020] border border-slate-200 text-xs dark:border-slate-800">
+                <SelectContent className="z-[100020] rounded-xl border border-black/10 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 text-xs shadow-2xl backdrop-blur-2xl">
                   <SelectItem value="choice">Choice Poll</SelectItem>
                   {!isRegularUser && (
                     <SelectItem value="feature-poll">Feature Poll</SelectItem>
@@ -128,7 +129,7 @@ export function ComposerPollModal({
                 />
                 <label
                   htmlFor="modal-poll-multiple-toggle"
-                  className="text-slate-650 cursor-pointer text-[11px] font-semibold dark:text-neutral-300"
+                  className="cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300"
                 >
                   Multiple Selection
                 </label>
@@ -138,7 +139,7 @@ export function ComposerPollModal({
 
           {/* Blurb Prompt Notice for Regular Users */}
           {isRegularUser && (
-            <div className="flex items-start gap-2 rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-[11px] leading-relaxed text-[#ff8a65]">
+            <div className="flex items-start gap-2 rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-[11px] leading-relaxed text-[#ff8a65]">
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 Citizen accounts can only launch Choice Polls. To prioritize features,
@@ -158,10 +159,10 @@ export function ComposerPollModal({
           {/* Poll Options */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
+              <label className="block text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
                 Options * (min 2)
               </label>
-              <span className="text-muted-foreground/60 text-[9px] font-medium">
+              <span className="text-[9px] font-semibold text-slate-400">
                 {pollDraft.options.filter((o) => o.trim()).length} / 10
               </span>
             </div>
@@ -169,7 +170,7 @@ export function ComposerPollModal({
             <div className="max-h-[180px] space-y-2 overflow-y-auto pr-1">
               {pollDraft.options.map((option, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <span className="text-muted-foreground/60 w-4 text-center text-[10px] font-bold">
+                  <span className="w-4 text-center text-[10px] font-bold text-slate-400">
                     {idx + 1}
                   </span>
                   <Input
@@ -181,7 +182,7 @@ export function ComposerPollModal({
                       updated[idx] = e.target.value;
                       setPollDraft({ ...pollDraft, options: updated });
                     }}
-                    className="bg-background/50 flex-1 text-xs focus-visible:ring-[#ff8a65]/50"
+                    className="flex-1 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-medium focus-visible:ring-[#ff8a65]/50"
                     required
                   />
                   {pollDraft.options.length > 2 && (
@@ -194,7 +195,7 @@ export function ComposerPollModal({
                           options: pollDraft.options.filter((_, i) => i !== idx),
                         });
                       }}
-                      className="h-7 w-7 shrink-0 cursor-pointer text-rose-500 hover:bg-rose-500/10 hover:text-rose-600"
+                      className="h-7 w-7 shrink-0 cursor-pointer rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 active:scale-95 transition-all"
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </Button>
@@ -214,7 +215,7 @@ export function ComposerPollModal({
                     options: [...pollDraft.options, ""],
                   });
                 }}
-                className="mt-1 h-8 w-full cursor-pointer border-dashed border-[#ff8a65]/35 text-[10px] font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                className="mt-1 h-8 w-full rounded-xl border-dashed border-[#ff8a65]/35 text-[10px] font-bold text-[#ff8a65] hover:bg-[#ff8a65]/10 active:scale-[0.98] transition-all"
               >
                 <Plus className="mr-1 h-3 w-3" /> Add Option
               </Button>
@@ -222,7 +223,7 @@ export function ComposerPollModal({
           </div>
 
           {/* Actions */}
-          <div className="mt-2 flex justify-end gap-2 border-t border-slate-200 pt-3.5 dark:border-white/10">
+          <div className="mt-3 flex justify-end gap-2 border-t border-black/5 dark:border-white/10 pt-3.5">
             <Button
               type="button"
               variant="ghost"
@@ -230,7 +231,7 @@ export function ComposerPollModal({
                 setPollDraft(null);
                 setShowPollModal(false);
               }}
-              className="h-8 cursor-pointer px-3 text-xs font-semibold text-rose-500 hover:bg-rose-500/10"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all"
             >
               Discard Poll
             </Button>
@@ -249,7 +250,7 @@ export function ComposerPollModal({
                 setShowPollModal(false);
                 notify.success("Poll configured successfully!");
               }}
-              className="h-8 cursor-pointer bg-[#ff8a65] px-4 text-xs font-bold text-white hover:bg-[#ff8a65]/90"
+              className="h-8 rounded-xl bg-[#ff8a65] px-4 text-xs font-bold text-white hover:bg-[#ff8a65]/90 active:scale-[0.97] transition-all shadow-md"
             >
               Save & Apply
             </Button>
