@@ -84,9 +84,9 @@ export const DailyBonusWidget: React.FC = () => {
 
   if (isLoading || !userId) {
     return (
-      <div className="flex w-full items-center justify-between rounded-lg border border-slate-200/40 bg-slate-500/5 px-2.5 py-1.5">
-        <div className="h-3 w-20 animate-pulse rounded bg-white/10" />
-        <div className="h-3 w-8 animate-pulse rounded bg-white/10" />
+      <div className="flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-2.5 py-1.5">
+        <div className="h-3 w-20 animate-pulse rounded bg-muted/60" />
+        <div className="h-3 w-8 animate-pulse rounded bg-muted/60" />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export const DailyBonusWidget: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-black text-amber-800 shadow-sm transition-all hover:bg-amber-500/25 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-xs font-black text-amber-700 shadow-sm transition-all hover:bg-amber-500/25 active:scale-[0.98] dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15"
           >
             <Trophy className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <span className="flex-1 text-left text-[11px] leading-tight select-none">
@@ -119,14 +119,14 @@ export const DailyBonusWidget: React.FC = () => {
             )}
           </button>
         ) : (
-          <div className="text-muted-foreground flex w-full items-center justify-between rounded-lg border border-slate-200/40 bg-slate-500/5 px-2.5 py-1.5 text-[10px] select-none dark:border-white/5 dark:bg-white/5">
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-              <Trophy className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+          <div className="text-muted-foreground flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-[10px] select-none">
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+              <Trophy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               Daily Claimed
             </span>
             {(balanceData?.loginStreak ?? 0) > 0 && (
-              <span className="flex items-center gap-0.5 text-[9px] font-bold text-slate-500">
-                <Flame className="h-2.5 w-2.5 fill-slate-500/10" />
+              <span className="flex items-center gap-0.5 text-[9px] font-bold text-muted-foreground">
+                <Flame className="h-2.5 w-2.5 fill-muted-foreground/20" />
                 {balanceData?.loginStreak}d streak
               </span>
             )}

@@ -39,9 +39,13 @@ https://www.nationstates.net/pages/cardlist_S{season}.xml.gz
 https://www.nationstates.net/cgi-bin/api.cgi?nationname={nation}&q=cards+deck
 ```
 
-**Verification API:**
+**Verification API (with site-specific token):**
 ```
-https://www.nationstates.net/cgi-bin/api.cgi?a=verify&nation={nation}&checksum={checksum}
+https://www.nationstates.net/cgi-bin/api.cgi?a=verify&nation={nation}&checksum={checksum}&token={siteToken}
+```
+The `token` parameter binds the checksum to IxStats only, preventing cross-site checksum reuse per NS API best practices. The token is an HMAC-MD5 of `{nationName}-{NS_VERIFICATION_SECRET}` (env var). The corresponding verify login URL passed to the user includes the same token:
+```
+https://www.nationstates.net/page=verify_login?token={siteToken}
 ```
 
 **Rate Limiting:**
@@ -778,16 +782,56 @@ This section documents the compliance stance of the IxStats ↔ NationStates int
 - **Rate limiting**: 800ms+ spacing between real-time requests, exponential backoff on rate-limit errors. Full terms are bundled in `src/components/cards/display/nationstates-api.md`.
 - **No Referer spoofing**: The image proxy no longer fakes a NationStates Referer to defeat hotlink protection. On an NS non-OK response it redirects to the local placeholder artwork.
 
-### Attribution
+### Attribution Footer
 
-- Reusable `NationStatesAttribution` component shows on import surfaces and NS card details: "NationStates © Max Barry; nation flags remain the property of their authors. Not affiliated with or endorsed by NationStates.net."
-- NS header/banner images are served through the proxied image endpoint rather than hotlinked directly.
+`NationStatesAttribution` is a pinned footer bar rendered inside `CardDetailsModal` for all `NS_IMPORT` cards. It contains two zones separated by a vertical divider:
 
-### Flag-owner opt-out / takedown
+- **Left** — Attribution copy: *"Trading card data provided via the official [NationStates API](https://www.nationstates.net/pages/api.html#cards). Independent fan site; not affiliated with or endorsed by NationStates or Max Barry. All artwork and flags remain the property of their respective owners."*
+- **Right** — `ShieldAlert` button: **"Verify & Request Takedown"**, which opens `CardTakedownVerificationModal`.
 
-- Admins can hide any NS card via the Cards admin panel (or `nsImport.hideNSCard`): the card is retired and its artwork cleared, so the flag stops being served.
-- Hidden cards are excluded from future syncs: `upsertNSCardDefinition` skips retired cards, so a re-sync will not restore the artwork.
-- A flag owner who objects to their flag being served can request removal by providing their nation name to IxStats support; admins then run the takedown.
+The footer is `shrink-0` and lives outside the scrollable tab area, so it is always visible.
+
+### Self-Service Flag Artwork Takedown
+
+Flag owners can remove their artwork without involving an admin via a self-service ownership verification flow backed by the NationStates API.
+
+**User flow:**
+1. User opens the **Content Removal Request** dialog from the card footer.
+2. User enters their **Nation Name** — the modal immediately fetches a nation-specific verify login URL (via `nsImport.getVerificationUrl`) that includes a site-specific HMAC-MD5 token.
+3. User visits their personalised `verify_login?token=…` URL on NationStates and copies the one-time checksum.
+4. User pastes the checksum, selects a **Basis for Removal** (dropdown: rights holder, created by me / used without consent, privacy concern, or custom), and submits.
+5. The `nsImport.requestSelfServiceTakedown` mutation:
+   - Calls `nsApiClient.verifyOwnership(nationName, checksum)` — which sends the site token to the NS API, ensuring the checksum is IxStats-bound.
+   - Validates that the verified nation matches the card's title.
+   - Sets `card.isRetired = true`, `card.artwork = null`, `card.artworkVariants = DbNull`.
+   - Records audit metadata in `card.metadata.nsTakedown`:
+     ```json
+     {
+       "selfService": true,
+       "verifiedNation": "...",
+       "hiddenAt": "ISO timestamp",
+       "reason": "..."
+     }
+     ```
+6. Modal shows success state; card re-renders without artwork on next data refresh.
+
+**Key files:**
+
+| File | Purpose |
+|---|---|
+| `src/components/cards/display/NationStatesAttribution.tsx` | Attribution footer bar + takedown trigger |
+| `src/components/cards/display/CardTakedownVerificationModal.tsx` | Self-service ownership verification dialog |
+| `src/components/cards/display/CardDetailsModal.tsx` | Hosts both; blurs card modal when takedown dialog is open |
+| `src/server/api/routers/ns-import/cards.ts` | `requestSelfServiceTakedown` mutation + `getVerificationUrl` query |
+| `src/lib/ns-api-client.ts` | `verifyOwnership()`, `getVerificationUrl()`, `generateVerificationToken()` |
+
+**Environment variable required:**
+```
+NS_VERIFICATION_SECRET=<secret string>
+```
+This is the private key used to generate site-specific HMAC-MD5 tokens. Must be set in production.
+
+**Admin takedown** (unchanged): Admins can still retire any NS card via the Cards admin panel or `nsImport.hideNSCard`; retired cards are excluded from future syncs.
 
 ### No real-money angle
 

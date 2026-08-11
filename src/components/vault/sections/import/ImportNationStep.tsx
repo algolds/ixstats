@@ -14,6 +14,7 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 
 export interface ImportNationStepProps {
@@ -88,13 +89,14 @@ export function ImportNationStep({
             color: "purple",
           },
         ].map((item) => (
-          <div
+          <FacetCard
             key={item.step}
-            className="glass-hierarchy-child border-border flex items-start gap-3 rounded-xl border p-4"
+            depth={2}
+            className="flex items-start gap-3 rounded-xl p-4 shadow-sm"
           >
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-black text-white",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-black text-white shadow-sm",
                 item.color === "rose" && "from-rose-500 to-rose-600",
                 item.color === "amber" && "from-amber-500 to-amber-600",
                 item.color === "green" && "from-green-500 to-green-600",
@@ -107,13 +109,13 @@ export function ImportNationStep({
               <p className="text-foreground text-sm font-bold">{item.title}</p>
               <p className="text-muted-foreground text-xs">{item.desc}</p>
             </div>
-          </div>
+          </FacetCard>
         ))}
       </div>
 
       {/* Safety Disclaimer */}
-      <div className="glass-hierarchy-child border-border/50 text-muted-foreground flex items-start gap-2.5 rounded-xl border bg-white/5 p-4 text-xs select-none">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
+      <FacetCard depth={1} className="text-muted-foreground flex items-start gap-2.5 rounded-xl p-4 text-xs select-none">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
         <div className="space-y-0.5">
           <p className="text-foreground font-bold">Important</p>
           <p className="leading-relaxed">
@@ -122,7 +124,7 @@ export function ImportNationStep({
               href="https://www.nationstates.net/page=api"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-500"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               NationStates API
             </a>{" "}
@@ -130,7 +132,7 @@ export function ImportNationStep({
           </p>
           <NationStatesAttribution className="pt-1" />
         </div>
-      </div>
+      </FacetCard>
 
       <AnimatePresence mode="wait">
         {!showNameInput ? (
@@ -143,7 +145,7 @@ export function ImportNationStep({
           >
             <Button
               onClick={() => setShowNameInput(true)}
-              className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-base font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
+              className="h-12 w-full bg-gradient-to-r from-rose-500 to-orange-500 text-base font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
               size="lg"
             >
               <Sparkles className="mr-2 h-5 w-5" />
@@ -157,53 +159,55 @@ export function ImportNationStep({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.2 }}
-            className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-5"
           >
-            <div className="flex items-center justify-between">
-              <label className="text-foreground text-sm font-semibold">
-                Your Nation Name
-              </label>
-              <button
-                onClick={() => {
-                  setNationName("");
-                  setShowNameInput(false);
-                }}
-                className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
+            <FacetCard depth={2} className="space-y-3 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <label className="text-foreground text-sm font-semibold">
+                  Your Nation Name
+                </label>
+                <button
+                  onClick={() => {
+                    setNationName("");
+                    setShowNameInput(false);
+                  }}
+                  className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="relative">
+                <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  value={nationName}
+                  onChange={(e) => setNationName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && nationName.trim()) {
+                      onRequestVerification(nationName);
+                    }
+                  }}
+                  placeholder="e.g. Testlandia"
+                  className="glass-hierarchy-interactive h-12 bg-muted/30 pl-10 text-base focus:bg-background"
+                  autoFocus
+                />
+              </div>
+              <Button
+                onClick={() => onRequestVerification(nationName)}
+                disabled={!nationName.trim() || isPending}
+                className="h-11 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
+                size="lg"
               >
-                Cancel
-              </button>
-            </div>
-            <div className="relative">
-              <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                value={nationName}
-                onChange={(e) => setNationName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && nationName.trim()) {
-                    onRequestVerification(nationName);
-                  }
-                }}
-                placeholder="e.g. Testlandia"
-                className="glass-hierarchy-interactive h-12 pl-10 text-base"
-                autoFocus
-              />
-            </div>
-            <Button
-              onClick={() => onRequestVerification(nationName)}
-              disabled={!nationName.trim() || isPending}
-              className="h-11 w-full bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
-              size="lg"
-            >
-              {isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowRight className="mr-2 h-4 w-4" />
-              )}
-              Start Verification
-            </Button>
+                {isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                )}
+                Start Verification
+              </Button>
+            </FacetCard>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+

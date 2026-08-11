@@ -192,7 +192,7 @@ export function PackHolographicCard({
 
         <div className="mt-2.5 space-y-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="line-clamp-1 text-[11px] font-black text-slate-900 dark:text-white/90">
+            <span className="line-clamp-1 text-[11px] font-black text-foreground">
               {pack.name}
             </span>
             <Badge

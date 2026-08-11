@@ -12,7 +12,6 @@ import {
   BarChart3,
   Info,
   Sparkles,
-  History,
   ArrowRightLeft,
   Share2,
   Download,
@@ -28,16 +27,16 @@ import {
   getRarityConfig,
 } from "~/lib/card-display-utils";
 import { NationStatesAttribution } from "./NationStatesAttribution";
+import { NationStatesLogo } from "./NationStatesLogo";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { CardOverviewTab } from "./modal/CardOverviewTab";
-import { Card3DTab } from "./modal/Card3DTab";
 import { CardMarketTab } from "./modal/CardMarketTab";
-import { CardProvenanceTab } from "./modal/CardProvenanceTab";
 import { CardStatsTab } from "./modal/CardStatsTab";
 import { CardLoreTab } from "./modal/CardLoreTab";
 import { CardCompareTab } from "./modal/CardCompareTab";
+import { CardTakedownVerificationModal } from "./CardTakedownVerificationModal";
 
 export interface CardDetailsModalProps {
   card: CardInstance | null;
@@ -64,6 +63,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
     onDownloadImage,
   }) => {
     const [activeTab, setActiveTab] = useState("overview");
+    const [isTakedownModalOpen, setIsTakedownModalOpen] = useState(false);
 
     const rarityConfig = useMemo(() => {
       if (!card) return getRarityConfig("COMMON");
@@ -82,7 +82,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
     const transferHistoryQuery = api.cardMarket.getCardTransferHistory.useQuery(
       { ownershipId: card?.ownershipId || "" },
-      { enabled: !!card?.ownershipId && open && activeTab === "provenance" }
+      { enabled: !!card?.ownershipId && open && activeTab === "market" }
     );
 
     const { neonFrame } = useActiveCosmetics();
@@ -103,7 +103,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
     return (
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent showCloseButton={false} className="border-border/40 max-h-[90vh] w-full max-w-4xl overflow-hidden p-0 backdrop-blur-xl">
+      <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "border-border/40 flex flex-col gap-0 max-h-[95vh] h-auto w-full max-w-4xl overflow-hidden p-0 backdrop-blur-xl transition-all duration-300",
+            isTakedownModalOpen && "blur-sm brightness-75 pointer-events-none scale-[0.98]"
+          )}
+        >
           <DialogTitle className="sr-only">{card.title} Details</DialogTitle>
 
           <DialogClose className="hover:bg-accent text-muted-foreground focus:ring-ring absolute top-4 right-4 z-50 rounded-full p-2 transition-all hover:scale-110 focus:ring-2 focus:outline-none">
@@ -120,7 +126,14 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   <RarityBadge rarity={card.rarity} size="medium" />
                 </div>
                 <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs sm:text-sm">
-                  <span>{getCardTypeLabel(card.cardType)}</span>
+                  {card.cardType === "NS_IMPORT" ? (
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                      <NationStatesLogo size="sm" />
+                      NS Card
+                    </span>
+                  ) : (
+                    <span>{getCardTypeLabel(card.cardType)}</span>
+                  )}
                   <span>•</span>
                   <span>Season {card.season}</span>
                   {card.country && (
@@ -156,27 +169,17 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           </div>
 
           {/* Tabs Container */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col">
-            <div className="border-border/40 border-b px-4 sm:px-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col min-h-0">
+            <div className="border-border/40 shrink-0 border-b px-4 sm:px-6">
               <TabsList className="bg-transparent">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-primary/20 text-xs">
                   <Info className="mr-1.5 h-3.5 w-3.5" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="3d-view" className="data-[state=active]:bg-primary/20 text-xs">
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  3D View
-                </TabsTrigger>
                 <TabsTrigger value="market" className="data-[state=active]:bg-primary/20 text-xs">
                   <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-                  Market
+                  Market & Provenance
                 </TabsTrigger>
-                {card.ownershipId && (
-                  <TabsTrigger value="provenance" className="data-[state=active]:bg-primary/20 text-xs">
-                    <History className="mr-1.5 h-3.5 w-3.5" />
-                    Provenance
-                  </TabsTrigger>
-                )}
                 <TabsTrigger value="stats" className="data-[state=active]:bg-primary/20 text-xs">
                   <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
                   Stats
@@ -197,7 +200,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-auto px-4 py-4 sm:px-6">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-none px-4 py-4 sm:px-6">
               <TabsContent value="overview" className="space-y-4 sm:space-y-6">
                 <CardOverviewTab
                   card={card}
@@ -210,22 +213,14 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 />
               </TabsContent>
 
-              <TabsContent value="3d-view" className="flex min-h-[500px] items-center justify-center">
-                <Card3DTab card={card} />
-              </TabsContent>
-
               <TabsContent value="market" className="space-y-4">
-                <CardMarketTab card={card} rarityConfig={rarityConfig} />
+                <CardMarketTab
+                  card={card}
+                  rarityConfig={rarityConfig}
+                  isLoadingProvenance={transferHistoryQuery.isLoading}
+                  provenanceEvents={transferHistoryQuery.data as any}
+                />
               </TabsContent>
-
-              {card.ownershipId && (
-                <TabsContent value="provenance" className="space-y-4">
-                  <CardProvenanceTab
-                    isLoading={transferHistoryQuery.isLoading}
-                    events={transferHistoryQuery.data as any}
-                  />
-                </TabsContent>
-              )}
 
               <TabsContent value="stats" className="space-y-4">
                 <CardStatsTab card={card} stats={stats} />
@@ -251,9 +246,26 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           </Tabs>
 
           {card.cardType === "NS_IMPORT" && (
-            <NationStatesAttribution className="mx-4 mb-3 sm:mx-6" />
+            <div className="shrink-0 border-t border-border/40 bg-card/30 p-3 sm:px-6">
+              <NationStatesAttribution
+                onRequestTakedown={() => setIsTakedownModalOpen(true)}
+              />
+            </div>
           )}
+
         </DialogContent>
+
+        {card && (
+          <CardTakedownVerificationModal
+            isOpen={isTakedownModalOpen}
+            onClose={() => setIsTakedownModalOpen(false)}
+            cardId={card.id}
+            cardTitle={card.title}
+            nsCardId={card.nsCardId}
+            season={card.season}
+            onTakedownSuccess={() => setIsTakedownModalOpen(false)}
+          />
+        )}
       </Dialog>
     );
   }

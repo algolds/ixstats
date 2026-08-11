@@ -1,8 +1,7 @@
-"use client";
-
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
+import { FacetContainer } from "~/components/ui/facet-container";
 
 export interface VaultTabConfig<T extends string> {
   id: T;
@@ -31,9 +30,9 @@ export function VaultSubTabNav<T extends string>({
   activeTab,
   onTabChange,
   activeColor = {
-    text: "font-bold text-amber-400",
-    bg: "bg-white/10 border-white/15 shadow-md backdrop-blur-md",
-    icon: "text-amber-400",
+    text: "font-bold text-amber-600 dark:text-amber-400",
+    bg: "bg-white/60 dark:bg-white/10 border-slate-200 dark:border-white/15 shadow-md backdrop-blur-md",
+    icon: "text-amber-600 dark:text-amber-400",
   },
   tabColors,
   className,
@@ -44,9 +43,10 @@ export function VaultSubTabNav<T extends string>({
   const currentTabColor = tabColors?.[activeTab] || activeColor;
 
   return (
-    <div
+    <FacetContainer
+      depth={2}
       className={cn(
-        "relative flex w-full gap-1 overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-1.5 shadow-2xl backdrop-blur-2xl dark:border-white/12 dark:bg-black/60",
+        "relative flex w-full gap-1 overflow-hidden rounded-2xl p-1.5 shadow-lg backdrop-blur-2xl",
         maxWidthClass,
         className
       )}
@@ -77,14 +77,14 @@ export function VaultSubTabNav<T extends string>({
               "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none bg-transparent px-3 py-2 text-xs font-semibold whitespace-nowrap transition-all duration-150 active:scale-95",
               isActive
                 ? cn(configColor.text, "font-bold drop-shadow-sm")
-                : "text-slate-400 hover:text-white"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {Icon && (
               <Icon
                 className={cn(
                   "h-3.5 w-3.5 transition-colors duration-150",
-                  isActive ? configColor.icon : "text-slate-400"
+                  isActive ? configColor.icon : "text-muted-foreground"
                 )}
               />
             )}
@@ -97,6 +97,7 @@ export function VaultSubTabNav<T extends string>({
           </button>
         );
       })}
-    </div>
+    </FacetContainer>
   );
 }
+

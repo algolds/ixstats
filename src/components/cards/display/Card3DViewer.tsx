@@ -35,6 +35,10 @@ export interface Card3DViewerProps {
   className?: string;
   /** Performance mode - disable heavy effects */
   performanceMode?: boolean;
+  /** Hide market value overlay (default: false) */
+  hideValue?: boolean;
+  /** Hide stats bars & hover stats overlay (default: false) */
+  hideStats?: boolean;
   /** Callback when card is flipped */
   onFlip?: (side: "front" | "back") => void;
 }
@@ -72,6 +76,8 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
     rotationSensitivity = 1.0,
     className,
     performanceMode = false,
+    hideValue = false,
+    hideStats = false,
     onFlip,
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -233,7 +239,9 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
             <CardDisplay
               card={card}
               size={size}
-              showStatsOnHover={!isDragging}
+              showStatsOnHover={!hideStats && !isDragging}
+              hideValue={hideValue}
+              hideStats={hideStats}
               enable3D={false} // Disable internal 3D since viewer handles it
               enableHolographic={true}
               performanceMode={performanceMode}
@@ -259,19 +267,6 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
             />
           </motion.div>
 
-          {/* Drag indicator overlay */}
-          {enableDragRotation && isDragging && (
-            <motion.div
-              className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-2xl bg-black/20 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="rounded-full bg-white/20 px-4 py-2 text-sm font-bold text-white backdrop-blur-md">
-                Drag to Rotate
-              </div>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Flip indicator (subtle) */}
@@ -295,18 +290,6 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-          </motion.div>
-        )}
-
-        {/* Rotation controls hint (mobile) */}
-        {enableDragRotation && !performanceMode && (
-          <motion.div
-            className="pointer-events-none absolute top-2 left-2 z-10 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isDragging ? 0 : 0.5 }}
-            transition={{ delay: 0.5 }}
-          >
-            Drag to rotate
           </motion.div>
         )}
 

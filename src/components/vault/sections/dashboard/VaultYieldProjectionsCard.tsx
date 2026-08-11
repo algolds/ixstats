@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 
 export interface VaultYieldProjectionsCardProps {
@@ -42,19 +43,21 @@ export function VaultYieldProjectionsCard({
   socialCapData,
 }: VaultYieldProjectionsCardProps) {
   return (
-    <div
+    <FacetCard
+      depth={2}
+      interactive="hover"
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 border-t-white/20 dark:bg-black/60 dark:border-white/12 dark:border-t-white/25 hover:border-blue-500/30 hover:shadow-blue-500/10"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-blue-500/30 hover:shadow-blue-500/10"
       )}
     >
       <TextureOverlay texture="horizontalLines" opacity={0.04} />
 
-      <div className="relative z-10 mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+      <div className="relative z-10 mb-5 flex items-center justify-between border-b border-border/40 pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 shadow-sm backdrop-blur-md">
-            <TrendingUp className="h-4.5 w-4.5 text-blue-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 shadow-sm backdrop-blur-md">
+            <TrendingUp className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
           </div>
-          <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">
+          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
             Treasury Revenue & Yields
           </span>
         </div>
@@ -82,35 +85,35 @@ export function VaultYieldProjectionsCard({
 
       {loading ? (
         <div className="space-y-3">
-          <Skeleton className="h-5 w-1/3 rounded-lg bg-white/5" />
-          <Skeleton className="h-12 w-full rounded-xl bg-white/5" />
+          <Skeleton className="h-5 w-1/3 rounded-lg bg-muted/40" />
+          <Skeleton className="h-12 w-full rounded-xl bg-muted/40" />
         </div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Projections */}
             <div className="space-y-3">
-              <span className="block text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+              <span className="block text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
                 Treasury Revenue Forecasts
               </span>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Daily Treasury Yield</span>
-                  <span className="flex items-center gap-0.5 font-mono font-bold text-blue-400">
+                  <span className="text-muted-foreground font-medium">Daily Treasury Yield</span>
+                  <span className="flex items-center gap-0.5 font-mono font-bold text-blue-600 dark:text-blue-400">
                     +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.dailyDividend ? Math.round(passiveIncomeData.dailyDividend).toLocaleString() : "0"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Weekly Treasury Yield</span>
-                  <span className="flex items-center gap-0.5 font-mono font-bold text-slate-200">
+                  <span className="text-muted-foreground font-medium">Weekly Treasury Yield</span>
+                  <span className="flex items-center gap-0.5 font-mono font-bold text-foreground">
                     ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.weeklyDividend ? Math.round(passiveIncomeData.weeklyDividend).toLocaleString() : "0"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Monthly Treasury Yield</span>
-                  <span className="flex items-center gap-0.5 font-mono font-bold text-slate-200">
+                  <span className="text-muted-foreground font-medium">Monthly Treasury Yield</span>
+                  <span className="flex items-center gap-0.5 font-mono font-bold text-foreground">
                     ~<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.monthlyDividend ? Math.round(passiveIncomeData.monthlyDividend).toLocaleString() : "0"}
                   </span>
@@ -119,30 +122,30 @@ export function VaultYieldProjectionsCard({
             </div>
 
             {/* active multipliers */}
-            <div className="space-y-3 md:border-l md:border-white/10 md:pl-6">
-              <span className="block text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+            <div className="space-y-3 md:border-l md:border-border/40 md:pl-6">
+              <span className="block text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
                 Active Multipliers & Streaks
               </span>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-medium text-slate-400">
-                    <Flame className="h-3.5 w-3.5 fill-orange-500/20 text-orange-400" />{" "}
+                  <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                    <Flame className="h-3.5 w-3.5 fill-orange-500/20 text-orange-500 dark:text-orange-400" />{" "}
                     Active Streak
                   </span>
-                  <span className="font-bold text-orange-400">
+                  <span className="font-bold text-orange-600 dark:text-orange-400">
                     {loginStreak} Days
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Budget Multiplier</span>
+                  <span className="text-muted-foreground font-medium">Budget Multiplier</span>
                   <span
                     className={cn(
                       "font-mono font-bold",
                       budgetMultiplierPercent > 0
-                        ? "text-emerald-400"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : budgetMultiplierPercent < 0
-                          ? "text-rose-400"
-                          : "text-slate-400"
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-muted-foreground"
                     )}
                   >
                     {budgetMultiplierPercent > 0 ? "+" : ""}
@@ -150,8 +153,8 @@ export function VaultYieldProjectionsCard({
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Tier Bonus</span>
-                  <span className="font-mono font-bold text-purple-400">
+                  <span className="text-muted-foreground font-medium">Tier Bonus</span>
+                  <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
                     1.{vaultLevel * 5}x
                   </span>
                 </div>
@@ -160,21 +163,21 @@ export function VaultYieldProjectionsCard({
           </div>
 
           {/* Daily Allowances (Earning Caps) */}
-          <div className="mt-5 space-y-3 border-t border-white/10 pt-5">
-            <span className="block text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+          <div className="mt-5 space-y-3 border-t border-border/40 pt-5">
+            <span className="block text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
               Daily Allowance Progress
             </span>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {/* Active Gameplay Cap */}
               <div className="space-y-2">
                 <div className="flex justify-between text-[11px] font-semibold">
-                  <span className="text-slate-400">Active Gameplay</span>
-                  <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-white">
+                  <span className="text-muted-foreground">Active Gameplay</span>
+                  <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-foreground">
                     {activeCapLoading ? (
                       "..."
                     ) : (
                       <>
-                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-emerald-400" />
+                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                         {Math.round(
                           (activeCapData?.cap ?? 100) - (activeCapData?.remaining ?? 100)
                         )}{" "}
@@ -183,7 +186,7 @@ export function VaultYieldProjectionsCard({
                     )}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5 p-0.5 backdrop-blur-md">
+                <div className="h-2 w-full overflow-hidden rounded-full border border-border/50 bg-muted/40 p-0.5 backdrop-blur-md">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                     style={{
@@ -196,13 +199,13 @@ export function VaultYieldProjectionsCard({
               {/* Social Earning Cap */}
               <div className="space-y-2">
                 <div className="flex justify-between text-[11px] font-semibold">
-                  <span className="text-slate-400">Social Engagement</span>
-                  <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-white">
+                  <span className="text-muted-foreground">Social Engagement</span>
+                  <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-foreground">
                     {socialCapLoading ? (
                       "..."
                     ) : (
                       <>
-                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-indigo-400" />
+                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
                         {Math.round(
                           (socialCapData?.cap ?? 50) - (socialCapData?.remaining ?? 50)
                         )}{" "}
@@ -211,7 +214,7 @@ export function VaultYieldProjectionsCard({
                     )}
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5 p-0.5 backdrop-blur-md">
+                <div className="h-2 w-full overflow-hidden rounded-full border border-border/50 bg-muted/40 p-0.5 backdrop-blur-md">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-400 transition-all duration-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"
                     style={{
@@ -224,6 +227,7 @@ export function VaultYieldProjectionsCard({
           </div>
         </div>
       )}
-    </div>
+    </FacetCard>
   );
 }
+

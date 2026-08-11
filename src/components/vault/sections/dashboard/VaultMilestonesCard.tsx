@@ -4,6 +4,7 @@ import React from "react";
 import { Trophy, Award } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export interface VaultMilestonesCardProps {
   myAchievements?: Array<{ points?: number }>;
@@ -58,23 +59,24 @@ export function VaultMilestonesCard({
   ];
 
   return (
-    <div
+    <FacetCard
+      depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 border-t-white/20 dark:bg-black/60 dark:border-white/12 dark:border-t-white/25 hover:border-amber-500/30 hover:shadow-amber-500/10"
+        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
       )}
     >
       <TextureOverlay texture="dots" opacity={0.03} />
 
-      <div className="relative z-10 mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+      <div className="relative z-10 mb-4 flex items-center justify-between border-b border-border/40 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-sm backdrop-blur-md">
-            <Trophy className="h-4.5 w-4.5 text-amber-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-sm backdrop-blur-md">
+            <Trophy className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
           </div>
-          <span className="text-xs font-semibold tracking-wider text-slate-300 uppercase">
+          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
             Milestones & Rank
           </span>
         </div>
-        <span className="flex items-center gap-1 font-mono text-xs font-bold text-amber-400">
+        <span className="flex items-center gap-1 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
           <Award className="h-3.5 w-3.5" /> {myRank} ({totalScore} pts)
         </span>
       </div>
@@ -87,15 +89,15 @@ export function VaultMilestonesCard({
           return (
             <div
               key={idx}
-              className="space-y-1.5 rounded-2xl border border-white/5 bg-white/5 p-3 backdrop-blur-md transition-all hover:bg-white/10"
+              className="space-y-1.5 rounded-2xl border border-border/40 bg-muted/30 dark:bg-white/5 p-3 backdrop-blur-md transition-all hover:bg-muted/60 dark:hover:bg-white/10"
             >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-white tracking-tight">{m.title}</span>
-                <span className="font-mono text-[10px] font-semibold text-slate-400">
+                <span className="font-bold text-foreground tracking-tight">{m.title}</span>
+                <span className="font-mono text-[10px] font-semibold text-muted-foreground">
                   {m.current.toLocaleString()} / {m.max.toLocaleString()}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5 p-0.5 backdrop-blur-md">
+              <div className="h-2 w-full overflow-hidden rounded-full border border-border/50 bg-muted/40 p-0.5 backdrop-blur-md">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
@@ -106,14 +108,15 @@ export function VaultMilestonesCard({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>{m.target}</span>
-                <span className="font-semibold text-amber-400">{m.reward}</span>
+                <span className="font-semibold text-amber-600 dark:text-amber-400">{m.reward}</span>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </FacetCard>
   );
 }
+

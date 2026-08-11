@@ -43,13 +43,13 @@ export function AuctionCardItem({
   const theme = getRarityTheme(rarity);
 
   return (
-    <div className="glass-surface border-border/50 relative flex gap-3 overflow-hidden rounded-lg border bg-black/5 p-3 dark:bg-black/20">
+    <div className="glass-surface border-border/50 relative flex gap-3 overflow-hidden rounded-xl border bg-muted/30 p-3 backdrop-blur-md dark:bg-black/20">
       <TextureOverlay texture="dots" opacity={0.015} />
 
       {/* Artwork thumbnail — click to view details */}
       <button
         onClick={() => onShowDetails(auction)}
-        className="relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border border-white/10"
+        className="relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border/60"
       >
         <CardHolographicCover cardType="NS_IMPORT" rarity={rarity} title={title} />
         {artwork && artwork !== "/images/cards/placeholder-nation.png" && (
@@ -70,7 +70,7 @@ export function AuctionCardItem({
         className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-bold text-slate-900 dark:text-white/95">
+          <span className="truncate text-xs font-bold text-foreground">
             {title}
           </span>
           <Badge
@@ -87,7 +87,7 @@ export function AuctionCardItem({
           <span
             className={cn(
               "flex items-center gap-0.5 font-medium",
-              isUrgent ? "text-red-500 dark:text-red-400" : "text-muted-foreground"
+              isUrgent ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
             )}
           >
             <Clock className="h-3 w-3" />
@@ -114,13 +114,13 @@ export function AuctionCardItem({
               min={minNextBid}
               value={customAmount}
               onChange={(e) => setCustomAmount(parseInt(e.target.value) || minNextBid)}
-              className="h-6 w-16 border px-1 font-mono text-[10px] text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white"
+              className="h-6 w-16 border border-border/60 bg-background px-1 font-mono text-[10px] text-foreground"
             />
             <Button
               size="sm"
               onClick={() => onBid(auction.id, customAmount)}
               disabled={isBidding || customAmount < minNextBid}
-              className="bg-secondary border-border/50 hover:bg-secondary/80 h-6 border px-2 text-[10px] text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              className="h-6 border border-border/60 bg-muted/60 px-2 text-[10px] font-semibold text-foreground hover:bg-muted"
             >
               {isBidding ? "..." : "Bid"}
             </Button>
@@ -130,7 +130,7 @@ export function AuctionCardItem({
               size="sm"
               onClick={() => onBuyout(auction.id)}
               disabled={isBuyingOut}
-              className="h-6 border-none bg-gradient-to-r from-amber-600 to-yellow-600 px-2 text-[10px] font-bold text-white hover:from-amber-500 hover:to-yellow-500"
+              className="h-6 border-none bg-gradient-to-r from-amber-600 to-yellow-600 px-2 text-[10px] font-bold text-white hover:from-amber-500 hover:to-yellow-500 active:scale-95"
             >
               Buy {auction.buyoutPrice.toLocaleString()}
             </Button>

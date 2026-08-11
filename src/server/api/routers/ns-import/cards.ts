@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/ns-api-client";
 import { nsImportService } from "~/lib/ns-import-service";
 import { processCTENationFilter } from "~/lib/ns-sync-processor";
@@ -16,6 +16,95 @@ import { Prisma } from "@prisma/client";
 // ─── Background Processing Functions ──────────────────────────────
 
 export const nsImportCardsRouter = createTRPCRouter({
+  /**
+   * Public: Get site-specific NS verification URL for a given nation name.
+   * The URL includes a site token (HMAC-MD5) so the checksum is bound to IxStats only.
+   */
+  getVerificationUrl: publicProcedure
+    .input(z.object({ nationName: z.string().min(1) }))
+    .query(({ input }) => {
+      const url = nsApiClient.getVerificationUrl(input.nationName.trim().toLowerCase());
+      return { url };
+    }),
+
+  /**
+   * Public/Protected: Self-service NationStates card takedown by verifying nation ownership via NS API.
+   */
+  requestSelfServiceTakedown: publicProcedure
+    .input(
+      z.object({
+        cardId: z.string(),
+        nationName: z.string().min(1),
+        checksum: z.string().min(1),
+        reason: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const card = await ctx.db.card.findUnique({
+        where: { id: input.cardId },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Card not found",
+        });
+      }
+
+      // 1. Verify nation ownership on NationStates
+      const isVerified = await nsApiClient.verifyOwnership(
+        input.nationName.trim(),
+        input.checksum.trim()
+      );
+
+      if (!isVerified) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "NationStates verification failed. Please check your nation name and checksum code.",
+        });
+      }
+
+      // 2. Validate nation match against card title / metadata
+      const cleanNation = input.nationName.toLowerCase().replace(/_/g, " ").trim();
+      const cleanTitle = card.title.toLowerCase().replace(/_/g, " ").trim();
+
+      const isMatch = cleanTitle.includes(cleanNation) || cleanNation.includes(cleanTitle);
+
+      if (!isMatch) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Verified nation "${input.nationName}" does not match card target "${card.title}". Takedowns require ownership of the card's flag nation.`,
+        });
+      }
+
+      // 3. Retire card and purge artwork
+      const prevMetadata = (card.metadata as Record<string, any>) || {};
+      await ctx.db.card.update({
+        where: { id: card.id },
+        data: {
+          isRetired: true,
+          retiredAt: new Date(),
+          artwork: null,
+          artworkVariants: Prisma.DbNull,
+          metadata: {
+            ...prevMetadata,
+            nsTakedown: {
+              selfService: true,
+              verifiedNation: input.nationName.trim(),
+              hiddenAt: new Date().toISOString(),
+              reason: input.reason || "Self-service flag owner takedown request",
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        cardId: card.id,
+        title: card.title,
+        message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
+      };
+    }),
   /**
    * Get user's import history
    */

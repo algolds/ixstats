@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { FacetCard } from "~/components/ui/facet-container";
 import NumberFlow from "~/components/ui/number-flow";
 import type { CardRarity, CardType } from "@prisma/client";
 import type { FilterState, ViewMode } from "./types";
@@ -63,12 +64,12 @@ export function InventorySidebarContent({
   return (
     <div className="space-y-3">
       {/* Stats */}
-      <div className="rounded-lg bg-cyan-500/5 p-2.5">
+      <FacetCard depth={1} className="rounded-xl border-border bg-cyan-500/10 p-3 dark:bg-cyan-500/10">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
             My Cards
           </span>
-          <Layers className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
+          <Layers className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
         </div>
         <div className="mt-1.5 flex items-baseline gap-1">
           <span className="text-xl font-extrabold tracking-tighter text-cyan-600 dark:text-cyan-400">
@@ -88,7 +89,7 @@ export function InventorySidebarContent({
             <span className="font-bold text-purple-600 dark:text-purple-400">0</span>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       {/* Search */}
       <div className="relative">
@@ -97,7 +98,7 @@ export function InventorySidebarContent({
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           placeholder="Search cards..."
-          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-transparent pr-6 pl-6.5 text-xs"
+          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-muted/30 pr-6 pl-6.5 text-xs focus:bg-background"
         />
         {filters.search && (
           <button
@@ -117,7 +118,7 @@ export function InventorySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-100"
+            filters.rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold"
           )}
         >
           <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
@@ -142,7 +143,7 @@ export function InventorySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.cardType !== "all" && "border-cyan-500/30 bg-cyan-500/20 text-cyan-100"
+            filters.cardType !== "all" && "border-cyan-500/30 bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-bold"
           )}
         >
           <FileText className="mr-1.5 h-3 w-3 shrink-0" />
@@ -166,7 +167,7 @@ export function InventorySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-100"
+            filters.season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -233,7 +234,7 @@ export function InventorySidebarContent({
 
         {/* Multi-Select & Hide Value */}
         <div className="flex flex-col gap-1">
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
             <Checkbox
               checked={selectMode}
               onCheckedChange={(checked) => setSelectMode(checked as boolean)}
@@ -241,7 +242,7 @@ export function InventorySidebarContent({
             />
             <span className="text-xs font-medium">Multi-Select Mode</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/5">
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
             <Checkbox
               checked={hideValue}
               onCheckedChange={(checked) => setHideValue(checked as boolean)}
@@ -259,7 +260,7 @@ export function InventorySidebarContent({
         filters.season !== "all") && (
         <button
           onClick={onResetFilters}
-          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-white/5"
+          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-muted/50"
         >
           <X className="h-3 w-3" /> Clear Filters
         </button>
@@ -267,3 +268,4 @@ export function InventorySidebarContent({
     </div>
   );
 }
+

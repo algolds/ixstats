@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { CheckCircle, Info, ArrowLeft, Download, Package, Coins, ArrowRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import NumberFlow from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/ns-image-proxy";
@@ -41,17 +42,17 @@ export function ImportConfirmStep({
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
           className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-green-400/30"
         >
-          <CheckCircle className="h-8 w-8 text-green-400" />
+          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
         </motion.div>
         <h2 className="text-foreground text-2xl font-black">Nation Verified</h2>
         <p className="text-muted-foreground mt-2 text-sm">
-          <span className="font-semibold text-green-400">{nationName}</span> is confirmed as yours
+          <span className="font-semibold text-green-600 dark:text-green-400">{nationName}</span> is confirmed as yours
         </p>
       </div>
 
-      <div className="rounded-xl border border-green-400/20 bg-green-500/5 p-5">
+      <FacetCard depth={2} className="rounded-xl border-green-500/30 bg-green-500/10 p-5">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
           <div className="text-muted-foreground text-sm">
             <p className="text-foreground mb-1 font-semibold">Ready to import</p>
             <p>
@@ -59,15 +60,15 @@ export function ImportConfirmStep({
             </p>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="border-white/10">
+        <Button variant="outline" onClick={onBack} className="border-border/60">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
         <Button
           onClick={onConfirmImport}
-          className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600"
+          className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 font-bold text-white shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-orange-600 active:scale-[0.98]"
           size="lg"
         >
           <Download className="mr-2 h-4 w-4" /> Import Deck

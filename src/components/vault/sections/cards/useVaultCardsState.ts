@@ -3,9 +3,14 @@ import { usePathname } from "next/navigation";
 import { getSubTabFromPathname } from "../../VaultSidebarNav";
 import type { SubTab, ViewMode, FilterState } from "./types";
 
+const isDev = process.env.NODE_ENV === "development";
+
 export function resolveInitialTab(initialTab: string | null | undefined): SubTab {
   if (initialTab === "collections") return "collections";
-  if (initialTab === "gallery" || initialTab === "lore-gallery" || initialTab === "ns-library")
+  if (
+    isDev &&
+    (initialTab === "gallery" || initialTab === "lore-gallery" || initialTab === "ns-library")
+  )
     return "gallery";
   return "inventory";
 }

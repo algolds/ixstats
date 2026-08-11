@@ -30,3 +30,6 @@ export type { RarityBadgeProps } from "./RarityBadge";
 
 export { HolographicOverlay } from "./HolographicOverlay";
 export type { HolographicOverlayProps } from "./HolographicOverlay";
+
+export { NationStatesLogo, NationStatesBadge, NATIONSTATES_LOGO_URL } from "./NationStatesLogo";
+export type { NationStatesLogoProps } from "./NationStatesLogo";

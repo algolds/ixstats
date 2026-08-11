@@ -112,7 +112,7 @@ export function InventoryTab({
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="fixed bottom-6 left-1/2 z-50 w-full max-w-2xl -translate-x-1/2 px-4"
           >
-            <Card className="glass-hierarchy-interactive rounded-2xl border-amber-400/30 bg-black/85 shadow-2xl shadow-black/80 backdrop-blur-xl">
+            <Card className="glass-hierarchy-interactive rounded-2xl border-amber-500/40 bg-background/90 shadow-2xl backdrop-blur-xl dark:bg-black/90">
               <CardContent className="p-3.5">
                 <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
                   <div className="flex items-center gap-3">

@@ -30,6 +30,7 @@ import {
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { CardHolographicCover } from "./CardHolographicCover";
+import { NationStatesBadge } from "./NationStatesLogo";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -54,6 +55,8 @@ export interface CardDisplayProps {
   performanceMode?: boolean;
   /** Hide market value (default: false) */
   hideValue?: boolean;
+  /** Hide stats bars & hover stats (default: false) */
+  hideStats?: boolean;
 }
 
 /**
@@ -91,6 +94,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     enableHolographic,
     performanceMode = false,
     hideValue = false,
+    hideStats = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -310,12 +314,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               {card.cardType &&
                 (card.cardType as string) !== "COMMONS_IMPORT" &&
                 (card.cardType === "NS_IMPORT" ? (
-                  <span
-                    className="inline-flex items-center gap-1 rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400"
-                    title="NationStates Import"
-                  >
-                    NS
-                  </span>
+                  <NationStatesBadge />
                 ) : (
                   <span
                     className={cn(
@@ -373,17 +372,15 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               )}
 
               {/* Premium info bar - Season & Market value */}
-              <div
-                className={cn(
-                  "flex items-center justify-between rounded-lg px-2 py-1",
-                  "border border-white/10 bg-black/70 backdrop-blur-md",
-                  fonts.type
-                )}
-              >
-                <span className="font-medium text-white/80">Est. Value</span>
-                {hideValue ? (
-                  <span className="text-[10px] text-white/30 italic">Hidden</span>
-                ) : (
+              {!hideValue && (
+                <div
+                  className={cn(
+                    "flex items-center justify-between rounded-lg px-2 py-1",
+                    "border border-white/10 bg-black/70 backdrop-blur-md",
+                    fonts.type
+                  )}
+                >
+                  <span className="font-medium text-white/80">Est. Value</span>
                   <motion.span
                     className={cn("font-black", rarityConfig.color)}
                     style={{
@@ -401,11 +398,11 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                     <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
                     {card.marketValue.toLocaleString()}
                   </motion.span>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Stat bars — always visible compact indicator */}
-              {Object.keys(stats.base).length > 0 && (
+              {!hideStats && Object.keys(stats.base).length > 0 && (
                 <div className="space-y-2">
                   <div className="flex gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1.5 backdrop-blur-md">
                     {Object.entries(stats.base).map(([key, stat]) => (
@@ -430,7 +427,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
               {/* Premium stats reveal on hover */}
               <AnimatePresence>
-                {showStatsOnHover && isHovered && (
+                {!hideStats && showStatsOnHover && isHovered && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}

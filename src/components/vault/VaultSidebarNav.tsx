@@ -101,12 +101,14 @@ export function getSectionFromPathname(rawPathname: string): VaultSection {
 /** Map a pathname to the sub-tab within its section */
 export function getSubTabFromPathname(rawPathname: string): string | null {
   const pathname = stripBasePath(rawPathname);
+  const isDev = process.env.NODE_ENV === "development";
   // Cards section sub-tabs
   if (pathname.startsWith("/vault/collections")) return "collections";
   if (
-    pathname.startsWith("/vault/gallery") ||
-    pathname.startsWith("/vault/lore-gallery") ||
-    pathname.startsWith("/vault/ns-library")
+    isDev &&
+    (pathname.startsWith("/vault/gallery") ||
+      pathname.startsWith("/vault/lore-gallery") ||
+      pathname.startsWith("/vault/ns-library"))
   )
     return "gallery";
   if (pathname.startsWith("/vault/inventory") || pathname.startsWith("/vault/cards"))

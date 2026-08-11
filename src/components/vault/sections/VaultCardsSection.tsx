@@ -41,6 +41,8 @@ export function VaultCardsSection() {
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [loreGeneratorOpen, setLoreGeneratorOpen] = useState(false);
 
+  const isDev = process.env.NODE_ENV === "development";
+
   // Gallery Filters State
   const [gallerySource, setGallerySource] = useState<"all" | "ns" | "lore">("all");
   const [gallerySearch, setGallerySearch] = useState("");
@@ -116,7 +118,7 @@ export function VaultCardsSection() {
         />
       );
     }
-    if (activeTab === "gallery") {
+    if (activeTab === "gallery" && isDev) {
       return (
         <GallerySidebarContent
           source={gallerySource}
@@ -218,7 +220,7 @@ export function VaultCardsSection() {
         />
       )}
 
-      {activeTab === "gallery" && (
+      {activeTab === "gallery" && isDev && (
         <CardGalleryTab
           source={gallerySource}
           search={gallerySearch}

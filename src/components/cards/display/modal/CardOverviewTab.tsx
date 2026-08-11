@@ -2,11 +2,9 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import Image from "next/image";
 import { TrendingUp, Users, Calendar, ScrollText } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { proxyNSImage } from "~/lib/ns-image-proxy";
-import { CardHolographicCover } from "../CardHolographicCover";
+import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { getOwnerCount } from "~/lib/card-display-utils";
@@ -38,60 +36,32 @@ export function CardOverviewTab({
 }: CardOverviewTabProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
-      {/* Left: Card image */}
+      {/* Left: Interactive 3D Card Presentation */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
         className="space-y-4"
       >
-        {/* Card image */}
-        <div className="relative w-full overflow-hidden rounded-2xl border-2 shadow-2xl">
-          <div
-            className={cn("absolute inset-0 z-10", rarityConfig.borderColor)}
-            style={{
-              borderWidth: "2px",
-              borderRadius: "1rem",
-            }}
-          />
-          <div className="relative h-[300px] w-full sm:h-[400px]">
-            <CardHolographicCover
-              cardType={card.cardType}
-              rarity={card.rarity}
-              wikiSource={card.wikiSource}
-              title={card.title}
-            />
-            <Image
-              src={proxyNSImage(card.artwork)}
-              alt={card.title}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 90vw, 400px"
-              unoptimized
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-            {card.isRetired && (
-              <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-                <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-2 text-center text-xl font-black tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
-                  Retired
-                </div>
+        {/* Interactive 3D Viewer Container */}
+        <div className="relative flex min-h-[380px] flex-col items-center justify-center rounded-2xl border border-border/40 bg-muted/20 p-4 backdrop-blur-md">
+          {card.isRetired && (
+            <div className="pointer-events-none absolute top-4 z-30 flex items-center justify-center">
+              <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-1 text-center text-sm font-black tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
+                Retired
               </div>
-            )}
-          </div>
-          {/* Rarity glow */}
-          <div
-            className={cn(
-              "pointer-events-none absolute inset-0 z-20 rounded-2xl",
-              rarityConfig.glowColor,
-              rarityConfig.glowIntensity
-            )}
-          />
+            </div>
+          )}
 
-          {/* Neon Frame Overlay */}
-          <NeonFrameOverlay neonFrame={neonFrame} className="rounded-2xl" />
+          <Card3DViewer
+            card={card}
+            size="large"
+            enableFlip={true}
+            enableDragRotation={true}
+            enableMouseTracking={true}
+            hideValue={true}
+            hideStats={true}
+          />
         </div>
 
         {/* Market value & ownership */}
