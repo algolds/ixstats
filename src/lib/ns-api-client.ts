@@ -627,6 +627,70 @@ export class NSApiClient {
   }
 
   /**
+   * Fetch daily active nations XML dump (nations.xml.gz)
+   * Downloads and decompresses active nations list to identify CTE'd nations.
+   *
+   * @returns Set of normalized (lowercase) active nation names
+   */
+  async fetchActiveNationsDump(): Promise<Set<string>> {
+    const dumpUrl = "https://www.nationstates.net/pages/nations.xml.gz";
+    console.log(`[NS API] Streaming active nations dump from ${dumpUrl}`);
+
+    const https = await import("https");
+    const zlib = await import("zlib");
+    const readline = await import("readline");
+
+    return new Promise<Set<string>>((resolve, reject) => {
+      const activeSet = new Set<string>();
+
+      const req = https.get(
+        dumpUrl,
+        {
+          headers: {
+            "User-Agent": this.userAgent,
+            "Accept-Encoding": "gzip",
+          },
+        },
+        (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+            return;
+          }
+
+          const gunzip = zlib.createGunzip();
+          const rl = readline.createInterface({
+            input: res.pipe(gunzip),
+            crlfDelay: Infinity,
+          });
+
+          rl.on("line", (line) => {
+            const start = line.indexOf("<NAME>");
+            if (start !== -1) {
+              const end = line.indexOf("</NAME>", start + 6);
+              if (end !== -1) {
+                const name = line.substring(start + 6, end).trim().toLowerCase();
+                if (name) {
+                  activeSet.add(name);
+                }
+              }
+            }
+          });
+
+          rl.on("close", () => {
+            console.log(`[NS API] ✓ Streamed and parsed ${activeSet.size} active nations from dump`);
+            resolve(activeSet);
+          });
+
+          rl.on("error", (err) => reject(err));
+          gunzip.on("error", (err) => reject(err));
+        }
+      );
+
+      req.on("error", (err) => reject(err));
+    });
+  }
+
+  /**
    * Parse NS card dump XML into array of NSCard objects
    * Uses streaming approach to handle large XML files (100K+ cards)
    *

@@ -288,14 +288,20 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cached = await globalCache.get<any>(cacheKey);
       if (cached) return cached;
 
-      // Count owned card instances live
+      // Count owned card instances live (excluding retired cards)
       const totalCards = await ctx.db.cardOwnership.count({
-        where: { ownerId: ctx.user.id },
+        where: {
+          ownerId: ctx.user.id,
+          cards: { isRetired: false },
+        },
       });
 
-      // Sum of market values for all owned card instances live
+      // Sum of market values for all owned card instances live (excluding retired cards)
       const ownerships = await ctx.db.cardOwnership.findMany({
-        where: { ownerId: ctx.user.id },
+        where: {
+          ownerId: ctx.user.id,
+          cards: { isRetired: false },
+        },
         include: {
           cards: {
             select: {

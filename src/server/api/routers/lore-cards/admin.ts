@@ -17,6 +17,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
+import { CardRarity } from "@prisma/client";
 import type { WikiSource } from "~/lib/mediawiki-config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
@@ -53,8 +54,62 @@ export const loreCardsAdminRouter = createTRPCRouter({
           where,
         });
 
+        // Resolve requester display names
+        const userIds = Array.from(new Set(requests.map((r) => r.userId)));
+
+        const [users, verifications] = await Promise.all([
+          ctx.db.user.findMany({
+            where: {
+              OR: [
+                { clerkUserId: { in: userIds } },
+                { id: { in: userIds } },
+              ],
+            },
+            select: { id: true, clerkUserId: true, countryId: true },
+          }),
+          ctx.db.nSVerification.findMany({
+            where: {
+              userId: { in: userIds },
+              verified: true,
+            },
+            select: { userId: true, nationName: true },
+          }),
+        ]);
+
+        const countryIds = users.map((u) => u.countryId).filter((id): id is string => Boolean(id));
+        const countries = countryIds.length > 0
+          ? await ctx.db.country.findMany({
+              where: { id: { in: countryIds } },
+              select: { id: true, name: true },
+            })
+          : [];
+
+        const countryMap = new Map(countries.map((c) => [c.id, c.name]));
+        const verificationMap = new Map(verifications.map((v) => [v.userId, v.nationName]));
+
+        const userMap = new Map<string, string>();
+        for (const u of users) {
+          const nationName =
+            (u.countryId ? countryMap.get(u.countryId) : null) ||
+            verificationMap.get(u.id) ||
+            verificationMap.get(u.clerkUserId);
+          if (nationName) {
+            userMap.set(u.clerkUserId, nationName);
+            userMap.set(u.id, nationName);
+          }
+        }
+
+        const enrichedRequests = requests.map((r) => {
+          const resolvedName = userMap.get(r.userId) || verificationMap.get(r.userId);
+          const shortId = r.userId.startsWith("user_") ? r.userId.slice(5, 12) : r.userId.slice(0, 8);
+          return {
+            ...r,
+            requesterName: resolvedName ? resolvedName : `User (${shortId})`,
+          };
+        });
+
         return {
-          requests,
+          requests: enrichedRequests,
           total,
         };
       } catch (error) {
@@ -141,7 +196,7 @@ export const loreCardsAdminRouter = createTRPCRouter({
     .input(
       z.object({
         requestId: z.string().cuid(),
-        reason: z.string().min(1).max(500),
+        reason: z.string().min(1).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -348,4 +403,52 @@ export const loreCardsAdminRouter = createTRPCRouter({
       });
     }
   }),
+
+  /**
+   * Direct admin generation of a lore card from article title & parameters
+   */
+  generateLoreCard: adminProcedure
+    .input(
+      z.object({
+        articleTitle: z.string().min(1),
+        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+        targetRarity: z.nativeEnum(CardRarity).optional(),
+        customPrompt: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const candidate = await wikiLoreCardGenerator.generateCard(
+          input.articleTitle,
+          input.wikiSource as any
+        );
+
+        if (!candidate) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Could not generate lore card for "${input.articleTitle}". Article not found or incomplete.`,
+          });
+        }
+
+        if (input.targetRarity) {
+          candidate.rarity = input.targetRarity;
+        }
+
+        const cardId = await wikiLoreCardGenerator.createCard(candidate);
+
+        return {
+          success: true,
+          cardId,
+          title: candidate.title,
+          rarity: candidate.rarity,
+        };
+      } catch (error) {
+        console.error("[Lore Cards] Error in generateLoreCard:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to generate lore card",
+        });
+      }
+    }),
 });

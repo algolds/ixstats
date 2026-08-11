@@ -46,6 +46,7 @@ export function VaultCardsSection() {
   const [gallerySearch, setGallerySearch] = useState("");
   const [gallerySeason, setGallerySeason] = useState<number | "all">("all");
   const [galleryRarity, setGalleryRarity] = useState<CardRarity | "all">("all");
+  const [galleryCteFilter, setGalleryCteFilter] = useState<"all" | "cte_only" | "active_only">("all");
   const [gallerySortBy, setGallerySortBy] = useState("rarity");
 
   const { data: userStatsData } = api.vault.getUserStats.useQuery(undefined, {
@@ -126,12 +127,15 @@ export function VaultCardsSection() {
           setSeason={setGallerySeason}
           rarity={galleryRarity}
           setRarity={setGalleryRarity}
+          cteFilter={galleryCteFilter}
+          setCteFilter={setGalleryCteFilter}
           sortBy={gallerySortBy}
           setSortBy={setGallerySortBy}
           onClearFilters={() => {
             setGallerySearch("");
             setGallerySeason("all");
             setGalleryRarity("all");
+            setGalleryCteFilter("all");
           }}
           onRequestLoreCard={() => setLoreGeneratorOpen(true)}
         />
@@ -175,6 +179,7 @@ export function VaultCardsSection() {
     gallerySearch,
     gallerySeason,
     galleryRarity,
+    galleryCteFilter,
     gallerySortBy,
   ]);
 
@@ -219,6 +224,7 @@ export function VaultCardsSection() {
           search={gallerySearch}
           season={gallerySeason}
           rarity={galleryRarity}
+          cteFilter={galleryCteFilter}
           sortBy={gallerySortBy}
           onSourceChange={setGallerySource}
           onSearchChange={setGallerySearch}

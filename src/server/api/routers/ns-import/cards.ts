@@ -9,6 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/ns-api-client";
 import { nsImportService } from "~/lib/ns-import-service";
+import { processCTENationFilter } from "~/lib/ns-sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
 import { Prisma } from "@prisma/client";
 
@@ -230,6 +231,19 @@ export const nsImportCardsRouter = createTRPCRouter({
         selfService: meta.nsTakedown?.selfService ?? false,
       };
     });
+  }),
+
+  /**
+   * Admin: Filter imported NS cards against the daily active nations dump (nations.xml.gz).
+   * Tags all NS_IMPORT cards with metadata.isCTE (true if nation has Ceased To Exist).
+   */
+  filterCTECards: adminProcedure.mutation(async ({ ctx }) => {
+    const result = await processCTENationFilter(ctx.db);
+    return {
+      success: true,
+      ...result,
+      message: `CTE filter complete: ${result.totalProcessed} cards processed (${result.activeCount} active, ${result.cteCount} CTE'd).`,
+    };
   }),
 
   // ─── Self-serve flag-owner opt-out (user settings) ────────────────

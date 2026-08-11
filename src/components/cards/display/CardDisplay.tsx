@@ -308,6 +308,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 animated={!performanceMode}
               />
               {card.cardType &&
+                (card.cardType as string) !== "COMMONS_IMPORT" &&
                 (card.cardType === "NS_IMPORT" ? (
                   <span
                     className="inline-flex items-center gap-1 rounded bg-blue-600/20 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400"

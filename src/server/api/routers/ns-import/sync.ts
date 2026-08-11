@@ -97,7 +97,7 @@ export const nsImportSyncRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const regions = input.regionNames
-        .split(",")
+        .split(/[\n,]+/)
         .map((r) => r.trim())
         .filter((r) => r.length > 0);
 

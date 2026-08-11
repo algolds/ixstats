@@ -25,6 +25,7 @@ export function CardGalleryTab({
   search,
   season,
   rarity,
+  cteFilter,
   sortBy,
   onSourceChange,
   onSearchChange,
@@ -36,6 +37,7 @@ export function CardGalleryTab({
   search: string;
   season: number | "all";
   rarity: CardRarity | "all";
+  cteFilter?: "all" | "cte_only" | "active_only";
   sortBy: string;
   onSourceChange: (v: GallerySource) => void;
   onSearchChange: (v: string) => void;
@@ -55,6 +57,7 @@ export function CardGalleryTab({
       search: search || undefined,
       season: season !== "all" ? season : undefined,
       rarity: rarity !== "all" ? rarity : undefined,
+      cteFilter: cteFilter && cteFilter !== "all" ? cteFilter : undefined,
       sortBy: (sortBy === "marketValue"
         ? "marketValue"
         : sortBy === "recent"
@@ -63,7 +66,7 @@ export function CardGalleryTab({
             ? "name"
             : "rarity") as "name" | "rarity" | "marketValue" | "recent" | undefined,
     }),
-    [search, season, rarity, sortBy, offset]
+    [search, season, rarity, cteFilter, sortBy, offset]
   );
 
   const {

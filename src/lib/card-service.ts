@@ -41,6 +41,7 @@ export interface CardFilters {
   rarity?: CardRarity;
   type?: CardType;
   search?: string;
+  cteFilter?: "all" | "cte_only" | "active_only";
   limit?: number;
   offset?: number;
 }
@@ -253,6 +254,13 @@ export async function getCards(db: PrismaClient, filters: CardFilters): Promise<
       where.cardType = filters.type;
     }
 
+    if (filters.cteFilter && filters.cteFilter !== "all") {
+      where.metadata = {
+        path: ["isCTE"],
+        equals: filters.cteFilter === "cte_only",
+      };
+    }
+
     if (filters.search && filters.search.trim().length > 0) {
       where.OR = [
         { title: { contains: filters.search.trim(), mode: "insensitive" } },
@@ -311,13 +319,11 @@ export async function getUserCards(
 
     const where: any = {
       ownerId: userId,
+      cards: {
+        isRetired: false,
+        ...(filterRarity && { rarity: filterRarity }),
+      },
     };
-
-    if (filterRarity) {
-      where.cards = {
-        rarity: filterRarity,
-      };
-    }
 
     let orderBy: any = [];
     if (sortBy === "rarity") {

@@ -5,7 +5,7 @@
  * Maps NS data to IxStats Card model and handles import workflows.
  */
 
-import { type PrismaClient } from "@prisma/client";
+import { type PrismaClient, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardType, CardRarity } from "~/lib/card-enums";
 import { nsApiClient, type NSCard } from "~/lib/ns-api-client";
@@ -222,27 +222,18 @@ export class NSImportService {
       wikiArticleTitle: nsCard.name,
       wikiUrl: undefined,
       countryId: undefined,
-      stats: {
-        region: nsCard.region,
-        category: nsCard.category,
-        govt: nsCard.govt,
-        cardcategory: nsCard.cardcategory,
-        marketValue: nsCard.market_value,
-        badge: nsCard.badge,
-        trophies: nsCard.trophies,
-        ...this.generateCardStats(
-          {
-            govt: nsCard.govt,
-            marketValue: nsCard.market_value,
-            badge: nsCard.badge,
-            trophies: nsCard.trophies,
-            region: nsCard.region,
-            category: nsCard.category,
-            cardcategory: nsCard.cardcategory,
-          },
-          cardId
-        ),
-      },
+      stats: this.generateCardStats(
+        {
+          govt: nsCard.govt,
+          marketValue: nsCard.market_value,
+          badge: nsCard.badge,
+          trophies: nsCard.trophies,
+          region: nsCard.region,
+          category: nsCard.category,
+          cardcategory: nsCard.cardcategory,
+        },
+        cardId
+      ),
       totalSupply: 1,
       marketValue: this.convertNSValueToIxCredits(marketValue),
       level: 1,
@@ -324,7 +315,9 @@ export class NSImportService {
           title: cardData.title,
           description: cardData.description || null,
           artwork: cardData.artwork,
-          artworkVariants: cardData.artworkVariants || null,
+          artworkVariants: cardData.artworkVariants
+            ? (cardData.artworkVariants as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           cardType: cardData.cardType,
           rarity: cardData.rarity || CardRarity.COMMON,
           season: cardData.season,
@@ -333,7 +326,7 @@ export class NSImportService {
           wikiSource: cardData.wikiSource || null,
           wikiArticleTitle: cardData.wikiArticleTitle || null,
           countryId: cardData.countryId || null,
-          stats: cardData.stats,
+          stats: cardData.stats as unknown as Prisma.InputJsonValue,
           metadata: {
             nsData: {
               id: nsCard.id,
@@ -359,7 +352,9 @@ export class NSImportService {
           marketValue: cardData.marketValue,
           totalSupply: cardData.totalSupply,
           level: cardData.level,
-          enhancements: cardData.enhancements || null,
+          enhancements: cardData.enhancements
+            ? (cardData.enhancements as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         },
       });
     }

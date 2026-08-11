@@ -25,6 +25,8 @@ export function GallerySidebarContent({
   setSeason,
   rarity,
   setRarity,
+  cteFilter,
+  setCteFilter,
   sortBy,
   setSortBy,
   onClearFilters,
@@ -38,6 +40,8 @@ export function GallerySidebarContent({
   setSeason: (v: number | "all") => void;
   rarity: CardRarity | "all";
   setRarity: (v: CardRarity | "all") => void;
+  cteFilter?: "all" | "cte_only" | "active_only";
+  setCteFilter?: (v: "all" | "cte_only" | "active_only") => void;
   sortBy: string;
   setSortBy: (v: string) => void;
   onClearFilters: () => void;
@@ -130,6 +134,28 @@ export function GallerySidebarContent({
           <SelectItem value="LEGENDARY">Legendary</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Nation Status (CTE vs Active) */}
+      {setCteFilter && (source === "all" || source === "ns") && (
+        <Select
+          value={cteFilter || "all"}
+          onValueChange={(v) => setCteFilter(v as "all" | "cte_only" | "active_only")}
+        >
+          <SelectTrigger
+            className={cn(
+              "h-7 w-full px-2 text-xs",
+              cteFilter && cteFilter !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-100"
+            )}
+          >
+            <SelectValue placeholder="Nation Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Nations</SelectItem>
+            <SelectItem value="cte_only">CTE Nations Only</SelectItem>
+            <SelectItem value="active_only">Active Nations Only</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Sort */}
       <div>

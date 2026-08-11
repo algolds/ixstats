@@ -24,6 +24,7 @@ export const cardsBrowseRouter = createTRPCRouter({
         rarity: z.string().optional(),
         type: z.string().optional(),
         search: z.string().min(1).max(100).optional(),
+        cteFilter: z.enum(["all", "cte_only", "active_only"]).optional(),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
       })
@@ -61,6 +62,7 @@ export const cardsBrowseRouter = createTRPCRouter({
           rarity,
           type,
           search: input.search,
+          cteFilter: input.cteFilter,
           limit: input.limit,
           offset: input.offset,
         });

@@ -247,6 +247,12 @@ async function importNSCollection(userId: string, nsNation: string) {
 }
 ```
 
+**Copyright & Asset Storage Compliance:**
+- **URL-Only Storage:** IxCards stores URL strings (`artwork: "https://www.nationstates.net/images/cards/s..."`) rather than persistent image bytes. No flag binary files are written to S3, PostgreSQL, or local disk storage.
+- **Streaming Proxy:** The `/api/proxy-ns-image` endpoint acts as an in-memory streaming proxy with standard browser caching headers (`max-age=86400`). It does not persist file bytes to storage.
+- **First-Party Grant:** Verified imports require explicit confirmation from the nation owner: *"I am the owner or authorized operator of this nation on NationStates, and I grant permission to display my nation's flag and card representation on IxCards."*
+- **Flag-Owner Opt-Out:** Admins and verified nation owners can trigger a takedown (`hideNSCard`), retiring the card, clearing its artwork URL, and permanently blocking automated dump re-syncs.
+
 ### SPECIAL Cards (Event/Limited Editions)
 
 **Event Cards:**

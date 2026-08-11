@@ -125,7 +125,8 @@ async function loadRegionCardsFromDumps(
   regionNames: string[],
   seasons: number[]
 ): Promise<Array<{ id: number; season: number; card: NSCard }>> {
-  const regionSet = new Set(regionNames.map((r) => r.trim().toLowerCase()).filter(Boolean));
+  const norm = (str: string) => str.trim().toLowerCase().replace(/[\s_]+/g, " ");
+  const regionSet = new Set(regionNames.map(norm).filter(Boolean));
   const uniqueSeasons = Array.from(new Set(seasons)).sort((a, b) => a - b);
   const matches: Array<{ id: number; season: number; card: NSCard }> = [];
 
@@ -139,7 +140,7 @@ async function loadRegionCardsFromDumps(
 
       let matched = 0;
       for (const card of cards) {
-        if (card.region && regionSet.has(card.region.trim().toLowerCase())) {
+        if (card.region && regionSet.has(norm(card.region))) {
           const id = parseInt(card.id);
           const s = parseInt(card.season);
           if (!isNaN(id) && !isNaN(s)) {
@@ -290,4 +291,66 @@ export async function processRegionCardsFromDump(
   } finally {
     activeRunningJobs.delete(syncLogId);
   }
+}
+
+/**
+ * Filter imported NS cards by active vs. CTE'd nation status.
+ * Ingests nations.xml.gz and tags all NS_IMPORT cards with metadata.isCTE.
+ */
+export async function processCTENationFilter(db: PrismaClient): Promise<{
+  totalProcessed: number;
+  cteCount: number;
+  activeCount: number;
+}> {
+  console.log("[NS Import] Starting CTE nation status filter job...");
+  const activeNations = await nsApiClient.fetchActiveNationsDump();
+
+  const cards = await db.card.findMany({
+    where: { cardType: "NS_IMPORT" },
+    select: { id: true, title: true, metadata: true },
+  });
+
+  let cteCount = 0;
+  let activeCount = 0;
+
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < cards.length; i += BATCH_SIZE) {
+    const chunk = cards.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      chunk.map(async (card) => {
+        const meta = (card.metadata as Record<string, any>) || {};
+        const nsName = (meta.nsData?.name || card.title || "").trim().toLowerCase();
+
+        const isActive = activeNations.has(nsName);
+        const isCTE = !isActive;
+
+        if (isCTE) {
+          cteCount++;
+        } else {
+          activeCount++;
+        }
+
+        await db.card.update({
+          where: { id: card.id },
+          data: {
+            metadata: {
+              ...meta,
+              isCTE,
+              cteCheckedAt: new Date().toISOString(),
+            },
+          },
+        });
+      })
+    );
+  }
+
+  console.log(
+    `[NS Import] CTE filter complete: ${cards.length} processed (${activeCount} active, ${cteCount} CTE'd)`
+  );
+
+  return {
+    totalProcessed: cards.length,
+    cteCount,
+    activeCount,
+  };
 }
