@@ -18,7 +18,7 @@ import {
 import { RarityBadge } from "../RarityBadge";
 import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { api } from "~/trpc/react";
 
 export interface CardOverviewTabProps {

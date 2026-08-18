@@ -38,7 +38,7 @@ import {
   NotificationSettingsCard,
   NSCardSettingsCard,
 } from "./_components";
-import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
+import { WikiPreferencesCard } from "~/components/wiki-os/WikiPreferencesCard";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { Backlight } from "~/components/ui/backlight";
 import { PixelHeading } from "~/components/ui/pixel-heading-character";

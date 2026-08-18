@@ -4,7 +4,7 @@ import { useState, useEffect, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";

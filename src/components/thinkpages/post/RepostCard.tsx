@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 export interface RepostCardProps {
   post: any;

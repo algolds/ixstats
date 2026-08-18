@@ -12,7 +12,7 @@ import {
   Info,
   AlertTriangle,
 } from "lucide-react";
-import { LegalDocumentLayout, type LegalSectionItem } from "~/components/legal/LegalDocumentLayout";
+import { LegalDocumentLayout, type LegalSectionItem } from "~/components/ui/LegalDocumentLayout";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 
 export const metadata: Metadata = {

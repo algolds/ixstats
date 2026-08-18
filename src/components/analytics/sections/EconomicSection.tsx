@@ -12,7 +12,7 @@ import { SectorGrowthChart } from "../charts/SectorGrowthChart";
 import { VolatilityMetricsCard } from "../metrics/VolatilityMetricsCard";
 import { ComparativeBenchmarkingCard } from "../metrics/ComparativeBenchmarkingCard";
 import { GlassTooltip } from "../charts/GlassTooltip";
-import { DataTable } from "~/components/shared/data-display/DataTable";
+import { DataTable } from "~/components/ui/shared/data-display/DataTable";
 import type { SectorPerformance, VolatilityMetric, ComparativeBenchmark } from "~/lib/utils";
 
 interface EconomicSectionProps {

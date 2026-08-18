@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 import { Globe, Landmark, Heart } from "lucide-react";

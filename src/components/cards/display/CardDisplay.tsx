@@ -37,7 +37,7 @@ import {
 } from "~/lib/cards";
 import { getHybridRarityMaterial } from "~/lib/cards/rarity-materials";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 

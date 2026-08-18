@@ -39,9 +39,9 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Economy Builder Components
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
-import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { EconomicWelcomeModal } from "~/components/economy/atomic";
+import { AtomicEconomicComponentSelector } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { EconomicWelcomeModal } from "~/components/mycountry/domains/economy/atomic";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { Checkbox } from "~/components/ui/checkbox";
 

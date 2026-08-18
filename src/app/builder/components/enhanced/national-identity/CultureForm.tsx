@@ -34,7 +34,7 @@ import type { NationalIdentityData } from "~/app/builder/lib/economy-data-servic
 import { getCurrencyInfo } from "~/lib/utils";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

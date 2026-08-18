@@ -15,8 +15,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
-import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
-import { ShineBorder } from "~/components/magicui/shine-border";
+import { AnimatedShinyText } from "~/components/ui/magicui/animated-shiny-text";
+import { ShineBorder } from "~/components/ui/magicui/shine-border";
 import { NAV_COLORS, DEFAULT_NAV, type NavigationItem } from "~/lib/navigation-config";
 
 interface DesktopNavItemProps {

@@ -9,7 +9,7 @@ import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { createUrl } from "~/lib/utils";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { cn } from "~/lib/utils";
@@ -82,10 +82,10 @@ const CountryMapEmbed = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-52 animate-pulse rounded-xl" /> }
 );
 
-import { VitalityBreakdownModal } from "~/components/modals/VitalityBreakdownModal";
-import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
-import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
-import { GovernmentSpendingModal } from "~/components/modals/metric-details/GovernmentSpendingModal";
+import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
+import { GdpDetailsModal } from "~/components/ui/modals/GdpDetailsModal";
+import { PopulationDetailsModal } from "~/components/ui/modals/PopulationDetailsModal";
+import { GovernmentSpendingModal } from "~/components/ui/modals/metric-details/GovernmentSpendingModal";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;

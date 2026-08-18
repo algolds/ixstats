@@ -8,7 +8,7 @@
 
 import type { SectorConfiguration } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import {
   Factory,
   Leaf,

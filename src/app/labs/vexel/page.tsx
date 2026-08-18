@@ -1,6 +1,6 @@
 "use client";
 
-import VexelEditor from "~/components/vexel/VexelEditor";
+import VexelEditor from "~/components/maps/vexel/VexelEditor";
 
 export default function VexelNewPage() {
   return <VexelEditor />;

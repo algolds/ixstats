@@ -25,7 +25,7 @@ import { validateEconomy } from "~/app/builder/components/enhanced/tabs/utils/va
 import { computeGovernmentWarnings } from "~/app/builder/components/enhanced/government-preview/governmentWarnings";
 import { validateTaxBuilderState } from "~/lib/economy/tax-builder-validation";
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 interface UseBuilderAlertsInput {

@@ -16,7 +16,7 @@ import {
 } from "~/components/ui/select";
 import { useState } from "react";
 import { type StudioState } from "../../../hooks/useStudioState";
-import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { AppleSwitch } from "~/components/ui/apple-switch";
 
 interface StudioWorkshopProps {
   state: StudioState;

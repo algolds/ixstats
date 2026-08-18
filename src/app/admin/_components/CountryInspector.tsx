@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useAdminNavigation } from "./AdminNavigationContext";

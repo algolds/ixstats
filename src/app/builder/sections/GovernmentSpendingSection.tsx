@@ -7,7 +7,7 @@ import React from "react";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import type { GovernmentBuilderState } from "~/types/government";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { GovernmentBuilderError } from "../components/GovernmentBuilderError";
 
 // Modular components

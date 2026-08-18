@@ -349,9 +349,9 @@ import { NationalIdentitySection } from "../NationalIdentitySection";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { CoreIndicatorsSection } from "../../../sections/CoreIndicatorsSection";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { AtomicComponentSelector } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
+import { GovernmentBuilder } from "~/components/mycountry/domains/government/GovernmentBuilder";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
 // eslint-disable-next-line unused-imports/no-unused-imports

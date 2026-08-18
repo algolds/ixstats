@@ -9,8 +9,8 @@
  */
 
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import type { SuggestionItem } from "~/components/builders/SuggestionsPanel";
-import { computeTaxSuggestions as baseComputeTaxSuggestions } from "~/components/builders/suggestions/utils";
+import type { SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
+import { computeTaxSuggestions as baseComputeTaxSuggestions } from "~/components/mycountry/domains/government/builder/suggestions/utils";
 
 /**
  * Compute comprehensive tax suggestions based on builder state

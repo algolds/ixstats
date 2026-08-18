@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
-import { type CountryCardData } from "~/components/countries/CountryFocusCard";
+import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import {
   RiGlobalLine,
   RiGroupLine,

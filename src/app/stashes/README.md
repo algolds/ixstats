@@ -32,7 +32,7 @@ Signed-out visitors see a sign-in prompt instead of the manager.
 | Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `forum:thread:` = thread, else wiki page). Includes `StashedImageModal` (lightbox + wikitext copy formats) |
 | Stash button | `src/components/wiki-os/reader/StashButton.tsx` | Save toggle + popover + `StashManagerModal` |
 | Welcome modal | `src/components/wiki-os/shared/StashWelcomeModal.tsx` | First-run help (localStorage `wikios-stashes-welcome-seen`) |
-| Other entry points | `src/components/media-search/MyStashTab.tsx`, `src/components/messages/MessagesStashAttachmentModal.tsx` | Stash access from media search and messaging |
+| Other entry points | `src/components/wiki-os/media-search/MyStashTab.tsx`, `src/components/messages/MessagesStashAttachmentModal.tsx` | Stash access from media search and messaging |
 | Styles | `src/styles/wiki-os.css` | `wikios-stash-*` classes |
 
 Models live in `prisma/schema/wiki.prisma`: `LoreStash`, `LoreStashItem` (`contentType` = `wiki` | `forum_thread` | `forum_post`, optional `contentId`), `LoreStashAnnotation`.

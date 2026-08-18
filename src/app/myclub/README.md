@@ -44,8 +44,8 @@ MyLeague season-transition engine (Markov talent generator); MyClub only display
 | Layer | Location |
 |-------|----------|
 | Pages | `src/app/myclub/{page,layout}.tsx`, `[teamId]/page.tsx`, `[teamId]/season/[seasonId]/page.tsx` |
-| MyClub components | `src/components/myclub/` — `SponsorWalletDeck`, `RevenueCollector`, `PlayerTrainingButton`, `TeamTrainingButton`, `LineupBuilder` |
-| Reused MyLeague components | `MyLeagueSidebarLayout`, `MyLeagueSidebarNav`, `TeamSettingsModal`, `MatchTickerSim` (`src/components/myleague/`) |
+| MyClub components | `src/components/sports/club/` — `SponsorWalletDeck`, `RevenueCollector`, `PlayerTrainingButton`, `TeamTrainingButton`, `LineupBuilder` |
+| Reused MyLeague components | `MyLeagueSidebarLayout`, `MyLeagueSidebarNav`, `TeamSettingsModal`, `MatchTickerSim` (`src/components/sports/league/`) |
 | Sports UI | `src/components/sports/` — `PlayerCard1`, `Scoreboard1`, `PlayerMatchup1`, `MatchCommentary`, `PositionTooltip` |
 | Presets | `src/lib/sports/presets.ts` (`SPORT_PRESETS`, rating vectors) |
 

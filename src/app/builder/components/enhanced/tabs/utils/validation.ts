@@ -3,8 +3,8 @@
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { useMemo } from "react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import type { ValidationMessage } from "~/components/shared/feedback/ValidationFeedback";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import type { ValidationMessage } from "~/components/ui/shared/feedback/ValidationFeedback";
 
 export interface SectorContribution {
   id: string;

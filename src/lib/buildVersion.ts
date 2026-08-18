@@ -49,19 +49,19 @@ export const VERSIONS = {
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 4, // public-facing executive command UI; v4: v2 Issue Brief surface + intent progress in agenda/drill sheets
-    builder: 2,
+    mycountry: 5, // public-facing executive command UI; v5: 4-tier modular architecture (shell, shared primitives, 6 simulation domains, dossier)
+    builder: 3, // v3: unified statecraft & tax builder subsystems
     thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 3, // global contextual overlay (was "Dynamic Island"); +Live Activities; v3: onboarding tour guided walkthrough and dynamic styling
+    halo: 4, // global contextual overlay (was "Dynamic Island"); v4: canonical Halo brand & architecture transition
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
   // Design system.
   design: {
-    facet: 1, // glass/refraction/depth design language (was "Glass Physics")
+    facet: 2, // glass/refraction/depth design language; v2: core UI design system convergence & tactile feedback physics
   },
 
   // WikiOS sub-systems (nested, not top-level).

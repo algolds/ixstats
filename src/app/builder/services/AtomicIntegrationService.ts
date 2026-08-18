@@ -9,7 +9,7 @@
  */
 
 import { BaseBuilderService } from "./base";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import { generateGovernmentBuilderFromAtomicComponents } from "../utils/atomicGovernmentIntegration";

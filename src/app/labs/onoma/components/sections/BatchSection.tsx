@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { useNotify } from "~/hooks/useNotify";

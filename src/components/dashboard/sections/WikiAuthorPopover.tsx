@@ -5,7 +5,7 @@ import Link from "next/link";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import { BookOpen, Clock, Globe, Map as MapIcon, Users } from "lucide-react";
 import { api } from "~/trpc/react";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { createUrl } from "~/lib/utils";
 
 export function WikiAuthorPopover({ username }: { username: string }) {

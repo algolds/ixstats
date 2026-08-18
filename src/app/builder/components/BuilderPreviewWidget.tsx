@@ -17,7 +17,7 @@ import {
 import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import {
   CutoutCard,
   CutoutCardContent,

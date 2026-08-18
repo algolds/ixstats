@@ -10,7 +10,7 @@
  */
 
 import { EconomicComponentType } from "~/lib/economy/atomic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 
 /**
  * EconomicArchetype - Complete economic archetype definition

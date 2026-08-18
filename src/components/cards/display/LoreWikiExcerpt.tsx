@@ -11,7 +11,7 @@ import Link from "next/link";
 import { ExternalLink, BookOpen, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
-import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
 
 interface LoreWikiExcerptProps {

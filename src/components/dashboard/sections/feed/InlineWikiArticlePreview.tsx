@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 

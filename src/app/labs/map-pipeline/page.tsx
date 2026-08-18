@@ -11,8 +11,8 @@ import { enrichMapDataset, type EnrichedMapPackage } from "~/lib/maps/pipeline/e
 import {
   MapPipelineControls,
   type MapGenConfig,
-} from "~/components/labs/map-pipeline/MapPipelineControls";
-import { MapPipelineTelemetry } from "~/components/labs/map-pipeline/MapPipelineTelemetry";
+} from "~/components/maps/pipeline/MapPipelineControls";
+import { MapPipelineTelemetry } from "~/components/maps/pipeline/MapPipelineTelemetry";
 
 const IxWorldMap = dynamic(() => import("~/components/maps/core/IxWorldMap"), {
   ssr: false,

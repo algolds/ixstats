@@ -23,12 +23,12 @@ import { useCountryInfoPanelState } from "~/components/maps/core/hooks/useCountr
 import { ImageLightbox } from "~/components/maps/core/components/ImageLightbox";
 
 const GdpDetailsModal = dynamic(
-  () => import("~/components/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
+  () => import("~/components/ui/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
   { ssr: false }
 );
 const PopulationDetailsModal = dynamic(
   () =>
-    import("~/components/modals/PopulationDetailsModal").then((m) => ({
+    import("~/components/ui/modals/PopulationDetailsModal").then((m) => ({
       default: m.PopulationDetailsModal,
     })),
   { ssr: false }

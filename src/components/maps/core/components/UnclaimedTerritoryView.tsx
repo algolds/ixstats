@@ -5,7 +5,7 @@ import Link from "next/link";
 import { MapPin, Globe, BookOpen } from "lucide-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UnclaimedTerritoryViewProps {

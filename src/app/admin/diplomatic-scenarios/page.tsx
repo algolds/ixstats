@@ -30,7 +30,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
-import { JsonViewer } from "~/components/json-viewer";
+import { JsonViewer } from "~/components/ui/json-viewer";
 import {
   Plus,
   Pencil,

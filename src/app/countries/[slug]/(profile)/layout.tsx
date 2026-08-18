@@ -16,7 +16,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
+import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 import { CountryDataProvider, useCountryData } from "~/components/mycountry/primitives";
 import { CountryHeader } from "../_components/CountryHeader";
 import { CountryTabs } from "../_components/CountryTabs";

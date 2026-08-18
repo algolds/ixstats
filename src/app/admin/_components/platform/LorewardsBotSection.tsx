@@ -33,7 +33,7 @@ import {
   Save,
   CheckCircle,
 } from "lucide-react";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {
   Command,

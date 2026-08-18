@@ -33,7 +33,7 @@ import { Switch } from "~/components/ui/switch";
 import { getPopulationTierFromPopulation } from "~/types/ixstats";
 
 import { CountrySymbolsUploader } from "../../CountrySymbolsUploader";
-import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
+import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";
 
 interface BasicInfoFormProps {
   identity: NationalIdentityData;

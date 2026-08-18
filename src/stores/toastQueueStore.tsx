@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { toast as sonnerToast } from "sonner";
-import { ToastBanner } from "~/components/DynamicIsland/ToastBanner";
+import { ToastBanner } from "~/components/halo/ToastBanner";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
 // ─── Types ────────────────────────────────────────────────────────────

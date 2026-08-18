@@ -29,7 +29,7 @@ import {
   SynergyAnalysisPanel,
   ComparativeAnalysisChart,
   ScenarioPlanningPanel,
-} from "~/components/intelligence/policy-analysis";
+} from "~/components/mycountry/domains/intelligence/policy-analysis";
 
 interface PolicyAnalyticsProps {
   countryId: string;

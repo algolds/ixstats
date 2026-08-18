@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Network, SlidersHorizontal, Feather, Languages, GitCompare } from "lucide-react";
-import { FacetTabs } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { applyFlanking } from "~/lib/onoma/branding-utils";
 

@@ -392,11 +392,11 @@ Community wiki content reviews/blurbs. Mentioned in WikiOS integrations.
 
 ### 3.7 Halo
 
-Global contextual UI overlay system with plugin architecture. _(Formerly "Dynamic Island". The code directory `src/components/DynamicIsland/` keeps its name pending a separate mechanical rename.)_
+Global contextual UI overlay system with plugin architecture. _(Formerly "Dynamic Island". The code directory `src/components/halo/` keeps its name pending a separate mechanical rename.)_
 
 | Token        | Value                                 |
 | ------------ | ------------------------------------- |
-| **Location** | `src/components/DynamicIsland/`       |
+| **Location** | `src/components/halo/`       |
 | **Plugins**  | Wiki, Forum, Maps, Builder, MyCountry |
 | **Views**    | CompactView, ExpandedView             |
 | **Docs**     | `docs/systems/dynamic-island.md`      |

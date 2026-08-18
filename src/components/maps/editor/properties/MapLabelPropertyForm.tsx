@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Label } from "~/components/ui/label";
-import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 import type { MapLabelFormData } from "~/hooks/useMapEditor";
 
 const MAP_LABEL_TYPES = [
@@ -112,7 +112,7 @@ export const MapLabelPropertyForm = React.memo(function MapLabelPropertyForm({
         <Label className="text-foreground/80 text-xs">Color</Label>
         <ColorPickerInput
           value={form.color}
-          onChange={(val) => onChange({ ...form, color: val })}
+          onChange={(val: string) => onChange({ ...form, color: val })}
         />
       </div>
       <div className="space-y-1.5">

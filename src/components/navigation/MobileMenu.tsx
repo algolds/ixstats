@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Compass, User, X, Lightbulb } from "lucide-react";
-import { UserProfileMenu } from "~/components/UserProfileMenu";
+import { UserProfileMenu } from "~/components/navigation/UserProfileMenu";
 import type { ContextualMenuDefinition, NavigationItem } from "~/lib/navigation-config";
 import { ContextualMenu } from "~/components/navigation/ContextualMenu";
 

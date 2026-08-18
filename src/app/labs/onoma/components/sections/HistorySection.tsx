@@ -6,7 +6,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Star, ChevronDown, BarChart3, RefreshCw, Copy, Check } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 
 type HistoryEvent = {

@@ -52,7 +52,7 @@ import {
   ColorPickerEyeDropper,
   ColorPickerOutput,
   ColorPickerFormat,
-} from "~/components/kibo-ui/color-picker";
+} from "~/components/ui/color-picker";
 
 function CityScatterPopover({
   onScatter,

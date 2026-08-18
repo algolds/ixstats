@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
-import AchievementDetail from "~/components/vexel/registry/AchievementDetail";
+import AchievementDetail from "~/components/maps/vexel/registry/AchievementDetail";
 
 interface VexelRegistryDetailPageProps {
   params: Promise<{ id: string }>;

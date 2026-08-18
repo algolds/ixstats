@@ -29,7 +29,7 @@ import {
   UserCheck,
   Home,
 } from "lucide-react";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 
 export interface SpendingPolicy {
   id: string;

@@ -63,3 +63,10 @@ All components are organized into specialized domain sub-directories:
 ### 6. Primitives & Helpers (`src/components/thinkpages/primitives/`)
 - `PostActions.tsx` (700 lines) — Engagement bar (Like, Repost, Reply, Share, Reactions).
 - `ReactionCacheUpdater.ts` (159 lines) — Optimistic React Query cache update helpers.
+
+---
+
+### 7. Blurbs Suite (`src/components/thinkpages/blurbs/`)
+- `BlurbPromptList.tsx` — Active prompt browser list.
+- `BlurbPromptDetail.tsx` — Prompt header, responses list, and submission form with wiki-article linking.
+- `BlurbsNav.tsx` — Top navigation bar for Blurbs feed.

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
@@ -26,7 +26,7 @@ import type { BannerMode, BannerOption } from "../_types";
 import { FloatingRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

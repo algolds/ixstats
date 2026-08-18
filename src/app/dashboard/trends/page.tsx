@@ -2,7 +2,7 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
-import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
+import { DashboardErrorBoundary } from "~/components/ui/shared/feedback/DashboardErrorBoundary";
 
 export default function DashboardTrendsPage() {
   usePageTitle({ title: "The World - Dashboard" });

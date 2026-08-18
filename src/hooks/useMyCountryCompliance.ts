@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import { useCountryData } from "~/components/mycountry";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
 
 export interface ComplianceSectionStatus {
   id: "national-identity" | "government" | "economy" | "taxes";

@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { isEqual } from "~/lib/utils";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { atomicIntegrationService } from "../services/AtomicIntegrationService";
 import { generateGovernmentBuilderFromAtomicComponents } from "../utils/atomicGovernmentIntegration";
 import { validateGovernmentSpendingSource } from "../utils/governmentValidation";

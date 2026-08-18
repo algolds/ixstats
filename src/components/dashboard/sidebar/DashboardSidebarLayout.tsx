@@ -4,7 +4,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { DashboardPlayerWidget } from "./DashboardPlayerWidget";
 import { DashboardQuickLinks } from "./DashboardQuickLinks";
-import { VaultWidget } from "~/components/mycountry/VaultWidget";
+import { VaultWidget } from "~/components/mycountry/shell/VaultWidget";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 

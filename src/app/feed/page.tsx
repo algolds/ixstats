@@ -2,7 +2,7 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { ActivityFeedContainer } from "./_components/ActivityFeedContainer";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 
 export default function FeedPage() {
   usePageTitle({ title: "Activity Feed" });

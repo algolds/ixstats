@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { Zap, Clock, AlertTriangle } from "lucide-react";
 import { useState } from "react";

@@ -20,7 +20,7 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 import type { GovernmentStructure, GovernmentBuilderState } from "~/types/government";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { formatCurrency } from "~/lib/utils";
 import { StructureOverview } from "./government-preview/StructureOverview";
 import { ComponentsList } from "./government-preview/ComponentsList";

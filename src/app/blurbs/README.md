@@ -32,9 +32,9 @@ Admin moderation is **not** under `/blurbs` — it lives at `src/app/admin/blurb
 | Component / file | Role |
 |------------------|------|
 | `src/app/blurbs/*` | 4 page shells, all wrapped in `WikiOSLayout` |
-| `components/blurbs/BlurbPromptList.tsx` | Active-prompt browse list |
-| `components/blurbs/BlurbPromptDetail.tsx` | Prompt header, responses list, internal `BlurbSubmissionForm` (content + wiki-article linker) |
-| `components/blurbs/BlurbsNav.tsx` | Browse / My Blurbs / Submit nav (basePath-aware) |
+| `src/components/thinkpages/blurbs/BlurbPromptList.tsx` | Active-prompt browse list |
+| `src/components/thinkpages/blurbs/BlurbPromptDetail.tsx` | Prompt header, responses list, internal `BlurbSubmissionForm` (content + wiki-article linker) |
+| `src/components/thinkpages/blurbs/BlurbsNav.tsx` | Browse / My Blurbs / Submit nav (basePath-aware) |
 | `src/app/admin/blurbs/BlurbsPanel.tsx` | Admin moderation UI |
 | `components/dashboard/sections/BlurbSection.tsx` | Dashboard surface |
 | `components/wiki-os/reader/WikiOSMainPage.tsx`, `InfoboxWithMap.tsx`, `categories/CountryPortal.tsx` | WikiOS surfaces (homepage prompt, country blurbs) |

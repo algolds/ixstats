@@ -27,7 +27,7 @@ import {
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 

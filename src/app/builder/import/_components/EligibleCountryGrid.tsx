@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useCallback, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "motion/react";
 import { Globe, Search } from "lucide-react";
 import { api } from "~/trpc/react";
-import { BlurFade } from "~/components/magicui/blur-fade";
+import { BlurFade } from "~/components/ui/magicui/blur-fade";
 import { formatPopulation } from "~/lib/utils";
 import { CountryStatsModal } from "./CountryStatsModal";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AppleSwitch, type AppleSwitchProps } from "~/components/unlumen-ui/apple-switch";
+import { AppleSwitch, type AppleSwitchProps } from "~/components/ui/apple-switch";
 
 const Switch = React.forwardRef<HTMLButtonElement, AppleSwitchProps>(
   ({ size = "sm", ...props }, ref) => {

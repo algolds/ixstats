@@ -74,7 +74,7 @@ sequenceDiagram
 * **Changes:**
   * Track local state `isImpersonating` by reading `localStorage.getItem("ixstats.play_as_user")` on mount.
   * If active, render `dynamic-island-main` with border class `border-red-500/80 dark:border-red-500/60` and add a distinctive red shadow/glow `shadow-[0_0_15px_rgba(239,68,68,0.45)]`.
-* **File:** `src/components/DynamicIsland/ExpandedView.tsx` (or `CompactView.tsx`)
+* **File:** `src/components/halo/ExpandedView.tsx` (or `CompactView.tsx`)
   * Add a clear "Stop Impersonating" option/button in the expanded view.
   * On click:
     * Clear `localStorage.removeItem("ixstats.play_as_user")`.

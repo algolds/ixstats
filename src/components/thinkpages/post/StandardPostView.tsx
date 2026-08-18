@@ -41,7 +41,7 @@ import { LiveDataCard } from "../LiveDataCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS, RelativeTimestamp } from "./ThinkpagesPostUtils";
 

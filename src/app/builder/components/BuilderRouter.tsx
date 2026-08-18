@@ -16,8 +16,8 @@ import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/Buil
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
-import { BuilderDIPlugin } from "~/components/DynamicIsland/plugins/BuilderDIPlugin";
+import { MyCountryDIPlugin } from "~/components/halo/plugins/MyCountryDIPlugin";
+import { BuilderDIPlugin } from "~/components/halo/plugins/BuilderDIPlugin";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 // eslint-disable-next-line unused-imports/no-unused-imports

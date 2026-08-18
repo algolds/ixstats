@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Activity, ExternalLink, Loader2 } from "lucide-react";

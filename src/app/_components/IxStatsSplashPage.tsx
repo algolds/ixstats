@@ -4,7 +4,7 @@ import React, { useEffect, useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { createUrl } from "~/lib/utils";
 import {
   SplashHero,

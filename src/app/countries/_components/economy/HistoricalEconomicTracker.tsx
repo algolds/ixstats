@@ -28,7 +28,7 @@ import {
   SeverityDistributionCard,
   ImpactSummaryCard,
   AddEventForm,
-} from "~/components/economy/historical-charts";
+} from "~/components/mycountry/domains/economy/historical-charts";
 
 interface HistoricalEconomicTrackerProps {
   countryId: string;

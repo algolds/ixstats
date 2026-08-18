@@ -9,8 +9,8 @@ The diplomacy domain handles relationships, embassy networks, missions, cultural
 
 ## Application Surfaces
 - `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – summarises embassy reach, missions, influence, and alerts
-- `src/components/diplomatic/LiveDiplomaticFeed.tsx` – realtime event ticker
-- `src/components/diplomatic` – reusable cards for embassies, missions, treaties, and influence breakdowns
+- `src/components/mycountry/domains/diplomacy/LiveDiplomaticFeed.tsx` – realtime event ticker
+- `src/components/mycountry/domains/diplomacy` – reusable cards for embassies, missions, treaties, and influence breakdowns
 - `src/components/diplomacy/alliances/` – AllianceCreationWizard, AllianceDashboard, CollectiveActionsPanel (alliance management)
 - `src/components/diplomacy/ForeignPolicyPanel.tsx` – Foreign policy management
 - `src/components/diplomacy/foreign-policy/` – ActivePoliciesList, ProposePolicyModal, TradeImpactChart

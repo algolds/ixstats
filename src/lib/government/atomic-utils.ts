@@ -17,10 +17,10 @@
 import { ComponentType } from "@prisma/client";
 import type { AtomicGovernmentComponent } from "./atomic-data";
 import { ATOMIC_COMPONENTS } from "./atomic-data";
-import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
+import type { EffectivenessMetrics } from "~/components/ui/atomic/shared/types";
 import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
-import { ATOMIC_TAX_COMPONENTS } from "~/components/tax-system/atoms/AtomicTaxComponents";
+import { ATOMIC_TAX_COMPONENTS } from "~/components/mycountry/domains/government/tax/atoms/AtomicTaxComponents";
 import { IxTime } from "~/lib/ixtime";
 
 /**

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useIssueCount } from "./useNationalIssues";
 import { useMessageUnreadCount } from "./useMessageUnreadCount";
-import { buildAgendaItems, type AgendaItem } from "~/components/mycountry/SmartStack";
+import { buildAgendaItems, type AgendaItem } from "~/components/mycountry/shared/headers/SmartStack";
 
 /**
  * Fetches the MyCountry daily agenda for a country and returns the same Smart

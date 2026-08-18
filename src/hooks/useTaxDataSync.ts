@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import type { TaxBuilderState } from "./useTaxBuilderState";
 import type { TaxBracketInput } from "~/types/tax-system";
-import type { SuggestionItem } from "~/components/builders/SuggestionsPanel";
+import type { SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 import { parseEconomicDataForTaxSystem } from "~/lib/economy/tax-data-parser";
 import { revenueTaxIntegrationService } from "~/app/builder/services/RevenueTaxIntegrationService";
 import { bidirectionalTaxSyncService } from "~/app/builder/services/BidirectionalTaxSyncService";

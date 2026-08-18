@@ -26,7 +26,7 @@ export function SnippetExporter({ config, generatedClassNames }: SnippetExporter
           "--facet-lab-accent": "${customAccent}",
         } as React.CSSProperties`;
 
-    return `import { FacetMaterial } from "~/components/facet-ui/shared/FacetMaterial";
+    return `import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 export default function CustomFacetWidget() {

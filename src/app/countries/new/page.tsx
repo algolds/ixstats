@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "../_components/CountriesPageModular";
-import type { CountryCardData } from "~/components/countries/CountryFocusCard";
+import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 
 export default function NewCountriesPage() {

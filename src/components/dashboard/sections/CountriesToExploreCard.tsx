@@ -11,7 +11,7 @@ import {
 } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";

@@ -54,7 +54,7 @@ Roadmap items (not built): real-time collaboration, autosave/drafts, live WebSoc
 | Reader core | `reader/ArticleRenderer.tsx`, `WikiOSMainPage.tsx`, `StickyToc.tsx`, `InfoboxWithMap.tsx`, `LinkPreview.tsx` |
 | Editor core | `editor/WikiVisualEditor.tsx` (contentEditable), `editor/WikiSourceEditor.tsx` (CodeMirror 6), `editor/TemplateInserter.tsx`, `editor/ImageSearchModal.tsx` |
 | Shell | `shared/WikiOSLayout.tsx`, `WikiOSUnifiedSidebar.tsx`, `WikiContext.tsx`, `useWikiOSShortcuts.ts` |
-| Blurbs UI | `src/components/blurbs/` |
+| Blurbs UI | `src/components/thinkpages/blurbs/` |
 | Lib | `src/lib/wiki-os/` — `parsoid-client.ts`, `html-transformer.ts`, `template-registry.ts`, `template-resolver.ts`, `article-store.ts` (Postgres shadow + revisions), `auth.ts` + `use-wiki-auth.ts` (auth seam), `storage.ts` (identity/storage seam), `url-compat.ts`, `wikitext-diff.ts`, `csrf-cache.ts`, `wiki-embed-shared.ts`, `mediawiki-timestamp.ts`, `safe-decode.ts`, `fix-editor-images.ts` |
 | Styles | `src/styles/wiki-os.css` (entry) + `src/styles/wiki-os/` (variables, layout, elements, components, integrations, lorewards, editors, animations) |
 

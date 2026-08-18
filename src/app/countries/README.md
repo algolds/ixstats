@@ -26,7 +26,7 @@ Defined in `[slug]/_components/CountryTabs.tsx` (`TabType`), rendered by `[slug]
 | Governance | `CountryGovernancePanel` | Executive structure, cabinet, political parties, and active laws |
 | Community | `CountryActivityPanel` | Recent country governance timeline, diplomatic events, and community feed |
 
-Deeper economic detail (indicators, labor, fiscal, demographics, comparisons, modeling) is provided by the shared economy components — see `_components/economy/README.md`.
+Deeper economic detail (indicators, labor, fiscal, demographics, comparisons, modeling) is provided by the shared economy components — see `_src/components/mycountry/domains/economy/README.md`.
 
 ## Architecture
 

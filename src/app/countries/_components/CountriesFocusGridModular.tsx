@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CountryFocusCard, type CountryCardData } from "~/components/countries/CountryFocusCard";
-import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
+import { CountryFocusCard, type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
+import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { RiGlobalLine } from "react-icons/ri";
 import { cn } from "~/lib/utils";
 

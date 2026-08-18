@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
-import type { RingConfig } from "~/components/mycountry/primitives/VitalityRings";
+import type { RingConfig } from "~/components/mycountry/shared/primitives/VitalityRings";
 import {
   Building,
   Users,
@@ -27,9 +27,9 @@ import { api } from "~/trpc/react";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { createUrl } from "~/lib/utils";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
-import { useCountryData } from "~/components/mycountry/primitives";
-import { useFactbookMetrics } from "~/components/mycountry/FactbookMetricsProvider";
-import { getAppleVitalityColor } from "~/components/mycountry/primitives/tabs/VitalityRingsDisplay";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
+import { getAppleVitalityColor } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
 import type { VitalityData } from "../_types";
 
 const CountryMapEmbed = dynamic(

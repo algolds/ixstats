@@ -5,7 +5,7 @@ import { DollarSign, Users, Zap, CheckCircle, AlertTriangle } from "lucide-react
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../../lib/economy-data-service";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 
 // Sub-components
 import { ConfigurationSummary } from "./preview/ConfigurationSummary";

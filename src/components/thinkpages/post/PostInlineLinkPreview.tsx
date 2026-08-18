@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { api } from "~/trpc/react";
-import { ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { ForumLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
 
 export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {

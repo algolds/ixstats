@@ -320,7 +320,7 @@ export function GlassNumberInput({
   );
 }
 
-import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { AppleSwitch } from "~/components/ui/apple-switch";
 
 // Glass Toggle Switch Component
 interface GlassToggleProps extends BaseGlassInputProps {

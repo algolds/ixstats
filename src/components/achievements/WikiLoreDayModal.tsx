@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Calendar, Sliders, List } from "lucide-react";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,

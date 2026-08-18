@@ -29,7 +29,7 @@ import {
   EmbassyNetworkVisualization,
   InfluenceDistributionChart,
   DiplomaticTimeline,
-} from "~/components/intelligence/diplomatic-analysis";
+} from "~/components/mycountry/domains/intelligence/diplomatic-analysis";
 
 interface DiplomaticAnalyticsProps {
   countryId: string;

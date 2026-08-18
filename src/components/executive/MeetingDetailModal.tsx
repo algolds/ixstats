@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
-import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
+import { ParadoxFlavorCard } from "~/components/executive/narrator/ParadoxFlavorCard";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";

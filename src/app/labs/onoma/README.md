@@ -31,7 +31,7 @@ Single-Page Router pattern.
   - **`StudioLexicon.tsx`** — split-screen interactive conlang lexicon viewer and case-declension definition manager.
 - **`hooks/`** — local state managers:
   - **`useStudioState.ts`** — unified hook housing all Custom Studio state, analytics calculations (entropy, letter frequencies), dictionary loader triggers, and deletion cascades.
-- **`components/shared/`**
+- **`src/components/ui/shared/`**
   - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column: constraints (subtype, gender, **Culture / Linguistic Family**, and advanced options: Include Live World Data toggle, prefix/suffix, length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
   - **`NameResultCard.tsx`** — name results featuring inline detail morphs. Toggling details expands the card to `col-span-2` in the grid and renders case-declension case tables, script badges, and dictionary definition edit forms in-situ.
   - `UseNameDialog.tsx` — "use this name" → routes into a builder/wiki flow.

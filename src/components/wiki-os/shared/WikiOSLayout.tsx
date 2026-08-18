@@ -15,7 +15,7 @@ import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { StatusIndicator } from "~/components/status-indicator";
+import { StatusIndicator } from "~/components/ui/status-indicator";
 import {
   Popover,
   PopoverTrigger,

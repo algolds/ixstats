@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { IssueCard } from "~/components/national-issues";
+import { IssueCard } from "~/components/executive/issues";
 
 interface LegislativeIssuesProps {
   countryId: string;

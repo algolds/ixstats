@@ -27,7 +27,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
 import { sanitizeWikiContent } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import {
   CardHeader,
   CardContent,

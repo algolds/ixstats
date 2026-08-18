@@ -2,10 +2,10 @@
 
 import { use, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { MyCountryTabsList } from "~/components/mycountry/tabs";
-import { FactbookMetricsProvider } from "~/components/mycountry/FactbookMetricsProvider";
-import { FactbookModals } from "~/components/mycountry/FactbookModals";
-import { useCountryData } from "~/components/mycountry/primitives";
+import { MyCountryTabsList } from "~/components/mycountry/shared/tabs";
+import { FactbookMetricsProvider } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
+import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookModals";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { FactbookSidebar } from "../../_components/FactbookSidebar";
 import { calculateVitalityData } from "../../_utils/countryDataTransformers";
 import { sectionFromPathname } from "~/lib/wiki";

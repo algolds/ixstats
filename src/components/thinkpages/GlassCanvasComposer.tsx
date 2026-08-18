@@ -21,7 +21,7 @@ import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 

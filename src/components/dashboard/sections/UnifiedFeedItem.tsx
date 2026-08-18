@@ -25,7 +25,7 @@ import {
   WikiLinkPreview,
   ForumLinkPreview,
   WikiHtmlContent,
-} from "~/components/wiki/WikiLinkPreview";
+} from "~/components/wiki-os/reader/WikiLinkPreview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { resolveImageUrl, getImageUrl } from "~/lib/wiki/image-url";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";

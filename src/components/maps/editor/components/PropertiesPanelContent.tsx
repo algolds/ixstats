@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { ProvinceGeneratorPanel } from "~/components/maps/editor/components/ProvinceGeneratorPanel";
-import { JsonViewer } from "~/components/json-viewer";
+import { JsonViewer } from "~/components/ui/json-viewer";
 
 interface PropertiesPanelContentProps {
   isWorldMode: boolean;

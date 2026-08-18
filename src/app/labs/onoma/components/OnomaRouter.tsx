@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { OnomaSection, StudioSubTab } from "~/lib/onoma/types";
 import { getSectionFromPathname, getStudioSubTabFromPathname } from "~/lib/onoma/types";
-import { FacetTabs } from "~/components/facet-ui";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useNameBank } from "~/hooks/useNameBank";
 import {
   Compass,

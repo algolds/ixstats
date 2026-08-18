@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { formatCurrency } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import {
   Dialog,
   DialogContent,

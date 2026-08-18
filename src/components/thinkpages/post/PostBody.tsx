@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";

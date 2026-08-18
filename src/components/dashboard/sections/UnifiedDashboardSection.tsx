@@ -14,10 +14,10 @@ import { Badge } from "~/components/ui/badge";
 import {
   staggerContainer,
   staggerItem,
-} from "~/components/mycountry/primitives/tabs/TabMotionConfig";
+} from "~/components/mycountry/shared/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { FacetTabs } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";

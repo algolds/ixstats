@@ -9,7 +9,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
-import { ATOMIC_TAX_COMPONENTS } from "~/components/tax-system/atoms/AtomicTaxComponents";
+import { ATOMIC_TAX_COMPONENTS } from "~/components/mycountry/domains/government/tax/atoms/AtomicTaxComponents";
 import {
   calculateImplementationDate,
   calculateCivilServiceCapacity,

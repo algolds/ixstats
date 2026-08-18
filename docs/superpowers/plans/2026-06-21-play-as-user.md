@@ -428,13 +428,13 @@
 ### Task 5: Stop Impersonating UI inside Halo
 
 **Files:**
-- Modify: `src/components/DynamicIsland/ExpandedView.tsx`
+- Modify: `src/components/halo/ExpandedView.tsx`
 
 **Interfaces:**
 - Produces: Exit button and redirect back to `/admin/user-management`.
 
 - [ ] **Step 1: Add a header warning banner and Stop button in ExpandedView**
-  In `src/components/DynamicIsland/ExpandedView.tsx` around line 28:
+  In `src/components/halo/ExpandedView.tsx` around line 28:
   ```tsx
     const [isImpersonating, setIsImpersonating] = useState(false);
     useEffect(() => {
@@ -474,4 +474,4 @@
   ```
 
 - [ ] **Step 2: Commit changes**
-  Run command: `git add src/components/DynamicIsland/ExpandedView.tsx` and commit.
+  Run command: `git add src/components/halo/ExpandedView.tsx` and commit.

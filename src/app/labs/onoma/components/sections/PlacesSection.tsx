@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { GeneratorPanel } from "../shared/GeneratorPanel";
 import type { NameCategory } from "~/lib/onoma/types";
-import { FacetTabs } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/ui/facet";
 
 export function PlacesSection() {
   const [activeTab, setActiveTab] = useState<NameCategory>("city");

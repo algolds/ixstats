@@ -7,12 +7,12 @@
  * - Complete data continuity from start to finish
  */
 
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
-import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import type { TaxBuilderState } from "~/components/mycountry/domains/government/tax/TaxBuilder";
 
 /**
  * Government → Economy Component Mapping

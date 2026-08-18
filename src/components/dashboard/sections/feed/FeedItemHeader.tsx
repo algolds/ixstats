@@ -9,7 +9,7 @@ import {
   WikiHtmlContent,
   WikiLinkPreview,
   ForumLinkPreview,
-} from "~/components/wiki/WikiLinkPreview";
+} from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cn } from "~/lib/utils";
 
 export interface FeedItemHeaderProps {

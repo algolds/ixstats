@@ -14,6 +14,7 @@ import { StoreItemCard, type StoreItem } from "../StoreItemCard";
 
 export interface StorePurchaseDialogProps {
   item: StoreItem | null;
+  isOpen?: boolean;
   onClose: () => void;
   onConfirm: () => void;
   isPurchasing: boolean;

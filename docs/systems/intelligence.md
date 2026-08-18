@@ -9,7 +9,7 @@ The intelligence stack aggregates diplomatic, economic, and security signals int
 - `src/components/mycountry/EnhancedIntelligenceContent.tsx` – Intelligence content orchestrator
 - `src/app/mycountry/intelligence/_components/IntelligenceFeed.tsx` – Core feed component combining hot issues, opportunities, and risk mitigation
 - `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – Mission tracking, embassy posture, and regional insights
-- `src/components/diplomatic/LiveDiplomaticFeed.tsx` – WebSocket-enabled diplomatic activity stream
+- `src/components/mycountry/domains/diplomacy/LiveDiplomaticFeed.tsx` – WebSocket-enabled diplomatic activity stream
 
 ## Data Providers
 - `diplomatic-intelligence.ts` – Executive briefings (`getIntelligenceBriefing`)

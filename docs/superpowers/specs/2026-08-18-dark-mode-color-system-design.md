@@ -110,7 +110,7 @@ The following high-traffic components will be refactored from hardcoded Slate/Zi
 - [ ] `src/components/thinkpages/editor/MentionMenuPortal.tsx`
 - [ ] `src/components/thinkpages/editor/WikiAndStashPopovers.tsx`
 - [ ] `src/components/maps/core/components/TourHUD.tsx`
-- [ ] `src/components/DynamicIsland/NotificationsView.tsx`
+- [ ] `src/components/halo/NotificationsView.tsx`
 - [ ] `src/components/sports/player-cards/PlayerCard1.tsx`
 - [ ] `src/components/sports/scoreboards/Scoreboard1.tsx`
 - [ ] `src/components/sports/standings/Standings1.tsx`

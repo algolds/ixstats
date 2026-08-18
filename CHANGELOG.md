@@ -10,6 +10,32 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Component Architecture Consolidation & MyCountry 4-Tier Subsystem Modularization (`systems.mycountry` v5, `design.facet` v2, `systems.halo` v4, `systems.builder` v3)
+
+- **Comprehensive Component Topology Consolidation**:
+  - Restructured `src/components/` from 54 legacy directories into a streamlined, high-cohesion domain topology.
+  - Eliminated 16 obsolete shim/empty directories (`defense`, `diplomacy`, `economy`, `government`, `intelligence`, `DynamicIsland`, `countries`, `atomic`, `facet-ui`, `charts`, `shared`, `magicui`, `notifications`, `profile`, `legal`, `modals`).
+  - Consolidated 12 loose root component files into canonical UI, Navigation, and WikiOS modules.
+
+- **MyCountry 4-Tier Modular Architecture (`systems.mycountry` v5)**:
+  - **`shell/`**: Co-located executive command center surfaces (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta`).
+  - **`shared/`**: Universal reusable component foundation (`cards/`, `banners/`, `headers/`, `context/`, `metrics/`, `modals/`, `primitives/`, `tabs/`).
+  - **`domains/`**: 6 integrated simulation pillars (`defense/`, `diplomacy/`, `economy/`, `government/`, `intelligence/`, `geography/`).
+  - **`dossier/`**: Country dossiers, public factbooks, and Wiki infobox views.
+
+- **Facet Core UI Design System Convergence (`design.facet` v2)**:
+  - Unified all atomic tokens, glass containers, charts, interactive controls, and shared feedback states in `src/components/ui/`.
+  - Added tactile press feedback physics (`:active:scale-[0.98]`), spring transition bounds, and cursor pointer states across primary button and control primitives.
+
+- **Brand & System Renames (`systems.halo` v4, `systems.builder` v3)**:
+  - Completed platform-wide brand transition from Dynamic Island to canonical Halo pill architecture (`src/components/halo/`).
+  - Consolidated statecraft and tax builders under `src/components/mycountry/domains/government/builder` and `tax/`.
+
+- **Verification**:
+  - 100% typecheck clean across all 4 sub-projects (`typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db`).
+  - 0 broken component imports across 2,900+ source files.
+  - Jest component unit tests passing green.
+
 ### Global Codebase Typographic Harmonization & Optical Scale Standardization (Phases 1–4)
 
 - **Master Specification & Design Foundations ([2026-08-18-codebase-typography-design.md](file:///home/jxsig/projects/ixstats/docs/superpowers/specs/2026-08-18-codebase-typography-design.md))**:

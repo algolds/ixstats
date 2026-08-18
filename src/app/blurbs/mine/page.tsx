@@ -10,7 +10,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { User, BookOpen } from "lucide-react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
+import { BlurbsNav } from "~/components/thinkpages/blurbs/BlurbsNav";
 
 function MyBlurbsList() {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =

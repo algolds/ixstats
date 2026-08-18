@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {

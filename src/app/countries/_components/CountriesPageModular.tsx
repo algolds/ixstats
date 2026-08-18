@@ -5,10 +5,10 @@ import { Search, X, Globe } from "lucide-react";
 import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
-import { type CountryCardData } from "~/components/countries/CountryFocusCard";
+import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { createAbsoluteUrl } from "~/lib/utils";
-import { useDIPlugin } from "~/components/DynamicIsland";
-import { CountriesDIView } from "~/components/DynamicIsland/CountriesDIView";
+import { useDIPlugin } from "~/components/halo";
+import { CountriesDIView } from "~/components/halo/CountriesDIView";
 
 interface CountriesPageModularProps {
   countries: CountryCardData[];

@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import { useFactbookMetrics } from "~/components/mycountry/FactbookMetricsProvider";
+import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import {
   OverviewTab,
   EconomyTab,
   LaborTab,
   GovernmentTab,
   GeographyTab,
-} from "~/components/mycountry/tabs";
+} from "~/components/mycountry/shared/tabs";
 import type { FactbookSection } from "~/lib/wiki";
 
 /**

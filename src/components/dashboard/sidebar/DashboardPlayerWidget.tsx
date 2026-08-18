@@ -21,7 +21,7 @@ import * as LucideIcons from "lucide-react";
 import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import {
   CutoutCard,

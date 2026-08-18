@@ -11,7 +11,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { CheckCircle, User } from "lucide-react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
+import { BlurbsNav } from "~/components/thinkpages/blurbs/BlurbsNav";
 
 function SubmitPromptForm() {
   const [title, setTitle] = useState("");

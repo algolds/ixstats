@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
-import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { escapeHtml, sanitizeUserContent } from "~/lib/utils";
 import type { ActivityFilter, ActivityTimeRange, CountryActivityItem } from "../_types";
 

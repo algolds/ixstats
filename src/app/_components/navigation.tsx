@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
-import { CommandPalette } from "~/components/DynamicIsland";
+import { CommandPalette } from "~/components/halo";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useHasRoleLevel, useHasPermission } from "~/hooks/usePermissions";

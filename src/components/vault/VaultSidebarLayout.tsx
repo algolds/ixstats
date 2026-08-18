@@ -7,7 +7,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import type { VaultSection } from "./VaultSidebarNav";
 import { DashboardPlayerWidget } from "~/components/dashboard/sidebar/DashboardPlayerWidget";
-import { VaultWidget } from "~/components/mycountry/VaultWidget";
+import { VaultWidget } from "~/components/mycountry/shell/VaultWidget";
 import { DashboardQuickLinks } from "~/components/dashboard/sidebar/DashboardQuickLinks";
 import { useTheme } from "~/context/theme-context";
 

@@ -28,8 +28,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import { HealthRing } from "~/components/ui/health-ring";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { PreText } from "~/components/ui/pretext";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { StandingBands } from "~/components/mycountry/StandingBands";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { StandingBands } from "~/components/mycountry/shell/StandingBands";
 import type { HeroSection } from "./useHeroAutoCycle";
 
 // Helper UI primitives

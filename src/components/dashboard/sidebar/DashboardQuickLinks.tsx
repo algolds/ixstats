@@ -4,10 +4,10 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BookOpen, MessageSquare, Bookmark, Users, Compass } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { StatusIndicator } from "~/components/status-indicator";
+import { StatusIndicator } from "~/components/ui/status-indicator";
 import { BUILD_VERSION, PLATFORM_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
-import { FeedbackModal } from "~/components/modals/FeedbackModal";
+import { FeedbackModal } from "~/components/ui/modals/FeedbackModal";
 import {
   CutoutCard,
   CutoutCardContent,

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 interface CountryInfoTabProps {
   wikiRichIntro: any;

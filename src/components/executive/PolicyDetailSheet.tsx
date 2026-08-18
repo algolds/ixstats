@@ -30,7 +30,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
-import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
+import { ParadoxFlavorCard } from "~/components/executive/narrator/ParadoxFlavorCard";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 import { cn } from "~/lib/utils";
 

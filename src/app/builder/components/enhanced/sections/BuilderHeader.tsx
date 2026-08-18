@@ -7,7 +7,7 @@ import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useBuilderContext } from "../context/BuilderStateContext";
-import { AutosaveHistoryPanel } from "~/components/builder/AutosaveHistoryPanel";
+import { AutosaveHistoryPanel } from "~/components/mycountry/domains/government/builder/AutosaveHistoryPanel";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 
 interface BuilderHeaderProps {

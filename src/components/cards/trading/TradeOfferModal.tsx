@@ -21,7 +21,7 @@ import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards";
 
 export interface TradeOfferModalProps {
