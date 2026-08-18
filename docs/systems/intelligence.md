@@ -26,7 +26,7 @@ The intelligence stack aggregates diplomatic, economic, and security signals int
 | Mission Tracker | `api.diplomatic.getActiveMissions`, `api.diplomatic.getEmbassies` | Supports operations hub and quick actions |
 
 ## Realtime Behaviour
-- Production WebSocket server (`src/lib/websocket-server.ts`) broadcasts diplomatic events, crisis updates, and notifications
+- Production WebSocket server (`src/server/websocket-server.ts`) broadcasts diplomatic events, crisis updates, and notifications
 - Client widgets subscribe via Socket.IO in `LiveDiplomaticFeed.tsx` and related components
 
 ## Calculations & Utilities

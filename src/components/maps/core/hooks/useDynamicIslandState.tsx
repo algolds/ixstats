@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
-import { useIxTime } from "~/contexts/IxTimeContext";
+import { useIxTime } from "~/context/IxTimeContext";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";

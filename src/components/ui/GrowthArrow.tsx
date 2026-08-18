@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface GrowthArrowProps {
   /** Signed percentage change, e.g. 2.4 or -1.1. */
@@ -28,7 +28,7 @@ export function GrowthArrow({
 }: GrowthArrowProps) {
   if (value == null || !isFinite(value) || value === 0) return null;
   const up = value > 0;
-  const Icon = up ? ArrowTrendingUpIcon : ArrowTrendingDownIcon;
+  const Icon = up ? TrendingUp : TrendingDown;
   return (
     <span
       className={cn(

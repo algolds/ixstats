@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { GovernmentBuilderStateSchema } from "~/types/validation/government";
+import { GovernmentBuilderStateSchema } from "~/types/government";
 
 describe("GovernmentBuilder validation", () => {
   it("fails when totalBudget <= 0 and department name missing", () => {

@@ -1,13 +1,12 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, Activity, ChevronRight, BookOpen } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, ChevronRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
 import { extractWikiIntroHtml, findCoatOfArmsUrl, type WikiIntro } from "~/lib/wiki/integration";
@@ -71,7 +70,7 @@ export function OverviewTab({
                     if (gdpGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <ArrowTrendingUpIcon size={14} className="inline-flex" />
+                          <TrendingUp size={14} className="inline-flex" />
                           <span className="text-[10px] font-semibold">
                             +{gdpGrowth.toFixed(1)}%
                           </span>
@@ -80,7 +79,7 @@ export function OverviewTab({
                     if (gdpGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <ArrowTrendingDownIcon size={14} className="inline-flex" />
+                          <TrendingDown size={14} className="inline-flex" />
                           <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
@@ -118,7 +117,7 @@ export function OverviewTab({
                     if (popGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <ArrowTrendingUpIcon size={14} className="inline-flex" />
+                          <TrendingUp size={14} className="inline-flex" />
                           <span className="text-[10px] font-semibold">
                             +{popGrowth.toFixed(1)}%
                           </span>
@@ -127,7 +126,7 @@ export function OverviewTab({
                     if (popGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <ArrowTrendingDownIcon size={14} className="inline-flex" />
+                          <TrendingDown size={14} className="inline-flex" />
                           <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
                       );

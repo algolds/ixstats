@@ -2,54 +2,52 @@
 "use client";
 
 import { Globe, BarChart3, Users } from "lucide-react";
-// Assuming Skeleton is in this path
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { ExpandableStatCard } from "~/components/ui/ExpandableStatCard";
-import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
 interface CountriesPageHeaderProps {
-  // totalCountries: number; // Removed
   isLoading?: boolean;
-  // showing?: number; // Removed
-  totalPopulation?: number; // Add totalPopulation prop
-  combinedGdp?: number; // Add combinedGdp prop
+  totalPopulation?: number;
+  combinedGdp?: number;
 }
 
-// Dynamically import react-wavify to avoid SSR issues
-const Wave = dynamic(() => import("react-wavify").then((mod) => mod.default), { ssr: false });
-
 function FlagWaveBackground({ flagUrl }: { flagUrl: string }) {
-  // The SVG wave overlays the flag image for a realistic effect
   return (
     <div
       className="pointer-events-none absolute inset-0 z-0 flex items-end justify-center overflow-hidden"
       style={{ minHeight: 120 }}
     >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          background: `url(${flagUrl}) center/cover no-repeat`,
-          opacity: 0.22,
-          filter: "blur(0.5px) saturate(1.2)",
-        }}
-      />
+      {flagUrl && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            background: `url(${flagUrl}) center/cover no-repeat`,
+            opacity: 0.22,
+            filter: "blur(0.5px) saturate(1.2)",
+          }}
+        />
+      )}
       <div style={{ position: "absolute", bottom: 0, width: "100%", height: "100%" }}>
-        <Wave
-          fill="url(#flag-gradient)"
-          options={{ height: 60, amplitude: 18, speed: 0.18, points: 5 }}
-          style={{ width: "100%", height: 120, minHeight: 80, opacity: 0.7 }}
+        <svg
+          viewBox="0 0 1440 120"
+          className="h-full w-full opacity-70"
+          preserveAspectRatio="none"
         >
           <defs>
-            <linearGradient id="flag-gradient" gradientTransform="rotate(90)">
+            <linearGradient id="flag-gradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#fff" stopOpacity="0.7" />
               <stop offset="100%" stopColor="#fff" stopOpacity="0.1" />
             </linearGradient>
           </defs>
-        </Wave>
+          <path
+            fill="url(#flag-gradient)"
+            d="M0,32L48,42.7C96,53,192,75,288,80C384,85,480,75,576,64C672,53,768,43,864,48C960,53,1056,75,1152,80C1248,85,1344,75,1392,69.3L1440,64L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"
+          />
+        </svg>
       </div>
     </div>
   );
@@ -61,7 +59,6 @@ export function CountriesPageHeader({
   combinedGdp,
   filteredCountries = [],
 }: CountriesPageHeaderProps & { filteredCountries?: any[] }) {
-  // Find top 3 countries by GDP for the GDP card
   const topGdpCountries = useMemo(
     () =>
       (filteredCountries || [])
@@ -71,15 +68,12 @@ export function CountriesPageHeader({
     [filteredCountries]
   );
 
-  // Use a placeholder for the background - the FlagWaveBackground component should handle flag loading
-  const flagUrl = null; // Let FlagWaveBackground handle flag loading from cache
+  const flagUrl = null;
 
   return (
     <div className="relative mb-8">
-      {/* Realistic waving flag background using react-wavify */}
       <FlagWaveBackground flagUrl={flagUrl ?? ""} />
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left side: Title and description */}
         <div>
           <h1 className="text-foreground flex items-center text-3xl font-bold md:text-4xl">
             <Globe className="text-primary mr-3 h-8 w-8 md:h-10 md:w-10" />
@@ -89,7 +83,6 @@ export function CountriesPageHeader({
             Browse detailed statistics for all countries in the world.
           </p>
         </div>
-        {/* Right side: Expandable Stat Cards */}
         <div className="flex flex-col gap-3 sm:flex-row">
           <ExpandableStatCard
             icon={<Users className="mr-2 h-5 w-5 text-blue-500" />}
@@ -137,5 +130,4 @@ export function CountriesPageHeader({
   );
 }
 
-// Default export for the component, useful for dynamic imports or if it's the primary export of the file.
 export default CountriesPageHeader;

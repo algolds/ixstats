@@ -22,7 +22,7 @@ import {
   type CoreEconomicIndicatorsData,
   // eslint-disable-next-line unused-imports/no-unused-imports
   type GovernmentSpendingData,
-} from "~/schemas/economics.schema";
+} from "~/types/economics";
 
 // ===============================
 // Types for DB relations

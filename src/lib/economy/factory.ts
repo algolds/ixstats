@@ -9,7 +9,7 @@ import {
   EconomyDataSchema,
   type EconomyData,
   type GovernmentSpendingData,
-} from "~/schemas/economics.schema";
+} from "~/types/economics";
 
 // ===============================
 // Policy flags default (all false)

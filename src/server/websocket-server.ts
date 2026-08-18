@@ -1,18 +1,13 @@
 // Next.js WebSocket Server Integration
-// Integrates WebSocket server with Next.js application
+// Integrates WebSocket server with Next.js custom server (server.mjs)
 
 import "server-only";
-import { Server as HTTPServer } from "http";
-import type { NextApiRequest, NextApiResponse } from "next";
-
-// Use any types to avoid importing socket.io during build
-type IntelligenceWebSocketServer = any;
-type IntelligenceBroadcastService = any;
-type ThinkPagesWebSocketServer = any;
+import type { Server as HTTPServer } from "http";
+import type { IntelligenceWebSocketServer } from "~/lib/websocket/intelligence-websocket-server";
+import type { ThinkPagesWebSocketServer } from "~/lib/websocket/thinkpages-websocket-server";
 
 // Global instances
 let wsServer: IntelligenceWebSocketServer | null = null;
-let broadcastService: IntelligenceBroadcastService | null = null;
 let thinkPagesServer: ThinkPagesWebSocketServer | null = null;
 
 /**
@@ -30,26 +25,12 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
     // Dynamic import to avoid bundling socket.io during build
     const { IntelligenceWebSocketServer } =
       await import("~/lib/websocket/intelligence-websocket-server");
-    const { IntelligenceBroadcastService } = await import("~/lib/intelligence-broadcast-service");
     const { ThinkPagesWebSocketServer } =
       await import("~/lib/websocket/thinkpages-websocket-server");
 
-    // Create WebSocket server
+    // Create WebSocket servers
     wsServer = new IntelligenceWebSocketServer(httpServer);
     thinkPagesServer = new ThinkPagesWebSocketServer(httpServer);
-
-    // Create and start broadcast service
-    broadcastService = new IntelligenceBroadcastService({
-      websocketServer: wsServer,
-      broadcastInterval: 30000, // 30 seconds
-      alertThresholds: {
-        economicChange: 5.0,
-        populationChange: 2.0,
-        vitalityDrop: 10.0,
-      },
-    });
-
-    broadcastService.start();
 
     console.log("WebSocket Servers initialized successfully");
 
@@ -68,13 +49,6 @@ export function getWebSocketServer(): IntelligenceWebSocketServer | null {
   return wsServer;
 }
 
-/**
- * Get broadcast service instance
- */
-export function getBroadcastService(): IntelligenceBroadcastService | null {
-  return broadcastService;
-}
-
 export function getThinkPagesServer(): ThinkPagesWebSocketServer | null {
   return thinkPagesServer;
 }
@@ -84,11 +58,6 @@ export function getThinkPagesServer(): ThinkPagesWebSocketServer | null {
  */
 async function handleShutdown(): Promise<void> {
   console.log("Shutting down WebSocket services...");
-
-  if (broadcastService) {
-    broadcastService.stop();
-    broadcastService = null;
-  }
 
   if (wsServer) {
     await wsServer.shutdown();
@@ -100,55 +69,4 @@ async function handleShutdown(): Promise<void> {
   }
 
   console.log("WebSocket services shutdown complete");
-}
-
-/**
- * API route handler for WebSocket status and management
- */
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "GET") {
-    // Return WebSocket server status
-    const status = {
-      websocketServer: {
-        active: !!wsServer,
-        stats: wsServer?.getStats() || null,
-      },
-      broadcastService: {
-        active: !!broadcastService,
-        stats: broadcastService?.getStats() || null,
-      },
-      timestamp: Date.now(),
-    };
-
-    res.status(200).json(status);
-  } else if (req.method === "POST") {
-    // Handle WebSocket management commands
-    const { action, countryId } = req.body;
-
-    if (action === "trigger_broadcast") {
-      if (!broadcastService) {
-        return res.status(503).json({ error: "Broadcast service not available" });
-      }
-
-      broadcastService
-        .triggerBroadcast(countryId)
-        .then(() => {
-          res.status(200).json({ success: true, message: "Broadcast triggered" });
-        })
-        .catch((error: Error) => {
-          res.status(500).json({ error: error.message });
-        });
-    } else if (action === "get_stats") {
-      const stats = {
-        websocketServer: wsServer?.getStats() || null,
-        broadcastService: broadcastService?.getStats() || null,
-      };
-      res.status(200).json(stats);
-    } else {
-      res.status(400).json({ error: "Invalid action" });
-    }
-  } else {
-    res.setHeader("Allow", ["GET", "POST"]);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
 }

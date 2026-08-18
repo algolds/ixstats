@@ -33,10 +33,42 @@ import React, {
   useState,
 } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
-import useMeasure from "react-use-measure";
 import { cn } from "~/lib/utils";
 import { useSwipePhysics } from "./useSwipePhysics";
 import { GULP_SCALE, SPRING_PRESETS } from "./constants";
+
+/**
+ * Lightweight native measure hook replacing react-use-measure
+ */
+function useMeasure<T extends HTMLElement = HTMLDivElement>() {
+  const [bounds, setBounds] = useState({ width: 0, height: 0 });
+  const [element, setElement] = useState<T | null>(null);
+
+  const ref = useCallback((node: T | null) => {
+    setElement(node);
+    if (node) {
+      const rect = node.getBoundingClientRect();
+      setBounds({ width: rect.width, height: rect.height });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!element || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        setBounds({ width, height });
+      }
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
+
+  return [ref, bounds] as const;
+}
 import type {
   SwipeableRowProps,
   SwipeableRowLeadingProps,

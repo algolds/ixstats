@@ -8,7 +8,7 @@ import {
   syncTaxData,
   type ConflictWarning,
 } from "~/server/services/builderIntegrationService";
-import { TaxBuilderStateSchema } from "~/types/validation/tax";
+import { TaxBuilderStateSchema } from "~/types/tax-system";
 
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";

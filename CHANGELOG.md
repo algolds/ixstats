@@ -10,6 +10,42 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Repository Optimization & Codebase Pruning (/ponytail)
+
+- **Native Web API Replacements & Dependency Pruning**:
+  - Replaced `react-intersection-observer` with native `IntersectionObserver` in `WikiSearch.tsx`.
+  - Replaced `react-use-measure` with native `ResizeObserver` in `SwipeableRow.tsx`.
+  - Replaced `react-dropzone` with native HTML5 drag-and-drop & `<input type="file">` in `UploadStep.tsx`.
+  - Replaced `react-wavify` with native SVG wave markup and gradient styling in `CountriesPageHeader.tsx`.
+  - Replaced `canvas-confetti` and `@types/canvas-confetti` with a native 2D canvas particle runner in `confetti.tsx`.
+  - Pruned all 6 packages from `package.json` and synchronized `bun.lock`.
+  - Deleted `src/components/ui/icons/` (38 files, ~3,500 lines) in favor of standard `lucide-react` icons.
+- **Context Architecture Consolidation**:
+  - Merged bifurcated `src/contexts/` into canonical `src/context/` (`ExecutiveNotificationContext`, `IxTimeContext`) and deleted `src/contexts/`.
+- **Multi-Engine Notification Deconstruction**:
+  - Pruned 10 speculative files (~4,800 lines) of multi-engine notification wrappers, store duplicates, and telemetry pollers in `src/services/` and `src/hooks/` (`GlobalNotificationBridge`, `GlobalNotificationStore`, `NotificationOrchestrator`, `ContextIntelligenceEngine`, `DeliveryHandlers`, `DiplomaticNotificationService`, `useUnifiedNotifications`, `GlobalNotificationSystem`, `LiveDataIntegration`).
+  - Anchored notification production architecture to `useNotificationStore` + `useToastQueueStore` + `useNotify`.
+- **Stylesheets Modernization (`src/styles/`)**:
+  - Deleted dead CIA-style intelligence presentation stylesheet `src/styles/diplomatic-intelligence.css` (371 lines).
+  - Deleted mislabeled dead stylesheet `src/styles/aurora-backgrounds.css` (46 lines).
+  - Renamed legacy design entrypoint `glass-refraction.css` → `facet.css` and updated `@import "./facet.css"` in `globals.css`.
+  - Streamlined `compact-mode.css` by removing hazardous global Tailwind utility overrides (`.p-4`, `.gap-4`, `.text-sm`).
+  - Fixed syntax parser issues on Line 1 of `globals.css`.
+- **Types Consolidation (`src/types/`)**:
+  - Merged `src/types/validation/government.ts` directly into `src/types/government.ts`.
+  - Merged `src/types/validation/tax.ts` directly into `src/types/tax-system.ts`.
+  - Deleted `src/types/validation/` directory and updated all router and test call sites.
+  - Streamlined `src/types/unified-notifications.ts` from 441 lines to active canonical types, removing ~380 lines of unused ML personalization, suppression rules, and battery telemetry.
+- **Server Architecture Optimization (`src/server/`)**:
+  - Domain-split flat `intelligence.ts` router monolith (631 lines) into modular sub-routers (`feed.ts`, `templates.ts`, `briefings.ts`) recombined with `mergeRouters` in `src/server/api/routers/intelligence/index.ts`, deleting the flat monolith.
+  - Migrated `EconomicModel`, `EconomicYearData`, and `PolicyEffect` to canonical `src/types/economics.ts`; deleted `src/server/db/schema.ts` and directory `src/server/db/`.
+  - Pruned dead 50-line Next.js Pages API route handler from `src/server/websocket-server.ts`.
+  - Corrected `websocket:dev` and `websocket:server` scripts in `package.json`.
+- **Net Cumulative Impact**:
+  - **~10,200+ net lines of dead code and structural bloat eliminated**.
+  - **6 NPM packages removed**.
+  - **714 / 714 unit tests passing** across the platform.
+
 ### Refactored & Consolidated (`src/lib/` Phase 8 Caching, System & Utils Package Partitioning)
 
 - **Pure Root Architecture & System Isolation (/ponytail)**:

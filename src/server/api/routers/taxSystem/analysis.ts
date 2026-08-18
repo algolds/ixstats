@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState } from "~/types/government";
 import { detectTaxConflicts } from "~/server/services/builderIntegrationService";
-import { TaxBuilderStateSchema } from "~/types/validation/tax";
+import { TaxBuilderStateSchema } from "~/types/tax-system";
 import {
   parseEconomicDataForTaxSystem,
   calculateRecommendedTaxRevenue,

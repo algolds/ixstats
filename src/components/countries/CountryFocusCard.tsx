@@ -6,8 +6,7 @@ import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { UsersIcon } from "~/components/ui/icons/users";
-import { ArrowTrendingUpIcon as TrendingUpIcon } from "~/components/ui/icons/arrow-trending-up";
+import { TrendingUp } from "lucide-react";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 
@@ -100,10 +99,6 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     const isOtherExpanded = propIsOtherExpanded ?? (expanded !== null && expanded !== index);
     const isOwnCountry = !!viewerCountryId && viewerCountryId === country.id;
 
-    // Icon refs for controlling animations
-    const usersIconRef = useRef<any>(null);
-    const trendingIconRef = useRef<any>(null);
-
     const handleCardClick = () => {
       if (onExpandToggle) {
         onExpandToggle(isExpanded ? null : index);
@@ -129,8 +124,6 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           } else {
             setHovered?.(index);
           }
-          usersIconRef.current?.startAnimation();
-          trendingIconRef.current?.startAnimation();
         }}
         onMouseLeave={() => {
           if (onHoverToggle) {
@@ -138,8 +131,6 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           } else {
             setHovered?.(null);
           }
-          usersIconRef.current?.stopAnimation();
-          trendingIconRef.current?.stopAnimation();
         }}
         onClick={handleCardClick}
         animate={{
@@ -285,8 +276,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                         className="flex items-center justify-between text-sm text-white/90"
                       >
                         <div className="flex items-center gap-2">
-                          <TrendingUpIcon
-                            ref={trendingIconRef}
+                          <TrendingUp
                             size={16}
                             className="text-emerald-400"
                           />

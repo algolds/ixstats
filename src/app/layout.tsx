@@ -23,8 +23,8 @@ import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
-import { IxTimeProvider } from "~/contexts/IxTimeContext";
-import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
+import { IxTimeProvider } from "~/context/IxTimeContext";
+import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 

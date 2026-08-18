@@ -3,49 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Brain, Shield, Crown, Users, Vote, Lock, Edit2, TrendingUp } from "lucide-react";
-import { cn } from "~/lib/utils";
 import {
-  LayoutDashboardIcon,
-  CrownIcon,
-  UsersIcon,
-  BrainIcon,
-  ShieldCheckIcon,
-  VoteIcon,
-  MapIcon,
-} from "~/components/ui/icons";
+  Brain,
+  Shield,
+  Crown,
+  Users,
+  Vote,
+  Lock,
+  Edit2,
+  TrendingUp,
+  LayoutDashboard,
+  ShieldCheck,
+  Map,
+} from "lucide-react";
+import { cn } from "~/lib/utils";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 
-/** Map section ids to their animated icon counterparts */
-const ANIMATED_NAV_ICONS: Record<
-  string,
-  React.ComponentType<{ size?: number; className?: string }>
-> = {
-  overview: LayoutDashboardIcon,
-  executive: CrownIcon,
-  diplomacy: UsersIcon,
-  intelligence: BrainIcon,
-  defense: ShieldCheckIcon,
-  politics: VoteIcon,
-  "map-editor": MapIcon,
-};
-
-/** Renders the animated icon for a section when available, falling back to the lucide icon */
+/** Renders the standard Lucide icon for a section */
 function NavIcon({
-  id,
   fallback: Fallback,
   className,
-  size = 16,
 }: {
-  id: string;
+  id?: string;
   fallback: LucideIcon;
   className?: string;
   size?: number;
 }) {
-  const Animated = ANIMATED_NAV_ICONS[id];
-  if (Animated) return <Animated size={size} className={className} />;
   return <Fallback className={cn("h-4 w-4", className)} />;
 }
 

@@ -494,7 +494,7 @@ Multi-source flag resolution pipeline. Key files: `unified-flag-service.ts`, `fl
 
 | System                     | Status           | Key File                                                                   |
 | -------------------------- | ---------------- | -------------------------------------------------------------------------- |
-| **Intelligence WebSocket** | Production only  | `src/lib/websocket-server.ts`, `src/server/websocket-server.ts`            |
+| **Intelligence WebSocket** | Production only  | `src/server/websocket-server.ts`                                           |
 | **Market WebSocket**       | Always enabled   | `src/lib/market-websocket-server.ts`, `src/lib/market-websocket-client.ts` |
 | **Diplomatic WebSocket**   | Production only  | `src/lib/diplomatic-websocket.ts`                                          |
 | **ThinkPages WebSocket**   | Live social feed | `src/hooks/useThinkPagesWebSocket.ts`                                      |

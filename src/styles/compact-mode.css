@@ -15,63 +15,18 @@
 }
 
 .compact-mode .navigation-bar {
-  height: 3rem; /* Reduced from 4rem */
+  height: 3rem;
 }
 
 .compact-mode .marquee-container {
-  height: 2.5rem; /* Reduced marquee height */
+  height: 2.5rem;
 }
 
 .compact-mode .marquee-item {
-  padding: 0.25rem 0.5rem; /* Reduced padding */
+  padding: 0.25rem 0.5rem;
   font-size: var(--font-size-sm);
 }
 
 .compact-mode .dynamic-island {
-  transform: scale(0.9); /* Slightly smaller */
-}
-
-.compact-mode .card {
-  padding: var(--spacing-md); /* Reduced card padding */
-}
-
-.compact-mode .btn-sm {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-}
-
-.compact-mode .text-sm {
-  font-size: var(--font-size-xs);
-}
-
-.compact-mode .text-base {
-  font-size: var(--font-size-sm);
-}
-
-.compact-mode .text-lg {
-  font-size: var(--font-size-base);
-}
-
-.compact-mode .gap-4 {
-  gap: var(--spacing-md);
-}
-
-.compact-mode .gap-6 {
-  gap: var(--spacing-lg);
-}
-
-.compact-mode .p-4 {
-  padding: var(--spacing-md);
-}
-
-.compact-mode .p-6 {
-  padding: var(--spacing-lg);
-}
-
-.compact-mode .m-4 {
-  margin: var(--spacing-md);
-}
-
-.compact-mode .m-6 {
-  margin: var(--spacing-lg);
+  transform: scale(0.9);
 }

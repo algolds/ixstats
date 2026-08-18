@@ -1,6 +1,6 @@
 import React from "react";
 import { useUser } from "~/context/auth-context";
-import { useIxTime } from "~/contexts/IxTimeContext";
+import { useIxTime } from "~/context/IxTimeContext";
 import { PreText } from "~/components/ui/pretext";
 
 interface WikiProfileButtonProps {}

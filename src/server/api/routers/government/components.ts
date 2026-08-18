@@ -3,9 +3,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { COMPONENT_TYPE_VALUES } from "~/types/government";
-
-import { GovernmentBuilderStateSchema } from "~/types/validation/government";
+import { COMPONENT_TYPE_VALUES, GovernmentBuilderStateSchema } from "~/types/government";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";

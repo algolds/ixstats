@@ -73,7 +73,7 @@ Each tier carries an independent version where noted — see the **[Versioning &
 | Database | Prisma 6.19.3, PostgreSQL (port 5433) |
 | Styling | Tailwind CSS 4.3, custom **Facet** design system (glass/refraction/depth), Lucide icons |
 | Mapping | MapLibre GL JS with globe/mercator projection, PostGIS spatial queries |
-| Realtime | Socket.IO via `server.mjs` and `src/lib/websocket-server.ts` |
+| Realtime | Socket.IO via `server.mjs` and `src/server/websocket-server.ts` |
 
 ## Getting Started
 
@@ -223,8 +223,8 @@ The platform is built on **Facet**  — a custom design system built around dept
 
 - tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
 - Router index: `src/server/api/root.ts` (90 domain routers)
-- Database: Prisma client helpers in `src/server/db`
-- Realtime: Socket.IO events from `src/lib/websocket-server.ts`
+- Database: Prisma client in `src/server/db.ts`
+- Realtime: Socket.IO events from `src/server/websocket-server.ts`
 - **Architecture guard:** `bun run audit:arch` — fails on new god files, file growth past ratcheted baseline, or new cross-router imports. Single canonical splitter: `scripts/split-router-template.ts`
 
 ## Observability

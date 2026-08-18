@@ -13,8 +13,7 @@ import { useIxTimeStore } from "~/stores/ixtime-store";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
-import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
+import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
 import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
@@ -108,7 +107,6 @@ function CompactViewComponent({
 
   const enhancedStats = useNotificationStore((s) => s.stats);
   const notifications = useNotificationStore((s) => s.notifications);
-  const { getStats: _getStats } = useGlobalNotificationBridge();
   const { unreadCount: executiveUnreadCount, isExecutiveMode } = useExecutiveNotifications();
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(

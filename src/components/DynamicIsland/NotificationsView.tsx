@@ -4,7 +4,7 @@ import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
+import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
 import { useUser } from "~/context/auth-context";
 import {
   Bell,

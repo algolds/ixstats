@@ -8,7 +8,6 @@ import { api } from "~/trpc/react";
 import type { Country, IntelligenceItem, VitalityIntelligence } from "~/types/intelligence-unified";
 import type { DeliveryMethod } from "~/types/unified-notifications";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
 import { createAbsoluteUrl } from "~/lib/utils";
 
 interface OptimizedIntelligenceData {
@@ -82,8 +81,6 @@ export function useOptimizedIntelligenceData({
   });
 
   // Memoize the result to prevent unnecessary re-renders
-  // Get notification system for live wire integration
-  const { createNotification } = useUnifiedNotifications();
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Wire intelligence data changes to global notifications

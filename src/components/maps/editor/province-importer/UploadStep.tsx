@@ -1,7 +1,6 @@
 "use client";
 
-import React, { memo, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
+import React, { memo, useCallback, useState, useRef } from "react";
 import { Upload, FileImage, FileText, Loader2 } from "lucide-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
@@ -10,26 +9,52 @@ interface UploadStepProps {
 }
 
 export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps) {
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      if (file) {
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFile = useCallback(
+    (file?: File) => {
+      if (file && (file.type === "image/svg+xml" || file.type === "image/png" || file.name.endsWith(".svg") || file.name.endsWith(".png"))) {
         importer.handleUpload(file);
       }
     },
     [importer]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/svg+xml": [".svg"],
-      "image/png": [".png"],
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!importer.isProcessing) {
+      setIsDragActive(true);
+    }
+  }, [importer.isProcessing]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragActive(false);
+      if (importer.isProcessing) return;
+
+      const file = e.dataTransfer.files?.[0];
+      handleFile(file);
     },
-    maxFiles: 1,
-    maxSize: 20 * 1024 * 1024, // 20MB
-    disabled: importer.isProcessing,
-  });
+    [importer.isProcessing, handleFile]
+  );
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      handleFile(file);
+    },
+    [handleFile]
+  );
 
   return (
     <div className="space-y-4">
@@ -69,14 +94,23 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
       </div>
 
       <div
-        {...getRootProps()}
+        onClick={() => !importer.isProcessing && fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${
           isDragActive
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/50 hover:bg-accent/50"
         } ${importer.isProcessing ? "pointer-events-none opacity-50" : ""}`}
       >
-        <input {...getInputProps()} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".svg,.png,image/svg+xml,image/png"
+          onChange={handleInputChange}
+          className="hidden"
+        />
 
         {importer.isProcessing ? (
           <>

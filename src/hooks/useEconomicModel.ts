@@ -16,11 +16,11 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import type {
-  Country,
+  CountryEconomicSummary,
   EconomicYearData,
   StorytellerEffect,
   EconomicModel,
-} from "~/server/db/schema";
+} from "~/types/economics";
 import {
   type ModelParameters,
   type SectorData,
@@ -36,7 +36,7 @@ import {
 /**
  * Country data with related economic information
  */
-interface CountryWithEconomicData extends Country {
+interface CountryWithEconomicData extends CountryEconomicSummary {
   economicYears: EconomicYearData[];
   storytellerEffects?: StorytellerEffect | null;
   economicModel?: EconomicModel | null;

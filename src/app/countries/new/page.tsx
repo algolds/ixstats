@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "../_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/countries/CountryFocusCard";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 
 export default function NewCountriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,8 +29,8 @@ export default function NewCountriesPage() {
     return countriesResult?.countries?.map((c) => c.name) || [];
   }, [countriesResult]);
 
-  // Bulk fetch flags
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+  // Load all flags in parallel with automatic fallback
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlags(countryNames);
 
   // Process countries data for the focus grid
   const processedCountries: CountryCardData[] = useMemo(() => {

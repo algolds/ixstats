@@ -25,7 +25,6 @@ import { cn } from "~/lib/utils";
 // Hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";
 import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
-import { useSharedDataModal } from "~/hooks/useSharedDataModal";
 
 // Sub-components (embassy network)
 import {
@@ -91,7 +90,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
 
   // Shared data modal (embassy synergy detail — legacy)
-  const { showSharedData, closeModal: closeSharedDataModal } = useSharedDataModal();
+  const [showSharedData, setShowSharedData] = useState<string | null>(null);
+  const closeSharedDataModal = () => setShowSharedData(null);
 
   // Relations data
   const { data: relations } = api.diplomaticCore.getRelationships.useQuery(

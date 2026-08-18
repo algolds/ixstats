@@ -10,7 +10,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { useIxMedia } from "~/hooks/useIxMedia";
+import { useIxMedia } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
 
 export interface PlaybackBlock {

@@ -39,9 +39,9 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 ## Subdirectory Routers
 Some domains are split into multiple files under a subdirectory with an `index.ts` barrel:
 
-- **`geo/`** — 6 files (~11,558 lines, 102 endpoints): core, features, editor, admin, sovereignty, wiki
+- **`geo/`** — 6 files: core, features, editor, admin, sovereignty, wiki
 - **`diplomacy/`** — Split diplomatic operations
-- **`intelligence/`** — Split intelligence operations
+- **`intelligence/`** — 4 files (feed, templates, briefings, index barrel with mergeRouters)
 - **`countries/`** — Split country data operations
 
 ## Adding a Router

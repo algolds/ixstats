@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/utils";
-import type { EconomicYearData, StorytellerEffect } from "~/server/db/schema";
+import type { EconomicYearData, StorytellerEffect } from "~/types/economics";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 
 interface ModelingPageProps {

@@ -18,7 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { useNotify } from "~/hooks/useNotify";
 
 export function CountryAdminPanel() {

@@ -5,7 +5,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "./_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/countries/CountryFocusCard";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { useUserCountry } from "~/hooks/useUserCountry";
 

@@ -14,7 +14,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Loader2, Check } from "lucide-react";
-import { useInView } from "react-intersection-observer";
+import { useRef } from "react";
 
 interface WikiSearchProps {
   onImageSelect?: (imageUrl: string) => void;
@@ -26,7 +26,7 @@ export function WikiSearch({ onImageSelect }: WikiSearchProps) {
   const [activeQuery, setActiveQuery] = useState("");
   const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const { ref: bottomRef, inView } = useInView();
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     // @ts-expect-error — TODO: implement searchWiki procedure on thinkpages router
@@ -62,10 +62,21 @@ export function WikiSearch({ onImageSelect }: WikiSearchProps) {
 
   // Infinite scroll - load more when scrolling to bottom
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    const el = bottomRef.current;
+    if (!el || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Flatten all pages into single array
   const allImages = data?.pages.flatMap((page: any) => page.images) || [];

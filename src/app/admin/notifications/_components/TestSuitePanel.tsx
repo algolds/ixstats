@@ -3,11 +3,6 @@
 import { useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
-import {
-  diplomaticNotificationService,
-  achievementNotificationService,
-} from "~/services/DiplomaticNotificationService";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -65,7 +60,6 @@ const PRIORITIES: { label: string; value: ToastPriority }[] = [
 export function TestSuitePanel() {
   const notify = useNotify();
   const addNotification = useNotificationStore((state) => state.addNotification);
-  const { bridge } = useGlobalNotificationBridge();
 
   const [testResults, setTestResults] = useState<string[]>([]);
 
