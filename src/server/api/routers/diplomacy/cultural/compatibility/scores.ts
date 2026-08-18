@@ -6,7 +6,7 @@ import {
   type CountryBasicInfo,
   type DiplomaticRelationship,
   type EmbassyConnection,
-} from "~/lib/cultural-compatibility";
+} from "~/lib/diplomacy/cultural-compatibility";
 
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 

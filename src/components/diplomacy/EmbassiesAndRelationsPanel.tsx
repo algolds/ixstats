@@ -18,7 +18,7 @@ import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
+import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 

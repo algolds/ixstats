@@ -17,12 +17,12 @@ import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
 import { notificationAPI } from "~/lib/notifications/api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
-import { revealConsequences } from "~/lib/statecraft-recon";
+import { revealConsequences } from "~/lib/statecraft/recon";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
 } from "~/lib/atomic-government-utils";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 

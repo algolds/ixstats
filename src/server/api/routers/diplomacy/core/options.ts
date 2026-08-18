@@ -6,7 +6,7 @@ import {
   STRATEGIC_PRIORITIES,
   PARTNERSHIP_GOALS,
   KEY_ACHIEVEMENTS,
-} from "~/lib/diplomatic-profile-options";
+} from "~/lib/diplomacy/profile-options";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreOptionsRouter = createTRPCRouter({

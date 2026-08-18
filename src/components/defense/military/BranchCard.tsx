@@ -22,7 +22,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { UnitManager } from "~/components/defense/UnitManager";
 import { AssetManager } from "~/components/defense/AssetManager";
-import type { BRANCH_CONFIGS } from "~/lib/military-config";
+import type { BRANCH_CONFIGS } from "~/lib/military/config";
 
 interface BranchCardProps {
   branch: any;

@@ -3,9 +3,9 @@ import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
-import { computeForeignPolicyImpact } from "~/lib/statecraft-foreign-policy";
-import { assessReach, fogNumber } from "~/lib/statecraft-diplo-intel";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { computeForeignPolicyImpact } from "~/lib/statecraft/foreign-policy";
+import { assessReach, fogNumber } from "~/lib/statecraft/diplo-intel";
 
 // Cooperative actions need the target's consent before they take effect; hostile ones
 // are unilateral. See plans/statecraft-stage2.md (S2.C).

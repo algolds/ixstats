@@ -1,5 +1,5 @@
 import { tallyVote, type VotingBloc } from "./legislative-vote";
-import { fogVoteProjection } from "./statecraft-whip";
+import { fogVoteProjection } from "./whip";
 
 const blocs: VotingBloc[] = [
   { partyId: "a", partyName: "Left", ideology: "left", seats: 40 },

@@ -1,6 +1,6 @@
 import { IxTime } from "./ixtime";
-import { generateDiplomaticNews } from "./diplomatic-news-generator";
-import type { NewsEventType } from "./diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./activity-hooks";
 import type { PrismaClient } from "@prisma/client";
 

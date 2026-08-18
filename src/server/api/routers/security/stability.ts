@@ -11,10 +11,10 @@ import {
   type DemographicData,
   type PoliticalData,
   type RecentPolicy,
-} from "~/lib/stability-formulas";
+} from "~/lib/statecraft/stability-formulas";
 
 import { notificationAPI } from "~/lib/notifications/api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // ===========================
 // Input Validation Schemas

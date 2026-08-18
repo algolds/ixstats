@@ -17,7 +17,7 @@
  *                     geographic_weight * 0.1 + alliance_weight * 0.1
  */
 
-import type { DiplomaticChoice } from "./diplomatic-choice-tracker";
+import type { DiplomaticChoice } from "./choice-tracker";
 
 // ==================== RELATIONSHIP STATES ====================
 

@@ -2,7 +2,7 @@
 // Eliminates a separate Map + setInterval while preserving the same API for consumers.
 // All storage is handled by the consolidated globalCache (advanced-cache-system.ts).
 
-import { globalCache } from "./advanced-cache-system";
+import { globalCache } from "~/lib/advanced-cache-system";
 
 export type CacheType = "critical" | "standard" | "historical" | "static";
 

@@ -7,7 +7,7 @@ jest.mock("~/server/db", () => ({
   },
   isDatabaseReadOnly: false,
 }));
-jest.mock("~/lib/diplomatic-news-generator", () => ({
+jest.mock("~/lib/diplomacy/news-generator", () => ({
   generateDiplomaticNews: jest.fn(),
 }));
 jest.mock("~/lib/notifications/api", () => ({
@@ -16,7 +16,7 @@ jest.mock("~/lib/notifications/api", () => ({
 
 import { createCallerFactory } from "../../../trpc";
 import { securityOperationsRouter } from "../operations";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications/api";
 
 type MockFn = jest.MockedFunction<any>;

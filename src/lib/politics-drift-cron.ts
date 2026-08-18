@@ -14,8 +14,8 @@
 import { db } from "~/server/db";
 import { applyGovernmentComponentEffects } from "./government-component-effects";
 import { isNewsworthySwing } from "./approval";
-import { generateDiplomaticNews } from "./diplomatic-news-generator";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 export interface PoliticsDriftResult {
   countriesProcessed: number;

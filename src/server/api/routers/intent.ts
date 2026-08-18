@@ -21,7 +21,7 @@ import {
   type Category,
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
-import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 

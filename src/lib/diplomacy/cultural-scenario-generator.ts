@@ -12,8 +12,8 @@
  * - Integration with NPC personality system for realistic responses
  */
 
-import type { RelationshipState } from "./diplomatic-markov-engine";
-import type { DiplomaticChoice, CumulativeEffects } from "./diplomatic-choice-tracker";
+import type { RelationshipState } from "./markov-engine";
+import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
 
 // ============================================================================
 // TYPE DEFINITIONS

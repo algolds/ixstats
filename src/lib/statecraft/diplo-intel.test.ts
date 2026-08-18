@@ -1,4 +1,4 @@
-import { assessReach, fogNumber } from "./statecraft-diplo-intel";
+import { assessReach, fogNumber } from "./diplo-intel";
 
 describe("assessReach — reach drives clarity", () => {
   it("embassy → revealed", () => {

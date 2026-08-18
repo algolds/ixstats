@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationAPI } from "~/lib/notifications/api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
 import { CountryEventSpine } from "~/lib/country-event-spine";
 import { TRPCError } from "@trpc/server";
@@ -15,7 +15,7 @@ import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
 } from "~/lib/atomic-government-utils";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const RECON_CAPACITY_COST = 20;
 

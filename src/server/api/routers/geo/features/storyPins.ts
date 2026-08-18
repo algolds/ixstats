@@ -269,7 +269,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
 
       // Auto-generate ThinkPages news for major/legendary story pins
       if (input.importance >= 1) {
-        import("~/lib/diplomatic-news-generator")
+        import("~/lib/diplomacy/news-generator")
           .then(({ generateStoryPinNews }) => {
             generateStoryPinNews(
               ctx.db,

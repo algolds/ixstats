@@ -1,4 +1,4 @@
-import { revealConsequences, classifyDomain } from "./statecraft-recon";
+import { revealConsequences, classifyDomain } from "./recon";
 
 const democratic = {
   componentTypes: ["ELECTORAL_LEGITIMACY", "DEMOCRATIC_PROCESS", "MIXED_ECONOMY"],

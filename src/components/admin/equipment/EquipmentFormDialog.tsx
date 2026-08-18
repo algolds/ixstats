@@ -32,7 +32,7 @@ import {
   SUBCATEGORIES,
   ERAS,
   type EquipmentFormData,
-} from "~/lib/equipment-catalog-utils";
+} from "~/lib/military/catalog-utils";
 
 interface EquipmentFormDialogProps {
   isOpen: boolean;

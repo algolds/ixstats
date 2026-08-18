@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { applyPolicyEffect } from "~/lib/policy-effects-sync";
 import {
   tallyVote,
@@ -11,9 +11,9 @@ import {
   type Ideology,
   type VotingBloc,
   type VoteResult,
-} from "~/lib/legislative-vote";
+} from "~/lib/statecraft/legislative-vote";
 import { computeApproval } from "~/lib/approval";
-import { fogVoteProjection } from "~/lib/statecraft-whip";
+import { fogVoteProjection } from "~/lib/statecraft/whip";
 
 /**
  * Legislation — bills go to the floor and parties vote them up or down.

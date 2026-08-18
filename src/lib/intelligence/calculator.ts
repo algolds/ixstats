@@ -5,7 +5,7 @@
 
 import { db } from "~/server/db";
 import { IxTime } from "~/lib/ixtime";
-import { generateIntelligenceReport } from "~/lib/intelligence-engine";
+import { generateIntelligenceReport } from "./engine";
 import { transformApiDataToVitalityIntelligence } from "~/app/mycountry/utils/liveDataTransformers";
 import type { Category, BriefingType, Priority, Urgency, Difficulty, Trend } from "@prisma/client";
 

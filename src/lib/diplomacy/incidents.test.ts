@@ -1,4 +1,4 @@
-import { groupIncidentsByCountry, type DiplomaticEventLite } from "./diplomatic-incidents";
+import { groupIncidentsByCountry, type DiplomaticEventLite } from "./incidents";
 
 const ev = (over: Partial<DiplomaticEventLite>): DiplomaticEventLite => ({
   country1Id: "A",

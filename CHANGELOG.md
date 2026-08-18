@@ -10,6 +10,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 2 Simulation & Core Engine Isolation)
+
+- **Simulation & Core Engine Package Isolation (/ponytail)**:
+  - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/statecraft/index.ts)).
+  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/military/index.ts)).
+  - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/intelligence/index.ts)).
+  - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/index.ts)).
+  - **Clean Call Site Migration**: Migrated all ~65 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, and `src/tests/` to import directly from `~/lib/statecraft`, `~/lib/military`, `~/lib/intelligence`, and `~/lib/diplomacy`, completely deleting 32 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all simulation and engine test suites (42/42 tests passing).
+
 ### Refactored & Consolidated (`src/lib/` Phase 1 Domain Package Isolation)
 
 - **Domain Package Isolation & Clean Library Architecture (/ponytail)**:

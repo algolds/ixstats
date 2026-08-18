@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
-import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
+import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { useUser } from "~/context/auth-context";
 
 interface DiplomaticRelationsListProps {

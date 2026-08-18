@@ -15,7 +15,7 @@ import { IxTime } from "~/lib/ixtime";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { notificationAPI } from "~/lib/notifications/api";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
+import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   calculateCulturalCompatibility,
@@ -25,15 +25,15 @@ import {
   type DiplomaticRelationship,
   // eslint-disable-next-line unused-imports/no-unused-imports
   type EmbassyConnection,
-} from "~/lib/cultural-compatibility";
+} from "~/lib/diplomacy/cultural-compatibility";
 import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   NPCCulturalParticipation,
   // eslint-disable-next-line unused-imports/no-unused-imports
   type NPCParticipationContext,
-} from "~/lib/npc-cultural-participation";
+} from "~/lib/diplomacy/npc-cultural-participation";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomatic-npc-personality";
+import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
 import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   STRATEGIC_PRIORITIES,
@@ -41,11 +41,11 @@ import {
   PARTNERSHIP_GOALS,
   // eslint-disable-next-line unused-imports/no-unused-imports
   KEY_ACHIEVEMENTS,
-} from "~/lib/diplomatic-profile-options";
+} from "~/lib/diplomacy/profile-options";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { vaultService } from "~/lib/vault-service";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";

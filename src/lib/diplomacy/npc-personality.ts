@@ -20,11 +20,11 @@
  * - Decision-making for player proposals
  */
 
-import type { DiplomaticChoice, CumulativeEffects } from "./diplomatic-choice-tracker";
+import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
 import type {
   RelationshipState as MarkovRelationshipState,
   TransitionContext,
-} from "./diplomatic-markov-engine";
+} from "./markov-engine";
 
 // ==================== PERSONALITY TRAITS ====================
 

@@ -12,7 +12,7 @@
  */
 
 import type { Embassy } from "~/types/diplomatic-network";
-import { ATOMIC_COMPONENTS } from "./atomic-government-data";
+import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import type { ComponentType } from "@prisma/client";
 
 /**

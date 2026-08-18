@@ -13,7 +13,7 @@ import { ComponentType, type PrismaClient } from "@prisma/client";
 import { COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
 import { calculateGovernmentEffectiveness } from "~/lib/atomic-government-utils";
 import { IxTime } from "~/lib/ixtime";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 // Category → StorytellerEffect inputType + base effect value per component
 const CATEGORY_EFFECTS: Record<string, { inputType: string; base: number; desc: string }> = {

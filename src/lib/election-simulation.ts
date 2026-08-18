@@ -5,7 +5,7 @@
  * the mutation does its ownership check, then delegates here.
  */
 import type { PrismaClient } from "@prisma/client";
-import { generateDiplomaticNews } from "./diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "./notification-api";
 
 // ── Seat-allocation helpers (single source of truth) ──

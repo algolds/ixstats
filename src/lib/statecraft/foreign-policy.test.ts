@@ -1,4 +1,4 @@
-import { computeForeignPolicyImpact, type FPParty } from "./statecraft-foreign-policy";
+import { computeForeignPolicyImpact, type FPParty } from "./foreign-policy";
 
 const mid: FPParty = { gdpPerCapita: 20000, population: 10_000_000 };
 const rich: FPParty = { gdpPerCapita: 60000, population: 10_000_000 };

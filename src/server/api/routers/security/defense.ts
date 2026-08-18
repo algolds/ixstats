@@ -14,7 +14,7 @@ import {
   syncDefenseBudgetToGovernment,
   getDefenseMetricsForIntelligence,
   getDefenseOverviewMetrics,
-} from "~/lib/defense-integration";
+} from "~/lib/military/defense-integration";
 import { notificationAPI } from "~/lib/notifications/api";
 
 // ===========================

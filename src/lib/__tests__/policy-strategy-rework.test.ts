@@ -11,7 +11,7 @@ jest.mock("~/lib/notifications/api", () => ({
 jest.mock("~/lib/country-event-spine", () => ({
   CountryEventSpine: { recordCountryEvent: jest.fn(() => Promise.resolve()) },
 }));
-jest.mock("~/lib/diplomatic-news-generator", () => ({
+jest.mock("~/lib/diplomacy/news-generator", () => ({
   generateDiplomaticNews: jest.fn(() => Promise.resolve()),
 }));
 jest.mock("~/lib/activity-hooks", () => ({

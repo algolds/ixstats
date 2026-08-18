@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Building2, Globe, Users, Send, Scale, Handshake, Sparkles } from "lucide-react";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
-import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
+import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 
 interface DiplomacyOverviewProps {
   countryId: string;

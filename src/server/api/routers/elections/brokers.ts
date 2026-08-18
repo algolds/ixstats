@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 export const electionsBrokersRouter = createTRPCRouter({
   getPowerBrokers: publicProcedure

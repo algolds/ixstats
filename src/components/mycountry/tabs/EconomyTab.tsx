@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
-import { smartNormalizeGrowthRate } from "~/lib/growth-calculations";
+import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 
 export function EconomyTab({

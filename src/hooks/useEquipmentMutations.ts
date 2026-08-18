@@ -5,7 +5,7 @@
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import type { EquipmentFormData } from "~/lib/equipment-catalog-utils";
+import type { EquipmentFormData } from "~/lib/military/catalog-utils";
 
 interface UseEquipmentMutationsArgs {
   formData: EquipmentFormData;

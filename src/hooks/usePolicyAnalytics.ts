@@ -12,7 +12,7 @@
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
-import { COMPONENT_CATEGORIES } from "~/lib/synergy-calculator";
+import { COMPONENT_CATEGORIES } from "~/lib/statecraft/synergy-calculator";
 
 // ----- Types -----
 

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
+import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
@@ -119,7 +119,7 @@ export const diplomaticCulturalNpcGenerationRouter = createTRPCRouter({
       // Generate scenario using the scenario generator
       // Import is done at the top of the file
       const { CulturalScenarioGenerator, CULTURAL_SCENARIO_TEMPLATES } =
-        await import("~/lib/cultural-scenario-generator");
+        await import("~/lib/diplomacy/cultural-scenario-generator");
 
       const template =
         input.preferredScenarioType &&

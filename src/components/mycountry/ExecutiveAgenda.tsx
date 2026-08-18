@@ -32,7 +32,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
-import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft-calendar";
+import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft/calendar";
 import type { DrillSheetKind } from "./DrillSheets";
 
 interface AgendaEvent {

@@ -18,7 +18,7 @@ import { CommandPanel } from "~/components/executive/CommandPanel";
 import { CommandPanelItem } from "~/components/executive/CommandPanelItem";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/unified-flag-service";
-import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
+import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 
 const DiplomacyOverview = dynamic(
   () => import("./DiplomacyOverview").then((m) => ({ default: m.DiplomacyOverview })),

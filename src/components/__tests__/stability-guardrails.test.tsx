@@ -5,7 +5,7 @@
  * NationStates API responses are handled gracefully without crashing the application.
  */
 
-import { NPCPersonalitySystem } from "~/lib/diplomatic-npc-personality";
+import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { toast } from "sonner";
 import { renderHook } from "@testing-library/react";

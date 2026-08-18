@@ -6,7 +6,7 @@ import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/ap
 import { TRPCError } from "@trpc/server";
 
 import { notificationAPI } from "~/lib/notifications/api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // ===========================
 // Input Validation Schemas

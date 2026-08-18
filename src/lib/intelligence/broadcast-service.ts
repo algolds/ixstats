@@ -2,11 +2,11 @@
 // Orchestrates real-time intelligence updates and notifications
 
 import "server-only";
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
-import type { IntelligenceUpdate } from "./websocket/types";
+import type { IntelligenceUpdate } from "~/lib/websocket/types";
 import type { Country } from "@prisma/client";
-import { standardize } from "./interface-standardizer";
+import { standardize } from "~/lib/interface-standardizer";
 
 // Use any type to avoid importing socket.io during build
 type IntelligenceWebSocketServer = any;

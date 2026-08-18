@@ -16,7 +16,7 @@ import {
   type CrisisData,
   type LegislatureData,
   type SeatSummary,
-} from "~/lib/cross-pillar-engine";
+} from "~/lib/statecraft/cross-pillar-engine";
 import type { MyCountrySection } from "../MyCountrySidebarNav";
 
 interface CrossPillarBannerProps {

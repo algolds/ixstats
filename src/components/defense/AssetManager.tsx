@@ -46,7 +46,7 @@ import {
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
   EXPANDED_MILITARY_DATABASE,
-} from "~/lib/military-equipment";
+} from "~/lib/military/equipment";
 
 // Define a more specific type for our asset
 interface Asset {

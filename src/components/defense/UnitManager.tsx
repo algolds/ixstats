@@ -28,7 +28,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { useNotify } from "~/hooks/useNotify";
-import { UNIT_TEMPLATES } from "~/lib/military-equipment";
+import { UNIT_TEMPLATES } from "~/lib/military/equipment";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 interface UnitManagerProps {

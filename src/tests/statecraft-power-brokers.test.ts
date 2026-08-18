@@ -1,5 +1,5 @@
 import { ComponentType } from "@prisma/client";
-import { deriveBrokers } from "../lib/statecraft-power-brokers";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 describe("Statecraft Power Brokers Derivation", () => {
   it("should lock all brokers when no components match", () => {

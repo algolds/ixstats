@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { BRANCH_CONFIGS } from "~/lib/military-config";
+import { BRANCH_CONFIGS } from "~/lib/military/config";
 import { useMilitaryBranches } from "~/hooks/useMilitaryBranches";
 import {
   BranchCard,

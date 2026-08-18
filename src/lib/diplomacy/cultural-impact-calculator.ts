@@ -16,9 +16,9 @@ import {
   MarkovDiplomacyEngine,
   type RelationshipState,
   type TransitionContext,
-} from "./diplomatic-markov-engine";
+} from "./markov-engine";
 import type { CulturalScenarioType } from "./cultural-scenario-generator";
-import { DiplomaticChoiceTracker, type DiplomaticChoice } from "./diplomatic-choice-tracker";
+import { DiplomaticChoiceTracker, type DiplomaticChoice } from "./choice-tracker";
 
 // ============================================================================
 // TYPE DEFINITIONS

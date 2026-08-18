@@ -669,4 +669,4 @@ export function getAllEquipment() {
 }
 
 // Re-export extended database for full catalog access
-export * from "./military-equipment-extended";
+export * from "./equipment-extended";

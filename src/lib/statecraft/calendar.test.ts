@@ -1,4 +1,4 @@
-import { getUpcomingEvents, formatRelativeIxDays, formatIxCountdown } from "./statecraft-calendar";
+import { getUpcomingEvents, formatRelativeIxDays, formatIxCountdown } from "./calendar";
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = 1_000_000_000_000;

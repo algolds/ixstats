@@ -15,7 +15,7 @@ import {
   type ManufacturerFormData,
   type SortField,
   type SortDirection,
-} from "~/lib/manufacturer-utils";
+} from "~/lib/military/manufacturer-utils";
 import { useManufacturerMutations } from "~/hooks/useManufacturerMutations";
 
 export function useManufacturerManagement(activeMainTab: string) {

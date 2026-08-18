@@ -21,7 +21,7 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { getStrengthLabel } from "~/lib/statecraft-diplo-intel";
+import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { computeApproval } from "~/lib/approval";
 import { useCountryData } from "./primitives";
 import type { V2Domain } from "./domain-meta";
