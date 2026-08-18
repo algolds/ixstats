@@ -18,7 +18,7 @@ import {
   invalidateThread,
   cacheInvalidate,
 } from "~/server/modules/forum";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 // ---------------------------------------------------------------------------
 // Helpers

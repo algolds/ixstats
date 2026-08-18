@@ -6,8 +6,8 @@ import { TRPCError } from "@trpc/server";
 import { COMPONENT_TYPE_VALUES } from "~/types/government";
 
 import { GovernmentBuilderStateSchema } from "~/types/validation/government";
-import { notificationHooks } from "~/lib/notification-hooks";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationHooks } from "~/lib/notifications/hooks";
+import { notificationAPI } from "~/lib/notifications/api";
 import { applyGovernmentComponentEffects } from "~/lib/government-component-effects";
 import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";

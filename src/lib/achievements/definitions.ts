@@ -11,7 +11,7 @@
  * - Condition function for auto-unlock detection
  */
 
-import { meetsScale, RARITY_PERCENTILE } from "./achievement-scaling";
+import { meetsScale, RARITY_PERCENTILE } from "./scaling";
 
 export type AchievementCategory =
   "Economic" | "Military" | "Diplomatic" | "Government" | "Social" | "General";

@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { getThinkPagesServer } from "~/server/websocket-server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { validateNoXSS } from "~/lib/sanitize-html";
 import { globalCache } from "~/lib/advanced-cache-system";
 

@@ -13,7 +13,7 @@ import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { IxTime } from "~/lib/ixtime";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
 import {

@@ -7,9 +7,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure, publicProcedure } from "~/server/api/trpc";
-import { nsApiClient } from "~/lib/ns-api-client";
-import { nsImportService } from "~/lib/ns-import-service";
-import { processCTENationFilter } from "~/lib/ns-sync-processor";
+import { nsApiClient } from "~/lib/nationstates/api-client";
+import { nsImportService } from "~/lib/nationstates/import-service";
+import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
 import { Prisma } from "@prisma/client";
 

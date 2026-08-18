@@ -10,7 +10,7 @@ import {
 } from "~/server/services/builderIntegrationService";
 import { TaxBuilderStateSchema } from "~/types/validation/tax";
 
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 

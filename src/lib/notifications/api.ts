@@ -21,9 +21,9 @@
  */
 
 import { db } from "~/server/db";
-import { emitNotificationEvent } from "~/lib/notification-emitter";
-import { withBasePath } from "./base-path";
-import { isNotificationEventEnabled } from "./notification-event-guard";
+import { emitNotificationEvent } from "./emitter";
+import { withBasePath } from "~/lib/base-path";
+import { isNotificationEventEnabled } from "./guard";
 
 function resolveHref(href?: string | null): string | null {
   if (!href) return null;

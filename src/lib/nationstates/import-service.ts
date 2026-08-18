@@ -8,7 +8,7 @@
 import { type PrismaClient, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardType, CardRarity } from "~/lib/card-enums";
-import { nsApiClient, type NSCard } from "~/lib/ns-api-client";
+import { nsApiClient, type NSCard } from "./api-client";
 import { type CardCreationData } from "~/lib/card-service";
 
 /**

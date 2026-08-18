@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { NOTIFICATION_EVENTS } from "~/lib/notification-events-registry";
+import { NOTIFICATION_EVENTS } from "~/lib/notifications/events-registry";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([

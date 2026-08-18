@@ -10,7 +10,7 @@
  * Posting reuses `formatThinkPagesEmbed` and the bot-token REST pattern.
  */
 
-import { formatThinkPagesEmbed } from "~/lib/discord-ixtwitter-sync";
+import { formatThinkPagesEmbed } from "./ixtwitter-sync";
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";

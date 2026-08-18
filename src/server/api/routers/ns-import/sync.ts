@@ -6,12 +6,12 @@
 
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { nsApiClient } from "~/lib/ns-api-client";
-import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
+import { nsApiClient } from "~/lib/nationstates/api-client";
+import { SyncHealthMonitor } from "~/lib/nationstates/sync-monitor";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 
-import { activeRunningJobs, processRegionCardsFromDump } from "~/lib/ns-sync-processor";
+import { activeRunningJobs, processRegionCardsFromDump } from "~/lib/nationstates/sync-processor";
 
 /**
  * Default set of NS trading-card seasons to include when none are specified.
@@ -74,6 +74,133 @@ export const nsImportSyncRouter = createTRPCRouter({
         duration: log.completedAt ? log.completedAt.getTime() - log.startedAt.getTime() : null,
       }));
     }),
+
+  /**
+   * Admin: Get cards imported or updated during a specific sync run
+   */
+  getSyncLogCards: adminProcedure
+    .input(
+      z.object({
+        syncLogId: z.string(),
+        limit: z.number().int().min(1).max(100).default(50),
+        offset: z.number().int().min(0).default(0),
+        search: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const syncLog = await ctx.db.syncLog.findUnique({
+        where: { id: input.syncLogId },
+      });
+
+      if (!syncLog) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Sync log not found",
+        });
+      }
+
+      // Extract region and nations from metadata or syncType
+      const meta = (syncLog.metadata as Record<string, any>) || {};
+      let regionName: string | null = null;
+      if (meta.regionName && typeof meta.regionName === "string") {
+        regionName = meta.regionName.trim().toLowerCase();
+      } else if (Array.isArray(meta.regionNames) && meta.regionNames[0]) {
+        regionName = String(meta.regionNames[0]).trim().toLowerCase();
+      } else if (syncLog.syncType.startsWith("NS_REGION_")) {
+        regionName = syncLog.syncType.replace("NS_REGION_", "").trim().toLowerCase();
+      }
+
+      const nationsList: string[] = Array.isArray(meta.nations)
+        ? meta.nations.map((n: any) => String(n).trim()).filter(Boolean)
+        : [];
+
+      const orConditions: any[] = [];
+
+      if (regionName) {
+        const spaced = regionName.replace(/_/g, " ");
+        const underscored = regionName.replace(/\s+/g, "_");
+        const titleCase = spaced
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        const upper = regionName.toUpperCase();
+
+        const regionVariants = Array.from(
+          new Set([regionName, spaced, underscored, titleCase, upper])
+        );
+
+        for (const variant of regionVariants) {
+          orConditions.push(
+            { stats: { path: ["region"], equals: variant } },
+            { stats: { path: ["region"], string_contains: variant } },
+            { metadata: { path: ["importedFrom"], equals: `region:${variant}` } },
+            { metadata: { path: ["importedFrom"], string_contains: variant } }
+          );
+        }
+      }
+
+      if (nationsList.length > 0) {
+        const nationVariants: string[] = [];
+        for (const nation of nationsList.slice(0, 300)) {
+          nationVariants.push(nation);
+          nationVariants.push(nation.replace(/_/g, " "));
+          nationVariants.push(
+            nation
+              .split("_")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ")
+          );
+        }
+        orConditions.push({
+          title: { in: Array.from(new Set(nationVariants)), mode: "insensitive" },
+        });
+      }
+
+      if (syncLog.startedAt) {
+        const start = new Date(syncLog.startedAt.getTime() - 10 * 60 * 1000);
+        const end = syncLog.completedAt
+          ? new Date(syncLog.completedAt.getTime() + 10 * 60 * 1000)
+          : new Date(syncLog.startedAt.getTime() + 60 * 60 * 1000);
+
+        orConditions.push({
+          createdAt: { gte: start, lte: end },
+        });
+        orConditions.push({
+          updatedAt: { gte: start, lte: end },
+        });
+      }
+
+      const where: any = {
+        cardType: "NS_IMPORT",
+      };
+
+      if (orConditions.length > 0) {
+        where.OR = orConditions;
+      }
+
+      if (input.search?.trim()) {
+        where.title = { contains: input.search.trim(), mode: "insensitive" };
+      }
+
+      const [cards, total] = await Promise.all([
+        ctx.db.card.findMany({
+          where,
+          orderBy: { updatedAt: "desc" },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.db.card.count({ where }),
+      ]);
+
+      return {
+        syncLog,
+        cards,
+        total,
+        regionName,
+      };
+    }),
+
+
 
   // ─── Bulk Import Endpoints ────────────────────────────────────────
 

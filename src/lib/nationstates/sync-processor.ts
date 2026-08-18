@@ -12,9 +12,9 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { nsApiClient, type NSCard } from "~/lib/ns-api-client";
+import { nsApiClient, type NSCard } from "./api-client";
 import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
-import { generateNSImportDescription } from "~/lib/ns-import-service";
+import { generateNSImportDescription } from "./import-service";
 
 /**
  * Tracks currently active background sync jobs in memory to prevent parallel duplicates.

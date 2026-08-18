@@ -5,7 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 export const adminCountriesGodModeRouter = createTRPCRouter({
   // Internal calculation formulas management

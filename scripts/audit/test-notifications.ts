@@ -7,7 +7,7 @@
  */
 
 import { db } from "~/server/db";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 interface AuditResult {
   feature: string;

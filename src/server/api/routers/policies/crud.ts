@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { ActivityHooks } from "~/lib/activity-hooks";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
 import { CountryEventSpine } from "~/lib/country-event-spine";

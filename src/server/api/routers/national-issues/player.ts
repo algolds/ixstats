@@ -14,7 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues-engine";
 import type { ResponseOptionTemplate } from "~/lib/national-issues-engine";
 import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft-recon";

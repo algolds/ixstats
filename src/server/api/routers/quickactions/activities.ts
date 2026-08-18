@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 /**
  * QUICK ACTIONS ROUTER

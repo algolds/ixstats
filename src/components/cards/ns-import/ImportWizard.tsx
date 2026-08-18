@@ -15,7 +15,7 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import type { NSCard } from "~/lib/ns-api-client";
+import type { NSCard } from "~/lib/nationstates/api-client";
 
 interface ImportWizardProps {
   onComplete: (results: ImportResults) => void;

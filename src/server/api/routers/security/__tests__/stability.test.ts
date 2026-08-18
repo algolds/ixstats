@@ -10,13 +10,13 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/diplomatic-news-generator", () => ({
   generateDiplomaticNews: jest.fn(),
 }));
-jest.mock("~/lib/notification-api", () => ({
+jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn() },
 }));
 
 import { securityStabilityRouter } from "../stability";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 type MockFn = jest.MockedFunction<any>;
 

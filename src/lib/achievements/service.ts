@@ -11,16 +11,15 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { getAchievementById, type ExtendedAchievementData } from "./achievement-definitions";
-import { getScaleThresholds } from "./achievement-scaling";
-import { achievementBonus, getBonusConfig, grantBonus } from "./vault-bonus";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
-import { awardAchievementCard } from "./card-service";
-import { eventBus } from "./event-bus";
+import { getAchievementById, type ExtendedAchievementData } from "./definitions";
+import { getScaleThresholds } from "./scaling";
+import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault-bonus";
+import { getCardRewardForAchievement, hasCardReward } from "./card-rewards";
+import { awardAchievementCard } from "~/lib/card-service";
+import { eventBus } from "~/lib/event-bus";
 import { Redis } from "ioredis";
 import { ActivityHooks } from "~/lib/activity-hooks";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 // Redis client (lazy initialized)
 let redisClient: Redis | null = null;

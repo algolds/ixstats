@@ -9,7 +9,7 @@ import {
   type ConflictWarning,
 } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/validation/government";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({

@@ -8,7 +8,7 @@
  * PM2 config: ecosystem.config.cjs (app name: ixstats-ixtwitter)
  */
 
-import { syncIxTwitterToThinkPages } from "../src/lib/discord-ixtwitter-sync";
+import { syncIxTwitterToThinkPages } from "../src/lib/discord/ixtwitter-sync";
 
 const INTERVAL_MS = 5 * 60 * 1000;
 

@@ -24,7 +24,7 @@ import {
   NOTIFICATION_SOURCES,
   NOTIFICATION_TRIGGER_TYPES,
   CATEGORY_ORDER,
-} from "~/lib/notification-events-registry";
+} from "~/lib/notifications/events-registry";
 import {
   Search,
   RotateCcw,

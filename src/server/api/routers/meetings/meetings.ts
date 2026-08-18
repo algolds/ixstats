@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 export const meetingsMeetingsRouter = createTRPCRouter({
   // ==================== CABINET MEETINGS ====================

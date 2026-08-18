@@ -1,7 +1,7 @@
 import { type PrismaClient } from "@prisma/client";
-import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./achievement-definitions";
-import { getCardRewardForAchievement } from "./achievement-card-rewards";
-import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./achievement-scaling";
+import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./definitions";
+import { getCardRewardForAchievement } from "./card-rewards";
+import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./scaling";
 
 export async function syncAchievements(db: PrismaClient): Promise<void> {
   console.log("[Achievement Sync] Starting baseline synchronization...");

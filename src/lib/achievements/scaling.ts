@@ -13,7 +13,7 @@
  * these, so there are no duplicated magic numbers anywhere.
  */
 import type { PrismaClient } from "@prisma/client";
-import type { AchievementRarity, ExtendedAchievementData } from "./achievement-definitions";
+import type { AchievementRarity, ExtendedAchievementData } from "./definitions";
 
 export type ScaleMetric = "currentPopulation" | "currentTotalGdp" | "currentGdpPerCapita";
 

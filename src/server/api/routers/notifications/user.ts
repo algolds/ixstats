@@ -10,7 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
-import { notificationEmitter, emitNotificationEvent } from "~/lib/notification-emitter";
+import { notificationEmitter, emitNotificationEvent } from "~/lib/notifications/emitter";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { achievementService } from "~/lib/achievement-service";
+import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
   // Get recent achievements for a country

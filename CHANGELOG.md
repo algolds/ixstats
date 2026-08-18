@@ -10,6 +10,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 1 Domain Package Isolation)
+
+- **Domain Package Isolation & Clean Library Architecture (/ponytail)**:
+  - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/achievements/index.ts)).
+  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/discord/index.ts)).
+  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/nationstates/index.ts)).
+  - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/notifications/index.ts)).
+  - **Clean Full-Codebase Call Site Migration**: Migrated all ~80 import call sites across components, pages, tRPC routers, server cron jobs, and scripts to import directly from domain packages (`~/lib/achievements`, `~/lib/discord`, `~/lib/nationstates`, `~/lib/notifications`), completely removing 22 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all migrated domain suites (stability guardrails, discord format, poll payload, achievements scaling, and wiki pipeline).
+
 ### Refactored & Consolidated (Wiki Parser Unification & Package Isolation — `src/lib/wiki/`)
 
 - **Wiki Parser Architecture Consolidation & `src/lib/wiki/` Package Migration**:

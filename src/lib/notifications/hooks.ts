@@ -3,9 +3,8 @@
  * Auto-wiring notifications into existing functionality
  */
 
-import { notificationAPI } from "./notification-api";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { isNotificationEventEnabled, guardNotificationEvent } from "./notification-event-guard";
+import { notificationAPI } from "./api";
+import { isNotificationEventEnabled, guardNotificationEvent } from "./guard";
 
 /**
  * Economic Data Change Hook

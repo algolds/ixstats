@@ -12,7 +12,7 @@ import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { generateSlug } from "~/lib/slug-utils";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/advanced-cache-system";

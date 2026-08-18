@@ -9,7 +9,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 import { forumBridge } from "~/server/bridges/forum-bridge";
 

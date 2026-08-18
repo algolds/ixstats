@@ -243,7 +243,7 @@ app
       // 5. IxTwitter Discord sync (every hour)
       scheduleCron("IxTwitter Discord sync", "0 * * * *", async () => {
         try {
-          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord-ixtwitter-sync.js");
+          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord/ixtwitter-sync.js");
           const result = await syncIxTwitterToThinkPages();
           if (result.posted > 0) {
             console.log(

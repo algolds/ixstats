@@ -27,7 +27,7 @@ import {
   categorizeNotification,
   optimizeDeliveryMethod,
   createSmartBatches,
-} from "~/lib/notification-optimization";
+} from "~/lib/notifications/optimization";
 
 interface NotificationState {
   // Core data

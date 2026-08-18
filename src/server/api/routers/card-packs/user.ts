@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { purchasePack, openPack, getUserPacks } from "~/lib/card-pack-service";
 import { syncUserToForum } from "~/server/modules/forum";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/advanced-cache-system";
 
 /**

@@ -17,7 +17,7 @@
 import { vaultService, getVaultConfig } from "./vault-service";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/card-xp-utils";
 import { SYSTEM_OWNER_IDS } from "~/lib/system-owner-constants";
 

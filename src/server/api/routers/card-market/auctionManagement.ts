@@ -13,7 +13,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/card-xp-utils";
 import { globalCache } from "~/lib/advanced-cache-system";
 

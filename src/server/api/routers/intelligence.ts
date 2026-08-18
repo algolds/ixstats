@@ -9,7 +9,7 @@ import {
 } from "~/server/api/trpc";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 import { calculateIntelligence } from "~/lib/intelligence-calculator";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 function safeJsonParse<T>(raw: string, fallback: T): T {
   try {

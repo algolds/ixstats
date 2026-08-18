@@ -8,7 +8,7 @@
  * Usage: bun run scripts/backfill-ixtwitter.ts
  */
 
-import { backfillIxTwitterToThinkPages } from "../src/lib/discord-ixtwitter-sync";
+import { backfillIxTwitterToThinkPages } from "../src/lib/discord/ixtwitter-sync";
 
 console.log("=== IxTwitter Backfill ===");
 console.log(`Channel: ${process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818"}`);

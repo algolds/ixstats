@@ -5,7 +5,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { getWikiDbPool } from "~/lib/wiki/bridge";
-import { achievementService } from "~/lib/achievement-service";
+import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsProgressRouter = createTRPCRouter({
   // Get recent achievements for a country

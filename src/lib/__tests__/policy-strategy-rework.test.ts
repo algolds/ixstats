@@ -5,7 +5,7 @@ jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "te
 jest.mock("~/server/db", () => ({
   db: { systemLog: { create: jest.fn(() => Promise.resolve()) } },
 }));
-jest.mock("~/lib/notification-api", () => ({
+jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
 }));
 jest.mock("~/lib/country-event-spine", () => ({

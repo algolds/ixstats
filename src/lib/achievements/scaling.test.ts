@@ -1,4 +1,4 @@
-import { percentileOf, RARITY_PERCENTILE, SCALE_METRIC_BY_ID } from "./achievement-scaling";
+import { percentileOf, RARITY_PERCENTILE, SCALE_METRIC_BY_ID } from "./scaling";
 
 describe("percentileOf", () => {
   const sorted = Array.from({ length: 100 }, (_, i) => i + 1); // 1..100 ascending

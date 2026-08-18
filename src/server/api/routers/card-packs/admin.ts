@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 /**
  * Card Packs Router

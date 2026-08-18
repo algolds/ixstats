@@ -20,7 +20,7 @@ import {
   ACHIEVEMENT_DEFINITIONS,
   getAchievementStats,
   type AchievementDefinition,
-} from "~/lib/achievement-definitions";
+} from "~/lib/achievements/definitions";
 
 /**
  * Achievement table model (no separate Achievement table in schema)

@@ -14,7 +14,7 @@ import {
   cleanPostContent,
   parseJsonStringArray,
   sendThinkPagesFeedTestMessage,
-} from "~/lib/thinkpages-discord-feed";
+} from "~/lib/discord/thinkpages-feed";
 
 async function loadOrSeedConfig(db: any) {
   let row = await db.thinkpagesDiscordFeedConfig.findUnique({ where: { id: "default" } });

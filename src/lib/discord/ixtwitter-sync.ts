@@ -13,9 +13,9 @@ import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
 import { DOMParser } from "@xmldom/xmldom";
-import { buildDiscordPollObject } from "~/lib/discord-poll";
+import { buildDiscordPollObject } from "./poll";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
-import { cleanPostContent } from "~/lib/thinkpages-discord-feed";
+import { cleanPostContent } from "./thinkpages-feed";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.

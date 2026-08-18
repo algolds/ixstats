@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/sanitize-html";
 import { globalCache } from "~/lib/advanced-cache-system";
 

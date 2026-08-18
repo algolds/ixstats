@@ -6,7 +6,7 @@ import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/ap
 import { TRPCError } from "@trpc/server";
 
 import { createIntelligenceFromThreat } from "~/lib/defense-integration";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 // ===========================
 // Input Validation Schemas

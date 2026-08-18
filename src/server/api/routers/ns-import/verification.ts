@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { nsApiClient } from "~/lib/ns-api-client";
+import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 
 export const nsImportVerificationRouter = createTRPCRouter({
