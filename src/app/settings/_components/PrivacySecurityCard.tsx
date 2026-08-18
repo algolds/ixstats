@@ -1,7 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import { useState, useEffect } from "react";
-import { Shield, Lock, RefreshCw, Database, Key } from "lucide-react";
+import Link from "next/link";
+import { Shield, Lock, RefreshCw, Database, Key, FileText, ExternalLink } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
@@ -261,6 +262,35 @@ export function PrivacySecurityCard({
               <Key className="h-3.5 w-3.5" />
               Open Console
             </button>
+          </div>
+
+          {/* Legal Documents & Data Rights */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+            <div>
+              <Label className="text-sm font-bold text-slate-900 dark:text-white">
+                Legal &amp; Privacy Rights
+              </Label>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-md">
+                Review our platform terms, acceptable use guidelines, zero-sale privacy policy, and
+                GDPR/CCPA data erasure procedures.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/terms"
+                className="glass-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <FileText className="h-3.5 w-3.5 text-amber-500" />
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                className="glass-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                <Shield className="h-3.5 w-3.5 text-purple-500" />
+                Privacy
+              </Link>
+            </div>
           </div>
 
           {/* Danger zone / clear data */}

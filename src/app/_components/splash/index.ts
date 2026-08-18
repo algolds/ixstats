@@ -5,5 +5,6 @@ export { SplashTwoWorlds } from "./SplashTwoWorlds";
 export { GlobalLeadersCarousel } from "./GlobalLeadersCarousel";
 export { SplashIssuesTeaser } from "./SplashIssuesTeaser";
 export { SplashFold } from "./SplashFold";
+export { SplashFooter } from "./SplashFooter";
 export { SplashThinkPagesPeek } from "./SplashThinkPagesPeek";
 export { CountryShowcaseCard } from "./CountryShowcaseCard";

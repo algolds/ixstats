@@ -13,6 +13,7 @@ import {
   SplashTwoWorlds,
   SplashIssuesTeaser,
   SplashFold,
+  SplashFooter,
 } from "./splash";
 
 export function IxStatsSplashPage() {
@@ -74,6 +75,7 @@ export function IxStatsSplashPage() {
         <SplashTwoWorlds topCountries={topCountriesRecords} />
         <SplashIssuesTeaser />
         <SplashFold />
+        <SplashFooter />
       </div>
     </div>
   );
