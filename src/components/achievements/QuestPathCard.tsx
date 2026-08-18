@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { cn } from "~/lib/utils";
+import { motion } from "motion/react";
+import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import {
   CutoutCard,
@@ -9,9 +10,10 @@ import {
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { Lock, Crown, Layers, Package } from "lucide-react";
+import { Lock, Crown, Layers, Package, Eye, EyeOff } from "lucide-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { createUrl } from "~/lib/utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { getAchievementGameIconPath, getCategoryTheme } from "./constants";
 
 interface QuestPathCardProps {
   path: {
@@ -47,10 +49,17 @@ export function QuestPathCard({
   const progressPercent = totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
 
   // Track currently selected node in path card to show detail panel (prevents vertical tooltip cut-off)
+  const firstUnlocked = pathAchievements.find((a) => a.isUnlocked);
   const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(
-    pathAchievements[0]?.key || null
+    firstUnlocked ? firstUnlocked.key : (pathAchievements[0]?.key ?? null)
   );
+  const [shakingKey, setShakingKey] = useState<string | null>(null);
   const selectedNode = pathAchievements.find((a) => a.key === selectedNodeKey);
+
+  const triggerLockedShake = (key: string) => {
+    setShakingKey(key);
+    setTimeout(() => setShakingKey(null), 400);
+  };
 
   return (
     <CutoutCard
@@ -75,11 +84,11 @@ export function QuestPathCard({
                 <p className="text-muted-foreground text-xs">{path.description}</p>
               </div>
             </div>
-            <div className="bg-muted/40 border-border/50 flex items-center gap-3 rounded-lg border px-3 py-1.5 dark:border-white/5 dark:bg-black/40">
-              <span className="text-xs font-semibold text-[--intel-gold]">
+            <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/40 px-3 py-1.5 dark:border-white/5 dark:bg-black/40">
+              <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                 {unlockedCount} / {totalCount} ({Math.round(progressPercent)}%)
               </span>
-              <div className="bg-muted/50 h-1.5 w-24 overflow-hidden rounded-full dark:bg-white/10">
+              <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted/50 dark:bg-white/10">
                 <div
                   className={cn(
                     "h-full transition-all duration-500",
@@ -88,9 +97,9 @@ export function QuestPathCard({
                       : path.nodeColor === "yellow"
                         ? "bg-yellow-500"
                         : path.nodeColor === "red"
-                          ? "bg-red-500"
+                          ? "bg-rose-500"
                           : path.nodeColor === "blue"
-                            ? "bg-blue-500"
+                            ? "bg-sky-500"
                             : path.nodeColor === "purple"
                               ? "bg-purple-500"
                               : "bg-pink-500"
@@ -100,18 +109,16 @@ export function QuestPathCard({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Path Nodes container */}
-        <div className="scrollbar-thumb-muted-foreground/20 scrollbar-thin overflow-x-auto px-6 py-8">
-          <div className="relative flex min-w-max items-center justify-start gap-4 py-4">
-            {pathAchievements.map((achievement: any, idx: number) => {
+          {/* Linear Nodes Scrollable Container */}
+          <div className="flex items-center gap-2 overflow-x-auto py-3 pr-2 select-none scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent">
+            {pathAchievements.map((achievement, idx) => {
               const isUnlocked = achievement.isUnlocked;
-              const nextNode = pathAchievements[idx + 1];
               const isSelected = selectedNodeKey === achievement.key;
               const isSecret =
                 (achievement.key.startsWith("vid-") || achievement.key.startsWith("meme-")) &&
                 !isUnlocked;
+              const nextNode = pathAchievements[idx + 1];
 
               let count = 0;
               if (achievement.metadata) {
@@ -121,7 +128,7 @@ export function QuestPathCard({
                       ? JSON.parse(achievement.metadata)
                       : achievement.metadata;
                   count = parsed.count || 0;
-                } catch (e) {
+                } catch {
                   // ignore
                 }
               }
@@ -132,36 +139,44 @@ export function QuestPathCard({
                   <div className="group relative z-10 flex flex-col items-center gap-3">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setSelectedNodeKey(achievement.key)}
-                          onMouseEnter={() => setSelectedNodeKey(achievement.key)}
+                        <motion.button
+                          animate={shakingKey === achievement.key ? { x: [0, -6, 6, -5, 5, -2, 2, 0] } : { x: 0 }}
+                          transition={{ duration: 0.38, ease: [0.36, 0.07, 0.19, 0.97] }}
+                          onClick={() => {
+                            if (!isUnlocked) {
+                              triggerLockedShake(achievement.key);
+                              return;
+                            }
+                            setSelectedNodeKey(achievement.key);
+                          }}
+                          onMouseEnter={() => {
+                            if (isUnlocked) setSelectedNodeKey(achievement.key);
+                          }}
                           className={cn(
                             "relative flex h-16 w-16 items-center justify-center rounded-full border transition-all duration-300 select-none",
                             isUnlocked
-                              ? "bg-card cursor-pointer border-amber-500 shadow-lg dark:border-amber-400"
-                              : "bg-muted/80 border-border opacity-40",
+                              ? "bg-card cursor-pointer border-amber-500 shadow-lg active:scale-95 dark:border-amber-400"
+                              : "cursor-not-allowed border-dashed border-border/40 bg-muted/20 opacity-60 hover:border-rose-500/40",
                             isSelected && "ring-primary ring-offset-background ring-2 ring-offset-2"
                           )}
                         >
                           {isUnlocked ? (
-                            achievement.iconUrl?.startsWith("http") ||
-                            achievement.iconUrl?.startsWith("/") ? (
-                              <img
-                                src={
-                                  achievement.iconUrl?.startsWith("/")
-                                    ? createUrl(achievement.iconUrl)
-                                    : achievement.iconUrl
-                                }
-                                alt={achievement.title}
-                                className="h-10 w-10 object-contain transition duration-300 group-hover:scale-110"
-                              />
-                            ) : (
-                              <span className="text-3xl transition duration-300 group-hover:scale-110">
-                                {achievement.iconUrl}
-                              </span>
-                            )
+                            <img
+                              src={createUrl(getAchievementGameIconPath(achievement.key, achievement.category))}
+                              alt={achievement.title}
+                              className="h-9 w-9 object-contain transition duration-300 group-hover:scale-110 invert filter dark:filter-none"
+                              loading="lazy"
+                            />
                           ) : (
-                            <Lock className="text-muted-foreground/50 h-5 w-5" />
+                            <div className="relative flex h-full w-full items-center justify-center">
+                              <img
+                                src={createUrl(getAchievementGameIconPath(achievement.key, achievement.category))}
+                                alt={achievement.title}
+                                className="h-7 w-7 object-contain opacity-20 blur-[1px] filter"
+                                loading="lazy"
+                              />
+                              <Lock className="absolute h-5 w-5 text-muted-foreground/80 drop-shadow-sm" />
+                            </div>
                           )}
 
                           {isUnlocked && count > 1 && (
@@ -169,27 +184,7 @@ export function QuestPathCard({
                               {count}
                             </span>
                           )}
-
-                          {/* Glow Ring */}
-                          {isUnlocked && (
-                            <div
-                              className={cn(
-                                "absolute inset-0 rounded-full opacity-35 blur-md transition duration-300 group-hover:opacity-65",
-                                path.nodeColor === "emerald"
-                                  ? "bg-emerald-500"
-                                  : path.nodeColor === "yellow"
-                                    ? "bg-yellow-500"
-                                    : path.nodeColor === "red"
-                                      ? "bg-red-500"
-                                      : path.nodeColor === "blue"
-                                        ? "bg-blue-500"
-                                        : path.nodeColor === "purple"
-                                          ? "bg-purple-500"
-                                          : "bg-pink-500"
-                              )}
-                            />
-                          )}
-                        </button>
+                        </motion.button>
                       </TooltipTrigger>
                       <TooltipContent
                         side="top"
@@ -197,22 +192,15 @@ export function QuestPathCard({
                       >
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            {isUnlocked &&
-                            (achievement.iconUrl?.startsWith("http") ||
-                              achievement.iconUrl?.startsWith("/")) ? (
+                            {isUnlocked ? (
                               <img
-                                src={
-                                  achievement.iconUrl?.startsWith("/")
-                                    ? createUrl(achievement.iconUrl)
-                                    : achievement.iconUrl
-                                }
+                                src={createUrl(getAchievementGameIconPath(achievement.key, achievement.category))}
                                 alt={achievement.title}
-                                className="h-5 w-5 object-contain"
+                                className="h-5 w-5 object-contain invert filter dark:filter-none"
+                                loading="lazy"
                               />
                             ) : (
-                              <span className="text-lg select-none">
-                                {isUnlocked ? achievement.iconUrl : "🔒"}
-                              </span>
+                              <Lock className="text-muted-foreground/60 h-4 w-4" />
                             )}
                             <span className="text-foreground text-xs leading-none font-bold">
                               {isSecret ? "Secret Achievement" : achievement.title}
@@ -233,24 +221,14 @@ export function QuestPathCard({
                               ? "Keep playing to unlock this secret achievement challenge."
                               : achievement.description}
                           </p>
-                          <div className="border-border/30 mt-1 flex items-center justify-between border-t pt-1.5 text-[9px]">
-                            <span className="font-bold text-green-600 dark:text-green-400">
-                              {achievement.points} pts
-                            </span>
-                            {achievement.globalUnlockPercent !== undefined && (
-                              <span className="text-muted-foreground/60">
-                                ({achievement.globalUnlockPercent}% unlocked)
-                              </span>
-                            )}
-                          </div>
                         </div>
                       </TooltipContent>
                     </Tooltip>
 
                     <span
                       className={cn(
-                        "max-w-[110px] truncate text-center text-xs font-medium",
-                        isUnlocked ? "text-foreground font-semibold" : "text-muted-foreground/50"
+                        "max-w-[110px] truncate text-center text-xs font-medium transition-all",
+                        isUnlocked ? "text-foreground font-semibold" : "text-muted-foreground/50 blur-[0.4px]"
                       )}
                     >
                       {isSecret ? "Secret" : achievement.title}
@@ -276,27 +254,24 @@ export function QuestPathCard({
           </div>
         </div>
 
-        {/* Selected Node Details Panel (Prevents cut-offs and supports touch screens) */}
+        {/* Selected Node Details Panel */}
         {selectedNode && (
           <div className="border-border/40 bg-muted/10 border-t p-5 transition-all duration-300 dark:border-white/5 dark:bg-white/[0.01]">
             <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
               <div className="flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  {selectedNode.iconUrl?.startsWith("http") ||
-                  selectedNode.iconUrl?.startsWith("/") ? (
-                    <img
-                      src={
-                        selectedNode.iconUrl?.startsWith("/")
-                          ? createUrl(selectedNode.iconUrl)
-                          : selectedNode.iconUrl
-                      }
-                      alt={selectedNode.title}
-                      className="h-8 w-8 object-contain"
-                    />
-                  ) : (
-                    <span className="text-2xl select-none">{selectedNode.iconUrl}</span>
-                  )}
-                  <span className="text-foreground text-sm font-bold md:text-base">
+                  <img
+                    src={createUrl(getAchievementGameIconPath(selectedNode.key, selectedNode.category))}
+                    alt={selectedNode.title}
+                    className="h-8 w-8 object-contain drop-shadow-md invert filter dark:filter-none"
+                    loading="lazy"
+                  />
+                  <span
+                    className={cn(
+                      "text-sm font-bold md:text-base",
+                      selectedNode.isUnlocked ? "text-foreground" : "text-muted-foreground blur-[0.4px]"
+                    )}
+                  >
                     {selectedNode.title}
                   </span>
                   <Badge
@@ -322,7 +297,14 @@ export function QuestPathCard({
                     {selectedNode.category}
                   </span>
                 </div>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p
+                  className={cn(
+                    "text-xs leading-relaxed transition-all",
+                    selectedNode.isUnlocked
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/60 blur-[1.5px]"
+                  )}
+                >
                   {selectedNode.description}
                 </p>
                 {selectedNode.isUnlocked && selectedNode.unlockedAt && (
@@ -332,12 +314,12 @@ export function QuestPathCard({
                 )}
               </div>
 
-              <div className="border-border/30 flex w-full shrink-0 flex-col gap-2.5 border-t pt-3 md:w-auto md:items-end md:border-t-0 md:pt-0">
-                <div className="text-green-655 flex items-center gap-1.5 text-xs font-bold select-none dark:text-green-400">
+              <div className="flex w-full shrink-0 flex-col gap-2.5 border-t border-border/30 pt-3 md:w-auto md:items-end md:border-t-0 md:pt-0">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 select-none dark:text-emerald-400">
                   <span>Value:</span>
                   <span>{selectedNode.points} pts</span>
                   {selectedNode.globalUnlockPercent !== undefined && (
-                    <span className="text-muted-foreground/60 font-normal">
+                    <span className="font-normal text-muted-foreground/60">
                       ({selectedNode.globalUnlockPercent}% unlocked)
                     </span>
                   )}
@@ -368,7 +350,7 @@ export function QuestPathCard({
                       <Badge
                         key={pId}
                         variant="secondary"
-                        className="text-purple-650 border-purple-500/20 bg-purple-500/10 text-[9px] dark:text-purple-400"
+                        className="border-purple-500/20 bg-purple-500/10 text-[9px] text-purple-600 dark:text-purple-400"
                       >
                         <Package className="mr-1 inline-block h-3 w-3 align-text-top" />
                         Pack

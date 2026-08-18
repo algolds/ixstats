@@ -1,14 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, X, Globe } from "lucide-react";
 import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { createAbsoluteUrl } from "~/lib/utils";
-import { useDIPlugin } from "~/components/halo";
-import { CountriesDIView } from "~/components/halo/CountriesDIView";
 
 interface CountriesPageModularProps {
   countries: CountryCardData[];
@@ -48,21 +45,8 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [isDIPaletteOpen, setIsDIPaletteOpen] = useState(false);
   const [randomSeed, setRandomSeed] = useState(Date.now());
   const [continentFilter, setContinentFilter] = useState<string | null>(null);
-
-  // Sync isDIPaletteOpen with actual Dynamic Island mode
-  useEffect(() => {
-    const handleDiModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: string }>;
-      setIsDIPaletteOpen(customEvent.detail?.mode === "plugin:countries");
-    };
-    window.addEventListener("ix:di-mode-changed", handleDiModeChange);
-    return () => {
-      window.removeEventListener("ix:di-mode-changed", handleDiModeChange);
-    };
-  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -172,80 +156,10 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     }
   }, [processedCountries, handleCountryClick]);
 
-  // Register the Countries Search Dynamic Island plugin
-  const countriesDIPlugin = useMemo(() => {
-    return {
-      id: "countries",
-      priority: 25, // Higher priority to override general plugins on this page
-      center: (
-        <span className="flex items-center gap-1.5 select-none">
-          <Globe className="h-3.5 w-3.5 shrink-0 text-purple-400" />
-          <span className="text-foreground/80 text-xs font-semibold">Countries Search</span>
-        </span>
-      ),
-      expandedViews: {
-        countries: () => (
-          <CountriesDIView
-            onClose={() => {
-              window.dispatchEvent(
-                new CustomEvent("ix:switch-di-mode", { detail: { mode: "compact" } })
-              );
-            }}
-            searchInput={searchInput}
-            onSearchChange={setSearchInput}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            filterBy={filterBy}
-            onFilterChange={setFilterBy}
-            onReshuffle={handleReshuffle}
-            onImFeelingLucky={handleImFeelingLucky}
-            resultsCount={processedCountries.length}
-          />
-        ),
-      },
-      accentColor: "#a855f7",
-      stickyLabel: "Countries Search",
-    };
-  }, [
-    searchInput,
-    sortBy,
-    filterBy,
-    handleReshuffle,
-    handleImFeelingLucky,
-    processedCountries.length,
-  ]);
-
-  useDIPlugin(countriesDIPlugin);
-
-  // Tab key handler for command palette and clickaway for expanded cards
+  // Key handler and clickaway for expanded cards
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const inInput =
-        target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
-
-      if (e.key === "Tab" && !e.ctrlKey && !inInput) {
-        e.preventDefault();
-        window.dispatchEvent(
-          new CustomEvent("ix:switch-di-mode", {
-            detail: { mode: isDIPaletteOpen ? "compact" : "plugin:countries" },
-          })
-        );
-      }
-      if (e.key === "Tab" && e.ctrlKey) {
-        e.preventDefault();
-        handleImFeelingLucky();
-      }
-      if (e.key === "r" && isDIPaletteOpen && !inInput) {
-        e.preventDefault();
-        handleReshuffle();
-      }
       if (e.key === "Escape") {
-        if (isDIPaletteOpen) {
-          window.dispatchEvent(
-            new CustomEvent("ix:switch-di-mode", { detail: { mode: "compact" } })
-          );
-        }
         setExpanded(null);
       }
     };
@@ -264,8 +178,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("click", handleClickAway);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded, isDIPaletteOpen, processedCountries]);
+  }, [expanded]);
 
   // Infinite scroll
   const loadMore = useCallback(() => {

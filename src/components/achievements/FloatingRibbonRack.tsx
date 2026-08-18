@@ -52,8 +52,8 @@ export function FloatingRibbonRack({
                   {/* Frameless Vertical Ribbon Fabric Bar */}
                   <div
                     className={cn(
-                      "relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border border-white/30 shadow-md transition-all duration-150 group-hover/ribbon:border-amber-300 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.55)]",
-                      isUnlocked ? `bg-gradient-to-b ${ribbon.stripeGradient}` : "bg-slate-900/80"
+                      "relative flex h-5 w-4 items-center justify-center overflow-hidden rounded-xs border border-border/60 shadow-md transition-all duration-150 group-hover/ribbon:border-amber-400 group-hover/ribbon:shadow-[0_0_12px_rgba(251,191,36,0.4)]",
+                      isUnlocked ? `bg-gradient-to-b ${ribbon.stripeGradient}` : "bg-muted/80"
                     )}
                   >
                     {/* Top Gold Hardware Mounting Pin */}
@@ -67,7 +67,7 @@ export function FloatingRibbonRack({
                     <Star
                       className={cn(
                         "relative z-20 h-2.5 w-2.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] transition-transform duration-150 group-hover/ribbon:scale-110",
-                        isUnlocked ? "fill-amber-300 text-amber-300" : "text-slate-500"
+                        isUnlocked ? "fill-amber-300 text-amber-300" : "text-muted-foreground/60"
                       )}
                     />
 
@@ -80,19 +80,19 @@ export function FloatingRibbonRack({
                 side="bottom"
                 align="center"
                 sideOffset={8}
-                className="bg-background/90 text-foreground z-[100] max-w-xs rounded-xl border border-amber-500/30 p-3 text-xs shadow-2xl ring-1 ring-black/5 saturate-180 backdrop-blur-2xl transition-all duration-200 dark:border-amber-400/35 dark:bg-zinc-950/95 dark:text-slate-100 dark:ring-white/10"
+                className="z-[100] max-w-xs rounded-xl border border-amber-500/30 bg-popover/95 p-3 text-xs text-popover-foreground shadow-2xl backdrop-blur-2xl transition-all duration-200 dark:border-amber-400/35"
               >
-                <div className="border-border/60 mb-1.5 flex items-center gap-2 border-b pb-1.5 dark:border-amber-500/20">
+                <div className="mb-1.5 flex items-center gap-2 border-b border-border/60 pb-1.5">
                   <Award className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
                   <span className="text-xs font-extrabold tracking-wider text-amber-600 uppercase dark:text-amber-400">
                     {ribbon.title}
                   </span>
                 </div>
-                <p className="text-muted-foreground mb-1.5 text-[11px] leading-snug font-medium dark:text-slate-300">
+                <p className="mb-1.5 text-[11px] leading-snug font-medium text-muted-foreground">
                   Conferred platform honor for excellence in {ribbon.category}.
                 </p>
-                <div className="border-border/50 flex items-center justify-between border-t pt-1 text-[10px] dark:border-white/10">
-                  <span className="text-muted-foreground font-medium dark:text-slate-400">
+                <div className="flex items-center justify-between border-t border-border/50 pt-1 text-[10px]">
+                  <span className="font-medium text-muted-foreground">
                     Platform Honor
                   </span>
                   <span className="rounded-xs border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono font-semibold text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">

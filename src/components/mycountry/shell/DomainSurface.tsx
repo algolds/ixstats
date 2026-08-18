@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import dynamic from "next/dynamic";
 import { Command, ArrowUpRight } from "lucide-react";

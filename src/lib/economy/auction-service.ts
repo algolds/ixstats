@@ -29,7 +29,7 @@ let _marketWs: { getMarketWebSocketServer: () => any } | null | undefined;
 async function getMarketWs() {
   if (_marketWs === undefined) {
     try {
-      _marketWs = await import("~/lib/websocket");
+      _marketWs = await import("~/lib/websocket/market-websocket-server");
     } catch {
       _marketWs = null;
     }

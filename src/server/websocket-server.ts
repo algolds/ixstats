@@ -1,7 +1,6 @@
 // Next.js WebSocket Server Integration
 // Integrates WebSocket server with Next.js custom server (server.mjs)
 
-import "server-only";
 import type { Server as HTTPServer } from "http";
 import type { IntelligenceWebSocketServer } from "~/lib/websocket/intelligence-websocket-server";
 import type { ThinkPagesWebSocketServer } from "~/lib/websocket/thinkpages-websocket-server";

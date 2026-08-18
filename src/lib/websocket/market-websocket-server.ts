@@ -11,7 +11,6 @@
  * Mounted at /api/market-ws by server.mjs.
  */
 
-import "server-only";
 import { Server as HTTPServer, IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 

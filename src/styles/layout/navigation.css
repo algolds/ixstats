@@ -2,22 +2,17 @@
    NAVIGATION BACKGROUND TRANSPARENCY & OVERLAP
    ========================================== */
 
-/* Make the navigation bar absolute by default so it sits on top of page backgrounds */
+/* Make the navigation bar fixed by default so it sits cleanly on top of page backgrounds */
 .navigation-bar {
-  position: absolute !important;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
   z-index: 50; /* Above background, but below dropdowns/overlays */
+  will-change: transform, opacity;
 }
 
-/* On pages with headless builder, preserve fixed positioning */
-body:has([data-builder-headless]) .navigation-bar,
-body:has([data-headless-nav]) .navigation-bar {
-  position: fixed !important;
-}
-
-/* Offset the main element's content by the height of the absolute navigation bar */
+/* Offset the main element's content by the height of the fixed navigation bar */
 main {
   padding-top: 56px; /* standard mobile navigation height */
 }
@@ -33,13 +28,8 @@ body.compact-mode main {
   padding-top: 48px;
 }
 
-/* Headless builder mode should have zero padding at the top since it starts hidden */
+/* Dedicated canvas / map pages have zero padding at the top */
 body:has([data-builder-headless]) main,
-body:has([data-headless-nav]) main {
-  padding-top: 0 !important;
-}
-
-/* Maps pages manage their own top positioning via MapDynamicIsland — no main padding needed */
 body:has([data-maps-page]) main {
   padding-top: 0 !important;
 }
@@ -68,40 +58,15 @@ body.compact-mode .extend-under-nav {
 }
 
 body:has([data-builder-headless]) .extend-under-nav,
-body:has([data-headless-nav]) .extend-under-nav {
+body:has([data-maps-page]) .extend-under-nav {
   top: 0 !important;
 }
 
-/* ─── Navigation bar: hidden by default in headless mode ─── */
-body:has([data-headless-nav]) .navigation-bar {
-  transform: translateY(-100%);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  will-change: transform;
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .navigation-bar {
+    transform: none !important;
+  }
 }
 
-/* ─── Reveal with spring physics overshoot ─── */
-body:has([data-headless-nav][data-show-nav="true"]) .navigation-bar {
-  transform: translateY(0);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border-bottom-color: rgba(251, 191, 36, 0.25);
-}
-
-/* ─── Mobile nav siblings ─── */
-body:has([data-headless-nav]) .navigation-bar + div[class*="mobile"],
-body:has([data-headless-nav]) [data-mobile-nav] {
-  transform: translateY(-100%);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-body:has([data-headless-nav][data-show-nav="true"])
-  .navigation-bar
-  + div[class*="mobile"],
-body:has([data-headless-nav][data-show-nav="true"]) [data-mobile-nav] {
-  transform: translateY(0);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 

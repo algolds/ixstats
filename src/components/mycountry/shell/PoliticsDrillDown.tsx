@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Users, Scale, Building2, FileText, Crown } from "lucide-react";

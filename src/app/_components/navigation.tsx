@@ -16,7 +16,6 @@ import { isStandaloneClient } from "~/lib/system";
 
 import { contextualMenus, getContextKey } from "~/lib/navigation-config";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { useHeadlessNav } from "~/hooks/useHeadlessNav";
 import { useResponsiveNav } from "~/hooks/useResponsiveNav";
 import { useNavigationItems } from "~/hooks/useNavigationItems";
 import { NavigationBar } from "~/components/navigation/NavigationBar";
@@ -27,30 +26,14 @@ export function Navigation() {
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
     normalizedPathname.startsWith("/wiki/") ||
-    normalizedPathname.startsWith("/wiki/") ||
     normalizedPathname.startsWith("/blurbs");
 
-  const isCriticalPage = useMemo(() => {
-    const criticalPrefixes = [
-      "/dashboard",
-      "/vault",
-      "/mycountry",
-      "/admin",
-      "/messages",
-      "/forum",
-      "/sign-in",
-      "/sign-up",
-      "/setup",
-    ];
-    if (normalizedPathname === "/" || normalizedPathname === "") return true;
-    return criticalPrefixes.some((prefix) => normalizedPathname.startsWith(prefix));
-  }, [normalizedPathname]);
-
-  const { showNav } = useHeadlessNav(!isCriticalPage);
+  const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky } = useNavigationScroll();
-  const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
+  const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
+    isLocked: mobileMenuOpen,
+  });
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -136,17 +119,21 @@ export function Navigation() {
 
   return (
     <>
-      <nav
-        data-headless-nav={!isCriticalPage ? true : undefined}
-        data-show-nav={!isCriticalPage ? showNav : undefined}
-        className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
+      <motion.nav
+        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
             : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
-        style={{
-          opacity: 1 - morphProgress * 0.6,
-          transition: "opacity 0.05s linear",
+        animate={{
+          y: isNavVisible ? 0 : -80,
+          opacity: isNavVisible ? 1 - morphProgress * 0.6 : 0,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 350,
+          damping: 32,
+          mass: 1,
         }}
       >
         {!isWikiPage && (
@@ -190,7 +177,7 @@ export function Navigation() {
             </div>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       <AnimatePresence>
         {isMobile && mobileMenuOpen && (
@@ -238,12 +225,17 @@ export function Navigation() {
         <motion.div
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
-            y: activeIsSticky ? 8 : Math.max(-100, 10 - activeScrollY),
+            y: isNavVisible
+              ? activeIsSticky
+                ? 8
+                : Math.max(-100, 10 - activeScrollY)
+              : -100,
+            opacity: isNavVisible ? 1 : 0,
           }}
           transition={{
             type: "spring",
-            stiffness: 400,
-            damping: 30,
+            stiffness: 350,
+            damping: 32,
             mass: 1,
           }}
           style={{

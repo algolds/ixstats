@@ -122,7 +122,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
       <img
         src={flag}
         alt={`Flag of ${countryName}`}
-        className="h-5 w-7 shrink-0 rounded border border-white/10 object-cover shadow-sm"
+        className="h-5 w-7 shrink-0 rounded border border-border/60 object-cover shadow-sm"
       />
     );
   }
@@ -151,24 +151,24 @@ function PodiumCard({
   const styles = {
     1: {
       badgeBg:
-        "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]",
-      cardBg: "from-amber-500/15 via-amber-500/5 to-slate-950/80 border-amber-500/30",
+        "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/40 shadow-sm",
+      cardBg: "from-amber-500/15 via-amber-500/5 to-card border-amber-500/30",
       icon: Crown,
-      iconColor: "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]",
+      iconColor: "text-amber-500 dark:text-amber-400 drop-shadow-sm",
       label: "Gold Champion",
     },
     2: {
-      badgeBg: "bg-slate-400/20 text-slate-200 border-slate-400/40",
-      cardBg: "from-slate-400/15 via-slate-400/5 to-slate-950/80 border-slate-400/30",
+      badgeBg: "bg-muted/80 text-foreground border-border/60 shadow-sm",
+      cardBg: "from-muted/60 via-muted/20 to-card border-border/60",
       icon: Medal,
-      iconColor: "text-slate-300",
+      iconColor: "text-muted-foreground",
       label: "Silver Runner-Up",
     },
     3: {
-      badgeBg: "bg-amber-700/25 text-amber-400 border-amber-700/40",
-      cardBg: "from-amber-700/15 via-amber-700/5 to-slate-950/80 border-amber-700/30",
+      badgeBg: "bg-amber-700/15 text-amber-700 dark:text-amber-400 border-amber-700/30 shadow-sm",
+      cardBg: "from-amber-700/15 via-amber-700/5 to-card border-amber-700/30",
       icon: Award,
-      iconColor: "text-amber-500",
+      iconColor: "text-amber-600 dark:text-amber-500",
       label: "Bronze Podium",
     },
   }[rank];
@@ -177,11 +177,11 @@ function PodiumCard({
 
   return (
     <motion.div
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      whileHover={{ y: -3, scale: 1.015 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-t-white/20 bg-gradient-to-b p-5 shadow-2xl backdrop-blur-2xl transition-all",
+        "relative overflow-hidden rounded-3xl border border-t-white/15 bg-gradient-to-b p-5 shadow-xl backdrop-blur-2xl transition-all",
         styles.cardBg
       )}
     >
@@ -196,7 +196,7 @@ function PodiumCard({
           >
             #{rank}
           </span>
-          <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
             {styles.label}
           </span>
         </div>
@@ -206,10 +206,10 @@ function PodiumCard({
       <div className="relative z-10 mt-4 space-y-1">
         <div className="flex items-center gap-2">
           <FlagGraphic countryName={name} flag={flag} />
-          <div className="truncate text-base font-bold text-slate-100">{name}</div>
+          <div className="truncate text-base font-bold text-foreground">{name}</div>
         </div>
-        <div className="font-mono text-2xl font-bold text-slate-100 tabular-nums">{primary}</div>
-        <div className="text-xs text-slate-400">{secondary}</div>
+        <div className="font-mono text-2xl font-bold text-foreground tabular-nums">{primary}</div>
+        <div className="text-xs text-muted-foreground">{secondary}</div>
       </div>
     </motion.div>
   );
@@ -237,11 +237,13 @@ function Row({
         delay: Math.min(index * 0.02, 0.2),
         ease: [0.23, 1, 0.32, 1],
       }}
+      whileHover={{ y: -2, scale: 1.004 }}
+      whileTap={{ scale: 0.985 }}
       className={cn(
-        "flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:border-white/20",
+        "flex items-center justify-between rounded-2xl border border-border/60 border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:border-border hover:shadow-lg",
         index < 3
-          ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-slate-950/70 to-slate-950/70"
-          : "border-white/10 bg-slate-950/60 dark:bg-black/40"
+          ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-card/75 to-card/75"
+          : "bg-card/70 dark:bg-card/50"
       )}
     >
       <div className="flex items-center gap-4">
@@ -249,12 +251,12 @@ function Row({
           className={cn(
             "w-8 text-center font-mono text-xl font-bold tabular-nums",
             index === 0
-              ? "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+              ? "text-amber-500 drop-shadow-sm dark:text-amber-400"
               : index === 1
-                ? "text-slate-300"
+                ? "text-muted-foreground"
                 : index === 2
-                  ? "text-amber-600"
-                  : "text-slate-500"
+                  ? "text-amber-700 dark:text-amber-500"
+                  : "text-muted-foreground/60"
           )}
         >
           {index + 1}
@@ -262,14 +264,14 @@ function Row({
         <div>
           <div className="flex items-center gap-2">
             <FlagGraphic countryName={name} flag={flag} />
-            <div className="font-bold text-slate-100">{name}</div>
+            <div className="font-bold text-foreground">{name}</div>
           </div>
-          <div className="text-xs text-slate-400">{secondary}</div>
+          <div className="text-xs text-muted-foreground">{secondary}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-400" />
-        <span className="font-mono text-lg font-bold text-slate-100 tabular-nums">{primary}</span>
+        <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-500 dark:text-amber-400" />
+        <span className="font-mono text-lg font-bold text-foreground tabular-nums">{primary}</span>
       </div>
     </motion.div>
   );
@@ -324,33 +326,33 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 border-t-white/20 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all dark:border-white/12 dark:bg-black/60">
+    <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/20 bg-card/75 p-6 shadow-xl backdrop-blur-2xl transition-all dark:border-border/40 dark:border-t-white/10 dark:bg-card/60">
       <TextureOverlay texture="dots" opacity={0.03} />
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xl font-bold tracking-tight text-slate-100">
+            <h3 className="text-xl font-bold tracking-tight text-foreground">
               Global World Leaderboards
             </h3>
-            <p className="text-xs font-medium text-slate-400">
+            <p className="text-xs font-medium text-muted-foreground">
               Rankings across {active.label.toLowerCase()} • {limit} nations displayed
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search nation..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 rounded-full border-white/10 bg-slate-900/80 pl-9 text-xs font-medium text-slate-200 focus:border-purple-500/50"
+                className="h-9 rounded-full border-border/60 bg-background/60 pl-9 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-amber-500/50"
               />
             </div>
 
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-900/80 p-1 text-xs backdrop-blur-md">
+            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 text-xs backdrop-blur-md">
               {[10, 25, 50, 100].map((l) => (
                 <button
                   key={l}
@@ -358,8 +360,8 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                   className={cn(
                     "rounded-full px-2.5 py-0.5 font-bold transition-all active:scale-95",
                     limit === l
-                      ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {l}
@@ -369,7 +371,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/50 pb-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -377,8 +379,8 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-bold transition-all active:scale-95",
                 activeDomain === cat.id
-                  ? "bg-slate-100 text-slate-950 shadow-md"
-                  : "border border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               )}
             >
               {cat.label}
@@ -396,8 +398,8 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 className={cn(
                   "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all active:scale-95",
                   filter === f.id
-                    ? "border-amber-300/40 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20"
-                    : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                    ? "border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm dark:text-amber-300"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -448,13 +450,13 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-slate-400">
+            <div className="py-12 text-center text-xs text-muted-foreground">
               No achievement data available for search query
             </div>
           )
         ) : isLoading ? (
           <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-amber-500 dark:text-amber-400" />
           </div>
         ) : countryBoard && countryBoard.length > 0 ? (
           <div className="space-y-2.5">
@@ -470,7 +472,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center text-xs text-slate-400">
+          <div className="py-12 text-center text-xs text-muted-foreground">
             No nation metrics found matching your criteria
           </div>
         )}

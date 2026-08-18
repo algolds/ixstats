@@ -1,7 +1,6 @@
 // Intelligence Broadcasting Service
 // Orchestrates real-time intelligence updates and notifications
 
-import "server-only";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
 import type { IntelligenceUpdate } from "~/lib/websocket/types";

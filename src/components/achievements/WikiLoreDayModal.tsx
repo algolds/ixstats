@@ -135,7 +135,7 @@ export function WikiLoreDayModal({
                           size="xs"
                           showTooltip={false}
                         />
-                        <h5 className="text-foreground text-foreground/90 text-sm font-semibold">
+                        <h5 className="text-sm font-semibold text-foreground">
                           {entry.runnerUpUser}
                         </h5>
                       </div>

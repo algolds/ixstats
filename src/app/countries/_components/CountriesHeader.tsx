@@ -17,7 +17,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
   children,
 }) => {
   return (
-    <div className="bg-background sticky top-0 z-40 mb-2 pt-12 pb-2">
+    <div className="bg-background sticky top-0 z-30 mb-2 pt-2 pb-2">
       {/* Solid Opaque Apple Panel */}
       <div className="bg-card text-card-foreground border-border relative overflow-hidden rounded-2xl border p-4 shadow-xl transition-all md:p-5">
         {/* Ambient background glows */}

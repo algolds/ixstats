@@ -93,27 +93,27 @@ export default function AchievementsPage() {
       <div className="space-y-6">
         {/* Country Profile Header Card */}
         {isMounted && userProfile && (
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 border-t-white/20 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 dark:border-white/12 dark:border-t-white/25 dark:bg-black/60">
+          <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/20 bg-card/75 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-border/40 dark:border-t-white/10 dark:bg-card/60">
             <TextureOverlay texture="dots" opacity={0.03} />
 
             {/* Country Flag Background Wash & Watermark */}
             {countryFlagUrl && (
               <>
-                <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-15 select-none dark:opacity-20">
+                <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10 select-none dark:opacity-15">
                   <img
                     src={countryFlagUrl}
                     alt=""
                     className="h-full w-full object-cover object-center blur-2xl saturate-[0.4]"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-slate-950 dark:from-black dark:via-black/80 dark:to-black" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-card via-card/85 to-card" />
                 </div>
-                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-15 transition-all duration-700 select-none dark:opacity-20">
+                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-10 transition-all duration-700 select-none dark:opacity-20">
                   <img
                     src={countryFlagUrl}
                     alt=""
                     className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-l from-transparent via-slate-950/60 to-slate-950 dark:via-black/60 dark:to-black" />
+                  <div className="absolute inset-0 bg-gradient-to-l from-transparent via-card/60 to-card" />
                 </div>
               </>
             )}
@@ -121,9 +121,9 @@ export default function AchievementsPage() {
             <div className="relative z-10 space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-slate-100">
+                  <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground">
                     <span>Achievements</span>
-                    <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-400 backdrop-blur-md">
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-600 backdrop-blur-md dark:text-amber-400">
                       {completionPercent}% Mastered
                     </span>
                   </h1>
@@ -133,18 +133,18 @@ export default function AchievementsPage() {
                   {/* Global Leaderboards Badge Link */}
                   <Link
                     href="/leaderboards"
-                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-slate-300 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
+                    className="flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-3.5 py-1.5 text-xs font-bold text-foreground/80 backdrop-blur-md transition-all hover:bg-muted/80 hover:text-foreground active:scale-95"
                   >
-                    <Award className="h-3.5 w-3.5 text-amber-400" />
+                    <Award className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
                     <span>Global Leaderboards</span>
                     <ExternalLink className="h-3 w-3 opacity-60" />
                   </Link>
 
                   {/* Showcase Cabinet Toggle */}
-                  <div className="flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/60 px-3.5 py-1.5 backdrop-blur-md">
+                  <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3.5 py-1.5 backdrop-blur-md">
                     <Label
                       htmlFor="cabinet-toggle"
-                      className="cursor-pointer text-[10px] font-extrabold tracking-wider text-slate-300 uppercase select-none"
+                      className="cursor-pointer text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase select-none hover:text-foreground"
                     >
                       Showcase Shelf
                     </Label>
@@ -152,37 +152,37 @@ export default function AchievementsPage() {
                       id="cabinet-toggle"
                       checked={showCabinet}
                       onCheckedChange={toggleCabinet}
-                      className="data-[state=checked]:bg-purple-500"
+                      className="data-[state=checked]:bg-amber-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Metrics Summary Row */}
-              <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-5 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 border-t border-border/50 pt-5 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <div className="text-3xl font-black tracking-tight text-slate-100">
+                  <div className="text-3xl font-black tracking-tight text-foreground">
                     <NumberFlow value={totalUnlocked} />
                   </div>
-                  <div className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
                     Achievements Unlocked
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-3xl font-black tracking-tight text-emerald-400">
+                  <div className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
                     <span className="flex items-baseline gap-1">
                       <NumberFlow value={gameplayPoints} />
-                      <span className="text-sm font-bold text-emerald-400/80">pts</span>
+                      <span className="text-sm font-bold text-emerald-600/80 dark:text-emerald-400/80">pts</span>
                     </span>
                   </div>
-                  <div className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
                     Achievement Points
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-3xl font-black tracking-tight text-purple-400">
+                  <div className="text-3xl font-black tracking-tight text-purple-600 dark:text-purple-400">
                     {globalRank > 0 ? (
                       <span className="flex items-baseline">
                         #<NumberFlow value={globalRank} />
@@ -191,7 +191,7 @@ export default function AchievementsPage() {
                       "—"
                     )}
                   </div>
-                  <div className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
                     Global Rank
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function AchievementsPage() {
         {/* Loader */}
         {isLoading && (
           <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-amber-500 dark:text-amber-400" />
           </div>
         )}
 

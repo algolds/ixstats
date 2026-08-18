@@ -3,7 +3,6 @@
  * Provides live intelligence updates to connected MyCountry dashboard clients
  */
 
-import "server-only";
 import { WebSocketServer } from "ws";
 import { createServer } from "http";
 import { parse } from "url";
