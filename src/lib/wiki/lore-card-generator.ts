@@ -18,10 +18,15 @@
  */
 
 import { db } from "~/server/db";
-import { CardType, CardRarity } from "@prisma/client";
+import { CardType, CardRarity, Prisma } from "@prisma/client";
 import { getCurrentIxCardSeason } from "~/lib/cards";
 import type { WikiSource } from "./config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "./config";
+import type {
+  MediaWikiPageItem,
+  MediaWikiCategoryItem,
+  MediaWikiAllCategoriesItem,
+} from "./types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "~/lib/cards";
 import type { CardAuthorInfo } from "~/types/cards-display";
@@ -289,7 +294,10 @@ export class WikiLoreCardGenerator {
         throw new Error(`MediaWiki response contained no page data.`);
       }
 
-      const page = Object.values(pages)[0] as any;
+      const page = Object.values(pages)[0] as MediaWikiPageItem & {
+        original?: { source?: string };
+        invalidreason?: string;
+      };
       if (page.missing !== undefined) {
         throw new Error(
           `Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`
@@ -313,13 +321,13 @@ export class WikiLoreCardGenerator {
       // If no pageimage, try to get from infobox
       if (!featuredImage && infoboxData.image) {
         // Get actual image URL from image filename
-        featuredImage = await this.getImageUrl(infoboxData.image, wikiSource);
+        featuredImage = (await this.getImageUrl(infoboxData.image, wikiSource)) ?? undefined;
       }
 
       // If still no image, try first image from article
-      if (!featuredImage && page.images?.length > 0) {
+      if (!featuredImage && page.images && page.images.length > 0) {
         // Get first non-icon image
-        const firstImage = page.images.find((img: any) => {
+        const firstImage = page.images.find((img: { title?: string }) => {
           const filename = img.title?.toLowerCase() || "";
           return (
             !filename.includes("icon") &&
@@ -331,8 +339,8 @@ export class WikiLoreCardGenerator {
               filename.endsWith(".svg"))
           );
         });
-        if (firstImage) {
-          featuredImage = await this.getImageUrl(firstImage.title, wikiSource);
+        if (firstImage && firstImage.title) {
+          featuredImage = (await this.getImageUrl(firstImage.title, wikiSource)) ?? undefined;
         }
       }
 
@@ -382,7 +390,7 @@ export class WikiLoreCardGenerator {
 
         if (creatorRes.ok) {
           const creatorData = await creatorRes.json();
-          const creatorPage = Object.values(creatorData.query?.pages ?? {})[0] as any;
+          const creatorPage = Object.values(creatorData.query?.pages ?? {})[0] as MediaWikiPageItem;
           const earlyRevs = (creatorPage?.revisions || []) as Array<{
             user: string;
             timestamp: string;
@@ -403,12 +411,12 @@ export class WikiLoreCardGenerator {
       }
 
       // Fallback: check latest revision user from main query
-      if (!creator && page.revisions?.length > 0) {
+      if (!creator && page.revisions && page.revisions.length > 0) {
         for (const r of page.revisions) {
           const u = cleanWikiUsername(r.user);
           if (u && !BOT_REGEX.test(u)) {
             creator = u;
-            createdAt = r.timestamp;
+            createdAt = r.timestamp ?? new Date().toISOString();
             break;
           }
         }
@@ -516,7 +524,9 @@ export class WikiLoreCardGenerator {
               return [] as ArticleMetadataPreview[];
             }
             const data = await res.json();
-            const pages = Object.values(data.query?.pages ?? {}) as any[];
+            const pages = Object.values(data.query?.pages ?? {}) as Array<
+              MediaWikiPageItem & { missing?: boolean; extract?: string; length?: number }
+            >;
             return pages
               .filter((p) => !p.missing)
               .map((p) => {
@@ -536,7 +546,7 @@ export class WikiLoreCardGenerator {
   }
 
   private toMetadataPreview(
-    page: any,
+    page: MediaWikiPageItem & { extract?: string; length?: number },
     cfg: CardValuationConfig,
     authorInfo?: CardAuthorInfo | null
   ): ArticleMetadataPreview {
@@ -619,7 +629,7 @@ export class WikiLoreCardGenerator {
 
             if (!res.ok) return;
             const data = await res.json();
-            const pages = Object.values(data.query?.pages ?? {}) as any[];
+            const pages = Object.values(data.query?.pages ?? {}) as MediaWikiPageItem[];
             if (pages.length === 0) return;
 
             const p = pages[0];
@@ -821,7 +831,9 @@ export class WikiLoreCardGenerator {
         return [];
       }
       const data = await res.json();
-      return (data.query?.allcategories ?? []).map((c: any) => c["*"] as string);
+      return (data.query?.allcategories ?? []).map(
+        (c: MediaWikiAllCategoriesItem) => (c["*"] || c.title || "") as string
+      );
     } catch (e) {
       console.error(`[Lore Card Generator] allcategories fetch failed:`, e);
       return [];
@@ -1021,7 +1033,7 @@ export class WikiLoreCardGenerator {
       const pages = data.query?.pages;
       if (!pages) return null;
 
-      const page = Object.values(pages)[0] as any;
+      const page = Object.values(pages)[0] as MediaWikiPageItem;
       return page.imageinfo?.[0]?.url || null;
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching image URL:`, error);
@@ -1047,7 +1059,14 @@ export class WikiLoreCardGenerator {
   /**
    * Analyze article quality metrics
    */
-  private analyzeArticleQuality(articleData: any): ArticleQuality {
+  private analyzeArticleQuality(
+    articleData: MediaWikiPageItem & {
+      rawText?: string;
+      text?: string;
+      inboundLinks?: number;
+      lastModified?: Date;
+    }
+  ): ArticleQuality {
     // Use raw text for template/reference detection
     const rawText = articleData.rawText || articleData.text || "";
 
@@ -1064,7 +1083,10 @@ export class WikiLoreCardGenerator {
     // Check if featured (has {{featured}} template or in Featured category)
     const isFeatured =
       /{{featured/i.test(rawText) ||
-      articleData.categories?.some((cat: any) => cat.title?.toLowerCase().includes("featured"));
+      (articleData.categories?.some((cat: MediaWikiCategoryItem) =>
+        cat.title?.toLowerCase().includes("featured")
+      ) ??
+        false);
 
     return {
       length: cleanText.length, // Use cleaned text length
@@ -1073,7 +1095,7 @@ export class WikiLoreCardGenerator {
       categoryCount: articleData.categories?.length || 0,
       hasInfobox,
       isFeatured,
-      lastModified: articleData.lastModified,
+      lastModified: articleData.lastModified ?? new Date(),
     };
   }
 
@@ -1124,18 +1146,22 @@ export class WikiLoreCardGenerator {
   /**
    * Detect lore category from article categories and content
    */
-  private detectCategory(articleData: any): LoreCategoryType {
+  private detectCategory(
+    articleData: MediaWikiPageItem & { text?: string; extract?: string }
+  ): LoreCategoryType {
     return classifyLoreArticle({
       title: articleData.title,
-      text: articleData.text || articleData.extract,
-      categories: articleData.categories,
+      text: articleData.text || articleData.extract || "",
+      categories: (articleData.categories || []).map((c) => ({
+        title: c.title || "",
+      })),
     });
   }
 
-  /**
-   * Extract artwork/image from article
-   */
-  private extractArtwork(articleData: any, _wikiSource: WikiSource): string {
+  private extractArtwork(
+    articleData: MediaWikiPageItem & { image?: string },
+    _wikiSource: WikiSource
+  ): string {
     // Use original image from API if available
     if (articleData.image) {
       return articleData.image;
@@ -1252,7 +1278,7 @@ export class WikiLoreCardGenerator {
         title: candidate.title,
         description: candidate.description,
         artwork: candidate.artwork,
-        category: candidate.category as any,
+        category: candidate.category as LoreCategory,
         cardType: CardType.LORE,
         rarity: candidate.rarity,
         season,
@@ -1265,7 +1291,9 @@ export class WikiLoreCardGenerator {
           qualityScore: candidate.qualityScore,
           loreStats: candidate.loreStats,
           fullExcerpt: candidate.fullExcerpt,
-          ...(candidate.authorInfo ? { authorInfo: candidate.authorInfo as any } : {}),
+          ...(candidate.authorInfo
+            ? { authorInfo: candidate.authorInfo as unknown as Prisma.InputJsonValue }
+            : {}),
           ...(candidate.authorInfo?.displayAuthor
             ? { author: candidate.authorInfo.displayAuthor }
             : {}),
@@ -1316,7 +1344,9 @@ export class WikiLoreCardGenerator {
       if (!response.ok) return false;
 
       const data = await response.json();
-      const page = Object.values(data.query?.pages ?? {})[0] as any;
+      const page = Object.values(data.query?.pages ?? {})[0] as
+        | (MediaWikiPageItem & { original?: { source?: string } })
+        | undefined;
       return !!page?.original?.source;
     } catch {
       return false;
@@ -1355,7 +1385,9 @@ export class WikiLoreCardGenerator {
       }
 
       const data = await response.json();
-      const pages = Object.values(data.query?.pages ?? {}) as any[];
+      const pages = Object.values(data.query?.pages ?? {}) as Array<
+        MediaWikiPageItem & { original?: { source?: string } }
+      >;
       return pages
         .filter((p) => p?.original?.source)
         .map((p) => p.title as string)
@@ -1391,9 +1423,9 @@ export class WikiLoreCardGenerator {
       }
 
       const data = await response.json();
-      const articles = data.query?.random || [];
+      const articles = (data.query?.random || []) as Array<{ title: string }>;
 
-      return articles.map((article: any) => article.title);
+      return articles.map((article) => article.title);
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles:`, error);
       return [];

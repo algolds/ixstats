@@ -31,9 +31,7 @@ export function Navigation() {
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
-    isLocked: mobileMenuOpen,
-  });
+  const { scrollY, isSticky } = useNavigationScroll();
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -119,25 +117,23 @@ export function Navigation() {
 
   return (
     <>
-      <motion.nav
+      <nav
         className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
             : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
-        animate={{
-          y: isNavVisible ? 0 : -80,
-          opacity: isNavVisible ? 1 - morphProgress * 0.6 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 350,
-          damping: 32,
-          mass: 1,
+        style={{
+          opacity: Math.max(0, 1 - morphProgress),
+          pointerEvents: morphProgress > 0.8 ? "none" : "auto",
+          transition: "opacity 0.05s linear",
         }}
       >
         {!isWikiPage && (
-          <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
+          <div
+            className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent"
+            style={{ opacity: Math.max(0, 1 - morphProgress) }}
+          />
         )}
 
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
@@ -177,7 +173,7 @@ export function Navigation() {
             </div>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       <AnimatePresence>
         {isMobile && mobileMenuOpen && (
@@ -225,17 +221,12 @@ export function Navigation() {
         <motion.div
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
-            y: isNavVisible
-              ? activeIsSticky
-                ? 8
-                : Math.max(-100, 10 - activeScrollY)
-              : -100,
-            opacity: isNavVisible ? 1 : 0,
+            y: activeIsSticky ? 8 : 10,
           }}
           transition={{
             type: "spring",
-            stiffness: 350,
-            damping: 32,
+            stiffness: 400,
+            damping: 30,
             mass: 1,
           }}
           style={{
@@ -243,11 +234,11 @@ export function Navigation() {
             maxWidth: "100%",
           }}
         >
-          {/* Large blur-3xl glow that moves and morphs with the DI */}
+          {/* Ambient glow around DI when navbar is visible, fading cleanly to 0 on scroll */}
           <div
             className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
             style={{
-              opacity: 0.6 * Math.max(0.2, 1 - morphProgress),
+              opacity: 0.6 * Math.max(0, 1 - morphProgress),
             }}
           />
           <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />

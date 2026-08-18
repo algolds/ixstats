@@ -1,17 +1,13 @@
 /**
- * wiki.ts — Unified tRPC router for all wiki data access.
- *
- * Single entry point for all wiki operations across IxStats + IxWorld.
- * Uses WikiBridge internally: direct MySQL for ixwiki, HTTP for iiwiki.
- *
- * Replaces scattered wiki endpoints in geo.ts, countries.ts, wikiImporter.ts.
+ * wikiDataRouter — Unified tRPC router for dynamic wiki data placeholders and business search.
  */
 
 import { z } from "zod/v4";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-
-const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 
 export const wikiDataRouter = createTRPCRouter({
   /** Resolve wikitext placeholders for dynamic country and business stats. */
@@ -35,7 +31,7 @@ export const wikiDataRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const where: any = {
+      const where: Prisma.PointOfInterestWhereInput = {
         status: "approved",
         category: { in: ["commercial", "office", "industrial", "factory"] },
       };
@@ -62,11 +58,22 @@ export const wikiDataRouter = createTRPCRouter({
     }),
 });
 
+interface WikiPlaceholderMetadata {
+  label: string;
+  countryName?: string;
+  companyName?: string;
+  growthTrend?: "down" | "up" | "flat";
+  growthRate?: string;
+  lastCalculated?: string;
+  detailsUrl?: string;
+  comparisonRank?: string;
+}
+
 export async function resolveWikiPlaceholdersInternal(
   placeholders: string[],
-  ctx: any,
+  ctx: { db: Prisma.TransactionClient | typeof import("~/server/db").db } & WikiAuthContext,
   activeCountryId?: string
-): Promise<Record<string, { value: string; rawVal: any; metadata?: any }>> {
+): Promise<Record<string, { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }>> {
   let userCountryId = activeCountryId;
   if (!userCountryId) {
     userCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
@@ -99,7 +106,7 @@ export async function resolveWikiPlaceholdersInternal(
     },
   });
 
-  const userCountry = userCountryId ? countries.find((c: any) => c.id === userCountryId) : null;
+  const userCountry = userCountryId ? countries.find((c) => c.id === userCountryId) : null;
 
   // Fetch all POIs for businesses
   const pois =
@@ -125,24 +132,10 @@ export async function resolveWikiPlaceholdersInternal(
     orderBy: { currentPopulation: "desc" },
   });
 
-  const results: Record<string, { value: string; rawVal: any; metadata?: any }> = {};
-
-  function formatNumber(n: number, isCurrency = false): string {
-    const absVal = Math.abs(n);
-    let formatted = "";
-    if (absVal >= 1_000_000_000_000) {
-      formatted = `${(n / 1_000_000_000_000).toFixed(2)}T`;
-    } else if (absVal >= 1_000_000_000) {
-      formatted = `${(n / 1_000_000_000).toFixed(2)}B`;
-    } else if (absVal >= 1_000_000) {
-      formatted = `${(n / 1_000_000).toFixed(2)}M`;
-    } else if (absVal >= 1_000) {
-      formatted = `${(n / 1_000).toFixed(1)}K`;
-    } else {
-      formatted = n.toLocaleString();
-    }
-    return isCurrency ? `$${formatted}` : formatted;
-  }
+  const results: Record<
+    string,
+    { value: string; rawVal: unknown; metadata?: WikiPlaceholderMetadata }
+  > = {};
 
   function hashCode(str: string): number {
     let hash = 0;
@@ -166,7 +159,7 @@ export async function resolveWikiPlaceholdersInternal(
       const cName = parts[1]?.replace(/_/g, " ");
       const field = parts[2];
       if (!cName || !field) continue;
-      const country = countries.find((c: any) => c.name.toLowerCase() === cName.toLowerCase());
+      const country = countries.find((c) => c.name.toLowerCase() === cName.toLowerCase());
       if (!country) {
         results[p] = { value: "Unknown Country", rawVal: null };
         continue;
@@ -178,13 +171,13 @@ export async function resolveWikiPlaceholdersInternal(
       const field = parts[2];
       if (!companyName || !field) continue;
 
-      const poi = pois.find((poi: any) => poi.name.toLowerCase() === companyName.toLowerCase());
+      const poi = pois.find((poiItem) => poiItem.name.toLowerCase() === companyName.toLowerCase());
       if (!poi) {
         results[p] = { value: "Unknown Company", rawVal: null };
         continue;
       }
 
-      const parentCountry = countries.find((c: any) => c.id === poi.countryId) || poi.country;
+      const parentCountry = countries.find((c) => c.id === poi.countryId) || poi.country;
       const hash = hashCode(companyName);
       let tierScale = 1.0;
       if (parentCountry.economicTier === "S") tierScale = 2.5;
@@ -210,7 +203,7 @@ export async function resolveWikiPlaceholdersInternal(
 
       if (field === "revenue") {
         results[p] = {
-          value: formatNumber(revenueVal, true),
+          value: formatCurrency(revenueVal),
           rawVal: revenueVal,
           metadata: {
             label: "Annual Revenue",
@@ -260,39 +253,43 @@ export async function resolveWikiPlaceholdersInternal(
     }
   }
 
-  function resolveCountryField(placeholder: string, country: any, field: string) {
-    let val: any = null;
+  function resolveCountryField(
+    placeholder: string,
+    country: (typeof countries)[number],
+    field: string
+  ) {
+    let val: unknown = null;
     let formattedVal = "";
     let label = field;
     let rank: string | undefined;
 
     if (field === "currentPopulation" || field === "population") {
       val = country.currentPopulation;
-      formattedVal = formatNumber(val);
+      formattedVal = formatNumber(Number(val));
       label = "Population";
-      const rIndex = allCountriesSortedPop.findIndex((c: any) => c.id === country.id);
+      const rIndex = allCountriesSortedPop.findIndex((c) => c.id === country.id);
       rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
     } else if (field === "currentTotalGdp" || field === "gdp") {
       val = country.currentTotalGdp;
-      formattedVal = formatNumber(val, true);
+      formattedVal = formatCurrency(Number(val));
       label = "Total GDP";
-      const rIndex = allCountriesSortedGdp.findIndex((c: any) => c.id === country.id);
+      const rIndex = allCountriesSortedGdp.findIndex((c) => c.id === country.id);
       rank = rIndex !== -1 ? `Ranked #${rIndex + 1} globally` : undefined;
     } else if (field === "currentGdpPerCapita" || field === "gdpPerCapita") {
       val = country.currentGdpPerCapita;
-      formattedVal = formatNumber(val, true);
+      formattedVal = formatCurrency(Number(val));
       label = "GDP per Capita";
     } else if (field === "adjustedGdpGrowth" || field === "gdpGrowth") {
       val = country.adjustedGdpGrowth;
-      formattedVal = `${(val * 100).toFixed(1)}%`;
+      formattedVal = `${(Number(val) * 100).toFixed(1)}%`;
       label = "GDP Growth";
     } else if (field === "unemploymentRate" || field === "unemployment") {
       val = country.unemploymentRate;
-      formattedVal = val !== null ? `${(val * 100).toFixed(1)}%` : "N/A";
+      formattedVal = val !== null ? `${(Number(val) * 100).toFixed(1)}%` : "N/A";
       label = "Unemployment Rate";
     } else if (field === "inflationRate" || field === "inflation") {
       val = country.inflationRate;
-      formattedVal = val !== null ? `${(val * 100).toFixed(1)}%` : "N/A";
+      formattedVal = val !== null ? `${(Number(val) * 100).toFixed(1)}%` : "N/A";
       label = "Inflation Rate";
     } else if (field === "politicalStability" || field === "stability") {
       val = country.politicalStability;
@@ -326,16 +323,20 @@ export async function resolveWikiPlaceholdersInternal(
       val = country.nationalIdentity?.currencySymbol;
       formattedVal = String(val || "");
       label = "Currency Symbol";
-    } else if ((country as any)[field] !== undefined) {
-      val = (country as any)[field];
+    } else if ((country as Record<string, unknown>)[field] !== undefined) {
+      val = (country as Record<string, unknown>)[field];
       formattedVal = typeof val === "number" ? formatNumber(val) : String(val);
-    } else if (country.nationalIdentity && (country.nationalIdentity as any)[field] !== undefined) {
-      val = (country.nationalIdentity as any)[field];
+    } else if (
+      country.nationalIdentity &&
+      (country.nationalIdentity as Record<string, unknown>)[field] !== undefined
+    ) {
+      val = (country.nationalIdentity as Record<string, unknown>)[field];
       formattedVal = String(val || "N/A");
     } else {
       formattedVal = "N/A";
     }
 
+    const numericVal = typeof val === "number" ? val : 0;
     results[placeholder] = {
       value: formattedVal,
       rawVal: val,
@@ -343,9 +344,9 @@ export async function resolveWikiPlaceholdersInternal(
         label,
         countryName: country.name,
         growthTrend:
-          field.includes("Growth") && val < 0
+          field.includes("Growth") && numericVal < 0
             ? "down"
-            : field.includes("Growth") && val > 0
+            : field.includes("Growth") && numericVal > 0
               ? "up"
               : "flat",
         growthRate:

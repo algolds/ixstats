@@ -6,6 +6,7 @@
 
 // Core types & configuration
 export * from "./config";
+export * from "./types";
 
 // Image URL utilities
 export * from "./image-url";
