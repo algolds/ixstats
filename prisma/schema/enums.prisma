@@ -409,3 +409,31 @@ enum VaultTransactionType {
   SPEND_COSMETIC
   ADMIN_ADJUSTMENT
 }
+
+/// *
+///  * LoreCategory - 13 super-categories for lore-first cards
+enum LoreCategory {
+  MILITARY
+  DIPLOMACY
+  GEOGRAPHY
+  RELIGION
+  CULTURE
+  GOVERNMENT
+  PEOPLE
+  ECONOMY
+  SCIENCE
+  HISTORY
+  NATION
+  SPECIAL
+  NS_IMPORT
+}
+
+/// *
+///  * ArtworkSource - Origin of card artwork
+enum ArtworkSource {
+  PROCEDURAL
+  WIKI_FETCHED
+  UPLOADED
+  FLAG
+}
+

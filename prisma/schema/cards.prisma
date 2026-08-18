@@ -50,8 +50,14 @@ model VaultTransaction {
 model Card {
   id               String          @id(map: "Card_pkey") @default(cuid())
   title            String
+  slug             String?
   description      String?
+  category         LoreCategory?   @default(NS_IMPORT)
+  subcategory      String?
   artwork          String?
+  artworkUrl       String?
+  artworkSource    ArtworkSource?  @default(PROCEDURAL)
+  artworkCredit    String?
   rarity           String
   season           Int             @default(1)
   cardType         String
@@ -62,8 +68,12 @@ model Card {
   updatedAt        DateTime        @default(now()) @updatedAt
   nsCardId         Int?
   nsSeason         Int?
+  nsData           Json?
   wikiSource       String?
   wikiArticleTitle String?
+  wikiPageId       Int?
+  wikiExcerpt      String?
+  wikiImageUrl     String?
   countryId        String?
   stats            Json?
   level            Int?            @default(1)
@@ -79,8 +89,10 @@ model Card {
 
   @@unique([nsCardId, nsSeason])
   @@index([cardType, rarity, season])
+  @@index([category, rarity, season])
   @@index([marketValue])
   @@index([countryId])
+  @@index([slug])
   @@index([rarity], map: "Card_rarity_idx")
   @@index([season], map: "Card_season_idx")
   @@map("cards")
@@ -330,20 +342,22 @@ model SyncCheckpoint {
 }
 
 model LoreCardRequest {
-  id              String    @id @default(cuid())
+  id              String        @id @default(cuid())
   userId          String
   articleTitle    String
   wikiSource      String
-  status          String    @default("PENDING")
+  category        LoreCategory?
+  suggestedRarity CardRarity?
+  status          String        @default("PENDING")
   cardId          String?
   adminNotes      String?
-  requestedAt     DateTime  @default(now())
+  requestedAt     DateTime      @default(now())
   reviewedAt      DateTime?
   reviewedBy      String?
   generatedAt     DateTime?
   rejectionReason String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([userId])
   @@index([status])
