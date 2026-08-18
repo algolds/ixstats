@@ -3,7 +3,6 @@
  */
 
 export * from "./cn";
-export * from "./format-number";
 export * from "./format-utils";
 export * from "./chart-utils";
 export * from "./analytics-data-transformers";

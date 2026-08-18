@@ -1,8 +1,8 @@
 # Library Architecture (`src/lib`)
 
-**Last updated:** August 2026 (Phase 8 `/ponytail` Modular Architecture)
+**Last updated:** August 2026
 
-`src/lib` hosts shared services, domain engines, calculation models, and platform infrastructure. Under the `/ponytail` modular architecture, all domain-specific logic, system services, and data utilities are organized into isolated, self-contained subpackages with typed barrel exports (`index.ts`).
+`src/lib` hosts shared services, domain engines, calculation models, and platform infrastructure. Under the ponytail modular architecture, all domain-specific logic, system services, and data utilities are organized into isolated, self-contained subpackages with typed barrel exports (`index.ts`).
 
 Only **14 global primitives** (Core Architecture, Type Normalization, and Platform Configuration) reside in the root of `src/lib/`.
 

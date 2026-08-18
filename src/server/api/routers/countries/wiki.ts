@@ -16,8 +16,7 @@ import {
 import { searchWiki as searchWikiService } from "~/lib/wiki/search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki/infobox-parser";
 import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki/unified-parser";
-import { getEligibleCountries } from "~/lib/wiki";
-import { wikiCacheService } from "~/lib/services/wiki-cache-service";
+import { wikiCacheService } from "~/lib/wiki";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [

@@ -182,14 +182,14 @@ class RedisCache {
   }
 }
 
-export interface CacheOptions {
+export interface AdvancedCacheOptions {
   ttl?: number; // Time to live in seconds
   tier?: "critical" | "standard" | "background"; // Cache tier
   tags?: string[]; // For invalidation
   skipRedis?: boolean; // Skip Redis for this item
 }
 
-export interface CacheStats {
+export interface AdvancedCacheStats {
   memory: {
     size: number;
     hits: number;
@@ -225,7 +225,7 @@ export class AdvancedCacheSystem {
   /**
    * Set value in cache with intelligent tiering
    */
-  async set(key: string, value: any, options: CacheOptions = {}): Promise<void> {
+  async set(key: string, value: any, options: AdvancedCacheOptions = {}): Promise<void> {
     const startTime = performance.now();
 
     try {
@@ -314,7 +314,7 @@ export class AdvancedCacheSystem {
   /**
    * Get cache statistics
    */
-  getStats(): CacheStats {
+  getStats(): AdvancedCacheStats {
     const memoryStats = this.memoryCache.getStats();
     const avgGetTime =
       this.performanceMetrics.getTimeCount > 0
@@ -371,7 +371,7 @@ export class CacheUtils {
   static async cache<T>(
     keyGenerator: () => string,
     dataFetcher: () => Promise<T>,
-    options: CacheOptions = {}
+    options: AdvancedCacheOptions = {}
   ): Promise<T> {
     const key = keyGenerator();
 
@@ -396,7 +396,7 @@ export class CacheUtils {
   static async batchCache<T>(
     keys: string[],
     dataFetcher: (keys: string[]) => Promise<Record<string, T>>,
-    options: CacheOptions = {}
+    options: AdvancedCacheOptions = {}
   ): Promise<Record<string, T>> {
     const results: Record<string, T> = {};
     const missingKeys: string[] = [];

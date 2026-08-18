@@ -20,8 +20,9 @@ import {
   getSpecialStatsForType,
   STAT_PROGRESSION,
   LEGACY_KEY_MAP,
+  normalizeSpecialStat,
+  formatCompactValue,
 } from "./stat-config";
-import { formatCompactValue, normalizeSpecialStat } from "~/lib/utils";
 import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
 
 /**

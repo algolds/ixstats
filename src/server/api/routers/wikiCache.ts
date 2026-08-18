@@ -12,7 +12,7 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/services/wiki-cache-service";
+import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki";
 import { extractDataFromWikiSections } from "~/app/builder/lib/wiki-data-extractor";
 import { getArticleWikitext } from "~/lib/wiki/bridge";
 import { withRetrySafe } from "~/lib/system";

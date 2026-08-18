@@ -7,7 +7,7 @@ import {
   premiumProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
+import { unifyIntelligenceItem } from "~/lib/intelligence";
 import { calculateIntelligence } from "~/lib/intelligence/calculator";
 import { notificationAPI } from "~/lib/notifications/api";
 
