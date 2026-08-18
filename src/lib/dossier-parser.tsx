@@ -44,6 +44,9 @@ export interface WikiSection {
   lastModified: string;
 }
 
+import { cleanWikiMarkup } from "../wiki/wikitext-parser";
+import { parseInfobox } from "../wiki/infobox-parser";
+
 /**
  * Parse wiki markup content into structured data
  *
@@ -58,18 +61,14 @@ export function parseWikiMarkup(markup: string, title: string = ""): ParsedWikiC
   const images: string[] = [];
   const links: string[] = [];
 
-  // Extract infobox data
-  const infoboxMatch = markup.match(/\{\{Infobox[\s\S]*?\}\}/i);
-  if (infoboxMatch) {
-    const infoboxText = infoboxMatch[0];
-    const lines = infoboxText.split("\n");
-
-    lines.forEach((line) => {
-      const keyValue = line.match(/\|\s*(\w+)\s*=\s*(.+)/);
-      if (keyValue) {
-        infobox[keyValue[1].trim()] = keyValue[2].trim();
+  // Extract infobox data via core parser
+  const parsedBox = parseInfobox(markup);
+  if (parsedBox) {
+    for (const f of parsedBox.fields) {
+      if (f.cleanValue) {
+        infobox[f.key] = f.cleanValue;
       }
-    });
+    }
   }
 
   // Extract categories
@@ -227,40 +226,15 @@ export function parseTemplate(template: string): { name: string; params: Record<
 }
 
 /**
- * Strip wiki markup from text, leaving plain text
+ * ponytail: Strip wiki markup from text, leaving plain text using canonical cleaner.
  *
  * @param markup - Wiki markup text
  * @returns Plain text without markup
  */
 export function stripWikiMarkup(markup: string): string {
-  let text = markup;
-
-  // Remove templates
-  text = text.replace(/\{\{[^}]+\}\}/g, "");
-
-  // Remove file/image links
-  text = text.replace(/\[\[File:[^\]]+\]\]/g, "");
-
-  // Convert internal links to plain text
-  text = text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, link, display) => display || link);
-
-  // Remove external link brackets
-  text = text.replace(
-    /\[(https?:\/\/[^\s\]]+)(?:\s+([^\]]+))?\]/g,
-    (_, url, display) => display || url
-  );
-
-  // Remove HTML tags
-  text = text.replace(/<[^>]+>/g, "");
-
-  // Remove categories
-  text = text.replace(/\[\[Category:[^\]]+\]\]/g, "");
-
-  // Clean up multiple newlines
-  text = text.replace(/\n{3,}/g, "\n\n");
-
-  return text.trim();
+  return cleanWikiMarkup(markup);
 }
+
 
 /**
  * Truncate content to a reasonable length

@@ -15,12 +15,11 @@
  */
 
 import { Cache } from "~/lib/cache";
-import { DEFAULT_USER_AGENT } from "~/lib/mediawiki-config";
+import { DEFAULT_USER_AGENT } from "./config";
 
 import mysql from "mysql2/promise";
 import type { Pool } from "mysql2/promise";
-import { parseInfobox, parseCoordTemplate } from "./wiki-infobox-parser";
-import { withRetrySafe } from "~/lib/with-retry";
+import { parseInfobox, parseCoordTemplate } from "./infobox-parser";
 
 // ──────────────────────────────────────────────
 // Types
@@ -128,13 +127,13 @@ export function getWikiDbPool(): Pool {
 // In-Memory LRU Cache (L1)
 // ──────────────────────────────────────────────
 
-const wikiBridgeCache = new Cache({
+const wikiBridgeCache = new Cache<any>({
   defaultTtlMs: 30 * 60 * 1000, // 30 minutes
   maxSize: 500,
 });
 
 function cacheGet<T>(key: string): T | null {
-  return wikiBridgeCache.get<T>(key) ?? null;
+  return (wikiBridgeCache.get(key) as T | undefined) ?? null;
 }
 
 function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000): void {
@@ -145,9 +144,60 @@ function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000): void
 // IxWiki Direct MySQL Queries
 // ──────────────────────────────────────────────
 
+async function fetchIxWikiWikitextHttp(title: string): Promise<WikiArticle | null> {
+  try {
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
+    const params = new URLSearchParams({
+      action: "query",
+      titles: title,
+      prop: "revisions",
+      rvprop: "content",
+      rvslots: "main",
+      format: "json",
+      origin: "*",
+    });
+
+    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
+      headers: { "User-Agent": DEFAULT_USER_AGENT },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            pageid?: number;
+            title?: string;
+            revisions?: Array<{ slots?: { main?: { "*"?: string } }; "*"?: string }>;
+          }
+        >;
+      };
+    };
+
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const page = Object.values(pages)[0];
+    if (!page || !page.pageid || page.pageid < 0) return null;
+
+    const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? page.revisions?.[0]?.["*"] ?? "";
+    if (!wikitext) return null;
+
+    return {
+      title: page.title ?? title,
+      pageId: page.pageid,
+      wikitext,
+      length: wikitext.length,
+    };
+  } catch (err) {
+    console.error("[WikiBridge] IxWiki HTTP fallback error:", err);
+    return null;
+  }
+}
+
 /**
- * Get article wikitext directly from the MediaWiki MySQL database.
- * Schema: page → slots → content → text
+ * Get article wikitext directly from the MediaWiki MySQL database with HTTP API fallback.
  */
 async function ixwikiGetWikitext(title: string): Promise<WikiArticle | null> {
   const cacheKey = `wikitext:${title}`;
@@ -167,22 +217,28 @@ async function ixwikiGetWikitext(title: string): Promise<WikiArticle | null> {
       [title.replace(/ /g, "_")]
     );
 
-    if (!rows || rows.length === 0) return null;
+    if (rows && rows.length > 0) {
+      const row = rows[0]!;
+      const article: WikiArticle = {
+        title: String(row.page_title).replace(/_/g, " "),
+        pageId: row.page_id as number,
+        wikitext: String(row.old_text),
+        length: row.page_len as number,
+      };
 
-    const row = rows[0]!;
-    const article: WikiArticle = {
-      title: String(row.page_title).replace(/_/g, " "),
-      pageId: row.page_id as number,
-      wikitext: String(row.old_text),
-      length: row.page_len as number,
-    };
-
-    cacheSet(cacheKey, article);
-    return article;
+      cacheSet(cacheKey, article);
+      return article;
+    }
   } catch (err) {
-    console.error("[WikiBridge] MySQL error fetching wikitext:", err);
-    return null;
+    console.warn("[WikiBridge] MySQL error fetching wikitext, falling back to HTTP:", err);
   }
+
+  // Fallback to HTTP API
+  const httpArticle = await fetchIxWikiWikitextHttp(title);
+  if (httpArticle) {
+    cacheSet(cacheKey, httpArticle);
+  }
+  return httpArticle;
 }
 
 /**
@@ -1305,7 +1361,7 @@ function markExternalHostOffline(hostname: string) {
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
  * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-async function fetchExternalWiki(url: string): Promise<Response | null> {
+async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
     return null;
@@ -1313,7 +1369,7 @@ async function fetchExternalWiki(url: string): Promise<Response | null> {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
       headers: {
@@ -1338,7 +1394,7 @@ async function fetchExternalWiki(url: string): Promise<Response | null> {
     return response;
   } catch (err: any) {
     if (err?.name === "AbortError") {
-      console.warn(`[WikiBridge] ${hostname} fetch timed out (5s)`);
+      console.warn(`[WikiBridge] ${hostname} fetch timed out (${timeoutMs / 1000}s)`);
     } else {
       console.warn(`[WikiBridge] ${hostname} fetch failed:`, err?.message || err);
     }
@@ -1347,7 +1403,7 @@ async function fetchExternalWiki(url: string): Promise<Response | null> {
 }
 
 // ──────────────────────────────────────────────
-// IIWiki HTTP API (direct access — Cloudflare whitelisted)
+// IIWiki HTTP API (direct in prod / proxied via maps.ixwiki.com in dev)
 // ──────────────────────────────────────────────
 
 function getIiwikiApiBaseUrl(): string {
@@ -1355,6 +1411,12 @@ function getIiwikiApiBaseUrl(): string {
 }
 
 function getFullIiwikiApiUrl(): string {
+  if (process.env.IIWIKI_DEV_PROXY_URL) {
+    return process.env.IIWIKI_DEV_PROXY_URL;
+  }
+  if (process.env.NODE_ENV === "development") {
+    return "https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php";
+  }
   return "https://iiwiki.com/api.php";
 }
 
@@ -1764,8 +1826,8 @@ export async function getPageLog(title: string, limit?: number) {
   return ixwikiGetPageLog(title, limit);
 }
 
-// Re-exported from wiki-image-url (shared with client-safe code)
-export { getImageUrl } from "./wiki-image-url";
+// Re-exported from image-url (shared with client-safe code)
+export { getImageUrl } from "./image-url";
 
 /**
  * Extract coordinates from article wikitext.
@@ -1932,7 +1994,7 @@ function extractIntroFromWikitext(wikitext: string): string {
 function cleanWikiMarkup(text: string): string {
   let clean = text;
 
-  // Remove infobox/template blocks ({{...}}) — handle nested
+  // 1. Strip top-level infobox/template blocks ({{...}}) — handle nested and unclosed
   let depth = 0;
   let result = "";
   let i = 0;
@@ -1950,7 +2012,14 @@ function cleanWikiMarkup(text: string): string {
       i++;
     }
   }
-  clean = result;
+
+  // If text was cut off while still inside an unclosed template (depth > 0),
+  // fall back to stripping from the last top-level blank line or paragraph start
+  if (depth > 0 && !result.trim()) {
+    clean = text.replace(/^\{\{[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi, "");
+  } else {
+    clean = result;
+  }
 
   // Remove HTML tags
   clean = clean.replace(/<[^>]+>/g, "");
@@ -1965,8 +2034,9 @@ function cleanWikiMarkup(text: string): string {
   // Remove bold/italic markers
   clean = clean.replace(/'{2,5}/g, "");
 
-  // Remove categories/files
-  clean = clean.replace(/\[\[(?:Category|File|Image):[^\]]+\]\]/gi, "");
+  // Remove categories/files/templates
+  clean = clean.replace(/\[\[(?:Category|File|Image|Template):[^\]]+\]\]/gi, "");
+  clean = clean.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // Remove references
   clean = clean.replace(/<ref[^>]*\/>/g, "");

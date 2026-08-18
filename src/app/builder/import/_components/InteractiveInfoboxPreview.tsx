@@ -19,7 +19,7 @@ import { Badge } from "~/components/ui/badge";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
-import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
 
 interface InteractiveInfoboxPreviewProps {
   data: UnifiedInfoboxData & { wikiIntro?: string };

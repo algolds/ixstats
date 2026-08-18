@@ -11,7 +11,7 @@ import { BackButton } from "../../import/_components/BackButton";
 import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveInfoboxPreview";
 import { EligibleCountryGrid } from "../../import/_components/EligibleCountryGrid";
 import type { BuilderSection } from "../../lib/builder-theme";
-import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
 import { WikiDeepScanPanel } from "../../import/_components/WikiDeepScanPanel";
 import type { ExtractedBuilderData } from "../../lib/wiki-data-extractor";
 import { ScanCompleteToast } from "../../import/_components/ScanCompleteToast";

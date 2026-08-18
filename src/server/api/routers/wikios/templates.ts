@@ -10,7 +10,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import {
   getRevisionWikitext as getRevisionWikitextMySQL,
   searchTemplates as searchTemplatesDB,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 import {
   fetchTemplateData,
   getTemplatePreview as renderTemplatePreview,

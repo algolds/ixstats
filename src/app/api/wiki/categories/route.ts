@@ -2,8 +2,8 @@
 // Search live wiki categories by prefix — feeds the admin lore-card category picker.
 
 import { NextResponse } from "next/server";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import type { WikiSource } from "~/lib/wiki/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -21,8 +21,8 @@ import {
 import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/dossier-parser";
 import type { WikiSection } from "~/lib/dossier-parser";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
-import { type WikiSource } from "~/lib/mediawiki-config";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
+import { type WikiSource } from "~/lib/wiki/config";
 
 const CLASSIFICATION_STYLES = {
   PUBLIC: { color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },

@@ -18,7 +18,7 @@ import {
   getParentCategories as getParentCategoriesMySQL,
   getCategoryInfo,
   type WikiSource,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 
 import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";
 

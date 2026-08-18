@@ -2,8 +2,8 @@
 // API endpoint to generate and save a lore card from a wiki article
 
 import { NextResponse } from "next/server";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import type { WikiSource } from "~/lib/wiki/config";
 import { auth } from "@clerk/nextjs/server";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 

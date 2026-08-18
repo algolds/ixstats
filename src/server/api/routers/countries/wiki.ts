@@ -12,10 +12,10 @@ import {
   getArticleWikitext,
   getPageImages as wikiBridgePageImages,
   getInfobox as wikiBridgeInfobox,
-} from "~/lib/wiki-bridge";
-import { searchWiki as searchWikiService } from "~/lib/wiki-search-service";
-import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-infobox-parser";
-import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/unified-wiki-parser";
+} from "~/lib/wiki/bridge";
+import { searchWiki as searchWikiService } from "~/lib/wiki/search-service";
+import { parseInfobox as parseInfoboxParser } from "~/lib/wiki/infobox-parser";
+import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki/unified-parser";
 import { getEligibleCountries } from "~/lib/eligible-country-service";
 import { wikiCacheService } from "~/lib/services/wiki-cache-service";
 

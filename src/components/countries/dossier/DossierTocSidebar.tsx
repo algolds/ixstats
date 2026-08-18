@@ -20,9 +20,9 @@ import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { parseInfoboxValue } from "~/lib/dossier-parser";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
-import type { CountryInfobox } from "~/lib/mediawiki-service";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
+import type { CountryInfobox } from "~/lib/wiki/legacy-service";
+import type { WikiSource } from "~/lib/wiki/config";
 
 export interface TocItem {
   id: string;

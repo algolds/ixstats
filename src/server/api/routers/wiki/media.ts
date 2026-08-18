@@ -9,7 +9,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, cachedPublicProcedure, publicProcedure } from "~/server/api/trpc";
-import { getImageUrl, getPageImages } from "~/lib/wiki-bridge";
+import { getImageUrl, getPageImages } from "~/lib/wiki/bridge";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 
 const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
@@ -118,7 +118,7 @@ export const wikiMediaRouter = createTRPCRouter({
 
       if (!isIiwiki) {
         try {
-          const { getIxWikiPool } = await import("~/lib/wiki-bridge");
+          const { getIxWikiPool } = await import("~/lib/wiki/bridge");
           const pool = getIxWikiPool();
           const [rows] = await pool.query<any[]>(
             `

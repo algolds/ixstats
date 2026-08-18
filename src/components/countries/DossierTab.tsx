@@ -14,7 +14,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 import Link from "next/link";
 import { BookOpen, Plus, Upload, Trash2, Edit3, Lock, Shield, Eye } from "lucide-react";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";

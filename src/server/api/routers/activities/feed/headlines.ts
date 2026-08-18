@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-bridge";
+import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
 
 // Input schemas

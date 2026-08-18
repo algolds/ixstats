@@ -16,7 +16,7 @@ import {
   getPageProps,
   getPageProtection,
   getPageLog,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
 import {
   extractTemplateKeys,

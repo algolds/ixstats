@@ -101,7 +101,7 @@ export class MemoryOptimizer {
 
       // Clear MediaWiki L1 caches
       try {
-        const { clearAllMediaWikiCaches } = await import("./mediawiki-service");
+        const { clearAllMediaWikiCaches } = await import("../wiki/legacy-service");
         clearAllMediaWikiCaches();
         console.log("[MemoryOptimizer] Cleared mediawikiL1Caches");
       } catch (error) {

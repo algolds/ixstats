@@ -8,7 +8,7 @@
  */
 
 import { db } from "~/server/db";
-import { getUserInfo } from "~/lib/wiki-bridge";
+import { getUserInfo } from "./bridge";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 
 // ---------------------------------------------------------------------------

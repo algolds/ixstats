@@ -16,15 +16,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import { CardRarity } from "@prisma/client";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
+import type { WikiSource } from "~/lib/wiki/config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 
-/**
- * Lore Cards Router
- */
 export const loreCardsAdminRouter = createTRPCRouter({
   /**
    * Get pending lore card request queue (admin only)
@@ -405,50 +402,58 @@ export const loreCardsAdminRouter = createTRPCRouter({
   }),
 
   /**
-   * Direct admin generation of a lore card from article title & parameters
+   * Suggest category, rarity, and artwork source for a wiki article (admin preview)
    */
-  generateLoreCard: adminProcedure
+  suggestWikiSignals: adminProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1),
         wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-        targetRarity: z.nativeEnum(CardRarity).optional(),
-        customPrompt: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       try {
-        const candidate = await wikiLoreCardGenerator.generateCard(
-          input.articleTitle,
+        const metadata = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
+          [input.articleTitle],
           input.wikiSource as any
         );
 
-        if (!candidate) {
+        const first = metadata[0];
+        if (!first) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: `Could not generate lore card for "${input.articleTitle}". Article not found or incomplete.`,
+            message: `Article "${input.articleTitle}" not found on ${input.wikiSource}`,
           });
         }
 
-        if (input.targetRarity) {
-          candidate.rarity = input.targetRarity;
-        }
+        const signals = {
+          wordCount: Math.round(first.length / 5),
+          inboundLinks: 10,
+          outboundLinks: 10,
+          editCount: 5,
+          categoryNames: [],
+          hasImages: first.hasImage,
+        };
 
-        const cardId = await wikiLoreCardGenerator.createCard(candidate);
+        const analysis = analyzeWikiSignals(input.articleTitle, signals);
 
         return {
-          success: true,
-          cardId,
-          title: candidate.title,
-          rarity: candidate.rarity,
+          articleTitle: input.articleTitle,
+          wikiSource: input.wikiSource,
+          hasImage: first.hasImage,
+          imageUrl: first.imageUrl,
+          excerpt: first.extract,
+          analysis,
         };
       } catch (error) {
-        console.error("[Lore Cards] Error in generateLoreCard:", error);
+        console.error("[Lore Cards] Error in suggestWikiSignals:", error);
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to generate lore card",
+          message: "Failed to analyze wiki article signals",
         });
       }
     }),
 });
+
+

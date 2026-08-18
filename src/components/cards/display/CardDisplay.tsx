@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
 import { cn } from "~/lib/utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { CometCard } from "~/components/ui/comet-card";
 import { RarityBadge } from "./RarityBadge";
 import { HolographicOverlay } from "./HolographicOverlay";
@@ -17,21 +18,71 @@ import {
   getRarityGlow,
   getRarityConfig,
   getCardWidth,
-  getCardAspectRatio,
   formatCardStats,
   getCardTypeLabel,
 } from "~/lib/card-display-utils";
-import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   getPremiumBorderConfig,
   getFoilStampConfig,
-  getEmbossedTextShadow,
   getMetallicGradient,
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { CardHolographicCover } from "./CardHolographicCover";
+import { RARITY_THEMES } from "./CardBack";
 import { NationStatesBadge } from "./NationStatesLogo";
+import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
+import { CategoryIcon } from "~/components/cards/icons";
+import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, type LoreCategory } from "~/lib/cards";
+import { getHybridRarityMaterial } from "~/lib/cards/rarity-materials";
+import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
+import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
+
+// Static lookup configurations hoisted outside render function
+const FONT_SIZES = {
+  small: {
+    title: "text-xs",
+    type: "text-[10px]",
+    stats: "text-[10px]",
+  },
+  sm: {
+    title: "text-xs",
+    type: "text-[10px]",
+    stats: "text-[10px]",
+  },
+  medium: {
+    title: "text-sm",
+    type: "text-xs",
+    stats: "text-xs",
+  },
+  md: {
+    title: "text-sm",
+    type: "text-xs",
+    stats: "text-xs",
+  },
+  large: {
+    title: "text-base",
+    type: "text-sm",
+    stats: "text-sm",
+  },
+} as const;
+
+const HEIGHT_CLASSES: Record<CardDisplaySize, string> = {
+  small: "h-[179px]",
+  sm: "h-[179px]",
+  medium: "h-[269px]",
+  md: "h-[269px]",
+  large: "h-[358px]",
+};
+
+const HEIGHT_PIXELS: Record<CardDisplaySize, string> = {
+  small: "179px",
+  sm: "179px",
+  medium: "269px",
+  md: "269px",
+  large: "358px",
+};
 
 /**
  * CardDisplay component props
@@ -57,32 +108,10 @@ export interface CardDisplayProps {
   hideValue?: boolean;
   /** Hide stats bars & hover stats (default: false) */
   hideStats?: boolean;
+  /** Hide bottom lore excerpt box (default: false) */
+  hideExcerpt?: boolean;
 }
 
-/**
- * CardDisplay - Premium trading card component with Yu-Gi-Oh styling
- *
- * Features:
- * - Holographic parallax with multi-layer effects
- * - Rarity-based premium borders with metallic gradients
- * - Embossed text with shadow effects
- * - Foil stamps for high rarities
- * - Animated glow and particle effects
- * - Glass physics depth hierarchy
- * - GPU-accelerated animations
- * - Mobile-optimized performance
- *
- * @example
- * ```tsx
- * <CardDisplay
- *   card={cardInstance}
- *   size="medium"
- *   onClick={(card) => console.log('Clicked:', card.title)}
- *   enableHolographic={true}
- *   hideValue={false}
- * />
- * ```
- */
 export const CardDisplay = React.memo<CardDisplayProps>(
   ({
     card,
@@ -93,16 +122,86 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     enable3D = true,
     enableHolographic,
     performanceMode = false,
-    hideValue = false,
+    hideValue: _hideValue = false,
     hideStats = false,
+    hideExcerpt = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    const rarityConfig = getRarityConfig(card.rarity);
-    const stats = formatCardStats(card);
-    const borderConfig = getPremiumBorderConfig(card.rarity);
-    const foilStamp = getFoilStampConfig(card.rarity);
+    const designMeta = React.useMemo(() => getCardDesignMetadata(card), [card]);
+    const rarityConfig = React.useMemo(() => getRarityConfig(card.rarity), [card.rarity]);
+    const stats = React.useMemo(() => formatCardStats(card), [card]);
+    const borderConfig = React.useMemo(() => getPremiumBorderConfig(card.rarity), [card.rarity]);
+    const foilStamp = React.useMemo(() => getFoilStampConfig(card.rarity), [card.rarity]);
+
+    // Resolve category and theme (memoized)
+    const resolvedCategory: LoreCategory | null = React.useMemo(() => {
+      if (card.category && isValidLoreCategory(card.category)) {
+        return card.category as LoreCategory;
+      }
+      if (isValidLoreCategory(card.cardType)) {
+        return card.cardType as LoreCategory;
+      }
+      return null;
+    }, [card.category, card.cardType]);
+
+    // Check if artwork URL is custom art (Tier 3) or legacy artwork
+    const customArtUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
+    const hasCustomArtwork = Boolean(
+      customArtUrl &&
+        customArtUrl.trim() !== "" &&
+        !imageError
+    );
+
+    const cardTypeStr = (card.cardType as string) || "";
+    // Is this a lore card (no numeric stats)?
+    const isLoreCard =
+      cardTypeStr === "LORE" ||
+      cardTypeStr === "LORE_BATCH" ||
+      Boolean(card.category && card.category !== "NS_IMPORT") ||
+      Boolean(card.wikiPageId) ||
+      Boolean(card.wikiSource) ||
+      Boolean(card.wikiArticleTitle) ||
+      Boolean(card.slug) ||
+      (resolvedCategory !== null && resolvedCategory !== "NS_IMPORT");
+
+    const effectiveCategory: LoreCategory | null = React.useMemo(() => {
+      if (resolvedCategory && resolvedCategory !== "NS_IMPORT") {
+        return resolvedCategory;
+      }
+      if (isLoreCard) {
+        const meta = card.metadata as Record<string, unknown> | null | undefined;
+        return classifyFromWikitext(
+          (meta?.fullExcerpt as string) || card.description,
+          card.wikiArticleTitle || card.title
+        );
+      }
+      return null;
+    }, [resolvedCategory, isLoreCard, card.metadata, card.description, card.wikiArticleTitle, card.title]);
+
+    const effectiveCategoryTheme = React.useMemo(
+      () => (effectiveCategory ? getCategoryTheme(effectiveCategory) : null),
+      [effectiveCategory]
+    );
+
+    const isIIWiki = React.useMemo(() => isIIWikiCard(card), [card]);
+
+    const rarityMat = React.useMemo(
+      () => getHybridRarityMaterial(card.rarity, effectiveCategory, designMeta.enableCategoryTint),
+      [card.rarity, effectiveCategory, designMeta.enableCategoryTint]
+    );
+
+    const rarityTheme = React.useMemo(
+      () => RARITY_THEMES[card.rarity] ?? RARITY_THEMES.COMMON!,
+      [card.rarity]
+    );
+
+    const excerptText = card.wikiExcerpt || card.description || "";
+    const parsedExcerptHtml = React.useMemo(
+      () => (excerptText ? parseWikitextToHtml(excerptText) : ""),
+      [excerptText]
+    );
 
     // Auto-enable holographic for rare+ cards unless explicitly disabled
     const shouldShowHolographic =
@@ -112,51 +211,15 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
     // Size-dependent classes
     const widthClass = getCardWidth(size);
-    const aspectRatioClass = getCardAspectRatio(size);
+    const fonts = FONT_SIZES[size] || FONT_SIZES.medium;
+    const heightClass = HEIGHT_CLASSES[size] || HEIGHT_CLASSES.medium;
 
-    // Font sizes based on card size
-    const fontSizes = {
-      small: {
-        title: "text-xs",
-        type: "text-[10px]",
-        stats: "text-[10px]",
-      },
-      sm: {
-        title: "text-xs",
-        type: "text-[10px]",
-        stats: "text-[10px]",
-      },
-      medium: {
-        title: "text-sm",
-        type: "text-xs",
-        stats: "text-xs",
-      },
-      md: {
-        title: "text-sm",
-        type: "text-xs",
-        stats: "text-xs",
-      },
-      large: {
-        title: "text-base",
-        type: "text-sm",
-        stats: "text-sm",
-      },
-    };
-
-    const fonts = fontSizes[size];
-
-    /**
-     * Handle card click
-     */
     const handleClick = () => {
       if (onClick) {
         onClick(card);
       }
     };
 
-    /**
-     * Handle card hover
-     */
     const handleMouseEnter = () => {
       setIsHovered(true);
     };
@@ -165,25 +228,21 @@ export const CardDisplay = React.memo<CardDisplayProps>(
       setIsHovered(false);
     };
 
-    // Explicit height to ensure proper aspect ratio rendering
-    const heightClass =
-      size === "small" || size === "sm"
-        ? "h-[179px]" // 128px * 3.5/2.5 = 179px
-        : size === "medium" || size === "md"
-          ? "h-[269px]" // 192px * 3.5/2.5 = 269px
-          : "h-[358px]"; // 256px * 3.5/2.5 = 358px
+    const borderImageSourceStyle = React.useMemo(() => {
+      if (!borderConfig.animated || performanceMode) return undefined;
+      return `linear-gradient(135deg, ${borderConfig.gradient
+        .split(" ")
+        .map((c) => `var(--tw-gradient-${c})`)
+        .join(", ")})`;
+    }, [borderConfig, performanceMode]);
 
     return (
       <CometCard
         className={cn(
-          // Base sizing with explicit height for image fill
           widthClass,
           heightClass,
-          // Interactive cursor
           onClick && "cursor-pointer",
-          // Smooth transitions
           "transition-all duration-300",
-          // Custom classes
           className
         )}
         rotateDepth={enable3D && !performanceMode ? 12 : 0}
@@ -196,20 +255,15 @@ export const CardDisplay = React.memo<CardDisplayProps>(
         <motion.div
           className={cn(
             "relative h-full w-full overflow-hidden rounded-2xl",
-            // Premium border with gradient
             borderConfig.animated && !performanceMode
               ? `border-${borderConfig.width} ${borderConfig.glow}`
               : `border-${borderConfig.width}`,
             rarityConfig.borderColor
           )}
           style={{
-            borderImage: borderConfig.animated
-              ? `linear-gradient(135deg, ${borderConfig.gradient
-                  .split(" ")
-                  .map((c) => `var(--tw-gradient-${c})`)
-                  .join(", ")}) 1`
-              : undefined,
-            borderImageSlice: borderConfig.animated ? 1 : undefined,
+            borderImageSource: borderImageSourceStyle,
+            borderImageSlice: borderConfig.animated && !performanceMode ? 1 : undefined,
+            boxShadow: `0 20px 45px -10px rgba(0, 0, 0, 0.85), 0 0 25px ${rarityMat.specularColor}`,
           }}
           onHoverStart={handleMouseEnter}
           onHoverEnd={handleMouseLeave}
@@ -223,21 +277,23 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               : undefined
           }
         >
-          {/* Card artwork */}
+          {/* Dual-Border Frame & Corner Brackets (matching CardBack.tsx) */}
+          <div className={cn("absolute inset-1 rounded-[14px] border pointer-events-none z-30 opacity-60", rarityTheme.borderInner)} />
+
+          <div className={cn("absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
+          <div className={cn("absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
+          <div className={cn("absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
+          <div className={cn("absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
+          {/* Card artwork / procedural background */}
           <div
-            className="relative w-full"
+            className="relative w-full h-full overflow-hidden"
             style={{
-              height:
-                size === "small" || size === "sm"
-                  ? "179px"
-                  : size === "medium" || size === "md"
-                    ? "269px"
-                    : "358px",
+              height: HEIGHT_PIXELS[size] || "269px",
             }}
           >
-            {!imageError ? (
+            {hasCustomArtwork && customArtUrl ? (
               <Image
-                src={proxyNSImage(card.artwork)}
+                src={proxyNSImage(customArtUrl)}
                 alt={card.title}
                 fill
                 className="object-cover"
@@ -250,14 +306,17 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       : "256px"
                 }
                 onError={() => setImageError(true)}
-                unoptimized // NS images may not support Next.js optimization
+                unoptimized
               />
             ) : (
               <CardHolographicCover
+                category={resolvedCategory}
                 cardType={card.cardType}
                 rarity={card.rarity}
-                wikiSource={card.wikiSource}
+                wikiSource={isIIWiki ? "iiwiki" : card.wikiSource}
                 title={card.title}
+                designMetadata={designMeta}
+                isHovered={isHovered}
               />
             )}
 
@@ -277,8 +336,17 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               />
             )}
 
-            {/* Gradient overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+            {/* Tactile Texture Overlay for Physical Cardstock Depth */}
+            <TextureOverlay
+              texture="paperGrain"
+              opacity={0.06}
+              className="mix-blend-overlay pointer-events-none z-10"
+            />
+
+            {/* Gradient overlay for text readability when using artwork */}
+            {hasCustomArtwork && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+            )}
 
             {/* Holographic overlay layer */}
             {shouldShowHolographic && (
@@ -292,7 +360,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               />
             )}
 
-            {/* Rarity glow effect (enhanced) */}
+            {/* Rarity glow effect */}
             <motion.div
               className={cn("absolute inset-0 rounded-2xl", getRarityGlow(card.rarity))}
               initial={{ opacity: 0 }}
@@ -302,8 +370,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           </div>
 
           {/* Card content overlay */}
-          <div className="absolute inset-0 flex flex-col justify-between p-3">
-            {/* Top section - Rarity badge & type */}
+          <div className="absolute inset-0 flex flex-col justify-between p-3 pointer-events-none">
+            {/* Top section - Rarity badge & category seal */}
             <div className="flex items-start justify-between">
               <RarityBadge
                 rarity={card.rarity}
@@ -311,41 +379,45 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 size={size === "large" ? "medium" : "small"}
                 animated={!performanceMode}
               />
-              {card.cardType &&
-                (card.cardType as string) !== "COMMONS_IMPORT" &&
-                (card.cardType === "NS_IMPORT" ? (
+              <div className="flex items-center gap-1">
+                {isIIWiki ? (
+                  <IIWikiBadge size="sm" showText={false} className="h-5 w-auto px-1 py-0" />
+                ) : !isLoreCard && (card.cardType === "NS_IMPORT" || Boolean(card.nsCardId)) ? (
                   <NationStatesBadge />
-                ) : (
+                ) : null}
+
+                {effectiveCategory ? (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-950/80 p-0.5 backdrop-blur-md border border-white/20 text-white shadow-xs"
+                    title={getCategoryLabel(effectiveCategory)}
+                  >
+                    <CategoryIcon
+                      category={effectiveCategory}
+                      treatment="seal"
+                      size="xs"
+                      color={effectiveCategoryTheme?.accentColor}
+                    />
+                  </span>
+                ) : !isIIWiki && (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId)) ? (
                   <span
                     className={cn(
-                      "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
-                      fonts.type,
-                      "border border-white/20 text-white"
+                      "rounded-md bg-slate-950/80 px-2 py-0.5 font-bold backdrop-blur-md border border-white/20 text-white shadow-xs",
+                      fonts.type
                     )}
-                    style={{
-                      textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
-                    }}
                   >
                     {getCardTypeLabel(card.cardType)}
                   </span>
-                ))}
+                ) : null}
+              </div>
             </div>
 
             {/* Bottom section - Card info */}
             <div className="space-y-1">
-              {/* Card title with embossed effect */}
+              {/* Card title */}
               <motion.h3
-                className={cn("line-clamp-2 font-black tracking-wide text-white", fonts.title)}
+                className={cn("line-clamp-2 font-black tracking-tight text-white", fonts.title)}
                 style={{
-                  textShadow: getEmbossedTextShadow(
-                    card.rarity === "LEGENDARY"
-                      ? "gold"
-                      : card.rarity === "EPIC"
-                        ? "purple"
-                        : "silver"
-                  ),
-                  WebkitTextStroke: "0.5px rgba(0,0,0,0.8)",
-                  textRendering: "geometricPrecision",
+                  textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)",
                 }}
                 animate={
                   !performanceMode && isHovered
@@ -359,7 +431,16 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 {card.title}
               </motion.h3>
 
-              {/* Country name (if available) with premium styling */}
+              {/* Subtitle line */}
+              <p className="text-[10px] font-semibold text-white/80 tracking-wider uppercase flex items-center gap-1.5 line-clamp-1 mt-0.5">
+                <span>{card.subcategory || (effectiveCategory ? getCategoryLabel(effectiveCategory) : "Chronicles")}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-amber-400 font-semibold tracking-wide">
+                  {designMeta.customSubtitle || card.rarity}
+                </span>
+              </p>
+
+              {/* Country name (if available) */}
               {card.country && (
                 <p
                   className={cn("font-semibold text-white/90", fonts.type)}
@@ -371,40 +452,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 </p>
               )}
 
-              {/* Premium info bar - Season & Market value */}
-              {!hideValue && (
-                <div
-                  className={cn(
-                    "flex items-center justify-between rounded-lg px-2 py-1",
-                    "border border-white/10 bg-black/70 backdrop-blur-md",
-                    fonts.type
-                  )}
-                >
-                  <span className="font-medium text-white/80">Est. Value</span>
-                  <motion.span
-                    className={cn("font-black", rarityConfig.color)}
-                    style={{
-                      textShadow: `0 0 10px ${rarityConfig.color.includes("yellow") ? "rgba(234, 179, 8, 0.8)" : "rgba(147, 51, 234, 0.8)"}`,
-                    }}
-                    animate={
-                      !performanceMode && isHovered
-                        ? {
-                            scale: [1, 1.1, 1],
-                          }
-                        : {}
-                    }
-                    transition={{ duration: 0.5 }}
-                  >
-                    <IxCreditsSymbol size="0.8em" variant="ic" className="mr-1" />
-                    {card.marketValue.toLocaleString()}
-                  </motion.span>
-                </div>
-              )}
-
-              {/* Stat bars — always visible compact indicator */}
-              {!hideStats && Object.keys(stats.base).length > 0 && (
+              {/* Stat bars — ONLY for nation/NS_IMPORT cards (numeric stats are dropped for lore categories) */}
+              {!hideStats && !isLoreCard && Object.keys(stats.base).length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1.5 backdrop-blur-md">
+                  <div className="flex gap-1 rounded-lg border border-white/10 bg-slate-950/80 px-2 py-1.5 backdrop-blur-md">
                     {Object.entries(stats.base).map(([key, stat]) => (
                       <div key={key} className="flex-1 space-y-0.5">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
@@ -425,9 +476,24 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 </div>
               )}
 
-              {/* Premium stats reveal on hover */}
+              {/* Bottom Lore Excerpt Box */}
+              {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
+                <div className="rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 p-2 shadow-inner text-left pointer-events-auto mt-1 transition-all duration-300">
+                  <div className="text-[10px] text-white/90 leading-snug line-clamp-2">
+                    <WikiHtmlContent html={parsedExcerptHtml} />
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/10 text-[8px] text-white/50">
+                    <span className="uppercase tracking-widest font-semibold text-amber-400">
+                      {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
+                    </span>
+                    <span className="font-mono font-medium text-white/70">{card.marketValue.toLocaleString()} IxC</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Premium stats reveal on hover for non-lore cards */}
               <AnimatePresence>
-                {!hideStats && showStatsOnHover && isHovered && (
+                {!hideStats && !isLoreCard && showStatsOnHover && isHovered && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -462,7 +528,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             </div>
           </div>
 
-          {/* Level indicator (if enhanced) - floating badge */}
+          {/* Level indicator */}
           {card.level > 1 && (
             <motion.div
               className={cn(
@@ -481,15 +547,6 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 rotate: 0,
               }}
               transition={{ duration: 0.5, type: "spring" }}
-              whileHover={
-                !performanceMode
-                  ? {
-                      scale: 1.2,
-                      rotate: 360,
-                      transition: { duration: 0.3 },
-                    }
-                  : undefined
-              }
             >
               {card.level}
             </motion.div>

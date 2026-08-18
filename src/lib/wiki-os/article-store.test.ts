@@ -21,7 +21,7 @@ const mockGetRevisionWikitext = jest.fn();
 const mockGetRecentChanges = jest.fn();
 
 jest.mock("~/server/db", () => ({ db: mockDb }));
-jest.mock("~/lib/wiki-bridge", () => ({
+jest.mock("~/lib/wiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
   getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),

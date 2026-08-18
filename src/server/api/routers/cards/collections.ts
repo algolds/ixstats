@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
 /**
  * Cards router for IxCards system
@@ -136,9 +136,9 @@ export const cardsCollectionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Fetch wiki article excerpt on-demand for lore cards without stored fullExcerpt
+   * Fetch wiki article wikitext/excerpt on-demand for lore cards
    */
-  getWikiArticleExcerpt: protectedProcedure
+  getWikiArticleExcerpt: publicProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1),
@@ -146,11 +146,18 @@ export const cardsCollectionsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { getArticleIntro } = await import("~/lib/wiki-bridge");
+      const { getArticleWikitext, getArticleIntro } = await import("~/lib/wiki/bridge");
+      const article = await getArticleWikitext(
+        input.articleTitle,
+        input.wikiSource as "ixwiki" | "iiwiki"
+      );
+      if (article?.wikitext) {
+        return { extract: article.wikitext, wikitext: article.wikitext };
+      }
       const result = await getArticleIntro(
         input.articleTitle,
         input.wikiSource as "ixwiki" | "iiwiki"
       );
-      return { extract: result?.text ?? null };
+      return { extract: result?.text ?? null, wikitext: result?.text ?? null };
     }),
 });

@@ -15,7 +15,7 @@ import {
   getBacklinks,
   getRevisionWikitext as getRevisionWikitextMySQL,
   getNamespacedWikitext,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
 
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";

@@ -7,7 +7,7 @@
  * Pure functions — no side effects, no database, no fetch.
  */
 
-import type { WikiExtractedContent, WikiSection } from "./wiki-content-extractor";
+import type { WikiExtractedContent, WikiSection } from "./content-extractor";
 
 // ── Types ──
 

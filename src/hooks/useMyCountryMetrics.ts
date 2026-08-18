@@ -6,8 +6,8 @@ import { useUser } from "~/context/auth-context";
 import { useCountryData, type CardImageType } from "~/components/mycountry/primitives";
 import { extractCountryImageData } from "~/lib/country-image-engine";
 import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
-import { getWikiCache, setWikiCache } from "~/lib/wiki-local-cache";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import { getWikiCache, setWikiCache } from "~/lib/wiki/local-cache";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 
 /**
  * Aggregates all data, query, and local UI state for the MyCountry tab system:

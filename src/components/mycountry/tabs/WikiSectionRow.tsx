@@ -10,7 +10,7 @@ import {
   extractWikiSectionRawContent,
   cleanWikiSectionContent,
   getWikiSectionUrl,
-} from "~/lib/wiki-integration";
+} from "~/lib/wiki/integration";
 
 /**
  * An expandable row representing a single level-2 wiki article section. Lazily

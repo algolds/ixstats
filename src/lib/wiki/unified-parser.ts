@@ -11,9 +11,14 @@
  * 4. Return structured UnifiedInfoboxData with 80+ typed fields
  */
 
-import { parseInfobox, parsePopulation, extractCoordsFromFields } from "./wiki-infobox-parser";
-import { resolveImageUrl } from "./wiki-image-url";
-import type { WikiSource } from "./mediawiki-config";
+import {
+  parseInfobox,
+  parsePopulation,
+  extractCoordsFromFields,
+  cleanWikiValue,
+} from "./infobox-parser";
+import { resolveImageUrl } from "./image-url";
+import type { WikiSource } from "./config";
 
 export { resolveImageUrl };
 
@@ -153,21 +158,6 @@ function splitByPipe(content: string): string[] {
   return parts;
 }
 
-function cleanWikiValue(raw: string): string {
-  let s = raw;
-  s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
-  s = s.replace(/'{2,3}/g, "");
-  // Iterate to strip nested templates from innermost out
-  let prev;
-  do {
-    prev = s;
-    s = s.replace(/\{\{[^{}]*\}\}/g, "");
-  } while (s !== prev);
-  s = s.replace(/<[^>]+>/g, "");
-  s = s.replace(/&\w+;/g, " ");
-  s = s.replace(/\s+/g, " ").trim();
-  return s;
-}
 
 function processSwitcher(value: string): string {
   const match = /\{\{\s*[Ss]witcher\s*\|([\s\S]*?)\}\}/.exec(value);
@@ -671,7 +661,7 @@ export async function fetchAndParseInfobox(
   wikiSource: WikiSource = "ixwiki"
 ): Promise<UnifiedInfoboxData | null> {
   try {
-    const { getArticleWikitext } = await import("./wiki-bridge");
+    const { getArticleWikitext } = await import("./bridge");
     const wikitext = await getArticleWikitext(pageName, wikiSource);
     if (!wikitext) return null;
     return parseInfoboxWithTemplates(wikitext.wikitext, pageName);
@@ -679,3 +669,4 @@ export async function fetchAndParseInfobox(
     return null;
   }
 }
+

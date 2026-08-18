@@ -10,7 +10,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
 import { smartNormalizeGrowthRate } from "~/lib/growth-calculations";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
-import { extractWikiIntroHtml, findCoatOfArmsUrl, type WikiIntro } from "~/lib/wiki-integration";
+import { extractWikiIntroHtml, findCoatOfArmsUrl, type WikiIntro } from "~/lib/wiki/integration";
 
 type MetricView = {
   gdp: "perCapita" | "total";

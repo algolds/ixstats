@@ -9,6 +9,8 @@
  * await importCountryData(mappedData);
  */
 
+import { parseInfobox, parseCoordTemplate } from "./infobox-parser";
+
 export interface WikiInfoboxData {
   [key: string]: string | number | null;
 }
@@ -194,35 +196,18 @@ export const INFOBOX_FIELD_MAPPING: Record<
 };
 
 /**
- * Parse MediaWiki infobox template text into key-value pairs
+ * ponytail: Pure delegating parser that uses the robust brace-depth tokenizer.
+ * Parse MediaWiki infobox template text into key-value pairs.
  */
 export function parseInfoboxTemplate(wikitext: string): WikiInfoboxData {
+  const parsed = parseInfobox(wikitext);
+  if (!parsed) return {};
   const data: WikiInfoboxData = {};
-
-  // Match {{Infobox country ... }}
-  const infoboxMatch = wikitext.match(/\{\{Infobox country\s*([\s\S]*?)\}\}/i);
-  if (!infoboxMatch) return data;
-
-  const infoboxContent = infoboxMatch[1];
-
-  // Parse parameter lines
-  const paramRegex = /\|\s*(\w+)\s*=\s*([^\|]*)/g;
-  let match;
-
-  while ((match = paramRegex.exec(infoboxContent)) !== null) {
-    const [, key, value] = match;
-    // Clean up value (remove wiki markup, extra whitespace)
-    const cleanValue = value
-      .replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, "$2") // Remove wiki links
-      .replace(/<[^>]+>/g, "") // Remove HTML tags
-      .replace(/\{\{[^}]+\}\}/g, "") // Remove templates
-      .trim();
-
-    if (cleanValue) {
-      data[key.trim()] = cleanValue;
+  for (const f of parsed.fields) {
+    if (f.cleanValue) {
+      data[f.key] = f.cleanValue;
     }
   }
-
   return data;
 }
 
@@ -298,61 +283,20 @@ export function deriveGovCategory(
 }
 
 /**
- * Parse coordinates from Wikipedia format to lat/long
+ * ponytail: Parse coordinates from Wikipedia format using the shared coordinate parser.
  */
 export function parseCoordinates(
   coordString: string
 ): { latitude: string; longitude: string } | null {
-  // Match formats like "51°30′N 0°7′W" or "40.7128°N, 74.0060°W"
-  const dmsMatch = coordString.match(
-    /(\d+)[°º](\d+)?['′]?(\d+)?["″]?([NS])\s*[,\s]*(\d+)[°º](\d+)?['′]?(\d+)?["″]?([EW])/
-  );
-
-  if (dmsMatch) {
-    const [
-      ,
-      latDeg,
-      latMin = "0",
-      latSec = "0",
-      latDir,
-      lonDeg,
-      lonMin = "0",
-      lonSec = "0",
-      lonDir,
-    ] = dmsMatch;
-
-    let lat = parseInt(latDeg) + parseInt(latMin) / 60 + parseInt(latSec) / 3600;
-    let lon = parseInt(lonDeg) + parseInt(lonMin) / 60 + parseInt(lonSec) / 3600;
-
-    if (latDir === "S") lat = -lat;
-    if (lonDir === "W") lon = -lon;
-
-    return {
-      latitude: lat.toFixed(6),
-      longitude: lon.toFixed(6),
-    };
-  }
-
-  // Try decimal format
-  const decimalMatch = coordString.match(
-    /(-?\d+\.?\d*)[°º]?\s*([NS])[,\s]+(-?\d+\.?\d*)[°º]?\s*([EW])/
-  );
-  if (decimalMatch) {
-    const [, lat, latDir, lon, lonDir] = decimalMatch;
-    let latitude = parseFloat(lat);
-    let longitude = parseFloat(lon);
-
-    if (latDir === "S") latitude = -Math.abs(latitude);
-    if (lonDir === "W") longitude = -Math.abs(longitude);
-
-    return {
-      latitude: latitude.toFixed(6),
-      longitude: longitude.toFixed(6),
-    };
-  }
-
-  return null;
+  const coords = parseCoordTemplate(coordString);
+  if (!coords) return null;
+  const [lon, lat] = coords;
+  return {
+    latitude: lat.toFixed(6),
+    longitude: lon.toFixed(6),
+  };
 }
+
 
 /**
  * Example usage and test data

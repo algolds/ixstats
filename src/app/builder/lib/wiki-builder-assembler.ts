@@ -3,7 +3,7 @@
  * a complete BuilderState from infobox data + parsed wiki attributes.
  */
 
-import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { ComponentType } from "~/lib/enums";
 import type {

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Compass, Loader2, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { api } from "~/trpc/react";
-import type { EntityKind, ParseWikiResult } from "~/lib/wiki-entity-parser";
+import type { EntityKind, ParseWikiResult } from "~/lib/wiki/entity-parser";
 
 interface PopulateFromWikiButtonProps {
   countryId: string;

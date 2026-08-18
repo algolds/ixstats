@@ -18,7 +18,7 @@ process.env.SKIP_ENV_VALIDATION = "1";
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/ixstats";
 
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
 import { LORE_CATEGORIES } from "~/lib/lore-card-constants";
 import { CardRarity } from "@prisma/client";
 

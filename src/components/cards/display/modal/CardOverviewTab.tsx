@@ -1,14 +1,19 @@
-"use client";
-
 import React from "react";
 import { motion } from "motion/react";
-import { TrendingUp, Users, Calendar, ScrollText } from "lucide-react";
+import { TrendingUp, Users, Calendar, ScrollText, Layers, Globe } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { getOwnerCount } from "~/lib/card-display-utils";
-import type { CardInstance, FormattedStats } from "~/types/cards-display";
+import type { CardInstance, FormattedStats, CardAuthorInfo } from "~/types/cards-display";
+import { CategoryIcon } from "~/components/cards/icons";
+import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, LoreCategory } from "~/lib/cards";
+import { RarityBadge } from "../RarityBadge";
+import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
+import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { api } from "~/trpc/react";
 
 export interface CardOverviewTabProps {
   card: CardInstance;
@@ -28,12 +33,72 @@ export interface CardOverviewTabProps {
 export function CardOverviewTab({
   card,
   rarityConfig,
-  neonFrame,
+  neonFrame: _neonFrame,
   stats,
   onTrade,
   onList,
   onViewCollection,
 }: CardOverviewTabProps) {
+  const rawMeta = (card.metadata as Record<string, unknown> | null | undefined) ?? {};
+  const rawAttrs = (card.attributes as Record<string, unknown> | null | undefined) ?? {};
+  const authorInfoFromMeta = (rawMeta.authorInfo as CardAuthorInfo | undefined) || null;
+
+  const cardTypeStr = (card.cardType as string) || "";
+  const isLoreCard =
+    cardTypeStr === "LORE" ||
+    cardTypeStr === "LORE_BATCH" ||
+    Boolean(card.category && card.category !== "NS_IMPORT") ||
+    Boolean(card.wikiPageId) ||
+    Boolean(card.wikiSource) ||
+    Boolean(card.slug);
+
+  const hasStoredAuthor = Boolean(
+    authorInfoFromMeta?.displayAuthor &&
+    !authorInfoFromMeta.displayAuthor.includes("Community") &&
+    !authorInfoFromMeta.displayAuthor.includes("Unknown") &&
+    !authorInfoFromMeta.displayAuthor.includes("imported>")
+  );
+
+  const { data: liveAuthorData } = api.loreCards.getCardAuthorInfo.useQuery(
+    {
+      cardId: card.id,
+      articleTitle: card.wikiArticleTitle || "",
+      source: (card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki",
+    },
+    {
+      enabled: Boolean(
+        isLoreCard &&
+        card.wikiArticleTitle &&
+        !hasStoredAuthor
+      ),
+      staleTime: 1000 * 60 * 60,
+    }
+  );
+
+  const rawAuthorStr =
+    liveAuthorData?.authorInfo?.displayAuthor ||
+    authorInfoFromMeta?.displayAuthor ||
+    (rawMeta.author as string) ||
+    (rawMeta.creator as string) ||
+    (rawMeta.wikiAuthor as string) ||
+    (rawAttrs.author as string) ||
+    (rawAttrs.creator as string) ||
+    card.artworkCredit ||
+    "";
+
+  let wikiAuthor: string | null = rawAuthorStr
+    .replace(/(?:imported|import)\s*>\s*/gi, "")
+    .replace(/User:\s*/gi, "")
+    .trim();
+
+  if (
+    !wikiAuthor ||
+    wikiAuthor.toLowerCase().includes("community") ||
+    wikiAuthor.toLowerCase() === "unknown"
+  ) {
+    wikiAuthor = null;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
       {/* Left: Interactive 3D Card Presentation */}
@@ -61,6 +126,7 @@ export function CardOverviewTab({
             enableMouseTracking={true}
             hideValue={true}
             hideStats={true}
+            hideExcerpt={true}
           />
         </div>
 
@@ -168,34 +234,117 @@ export function CardOverviewTab({
         {card.description && (
           <div className="glass-hierarchy-child rounded-lg p-4">
             <h3 className="text-foreground mb-2 text-sm font-semibold">Description</h3>
-            <p className="text-muted-foreground text-sm">{card.description}</p>
+            <div className="text-muted-foreground text-sm leading-relaxed space-y-1">
+              <WikiHtmlContent html={parseWikitextToHtml(card.description, card.wikiSource || undefined)} />
+            </div>
           </div>
         )}
 
-        {/* Quick stats */}
-        <div className="glass-hierarchy-child rounded-lg p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-foreground text-sm font-semibold">Quick Stats</h3>
-            {card.level > 1 && (
-              <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500 dark:text-amber-400">
-                Lv.{card.level} +{stats.totalBoost}
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {Object.entries(stats.base).map(([key, stat]) => (
-              <div key={key}>
-                <div className="text-muted-foreground text-xs">{stat.def.label}</div>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-xl font-bold" style={{ color: stat.def.color }}>
-                    {stat.value}
-                  </span>
-                  <span className="text-muted-foreground/50 text-xs">/100</span>
+        {/* Card Specifications or NS Stats */}
+        {(() => {
+          const cardTypeStr = (card.cardType as string) || "";
+          const isIIWiki = isIIWikiCard(card);
+          const isLoreCard =
+            isIIWiki ||
+            cardTypeStr === "LORE" ||
+            cardTypeStr === "LORE_BATCH" ||
+            Boolean(card.category && card.category !== "NS_IMPORT") ||
+            Boolean(card.wikiPageId) ||
+            Boolean(card.wikiSource) ||
+            Boolean(card.slug);
+
+          const meta = card.metadata as Record<string, unknown> | null | undefined;
+          const rawCat = card.category || (meta?.category as string);
+          const resolvedCategory = (
+            rawCat && isValidLoreCategory(rawCat) && rawCat !== "NS_IMPORT"
+              ? (rawCat as LoreCategory)
+              : isLoreCard
+                ? classifyFromWikitext(
+                    (meta?.fullExcerpt as string) || card.description,
+                    card.wikiArticleTitle || card.title
+                  )
+                : null
+          ) as LoreCategory | null;
+
+          const categoryTheme = resolvedCategory ? getCategoryTheme(resolvedCategory) : null;
+
+          if (isLoreCard) {
+            return (
+              <div className="glass-hierarchy-child rounded-xl p-4 border border-border/40 backdrop-blur-md space-y-3">
+                <h3 className="text-foreground text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 mb-2">
+                  <Layers className="h-3.5 w-3.5 text-primary" />
+                  Card Specifications
+                </h3>
+
+                <div className="space-y-2.5 text-xs divide-y divide-white/5">
+                  {resolvedCategory && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-muted-foreground font-medium">Category</span>
+                      <span className="inline-flex items-center gap-1.5 font-bold text-foreground">
+                        <CategoryIcon category={resolvedCategory} treatment="seal" size="xs" color={categoryTheme?.accentColor} />
+                        {getCategoryLabel(resolvedCategory)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-muted-foreground font-medium">Tier & Season</span>
+                    <div className="inline-flex items-center gap-2">
+                      <RarityBadge rarity={card.rarity} size="small" />
+                      <span className="font-semibold text-foreground">Season {card.season}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-muted-foreground font-medium">Wiki Archive</span>
+                    {isIIWiki ? (
+                      <IIWikiBadge size="sm" />
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold text-xs">
+                        <Globe className="h-3 w-3" /> IxWiki
+                      </span>
+                    )}
+                  </div>
+
+                  {wikiAuthor && (
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-muted-foreground font-medium">Wiki Author</span>
+                      <span className="font-semibold text-foreground truncate max-w-[200px]" title={wikiAuthor}>
+                        {wikiAuthor}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            );
+          }
+
+          return Object.keys(stats.base).length > 0 ? (
+            <div className="glass-hierarchy-child rounded-xl p-4 border border-border/40 backdrop-blur-md space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-foreground text-sm font-bold">NS Simulation Stats</h3>
+                {card.level > 1 && (
+                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500 dark:text-amber-400">
+                    Lv.{card.level} +{stats.totalBoost}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(stats.base).map(([key, stat]) => (
+                  <div key={key} className="rounded-lg border border-white/10 bg-black/40 p-2.5">
+                    <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">{stat.def.label}</div>
+                    <div className="mt-0.5 flex items-baseline gap-2">
+                      <span className="text-lg font-extrabold" style={{ color: stat.def.color }}>
+                        {stat.value}
+                      </span>
+                      <span className="text-muted-foreground/50 text-[10px]">/100</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">

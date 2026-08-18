@@ -18,7 +18,7 @@ import {
   getPageHistory,
   getRevisionWikitext,
   type WikiSource,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 
 // Serve a shadow copy without re-checking MediaWiki for this long. In-app edits
 // invalidate the shadow on save, so this window only matters for edits made

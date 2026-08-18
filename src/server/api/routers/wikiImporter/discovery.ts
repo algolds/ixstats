@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-bridge";
+import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki/bridge";
 
 /**
  * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)
@@ -159,7 +159,7 @@ export const wikiImporterDiscoveryRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { searchPages } = await import("~/lib/wiki-bridge");
+      const { searchPages } = await import("~/lib/wiki/bridge");
       const sources: WikiSource[] = ["iiwiki", "ixwiki", "althist"];
       const results = await Promise.allSettled(
         sources.map(async (source) => {

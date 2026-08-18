@@ -10,9 +10,9 @@
  */
 
 import { db } from "~/server/db";
-import { IxnayWikiService, type CountryInfoboxWithDynamicProps } from "~/lib/mediawiki-service";
+import { IxnayWikiService, type CountryInfoboxWithDynamicProps } from "~/lib/wiki/legacy-service";
 import { env } from "~/env";
-import { type WikiSource } from "~/lib/mediawiki-config";
+import { type WikiSource } from "~/lib/wiki/config";
 
 // Redis types
 type RedisClient = any; // ioredis types
@@ -73,56 +73,16 @@ const REDIS_PREFIX = {
   section: "wiki:section:",
 } as const;
 
+import { cleanWikiMarkup } from "~/lib/wiki/wikitext-parser";
+
 /**
- * Strip infobox templates, header templates, categories, and other non-content
+ * ponytail: Strip infobox templates, header templates, categories, and other non-content
  * wikitext from raw page content so only the readable body remains.
  */
 export function cleanWikitextForDisplay(raw: string): string {
-  let text = raw;
-
-  // 1. Remove all {{...}} templates (handle nested braces via iterative stripping)
-  //    This catches Infobox, Sidebar, Use dmy dates, Short description, etc.
-  let prevLen = -1;
-  while (text.length !== prevLen) {
-    prevLen = text.length;
-    // Strip innermost templates first (no nested {{ inside)
-    text = text.replace(/\{\{[^{}]*\}\}/g, "");
-  }
-
-  // 2. Remove HTML comments
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
-
-  // 3. Remove category links
-  text = text.replace(/\[\[Category:[^\]]*\]\]/gi, "");
-
-  // 4. Remove file/image links (images are tracked separately)
-  text = text.replace(/\[\[File:[^\]]*\]\]/gi, "");
-  text = text.replace(/\[\[Image:[^\]]*\]\]/gi, "");
-
-  // 5. Remove section headings (==...==) — section title is already in the card header
-  text = text.replace(/^={2,}\s*[^=]+\s*={2,}\s*$/gm, "");
-
-  // 6. Convert wiki links [[Page|Display]] → Display, [[Page]] → Page
-  text = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2");
-  text = text.replace(/\[\[([^\]]+)\]\]/g, "$1");
-
-  // 7. Convert external links [url text] → text
-  text = text.replace(/\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g, "$2");
-  text = text.replace(/\[(https?:\/\/[^\s\]]+)\]/g, "");
-
-  // 8. Strip wiki formatting
-  text = text.replace(/'{2,3}/g, ""); // bold / italic
-  text = text.replace(/<br\s*\/?>/gi, "\n");
-  text = text.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, ""); // references
-  text = text.replace(/<ref[^/]*\/>/gi, ""); // self-closing refs
-  text = text.replace(/<\/?[^>]+>/g, ""); // remaining HTML tags
-
-  // 9. Clean up whitespace
-  text = text.replace(/\n{3,}/g, "\n\n");
-  text = text.trim();
-
-  return text;
+  return cleanWikiMarkup(raw);
 }
+
 
 export class WikiCacheService {
   private wikiServices = new Map<WikiSource, IxnayWikiService>();

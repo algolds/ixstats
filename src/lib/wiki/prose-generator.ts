@@ -1,4 +1,4 @@
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 
 export interface ProseDetails {
   countryName: string;

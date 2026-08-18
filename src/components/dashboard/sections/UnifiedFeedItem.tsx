@@ -27,7 +27,7 @@ import {
   WikiHtmlContent,
 } from "~/components/wiki/WikiLinkPreview";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
-import { resolveImageUrl, getImageUrl } from "~/lib/wiki-image-url";
+import { resolveImageUrl, getImageUrl } from "~/lib/wiki/image-url";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { formatTimeAgo } from "~/lib/time-utils";

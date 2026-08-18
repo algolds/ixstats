@@ -3,7 +3,7 @@
  * Tests the full pipeline: infobox parsing → government/economy parsing → component matching → assembly.
  */
 
-import { parseInfoboxWithTemplates } from "~/lib/unified-wiki-parser";
+import { parseInfoboxWithTemplates } from "~/lib/wiki/unified-parser";
 import { parseGovernmentAttributes } from "~/app/builder/lib/wiki-government-parser";
 import { parseEconomyAttributes } from "~/app/builder/lib/wiki-economy-parser";
 import { parseDepartments } from "~/app/builder/lib/wiki-department-parser";

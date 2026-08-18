@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { WikiProseGenerator } from "~/lib/wiki-prose-generator";
+import { WikiProseGenerator } from "~/lib/wiki/prose-generator";
 import { IxTime } from "~/lib/ixtime";
 
 interface CountryChangeLogTimelineProps {

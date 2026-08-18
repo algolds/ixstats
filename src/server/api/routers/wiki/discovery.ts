@@ -9,7 +9,7 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, cachedPublicProcedure, publicProcedure } from "~/server/api/trpc";
-import { getArticleWikitext, getRecentChanges } from "~/lib/wiki-bridge";
+import { getArticleWikitext, getRecentChanges } from "~/lib/wiki/bridge";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 
 const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");

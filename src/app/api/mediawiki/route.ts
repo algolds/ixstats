@@ -1,7 +1,7 @@
 // src/app/api/mediawiki/route.ts
 import { type NextRequest, NextResponse } from "next/server";
-import { MEDIAWIKI_CONFIG, buildApiUrl } from "~/lib/mediawiki-config";
-import { ixnayWiki } from "~/lib/mediawiki-service";
+import { MEDIAWIKI_CONFIG, buildApiUrl } from "~/lib/wiki/config";
+import { ixnayWiki } from "~/lib/wiki/legacy-service";
 
 // Use values from the shared configuration
 const RATE_LIMIT_WINDOW = MEDIAWIKI_CONFIG.rateLimit.windowMs; // 1 minute

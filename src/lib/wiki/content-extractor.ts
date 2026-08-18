@@ -13,7 +13,8 @@ import {
   parseCoordTemplate,
   cleanWikiValue,
   type ParsedInfobox,
-} from "./wiki-infobox-parser";
+} from "./infobox-parser";
+import { cleanWikiMarkup } from "./wikitext-parser";
 
 // ── Types ──
 
@@ -61,51 +62,6 @@ export interface WikiExtractedContent {
   lists: WikiList[];
 }
 
-// ── Wikitext Cleanup ──
-
-/**
- * Strip wiki markup to produce plaintext.
- * Handles nested templates, links, HTML, entities.
- */
-function cleanWikiMarkup(text: string): string {
-  let clean = text;
-
-  // Remove infobox/template blocks ({{...}}) — handle nested
-  let depth = 0;
-  let result = "";
-  let i = 0;
-  while (i < clean.length) {
-    if (clean[i] === "{" && i + 1 < clean.length && clean[i + 1] === "{") {
-      depth++;
-      i += 2;
-    } else if (clean[i] === "}" && i + 1 < clean.length && clean[i + 1] === "}") {
-      depth = Math.max(0, depth - 1);
-      i += 2;
-    } else if (depth === 0) {
-      result += clean[i];
-      i++;
-    } else {
-      i++;
-    }
-  }
-  clean = result;
-
-  // [[Link|Display]] → Display; [[Link]] → Link
-  clean = clean.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
-  // '''bold''' / ''italic''
-  clean = clean.replace(/'{2,3}/g, "");
-  // HTML tags
-  clean = clean.replace(/<[^>]+>/g, "");
-  // &nbsp; etc
-  clean = clean.replace(/&\w+;/g, " ");
-  // Ref tags
-  clean = clean.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
-  clean = clean.replace(/<ref[^>]*\/>/gi, "");
-  // Collapse whitespace
-  clean = clean.replace(/\s+/g, " ").trim();
-
-  return clean;
-}
 
 // ── Section Extraction ──
 

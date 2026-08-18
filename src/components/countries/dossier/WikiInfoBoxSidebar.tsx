@@ -23,10 +23,10 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { RiGlobalLine, RiShieldLine, RiBookOpenLine, RiRefreshLine } from "react-icons/ri";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { type CountryInfobox } from "~/lib/mediawiki-service";
+import { type CountryInfobox } from "~/lib/wiki/legacy-service";
 import { parseInfoboxValue } from "~/lib/dossier-parser";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
-import { type WikiSource } from "~/lib/mediawiki-config";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
+import { type WikiSource } from "~/lib/wiki/config";
 
 /**
  * Props for WikiInfoBoxSidebar component

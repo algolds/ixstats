@@ -313,4 +313,4 @@ export const adminUsersRouter = createTRPCRouter({
     }),
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki-bridge"
+// getWikiDbPool is now imported from "~/lib/wiki/bridge"

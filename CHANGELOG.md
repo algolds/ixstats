@@ -10,6 +10,18 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (Wiki Parser Unification & Package Isolation — `src/lib/wiki/`)
+
+- **Wiki Parser Architecture Consolidation & `src/lib/wiki/` Package Migration**:
+  - **Dedicated Domain Package (`src/lib/wiki/`)**: Consolidated all 19 MediaWiki and wiki parsers, bridges, and domain mappers from the flat `src/lib/` root into a structured `src/lib/wiki/` package with clean internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
+  - **Legacy Monolith Elimination**: Replaced the 2,556-line monolithic legacy `mediawiki-service.ts` with a lightweight, ~200-line compatibility adapter in [legacy-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/legacy-service.ts) delegating directly to [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/bridge.ts) and [unified-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/unified-parser.ts).
+  - **Search Service Streamlining**: Reduced `wiki-search-service.ts` from 1,808 lines down to ~170 lines in [search-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/search-service.ts), eliminating dead duplicate scraping and infobox parsing routines.
+  - **Deleted Redundant Client Copy**: Removed `src/lib/wiki-search-service.client.ts` and migrated [country-flag-service.ts](file:///home/jxsig/projects/ixstats/src/lib/country-flag-service.ts) to the core search service.
+  - **Canonical Plaintext Cleaning**: Centralized all plaintext wikitext stripping into `cleanWikiMarkup` / `cleanWikitextExcerpt` in [wikitext-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/wikitext-parser.ts), eliminating 6 ad-hoc duplicate regex stripping routines across `content-extractor.ts`, `dossier-parser.tsx`, and `services/wiki-cache-service.ts`.
+  - **Brace-Depth Infobox & Coordinate Normalization**: Upgraded [infobox-mapper.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-mapper.ts) to delegate directly to [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-parser.ts) for robust template nesting and coordinate extraction.
+  - **Full-Codebase Import Migration**: Migrated ~120 import call sites across `src/` (components, pages, tRPC routers, hooks, tests) and `scripts/` to import directly from `~/lib/wiki/...` or `~/lib/wiki`, completely removing the 19 legacy root files from `src/lib/`.
+  - **Unit Test Migration & Parity**: Moved infobox mapper tests to [src/lib/__tests__/wiki-infobox-mapper.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/wiki-infobox-mapper.test.ts); verified 100% test pass rate across all wiki test suites (61/61 tests passing).
+
 ### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:

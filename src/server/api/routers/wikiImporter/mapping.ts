@@ -7,8 +7,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki-infobox-mapper";
-import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-bridge";
+import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki/infobox-mapper";
+import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki/bridge";
 
 /**
  * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)

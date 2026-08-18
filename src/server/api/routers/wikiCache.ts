@@ -14,9 +14,9 @@ import {
 } from "~/server/api/trpc";
 import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/services/wiki-cache-service";
 import { extractDataFromWikiSections } from "~/app/builder/lib/wiki-data-extractor";
-import { getArticleWikitext } from "~/lib/wiki-bridge";
+import { getArticleWikitext } from "~/lib/wiki/bridge";
 import { withRetrySafe } from "~/lib/with-retry";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import type { WikiSource } from "~/lib/wiki/config";
 
 function getApiBaseUrl(wikiSource: string): string {
   if (wikiSource === "iiwiki") return "https://iiwiki.com/api.php";

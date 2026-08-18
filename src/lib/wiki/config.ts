@@ -84,6 +84,14 @@ export type WikiSource = keyof typeof WIKI_SOURCES;
  * Get the appropriate MediaWiki API URL based on context and wiki source
  */
 export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
+  if (source === "iiwiki") {
+    if (process.env.IIWIKI_DEV_PROXY_URL) {
+      return process.env.IIWIKI_DEV_PROXY_URL;
+    }
+    if (process.env.NODE_ENV === "development") {
+      return "https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php";
+    }
+  }
   const wikiConfig = WIKI_SOURCES[source];
   return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
 }

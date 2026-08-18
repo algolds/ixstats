@@ -1,5 +1,5 @@
 import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { getWikiDbPool } from "~/lib/wiki-bridge";
+import { getWikiDbPool } from "~/lib/wiki/bridge";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import { invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import { invalidateArticleShadow, recordArticleRevision } from "~/lib/wiki-os/article-store";

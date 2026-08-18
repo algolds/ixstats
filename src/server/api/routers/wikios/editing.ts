@@ -9,7 +9,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/parsoid-client";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { getPageHistory, getRevisionWikitext as getRevisionWikitextMySQL } from "~/lib/wiki-bridge";
+import { getPageHistory, getRevisionWikitext as getRevisionWikitextMySQL } from "~/lib/wiki/bridge";
 import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
 
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";

@@ -222,6 +222,10 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **React**: Use `React.memo`, `useMemo`, `useCallback` for performance. Facet (glass/refraction/depth) design patterns.
 - **tRPC**: All API access goes through tRPC routers. Do not query Prisma directly from components.
 - **Modular architecture**: For components >500 lines, extract business logic to `src/lib/`, state to `src/hooks/`, UI to focused components under `src/components/domain/feature/`.
+- **MediaWiki & Wiki Integration**:
+  - **User-Agent**: All MediaWiki / wiki API requests MUST strictly use the `IxStats-Builder` User-Agent string as defined in `src/lib/wiki/config.ts` (`DEFAULT_USER_AGENT`). Never override, spoof, or change this User-Agent.
+  - **Centralized Primitives**: ALL wiki network calls, search queries, metadata resolution, and article parsing MUST go through the central MediaWiki primitives (`src/lib/wiki/config.ts`, `src/lib/wiki/bridge.ts`, `src/lib/wiki/lore-card-generator.ts`, and `src/server/api/routers/lore-cards/wiki.ts`).
+  - **No Ad-Hoc Calls**: NEVER write manual `fetch()` requests or hardcode inline MediaWiki API URLs / User-Agents in frontend UI components, hooks, or non-wiki router files.
 
 ### tRPC Router Splitting
 

@@ -20,13 +20,16 @@
 import { db } from "~/server/db";
 import { CardType, CardRarity } from "@prisma/client";
 import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
-import type { WikiSource } from "~/lib/mediawiki-config";
-import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/mediawiki-config";
-import { LORE_CATEGORIES } from "./lore-card-constants";
-import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./card-valuation";
+import type { WikiSource } from "./config";
+import { getMediaWikiApiUrl, getWikiUserAgent } from "./config";
+import { LORE_CATEGORIES } from "~/lib/lore-card-constants";
+import { getValuationConfig, computeCardValue, type CardValuationConfig } from "~/lib/card-valuation";
+import type { CardAuthorInfo } from "~/types/cards-display";
+import { LoreCategory, classifyLoreArticle, type LoreCategory as LoreCategoryType } from "~/lib/cards";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
+export type { CardAuthorInfo };
 
 /**
  * Article quality metrics for scoring
@@ -53,7 +56,7 @@ interface LoreCardCandidate {
   wikiSource: string;
   wikiArticleTitle: string;
   wikiUrl: string;
-  category: string;
+  category: LoreCategoryType;
   stats: {
     economic: number;
     diplomatic: number;
@@ -65,6 +68,7 @@ interface LoreCardCandidate {
     culturalImpact: number;
   };
   qualityScore: number;
+  authorInfo?: CardAuthorInfo;
 }
 
 /**
@@ -77,15 +81,37 @@ export interface ArticleMetadataPreview {
   length: number; // page length in bytes (cheap size proxy from prop=info)
   extract: string;
   categoryCount: number;
+  category?: LoreCategoryType;
   estimatedQuality: number;
   estimatedRarity: CardRarity;
   estimatedValue: number; // catalog value in IxCredits at the estimated rarity (LORE card)
+  authorInfo?: CardAuthorInfo | null;
 }
 
 // Stub floor: an article must have at least this many cleaned-text chars to become a card.
 // Image presence is the primary gate; this just skips near-empty stubs.
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
+
+export const BOT_REGEX =
+  /^(.*bot|mediawiki default|maintenance script|adminimport|importbot|uploadwizard|system|anonymous)$/i;
+
+/**
+ * Clean a wiki username by stripping import prefixes, namespaces, and brackets
+ */
+export function cleanWikiUsername(username: string | null | undefined): string {
+  if (!username) return "";
+  let clean = String(username).trim();
+  // Strip MediaWiki XML import dump prefixes: "imported>", "Imported>", "import>", "Import>"
+  clean = clean.replace(/^(?:imported|import)\s*>\s*/i, "").trim();
+  // Strip "User:" or "user:" namespace prefix
+  clean = clean.replace(/^user:\s*/i, "").trim();
+  // Strip wiki links [[User:Foo|Foo]] or [[Foo]]
+  clean = clean.replace(/^\[\[(?:[^|\]]*\|)?([^\]]+)\]\]$/g, "$1").trim();
+  // Strip enclosing quotes
+  clean = clean.replace(/^["']|["']$/g, "").trim();
+  return clean;
+}
 
 /**
  * Category-based stat weights for lore cards.
@@ -95,17 +121,18 @@ const CATEGORY_STAT_WEIGHTS: Record<
   string,
   { economic: number; diplomatic: number; military: number; social: number }
 > = {
-  [LORE_CATEGORIES.HISTORICAL_FIGURES]: {
-    economic: 0.15,
-    diplomatic: 0.4,
-    military: 0.15,
-    social: 0.3,
-  },
-  [LORE_CATEGORIES.LOCATIONS]: { economic: 0.4, diplomatic: 0.2, military: 0.15, social: 0.25 },
-  [LORE_CATEGORIES.EVENTS]: { economic: 0.2, diplomatic: 0.3, military: 0.35, social: 0.15 },
-  [LORE_CATEGORIES.ARTIFACTS]: { economic: 0.3, diplomatic: 0.2, military: 0.1, social: 0.4 },
-  [LORE_CATEGORIES.CULTURE]: { economic: 0.2, diplomatic: 0.25, military: 0.1, social: 0.45 },
-  [LORE_CATEGORIES.MYTHOLOGY]: { economic: 0.15, diplomatic: 0.2, military: 0.25, social: 0.4 },
+  [LoreCategory.PEOPLE]: { economic: 0.15, diplomatic: 0.4, military: 0.15, social: 0.3 },
+  [LoreCategory.GEOGRAPHY]: { economic: 0.4, diplomatic: 0.2, military: 0.15, social: 0.25 },
+  [LoreCategory.MILITARY]: { economic: 0.1, diplomatic: 0.2, military: 0.55, social: 0.15 },
+  [LoreCategory.DIPLOMACY]: { economic: 0.2, diplomatic: 0.5, military: 0.1, social: 0.2 },
+  [LoreCategory.GOVERNMENT]: { economic: 0.25, diplomatic: 0.35, military: 0.15, social: 0.25 },
+  [LoreCategory.ECONOMY]: { economic: 0.55, diplomatic: 0.2, military: 0.1, social: 0.15 },
+  [LoreCategory.SCIENCE]: { economic: 0.35, diplomatic: 0.15, military: 0.2, social: 0.3 },
+  [LoreCategory.RELIGION]: { economic: 0.1, diplomatic: 0.25, military: 0.15, social: 0.5 },
+  [LoreCategory.CULTURE]: { economic: 0.15, diplomatic: 0.25, military: 0.1, social: 0.5 },
+  [LoreCategory.HISTORY]: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
+  [LoreCategory.NATION]: { economic: 0.3, diplomatic: 0.3, military: 0.2, social: 0.2 },
+  [LoreCategory.SPECIAL]: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
   default: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
 };
 
@@ -127,21 +154,18 @@ export class WikiLoreCardGenerator {
       // Fetch article data
       const articleData = await this.fetchArticleData(articleTitle, wikiSource);
       if (!articleData) {
-        console.warn(`[Lore Card Generator] Article "${articleTitle}" not found`);
-        return null;
+        throw new Error(`Article "${articleTitle}" was not found or could not be loaded from ${wikiSource}.`);
       }
 
       // Check image requirement
       if (options?.requireImage && !articleData.image) {
-        console.log(`[Lore Card Generator] Skipping "${articleTitle}" — no image found`);
-        return null;
+        throw new Error(`Article "${articleTitle}" has no usable images (image requirement enabled).`);
       }
 
       // Check if card already exists
       const exists = await this.checkCardExists(articleTitle, wikiSource);
       if (exists) {
-        console.log(`[Lore Card Generator] Card already exists for "${articleTitle}"`);
-        return null;
+        throw new Error(`A lore card for "${articleTitle}" (${wikiSource}) already exists in the collection.`);
       }
 
       // Calculate quality score
@@ -149,10 +173,9 @@ export class WikiLoreCardGenerator {
 
       // Minimal floor: skip near-empty stubs (image is the gate, this drops one-liners)
       if (quality.length < MIN_ARTICLE_LENGTH) {
-        console.log(
-          `[Lore Card Generator] Skipping "${articleTitle}" — too short (${quality.length} chars)`
+        throw new Error(
+          `Article "${articleTitle}" is too short (${quality.length} chars; minimum is ${MIN_ARTICLE_LENGTH} chars).`
         );
-        return null;
       }
 
       const qualityScore = this.calculateQualityScore(quality);
@@ -180,6 +203,9 @@ export class WikiLoreCardGenerator {
       // Build wiki URL
       const wikiUrl = this.buildWikiUrl(articleTitle, wikiSource);
 
+      // Extract author info if available
+      const authorInfo = articleData.authorInfo as CardAuthorInfo | undefined;
+
       const candidate: LoreCardCandidate = {
         title: articleTitle.replace(/_/g, " "),
         description,
@@ -193,6 +219,7 @@ export class WikiLoreCardGenerator {
         stats,
         loreStats,
         qualityScore,
+        authorInfo,
       };
 
       console.log(
@@ -203,24 +230,24 @@ export class WikiLoreCardGenerator {
       return candidate;
     } catch (error) {
       console.error(`[Lore Card Generator] Error generating card for "${articleTitle}":`, error);
-      return null;
+      throw error;
     }
   }
 
   /**
    * Fetch article data from wiki API
    */
-  private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
+  async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
 
-      // Fetch article content with infobox and metadata
+      // Fetch article content with infobox, metadata, and contributors
       const url = new URL(apiUrl);
       url.searchParams.set("action", "query");
       url.searchParams.set("format", "json");
       url.searchParams.set("titles", title);
-      url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions|images");
+      url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions|images|contributors");
       url.searchParams.set("exchars", "2000"); // Get first ~2000 chars for full excerpt
       url.searchParams.set("exlimit", "1");
       url.searchParams.set("explaintext", "1"); // Plain text
@@ -229,24 +256,31 @@ export class WikiLoreCardGenerator {
       url.searchParams.set("inprop", "url");
       url.searchParams.set("cllimit", "50"); // Get up to 50 categories
       url.searchParams.set("pllimit", "500"); // Get up to 500 links (inbound indicator)
-      url.searchParams.set("rvprop", "content|timestamp"); // Get full wikitext and timestamp
+      url.searchParams.set("rvprop", "content|timestamp|user|comment"); // Get full wikitext, user, and timestamp
       url.searchParams.set("imlimit", "10"); // Get up to 10 images
+      url.searchParams.set("pclimit", "10"); // Get up to 10 contributors
 
       const response = await fetch(url.toString(), {
         headers: { "User-Agent": userAgent },
       });
 
       if (!response.ok) {
-        console.error(`[Lore Card Generator] API error: ${response.status}`);
-        return null;
+        throw new Error(`MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`);
       }
 
       const data = await response.json();
       const pages = data.query?.pages;
-      if (!pages) return null;
+      if (!pages) {
+        throw new Error(`MediaWiki response contained no page data.`);
+      }
 
       const page = Object.values(pages)[0] as any;
-      if (page.missing) return null;
+      if (page.missing !== undefined) {
+        throw new Error(`Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`);
+      }
+      if (page.invalid !== undefined) {
+        throw new Error(`Article title "${title}" is invalid: ${page.invalidreason || "bad characters"}`);
+      }
 
       // Get wikitext
       const wikitext = page.revisions?.[0]?.["*"] || "";
@@ -304,9 +338,97 @@ export class WikiLoreCardGenerator {
       // Clean text by removing all templates except infobox
       const cleanedText = this.removeTemplates(wikitext);
 
+      // Extract author information (query earliest revision for creator)
+      let creator = "";
+      let createdAt = "";
+      let isBotFiltered = false;
+
+      try {
+        const creatorUrl = new URL(apiUrl);
+        creatorUrl.searchParams.set("action", "query");
+        creatorUrl.searchParams.set("format", "json");
+        creatorUrl.searchParams.set("titles", title);
+        creatorUrl.searchParams.set("prop", "revisions");
+        creatorUrl.searchParams.set("rvdir", "newer");
+        creatorUrl.searchParams.set("rvlimit", "5");
+        creatorUrl.searchParams.set("rvprop", "user|timestamp|comment");
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const creatorRes = await fetch(creatorUrl.toString(), {
+          headers: { "User-Agent": userAgent },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (creatorRes.ok) {
+          const creatorData = await creatorRes.json();
+          const creatorPage = Object.values(creatorData.query?.pages ?? {})[0] as any;
+          const earlyRevs = (creatorPage?.revisions || []) as Array<{ user: string; timestamp: string }>;
+          for (const r of earlyRevs) {
+            const u = cleanWikiUsername(r.user);
+            if (u && !BOT_REGEX.test(u)) {
+              creator = u;
+              createdAt = r.timestamp;
+              break;
+            } else if (u && BOT_REGEX.test(u)) {
+              isBotFiltered = true;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Lore Card Generator] Earliest revision lookup failed for "${title}":`, err);
+      }
+
+      // Fallback: check latest revision user from main query
+      if (!creator && page.revisions?.length > 0) {
+        for (const r of page.revisions) {
+          const u = cleanWikiUsername(r.user);
+          if (u && !BOT_REGEX.test(u)) {
+            creator = u;
+            createdAt = r.timestamp;
+            break;
+          }
+        }
+      }
+
+      // 2. Primary Contributor
+      const contributors = (page.contributors || []) as Array<{ name: string; editcount?: number }>;
+      let primaryContributor: string | null = null;
+      for (const c of contributors) {
+        const u = cleanWikiUsername(c.name);
+        if (u && (!creator || u.toLowerCase() !== creator.toLowerCase()) && !BOT_REGEX.test(u)) {
+          primaryContributor = u;
+          break;
+        }
+      }
+
+      // If creator was empty, promote primary contributor to creator
+      if (!creator && primaryContributor) {
+        creator = primaryContributor;
+        primaryContributor = null;
+      }
+
+      if (!creator) {
+        creator = "Unknown";
+      }
+
+      const displayAuthor = primaryContributor
+        ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
+        : creator;
+
+      const authorInfo: CardAuthorInfo = {
+        creator,
+        createdAt: createdAt || undefined,
+        primaryContributor,
+        contributorCount: contributors.length,
+        displayAuthor,
+        isBotFiltered,
+      };
+
       return {
-        title: page.title,
-        extract: page.extract,
+        ...page,
+        authorInfo,
         text: cleanedText,
         rawText: wikitext,
         image: featuredImage,
@@ -333,6 +455,9 @@ export class WikiLoreCardGenerator {
    * the real scorers with the cheap signals available here; the exact score is recomputed
    * in generateCard at actual generation time.
    */
+  /**
+   * Lightweight batched metadata for many articles — ONE request per <=50 titles.
+   */
   async fetchArticleMetadataBatch(
     titles: string[],
     wikiSource: WikiSource
@@ -340,9 +465,9 @@ export class WikiLoreCardGenerator {
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const out: ArticleMetadataPreview[] = [];
-    // Pull the (cached, DM-tunable) valuation config once so each preview can show an
-    // estimated catalog value — same source of truth as real card valuation.
     const valuationCfg = await getValuationConfig(db);
+
+    const authorsMap = await this.fetchArticleAuthorInfoBatch(titles, wikiSource);
 
     // MediaWiki caps titles at 50 per query; chunk and run a few chunks at a time.
     const chunks: string[][] = [];
@@ -372,7 +497,11 @@ export class WikiLoreCardGenerator {
             const pages = Object.values(data.query?.pages ?? {}) as any[];
             return pages
               .filter((p) => !p.missing)
-              .map((p) => this.toMetadataPreview(p, valuationCfg));
+              .map((p) => {
+                const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
+                const authorInfo = authorsMap.get(titleKey) || null;
+                return this.toMetadataPreview(p, valuationCfg, authorInfo);
+              });
           } catch (e) {
             console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
             return [] as ArticleMetadataPreview[];
@@ -384,12 +513,14 @@ export class WikiLoreCardGenerator {
     return out;
   }
 
-  private toMetadataPreview(page: any, cfg: CardValuationConfig): ArticleMetadataPreview {
+  private toMetadataPreview(
+    page: any,
+    cfg: CardValuationConfig,
+    authorInfo?: CardAuthorInfo | null
+  ): ArticleMetadataPreview {
     const extract: string = page.extract || "";
     const length: number = page.length ?? extract.length;
     const categoryCount: number = page.categories?.length ?? 0;
-    // refs/inbound are unknown without the heavy fetch, so this estimate runs low — fine,
-    // the exact score is recomputed at generation.
     const quality: ArticleQuality = {
       length,
       referenceCount: 0,
@@ -401,6 +532,11 @@ export class WikiLoreCardGenerator {
     };
     const estimatedQuality = this.calculateQualityScore(quality);
     const estimatedRarity = this.determineRarity(estimatedQuality);
+    const category = classifyLoreArticle({
+      title: page.title,
+      text: extract,
+      categories: page.categories,
+    });
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -408,19 +544,172 @@ export class WikiLoreCardGenerator {
       length,
       extract,
       categoryCount,
+      category,
       estimatedQuality,
       estimatedRarity,
       estimatedValue: computeCardValue({ rarity: estimatedRarity, cardType: "LORE" }, cfg),
+      authorInfo: authorInfo ?? null,
     };
   }
 
   /**
-   * List page titles in a live wiki category (namespace-0 pages only, with paging).
+   * Batched author information extractor (Page Creator + Primary Contributor)
+   * Queries MediaWiki per title with concurrent pooling to avoid invalidparammix on multi-title queries.
+   */
+  async fetchArticleAuthorInfoBatch(
+    titles: string[],
+    wikiSource: WikiSource
+  ): Promise<Map<string, CardAuthorInfo>> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const resultMap = new Map<string, CardAuthorInfo>();
+
+    if (titles.length === 0) return resultMap;
+
+    const uniqueTitles = Array.from(
+      new Set(titles.map((t) => t.trim()).filter((t) => t.length > 0))
+    );
+
+    // Concurrently process titles in chunks of 8
+    const CHUNK_SIZE = 8;
+    for (let i = 0; i < uniqueTitles.length; i += CHUNK_SIZE) {
+      const slice = uniqueTitles.slice(i, i + CHUNK_SIZE);
+      await Promise.all(
+        slice.map(async (title) => {
+          const url = new URL(apiUrl);
+          url.searchParams.set("action", "query");
+          url.searchParams.set("format", "json");
+          url.searchParams.set("titles", title);
+          url.searchParams.set("prop", "revisions|contributors");
+          url.searchParams.set("rvdir", "newer");
+          url.searchParams.set("rvlimit", "5");
+          url.searchParams.set("rvprop", "user|timestamp|comment");
+          url.searchParams.set("pclimit", "10");
+
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            const res = await fetch(url.toString(), {
+              headers: { "User-Agent": userAgent },
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            if (!res.ok) return;
+            const data = await res.json();
+            const pages = Object.values(data.query?.pages ?? {}) as any[];
+            if (pages.length === 0) return;
+
+            const p = pages[0];
+            if (p.missing) return;
+
+            // 1. Page Creator
+            const revs = (p.revisions || []) as Array<{ user: string; timestamp: string }>;
+            let creator = "";
+            let createdAt = "";
+            let isBotFiltered = false;
+
+            for (const r of revs) {
+              const u = cleanWikiUsername(r.user);
+              if (u && !BOT_REGEX.test(u)) {
+                creator = u;
+                createdAt = r.timestamp;
+                break;
+              } else if (u && BOT_REGEX.test(u)) {
+                isBotFiltered = true;
+              }
+            }
+
+            if (!creator && revs.length > 0 && revs[0].user) {
+              const u = cleanWikiUsername(revs[0].user);
+              if (u) {
+                creator = u;
+                createdAt = revs[0].timestamp;
+              }
+            }
+
+            // 2. Primary Contributor
+            const contributors = (p.contributors || []) as Array<{ name: string; editcount?: number }>;
+            let primaryContributor: string | null = null;
+            for (const c of contributors) {
+              const u = cleanWikiUsername(c.name);
+              if (u && (!creator || u.toLowerCase() !== creator.toLowerCase()) && !BOT_REGEX.test(u)) {
+                primaryContributor = u;
+                break;
+              }
+            }
+
+            // If creator was empty or filtered out, promote top contributor to creator
+            if (!creator && primaryContributor) {
+              creator = primaryContributor;
+              primaryContributor = null;
+            }
+
+            if (!creator) {
+              creator = "Unknown";
+            }
+
+            // 3. Formatted display string
+            const displayAuthor = primaryContributor
+              ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
+              : creator;
+
+            const info: CardAuthorInfo = {
+              creator,
+              createdAt: createdAt || undefined,
+              primaryContributor,
+              contributorCount: contributors.length,
+              displayAuthor,
+              isBotFiltered,
+            };
+
+            // Register under multiple lookup keys to ensure cache hits
+            const keys = [
+              title,
+              title.toLowerCase(),
+              title.replace(/_/g, " ").trim().toLowerCase(),
+              title.replace(/ /g, "_").trim().toLowerCase(),
+              p.title,
+              (p.title || "").toLowerCase(),
+              (p.title || "").replace(/_/g, " ").trim().toLowerCase(),
+              (p.title || "").replace(/ /g, "_").trim().toLowerCase(),
+            ];
+
+            if (data.query?.normalized) {
+              for (const n of data.query.normalized) {
+                if (n.from) keys.push(n.from, n.from.toLowerCase(), n.from.replace(/_/g, " ").trim().toLowerCase());
+                if (n.to) keys.push(n.to, n.to.toLowerCase(), n.to.replace(/_/g, " ").trim().toLowerCase());
+              }
+            }
+
+            if (data.query?.redirects) {
+              for (const r of data.query.redirects) {
+                if (r.from) keys.push(r.from, r.from.toLowerCase(), r.from.replace(/_/g, " ").trim().toLowerCase());
+                if (r.to) keys.push(r.to, r.to.toLowerCase(), r.to.replace(/_/g, " ").trim().toLowerCase());
+              }
+            }
+
+            for (const k of keys) {
+              if (k) resultMap.set(k, info);
+            }
+          } catch (e) {
+            console.error(`[Lore Card Generator] Author info fetch failed for "${title}":`, e);
+          }
+        })
+      );
+    }
+
+    return resultMap;
+  }
+
+  /**
+   * List page titles in a live wiki category (namespace-0 pages and files, with paging).
    */
   async fetchCategoryMembers(
     category: string,
     wikiSource: WikiSource,
-    limit = 200
+    limit = 10000,
+    type: "page" | "file" | "page|file" = "page|file"
   ): Promise<string[]> {
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
@@ -434,17 +723,27 @@ export class WikiLoreCardGenerator {
       url.searchParams.set("format", "json");
       url.searchParams.set("list", "categorymembers");
       url.searchParams.set("cmtitle", cmtitle);
-      url.searchParams.set("cmtype", "page");
-      url.searchParams.set("cmlimit", "max");
+      url.searchParams.set("cmtype", type);
+      url.searchParams.set("cmlimit", "500");
       if (cmcontinue) url.searchParams.set("cmcontinue", cmcontinue);
+
       try {
-        const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch(url.toString(), {
+          headers: { "User-Agent": userAgent },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
         if (!res.ok) {
           console.error(`[Lore Card Generator] categorymembers error: ${res.status}`);
           break;
         }
         const data = await res.json();
-        for (const m of data.query?.categorymembers ?? []) titles.push(m.title as string);
+        for (const m of data.query?.categorymembers ?? []) {
+          if (m.title) titles.push(m.title as string);
+        }
         cmcontinue = data.continue?.cmcontinue;
       } catch (e) {
         console.error(`[Lore Card Generator] categorymembers fetch failed:`, e);
@@ -468,7 +767,14 @@ export class WikiLoreCardGenerator {
     url.searchParams.set("acprefix", prefix);
     url.searchParams.set("aclimit", String(Math.min(Math.max(limit, 1), 100)));
     try {
-      const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         console.error(`[Lore Card Generator] allcategories error: ${res.status}`);
         return [];
@@ -480,6 +786,107 @@ export class WikiLoreCardGenerator {
       return [];
     }
   }
+
+  /**
+   * Fetch category statistics (size, pages, files, subcats) for categories
+   */
+  async getCategoriesInfo(
+    categories: string[],
+    wikiSource: WikiSource
+  ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const result: Record<string, { size: number; pages: number; files: number; subcats: number }> = {};
+
+    const formattedTitles = categories
+      .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
+      .slice(0, 50);
+
+    if (formattedTitles.length === 0) return result;
+
+    const url = new URL(apiUrl);
+    url.searchParams.set("action", "query");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("prop", "categoryinfo");
+    url.searchParams.set("titles", formattedTitles.join("|"));
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        for (const pageId in data.query?.pages ?? {}) {
+          const p = data.query.pages[pageId];
+          const rawTitle = p.title?.replace(/^Category:\s*/i, "") || "";
+          if (p.categoryinfo) {
+            result[rawTitle] = p.categoryinfo;
+            result[p.title] = p.categoryinfo;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[Lore Card Generator] getCategoriesInfo failed:", e);
+    }
+
+    return result;
+  }
+
+  /**
+   * List all pages in the main namespace (namespace 0, excluding redirects).
+   */
+  async fetchAllMainNamespacePages(
+    wikiSource: WikiSource,
+    limit = 10000
+  ): Promise<string[]> {
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
+    const titles: string[] = [];
+    let apcontinue: string | undefined;
+
+    do {
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("list", "allpages");
+      url.searchParams.set("apnamespace", "0");
+      url.searchParams.set("apfilterredir", "nonredirects");
+      url.searchParams.set("aplimit", "500");
+      if (apcontinue) url.searchParams.set("apcontinue", apcontinue);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch(url.toString(), {
+          headers: { "User-Agent": userAgent },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          console.error(`[Lore Card Generator] allpages error: ${res.status}`);
+          break;
+        }
+        const data = await res.json();
+        for (const p of data.query?.allpages ?? []) {
+          if (p.title) titles.push(p.title as string);
+        }
+        apcontinue = data.continue?.apcontinue;
+      } catch (e) {
+        console.error(`[Lore Card Generator] allpages fetch failed:`, e);
+        break;
+      }
+    } while (apcontinue && titles.length < limit);
+
+    return titles.slice(0, limit);
+  }
+
+
 
   /**
    * Parse infobox template from wikitext
@@ -552,7 +959,8 @@ export class WikiLoreCardGenerator {
   /**
    * Get image URL from filename via MediaWiki API
    */
-  private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+  async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -680,98 +1088,12 @@ export class WikiLoreCardGenerator {
   /**
    * Detect lore category from article categories and content
    */
-  private detectCategory(articleData: any): string {
-    const categories = articleData.categories || [];
-    const text = (articleData.text || "").toLowerCase();
-    const _title = (articleData.title || "").toLowerCase();
-
-    // Check categories first
-    for (const cat of categories) {
-      const catTitle = (cat.title || "").toLowerCase();
-
-      if (
-        catTitle.includes("people") ||
-        catTitle.includes("politician") ||
-        catTitle.includes("leader") ||
-        catTitle.includes("historical figure")
-      ) {
-        return LORE_CATEGORIES.HISTORICAL_FIGURES;
-      }
-
-      if (
-        catTitle.includes("cit") ||
-        catTitle.includes("place") ||
-        catTitle.includes("geography") ||
-        catTitle.includes("location")
-      ) {
-        return LORE_CATEGORIES.LOCATIONS;
-      }
-
-      if (
-        catTitle.includes("war") ||
-        catTitle.includes("battle") ||
-        catTitle.includes("event") ||
-        catTitle.includes("history")
-      ) {
-        return LORE_CATEGORIES.EVENTS;
-      }
-
-      if (
-        catTitle.includes("culture") ||
-        catTitle.includes("tradition") ||
-        catTitle.includes("heritage")
-      ) {
-        return LORE_CATEGORIES.CULTURE;
-      }
-
-      if (
-        catTitle.includes("mythology") ||
-        catTitle.includes("legend") ||
-        catTitle.includes("folklore")
-      ) {
-        return LORE_CATEGORIES.MYTHOLOGY;
-      }
-
-      if (
-        catTitle.includes("artifact") ||
-        catTitle.includes("monument") ||
-        catTitle.includes("architecture")
-      ) {
-        return LORE_CATEGORIES.ARTIFACTS;
-      }
-    }
-
-    // Fallback: detect from content
-    if (
-      text.includes("was born") ||
-      text.includes("politician") ||
-      text.includes("leader") ||
-      text.includes("president") ||
-      text.includes("prime minister")
-    ) {
-      return LORE_CATEGORIES.HISTORICAL_FIGURES;
-    }
-
-    if (
-      text.includes("city") ||
-      text.includes("located in") ||
-      text.includes("capital") ||
-      text.includes("region")
-    ) {
-      return LORE_CATEGORIES.LOCATIONS;
-    }
-
-    if (
-      text.includes("war") ||
-      text.includes("battle") ||
-      text.includes("conflict") ||
-      text.includes("occurred on")
-    ) {
-      return LORE_CATEGORIES.EVENTS;
-    }
-
-    // Default to culture
-    return LORE_CATEGORIES.CULTURE;
+  private detectCategory(articleData: any): LoreCategoryType {
+    return classifyLoreArticle({
+      title: articleData.title,
+      text: articleData.text || articleData.extract,
+      categories: articleData.categories,
+    });
   }
 
   /**
@@ -793,12 +1115,26 @@ export class WikiLoreCardGenerator {
   private generateSummary(extract: string): string {
     if (!extract) return "A historical article from the wiki archives.";
 
-    // Clean up extract
-    let summary = extract.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+    // Strip raw templates and infoboxes while preserving wikitext links and bold formatting
+    let summary = extract
+      .replace(/\{\{[^}]*\}\}/g, "")
+      .replace(/\{\{[\s\S]*$/g, "")
+      .replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "")
+      .replace(/\n/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    // Limit to 200 characters
-    if (summary.length > 200) {
-      summary = summary.substring(0, 197) + "...";
+    if (!summary) summary = "A historical article from the wiki archives.";
+
+    // Limit to 250 characters
+    if (summary.length > 250) {
+      summary = summary.substring(0, 247) + "...";
+      // Clean up unclosed wikitext links if cut off mid-link
+      const openCount = (summary.match(/\[\[/g) || []).length;
+      const closeCount = (summary.match(/\]\]/g) || []).length;
+      if (openCount > closeCount) {
+        summary = summary.replace(/\[\[[^\]]*$/, "") + "...";
+      }
     }
 
     return summary;
@@ -880,6 +1216,7 @@ export class WikiLoreCardGenerator {
         title: candidate.title,
         description: candidate.description,
         artwork: candidate.artwork,
+        category: candidate.category as any,
         cardType: CardType.LORE,
         rarity: candidate.rarity,
         season,
@@ -892,6 +1229,8 @@ export class WikiLoreCardGenerator {
           qualityScore: candidate.qualityScore,
           loreStats: candidate.loreStats,
           fullExcerpt: candidate.fullExcerpt,
+          ...(candidate.authorInfo ? { authorInfo: candidate.authorInfo as any } : {}),
+          ...(candidate.authorInfo?.displayAuthor ? { author: candidate.authorInfo.displayAuthor } : {}),
         },
         totalSupply: 0, // Unlimited for lore cards
         marketValue: this.getBaseMarketValue(candidate.rarity),

@@ -20,8 +20,8 @@
  */
 
 import { db } from "~/server/db";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import type { WikiSource } from "~/lib/wiki/config";
 
 /**
  * Generation result for monitoring

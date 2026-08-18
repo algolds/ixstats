@@ -1,5 +1,5 @@
 // Country flag service using Wiki Commons API
-import { searchWiki } from "./wiki-search-service.client";
+import { searchWiki } from "../wiki/search-service";
 
 interface CountryFlag {
   country: string;

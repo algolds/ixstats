@@ -7,7 +7,7 @@
  *  - Editor "Auto-populate from wiki" feature
  */
 
-import { getArticleIntro, getPageImages, getCoordinates, getPageSections } from "./wiki-bridge";
+import { getArticleIntro, getPageImages, getCoordinates, getPageSections } from "../wiki/bridge";
 
 export interface WikiEnrichment {
   intro: string | null;

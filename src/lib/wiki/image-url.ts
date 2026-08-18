@@ -4,8 +4,8 @@
  * Extracted from wiki-bridge.ts to avoid pulling mysql2 into client bundles.
  */
 
-import { withBasePath } from "./base-path";
-import type { WikiSource } from "./mediawiki-config";
+import { withBasePath } from "~/lib/base-path";
+import type { WikiSource } from "./config";
 
 /**
  * Get file/image URL for an IxWiki file.

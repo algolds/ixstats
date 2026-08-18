@@ -13,8 +13,8 @@
  * skipped.
  */
 
-import { parseInfobox, parsePopulation, type InfoboxField } from "./wiki-infobox-parser";
-import { compareValues, type ContradictionVerdict } from "./country-geo-compliance";
+import { parseInfobox, parsePopulation, type InfoboxField } from "./infobox-parser";
+import { compareValues, type ContradictionVerdict } from "~/lib/country-geo-compliance";
 
 export type EntityKind = "city" | "subdivision" | "poi";
 

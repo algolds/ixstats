@@ -15,10 +15,10 @@
 import * as fs from "fs";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
-import { getArticleWikitext, type WikiSource } from "./wiki-bridge";
-import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-wiki-parser";
+import { getArticleWikitext, type WikiSource } from "../wiki/bridge";
+import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "../wiki/unified-parser";
 import { withRetrySafe } from "./with-retry";
-import { DEFAULT_USER_AGENT } from "~/lib/mediawiki-config";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki/config";
 import { withBasePath } from "./base-path";
 
 // ──────────────────────────────────────────────

@@ -19,7 +19,7 @@ import {
   getCoordinates,
   searchWithFallback,
   type WikiSource,
-} from "~/lib/wiki-bridge";
+} from "~/lib/wiki/bridge";
 
 const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
 
