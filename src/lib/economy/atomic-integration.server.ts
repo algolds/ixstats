@@ -7,7 +7,7 @@ import type {
   AtomicEconomicModifiers,
   AtomicEnhancedCountryData,
   CountryWithAtomicComponents,
-} from "./atomic-economic-integration";
+} from "./atomic-integration";
 
 export async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],

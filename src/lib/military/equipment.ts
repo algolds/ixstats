@@ -667,6 +667,3 @@ export function getAllEquipment() {
     weapons: WEAPON_SYSTEMS,
   };
 }
-
-// Re-export extended database for full catalog access
-export * from "./equipment-extended";
