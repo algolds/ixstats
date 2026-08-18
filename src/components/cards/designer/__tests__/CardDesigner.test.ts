@@ -1,16 +1,33 @@
 import { DEFAULT_DESIGN_STATE, RARITY_BASE_VALUES } from "../types";
-import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards/rarity-materials";
+import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 
+jest.mock("@tsparticles/react", () => ({
+  __esModule: true,
+  default: () => null,
+  ParticlesProvider: ({ children }: any) => children,
+}));
+
+jest.mock("@tsparticles/slim", () => ({
+  __esModule: true,
+  loadSlim: jest.fn(),
+}));
+
+jest.mock("~/components/vault/CosmeticParticles", () => ({
+  __esModule: true,
+  CosmeticParticles: () => null,
+  default: () => null,
+}));
+
 describe("Card Designer Studio & Game-Icons Library", () => {
   it("should have correct default design state initialized", () => {
-    expect(DEFAULT_DESIGN_STATE.title).toBe("Archivist of the Dawn");
-    expect(DEFAULT_DESIGN_STATE.rarity).toBe("EPIC");
+    expect(DEFAULT_DESIGN_STATE.title).toBe("Concord of Nations");
+    expect(DEFAULT_DESIGN_STATE.rarity).toBe("LEGENDARY");
     expect(DEFAULT_DESIGN_STATE.emblemIcon).not.toBeNull();
-    expect(DEFAULT_DESIGN_STATE.emblemIcon?.slug).toBe("star-medal");
+    expect(DEFAULT_DESIGN_STATE.emblemIcon?.slug).toBe("laurel-crown");
     expect(DEFAULT_DESIGN_STATE.watermarkIcon).not.toBeNull();
-    expect(DEFAULT_DESIGN_STATE.watermarkIcon?.slug).toBe("sunbeams");
+    expect(DEFAULT_DESIGN_STATE.watermarkIcon?.slug).toBe("scroll-unfurled");
     expect(["ixwiki", "iiwiki", "wikios", "stash"]).toContain(DEFAULT_DESIGN_STATE.wikiSource);
   });
 
