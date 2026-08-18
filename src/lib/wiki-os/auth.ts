@@ -7,7 +7,7 @@
 // See plans/wikios-workstream-c-packaging.md.
 
 import { TRPCError } from "@trpc/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 /** Minimal structural shape WikiOS needs from the request context. */
 export interface WikiAuthContext {

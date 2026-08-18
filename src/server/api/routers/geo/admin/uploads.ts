@@ -86,7 +86,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
       }
 
       // Extract metadata before storing
-      const { extractSvgMetadata } = await import("~/lib/flags/svg-parser/);
+      const { extractSvgMetadata } = await import("~/lib/flags/svg-parser");
       const metadata = extractSvgMetadata(svgString);
 
       const upload = await ctx.db.svgUpload.create({
@@ -139,7 +139,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
       });
 
       try {
-        const { parseSvgToGeoJson, matchFeaturesToCountries } = await import("~/lib/flags/svg-parser/);
+        const { parseSvgToGeoJson, matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
         const { readFileSync, existsSync } = await import("fs");
         const { join } = await import("path");
 
@@ -177,7 +177,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
         }
 
         // Compute diff against current DB state
-        const { computeLayerDiff } = await import("~/lib/flags/svg-parser/);
+        const { computeLayerDiff } = await import("~/lib/flags/svg-parser");
         const existingFeatures = await ctx.db.mapLayer.findMany({
           where: { layerType: upload.layerType, isActive: true },
           select: {

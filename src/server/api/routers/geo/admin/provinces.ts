@@ -143,7 +143,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       if (isPng && pngBase64) {
         // PNG path: extract provinces directly via boundary-line detection
         const pngBuffer = Buffer.from(pngBase64, "base64");
-        const { extractProvincesFromPng } = await import("~/lib/flags/png-to-svg/);
+        const { extractProvincesFromPng } = await import("~/lib/flags/png-to-svg");
 
         const result = await extractProvincesFromPng(pngBuffer);
 
@@ -325,7 +325,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       // Server-side validation: check coordinate bounds on all province geometries
       for (const province of input.provinces) {
         if ("coordinates" in province.geometry) {
-          const { validateGeometryBounds } = await import("~/lib/maps/geo-validation/);
+          const { validateGeometryBounds } = await import("~/lib/maps/geo-validation");
           validateGeometryBounds(province.geometry as unknown as import("geojson").Geometry);
         }
       }
@@ -361,7 +361,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           });
         }
 
-        const { repairGeometryGeoJSON } = await import("~/lib/maps/geo-validation/);
+        const { repairGeometryGeoJSON } = await import("~/lib/maps/geo-validation");
 
         const created: Array<{ id: string; name: string }> = [];
         let createdCount = 0;

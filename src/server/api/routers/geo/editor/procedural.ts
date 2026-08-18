@@ -319,7 +319,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const { runMapPipeline, validatePipelineResult } = await import("~/lib/maps/map-pipeline/);
+      const { runMapPipeline, validatePipelineResult } = await import("~/lib/maps/map-pipeline");
 
       const result = await runMapPipeline({
         source: input.source,
@@ -397,7 +397,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       // Build shared vertex index for political features
       if (layers.political) {
         try {
-          const { buildSharedVertexIndex } = await import("~/lib/maps/shared-vertex-builder/);
+          const { buildSharedVertexIndex } = await import("~/lib/maps/shared-vertex-builder");
           const politicalFeatures = layers.political.features
             .filter((f) => f.geometry?.type === "Polygon" || f.geometry?.type === "MultiPolygon")
             .map((f) => ({

@@ -1,16 +1,20 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "../../server/api/trpc";
 import { sportsRouter } from "../../server/api/routers/sports";
-import { exchangeService } from "../../lib/exchange-service";
-import { transitionSeasonAction } from "../../lib/sports/transition";
+import { exchangeService } from "~/lib/vault";
+import { transitionSeasonAction } from "~/lib/sports/transition";
 
 // Mock exchangeService
-jest.mock("../../lib/exchange-service", () => ({
-  exchangeService: {
-    spend: jest.fn(),
-    earn: jest.fn(),
-  },
-}));
+jest.mock("~/lib/vault", () => {
+  const actual = jest.requireActual("~/lib/vault") as any;
+  return {
+    ...actual,
+    exchangeService: {
+      spend: jest.fn(),
+      earn: jest.fn(),
+    },
+  };
+});
 
 describe("MyLeague Phase 3 & 4 Integration Tests", () => {
   let mockPrisma: any;

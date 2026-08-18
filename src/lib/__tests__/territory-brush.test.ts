@@ -13,7 +13,7 @@
  */
 
 import type { Polygon, MultiPolygon } from "geojson";
-import { applyBrushStroke } from "~/lib/maps/territory-brush;
+import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import { calculateArea } from "~/lib/maps/border-editor";
 
 // ─────────────────────────────────────────────────────────────────────────────

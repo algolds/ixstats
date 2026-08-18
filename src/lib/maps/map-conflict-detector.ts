@@ -210,4 +210,4 @@ function checkCoverageGaps(features: FeatureData[], totalAreaKm2?: number): Conf
 
 // ── Utilities ──────────────────────────────────────────────────────
 
-import { distanceKm as haversineKm } from "~/lib/geo-math";
+import { distanceKm as haversineKm } from "./geo-math";

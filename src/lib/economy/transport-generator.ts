@@ -178,7 +178,7 @@ export function terrainCost(elevation: number, isWater: boolean, routeType: Rout
 
 // ── Haversine distance ─────────────────────────────────────────────
 
-import { distanceKm as haversineKm } from "~/lib/geo-math";
+import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
 
 // ── Route line generation ──────────────────────────────────────────
 

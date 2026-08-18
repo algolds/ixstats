@@ -606,7 +606,7 @@ export const economicComponentsCatalogRouter = createTRPCRouter({
 
       // If database is empty, use fallback
       if (dbTemplates.length === 0) {
-        const { ECONOMIC_TEMPLATES } = await import("~/lib/economy/atomic-data/);
+        const { ECONOMIC_TEMPLATES } = await import("~/lib/economy/atomic-data");
         return {
           success: true,
           templates: ECONOMIC_TEMPLATES,

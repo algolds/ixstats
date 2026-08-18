@@ -114,7 +114,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
 
       // Layer 2: Auto-match only NEW features (not in existing DB)
       if (upload.layerType === "political") {
-        const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser/);
+        const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
         const countries = await ctx.db.country.findMany({
           select: { id: true, name: true, slug: true },
         });

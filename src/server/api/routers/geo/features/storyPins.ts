@@ -446,7 +446,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       let wikiEnrichment = null;
       if (pin.wikiPageTitle) {
         try {
-          const { enrichFromWiki } = await import("~/lib/maps/story-pin-enrichment/);
+          const { enrichFromWiki } = await import("~/lib/maps/story-pin-enrichment");
           wikiEnrichment = await enrichFromWiki(pin.wikiPageTitle);
         } catch {
           // Wiki enrichment is best-effort

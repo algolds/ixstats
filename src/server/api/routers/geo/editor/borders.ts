@@ -197,7 +197,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       if (input.applyDirectly) {
         // Admin direct apply — update geometry immediately
         const { calculateArea, calculateCentroid, calculateBBox } =
-          await import("~/lib/maps/border-editor/);
+          await import("~/lib/maps/border-editor");
         const geom = input.proposedGeometry as unknown as
           import("geojson").Polygon | import("geojson").MultiPolygon;
         await validateGeometryValid(ctx.db, input.proposedGeometry);
@@ -339,7 +339,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       }
 
       const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor/);
+        await import("~/lib/maps/border-editor");
       const geometry = feature.geometry as unknown as
         import("geojson").Polygon | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
@@ -444,7 +444,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       }
 
       const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor/);
+        await import("~/lib/maps/border-editor");
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
@@ -513,7 +513,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
   repairBorderGeometry: adminProcedure
     .input(z.object({ geometry: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ input }) => {
-      const { sanitizeRegionShape } = await import("~/lib/maps/border-editor/);
+      const { sanitizeRegionShape } = await import("~/lib/maps/border-editor");
       const geom = input.geometry as unknown as
         import("geojson").Polygon | import("geojson").MultiPolygon;
       const { geometry, issues } = sanitizeRegionShape(geom, geom);
@@ -526,7 +526,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
   rebuildAdjacency: adminProcedure
     .input(z.object({ worldId: z.string().default("default") }))
     .mutation(async ({ ctx }) => {
-      const { isPostGISAvailable } = await import("~/lib/maps/geo-validation/);
+      const { isPostGISAvailable } = await import("~/lib/maps/geo-validation");
       if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };
       const pairs = await ctx.db.$queryRawUnsafe<Array<{ a: string; b: string }>>(
         `SELECT a."featureId" AS a, b."featureId" AS b

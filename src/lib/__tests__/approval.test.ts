@@ -1,4 +1,4 @@
-import { computeApproval, isNewsworthySwing } from "~/lib/government/approval;
+import { computeApproval, isNewsworthySwing } from "~/lib/government/approval";
 
 describe("computeApproval", () => {
   it("tracks the leading party and lifts with high stability", () => {

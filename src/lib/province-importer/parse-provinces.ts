@@ -18,7 +18,7 @@ import {
   calculateBoundingBox,
   calculateApproxArea,
   ringArea,
-} from "~/lib/flags/svg-parser;
+} from "~/lib/flags/svg-parser";
 import { elementToRings, SHAPE_TAGS } from "./svg-element-converter";
 import { getAccumulatedTransform, applyMatrixToRings, isIdentity } from "./svg-transform";
 import {

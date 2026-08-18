@@ -18,7 +18,7 @@ import {
   type AtomicEconomicComponent,
   type EconomicComponentType,
   type EconomicCategory,
-} from "./atomic-economic-data";
+} from "./atomic-data";
 
 // ============================================================================
 // Synergy and Conflict Detection
