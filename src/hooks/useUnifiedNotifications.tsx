@@ -21,7 +21,7 @@ import { getNotificationOrchestrator } from "~/services/NotificationOrchestrator
 import { getContextIntelligenceEngine } from "~/services/ContextIntelligenceEngine";
 import { getGlobalNotificationStore } from "~/services/GlobalNotificationStore";
 import { getDeliveryHandlerRegistry } from "~/services/DeliveryHandlers";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 import type {
   UnifiedNotification,
   NotificationContext,

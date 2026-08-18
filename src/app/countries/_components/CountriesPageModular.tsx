@@ -6,7 +6,7 @@ import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 import { useDIPlugin } from "~/components/DynamicIsland";
 import { CountriesDIView } from "~/components/DynamicIsland/CountriesDIView";
 

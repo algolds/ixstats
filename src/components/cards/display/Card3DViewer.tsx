@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { cn } from "~/lib/utils";
 import { CardDisplay } from "./CardDisplay";
@@ -39,6 +39,8 @@ export interface Card3DViewerProps {
   hideValue?: boolean;
   /** Hide stats bars & hover stats overlay (default: false) */
   hideStats?: boolean;
+  /** Hide bottom lore excerpt box (default: false) */
+  hideExcerpt?: boolean;
   /** Callback when card is flipped */
   onFlip?: (side: "front" | "back") => void;
 }
@@ -78,6 +80,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
     performanceMode = false,
     hideValue = false,
     hideStats = false,
+    hideExcerpt = false,
     onFlip,
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -98,6 +101,13 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
       rotateYSpring,
       (value) => value + (currentSide === "back" ? 180 : 0)
     );
+
+    // Sync currentSide and reset rotation when initialSide prop changes
+    useEffect(() => {
+      setCurrentSide(initialSide);
+      rotateX.set(0);
+      rotateY.set(0);
+    }, [initialSide, rotateX, rotateY]);
 
     /**
      * Handle mouse/touch move for rotation
@@ -242,6 +252,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
               showStatsOnHover={!hideStats && !isDragging}
               hideValue={hideValue}
               hideStats={hideStats}
+              hideExcerpt={hideExcerpt}
               enable3D={false} // Disable internal 3D since viewer handles it
               enableHolographic={true}
               performanceMode={performanceMode}
@@ -259,6 +270,8 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
             }}
           >
             <CardBack
+              card={card}
+              cardName={card.title}
               rarity={card.rarity}
               size={size}
               performanceMode={performanceMode}

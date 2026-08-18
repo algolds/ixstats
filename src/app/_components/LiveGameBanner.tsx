@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
-import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import {
   RefreshCw,

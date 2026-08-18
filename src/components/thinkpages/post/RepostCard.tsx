@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
+import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
 export interface RepostCardProps {

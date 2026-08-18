@@ -15,7 +15,7 @@ import { PolicySelector } from "../components/spending/PolicySelector";
 
 // Custom hook for state management
 import { useGovernmentSpending } from "../hooks/useGovernmentSpending";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 

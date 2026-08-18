@@ -15,7 +15,7 @@ import { GlassTooltip } from "../charts/GlassTooltip";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import type { PolicyDistribution, BudgetImpact } from "~/lib/analytics-data-transformers";
+import type { PolicyDistribution, BudgetImpact } from "~/lib/utils";
 
 interface PolicySectionProps {
   policyDistributionData: PolicyDistribution[];

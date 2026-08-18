@@ -17,7 +17,7 @@ import type {
   SectorPerformance,
   VolatilityMetric,
   ComparativeBenchmark,
-} from "~/lib/analytics-data-transformers";
+} from "~/lib/utils";
 
 interface EconomicSectionProps {
   sectorPerformanceData: SectorPerformance[];

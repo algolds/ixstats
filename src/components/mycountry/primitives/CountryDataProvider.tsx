@@ -8,7 +8,7 @@ import { AlertTriangle, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { useDemoMode } from "~/context/DemoModeContext";
 

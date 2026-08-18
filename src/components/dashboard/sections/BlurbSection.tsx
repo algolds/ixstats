@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);

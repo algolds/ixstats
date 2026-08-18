@@ -3,7 +3,7 @@ import {
   formatCurrency as formatCurrencyUtil,
   formatPopulation as formatPopulationUtil,
   formatPercent,
-} from "~/lib/format-utils";
+} from "~/lib/utils";
 
 /**
  * @deprecated Use formatCurrency from ~/lib/format-utils instead

@@ -36,7 +36,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { formatPopulation } from "~/lib/chart-utils";
+import { formatPopulation } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
 import {

@@ -13,7 +13,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import Link from "next/link";
-import { getCountryPath } from "~/lib/slug-utils";
+import { getCountryPath } from "~/lib/utils";
 import { FlagUploadSection } from "./FlagUploadSection";
 import CountryFlag from "~/app/_components/CountryFlag";
 import { TextureOverlay } from "~/components/ui/texture-overlay";

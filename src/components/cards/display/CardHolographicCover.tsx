@@ -17,7 +17,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { CardRarity, CardType } from "@prisma/client";
@@ -27,17 +27,24 @@ import {
   getPrismaticWaveGradient,
   getHolofoilTextureGradient,
   getFoilStampConfig,
-} from "~/lib/holographic-effects";
+} from "~/lib/themes";
 import { LoreCardHolographicCover } from "./LoreCardHolographicCover";
+import { CategoryIcon } from "~/components/cards/icons";
+import { getCategoryTheme, isValidLoreCategory, type LoreCategory } from "~/lib/cards";
+
+import type { ResolvedCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 
 // ─── Types ──────────────────────────────────────────────────────
 
 export interface CardHolographicCoverProps {
-  cardType: string;
+  cardType?: string;
+  category?: LoreCategory | string | null;
   rarity: string;
   /** For LORE cards — passed through to LoreCardHolographicCover */
   wikiSource?: string | null;
   title?: string;
+  designMetadata?: ResolvedCardDesignMetadata | null;
+  isHovered?: boolean;
   className?: string;
 }
 
@@ -138,7 +145,7 @@ function getHoloOpacity(rarity: CardRarity): number {
   return map[rarity] ?? 0.12;
 }
 
-function getSweepSpeed(rarity: CardRarity): number {
+function _getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
     COMMON: 5,
     UNCOMMON: 4,
@@ -153,63 +160,182 @@ function getSweepSpeed(rarity: CardRarity): number {
 // ─── Component ──────────────────────────────────────────────────
 
 export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
-  ({ cardType, rarity: rarityStr, wikiSource, title, className }) => {
+  ({ cardType = "SPECIAL", category, rarity: rarityStr, wikiSource, title, designMetadata, isHovered = false, className }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+      if (!isHovered) return;
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      };
+      window.addEventListener("mousemove", handleMouseMove);
+      return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, [isHovered]);
+
     const rarity = getEffectiveRarity(rarityStr);
     const holoGradient = useMemo(() => getHoloGradient(rarity), [rarity]);
 
-    // Delegate to LoreCardHolographicCover for LORE cards
-    if (cardType === "LORE") {
+    // Check if category is a valid LoreCategory or if cardType is a LoreCategory
+    const resolvedCategory: LoreCategory | null =
+      (category && isValidLoreCategory(category) ? (category as LoreCategory) : null) ||
+      (isValidLoreCategory(cardType) ? (cardType as LoreCategory) : null);
+
+    // Delegate to LoreCardHolographicCover for LORE cards without explicit resolved category
+    if (cardType === "LORE" && !resolvedCategory) {
       return (
         <LoreCardHolographicCover
           rarity={rarityStr}
           wikiSource={wikiSource}
           title={title}
+          isHovered={isHovered}
           className={className}
         />
       );
     }
 
+    const categoryTheme = resolvedCategory ? getCategoryTheme(resolvedCategory) : null;
     const theme = CARD_TYPE_THEMES[cardType] ?? DEFAULT_THEME;
     const foilStamp = getFoilStampConfig(rarity);
-    const holoOpacity = getHoloOpacity(rarity);
-    const sweepDuration = getSweepSpeed(rarity);
+    const holoOpacity = isHovered ? getHoloOpacity(rarity) : getHoloOpacity(rarity) * 0.4;
 
     const showMotifs = rarity !== "COMMON";
 
     return (
-      <div className={cn("absolute inset-0 overflow-hidden select-none", className)}>
+      <div ref={containerRef} className={cn("absolute inset-0 overflow-hidden select-none", className)}>
         {/* Layer 1: Base gradient */}
-        <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
-
-        {/* Layer 2: Ink-flow ambient pattern */}
         <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(ellipse at 30% 20%, ${theme.accent} 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, ${theme.accentSoft} 0%, transparent 50%)
-            `,
-            backgroundSize: "200% 200%",
-            animation: "lore-ink-flow 12s ease-in-out infinite",
-            opacity: 0.6,
-          }}
+          className={cn(
+            "absolute inset-0 bg-gradient-to-br",
+            categoryTheme ? categoryTheme.gradient : theme.base
+          )}
         />
 
-        {/* Layer 3: Holographic pattern */}
+        {/* Layer 2: Category Pattern or Ink-flow ambient pattern */}
+        {categoryTheme ? (
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              background: categoryTheme.pattern,
+            }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(ellipse at 30% 20%, ${theme.accent} 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, ${theme.accentSoft} 0%, transparent 50%)
+              `,
+              backgroundSize: "200% 200%",
+              animation: isHovered ? "lore-ink-flow 12s ease-in-out infinite" : "none",
+              opacity: 0.6,
+            }}
+          />
+        )}
+
+        {/* Layer 2b: Custom Watermark Icon or Category Icon Watermark */}
+        {designMetadata?.watermarkIcon ? (
+          <div
+            className="pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-300 overflow-hidden"
+            style={{
+              opacity: designMetadata.watermarkOpacity ?? 0.35,
+              transform: `scale(${designMetadata.watermarkScale ?? 1.2})`,
+            }}
+          >
+            {designMetadata.watermarkColor ? (
+              <div
+                className="w-full h-full"
+                style={{
+                  maskImage: `url(${designMetadata.watermarkIcon.path})`,
+                  WebkitMaskImage: `url(${designMetadata.watermarkIcon.path})`,
+                  maskSize: "contain",
+                  WebkitMaskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center",
+                  backgroundColor: designMetadata.watermarkColor,
+                }}
+              />
+            ) : (
+              <img
+                src={designMetadata.watermarkIcon.path}
+                alt="Watermark"
+                className="w-full h-full object-contain filter invert opacity-90"
+              />
+            )}
+          </div>
+        ) : resolvedCategory ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 opacity-35">
+            <CategoryIcon
+              category={resolvedCategory}
+              treatment="watermark"
+              color={designMetadata?.watermarkColor || designMetadata?.accentColorOverride || categoryTheme?.accentColor}
+              className="max-h-[60%] max-w-[60%]"
+            />
+          </div>
+        ) : null}
+
+        {/* Layer 2c: Center Emblem Icon if provided */}
+        {designMetadata?.emblemIcon && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+            <div
+              className="relative flex items-center justify-center rounded-full p-6 transition-all duration-300"
+              style={{
+                transform: `scale(${designMetadata.emblemScale ?? 1.0})`,
+                background: "radial-gradient(circle, rgba(0,0,0,0.5) 0%, transparent 70%)",
+              }}
+            >
+              {designMetadata.emblemColor ? (
+                <div
+                  className="w-20 h-20"
+                  style={{
+                    maskImage: `url(${designMetadata.emblemIcon.path})`,
+                    WebkitMaskImage: `url(${designMetadata.emblemIcon.path})`,
+                    maskSize: "contain",
+                    WebkitMaskSize: "contain",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskPosition: "center",
+                    WebkitMaskPosition: "center",
+                    backgroundColor: designMetadata.emblemColor,
+                  }}
+                />
+              ) : (
+                <img
+                  src={designMetadata.emblemIcon.path}
+                  alt="Emblem"
+                  className="w-20 h-20 object-contain filter invert"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Layer 3: Holographic pattern with pointer backgroundPosition */}
         <div
           className="absolute inset-0"
           style={{
-            background: holoGradient,
+            backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
+            backgroundPosition: isHovered && containerRef.current
+              ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+              : "50% 50%",
             mixBlendMode: "overlay",
             opacity: holoOpacity,
             filter: theme.hueRotate ? `hue-rotate(${theme.hueRotate}deg)` : undefined,
-            animation: "holo-drift 10s ease-in-out infinite",
+            transition: "background-position 0.1s ease-out",
           }}
         />
 
         {/* Layer 4: Geometric motifs */}
-        {showMotifs && (
+        {showMotifs && !resolvedCategory && !designMetadata?.emblemIcon && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {/* Outer frame */}
             <div
@@ -219,7 +345,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
                 height: "75%",
                 borderColor: theme.accent,
                 borderWidth: "1px",
-                animation: "geo-spin 30s linear infinite",
+                animation: isHovered ? "geo-spin 30s linear infinite" : "none",
               }}
             />
             {/* Inner ornamental diamond */}
@@ -231,7 +357,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
                 border: `1px solid ${theme.accentSoft}`,
                 background: theme.accentSoft,
                 clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                animation: "geo-spin 35s linear infinite reverse",
+                animation: isHovered ? "geo-spin 35s linear infinite reverse" : "none",
               }}
             />
             {/* Center emblem for EPIC+ */}
@@ -250,29 +376,27 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
           </div>
         )}
 
-        {/* Layer 5: Foil shine sweep */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Layer 5: Specular Cursor Spotlight */}
+        {isHovered && (
           <div
-            className="absolute h-full"
+            className="pointer-events-none absolute inset-0 mix-blend-overlay transition-opacity duration-200"
             style={{
-              width: "50%",
-              top: 0,
-              background:
-                "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 55%, transparent 70%)",
-              animation: `foil-sweep ${sweepDuration}s ease-in-out infinite`,
+              background: `radial-gradient(circle 140px at ${mousePos.x}px ${mousePos.y}px, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 40%, transparent 80%)`,
             }}
           />
-        </div>
+        )}
 
-        {/* Layer 6: Center label */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <div className="space-y-1 px-4 text-center">
-            <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
-              {theme.label}
-            </p>
-            <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">{theme.sublabel}</p>
+        {/* Layer 6: Center label (if no resolved category watermark) */}
+        {!resolvedCategory && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <div className="space-y-1 px-4 text-center">
+              <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
+                {theme.label}
+              </p>
+              <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">{theme.sublabel}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }

@@ -1,7 +1,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { getOrCreateVault, earnCredits } from "~/lib/vault/vault-ledger";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
-import { grantCardXp } from "~/lib/card-xp-utils";
+import { grantCardXp } from "~/lib/cards";
 
 /**
  * Update login streak (increments or resets based on last login)

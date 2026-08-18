@@ -21,7 +21,7 @@ import { Redis } from "ioredis";
 import { initTRPC } from "@trpc/server";
 import { createHash } from "crypto";
 import type { createTRPCContext } from "~/server/api/trpc";
-import { memoryConfig } from "~/lib/dev-memory-config";
+import { memoryConfig } from "~/lib/system";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;

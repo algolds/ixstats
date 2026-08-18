@@ -17,7 +17,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import type { CardRarity } from "@prisma/client";
 import {
@@ -26,7 +26,7 @@ import {
   getPrismaticWaveGradient,
   getHolofoilTextureGradient,
   getFoilStampConfig,
-} from "~/lib/holographic-effects";
+} from "~/lib/themes";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ export interface LoreCardHolographicCoverProps {
   rarity: string;
   wikiSource?: string | null;
   title?: string;
+  isHovered?: boolean;
   className?: string;
 }
 
@@ -107,7 +108,7 @@ function getHoloOpacity(rarity: CardRarity): number {
   return map[rarity] ?? 0.12;
 }
 
-function getSweepSpeed(rarity: CardRarity): number {
+function _getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
     COMMON: 5,
     UNCOMMON: 4,
@@ -122,33 +123,49 @@ function getSweepSpeed(rarity: CardRarity): number {
 // ─── Component ──────────────────────────────────────────────────
 
 export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps>(
-  ({ rarity: rarityStr, wikiSource, title: _title, className }) => {
+  ({ rarity: rarityStr, wikiSource, title: _title, isHovered = false, className }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+      if (!isHovered) return;
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      };
+      window.addEventListener("mousemove", handleMouseMove);
+      return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, [isHovered]);
+
     const themeKey =
       wikiSource === "ixwiki" ? "ixwiki" : wikiSource === "iiwiki" ? "iiwiki" : "default";
     const theme = LORE_THEMES[themeKey]!;
     const rarity = getEffectiveRarity(rarityStr);
     const foilStamp = getFoilStampConfig(rarity);
-    const holoOpacity = getHoloOpacity(rarity);
-    const sweepDuration = getSweepSpeed(rarity);
+    const holoOpacity = isHovered ? getHoloOpacity(rarity) : getHoloOpacity(rarity) * 0.4;
     const holoGradient = useMemo(() => getHoloGradient(rarity), [rarity]);
 
     const showMotifs = rarity !== "COMMON";
 
     return (
-      <div className={cn("absolute inset-0 overflow-hidden select-none", className)}>
+      <div ref={containerRef} className={cn("absolute inset-0 overflow-hidden select-none", className)}>
         {/* Layer 1: Base gradient */}
         <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
 
-        {/* Layer 2: Ink-flow pattern (lore-specific slow drift) */}
+        {/* Layer 2: Ink-flow pattern */}
         <div
           className="lore-ink-flow absolute inset-0"
           style={{
-            background: `
-              radial-gradient(ellipse at 30% 20%, ${theme.accent} 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, ${theme.accentSoft} 0%, transparent 50%)
+            backgroundImage: `
+              radial-gradient(circle at 20% 30%, ${theme.accent} 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, ${theme.accentSoft} 0%, transparent 50%)
             `,
             backgroundSize: "200% 200%",
-            animation: "lore-ink-flow 12s ease-in-out infinite",
+            animation: isHovered ? "lore-ink-flow 12s ease-in-out infinite" : "none",
             opacity: 0.6,
           }}
         />
@@ -157,19 +174,22 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
         <div
           className="pack-holo-drift absolute inset-0"
           style={{
-            background: holoGradient,
+            backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
+            backgroundPosition: isHovered && containerRef.current
+              ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+              : "50% 50%",
             mixBlendMode: "overlay",
             opacity: holoOpacity,
             filter: theme.hueRotate ? `hue-rotate(${theme.hueRotate}deg)` : undefined,
-            animation: "holo-drift 10s ease-in-out infinite",
+            transition: "background-position 0.1s ease-out",
           }}
         />
 
         {/* Layer 4: Scroll / archive motifs */}
         {showMotifs && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            {/* Outer scroll frame — rounded rectangle outline */}
+            {/* Outer scroll frame */}
             <div
               className="pack-geo-spin absolute rounded-lg border"
               style={{
@@ -177,7 +197,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
                 height: "75%",
                 borderColor: theme.accent,
                 borderWidth: "1px",
-                animation: "geo-spin 30s linear infinite",
+                animation: isHovered ? "geo-spin 30s linear infinite" : "none",
               }}
             />
             {/* Inner ornamental diamond */}
@@ -189,7 +209,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
                 border: `1px solid ${theme.accentSoft}`,
                 background: theme.accentSoft,
                 clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                animation: "geo-spin 35s linear infinite reverse",
+                animation: isHovered ? "geo-spin 35s linear infinite reverse" : "none",
               }}
             />
             {/* Center scroll emblem for EPIC+ */}
@@ -208,19 +228,15 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
           </div>
         )}
 
-        {/* Layer 5: Foil shine sweep */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Layer 5: Specular Spotlight & Pointer-driven Foil Glare Sweep */}
+        {isHovered && (
           <div
-            className="pack-foil-sweep absolute h-full"
+            className="pointer-events-none absolute inset-0 mix-blend-overlay transition-opacity duration-200"
             style={{
-              width: "50%",
-              top: 0,
-              background:
-                "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 55%, transparent 70%)",
-              animation: `foil-sweep ${sweepDuration}s ease-in-out infinite`,
+              background: `radial-gradient(circle 140px at ${mousePos.x}px ${mousePos.y}px, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 40%, transparent 80%)`,
             }}
           />
-        </div>
+        )}
 
         {/* Layer 6: "Historical Archive" label at center */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">

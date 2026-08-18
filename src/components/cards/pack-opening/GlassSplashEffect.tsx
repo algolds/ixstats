@@ -6,7 +6,7 @@
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import type { CardRarity } from "@prisma/client";
-import { getParticleConfig } from "~/lib/holographic-effects";
+import { getParticleConfig } from "~/lib/themes";
 
 interface GlassSplashEffectProps {
   /** Card rarity determines particle count and colors */

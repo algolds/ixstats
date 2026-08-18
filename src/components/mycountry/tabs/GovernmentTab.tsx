@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatCompactCurrency, formatExactCurrency } from "~/lib/format-utils";
+import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, DollarSign, Crown } from "lucide-react";
@@ -17,7 +17,7 @@ import {
   useCountryData,
 } from "../primitives";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 import { CabinetPanel } from "~/components/executive/politics/CabinetPanel";

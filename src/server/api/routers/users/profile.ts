@@ -9,7 +9,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { UserManagementService } from "~/lib/auth";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 
 // Temporary storage for user-country mappings until we fix the User model
 

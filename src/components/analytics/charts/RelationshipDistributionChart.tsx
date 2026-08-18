@@ -11,7 +11,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recha
 import { Users, FileSpreadsheet, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import type { RelationshipDistribution } from "~/lib/analytics-data-transformers";
+import type { RelationshipDistribution } from "~/lib/utils";
 
 interface RelationshipDistributionChartProps {
   data: RelationshipDistribution[];

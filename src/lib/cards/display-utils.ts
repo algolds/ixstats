@@ -4,9 +4,7 @@
  * Phase 1: Card Display Components
  */
 
-import { CardRarity } from "~/lib/card-enums";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import type { CardType } from "~/lib/card-enums";
+import { CardRarity, type CardType } from "./enums";
 import type {
   CardInstance,
   FormattedStats,
@@ -22,9 +20,9 @@ import {
   getSpecialStatsForType,
   STAT_PROGRESSION,
   LEGACY_KEY_MAP,
-} from "~/lib/card-stat-config";
-import { formatCompactValue, normalizeSpecialStat } from "~/lib/format-number";
-import { computeSpecialStats, type SpecialStats } from "~/lib/special-stats-populator";
+} from "./stat-config";
+import { formatCompactValue, normalizeSpecialStat } from "~/lib/utils";
+import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
 
 /**
  * Rarity constants (matching database string values)
@@ -36,6 +34,8 @@ export const CARD_RARITIES = {
   ULTRA_RARE: "ULTRA_RARE",
   EPIC: "EPIC",
   LEGENDARY: "LEGENDARY",
+  MYTHIC: "MYTHIC",
+  DIVINE: "DIVINE",
 } as const;
 
 export type CardRarityType = (typeof CARD_RARITIES)[keyof typeof CARD_RARITIES];
@@ -60,32 +60,46 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     label: "Uncommon",
   },
   [CARD_RARITIES.RARE]: {
-    color: "text-cyan-400",
-    glowColor: "shadow-cyan-500/60",
+    color: "text-blue-400",
+    glowColor: "shadow-blue-500/60",
     glowIntensity: "shadow-lg",
-    borderColor: "border-cyan-500/40",
+    borderColor: "border-blue-500/40",
     label: "Rare",
   },
   [CARD_RARITIES.ULTRA_RARE]: {
-    color: "text-violet-400",
-    glowColor: "shadow-violet-500/70",
+    color: "text-cyan-400",
+    glowColor: "shadow-cyan-500/70",
     glowIntensity: "shadow-xl",
-    borderColor: "border-violet-500/50",
+    borderColor: "border-cyan-500/50",
     label: "Ultra Rare",
   },
   [CARD_RARITIES.EPIC]: {
-    color: "text-orange-400",
-    glowColor: "shadow-orange-500/80",
+    color: "text-purple-400",
+    glowColor: "shadow-purple-500/80",
     glowIntensity: "shadow-2xl",
-    borderColor: "border-orange-500/60",
+    borderColor: "border-purple-500/60",
     label: "Epic",
   },
   [CARD_RARITIES.LEGENDARY]: {
-    color: "text-yellow-300",
-    glowColor: "shadow-yellow-400/90",
+    color: "text-amber-400",
+    glowColor: "shadow-amber-400/90",
     glowIntensity: "shadow-2xl",
-    borderColor: "border-yellow-400/70",
+    borderColor: "border-amber-400/70",
     label: "Legendary",
+  },
+  [CARD_RARITIES.MYTHIC]: {
+    color: "text-rose-400",
+    glowColor: "shadow-rose-500/90",
+    glowIntensity: "shadow-2xl",
+    borderColor: "border-rose-500/80",
+    label: "Mythic",
+  },
+  [CARD_RARITIES.DIVINE]: {
+    color: "text-yellow-200",
+    glowColor: "shadow-yellow-200/100",
+    glowIntensity: "shadow-2xl",
+    borderColor: "border-yellow-200/90",
+    label: "Divine",
   },
 };
 
@@ -344,7 +358,7 @@ export function formatCardStats(card: CardInstance): FormattedStats {
  * @param size - Card display size
  * @returns Tailwind aspect ratio class
  */
-export function getCardAspectRatio(size: CardDisplaySize): string {
+export function getCardAspectRatio(_size: CardDisplaySize): string {
   // All sizes maintain the standard trading card aspect ratio
   return "aspect-[2.5/3.5]";
 }
@@ -491,4 +505,39 @@ export function getCardTypeLabel(type: string): string {
     COMMUNITY: "Community",
   };
   return labels[type] ?? type;
+}
+
+/**
+ * Format an 8-digit serial number for a card instance
+ */
+export function getCardSerialNumber(card?: CardInstance | null): string {
+  if (!card) return "00049281";
+  const rawCard = card as unknown as Record<string, unknown>;
+  if (rawCard.mintNumber) {
+    return String(rawCard.mintNumber).padStart(8, "0");
+  }
+  if (card.nsCardId) {
+    return String(card.nsCardId).padStart(8, "0");
+  }
+  if (card.id) {
+    let hash = 0;
+    for (let i = 0; i < card.id.length; i++) {
+      hash = (hash << 5) - hash + card.id.charCodeAt(i);
+      hash |= 0;
+    }
+    const num = Math.abs(hash % 90000000) + 10000000;
+    return String(num);
+  }
+  return "00049281";
+}
+
+/**
+ * Format edition label for a card instance
+ */
+export function getCardEditionLabel(card?: CardInstance | null): string {
+  if (!card) return "1ST EDITION";
+  if (card.season) {
+    return `SEASON ${card.season}`;
+  }
+  return "1ST EDITION";
 }

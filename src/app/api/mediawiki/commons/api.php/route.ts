@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimiter } from "~/lib/rate-limiter";
+import { rateLimiter } from "~/lib/cache";
 
 const ALLOWED_ACTIONS = ["query", "opensearch", "parse"] as const;
 type AllowedAction = (typeof ALLOWED_ACTIONS)[number];

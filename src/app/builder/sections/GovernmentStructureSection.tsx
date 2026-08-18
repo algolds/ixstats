@@ -10,7 +10,7 @@ import { GovernmentBuilder } from "~/components/government";
 import type { SectionContentProps } from "../types/builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { GovernmentBuilderState } from "~/types/government";
-import { formatExactCurrency } from "~/lib/format-utils";
+import { formatExactCurrency } from "~/lib/utils";
 
 interface GovernmentStructureSectionProps extends SectionContentProps {
   inputs: EconomicInputs;

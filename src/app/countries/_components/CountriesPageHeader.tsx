@@ -3,7 +3,7 @@
 
 import { Globe, BarChart3, Users } from "lucide-react";
 // Assuming Skeleton is in this path
-import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
+import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { ExpandableStatCard } from "~/components/ui/ExpandableStatCard";
 import dynamic from "next/dynamic";
 import { useMemo } from "react";

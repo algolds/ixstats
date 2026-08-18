@@ -25,7 +25,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { useCountryData } from "~/components/mycountry/primitives";
 import { useFactbookMetrics } from "~/components/mycountry/FactbookMetricsProvider";

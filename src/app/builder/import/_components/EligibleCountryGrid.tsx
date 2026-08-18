@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Globe, Search } from "lucide-react";
 import { api } from "~/trpc/react";
 import { BlurFade } from "~/components/magicui/blur-fade";
-import { formatPopulation } from "~/lib/chart-utils";
+import { formatPopulation } from "~/lib/utils";
 import { CountryStatsModal } from "./CountryStatsModal";
 
 interface EligibleCountryGridProps {

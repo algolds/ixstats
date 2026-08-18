@@ -6,7 +6,7 @@
 import { Redis } from "ioredis";
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
 
-import { memoryConfig } from "./dev-memory-config";
+import { memoryConfig } from "~/lib/system";
 
 // In-memory cache for fallback
 class InMemoryCache {

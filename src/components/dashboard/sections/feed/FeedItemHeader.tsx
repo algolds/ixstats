@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Clock, ExternalLink, Rss } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { formatTimeAgo } from "~/lib/time-utils";
+import { formatTimeAgo } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
 import { WikiHtmlContent, WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { cn } from "~/lib/utils";

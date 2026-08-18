@@ -29,7 +29,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 const EFFECT_TYPES = [
   { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" },

@@ -20,17 +20,17 @@ import {
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { createAbsoluteUrl } from "~/lib/url-utils";
-import { getNationUrl } from "~/lib/slug-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
+import { getNationUrl } from "~/lib/utils";
 import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   formatCompactNumber as _formatCompactNumber,
   // eslint-disable-next-line unused-imports/no-unused-imports
   formatCompactCurrency as _formatCompactCurrency,
-} from "~/lib/format-utils";
+} from "~/lib/utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { isStandaloneClient } from "~/lib/standalone-detection";
+import { isStandaloneClient } from "~/lib/system";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { PreText } from "~/components/ui/pretext";

@@ -3,8 +3,8 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { PackType, CardRarity } from "@prisma/client";
-import { getVaultConfig, vaultService } from "./vault-service";
-import { grantCardXp } from "./card-xp-utils";
+import { getVaultConfig, vaultService } from "~/lib/vault";
+import { grantCardXp } from "./xp-utils";
 
 /**
  * Pack odds validation - ensures all rarity odds sum to 100%

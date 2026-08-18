@@ -49,8 +49,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Security: Only allow NationStates domains
-    const allowedDomains = ["www.nationstates.net", "nationstates.net"];
+    // Security: Only allow trusted card image domains (NationStates & Wikimedia Commons)
+    const allowedDomains = [
+      "www.nationstates.net",
+      "nationstates.net",
+      "upload.wikimedia.org",
+      "commons.wikimedia.org",
+    ];
 
     let parsedUrl: URL;
     try {

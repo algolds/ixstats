@@ -9,7 +9,7 @@
  */
 
 import { db } from "~/server/db";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 import { IxTime } from "~/lib/ixtime";
 
 import type {

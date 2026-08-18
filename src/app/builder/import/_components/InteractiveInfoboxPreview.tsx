@@ -18,7 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
-import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { sanitizeWikiContent } from "~/lib/utils";
 import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
 
 interface InteractiveInfoboxPreviewProps {

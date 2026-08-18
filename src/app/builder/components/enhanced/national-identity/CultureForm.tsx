@@ -31,7 +31,7 @@ import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
-import { getCurrencyInfo } from "~/lib/format-utils";
+import { getCurrencyInfo } from "~/lib/utils";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),

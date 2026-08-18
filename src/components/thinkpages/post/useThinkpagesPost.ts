@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { usePermissions } from "~/hooks/usePermissions";
-import { extractHashtags, extractMentions } from "~/lib/text-formatter";
+import { extractHashtags, extractMentions } from "~/lib/utils";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { proxyDiscordUrl } from "./ThinkpagesPostUtils";
 

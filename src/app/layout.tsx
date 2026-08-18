@@ -15,7 +15,7 @@ import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/Chun
 import { ToastProvider } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
-import { isStandaloneRequest } from "~/lib/standalone-detection";
+import { isStandaloneRequest } from "~/lib/system";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { ConsentManager } from "../components/consent-manager";

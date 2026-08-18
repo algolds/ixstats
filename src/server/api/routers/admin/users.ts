@@ -6,8 +6,8 @@ import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/
 import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
 
-import { invalidateCache } from "~/lib/trpc-cache";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { invalidateCache } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 
 export const adminUsersRouter = createTRPCRouter({
   // Internal calculation formulas management

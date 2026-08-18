@@ -19,7 +19,7 @@ import {
   Sparkles,
   Palette,
 } from "lucide-react";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { cn } from "~/lib/utils";
 import type { BannerMode, BannerOption } from "../_types";

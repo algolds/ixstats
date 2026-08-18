@@ -30,3 +30,4 @@ export * from "./overlay-metrics";
 export * from "./overlay-registry";
 export * from "./overlay-types";
 export * from "./elevation-config";
+export * from "./editor-prefs";

@@ -20,13 +20,13 @@ import {
   getCardWidth,
   formatCardStats,
   getCardTypeLabel,
-} from "~/lib/card-display-utils";
+} from "~/lib/cards";
 import {
   getPremiumBorderConfig,
   getFoilStampConfig,
   getMetallicGradient,
-} from "~/lib/holographic-effects";
-import { proxyNSImage } from "~/lib/ns-image-proxy";
+} from "~/lib/themes";
+import { proxyNSImage } from "~/lib/cards";
 import { CardHolographicCover } from "./CardHolographicCover";
 import { RARITY_THEMES } from "./CardBack";
 import { NationStatesBadge } from "./NationStatesLogo";

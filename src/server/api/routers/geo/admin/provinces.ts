@@ -19,7 +19,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/province-importer/merge-plan";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 

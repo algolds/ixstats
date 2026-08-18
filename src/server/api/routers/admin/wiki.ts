@@ -6,8 +6,8 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 
-import { generateSlug } from "~/lib/slug-utils";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { generateSlug } from "~/lib/utils";
+import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
 import type { ScoringWeights } from "~/lib/lorewards";
 import * as mysql from "mysql2/promise";

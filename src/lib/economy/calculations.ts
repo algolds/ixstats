@@ -1,15 +1,15 @@
 // src/lib/calculations.ts
 // FIXED: Proper growth factor handling and updated tier classifications
 
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 import type {
   BaseCountryData,
   CountryStats,
   EconomicConfig,
   StorytellerEffect as StorytellerEffectRecord,
   HistoricalDataPoint,
-} from "../types/ixstats";
-import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils;
+} from "~/types/ixstats";
+import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {

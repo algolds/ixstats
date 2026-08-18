@@ -7,7 +7,7 @@ import { ExternalLink } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 
 /** Country row from getAll — intentionally loose for carousel display */

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { IxTime } from "~/lib/ixtime";
-import { formatTimeAgo } from "~/lib/time-utils";
+import { formatTimeAgo } from "~/lib/utils";
 
 type ThemeAccent = "amber" | "cyan" | "indigo" | "red" | "green" | "purple";
 

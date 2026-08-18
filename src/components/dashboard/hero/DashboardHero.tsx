@@ -17,7 +17,7 @@ import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { cn } from "~/lib/utils";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";

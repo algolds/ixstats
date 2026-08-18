@@ -3,7 +3,7 @@ import {
   computeCardValue,
   junkValue,
   rarityFloor,
-} from "~/lib/card-valuation";
+} from "~/lib/cards";
 
 describe("card-valuation", () => {
   test("NS junk common is lifted to the rarity floor, not stuck at NS bank value 1", () => {

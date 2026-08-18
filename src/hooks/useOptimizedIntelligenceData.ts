@@ -9,7 +9,7 @@ import type { Country, IntelligenceItem, VitalityIntelligence } from "~/types/in
 import type { DeliveryMethod } from "~/types/unified-notifications";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 interface OptimizedIntelligenceData {
   country: Country | null;

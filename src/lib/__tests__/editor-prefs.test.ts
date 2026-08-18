@@ -7,7 +7,7 @@ import {
   setSnapEnabled,
   getSnapTolerance,
   setSnapTolerance,
-} from "../editor-prefs";
+} from "~/lib/maps/editor-prefs";
 
 describe("editor-prefs — snap enabled", () => {
   test("default is true", () => {

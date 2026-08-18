@@ -21,7 +21,7 @@ import { PieChart as PieChartIcon, FileSpreadsheet, Download } from "lucide-reac
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import type { SectorPerformance } from "~/lib/analytics-data-transformers";
+import type { SectorPerformance } from "~/lib/utils";
 
 interface SectorPerformanceChartProps {
   data: SectorPerformance[];

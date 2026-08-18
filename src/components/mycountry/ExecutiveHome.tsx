@@ -31,7 +31,7 @@ import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { CommitmentsAgendaRail as _CommitmentsAgendaRail } from "./CommitmentsAgendaRail";
 import { V2CommandBriefingHero as CommandBriefingHero } from "./CommandBriefingHero";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";

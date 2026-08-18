@@ -77,7 +77,7 @@ export class MemoryOptimizer {
   static async clearAllCaches(): Promise<void> {
     try {
       // Clear advanced cache system
-      const { globalCache } = await import("./advanced-cache-system");
+      const { globalCache } = await import("~/lib/cache");
       await globalCache.clear();
       console.log("[MemoryOptimizer] Cleared globalCache");
 
@@ -92,7 +92,7 @@ export class MemoryOptimizer {
 
       // Clear tRPC memory cache
       try {
-        const { clearTrpcMemoryCache } = await import("./trpc-cache");
+        const { clearTrpcMemoryCache } = await import("~/lib/cache");
         clearTrpcMemoryCache();
         console.log("[MemoryOptimizer] Cleared trpcMemoryCache");
       } catch (error) {
@@ -591,7 +591,7 @@ export class ProductionStartup {
     console.log("[ProductionStartup] Warming up caches...");
 
     try {
-      const { globalCache } = await import("./advanced-cache-system");
+      const { globalCache } = await import("~/lib/cache");
       const { OptimizedCountryQueries } = await import("./database-optimizations");
       const { db } = await import("~/server/db");
 

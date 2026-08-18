@@ -18,7 +18,7 @@ import {
   Shuffle,
   Search,
 } from "lucide-react";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";

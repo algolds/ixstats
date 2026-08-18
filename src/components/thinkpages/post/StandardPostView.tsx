@@ -40,7 +40,7 @@ import { ThreadReplies } from "./ThreadReplies";
 import { LiveDataCard } from "../LiveDataCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
-import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
+import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
 import {

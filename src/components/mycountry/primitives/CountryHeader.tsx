@@ -3,7 +3,7 @@
 import { Crown, BarChart3, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface CountryHeaderProps {
   countryName: string;

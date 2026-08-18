@@ -1,4 +1,4 @@
-import { withBasePath } from "./base-path";
+import { withBasePath } from "~/lib/base-path";
 
 /**
  * Converts a card artwork URL to use our proxy endpoint if needed.
@@ -34,8 +34,8 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
     return withBasePath(`/api/mediawiki/althistory/${althistoryMatch[1]}`);
   }
 
-  // Handle NationStates URLs
-  if (artworkUrl.includes("nationstates.net")) {
+  // Handle NationStates & Wikimedia URLs (CORS / Same-Origin restricted)
+  if (artworkUrl.includes("nationstates.net") || artworkUrl.includes("wikimedia.org")) {
     const encodedUrl = encodeURIComponent(artworkUrl);
     return withBasePath(`/api/proxy-ns-image?url=${encodedUrl}`);
   }

@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
-import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
 interface CountryInfoTabProps {

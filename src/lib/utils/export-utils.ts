@@ -1,18 +1,14 @@
-import Papa from "papaparse";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-
 /**
  * Export data to CSV file
  * @param data - Array of objects to export
  * @param filename - Name of the file (without .csv extension)
  * @param columns - Optional array of column names/keys to include. If not provided, uses all keys from first object
  */
-export function exportDataToCSV<T extends Record<string, any>>(
+export async function exportDataToCSV<T extends Record<string, any>>(
   data: T[],
   filename: string,
   columns?: (keyof T)[]
-): void {
+): Promise<void> {
   if (!data || data.length === 0) {
     console.warn("No data to export");
     return;
@@ -31,6 +27,7 @@ export function exportDataToCSV<T extends Record<string, any>>(
   }
 
   // Convert to CSV
+  const Papa = (await import("papaparse")).default;
   const csv = Papa.unparse(processedData);
 
   // Create blob and download
@@ -74,6 +71,9 @@ export async function exportChartToPDF(
       console.error(`Element ${elementId} not found`);
       return;
     }
+
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
 
     // Capture the element as canvas
     const canvas = await html2canvas(element, {
@@ -133,6 +133,9 @@ export async function exportDashboardReport(
 ): Promise<void> {
   try {
     const { reportTitle, orientation = "landscape", quality = 0.95 } = options;
+
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
 
     const pdf = new jsPDF({
       orientation,
@@ -246,11 +249,11 @@ export async function exportDashboardReport(
  * @param filename - Name of the file
  * @param headerMap - Optional mapping of data keys to human-readable headers
  */
-export function exportTableToCSV<T extends Record<string, any>>(
+export async function exportTableToCSV<T extends Record<string, any>>(
   data: T[],
   filename: string,
   headerMap?: Record<keyof T, string>
-): void {
+): Promise<void> {
   if (!data || data.length === 0) {
     console.warn("No data to export");
     return;
@@ -269,5 +272,5 @@ export function exportTableToCSV<T extends Record<string, any>>(
     });
   }
 
-  exportDataToCSV(processedData, filename);
+  await exportDataToCSV(processedData, filename);
 }

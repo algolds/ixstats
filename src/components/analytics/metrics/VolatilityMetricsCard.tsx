@@ -10,7 +10,7 @@ import React from "react";
 import { Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import type { VolatilityMetric } from "~/lib/analytics-data-transformers";
+import type { VolatilityMetric } from "~/lib/utils";
 
 interface VolatilityMetricsCardProps {
   metrics: VolatilityMetric[];

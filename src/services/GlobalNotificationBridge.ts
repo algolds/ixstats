@@ -15,7 +15,7 @@ import type {
 import type { IntelligenceItem } from "~/types/intelligence-unified";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { IxTime } from "~/lib/ixtime";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 interface DataStreamEvent {
   type: "intelligence" | "economic" | "diplomatic" | "achievement" | "crisis";

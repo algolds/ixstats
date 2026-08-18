@@ -46,7 +46,7 @@ import {
   ArrowDown,
   Equal,
 } from "lucide-react";
-import { formatCurrency } from "~/lib/chart-utils";
+import { formatCurrency } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import { MetricModalLayout } from "./metric-details/MetricModalLayout";
 

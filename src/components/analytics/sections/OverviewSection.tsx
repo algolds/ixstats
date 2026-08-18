@@ -16,7 +16,7 @@ import type {
   SummaryMetric,
   EconomicChartDataPoint,
   EconomicHealthIndicator,
-} from "~/lib/analytics-data-transformers";
+} from "~/lib/utils";
 
 interface OverviewSectionProps {
   summaryMetrics: SummaryMetric[];

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimiter } from "~/lib/rate-limiter";
+import { rateLimiter } from "~/lib/cache";
 
 /**
  * SECURITY: Whitelist of allowed MediaWiki API actions

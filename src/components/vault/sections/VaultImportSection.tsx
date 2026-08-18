@@ -8,7 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { vaultNotify } from "~/lib/vault";
 import { Card, CardContent } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { proxyNSImage } from "~/lib/ns-image-proxy";
+import { proxyNSImage } from "~/lib/cards";
 import { ImportStepIndicator, type WizardStep } from "./import/ImportStepIndicator";
 import { ImportNationStep } from "./import/ImportNationStep";
 import { ImportVerifyStep } from "./import/ImportVerifyStep";

@@ -12,10 +12,17 @@
 import { mergeRouters } from "~/server/api/trpc";
 import { cardsBrowseRouter } from "./browse";
 import { cardsInventoryRouter } from "./inventory";
+import { cardsSettingsRouter } from "./settings";
+import { cardsAdminRouter } from "./admin";
 import { cardsCollectionsRouter } from "./collections";
+import { cardsOperationsRouter } from "./operations";
 
 export const cardsRouter = mergeRouters(
   cardsBrowseRouter,
   cardsInventoryRouter,
-  cardsCollectionsRouter
+  cardsSettingsRouter,
+  cardsAdminRouter,
+  cardsCollectionsRouter,
+  cardsOperationsRouter
 );
+

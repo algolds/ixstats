@@ -7,7 +7,7 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { getRarityColor, getRarityBg } from "../constants";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface ShowcaseTabProps {
   achievements: any[] | undefined;

@@ -15,7 +15,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
-import { rateLimiter } from "~/lib/rate-limiter";
+import { rateLimiter } from "~/lib/cache";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const UPLOAD_RATE_LIMIT = 10; // Max uploads per minute per user

@@ -9,7 +9,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 import { getVaultConfig, vaultService } from "~/lib/vault";
-import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import { computeCardValue, getValuationConfig } from "~/lib/cards";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault";
 import { generateNSImportDescription } from "~/lib/nationstates/import-service";
 

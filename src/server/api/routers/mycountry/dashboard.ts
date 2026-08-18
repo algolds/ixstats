@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, cachedPublicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 import {
   calculateVitalityScores,
   calculateAchievements,

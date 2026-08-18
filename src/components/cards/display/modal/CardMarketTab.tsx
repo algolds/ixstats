@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BarChart3, History, Package, Sparkles, Gift, ArrowRightLeft, ShoppingBag, Star } from "lucide-react";
+import { BarChart3, History, Package, Award, Gift, ArrowRightLeft, ShoppingBag, Star } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
@@ -97,7 +97,7 @@ export function CardMarketTab({
                 actionLabel = "Pulled from Card Pack";
                 colorClass = "bg-purple-500";
               } else if (event.action === "DAILY_CLAIM") {
-                icon = <Sparkles className="h-4 w-4 text-white" />;
+                icon = <Award className="h-4 w-4 text-white" />;
                 actionLabel = "Claimed as Daily Bonus";
                 colorClass = "bg-yellow-500";
               } else if (event.action === "GIFT") {

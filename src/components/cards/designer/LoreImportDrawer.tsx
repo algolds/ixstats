@@ -43,7 +43,7 @@ import {
 import { api } from "~/trpc/react";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { proxyCardArtwork } from "~/lib/cards";
 import type { CardDesignState } from "./types";
 import type { LoreCategory } from "~/lib/cards/category-enums";
 import type { CardRarity } from "@prisma/client";

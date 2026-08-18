@@ -31,7 +31,7 @@ import {
   snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
+import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;

@@ -4,8 +4,8 @@ import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 // Import from standalone query-monitor to avoid circular dependency with database-optimizations
-import { queryMonitor } from "~/lib/query-monitor";
-import { isDevMode } from "~/lib/dev-memory-config";
+import { queryMonitor } from "~/lib/system";
+import { isDevMode } from "~/lib/system";
 import { prismaErrorToAppError } from "~/lib/prisma-error";
 
 // Check if we're in read-only mode (development with production data)

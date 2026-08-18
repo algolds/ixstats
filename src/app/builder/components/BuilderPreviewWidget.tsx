@@ -24,7 +24,7 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
-import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
+import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 import { CountryPreview } from "../primitives/CountryPreview";
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
 import { useBuilderActions } from "../hooks/useBuilderActions";

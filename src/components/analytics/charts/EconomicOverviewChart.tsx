@@ -20,7 +20,7 @@ import { LineChart as LineChartIcon, FileSpreadsheet, Download } from "lucide-re
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import type { EconomicChartDataPoint } from "~/lib/analytics-data-transformers";
+import type { EconomicChartDataPoint } from "~/lib/utils";
 
 interface EconomicOverviewChartProps {
   data: EconomicChartDataPoint[];

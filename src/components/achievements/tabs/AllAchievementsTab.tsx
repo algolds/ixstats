@@ -22,7 +22,7 @@ import {
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { rarities, getTrophyTier, type TrophyTier } from "../constants";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 
 interface AllAchievementsTabProps {

@@ -7,7 +7,7 @@ import { Progress } from "~/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { PieChart, ChevronDown, ChevronRight } from "lucide-react";
 import type { BudgetAllocation, GovernmentDepartment } from "~/types/government";
-import { formatCurrency } from "~/lib/format-utils";
+import { formatCurrency } from "~/lib/utils";
 
 interface BudgetAllocationListProps {
   allocations: BudgetAllocation[];

@@ -11,7 +11,7 @@ import { motion } from "motion/react";
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import type { SummaryMetric } from "~/lib/analytics-data-transformers";
+import type { SummaryMetric } from "~/lib/utils";
 
 interface SummaryMetricsCardProps {
   metric: SummaryMetric;

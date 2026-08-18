@@ -6,7 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { navigateTo } from "~/lib/url-utils";
+import { navigateTo } from "~/lib/utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "motion/react";
 import {

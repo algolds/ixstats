@@ -9,7 +9,7 @@ import type {
   DeliveryMethod,
   NotificationPriority,
 } from "~/types/unified-notifications";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 // Base interface for all delivery handlers
 export interface DeliveryHandler {

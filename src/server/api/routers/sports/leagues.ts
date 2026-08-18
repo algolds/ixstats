@@ -1069,7 +1069,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         // Invalidate sports tRPC query caches
         try {
-          const { invalidateCache } = await import("~/lib/trpc-cache");
+          const { invalidateCache } = await import("~/lib/cache");
           await invalidateCache(["sports."]);
         } catch (cacheErr) {
           console.warn("Failed to invalidate sports cache:", cacheErr);
@@ -1365,7 +1365,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
   clearSportsCache: adminProcedure.mutation(async () => {
     try {
-      const { invalidateCache } = await import("~/lib/trpc-cache");
+      const { invalidateCache } = await import("~/lib/cache");
       await invalidateCache(["sports."]);
       return { success: true };
     } catch (error) {

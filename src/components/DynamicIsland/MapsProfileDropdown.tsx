@@ -3,7 +3,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { SignInButton } from "~/context/auth-context";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
-import { getNationUrl } from "~/lib/slug-utils";
+import { getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import { Crown, LogIn, Map, User } from "lucide-react";
 

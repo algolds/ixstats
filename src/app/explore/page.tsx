@@ -17,7 +17,7 @@ import CountriesSortBar from "../countries/_components/CountriesSortBar";
 import { CountryComparisonModal } from "../countries/_components/CountryComparisonModal";
 import { useCountryComparison } from "~/hooks/useCountryComparison";
 import { useAllCountriesData } from "~/hooks/useAllCountriesData";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 import type { PageCountryData } from "../countries/_components/CountriesGrid";
 

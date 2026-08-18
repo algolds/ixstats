@@ -12,7 +12,7 @@ import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { CommandSurface } from "./CommandSurface";
 
 function SectionErrorFallback({ sectionName, retry }: { sectionName: string; retry: () => void }) {

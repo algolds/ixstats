@@ -11,7 +11,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Lock, Crown, Layers, Package } from "lucide-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface QuestPathCardProps {
   path: {

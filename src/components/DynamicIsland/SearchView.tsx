@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Search, X, ChevronRight } from "lucide-react";
 import { UnifiedCountryFlag } from "../UnifiedCountryFlag";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import type { SearchViewProps, SearchFilter } from "./types";
 import { PreText } from "~/components/ui/pretext";
 

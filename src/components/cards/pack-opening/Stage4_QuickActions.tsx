@@ -6,9 +6,9 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pack-opening";
-import { getPackOpeningService } from "~/lib/pack-opening-service";
+import { getPackOpeningService } from "~/lib/cards";
 import { CardHolographicCover } from "../display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { proxyCardArtwork } from "~/lib/cards";
 
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];

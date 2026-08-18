@@ -8,7 +8,7 @@ import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
-import { formatCurrency, formatPercent } from "~/lib/format-utils";
+import { formatCurrency, formatPercent } from "~/lib/utils";
 import type { EconomicInputs } from "../../../../lib/economy-data-service";
 
 interface RevenueIntegration {

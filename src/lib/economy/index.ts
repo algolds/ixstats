@@ -26,3 +26,4 @@ export * from "./auction-service";
 export * from "./transport-costs";
 export * from "./transport-generator";
 export * from "./resource-generator";
+export * from "./calculations";

@@ -5,8 +5,8 @@ import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { createUrl } from "~/lib/url-utils";
-import { logger, LogCategory } from "~/lib/logger";
+import { createUrl } from "~/lib/utils";
+import { logger, LogCategory } from "~/lib/system";
 
 interface ErrorBoundaryState {
   hasError: boolean;

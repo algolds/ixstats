@@ -10,7 +10,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { validateNoXSS } from "~/lib/sanitize-html";
+import { validateNoXSS } from "~/lib/utils";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";

@@ -16,7 +16,7 @@ import {
   getCardImagePreset,
   getFallbackGradient,
   type CardImageType,
-} from "~/lib/card-image-presets";
+} from "~/lib/cards";
 import { useSimpleFlag } from "~/hooks/useSimpleFlag";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";

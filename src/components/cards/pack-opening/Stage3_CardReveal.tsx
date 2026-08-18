@@ -6,11 +6,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance } from "~/types/pack-opening";
-import { getPackOpeningService } from "~/lib/pack-opening-service";
+import { getPackOpeningService } from "~/lib/cards";
 import { GlassSplashEffect } from "./GlassSplashEffect";
-import { getParticleConfig } from "~/lib/holographic-effects";
+import { getParticleConfig } from "~/lib/themes";
 import { CardHolographicCover } from "../display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { proxyCardArtwork } from "~/lib/cards";
 
 interface Stage3_CardRevealProps {
   cards: CardInstance[];

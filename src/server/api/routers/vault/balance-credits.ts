@@ -15,7 +15,7 @@ import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/a
 import { vaultService } from "~/lib/vault";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { type VaultTransactionType } from "@prisma/client";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 
 /**
  * Vault transaction type enum for validation

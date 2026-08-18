@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import type { ValidationCategory as ValidationCategoryType } from "~/lib/system-validation";
-import { getStatusBgColor } from "~/lib/system-validation";
+import type { ValidationCategory as ValidationCategoryType } from "~/lib/system";
+import { getStatusBgColor } from "~/lib/system";
 import { ValidationResult } from "./ValidationResult";
 
 export const ValidationCategory = React.memo(function ValidationCategory({

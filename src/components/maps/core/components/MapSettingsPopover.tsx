@@ -12,7 +12,7 @@ import {
   setSnapEnabled,
   getSnapTolerance,
   setSnapTolerance,
-} from "~/lib/editor-prefs";
+} from "~/lib/maps/editor-prefs";
 
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;

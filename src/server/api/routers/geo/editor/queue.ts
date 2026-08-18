@@ -25,7 +25,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";

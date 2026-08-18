@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { safeFormatCurrency } from "~/lib/format-utils";
+import { safeFormatCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";

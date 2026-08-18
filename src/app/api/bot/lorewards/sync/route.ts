@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { recomputeUserStats } from "~/lib/lorewards";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

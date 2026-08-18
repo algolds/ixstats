@@ -4,7 +4,7 @@
  * Provides caching for external image APIs (Unsplash, flag services, Wikimedia Commons, etc.)
  */
 
-import { externalApiCache, type CacheMetadata, CACHE_TTL } from "~/lib/external-api-cache";
+import { externalApiCache, type CacheMetadata, CACHE_TTL } from "~/lib/cache";
 
 export interface CachedImage {
   url: string;

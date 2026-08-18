@@ -14,7 +14,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Activity, TrendingUp, Target, Globe, Zap, Building, Users, FileText } from "lucide-react";
 import { api } from "~/trpc/react";
-import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/export-utils";
+import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import {
   transformEconomicChartData,
@@ -34,7 +34,7 @@ import {
   type HistoricalDataPoint,
   type AnalyticsTrends,
   type AnalyticsVolatility,
-} from "~/lib/analytics-data-transformers";
+} from "~/lib/utils";
 
 // ===== TYPES =====
 

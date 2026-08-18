@@ -12,7 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -27,8 +27,60 @@ const CardDetailsModal = dynamic(
   { ssr: false }
 );
 
+const InventoryCardItem = React.memo(function InventoryCardItem({
+  card,
+  isSelected,
+  selectMode,
+  viewMode,
+  hideValue,
+  performanceMode,
+  onClick,
+}: {
+  card: CardInstance;
+  isSelected: boolean;
+  selectMode: boolean;
+  viewMode: ViewMode;
+  hideValue: boolean;
+  performanceMode: boolean;
+  onClick: (card: CardInstance) => void;
+}) {
+  const handleToggle = useCallback(() => {
+    onClick(card);
+  }, [card, onClick]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
+      className="relative"
+    >
+      {selectMode && (
+        <div className="absolute top-2 left-2 z-20">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={handleToggle}
+            className="h-6 w-6 border-2 border-white bg-black/60 backdrop-blur-sm"
+          />
+        </div>
+      )}
+      <CardDisplay
+        card={card}
+        size={viewMode === "compact" ? "small" : "medium"}
+        onClick={onClick}
+        hideValue={hideValue}
+        performanceMode={performanceMode}
+        className={cn(
+          "transition-all",
+          selectMode && isSelected && "ring-2 ring-amber-400 ring-offset-2 ring-offset-black"
+        )}
+      />
+    </motion.div>
+  );
+});
+
 export function InventoryTab({
-  ownerships,
+  ownerships: _ownerships,
   isLoading,
   allCards,
   viewMode,
@@ -82,6 +134,7 @@ export function InventoryTab({
   }, [allCards, filters]);
 
   const totalCards = allCards.length;
+  const isLargeGrid = filteredCards.length > 250;
 
   const handleCardClick = useCallback(
     (card: CardInstance) => {
@@ -101,51 +154,66 @@ export function InventoryTab({
   );
 
   return (
-    <div className="space-y-4">
-      {/* Bulk Actions */}
+    <div className="flex flex-col gap-6">
+      {/* Selection Action Bar */}
       <AnimatePresence>
-        {selectMode && selectedCards.size > 0 && (
+        {selectMode && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 left-1/2 z-50 w-full max-w-2xl -translate-x-1/2 px-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <Card className="glass-hierarchy-interactive rounded-2xl border-amber-500/40 bg-background/90 shadow-2xl backdrop-blur-xl dark:bg-black/90">
-              <CardContent className="p-3.5">
-                <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-                  <div className="flex items-center gap-3">
-                    <CheckSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    <span className="text-foreground text-sm font-bold">
-                      {selectedCards.size} card{selectedCards.size !== 1 ? "s" : ""} selected
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        vaultNotify.cardsBulkAction("Added to collection:", selectedCards.size);
-                        setSelectedCards(new Set());
-                        setSelectMode(false);
-                      }}
-                      className="h-8 text-xs"
-                    >
-                      <Folder className="mr-1.5 h-3.5 w-3.5" /> Collection
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        vaultNotify.cardsBulkAction("Listed for auction:", selectedCards.size);
-                        setSelectedCards(new Set());
-                        setSelectMode(false);
-                      }}
-                      className="h-8 text-xs"
-                    >
-                      <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> Sell
-                    </Button>
+            <Card className="glass-hierarchy-child border-amber-500/30 bg-amber-500/5">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-amber-400" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {selectedCards.size} card{selectedCards.size !== 1 ? "s" : ""} selected
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allKeys = filteredCards.map((c) => c.ownershipId || c.id);
+                      setSelectedCards(new Set(allKeys));
+                    }}
+                    className="h-8 text-xs"
+                  >
+                    Select All ({filteredCards.length})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedCards(new Set())}
+                    className="h-8 text-xs"
+                  >
+                    Deselect All
+                  </Button>
+
+                  <div className="h-4 w-px bg-border/60" />
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="h-8 text-xs text-muted-foreground opacity-50"
+                  >
+                    <Folder className="mr-1.5 h-3.5 w-3.5" /> Move
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="h-8 text-xs text-muted-foreground opacity-50"
+                  >
+                    <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> List Market
+                  </Button>
+
+                  <div className="flex items-center gap-2 border-l border-border/60 pl-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -153,7 +221,7 @@ export function InventoryTab({
                         const ownershipIds = Array.from(selectedCards);
                         junkCardsMutation.mutate({ ownershipIds });
                       }}
-                      disabled={junkCardsMutation.isPending}
+                      disabled={junkCardsMutation.isPending || selectedCards.size === 0}
                       className="h-8 text-xs text-red-400 hover:bg-red-500/10"
                     >
                       {junkCardsMutation.isPending ? (
@@ -166,17 +234,6 @@ export function InventoryTab({
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Junk
                         </>
                       )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedCards(new Set());
-                        setSelectMode(false);
-                      }}
-                      className="h-8 text-xs"
-                    >
-                      Cancel
                     </Button>
                   </div>
                 </div>
@@ -221,37 +278,21 @@ export function InventoryTab({
                 "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             )}
           >
-            {filteredCards.map((card) => (
-              <motion.div
-                key={card.ownershipId || card.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className="relative"
-              >
-                {selectMode && (
-                  <div className="absolute top-2 left-2 z-20">
-                    <Checkbox
-                      checked={selectedCards.has(card.ownershipId || card.id)}
-                      onCheckedChange={() => handleCardClick(card)}
-                      className="h-6 w-6 border-2 border-white bg-black/60 backdrop-blur-sm"
-                    />
-                  </div>
-                )}
-                <CardDisplay
+            {filteredCards.map((card) => {
+              const key = card.ownershipId || card.id;
+              return (
+                <InventoryCardItem
+                  key={key}
                   card={card}
-                  size={viewMode === "compact" ? "small" : "medium"}
-                  onClick={handleCardClick}
+                  isSelected={selectedCards.has(key)}
+                  selectMode={selectMode}
+                  viewMode={viewMode}
                   hideValue={hideValue}
-                  className={cn(
-                    "transition-all",
-                    selectMode &&
-                      selectedCards.has(card.ownershipId || card.id) &&
-                      "ring-2 ring-amber-400 ring-offset-2 ring-offset-black"
-                  )}
+                  performanceMode={isLargeGrid}
+                  onClick={handleCardClick}
                 />
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
         {!isLoading && filteredCards.length > 0 && (

@@ -5,7 +5,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { ixnayWiki } from "~/lib/wiki/legacy-service";
 import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki/entity-parser";

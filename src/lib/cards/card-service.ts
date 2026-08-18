@@ -3,8 +3,8 @@
 
 import { type PrismaClient, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { CardType, CardRarity } from "~/lib/card-enums";
-import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import { CardType, CardRarity } from "./enums";
+import { computeCardValue, getValuationConfig } from "./valuation";
 import type { ArtworkVariants, CardStatsData, CardEnhancementsData } from "~/types/cards-display";
 
 /**
@@ -67,7 +67,7 @@ export interface CardStats {
 /**
  * Rarity calculation input for nation cards
  */
-interface NationCardInput {
+export interface NationCardInput {
   economicTier: number;
   leaderboardRank?: number;
   achievementCount: number;
@@ -78,7 +78,7 @@ interface NationCardInput {
 /**
  * Rarity calculation input for lore cards
  */
-interface LoreCardInput {
+export interface LoreCardInput {
   articleLength: number;
   referenceCount: number;
   isFeatured: boolean;

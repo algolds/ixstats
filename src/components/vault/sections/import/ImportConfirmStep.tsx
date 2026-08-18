@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import NumberFlow from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { proxyCardArtwork } from "~/lib/cards";
 
 export interface ImportResult {
   cardsImported: number;

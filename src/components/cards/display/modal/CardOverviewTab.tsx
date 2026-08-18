@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { getOwnerCount } from "~/lib/card-display-utils";
+import { getOwnerCount } from "~/lib/cards";
 import type { CardInstance, FormattedStats, CardAuthorInfo } from "~/types/cards-display";
 import { CategoryIcon } from "~/components/cards/icons";
 import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, LoreCategory } from "~/lib/cards";

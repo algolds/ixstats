@@ -5,10 +5,10 @@ import { useState } from "react";
 import { User, Crown, Home, ChevronDown, LogOut, AlertCircle, Settings, Link2 } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { createAbsoluteUrl } from "~/lib/url-utils";
-import { getNationUrl } from "~/lib/slug-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
+import { getNationUrl } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { isStandaloneClient } from "~/lib/standalone-detection";
+import { isStandaloneClient } from "~/lib/system";
 
 interface UserProfileMenuProps {
   user: any;

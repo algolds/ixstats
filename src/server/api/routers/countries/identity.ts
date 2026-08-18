@@ -3,7 +3,7 @@ import { publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from 
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { isSystemOwner } from "~/lib/auth";
 import { fetchWikiIntro } from "./utils";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 export const identityProcedures = {

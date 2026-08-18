@@ -12,7 +12,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import * as LucideIcons from "lucide-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
-import { sanitizeHtml } from "~/lib/sanitize-html";
+import { sanitizeHtml } from "~/lib/utils";
 
 interface PostCardProps {
   postId: number;

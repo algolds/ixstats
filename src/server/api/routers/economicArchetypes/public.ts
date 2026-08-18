@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
-import { memoryConfig } from "~/lib/dev-memory-config";
+import { memoryConfig } from "~/lib/system";
 
 // Import hardcoded fallback data
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";

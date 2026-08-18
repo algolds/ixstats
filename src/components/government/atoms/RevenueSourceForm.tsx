@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { formatExactCurrency } from "~/lib/format-utils";
+import { formatExactCurrency } from "~/lib/utils";
 import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";

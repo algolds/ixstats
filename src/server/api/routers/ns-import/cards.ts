@@ -10,7 +10,7 @@ import { createTRPCRouter, protectedProcedure, adminProcedure, publicProcedure }
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { nsImportService } from "~/lib/nationstates/import-service";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
-import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import { computeCardValue, getValuationConfig } from "~/lib/cards";
 import { Prisma } from "@prisma/client";
 
 // ─── Background Processing Functions ──────────────────────────────

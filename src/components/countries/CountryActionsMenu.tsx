@@ -34,7 +34,7 @@ import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 interface CountryActionsMenuProps {

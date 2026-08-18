@@ -17,7 +17,7 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "~/component
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, displayGrowthRate } from "~/lib/utils";
 import { getTierStyle } from "~/lib/themes";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import type { VariantProps } from "class-variance-authority";

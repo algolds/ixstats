@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { formatTimeAgo } from "~/lib/time-utils";
+import { formatTimeAgo } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
 export interface FeedGroupedDrawerProps {

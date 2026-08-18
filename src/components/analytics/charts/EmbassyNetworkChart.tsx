@@ -19,7 +19,7 @@ import {
 import { Building } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import type { EconomicChartDataPoint } from "~/lib/analytics-data-transformers";
+import type { EconomicChartDataPoint } from "~/lib/utils";
 
 interface EmbassyNetworkChartProps {
   data: Array<EconomicChartDataPoint & { embassies: number }>;

@@ -101,7 +101,7 @@ class UnsplashService {
 
     if (typeof window === "undefined") {
       try {
-        const { externalApiCache } = await import("~/lib/external-api-cache");
+        const { externalApiCache } = await import("~/lib/cache");
         const dbCached = await externalApiCache.get<UnsplashImageData[]>({
           service: "unsplash",
           type: "json",
@@ -171,7 +171,7 @@ class UnsplashService {
 
       if (typeof window === "undefined") {
         try {
-          const { externalApiCache } = await import("~/lib/external-api-cache");
+          const { externalApiCache } = await import("~/lib/cache");
           await externalApiCache.set<UnsplashImageData[]>(
             {
               service: "unsplash",

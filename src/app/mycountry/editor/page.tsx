@@ -3,7 +3,7 @@
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { LoadingState } from "~/components/shared/feedback/LoadingState";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";

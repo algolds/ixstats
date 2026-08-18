@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 
@@ -21,7 +21,7 @@ import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { isStandaloneClient } from "~/lib/standalone-detection";
+import { isStandaloneClient } from "~/lib/system";
 
 // Extracted sub-components
 import { MapsProfileDropdown } from "./MapsProfileDropdown";

@@ -15,7 +15,7 @@ import {
   ExternalLink,
   BookOpen,
 } from "lucide-react";
-import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
+import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -24,7 +24,7 @@ import { GlassCard } from "~/components/ui/enhanced-card";
 import { FastAverageColor } from "fast-average-color";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 export interface CountryData {
   id: string;

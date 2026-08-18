@@ -15,7 +15,7 @@ import {
 import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/services/wiki-cache-service";
 import { extractDataFromWikiSections } from "~/app/builder/lib/wiki-data-extractor";
 import { getArticleWikitext } from "~/lib/wiki/bridge";
-import { withRetrySafe } from "~/lib/with-retry";
+import { withRetrySafe } from "~/lib/system";
 import type { WikiSource } from "~/lib/wiki/config";
 
 function getApiBaseUrl(wikiSource: string): string {

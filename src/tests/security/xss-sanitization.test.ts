@@ -12,7 +12,7 @@ import {
   escapeHtml,
   stripHtml,
   validateNoXSS,
-} from "~/lib/sanitize-html";
+} from "~/lib/utils";
 
 describe("XSS Sanitization Test Suite", () => {
   describe("sanitizeUserContent() - Strict User Content", () => {

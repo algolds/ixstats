@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { formatCompactCurrency } from "~/lib/format-utils";
+import { formatCompactCurrency } from "~/lib/utils";
 import {
   DollarSign,
   Calculator,

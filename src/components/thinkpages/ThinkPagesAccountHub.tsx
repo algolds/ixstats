@@ -12,7 +12,7 @@ import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 function ThinkPagesAccountHubInner() {
   const { user } = useUser();

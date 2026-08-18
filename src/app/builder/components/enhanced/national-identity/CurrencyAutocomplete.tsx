@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Coins } from "lucide-react";
 import { CurrencySelector, CurrencyInput } from "~/components/ui/currency-selector";
 import { api } from "~/trpc/react";
-import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/format-utils";
+import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/utils";
 
 const QUICK_CURRENCIES = [
   { code: "USD", symbol: "$", label: "US Dollar" },

@@ -19,7 +19,7 @@ import { db, isDatabaseReadOnly } from "~/server/db";
 // Gate verbose logging behind env var to reduce GC pressure from string allocation
 // Set TRPC_VERBOSE=true to enable detailed logging for debugging
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
-import { rateLimiter } from "~/lib/rate-limiter";
+import { rateLimiter } from "~/lib/cache";
 import {
   AppError,
   // eslint-disable-next-line unused-imports/no-unused-imports
@@ -34,7 +34,7 @@ import {
 import { userLoggingMiddleware } from "~/lib/logging";
 import { UserManagementService } from "~/lib/auth";
 import { isSystemOwner } from "~/lib/auth";
-import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";
+import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/cache";
 
 /**
  * 1. CONTEXT

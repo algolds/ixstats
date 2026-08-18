@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
-import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { toTitleCase } from "~/lib/utils";
 import type { SelectedCountry } from "../IxWorldMap";

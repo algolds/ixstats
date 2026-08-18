@@ -10,6 +10,39 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 8 Caching, System & Utils Package Partitioning)
+
+- **Pure Root Architecture & System Isolation (/ponytail)**:
+  - **Caching & Rate Limiting Subsystem (`src/lib/cache/`)**: Consolidated universal Redis/memory cache client, token-bucket rate limiter, multi-tier advanced cache with stampede protection, outbound HTTP cache, and tRPC query response middleware into `src/lib/cache/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/cache/index.ts)).
+  - **System, Performance & Telemetry Guards (`src/lib/system/`)**: Consolidated structured JSON logger, slow query instrumentation monitor, system boot validation checks, database connection pool optimization, production compression/headers, V8 memory configurations, process error handlers, exponential retry wrappers, standalone subdomain detectors, browser localStorage concurrency mutexes, and consent telemetry helpers into `src/lib/system/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/system/index.ts)).
+  - **Universal Formatting & Data Utilities (`src/lib/utils/`)**: Consolidated compact number/currency formatters, locale date utilities, Recharts canvas utilities, time-series chart data transformers, CSV/PDF report exporter with dynamic imports, HTML/DOMPurify sanitizers, markdown text formatters, and URL/slug generators into `src/lib/utils/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/utils/index.ts)).
+  - **Minimalist `src/lib/` Root (14 Files Only)**:
+    - **Core Architecture**: `app-error.ts`, `prisma-error.ts`, `buildVersion.ts`, `buildVersion.generated.ts`, `base-path.ts`, `enums.ts`.
+    - **Type Normalization**: `type-guards.ts`, `interface-standardizer.ts`.
+    - **Platform Config**: `config-service.ts`, `navigation-config.ts`, `event-bus.ts`, `gameplay-flags.ts`, `gameplay-flags.test.ts`, `README.md`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (603/603 full-platform tests passing across 53 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 7 IxCards & Pack Engine Isolation)
+
+- **IxCards System & Pack Architecture Isolation (/ponytail)**:
+  - **Cards Core Subsystem (`src/lib/cards/`)**: Consolidated 12 card subsystem files into `src/lib/cards/`:
+    - `display-utils.ts`: Card visual rendering, rarity formatting, badge generators, and frame shaders.
+    - `enums.ts`: Card types, rarities, foil types, trade statuses, and card condition constants.
+    - `general-settings.ts`: Global cards system configuration, pack generation limits, and season settings.
+    - `image-presets.ts`: Card aspect ratios, frame templates, and backdrop blur filters.
+    - `pack-service.ts`: Pack purchase workflow, card rolling, pity system mechanics, and drop tables.
+    - `card-service.ts`: Card minting, instance generation, inventory queries, and upgrade mutations.
+    - `stat-config.ts`: Card combat and economic stat configurations.
+    - `valuation.ts`: Card market pricing algorithm, rarity floors, and NS import valuation models.
+    - `xp-utils.ts`: Card XP progression, level curves, and battle experience calculators.
+    - `season.ts`: Active card season cycle detector and seasonal reset configuration.
+    - `pack-opening-service.ts`: Pack explosion animations, card reveal particle patterns, and sound triggers.
+    - `ns-image-proxy.ts`: NationStates card artwork and flag proxy URL signing.
+    - Master barrel export updated in [`src/lib/cards/index.ts`](file:///home/jxsig/projects/ixstats/src/lib/cards/index.ts).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 50+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/lib/`, `src/types/`, and `scripts/` to import from `~/lib/cards`, completely deleting all 12 legacy root files from `src/lib/`.
+  - **Zero Card Files in Root Lib**: All card-related logic is completely encapsulated within `src/lib/cards/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (563/563 full-platform tests passing across 50 test suites).
+
 ### Refactored & Consolidated (`src/lib/` Phase 6 Wiki, Country-Geo, Auth & AI Isolation)
 
 - **Domain Isolation & Root Library Completion (/ponytail)**:

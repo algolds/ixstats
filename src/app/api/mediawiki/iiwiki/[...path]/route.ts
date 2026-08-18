@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { externalApiCache } from "~/lib/external-api-cache";
+import { externalApiCache } from "~/lib/cache";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

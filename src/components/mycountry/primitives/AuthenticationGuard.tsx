@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Crown, Globe, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 interface AuthenticationGuardProps {
   children: React.ReactNode;

@@ -6,7 +6,7 @@ import { BookOpen } from "lucide-react";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
-import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
+import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import {
   PostInlineLinkPreview,
   getInlinePreviewLink,

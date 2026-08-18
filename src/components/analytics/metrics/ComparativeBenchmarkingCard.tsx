@@ -10,7 +10,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import type { ComparativeBenchmark } from "~/lib/analytics-data-transformers";
+import type { ComparativeBenchmark } from "~/lib/utils";
 
 interface ComparativeBenchmarkingCardProps {
   data: ComparativeBenchmark[];

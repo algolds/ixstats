@@ -4,8 +4,8 @@ import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { notificationAPI } from "~/lib/notifications/api";
-import { validateNoXSS } from "~/lib/sanitize-html";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { validateNoXSS } from "~/lib/utils";
+import { globalCache } from "~/lib/cache";
 
 const invalidateFeeds = async () => {
   try {

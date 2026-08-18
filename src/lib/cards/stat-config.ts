@@ -1,4 +1,4 @@
-import type { CardType } from "~/lib/card-enums";
+import type { CardType } from "./enums";
 
 export interface CardStatDef {
   key: string;

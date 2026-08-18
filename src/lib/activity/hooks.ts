@@ -3,7 +3,7 @@
 
 import { db } from "~/server/db";
 import { ActivityGenerator } from "./generator";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { notificationHooks } from "~/lib/notifications";
 import { eventBus } from "~/lib/event-bus";
 

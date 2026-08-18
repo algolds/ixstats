@@ -3,8 +3,8 @@
 import React from "react";
 import { CheckCircle, AlertTriangle, XCircle, Loader2, Clock } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import type { CheckStatus, ValidationCheck } from "~/lib/system-validation";
-import { getStatusColor } from "~/lib/system-validation";
+import type { CheckStatus, ValidationCheck } from "~/lib/system";
+import { getStatusColor } from "~/lib/system";
 
 function StatusIcon({ status }: { status: CheckStatus }) {
   const className = `h-4 w-4 ${getStatusColor(status)}`;

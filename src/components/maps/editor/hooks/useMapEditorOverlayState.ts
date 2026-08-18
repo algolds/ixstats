@@ -16,7 +16,7 @@ import {
   setSnapEnabled as persistSnapEnabled,
   getSnapTolerance,
   setSnapTolerance as persistSnapTolerance,
-} from "~/lib/editor-prefs";
+} from "~/lib/maps/editor-prefs";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";

@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface BuilderSidebarLayoutProps {
   children: ReactNode;

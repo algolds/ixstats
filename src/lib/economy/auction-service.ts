@@ -18,7 +18,7 @@ import { vaultService, getVaultConfig } from "~/lib/vault";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
-import { grantCardXp } from "~/lib/card-xp-utils";
+import { grantCardXp } from "~/lib/cards";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth";
 
 // market-websocket-server is marked `server-only`; importing it in a pure backend

@@ -1,4 +1,4 @@
-import { SPECIAL_NORMALIZATION } from "~/lib/card-stat-config";
+import { SPECIAL_NORMALIZATION } from "~/lib/cards";
 
 export function formatCompactValue(value: number): string {
   if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(1)}T`;

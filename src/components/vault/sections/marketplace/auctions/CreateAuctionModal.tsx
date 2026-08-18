@@ -8,7 +8,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { proxyCardArtwork } from "~/lib/cards";
 import { vaultNotify } from "~/lib/vault";
 import {
   Dialog,

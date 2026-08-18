@@ -5,7 +5,7 @@ import { compositionSchema } from "~/lib/heraldry/composition-schema";
 import { validateComposition } from "~/lib/heraldry/validation";
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import { isSystemOwner } from "~/lib/auth";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 export const heraldryMutationsRouter = createTRPCRouter({

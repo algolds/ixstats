@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
-import { formatPopulation } from "~/lib/chart-utils";
+import { formatPopulation } from "~/lib/utils";
 import { UsersIcon } from "~/components/ui/users";
 import { TrendingUpIcon } from "~/components/ui/trending-up";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";

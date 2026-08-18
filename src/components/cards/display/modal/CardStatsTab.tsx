@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Star, Sparkles } from "lucide-react";
+import { Star, Zap } from "lucide-react";
 import type { CardInstance, FormattedStats } from "~/types/cards-display";
 
 export interface CardStatsTabProps {
@@ -72,7 +72,7 @@ export function CardStatsTab({ card, stats }: CardStatsTabProps) {
       {stats.specials.length > 0 && (
         <div className="mt-8 space-y-4">
           <h4 className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <Sparkles className="h-4 w-4" />
+            <Zap className="h-4 w-4 text-amber-500" />
             Special Stats
           </h4>
           <div className="space-y-4">

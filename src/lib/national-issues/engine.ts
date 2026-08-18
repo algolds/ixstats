@@ -22,7 +22,7 @@
  */
 
 import { IxTime } from "~/lib/ixtime";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import {
   calculateCivilServiceCapacity,

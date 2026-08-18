@@ -33,3 +33,6 @@ export type { HolographicOverlayProps } from "./HolographicOverlay";
 
 export { NationStatesLogo, NationStatesBadge, NATIONSTATES_LOGO_URL } from "./NationStatesLogo";
 export type { NationStatesLogoProps } from "./NationStatesLogo";
+
+export { IIWikiLogo, IIWikiBadge, IIWIKI_LOGO_URL, isIIWikiCard } from "./IIWikiLogo";
+export type { IIWikiLogoProps } from "./IIWikiLogo";

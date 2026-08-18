@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Crown, Briefcase, Globe, Shield, X, Gavel } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";

@@ -10,7 +10,7 @@ import {
   invalidateConfigCache,
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
-import { IxStatsCalculator } from "~/lib/calculations";
+import { IxStatsCalculator } from "~/lib/economy/calculations";
 import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
 import { prepareBaseCountryData, getCountryComponentsStatsData } from "../countries/utils";
 

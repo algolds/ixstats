@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Eye, BookOpen, Activity } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import type { ProfileTabType } from "../_types";
 
 export type TabType = ProfileTabType;

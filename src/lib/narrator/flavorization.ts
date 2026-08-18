@@ -1,5 +1,5 @@
 import { queryLLM } from "./client";
-import { externalApiCache } from "../external-api-cache";
+import { externalApiCache } from "~/lib/cache";
 import { buildCanonContext, formatCanonContext, canonContextHash } from "./canon-context";
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "./constants";

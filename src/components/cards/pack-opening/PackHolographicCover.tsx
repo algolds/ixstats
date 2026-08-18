@@ -27,7 +27,7 @@ import {
   getHolofoilTextureGradient,
   getFoilStampConfig,
   getEmbossedTextShadow,
-} from "~/lib/holographic-effects";
+} from "~/lib/themes";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -273,7 +273,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
           <div
             className="pack-holo-drift pointer-events-none absolute inset-0"
             style={{
-              background: holoGradient,
+              backgroundImage: holoGradient,
               backgroundSize: "400% 400%",
               mixBlendMode: "color-dodge",
               opacity: isInteractive ? "calc(var(--opacity) * 0.7 + 0.1)" : holoOpacity,
@@ -285,6 +285,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               transition: "opacity 0.3s ease",
             }}
           />
+
 
           {/* Layer 7: PDS Custom Foil Overlay */}
           {packArtwork && packArtwork.endsWith(".svg") && (

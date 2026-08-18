@@ -5,7 +5,7 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import {
   SplashHero,
   SplashLiveFeed,

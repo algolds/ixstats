@@ -20,7 +20,7 @@ import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as LucideIcons from "lucide-react";
 import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import {
@@ -29,7 +29,7 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
-import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
+import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 

@@ -27,11 +27,11 @@ export function CardGalleryTab({
   rarity,
   cteFilter,
   sortBy,
-  onSourceChange,
-  onSearchChange,
-  onSeasonChange,
-  onRarityChange,
-  onSortByChange,
+  onSourceChange: _onSourceChange,
+  onSearchChange: _onSearchChange,
+  onSeasonChange: _onSeasonChange,
+  onRarityChange: _onRarityChange,
+  onSortByChange: _onSortByChange,
 }: {
   source: GallerySource;
   search: string;
@@ -232,9 +232,9 @@ export function CardGalleryTab({
                 key={card.id}
                 card={card}
                 size="medium"
-                onClick={(c) => {
-                  setSelectedCard(c);
-                }}
+                enable3D={true}
+                performanceMode={false}
+                onClick={setSelectedCard}
               />
             ))}
           </div>

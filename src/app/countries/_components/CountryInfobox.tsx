@@ -26,7 +26,7 @@ import type { CountryInfobox as CountryInfoboxType } from "~/lib/wiki/legacy-ser
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
-import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import {
   CardHeader,
