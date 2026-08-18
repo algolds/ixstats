@@ -27,8 +27,8 @@ export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 2,
-    patch: 7,
+    minor: 3,
+    patch: 0,
     release: "Ogma",
     channel: "Beta" as ReleaseChannel,
   },
