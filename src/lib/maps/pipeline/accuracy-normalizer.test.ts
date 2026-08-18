@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { generateWorld } from "../worldgen/engine";
+import { generateWorld } from "~/lib/worldgen/engine";
 import { evaluateWorldAccuracy, auditWorldGenerationBatch } from "./accuracy-normalizer";
 
 describe("accuracy-normalizer", () => {

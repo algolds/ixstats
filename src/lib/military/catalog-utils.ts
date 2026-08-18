@@ -87,16 +87,22 @@ export const DEFAULT_EQUIPMENT_FORM: EquipmentFormData = {
   isActive: true,
 };
 
+export interface FilterableEquipmentItem {
+  subcategory?: string | null;
+  technologyLevel?: number | null;
+  acquisitionCost?: number | null;
+}
+
 /**
  * Filters catalog equipment by subcategory, tech-level range, and cost range.
  * The category/era/search filters are applied server-side via the tRPC query.
  */
-export function filterEquipment(
-  equipmentData: any[] | undefined,
+export function filterEquipment<T extends FilterableEquipmentItem>(
+  equipmentData: T[] | undefined,
   subcategoryFilter: string,
   techLevelRange: [number, number],
   costRange: [number, number]
-): any[] {
+): T[] {
   if (!equipmentData) return [];
 
   return equipmentData.filter((item) => {
@@ -104,11 +110,13 @@ export function filterEquipment(
     if (subcategoryFilter !== "all" && item.subcategory !== subcategoryFilter) return false;
 
     // Tech level filter
-    if (item.technologyLevel < techLevelRange[0]! || item.technologyLevel > techLevelRange[1]!)
+    const techLevel = item.technologyLevel ?? 0;
+    if (techLevel < techLevelRange[0]! || techLevel > techLevelRange[1]!)
       return false;
 
     // Cost filter
-    if (item.acquisitionCost < costRange[0]! || item.acquisitionCost > costRange[1]!) return false;
+    const cost = item.acquisitionCost ?? 0;
+    if (cost < costRange[0]! || cost > costRange[1]!) return false;
 
     return true;
   });

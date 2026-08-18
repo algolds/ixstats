@@ -29,7 +29,7 @@ export interface FPImpact {
   targetTradeExposure: number;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+import { clamp } from "~/lib/utils";
 
 export function computeForeignPolicyImpact(args: {
   initiator: FPParty;

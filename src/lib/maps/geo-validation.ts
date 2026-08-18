@@ -7,7 +7,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { Geometry } from "geojson";
+import type { Geometry, Polygon, MultiPolygon, Position } from "geojson";
 import { TRPCError } from "@trpc/server";
 
 // ──────────────────────────────────────────────
@@ -178,14 +178,17 @@ export async function validatePolygonContainment(
  * Helper to clean a PostGIS-returned GeoJSON geometry to a Polygon or MultiPolygon.
  * Filters out line strings, points, and other non-polygon components.
  */
-export function cleanPostGISGeometry(geometry: any): any {
+export function cleanPostGISGeometry(
+  geometry: Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
+): Polygon | MultiPolygon | null {
   if (!geometry) return null;
   if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-    return geometry;
+    return geometry as Polygon | MultiPolygon;
   }
   if (geometry.type === "GeometryCollection") {
-    const polygons: any[] = [];
-    for (const g of geometry.geometries || []) {
+    const polygons: Position[][][] = [];
+    const geometries = "geometries" in geometry ? geometry.geometries || [] : [];
+    for (const g of geometries) {
       if (g.type === "Polygon") {
         polygons.push(g.coordinates);
       } else if (g.type === "MultiPolygon") {
@@ -193,7 +196,7 @@ export function cleanPostGISGeometry(geometry: any): any {
       }
     }
     if (polygons.length === 0) return null;
-    if (polygons.length === 1) {
+    if (polygons.length === 1 && polygons[0]) {
       return { type: "Polygon", coordinates: polygons[0] };
     }
     return { type: "MultiPolygon", coordinates: polygons };

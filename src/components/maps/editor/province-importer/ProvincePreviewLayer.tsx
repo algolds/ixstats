@@ -3,7 +3,7 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Feature, Polygon, MultiPolygon, Position } from "geojson";
-import type { ProvinceFeature } from "~/lib/province-importer/types";
+import type { ProvinceFeature } from "~/lib/maps/province-importer/types";
 
 interface ProvincePreviewLayerProps {
   map: MapLibreMap | null;

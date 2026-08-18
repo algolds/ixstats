@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from "@jest/globals";
 
-jest.mock("../province-importer/svg-element-converter", () => {
+jest.mock("~/lib/maps/province-importer/svg-element-converter", () => {
   return {
     SHAPE_TAGS: new Set(["path", "polygon", "polyline", "rect", "circle", "ellipse"]),
     elementToRings: jest.fn((el: any) => {

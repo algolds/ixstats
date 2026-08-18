@@ -1,4 +1,4 @@
-import { generateWorld } from "../worldgen/engine";
+import { generateWorld } from "~/lib/worldgen/engine";
 import { normalizeAzgaarGraph } from "./azgaar-normalizer";
 import { auditGeographicalAccuracy } from "./geographical-accuracy-analyzer";
 

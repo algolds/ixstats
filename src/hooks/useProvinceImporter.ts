@@ -20,14 +20,14 @@ import type {
   AffineMatrix,
   ManualTransform,
   TopologyReport,
-} from "~/lib/province-importer/types";
+} from "~/lib/maps/province-importer/types";
 import {
   computeAffineFromReferencePoints,
   autoAlignToCountryBorder,
   manualTransformToMatrix,
   applyAffineToProvinces,
   snapProvincesToBorderMultiRing,
-} from "~/lib/province-importer/alignment";
+} from "~/lib/maps/province-importer/alignment";
 import { applyCityAffine } from "~/lib/city-importer/align-cities";
 import type { SvgLayerInfo, SvgCityPoint } from "~/lib/city-importer/svg-points";
 import {
@@ -37,8 +37,8 @@ import {
   clipProvincesToBorder,
   simplifyProvinces,
   snapPointToCountryBorderJS,
-} from "~/lib/province-importer/topology";
-import type { ConformanceResult } from "~/lib/province-importer/topology";
+} from "~/lib/maps/province-importer/topology";
+import type { ConformanceResult } from "~/lib/maps/province-importer/topology";
 import { sanitizeRegionShape } from "~/lib/maps/border-editor";
 import type { Polygon, MultiPolygon } from "geojson";
 

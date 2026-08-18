@@ -12,7 +12,7 @@
  * 6. Earth-Like Compatibility (20-40% land ratio, latitudinal thermal gradient, arable river proximity)
  */
 
-import type { PackedGraph } from "../worldgen/types";
+import type { PackedGraph } from "~/lib/worldgen/types";
 import type { FeatureCollection } from "geojson";
 
 export interface ScientificAuditReport {

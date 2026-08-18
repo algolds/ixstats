@@ -372,7 +372,7 @@ export class NationalIssuesEngine {
     countryId: string,
     db: PrismaClient
   ): Promise<CountrySnapshot | null> {
-    const country = await (db as any).country.findUnique({
+    const country = await db.country.findUnique({
       where: { id: countryId },
       select: {
         id: true,
@@ -442,44 +442,44 @@ export class NationalIssuesEngine {
       grounded,
       neighbors,
     ] = await Promise.all([
-      (db as any).embassy.count({
+      db.embassy.count({
         where: {
           hostCountryId: countryId,
           status: "active",
         },
       }),
-      (db as any).policy.count({
+      db.policy.count({
         where: { countryId, status: "active" },
       }),
-      (db as any).nationalIssue.count({
+      db.nationalIssue.count({
         where: {
           countryId,
           status: { in: ["pending", "viewed"] },
         },
       }),
-      (db as any).crisisEvent.count({
+      db.crisisEvent.count({
         where: {
           affectedCountries: { contains: countryId },
           responseStatus: { not: "resolved" },
         },
       }),
-      (db as any).governmentComponent.findMany({
+      db.governmentComponent.findMany({
         where: { countryId },
         select: { componentType: true, isActive: true, implementationDate: true },
       }),
-      (db as any).economicComponent.findMany({
+      db.economicComponent.findMany({
         where: { countryId },
         select: { componentType: true, isActive: true, implementationDate: true },
       }),
-      (db as any).taxComponent.findMany({
+      db.taxComponent.findMany({
         where: { countryId },
         select: { componentType: true, isActive: true, implementationDate: true },
       }),
-      (db as any).policy.findMany({
+      db.policy.findMany({
         where: { countryId, status: "active" },
         select: { id: true, name: true, calculatedEffects: true },
       }),
-      (db as any).intent.findMany({
+      db.intent.findMany({
         where: { countryId, status: "active" },
         select: { goal: true, category: true },
       }),
@@ -825,7 +825,7 @@ export class NationalIssuesEngine {
       ]);
 
       // templateId is a required FK, so ensure a backing template exists.
-      const template = await (db as any).nationalIssueTemplate.upsert({
+      const template = await db.nationalIssueTemplate.upsert({
         where: { slug },
         update: {},
         create: {
@@ -850,12 +850,12 @@ export class NationalIssuesEngine {
       });
 
       // Avoid duplicates: skip if there is already an open staffing-shortage issue.
-      const existing = await (db as any).nationalIssue.count({
+      const existing = await db.nationalIssue.count({
         where: { countryId, templateId: template.id, status: { in: ["pending", "viewed"] } },
       });
       if (existing > 0) return;
 
-      await (db as any).nationalIssue.create({
+      await db.nationalIssue.create({
         data: {
           templateId: template.id,
           countryId,
@@ -939,7 +939,7 @@ export class NationalIssuesEngine {
       if (!options?.bypassLimits) {
         const sevenIxDaysMs = 7 * 24 * 60 * 60 * 1000;
         const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
-        const weeklyCount = await (db as any).nationalIssue.count({
+        const weeklyCount = await db.nationalIssue.count({
           where: { countryId, createdIxTime: { gte: weekAgoIxTime } },
         });
 
@@ -965,13 +965,13 @@ export class NationalIssuesEngine {
       if (options?.forceDomain) {
         whereClause.domain = options.forceDomain;
       }
-      const templates = await (db as any).nationalIssueTemplate.findMany({
+      const templates = await db.nationalIssueTemplate.findMany({
         where: whereClause,
       });
       result.templatesEvaluated = templates.length;
 
       // Get recent issue history for cooldown checking
-      const recentIssues = await (db as any).nationalIssue.findMany({
+      const recentIssues = await db.nationalIssue.findMany({
         where: { countryId },
         select: {
           templateId: true,
@@ -983,7 +983,7 @@ export class NationalIssuesEngine {
       });
 
       // Get NPC personality for modifier calculations
-      const personalityAssignment = await (db as any).nPCPersonalityAssignment.findUnique({
+      const personalityAssignment = await db.nPCPersonalityAssignment.findUnique({
         where: { countryId },
         include: { personality: true },
       });
@@ -1073,13 +1073,13 @@ export class NationalIssuesEngine {
       // Resolve target country statistics for foreign/diplomatic issues
       let targetCountryRecord: any = null;
       try {
-        const activeIntentsWithTarget = await (db as any).intent.findMany({
+        const activeIntentsWithTarget = await db.intent.findMany({
           where: { countryId, status: "active", target: { not: null } },
           select: { target: true },
         });
         if (activeIntentsWithTarget.length > 0 && activeIntentsWithTarget[0]?.target) {
           const targetName = activeIntentsWithTarget[0].target;
-          targetCountryRecord = await (db as any).country.findFirst({
+          targetCountryRecord = await db.country.findFirst({
             where: { name: { mode: "insensitive", equals: targetName } },
             select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
           });
@@ -1088,14 +1088,14 @@ export class NationalIssuesEngine {
           // Prefer grounded neighbors/partners over a random country (plan 002 §6C).
           const preferredName = snapshot.neighbors?.[0]?.name || snapshot.partners?.[0]?.name;
           if (preferredName) {
-            targetCountryRecord = await (db as any).country.findFirst({
+            targetCountryRecord = await db.country.findFirst({
               where: { name: { mode: "insensitive", equals: preferredName } },
               select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
             });
           }
         }
         if (!targetCountryRecord) {
-          const otherCountries = await (db as any).country.findMany({
+          const otherCountries = await db.country.findMany({
             where: { id: { not: countryId } },
             select: { name: true, leader: true, currentGdpPerCapita: true, continent: true },
             take: 20,
@@ -1173,7 +1173,7 @@ export class NationalIssuesEngine {
           const autoResolveOption = renderedOptions.find((o) => o.isAutoResolveDefault);
 
           // Create the issue instance
-          await (db as any).nationalIssue.create({
+          await db.nationalIssue.create({
             data: {
               templateId: candidate.template.id,
               countryId,
@@ -1215,7 +1215,7 @@ export class NationalIssuesEngine {
       // Log the evaluation
       result.executionTimeMs = Date.now() - startTime;
       if (result.issuesGenerated > 0 || result.errors.length > 0) {
-        await (db as any).issueGenerationLog
+        await db.issueGenerationLog
           .create({
             data: {
               countryId,
@@ -1251,7 +1251,7 @@ export class NationalIssuesEngine {
     const weekAgoIxTime = IxTime.getCurrentIxTime() - sevenIxDaysMs;
 
     // Count issues created for this country in the last 7 IxDays
-    const weeklyCount = await (db as any).nationalIssue.count({
+    const weeklyCount = await db.nationalIssue.count({
       where: { countryId, createdIxTime: { gte: weekAgoIxTime } },
     });
 
@@ -1259,7 +1259,7 @@ export class NationalIssuesEngine {
       return false; // Skip evaluation entirely if weekly cap reached
     }
 
-    const lastLog = await (db as any).issueGenerationLog.findFirst({
+    const lastLog = await db.issueGenerationLog.findFirst({
       where: { countryId },
       orderBy: { createdAt: "desc" },
       select: { ixTimeAtEvaluation: true },
@@ -1291,7 +1291,7 @@ export class NationalIssuesEngine {
     const errors: string[] = [];
     let resolved = 0;
 
-    const expiredIssues = await (db as any).nationalIssue.findMany({
+    const expiredIssues = await db.nationalIssue.findMany({
       where: {
         status: { in: ["pending", "viewed"] },
         deadlineIxTime: { not: null, lte: currentIxTime },
@@ -1302,7 +1302,7 @@ export class NationalIssuesEngine {
       try {
         if (issue.autoResolveOptionId) {
           // Auto-resolve with the default option
-          await (db as any).nationalIssue.update({
+          await db.nationalIssue.update({
             where: { id: issue.id },
             data: {
               status: "auto_resolved",
@@ -1316,7 +1316,7 @@ export class NationalIssuesEngine {
           });
         } else {
           // No auto-resolve option, just expire
-          await (db as any).nationalIssue.update({
+          await db.nationalIssue.update({
             where: { id: issue.id },
             data: { status: "expired" },
           });
@@ -1340,7 +1340,7 @@ export class NationalIssuesEngine {
     db: PrismaClient,
     parentIssueId?: string
   ): Promise<string | null> {
-    const template = await (db as any).nationalIssueTemplate.findUnique({
+    const template = await db.nationalIssueTemplate.findUnique({
       where: { id: templateId },
     });
     if (!template) return null;
@@ -1376,7 +1376,7 @@ export class NationalIssuesEngine {
 
     const autoResolveOption = renderedOptions.find((o) => o.isAutoResolveDefault);
 
-    const issue = await (db as any).nationalIssue.create({
+    const issue = await db.nationalIssue.create({
       data: {
         templateId: template.id,
         countryId,

@@ -195,16 +195,29 @@ export function generateRevenueChartData(fiscalData: FiscalSystemData): ChartDat
  * @param governmentStructure - Optional government structure with budget allocations
  * @returns Array of spending data items
  */
+export interface GovernmentBudgetStructure {
+  budgetAllocations?: Array<{
+    departmentId: string;
+    allocatedAmount: number;
+    allocatedPercent: number;
+  }>;
+  departments?: Array<{
+    id: string;
+    name?: string;
+    category?: string;
+  }>;
+}
+
 export function generateSpendingChartData(
   fiscalData: FiscalSystemData,
   nominalGDP: number,
-  governmentStructure?: any
+  governmentStructure?: GovernmentBudgetStructure
 ): SpendingDataItem[] {
   // Use actual government structure budget data if available
-  if (governmentStructure?.budgetAllocations?.length > 0) {
-    return governmentStructure.budgetAllocations.map((allocation: any) => {
+  if (governmentStructure?.budgetAllocations && governmentStructure.budgetAllocations.length > 0) {
+    return governmentStructure.budgetAllocations.map((allocation) => {
       const department = governmentStructure.departments?.find(
-        (d: any) => d.id === allocation.departmentId
+        (d) => d.id === allocation.departmentId
       );
       return {
         category: department?.name || department?.category || "Unknown",

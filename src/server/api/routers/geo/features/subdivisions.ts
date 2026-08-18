@@ -424,7 +424,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
       }
 
       const { simplifyProvinceBatch, countVertices } =
-        await import("~/lib/province-importer/topo-simplify");
+        await import("~/lib/maps/province-importer/topo-simplify");
 
       // Build Feature array from all subdivisions with valid geometry
       const validSubs = subdivisions.filter((s) => s.geometry);

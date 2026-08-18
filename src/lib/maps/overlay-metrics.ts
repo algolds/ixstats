@@ -8,10 +8,7 @@
  * schema migration or background write loop.
  */
 
-/** Clamp a number to the inclusive [min, max] range. */
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+import { clamp } from "~/lib/utils";
 
 /** Fields read from `country` to build a deterministic health score. */
 export interface HealthInput {

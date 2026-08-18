@@ -121,8 +121,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
   // 2. Map Head Coach development ratings for players
   const coachMap = new Map<string, number>();
-  const playersForAging: any[] = [];
-  const coachesForAging: any[] = [];
+  const playersForAging: Array<{ id: string; age: number; careerStage: any; ratings: Record<string, number> }> = [];
+  const coachesForAging: Array<{ id: string; age: number; careerStage: any; ratings: Record<string, number>; teamId: string }> = [];
 
   for (const team of season.league.teams) {
     const headCoach =
@@ -278,8 +278,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         take: (subLeague as any).promotionCount ?? 3,
       });
 
-      const relegatedTeamIds = parentStandings.map((s: any) => s.teamId);
-      const promotedTeamIds = childStandings.map((s: any) => s.teamId);
+      const relegatedTeamIds = parentStandings.map((s: { teamId: string }) => s.teamId);
+      const promotedTeamIds = childStandings.map((s: { teamId: string }) => s.teamId);
 
       if (relegatedTeamIds.length > 0 && promotedTeamIds.length > 0) {
         if (typeof (tx as any).sportTeam?.updateMany === "function") {
@@ -323,8 +323,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
               where: { id: { in: promotedTeamIds } },
               select: { name: true },
             });
-            const parentNames = parentTeams.map((t: any) => t.name).join(", ");
-            const childNames = childTeams.map((t: any) => t.name).join(", ");
+            const parentNames = parentTeams.map((t: { name: string }) => t.name).join(", ");
+            const childNames = childTeams.map((t: { name: string }) => t.name).join(", ");
 
             const post = await tx.thinkpagesPost.create({
               data: {
@@ -495,7 +495,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
     // Initialize standings
     await tx.sportStanding.createMany({
-      data: updatedTeams.map((t: any) => ({
+      data: updatedTeams.map((t: { id: string }) => ({
         seasonId: newSeason.id,
         teamId: t.id,
       })),
@@ -503,7 +503,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
     // Initialize team seasons
     await tx.sportTeamSeason.createMany({
-      data: updatedTeams.map((t: any) => ({
+      data: updatedTeams.map((t: { id: string }) => ({
         seasonId: newSeason.id,
         teamId: t.id,
       })),
@@ -581,13 +581,13 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
     let draftOrder: string[] = [];
     if (season.league.archetype === "league") {
-      draftOrder = prevStandings.map((s: any) => s.teamId);
+      draftOrder = prevStandings.map((s: { teamId: string }) => s.teamId);
     } else {
-      draftOrder = [...prevStandings].reverse().map((s: any) => s.teamId);
+      draftOrder = [...prevStandings].reverse().map((s: { teamId: string }) => s.teamId);
     }
 
     if (draftOrder.length === 0) {
-      draftOrder = updatedTeams.map((t: any) => t.id);
+      draftOrder = updatedTeams.map((t: { id: string }) => t.id);
     }
 
     // eslint-disable-next-line prefer-const
@@ -597,7 +597,14 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
       overall: r.ratings.overall ?? 50,
     }));
 
-    const draftPicksToCreate: any[] = [];
+    const draftPicksToCreate: Array<{
+      seasonId: string;
+      round: number;
+      pickNumber: number;
+      originalTeamId: string;
+      currentTeamId: string;
+      playerId: string | null;
+    }> = [];
     let pickNumber = 1;
     let round = 1;
     let anyVacanciesLeft = true;
@@ -826,12 +833,12 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     select: { nationId: true },
   });
   let nationIds = Array.from(
-    new Set(teams.map((t: any) => t.nationId).filter(Boolean))
-  ) as string[];
+    new Set(teams.map((t: { nationId: string | null }) => t.nationId).filter((id): id is string => !!id))
+  );
   if (nationIds.length === 0) {
     // Fallback: fetch countries from Country table
     const countries = await tx.country.findMany({ take: 32, select: { id: true } });
-    nationIds = countries.map((c: any) => c.id);
+    nationIds = countries.map((c: { id: string }) => c.id);
   }
 
   // 2. Draft squads and fetch country names
@@ -865,16 +872,17 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     // Sort and select top 11
     // eslint-disable-next-line prefer-const
     let squad = [...draftPlayers]
-      .sort((a: any, b: any) => {
-        const ratingA = (a.ratings as any)?.overall ?? 50;
-        const ratingB = (b.ratings as any)?.overall ?? 50;
+      .sort((a: { ratings?: Record<string, number> | null }, b: { ratings?: Record<string, number> | null }) => {
+        const ratingA = (a.ratings as Record<string, number> | undefined)?.overall ?? 50;
+        const ratingB = (b.ratings as Record<string, number> | undefined)?.overall ?? 50;
         return ratingB - ratingA;
       })
       .slice(0, 11);
 
     if (squad.length < 11) {
       const totalRating = allPlayers.reduce(
-        (acc: number, p: any) => acc + ((p.ratings as any)?.overall ?? 50),
+        (acc: number, p: { ratings?: Record<string, number> | null }) =>
+          acc + ((p.ratings as Record<string, number> | undefined)?.overall ?? 50),
         0
       );
       const avgRating = allPlayers.length > 0 ? Math.round(totalRating / allPlayers.length) : 75;

@@ -23,9 +23,7 @@ export interface PoliticsDriftResult {
   metricsRecomputed: number;
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
+import { clamp } from "~/lib/utils";
 
 export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
   const result: PoliticsDriftResult = {

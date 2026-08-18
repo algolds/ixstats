@@ -99,7 +99,7 @@ export function generateNounDeclension(word: string, culture: string | null): De
   let accP = baseWord + "s";
   let datS = "to " + baseWord;
   let datP = "to " + baseWord + "s";
-  let ablS = "from " + baseWord";
+  let ablS = "from " + baseWord;
   let ablP = "from " + baseWord + "s";
 
   if (c.includes("latin") || c.includes("roman")) {

@@ -216,8 +216,15 @@ export function generateCacheKey(type: string, identifier: string, ...args: stri
 }
 
 // Error handling helpers
-export function isMediaWikiError(error: any): error is { code: string; info: string } {
-  return error && typeof error === "object" && "code" in error && "info" in error;
+export function isMediaWikiError(error: unknown): error is { code: string; info: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    "info" in error &&
+    typeof (error as Record<string, unknown>).code === "string" &&
+    typeof (error as Record<string, unknown>).info === "string"
+  );
 }
 
 export function createMediaWikiError(code: string, message: string): Error {

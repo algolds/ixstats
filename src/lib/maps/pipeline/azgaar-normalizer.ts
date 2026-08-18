@@ -6,9 +6,9 @@
  */
 
 import type { FeatureCollection } from "geojson";
-import type { PackedGraph } from "../worldgen/types";
-import { exportToGeoJSON } from "../worldgen/export-geojson";
-import { cellLng, cellLat } from "../worldgen/voronoi-mesh";
+import type { PackedGraph } from "~/lib/worldgen/types";
+import { exportToGeoJSON } from "~/lib/worldgen/export-geojson";
+import { cellLng, cellLat } from "~/lib/worldgen/voronoi-mesh";
 
 export interface NormalizedCountryPayload {
   featureId: string;
@@ -54,7 +54,7 @@ export interface NormalizedMapData {
 /**
  * Normalize a PackedGraph output into structured realm map layers and entity datasets.
  */
-import { exportToGeoJSON as exportToGeoJSONV2 } from "../worldgen/v2/export";
+import { exportToGeoJSON as exportToGeoJSONV2 } from "~/lib/worldgen/v2/export";
 
 export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
   // 1. Export 7 GeoJSON layers sharing 100% identical cell topology & boundary alignment

@@ -12,7 +12,7 @@
  * 5. Lake Coverage: 1% - 5% of total land area
  */
 
-import type { GeneratedWorld, WorldStats } from "../worldgen/types";
+import type { GeneratedWorld, WorldStats } from "~/lib/worldgen/types";
 
 export interface AccuracyScoreCard {
   seed: number;

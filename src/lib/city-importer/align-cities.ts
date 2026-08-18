@@ -1,8 +1,8 @@
-import type { AffineMatrix, ReferencePoint } from "../province-importer/types";
+import type { AffineMatrix, ReferencePoint } from "~/lib/maps/province-importer/types";
 import {
   computeAffineFromReferencePoints,
   applyAffineToPoint,
-} from "../province-importer/alignment";
+} from "~/lib/maps/province-importer/alignment";
 
 export interface DbSubdivisionRef {
   name: string;

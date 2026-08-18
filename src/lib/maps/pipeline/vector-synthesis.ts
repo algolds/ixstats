@@ -17,14 +17,14 @@ import type {
   LineString,
   Position,
 } from "geojson";
-import { makeRng } from "../worldgen/rng";
+import { makeRng } from "~/lib/worldgen/rng";
 import { ELEVATION_ZONES } from "~/lib/maps/elevation-config";
 
 // Load vector seed datasets (bundled statically)
-import CONTINENTS_SEED from "../../../public/data/vector-seeds/continents.json";
-import ELEVATION_SEED from "../../../public/data/vector-seeds/elevation-contours.json";
-import RIVERS_SEED from "../../../public/data/vector-seeds/rivers.json";
-import LAKES_SEED from "../../../public/data/vector-seeds/lakes.json";
+import CONTINENTS_SEED from "../../../../public/data/vector-seeds/continents.json";
+import ELEVATION_SEED from "../../../../public/data/vector-seeds/elevation-contours.json";
+import RIVERS_SEED from "../../../../public/data/vector-seeds/rivers.json";
+import LAKES_SEED from "../../../../public/data/vector-seeds/lakes.json";
 
 function round4(val: number): number {
   return Math.round(val * 10000) / 10000;

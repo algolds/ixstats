@@ -161,9 +161,7 @@ const COACH_ROLES = [
   "technical_director",
 ];
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+import { clamp } from "~/lib/utils";
 
 export function advanceCareerStage(
   current: CareerStage,

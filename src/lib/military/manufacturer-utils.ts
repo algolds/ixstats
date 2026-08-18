@@ -70,14 +70,19 @@ export const DEFAULT_MANUFACTURER_FORM: ManufacturerFormData = {
  * Normalizes raw manufacturer records from the API into the Manufacturer shape,
  * coercing nullable fields to predictable defaults.
  */
-export function normalizeManufacturers(manufacturersAll: any[] | undefined): Manufacturer[] {
+export function normalizeManufacturers(
+  manufacturersAll: Partial<Manufacturer>[] | undefined
+): Manufacturer[] {
   if (!manufacturersAll) return [];
   return manufacturersAll.map((m) => ({
-    ...m,
+    id: m.id ?? "",
+    name: m.name ?? "",
+    country: m.country ?? "",
     specialty: m.specialty ?? "",
-    founded: (m as Manufacturer).founded ?? null,
-    description: (m as Manufacturer).description ?? null,
-    equipment: (m as Manufacturer).equipment ?? [],
+    founded: m.founded ?? null,
+    description: m.description ?? null,
+    equipment: m.equipment ?? [],
+    ...m,
   })) as Manufacturer[];
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { generateWorld } from "../worldgen/engine";
+import { generateWorld } from "~/lib/worldgen/engine";
 import { normalizeAzgaarGraph } from "./azgaar-normalizer";
 
 describe("azgaar-normalizer", () => {

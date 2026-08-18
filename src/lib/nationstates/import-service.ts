@@ -8,6 +8,7 @@
 import { type PrismaClient, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardType, CardRarity } from "~/lib/cards";
+import { clamp } from "~/lib/utils";
 import { nsApiClient, type NSCard } from "./api-client";
 import { type CardCreationData } from "~/lib/cards";
 
@@ -162,7 +163,7 @@ export class NSImportService {
       return hash - 3; // -3 to +3
     };
 
-    const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
+    const clampStat = (v: number) => clamp(Math.round(v), 0, 100);
     const id = cardId ?? 0;
 
     // Look up government profile (provides balanced base stats)
@@ -179,10 +180,10 @@ export class NSImportService {
     const trophyBonus = Math.min(trophyCount * 3, 15);
 
     return {
-      economic: clamp(profile[0] + marketBonus + jitter(id, 0)),
-      diplomatic: clamp(profile[1] + badgeBonus + Math.floor(trophyBonus / 2) + jitter(id, 1)),
-      military: clamp(profile[2] + jitter(id, 2)),
-      social: clamp(profile[3] + Math.floor(trophyBonus / 2) + jitter(id, 3)),
+      economic: clampStat(profile[0] + marketBonus + jitter(id, 0)),
+      diplomatic: clampStat(profile[1] + badgeBonus + Math.floor(trophyBonus / 2) + jitter(id, 1)),
+      military: clampStat(profile[2] + jitter(id, 2)),
+      social: clampStat(profile[3] + Math.floor(trophyBonus / 2) + jitter(id, 3)),
     };
   }
 

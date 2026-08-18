@@ -138,7 +138,7 @@ export class NationalIssuesConsequences {
 
     try {
       // Load the issue
-      const issue = await (db as any).nationalIssue.findUnique({
+      const issue = await db.nationalIssue.findUnique({
         where: { id: issueId },
         include: { template: true },
       });
@@ -238,7 +238,7 @@ export class NationalIssuesConsequences {
       // Apply party alignment support modifications
       if (chosenOption.partyAlignment && !isAutoResolve) {
         try {
-          const alignedParty = await (db as any).politicalParty.findFirst({
+          const alignedParty = await db.politicalParty.findFirst({
             where: {
               countryId: issue.countryId,
               OR: [
@@ -249,7 +249,7 @@ export class NationalIssuesConsequences {
             },
           });
           if (alignedParty) {
-            await (db as any).politicalParty.update({
+            await db.politicalParty.update({
               where: { id: alignedParty.id },
               data: {
                 currentSupport: Math.min(100, alignedParty.currentSupport + 3.0),
@@ -273,7 +273,7 @@ export class NationalIssuesConsequences {
       );
 
       // Update the issue
-      await (db as any).nationalIssue.update({
+      await db.nationalIssue.update({
         where: { id: issueId },
         data: {
           status: isAutoResolve ? "auto_resolved" : "responded",
@@ -291,7 +291,7 @@ export class NationalIssuesConsequences {
       if (chosenOption.triggersFollowUp && chosenOption.triggersFollowUp.length > 0) {
         for (const followUpSlug of chosenOption.triggersFollowUp) {
           try {
-            const followUpTemplate = await (db as any).nationalIssueTemplate.findUnique({
+            const followUpTemplate = await db.nationalIssueTemplate.findUnique({
               where: { slug: followUpSlug },
             });
             if (followUpTemplate) {
@@ -312,7 +312,7 @@ export class NationalIssuesConsequences {
 
         // Update parent issue with child IDs
         if (result.followUpIssueIds.length > 0) {
-          await (db as any).nationalIssue.update({
+          await db.nationalIssue.update({
             where: { id: issueId },
             data: {
               childIssueIds: JSON.stringify(result.followUpIssueIds),
@@ -344,14 +344,14 @@ export class NationalIssuesConsequences {
    * still open. Exported for the intent router and agenda aggregation to reuse.
    */
   static async recomputeIntentProgress(intentId: string, db: PrismaClient): Promise<number> {
-    const linked = await (db as any).nationalIssue.findMany({
+    const linked = await db.nationalIssue.findMany({
       where: { intentId },
       select: { status: true },
     });
 
     const total = linked.length;
     if (total === 0) {
-      await (db as any).intent.update({
+      await db.intent.update({
         where: { id: intentId },
         data: { progress: 0 },
       });
@@ -363,7 +363,7 @@ export class NationalIssuesConsequences {
     ).length;
 
     const progress = Math.round((resolved / total) * 100);
-    await (db as any).intent.update({
+    await db.intent.update({
       where: { id: intentId },
       data: { progress },
     });
@@ -403,7 +403,7 @@ export class NationalIssuesConsequences {
     const applied = appliedList[0];
 
     // Create local issue consequence audit record
-    await (db as any).nationalIssueConsequence.create({
+    await db.nationalIssueConsequence.create({
       data: {
         issueId,
         targetModel: consequence.targetModel,
@@ -466,7 +466,7 @@ export class NationalIssuesConsequences {
   /**
    * Calculate IxCredits reward based on issue severity and resolution type.
    */
-  private static calculateIxCredits(issue: any, isAutoResolve: boolean): number {
+  private static calculateIxCredits(issue: { priority?: string | null }, isAutoResolve: boolean): number {
     if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming
     if (isAutoResolve) return 0; // No reward for inaction
 

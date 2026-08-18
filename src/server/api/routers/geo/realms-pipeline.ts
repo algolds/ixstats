@@ -17,9 +17,9 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { generateWorld } from "~/lib/worldgen/engine";
-import { normalizeAzgaarGraph } from "~/lib/map-pipeline/azgaar-normalizer";
-import { enrichMapDataset } from "~/lib/map-pipeline/enrichment-pipeline";
-import { commitRealmMapToDatabase } from "~/lib/map-pipeline/realm-map-committer";
+import { normalizeAzgaarGraph } from "~/lib/maps/pipeline/azgaar-normalizer";
+import { enrichMapDataset } from "~/lib/maps/pipeline/enrichment-pipeline";
+import { commitRealmMapToDatabase } from "~/lib/maps/pipeline/realm-map-committer";
 
 export const realmsPipelineRouter = createTRPCRouter({
   /**

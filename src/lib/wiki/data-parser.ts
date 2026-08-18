@@ -41,7 +41,7 @@ function parseNumberOptional(value: any): number | undefined {
   return undefined;
 }
 
-function parsePercentageRequired(value: any, defaultValue = 0): number {
+function parsePercentageRequired(value: unknown, defaultValue = 0): number {
   if (
     value === null ||
     value === undefined ||
@@ -55,12 +55,11 @@ function parsePercentageRequired(value: any, defaultValue = 0): number {
 
   const isPercentString = asString.includes("%");
   const cleaned = asString.replace(/[,%$"]/g, "").trim();
-  let num;
+  let num: number;
   if (isPercentString) {
     num = parseFloat(cleaned.replace(/%/g, "")) / 100;
   } else {
     num = parseFloat(cleaned);
-    // If the number is greater than 1 and doesn't have %, assume it's already a percentage that needs converting
     if (num > 1) {
       num = num / 100;
     }
@@ -68,7 +67,7 @@ function parsePercentageRequired(value: any, defaultValue = 0): number {
   return isNaN(num) ? defaultValue : num;
 }
 
-function parseStringOptional(value: any): string | null {
+function parseStringOptional(value: unknown): string | null {
   if (
     value === null ||
     value === undefined ||

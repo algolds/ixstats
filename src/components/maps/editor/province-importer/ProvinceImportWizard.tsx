@@ -20,7 +20,7 @@ import { SnapPreviewStep } from "./SnapPreviewStep";
 import { ValidationStep } from "./ValidationStep";
 import { CommitStep } from "./CommitStep";
 import { BorderConformanceModal } from "../BorderConformanceModal";
-import type { ImportStep } from "~/lib/province-importer/types";
+import type { ImportStep } from "~/lib/maps/province-importer/types";
 
 interface ProvinceImportWizardProps {
   importer: ReturnType<typeof useProvinceImporter>;

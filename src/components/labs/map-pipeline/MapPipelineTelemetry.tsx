@@ -2,11 +2,11 @@
 
 import React, { useState } from "react";
 import { Activity, Layers } from "lucide-react";
-import type { NormalizedCountryPayload } from "~/lib/map-pipeline/azgaar-normalizer";
+import type { NormalizedCountryPayload } from "~/lib/maps/pipeline/azgaar-normalizer";
 import type {
   GeoProfilePayload,
   ResourcePlacementPayload,
-} from "~/lib/map-pipeline/enrichment-pipeline";
+} from "~/lib/maps/pipeline/enrichment-pipeline";
 
 export interface MapPipelineTelemetryProps {
   stats: {

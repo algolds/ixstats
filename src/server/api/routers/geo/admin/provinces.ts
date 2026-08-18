@@ -17,7 +17,7 @@ import {
   cachedPublicProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { buildProvinceMergePlan } from "~/lib/province-importer/merge-plan";
+import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -164,11 +164,11 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       }
 
       // Preprocess SVG (strip non-visual elements, remove fragments, normalize)
-      const { preprocessSvg } = await import("~/lib/province-importer/svg-preprocessor");
+      const { preprocessSvg } = await import("~/lib/maps/province-importer/svg-preprocessor");
       const preprocessed = preprocessSvg(svgContent);
 
       // Parse provinces from cleaned SVG
-      const { parseProvinceSvg } = await import("~/lib/province-importer/parse-provinces");
+      const { parseProvinceSvg } = await import("~/lib/maps/province-importer/parse-provinces");
       const result = parseProvinceSvg(preprocessed.svgContent);
 
       // Prepend preprocessing log
