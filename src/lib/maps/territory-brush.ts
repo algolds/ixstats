@@ -19,7 +19,7 @@ import { featureCollection } from "@turf/helpers";
 import { intersect } from "@turf/intersect";
 import { union } from "@turf/union";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
-import { sanitizeRegionShape } from "~/lib/border-editor";
+import { sanitizeRegionShape } from "~/lib/maps/border-editor";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

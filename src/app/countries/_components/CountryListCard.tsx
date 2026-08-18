@@ -21,7 +21,6 @@ import { CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { GlassCard } from "~/components/ui/enhanced-card";
-import { FastAverageColor } from "fast-average-color";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
@@ -50,20 +49,29 @@ interface CountryListCardProps {
   flagLoading?: boolean;
 }
 
-// Add a hook to extract the dominant color from the flag
+// Extract dominant color from flag via native 1x1 canvas
 function useDominantColor(imageUrl: string | null | undefined) {
   const [color, setColor] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!imageUrl) return;
-    const fac = new FastAverageColor();
     const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.src = imageUrl;
     img.onload = () => {
-      const result = fac.getColor(img);
-      setColor(result.hex);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        setColor(`rgb(${r}, ${g}, ${b})`);
+      } catch {
+        setColor(null);
+      }
     };
     img.onerror = () => setColor(null);
     imgRef.current = img;

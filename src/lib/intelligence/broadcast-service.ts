@@ -6,7 +6,6 @@ import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
 import type { IntelligenceUpdate } from "~/lib/websocket/types";
 import type { Country } from "@prisma/client";
-import { standardize } from "~/lib/interface-standardizer";
 
 // Use any type to avoid importing socket.io during build
 type IntelligenceWebSocketServer = any;
@@ -312,9 +311,15 @@ export class IntelligenceBroadcastService {
 
       // Broadcast each new intelligence item
       for (const item of newItems) {
-        // Bulk standardize intelligence item before broadcasting
-        const standardizedItem = standardize.intelligence(item);
-        this.websocketServer.broadcastNewIntelligenceItem(standardizedItem);
+        this.websocketServer.broadcastNewIntelligenceItem({
+          ...item,
+          id: String(item.id ?? ""),
+          title: String(item.title ?? ""),
+          description: String(item.description ?? item.content ?? ""),
+          category: (item.category ?? "governance").toLowerCase(),
+          severity: (item.severity ?? item.priority ?? "medium").toLowerCase(),
+          timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
+        });
       }
     } catch (error) {
       console.error("Error processing new intelligence items:", error);

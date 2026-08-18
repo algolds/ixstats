@@ -1,8 +1,6 @@
 /**
- * Global Developer Configuration Registry — IxStates / IxStats
+ * Global Developer Configuration Registry 
  *
- * Single source of truth for high-level system controls, simulation parameters,
- * feature flags, limits, and subsystem defaults across the platform.
  *
  * Usage:
  *   import { IX_CONFIG, getGlobalConfig } from "~/lib/config";

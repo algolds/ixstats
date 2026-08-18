@@ -14,7 +14,20 @@
  */
 
 import { createNoise, fractalNoise } from "./noise";
-import { getNeighbors4 } from "./plate-simulation";
+
+/** Get 4-connected neighbor indices (no diagonals) */
+function getNeighbors4(x: number, y: number, width: number, height: number): number[] {
+  const neighbors: number[] = [];
+  if (y > 0) neighbors.push((y - 1) * width + x);
+  if (y < height - 1) neighbors.push((y + 1) * width + x);
+  let nx = x - 1;
+  if (nx < 0) nx += width;
+  neighbors.push(y * width + nx);
+  nx = x + 1;
+  if (nx >= width) nx -= width;
+  neighbors.push(y * width + nx);
+  return neighbors;
+}
 
 // ─── Types ───────────────────────────────────────────────────
 

@@ -6,8 +6,8 @@ import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { UsersIcon } from "~/components/ui/users";
-import { TrendingUpIcon } from "~/components/ui/trending-up";
+import { UsersIcon } from "~/components/ui/icons/users";
+import { ArrowTrendingUpIcon as TrendingUpIcon } from "~/components/ui/icons/arrow-trending-up";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 

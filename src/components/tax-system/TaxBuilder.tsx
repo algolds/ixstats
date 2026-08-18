@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { createPortal } from "react-dom";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 import { Badge as UIBadge } from "~/components/ui/badge";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { Calculator, X, AlertTriangle, Settings, BarChart3 } from "lucide-react";

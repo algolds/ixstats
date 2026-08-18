@@ -17,6 +17,7 @@ import {
   Database,
   Bookmark,
   ZoomIn,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -24,7 +25,6 @@ import { api } from "~/trpc/react";
 import { CommonsCategoryBrowser } from "~/components/mediawiki/commons/CommonsCategoryBrowser";
 import { CommonsDetailPanel } from "~/components/mediawiki/commons/CommonsDetailPanel";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { SlidersHorizontalIcon } from "~/components/ui/sliders-horizontal";
 import type { CommonsImage } from "./types";
 import { getImageType, getImageOrientation } from "./types";
 import { MyStashTab } from "./MyStashTab";
@@ -295,7 +295,7 @@ export function WikiRepositoryTab({
                   isCategoryExpanded && "border-blue-500/50 bg-slate-100 dark:bg-white/5"
                 )}
               >
-                <SlidersHorizontalIcon size={14} className="h-3.5 w-3.5" />
+                <SlidersHorizontal size={14} className="h-3.5 w-3.5" />
                 Filters
               </Button>
             </div>

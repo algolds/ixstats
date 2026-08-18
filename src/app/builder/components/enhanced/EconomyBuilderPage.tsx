@@ -33,7 +33,7 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 

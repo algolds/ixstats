@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import debounce from "lodash/debounce";
 import { motion } from "motion/react";
 import NumberFlow from "@number-flow/react";
-import { cn } from "~/lib/utils";
+import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";

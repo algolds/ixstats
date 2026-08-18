@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 import { type BuilderStep, getStepsForMode } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";

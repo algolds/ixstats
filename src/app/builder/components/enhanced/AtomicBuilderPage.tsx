@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
