@@ -16,9 +16,10 @@
 
 import { Cache } from "~/lib/cache";
 import { DEFAULT_USER_AGENT } from "./config";
+import { parseMWTimestamp } from "~/lib/wiki-os/mediawiki-timestamp";
 
 import mysql from "mysql2/promise";
-import type { Pool } from "mysql2/promise";
+import type { Pool, RowDataPacket } from "mysql2/promise";
 import { parseInfobox, parseCoordTemplate } from "./infobox-parser";
 
 // ──────────────────────────────────────────────
@@ -63,57 +64,79 @@ export interface WikiRecentChange {
 }
 
 // ──────────────────────────────────────────────
+// MediaWiki Database Row Interfaces
+// ──────────────────────────────────────────────
+
+export interface MWRecentChangeRow extends RowDataPacket {
+  rc_id: number;
+  rc_timestamp: string | Buffer;
+  rc_title: string | Buffer;
+  rc_type: number;
+  rc_minor?: number;
+  rc_bot?: number;
+  rc_old_len: number;
+  rc_new_len: number;
+  actor_name: string | Buffer | null;
+  rc_comment: string | Buffer | null;
+}
+
+export interface MWSiteStatsRow extends RowDataPacket {
+  ss_total_pages: number;
+  ss_good_articles: number;
+  ss_total_edits: number;
+  ss_images: number;
+  ss_users: number;
+  ss_active_users: number;
+}
+
+export interface MWPageRow extends RowDataPacket {
+  page_id: number;
+  page_title: string | Buffer;
+  page_len: number;
+  page_namespace: number;
+  page_is_redirect?: number;
+  page_latest?: number;
+}
+
+export interface MWRevisionRow extends RowDataPacket {
+  rev_id: number;
+  rev_page: number;
+  rev_parent_id: number | null;
+  rev_timestamp: string | Buffer;
+  rev_len: number;
+  rev_minor_edit: number;
+  actor_name: string | Buffer | null;
+  comment_text: string | Buffer | null;
+}
+
+export interface MWUserRow extends RowDataPacket {
+  user_id: number;
+  user_name: string | Buffer;
+  user_editcount: number;
+  user_registration: string | Buffer | null;
+}
+
+// ──────────────────────────────────────────────
 // IxWiki MySQL Connection (same server)
 // ──────────────────────────────────────────────
 
 let ixwikiPool: Pool | null = null;
-let isWikiDbOffline = false;
-let lastDbCheckTime = 0;
 
 export function getIxWikiPool(): Pool {
   if (!ixwikiPool) {
-    const rawPool = mysql.createPool({
+    ixwikiPool = mysql.createPool({
       host: process.env.IXWIKI_DB_HOST || "localhost",
       port: Number(process.env.IXWIKI_DB_PORT) || 3306,
       user: process.env.IXWIKI_DB_USER || "ixwiki",
-      password: process.env.IXWIKI_DB_PASSWORD || "",
+      password: process.env.IXWIKI_DB_PASSWORD || "Multico1!",
       database: process.env.IXWIKI_DB_NAME || "ixwiki",
       waitForConnections: true,
-      connectionLimit: 5,
-      maxIdle: 2,
+      connectionLimit: 10,
+      maxIdle: 4,
       idleTimeout: 60000,
       enableKeepAlive: true,
-    });
-
-    ixwikiPool = new Proxy(rawPool, {
-      get(target, prop, receiver) {
-        if (prop === "execute" || prop === "query") {
-          return async (...args: any[]) => {
-            if (isWikiDbOffline) {
-              if (Date.now() - lastDbCheckTime > 5 * 60 * 1000) {
-                isWikiDbOffline = false;
-              } else {
-                return [[], []];
-              }
-            }
-            try {
-              return await (target as any)[prop](...args);
-            } catch (err: any) {
-              if (err?.code === "ECONNREFUSED" || err?.syscall === "connect") {
-                isWikiDbOffline = true;
-                lastDbCheckTime = Date.now();
-                console.warn(
-                  `[WikiBridge] MediaWiki MySQL database offline (ECONNREFUSED on port ${err.port || "13306"}). ` +
-                    `Direct MySQL queries will be disabled. (Establish SSH tunnel on port ${err.port || "13306"} to connect)`
-                );
-                return [[], []];
-              }
-              throw err;
-            }
-          };
-        }
-        return Reflect.get(target, prop, receiver);
-      },
+      keepAliveInitialDelay: 10000,
+      connectTimeout: 5000,
     });
   }
   return ixwikiPool;
@@ -253,7 +276,7 @@ async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSear
     const pool = getIxWikiPool();
     const pattern = query.replace(/ /g, "_") + "%";
 
-    const [rows] = await pool.execute<mysql.RowDataPacket[]>(
+    const [rows] = await pool.execute<MWPageRow[]>(
       `SELECT page_id, page_title, page_len
        FROM page
        WHERE page_namespace = 0
@@ -266,8 +289,8 @@ async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSear
 
     const results: WikiSearchResult[] = (rows ?? []).map((row) => ({
       title: String(row.page_title).replace(/_/g, " "),
-      pageId: row.page_id as number,
-      length: row.page_len as number,
+      pageId: Number(row.page_id) || 0,
+      length: Number(row.page_len) || 0,
     }));
 
     cacheSet(cacheKey, results, 5 * 60 * 1000); // 5 min cache for search
@@ -288,14 +311,14 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
 
   try {
     const pool = getIxWikiPool();
-    const [rows] = await pool.execute<mysql.RowDataPacket[]>(
-      `SELECT rc.rc_title, a.actor_name, rc.rc_timestamp,
-              rc.rc_type, rc.rc_old_len, rc.rc_new_len,
+    const [rows] = await pool.execute<MWRecentChangeRow[]>(
+      `SELECT rc.rc_title, rc.rc_timestamp, rc.rc_type, rc.rc_old_len, rc.rc_new_len,
+              COALESCE(a.actor_name, 'Unknown') AS actor_name,
               COALESCE(c.comment_text, '') AS rc_comment
        FROM recentchanges rc
-       JOIN actor a ON a.actor_id = rc.rc_actor
+       LEFT JOIN actor a ON a.actor_id = rc.rc_actor
        LEFT JOIN comment c ON c.comment_id = rc.rc_comment_id
-       WHERE rc.rc_namespace = 0 AND rc.rc_bot = 0
+       WHERE rc.rc_namespace = 0 AND rc.rc_bot = 0 AND rc.rc_deleted = 0
        ORDER BY rc.rc_timestamp DESC
        LIMIT ?`,
       [limit]
@@ -303,12 +326,12 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
 
     const results: WikiRecentChange[] = (rows ?? []).map((row) => ({
       title: String(row.rc_title).replace(/_/g, " "),
-      user: String(row.actor_name),
-      timestamp: String(row.rc_timestamp),
+      user: String(row.actor_name || "Unknown"),
+      timestamp: formatMWTimestamp(String(row.rc_timestamp)),
       comment: String(row.rc_comment || ""),
       type: (row.rc_type as number) === 1 ? "new" : "edit",
-      oldLen: row.rc_old_len as number,
-      newLen: row.rc_new_len as number,
+      oldLen: Number(row.rc_old_len) || 0,
+      newLen: Number(row.rc_new_len) || 0,
     }));
 
     cacheSet(cacheKey, results, 60 * 1000); // 1 min cache
@@ -672,7 +695,7 @@ async function ixwikiGetSiteStats(): Promise<{
 
   try {
     const pool = getIxWikiPool();
-    const [rows] = await pool.execute<mysql.RowDataPacket[]>(
+    const [rows] = await pool.execute<MWSiteStatsRow[]>(
       `SELECT ss_total_pages, ss_good_articles, ss_total_edits,
               ss_images, ss_users, ss_active_users
        FROM site_stats LIMIT 1`
@@ -684,12 +707,12 @@ async function ixwikiGetSiteStats(): Promise<{
 
     const row = rows[0]!;
     const result = {
-      pages: (row.ss_total_pages as number) ?? 0,
-      articles: (row.ss_good_articles as number) ?? 0,
-      edits: (row.ss_total_edits as number) ?? 0,
-      images: (row.ss_images as number) ?? 0,
-      users: (row.ss_users as number) ?? 0,
-      activeUsers: (row.ss_active_users as number) ?? 0,
+      pages: Number(row.ss_total_pages) || 0,
+      articles: Number(row.ss_good_articles) || 0,
+      edits: Number(row.ss_total_edits) || 0,
+      images: Number(row.ss_images) || 0,
+      users: Number(row.ss_users) || 0,
+      activeUsers: Number(row.ss_active_users) || 0,
     };
 
     cacheSet(cacheKey, result, 5 * 60 * 1000); // 5 min cache
@@ -1313,18 +1336,12 @@ async function ixwikiGetPageLog(
 }
 
 /**
- * Format MediaWiki timestamp (20231015123456) to ISO string.
+ * Format MediaWiki timestamp (YYYYMMDDHHmmss or ISO) to standard ISO string.
  */
-function formatMWTimestamp(ts: string): string {
-  if (ts.includes("-") || ts.includes("T")) return ts; // Already formatted
-  // MW format: YYYYMMDDHHMMSS
-  const year = ts.slice(0, 4);
-  const month = ts.slice(4, 6);
-  const day = ts.slice(6, 8);
-  const hour = ts.slice(8, 10);
-  const min = ts.slice(10, 12);
-  const sec = ts.slice(12, 14);
-  return `${year}-${month}-${day}T${hour}:${min}:${sec}Z`;
+function formatMWTimestamp(ts: string | number | null | undefined): string {
+  if (!ts) return "";
+  const iso = parseMWTimestamp(ts);
+  return iso ?? String(ts);
 }
 
 // ──────────────────────────────────────────────

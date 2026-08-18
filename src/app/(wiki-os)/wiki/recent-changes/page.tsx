@@ -7,7 +7,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/mediawiki-timestamp";
 import { ChevronDown, ChevronRight, FileText, FilePlus, Filter } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -52,14 +52,6 @@ function deltaClass(delta: number): string {
   return "";
 }
 
-function parseMWTimestamp(ts: string): Date {
-  // MediaWiki timestamp: 20250331120000 → Date
-  const s = String(ts);
-  return new Date(
-    `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(8, 10)}:${s.slice(10, 12)}:${s.slice(12, 14)}Z`
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Date range options
 // ---------------------------------------------------------------------------
@@ -87,10 +79,13 @@ export default function RecentChangesPage() {
 
   // Filter by date range
   const filtered = useMemo(() => {
-    if (!changes) return [];
+    if (!changes || changes.length === 0) return [];
     if (dateRange === 0) return changes;
     const cutoff = Date.now() - dateRange * 60 * 60 * 1000;
-    return changes.filter((c) => parseMWTimestamp(c.timestamp).getTime() > cutoff);
+    return changes.filter((c) => {
+      const d = parseMWDateObject(c.timestamp);
+      return d ? d.getTime() > cutoff : true;
+    });
   }, [changes, dateRange]);
 
   // Group by page title

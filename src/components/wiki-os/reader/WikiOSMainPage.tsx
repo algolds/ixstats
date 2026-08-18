@@ -180,7 +180,7 @@ export function WikiOSMainPage() {
   );
 
   // Fetch recent changes
-  const { data: recentChanges } = api.wikios.getRecentChanges.useQuery(
+  const { data: recentChanges, isLoading: isLoadingRecent } = api.wikios.getRecentChanges.useQuery(
     { limit: 6 },
     { staleTime: 30_000 }
   );
@@ -369,8 +369,10 @@ export function WikiOSMainPage() {
                   );
                 })}
               </ul>
-            ) : (
+            ) : isLoadingRecent ? (
               <p className="text-sm text-[var(--wikios-text-dim)]">Loading recent changes...</p>
+            ) : (
+              <p className="text-sm text-[var(--wikios-text-dim)]">No recent activity found.</p>
             )}
           </section>
         </div>
