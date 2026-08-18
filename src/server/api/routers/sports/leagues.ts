@@ -25,7 +25,7 @@ import {
   type SportPresetKey,
 } from "~/lib/sports";
 import { exchangeService } from "~/lib/vault";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { IxTime } from "~/lib/ixtime";
 import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";
 

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 const PRIVILEGED_ROLES = ["admin", "owner", "staff", "system-owner"];
 

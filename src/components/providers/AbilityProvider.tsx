@@ -7,7 +7,7 @@ import {
   useAbility as useCaslAbility,
 } from "@casl/react";
 import { api } from "~/trpc/react";
-import { type AppAbility, defineAbilityFor } from "~/lib/ability";
+import { type AppAbility, defineAbilityFor } from "~/lib/auth";
 import { useUser } from "@clerk/nextjs";
 
 // Re-export Can and useAbility with proper typings for our app

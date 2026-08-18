@@ -9,7 +9,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { DemoSeedService } from "~/lib/demo-seed";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 // SystemConfig keys for demo mode state
 const DEMO_ACTIVE_KEY = "demo_mode_active";

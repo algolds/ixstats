@@ -32,7 +32,7 @@ import { clearLayerCache } from "../core";
 import { ActivityGenerator } from "~/lib/activity";
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 // ──────────────────────────────────────────────
 // Router

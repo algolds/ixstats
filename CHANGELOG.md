@@ -10,6 +10,17 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 6 Wiki, Country-Geo, Auth & AI Isolation)
+
+- **Domain Isolation & Root Library Completion (/ponytail)**:
+  - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
+  - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/country-geo/index.ts)).
+  - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/auth/index.ts)).
+  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ai/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 60+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `src/tests/`, and `proxy.ts` to import directly from `~/lib/wiki`, `~/lib/country-geo`, `~/lib/auth`, and `~/lib/ai`, completely deleting 11 legacy root files from `src/lib/`.
+  - **Root `src/lib/` Purity**: Successfully consolidated and partitioned all domain-specific code into dedicated packages; only global core primitives (`utils.ts`, `logger.ts`, `cache.ts`, `rate-limiter.ts`, `event-bus.ts`, `app-error.ts`, `prisma-error.ts`, `base-path.ts`, formatting, math, and system configurations) remain in the root of `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (558/558 full-platform tests passing across 49 test suites).
+
 ### Refactored & Consolidated (`src/lib/` Phase 5 Media, WebSockets, Themes, Vault & Activity Isolation)
 
 - **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:

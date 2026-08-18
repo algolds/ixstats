@@ -506,7 +506,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 // ── Helpers ──────────────────────────────────────────────────────
 
 import { polylineLengthKm, normalizeTerrainDifficulty, samplePolylinePoints } from "~/lib/maps/geo-math";
-import { getTerrainAtPoint } from "~/lib/base-layer-query";
+import { getTerrainAtPoint } from "~/lib/country-geo";
 
 /**
  * Compute accurate route length and terrain difficulty from GeoJSON LineString coordinates.

@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
 
 import { invalidateCache } from "~/lib/trpc-cache";

@@ -4,7 +4,7 @@ import {
   getCountryGeoBundle,
   syncGeographicDemographics,
   distributeSubdivisionDemographicsToCities,
-} from "../country-geo-service";
+} from "~/lib/country-geo";
 
 describe("country-geo-service - Rollups & Reconciliation", () => {
   let mockDb: any;

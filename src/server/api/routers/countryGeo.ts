@@ -9,8 +9,8 @@ import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { ixnayWiki } from "~/lib/wiki/legacy-service";
 import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki/entity-parser";
-import { checkGeoCompliance } from "~/lib/country-geo-compliance";
-import { getTerrainAtPoint } from "~/lib/base-layer-query";
+import { checkGeoCompliance } from "~/lib/country-geo";
+import { getTerrainAtPoint } from "~/lib/country-geo";
 import {
   getCountryGeoBundle,
   upsertCity,
@@ -22,7 +22,7 @@ import {
   updateGeoRollupMode,
   rebaseNationalFromGeography,
   distributeSubdivisionDemographicsToCities,
-} from "~/lib/country-geo-service";
+} from "~/lib/country-geo";
 
 export const countryGeoRouter = createTRPCRouter({
   /**

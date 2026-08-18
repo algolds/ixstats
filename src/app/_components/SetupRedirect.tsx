@@ -6,7 +6,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
 import { usePermissions, ROLE_LEVELS } from "~/hooks/usePermissions";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 export function SetupRedirect() {
   const { user, isLoaded } = useUser();

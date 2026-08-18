@@ -13,7 +13,7 @@ import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { generateSlug } from "~/lib/slug-utils";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/advanced-cache-system";
 import { getBonusConfig, grantBonus } from "~/lib/vault";

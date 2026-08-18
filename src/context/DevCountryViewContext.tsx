@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { api } from "~/trpc/react";
 
 const STORAGE_KEY = "ixstats:devCountryView";

@@ -11,7 +11,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { SignInButton, useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Plus, ArrowLeft, Rocket, Factory, BarChart3, Target } from "lucide-react";

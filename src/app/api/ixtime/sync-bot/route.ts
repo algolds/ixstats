@@ -1,7 +1,7 @@
 // src/app/api/ixtime/sync-bot/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 export async function POST() {
   try {

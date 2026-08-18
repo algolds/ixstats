@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { useMapEditor } from "~/hooks/useMapEditor";
 import { useMapData } from "~/hooks/useMapData";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";

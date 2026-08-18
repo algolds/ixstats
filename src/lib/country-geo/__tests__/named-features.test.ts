@@ -1,7 +1,7 @@
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "../named-features";
 import { validatePolygonContainment } from "~/lib/maps/geo-validation";
 
-jest.mock("~/lib/maps/geo-validation/, () => ({
+jest.mock("~/lib/maps/geo-validation", () => ({
   snapPointToCountryBorder: jest.fn((_db, _countryId, lng, lat) => Promise.resolve([lng, lat])),
   validatePointContainment: jest.fn(() => Promise.resolve()),
   validateGeometryBounds: jest.fn(() => {}),

@@ -8,7 +8,7 @@ export async function checkPointInCountryTerritory(
   lng: number,
   lat: number
 ): Promise<boolean> {
-  const { validatePointContainment } = await import("~/lib/maps/geo-validation/);
+  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
   try {
     await validatePointContainment(db, countryId, lng, lat);
     return true;
@@ -66,7 +66,7 @@ export async function updateSubdivisionSpatialProfile(
   }
 
   const { resolveClimateFromColor, getAgricultureFactor, ELEVATION_ZONES } =
-    await import("~/lib/maps/geo-analytics/);
+    await import("~/lib/maps/geo-analytics");
 
   try {
     // 1. Climate distribution
@@ -216,7 +216,7 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
     return null;
   }
 
-  const { resolveClimateFromColor } = await import("~/lib/maps/geo-analytics/);
+  const { resolveClimateFromColor } = await import("~/lib/maps/geo-analytics");
 
   try {
     // 1. Dominant climate
@@ -287,7 +287,7 @@ export async function alignSubdivisionBorders(
   geometry: any,
   tolerance = 1e-7
 ): Promise<any> {
-  const { alignSharedVertices } = await import("~/lib/maps/border-editor/);
+  const { alignSharedVertices } = await import("~/lib/maps/border-editor");
   const subdivisions = await db.subdivision.findMany({
     where: {
       countryId,

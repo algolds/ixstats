@@ -11,7 +11,7 @@ import {
   hashToFactbookRoute,
   isFactbookSection,
   sectionFromPathname,
-} from "../factbook-routes";
+} from "~/lib/wiki";
 
 describe("factbook-routes", () => {
   describe("FACTBOOK_SECTIONS", () => {

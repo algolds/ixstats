@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";

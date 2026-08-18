@@ -15,11 +15,11 @@
 import * as fs from "fs";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
-import { getArticleWikitext, type WikiSource } from "../wiki/bridge";
-import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "../wiki/unified-parser";
-import { withRetrySafe } from "./with-retry";
+import { getArticleWikitext, type WikiSource } from "./bridge";
+import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
+import { withRetrySafe } from "~/lib/with-retry";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki/config";
-import { withBasePath } from "./base-path";
+import { withBasePath } from "~/lib/base-path";
 
 // ──────────────────────────────────────────────
 // Types

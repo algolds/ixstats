@@ -12,7 +12,7 @@ import { TaxBuilderStateSchema } from "~/types/validation/tax";
 
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 const PRIVILEGED_ROLES = ["admin", "owner", "staff", "system-owner"];
 

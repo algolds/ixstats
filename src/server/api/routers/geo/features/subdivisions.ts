@@ -18,7 +18,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { getTerrainForArea } from "~/lib/base-layer-query";
+import { getTerrainForArea } from "~/lib/country-geo";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { generateProvinces } from "~/lib/maps/province-generator";
 
@@ -220,7 +220,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         input.geometry,
         "Subdivision"
       );
-      const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+      const { alignSubdivisionBorders } = await import("~/lib/country-geo");
       const alignedGeometry = await alignSubdivisionBorders(
         ctx.db as any,
         input.countryId,
@@ -314,7 +314,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           input.geometry,
           "Subdivision"
         );
-        const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+        const { alignSubdivisionBorders } = await import("~/lib/country-geo");
         clippedGeometry = await alignSubdivisionBorders(
           ctx.db as any,
           input.countryId,

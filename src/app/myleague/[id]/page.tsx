@@ -21,7 +21,7 @@ import { TeamRosterModal } from "~/components/myleague/TeamRosterModal";
 import { LeagueSettingsModal } from "~/components/myleague/LeagueSettingsModal";
 import { TeamSettingsModal } from "~/components/myleague/TeamSettingsModal";
 import { useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { LeagueSidebarLayout } from "~/components/myleague/LeagueSidebarLayout";
 import Standings from "~/components/sports/standings/Standings1";
 import LatestResults from "~/components/sports/latest-results/LatestResults1";

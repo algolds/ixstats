@@ -9,7 +9,7 @@ import {
   GovernmentTab,
   GeographyTab,
 } from "~/components/mycountry/tabs";
-import type { FactbookSection } from "~/lib/factbook-routes";
+import type { FactbookSection } from "~/lib/wiki";
 
 /**
  * FactbookSectionContent — renders the tab content for a single factbook

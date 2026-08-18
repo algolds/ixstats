@@ -564,7 +564,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Calculate and store country mood metrics
   calculateCountryMoodMetrics: publicProcedure.mutation(async ({ ctx }) => {
     const { db } = ctx;
-    const { analyzePostSentiment } = await import("~/lib/sentiment-analysis");
+    const { analyzePostSentiment } = await import("~/lib/ai");
     const currentIxTime = IxTime.getCurrentIxTime();
     const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
 

@@ -10,7 +10,7 @@ unifiedFlagService.registerPersistentCache(
   (country, url) => wikiCacheService.cacheFlagUrl(country, url)
 );
 import { api } from "~/trpc/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 // Helper to check admin access
 async function requireAdminAccess(): Promise<{ authorized: boolean; error?: NextResponse }> {

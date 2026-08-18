@@ -11,7 +11,7 @@
 
 import { db } from "~/server/db";
 import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 // ─── Custom Field Definitions ────────────────────────────────────────────────
 

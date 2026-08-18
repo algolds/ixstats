@@ -3,7 +3,7 @@ import { adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { Geometry } from "geojson";
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import {
   buildGeoProfile,
   computeEconomicGeoModifiers,

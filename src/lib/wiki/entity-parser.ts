@@ -14,7 +14,7 @@
  */
 
 import { parseInfobox, parsePopulation, type InfoboxField } from "./infobox-parser";
-import { compareValues, type ContradictionVerdict } from "~/lib/country-geo-compliance";
+import { compareValues, type ContradictionVerdict } from "~/lib/country-geo";
 
 export type EntityKind = "city" | "subdivision" | "poi";
 

@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
 import type { WikiSource } from "~/lib/wiki/config";
 import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -12,7 +12,7 @@ import {
   Shield,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo-compliance";
+import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo";
 
 interface GeoCompliancePanelProps {
   countryId: string;

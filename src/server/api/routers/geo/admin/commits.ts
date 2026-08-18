@@ -18,7 +18,7 @@ import type { FeatureCollection } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { clearLayerCache, extractAllPositions } from "../core";
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 // ──────────────────────────────────────────────
 // Router

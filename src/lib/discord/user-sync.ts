@@ -7,7 +7,7 @@
  */
 
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Public API

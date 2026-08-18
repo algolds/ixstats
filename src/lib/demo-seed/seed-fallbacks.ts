@@ -3667,7 +3667,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
   ];
 
   const subIds: string[] = [];
-  const { updateSubdivisionSpatialProfile } = await import("../country-geo-service");
+  const { updateSubdivisionSpatialProfile } = await import("~/lib/country-geo");
   for (const sub of subdivisionData) {
     const created = await prisma.subdivision.create({
       data: {
@@ -3725,7 +3725,7 @@ export async function seedGeography(prisma: Prisma, countryId: string): Promise<
       isSubdivisionCapital: true,
     },
   ];
-  const { updateCitySpatialProfile } = await import("../country-geo-service");
+  const { updateCitySpatialProfile } = await import("~/lib/country-geo");
   for (const city of cities) {
     const created = await prisma.city.create({
       data: {

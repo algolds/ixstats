@@ -32,8 +32,8 @@ import {
   InternalError,
 } from "~/lib/app-error";
 import { userLoggingMiddleware } from "~/lib/logging";
-import { UserManagementService } from "~/lib/user-management-service";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { UserManagementService } from "~/lib/auth";
+import { isSystemOwner } from "~/lib/auth";
 import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";
 
 /**

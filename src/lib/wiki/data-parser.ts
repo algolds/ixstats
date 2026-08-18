@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { BaseCountryData } from "../types/ixstats";
+import type { BaseCountryData } from "~/types/ixstats";
 
 // Helper parsing functions
 function parseNumberRequired(value: any, defaultValue = 0): number {

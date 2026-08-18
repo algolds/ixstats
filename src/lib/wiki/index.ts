@@ -90,3 +90,6 @@ export * from "./user-sync";
 export * from "./lore-card-generator";
 export * from "./legacy-service";
 export * from "./cache-service";
+export * from "./data-parser";
+export * from "./factbook-routes";
+export * from "./eligible-country-service";

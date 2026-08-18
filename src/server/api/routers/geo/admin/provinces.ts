@@ -446,7 +446,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         // Batch create/upsert cities
         let citiesCreated = 0;
         if (input.cities && input.cities.length > 0) {
-          const { upsertCity } = await import("~/lib/country-geo-service");
+          const { upsertCity } = await import("~/lib/country-geo");
           for (const city of input.cities) {
             try {
               await upsertCity(tx, input.countryId, {

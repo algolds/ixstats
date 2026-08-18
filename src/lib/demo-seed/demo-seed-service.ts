@@ -77,7 +77,7 @@ export class DemoSeedService {
     }
 
     // Sync cached country geometries from MapLayer
-    const { syncCountryGeometryFromMapLayer } = await import("~/lib/country-geo-service");
+    const { syncCountryGeometryFromMapLayer } = await import("~/lib/country-geo");
     await syncCountryGeometryFromMapLayer(prisma, demoCountry.id);
 
     // Clone GovernmentStructure (or create synthetic fallback)

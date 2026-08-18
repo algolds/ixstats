@@ -8,7 +8,7 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
 import { AdminNavigationProvider } from "./_components";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

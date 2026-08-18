@@ -258,7 +258,7 @@ function getClerkMiddleware() {
           // Check for admin role on /admin routes
           if (req.nextUrl.pathname.startsWith("/admin")) {
             // Use centralized system owner constants
-            const { isSystemOwner } = await import("~/lib/system-owner-constants");
+            const { isSystemOwner } = await import("~/lib/auth");
             const isSystemOwnerUser = isSystemOwner(userId);
 
             if (!isSystemOwnerUser) {
