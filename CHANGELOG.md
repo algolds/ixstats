@@ -10,6 +10,17 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 5 Media, WebSockets, Themes, Vault & Activity Isolation)
+
+- **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:
+  - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/media/index.ts)).
+  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/websocket/index.ts)).
+  - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/themes/index.ts)).
+  - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/vault/index.ts)).
+  - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/activity/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 80+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/media`, `~/lib/websocket`, `~/lib/themes`, `~/lib/vault`, and `~/lib/activity`, completely deleting 26 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (520/520 full-platform tests passing across 43 test suites).
+
 ### Refactored & Consolidated (`src/lib/` Phase 4 Builder, Policies, Issues, Lorewards, Logging & IxTime Isolation)
 
 - **Systems, Builders & Simulation Engine Isolation (/ponytail)**:

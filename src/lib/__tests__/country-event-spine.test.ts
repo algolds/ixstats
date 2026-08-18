@@ -1,11 +1,11 @@
-import { CountryEventSpine } from "../country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 
 // Mock external dependency functions
-jest.mock("../diplomatic-news-generator", () => ({
+jest.mock("~/lib/diplomacy/news-generator", () => ({
   generateDiplomaticNews: jest.fn().mockResolvedValue(true),
 }));
 
-jest.mock("../activity-hooks", () => ({
+jest.mock("~/lib/activity/hooks", () => ({
   ActivityHooks: {
     Economic: {
       onTaxPolicyChange: jest.fn().mockResolvedValue(true),

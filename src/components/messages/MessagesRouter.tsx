@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
-import { getSoundService } from "~/lib/sound-service";
+import { getSoundService } from "~/lib/media";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { MessagesLayout } from "./MessagesLayout";

@@ -2,7 +2,7 @@
 // WebSocket client for real-time marketplace updates
 
 import type { MarketWebSocketMessage, Bid, AuctionListing } from "~/types/marketplace";
-import { withReconnect } from "~/lib/with-reconnect";
+import { withReconnect } from "./with-reconnect";
 
 type SubscriptionCallback<T> = (data: T) => void;
 

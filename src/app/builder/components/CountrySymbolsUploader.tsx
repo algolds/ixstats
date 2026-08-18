@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
-import { extractColorsFromImage, type ExtractedColors } from "~/lib/image-color-extractor";
+import { extractColorsFromImage, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";

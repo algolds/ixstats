@@ -12,7 +12,7 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "./vault-service";
 
 export interface VaultBonusConfig {
   /** Master toggle (1 = on, 0 = off). */

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 
 export const diplomaticInboxRouter = createTRPCRouter({
   getInbox: protectedProcedure

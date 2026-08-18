@@ -1,5 +1,5 @@
 import { type PrismaClient } from "@prisma/client";
-import { Cache } from "../cache";
+import { Cache } from "~/lib/cache";
 
 export interface VaultEffectPerks {
   cardCapacity?: number;

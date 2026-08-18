@@ -8,7 +8,7 @@ import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { TrendingUp, Users, DollarSign, Shield, Target, Activity, Crown, Zap } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { EconomicInputs } from "../lib/economy-data-service";
-import type { ExtractedColors } from "~/lib/image-color-extractor";
+import type { ExtractedColors } from "~/lib/media";
 
 interface BuilderVitalityRingsProps {
   economicInputs: EconomicInputs;

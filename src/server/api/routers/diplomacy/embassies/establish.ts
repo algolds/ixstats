@@ -41,9 +41,9 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   KEY_ACHIEVEMENTS,
 } from "~/lib/diplomacy/profile-options";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { ActivityHooks } from "~/lib/activity-hooks";
+import { ActivityHooks } from "~/lib/activity";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";

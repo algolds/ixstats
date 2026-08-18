@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
-import { processImageSelection, isExternalImageUrl } from "~/lib/image-download-service";
+import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
 // Modular tab components

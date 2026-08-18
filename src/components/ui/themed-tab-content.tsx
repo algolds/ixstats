@@ -5,7 +5,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { getTabThemeClasses, getTabCSSProperties, type TabTheme } from "~/lib/mycountry-theme";
+import { getTabThemeClasses, getTabCSSProperties, type TabTheme } from "~/lib/themes";
 
 interface ThemedTabContentProps {
   theme: TabTheme;

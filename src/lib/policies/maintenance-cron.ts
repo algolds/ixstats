@@ -1,5 +1,5 @@
 import { db } from "~/server/db";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 import { NationalIssuesEngine } from "~/lib/national-issues/engine";
 import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";

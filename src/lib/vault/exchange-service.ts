@@ -18,7 +18,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "~/lib/ixtime";
-import { getExchangeConfig } from "~/lib/exchange-config";
+import { getExchangeConfig } from "./exchange-config";
 
 /** Sovereign ledger transaction types (stored as String, matching VaultTransaction.type). */
 export type ExchangeTxType =

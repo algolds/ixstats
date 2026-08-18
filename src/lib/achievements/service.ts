@@ -13,12 +13,12 @@
 import { type PrismaClient } from "@prisma/client";
 import { getAchievementById, type ExtendedAchievementData } from "./definitions";
 import { getScaleThresholds } from "./scaling";
-import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault-bonus";
+import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault";
 import { getCardRewardForAchievement, hasCardReward } from "./card-rewards";
 import { awardAchievementCard } from "~/lib/card-service";
 import { eventBus } from "~/lib/event-bus";
 import { Redis } from "ioredis";
-import { ActivityHooks } from "~/lib/activity-hooks";
+import { ActivityHooks } from "~/lib/activity";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 // Redis client (lazy initialized)

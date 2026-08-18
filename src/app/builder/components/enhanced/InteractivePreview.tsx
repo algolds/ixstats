@@ -31,7 +31,7 @@ import { Button } from "~/components/ui/button";
 import { BuilderVitalityRings } from "../BuilderVitalityRings";
 import { withBasePath } from "~/lib/base-path";
 import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
-import type { ExtractedColors } from "~/lib/image-color-extractor";
+import type { ExtractedColors } from "~/lib/media";
 import type { BuilderStyle, BuilderMode } from "../glass/BuilderStyleToggle";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
 

@@ -18,7 +18,7 @@ import {
   type CardImageType,
 } from "~/lib/card-image-presets";
 import { useSimpleFlag } from "~/hooks/useSimpleFlag";
-import type { CountryImageData } from "~/lib/country-image-engine";
+import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
 // Theme color configurations

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { generateImageThemeCSS, type ExtractedColors } from "~/lib/image-color-extractor";
+import { generateImageThemeCSS, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 
 interface ThemeState {

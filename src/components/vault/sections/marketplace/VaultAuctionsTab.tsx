@@ -14,7 +14,7 @@ import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import { AuctionCardItem } from "./auctions/AuctionCardItem";
 import { CreateAuctionModal } from "./auctions/CreateAuctionModal";
 import type { MarketAuctionItem } from "./auctions/types";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { unsplashService } from "~/lib/unsplash-service";
+import { unsplashService } from "~/lib/media";
 import type { CountryInfobox } from "~/lib/wiki/legacy-service";
 import type { BannerMode, ProfileTabType, BaseCountryData } from "../_types";
 

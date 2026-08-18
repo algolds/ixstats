@@ -3,7 +3,7 @@ import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import { getRarityGlow, getRarityBorder } from "~/components/vault/vault-theme";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import type { CardInstance } from "~/types/cards-display";

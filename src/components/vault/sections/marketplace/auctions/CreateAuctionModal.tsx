@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/ns-image-proxy";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import {
   Dialog,
   DialogContent,

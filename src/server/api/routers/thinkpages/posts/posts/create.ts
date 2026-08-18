@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/sanitize-html";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 import { globalCache } from "~/lib/advanced-cache-system";
 
 const invalidateFeeds = async () => {

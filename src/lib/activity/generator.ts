@@ -2,7 +2,7 @@
 // Activity generator service for automatic activity creation
 
 import { db } from "~/server/db";
-import { formatCurrency, formatPopulation } from "./chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 export interface ActivityData {
   type: "achievement" | "diplomatic" | "economic" | "social" | "meta";

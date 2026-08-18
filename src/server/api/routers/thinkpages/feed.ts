@@ -556,7 +556,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   triggerCitizenReaction: publicProcedure
     .input(z.object({ postId: z.string() }))
     .mutation(async ({ input }) => {
-      const { generateAndPostCitizenReaction } = await import("~/lib/auto-post-service");
+      const { generateAndPostCitizenReaction } = await import("~/lib/activity");
       await generateAndPostCitizenReaction(input.postId);
       return { success: true, message: "Citizen reaction triggered" };
     }),

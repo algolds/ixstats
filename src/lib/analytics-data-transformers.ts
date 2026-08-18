@@ -8,7 +8,7 @@
  */
 
 import { IxTime } from "~/lib/ixtime";
-import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
+import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 
 // ===== TYPES =====
 

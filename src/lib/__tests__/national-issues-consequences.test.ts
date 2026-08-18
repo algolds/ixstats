@@ -15,7 +15,7 @@ jest.mock("~/lib/national-issues/engine", () => ({
   NationalIssuesEngine: { forceGenerate: jest.fn() },
 }));
 
-jest.mock("~/lib/country-event-spine", () => ({
+jest.mock("~/lib/activity/event-spine", () => ({
   CountryEventSpine: { recordCountryEvent: jest.fn() },
 }));
 

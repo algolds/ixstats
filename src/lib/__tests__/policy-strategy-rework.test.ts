@@ -8,13 +8,13 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
 }));
-jest.mock("~/lib/country-event-spine", () => ({
+jest.mock("~/lib/activity/event-spine", () => ({
   CountryEventSpine: { recordCountryEvent: jest.fn(() => Promise.resolve()) },
 }));
 jest.mock("~/lib/diplomacy/news-generator", () => ({
   generateDiplomaticNews: jest.fn(() => Promise.resolve()),
 }));
-jest.mock("~/lib/activity-hooks", () => ({
+jest.mock("~/lib/activity/hooks", () => ({
   ActivityHooks: {
     Economic: {
       onTaxPolicyChange: jest.fn(() => Promise.resolve()),

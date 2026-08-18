@@ -3,11 +3,11 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { ActivityHooks } from "~/lib/activity-hooks";
+import { ActivityHooks } from "~/lib/activity";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policies";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import { IxTime } from "~/lib/ixtime";

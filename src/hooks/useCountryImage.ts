@@ -5,8 +5,8 @@ import {
   generateImageKeywords,
   type CountryImageData,
   type ImageContext,
-} from "~/lib/country-image-engine";
-import { unsplashService, type UnsplashImageData } from "~/lib/unsplash-service";
+} from "~/lib/media";
+import { unsplashService, type UnsplashImageData } from "~/lib/media";
 
 // ── Types ────────────────────────────────────────────────────────────────
 

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import { Card, CardContent } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { proxyNSImage } from "~/lib/ns-image-proxy";

@@ -23,7 +23,7 @@ import {
   type ConsequenceDefinition,
 } from "./engine";
 import type { PrismaClient } from "@prisma/client";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 
 // ==================== FIELD BOUNDS ====================
 

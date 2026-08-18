@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { ImageContext } from "~/lib/country-image-engine";
+import type { ImageContext } from "~/lib/media";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
 

@@ -2,7 +2,7 @@
  * MyCountry gold accents for guest splash — aligns with SECTION_THEME_CLASSES.overview
  * (@see ~/lib/mycountry-theme.ts).
  */
-import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
+import { SECTION_THEME_CLASSES } from "~/lib/themes";
 
 const ov = SECTION_THEME_CLASSES.overview;
 

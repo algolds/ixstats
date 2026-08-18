@@ -12,7 +12,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/advanced-cache-system";
 

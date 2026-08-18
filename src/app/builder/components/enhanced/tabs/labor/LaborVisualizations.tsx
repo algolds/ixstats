@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
-import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
+import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import { PieChart, BarChart3, Shield, Gauge } from "lucide-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import { Button } from "~/components/ui/button";

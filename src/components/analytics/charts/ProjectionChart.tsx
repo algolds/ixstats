@@ -20,7 +20,7 @@ import {
 import { TrendingUp, FileSpreadsheet, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
+import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { ProjectionDataPoint } from "~/lib/analytics-data-transformers";
 import type { Scenario, DateRange } from "~/hooks/useAnalyticsDashboard";
 

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { externalApiCache } from "~/lib/external-api-cache";
 import { mediaWikiCache } from "~/lib/wiki/cache-service";
-import { imageCache } from "~/lib/image-cache-service";
+import { imageCache } from "~/lib/media";
 
 export const cacheRouter = createTRPCRouter({
   /**

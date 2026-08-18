@@ -14,7 +14,7 @@
  * - Bid validation (5% minimum increment)
  */
 
-import { vaultService, getVaultConfig } from "~/lib/vault-service";
+import { vaultService, getVaultConfig } from "~/lib/vault";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -29,7 +29,7 @@ let _marketWs: { getMarketWebSocketServer: () => any } | null | undefined;
 async function getMarketWs() {
   if (_marketWs === undefined) {
     try {
-      _marketWs = await import("~/lib/market-websocket-server");
+      _marketWs = await import("~/lib/websocket");
     } catch {
       _marketWs = null;
     }

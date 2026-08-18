@@ -29,7 +29,7 @@ import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { ActivityGenerator } from "~/lib/activity";
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";

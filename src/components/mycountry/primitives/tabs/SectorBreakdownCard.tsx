@@ -13,7 +13,7 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { useCountryImage } from "~/hooks/useCountryImage";
 import { useCountryData } from "../CountryDataProvider";
-import { extractCountryImageData, type ImageContext } from "~/lib/country-image-engine";
+import { extractCountryImageData, type ImageContext } from "~/lib/media";
 
 export interface SectorData {
   id: string;

@@ -13,7 +13,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
-import { getVaultConfig } from "~/lib/vault-service";
+import { getVaultConfig } from "~/lib/vault";
 import { grantCardXp } from "~/lib/card-xp-utils";
 
 /**

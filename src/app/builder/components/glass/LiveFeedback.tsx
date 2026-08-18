@@ -18,7 +18,7 @@ import { GlassCard, GlassCardContent } from "./GlassCard";
 import { BuilderVitalityRings } from "../BuilderVitalityRings";
 import { generatePolicyAdvisorTips } from "../../utils/policyAdvisorUtils";
 import type { EconomicInputs } from "../../lib/economy-data-service";
-import type { ExtractedColors } from "~/lib/image-color-extractor";
+import type { ExtractedColors } from "~/lib/media";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 interface LiveFeedbackProps {

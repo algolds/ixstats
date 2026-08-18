@@ -15,7 +15,7 @@ import {
   parseAnnualWinners,
 } from "./ool-parser";
 import { getWikiDbPool } from "~/lib/wiki/bridge";
-import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
+import { getBonusConfig, grantBonus } from "~/lib/vault";
 
 // Direct MySQL for namespace 4 (Project/IxWiki) pages
 function getPool(): mysql.Pool {

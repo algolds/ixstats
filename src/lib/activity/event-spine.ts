@@ -1,7 +1,7 @@
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
-import { ActivityHooks } from "./activity-hooks";
+import { ActivityHooks } from "./hooks";
 import type { PrismaClient } from "@prisma/client";
 
 // ==================== FIELD BOUNDS ====================

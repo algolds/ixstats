@@ -10,7 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { formatCurrency, formatPopulation, formatPercentage } from "./utils";
-import { getTierStyle } from "~/lib/theme-utils";
+import { getTierStyle } from "~/lib/themes";
 
 export interface CoreEconomicIndicators {
   totalPopulation: number;

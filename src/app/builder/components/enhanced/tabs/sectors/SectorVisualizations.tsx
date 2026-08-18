@@ -5,7 +5,7 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { Badge } from "~/components/ui/badge";
 import { PieChart, BarChart3, Zap } from "lucide-react";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
-import { getColorsFromData } from "~/lib/chart-colors";
+import { getColorsFromData } from "~/lib/themes";
 import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";
 

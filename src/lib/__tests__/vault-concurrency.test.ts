@@ -2,7 +2,7 @@
  * Concurrency stress tests for VaultService spendCredits
  */
 
-import { VaultService } from "../vault-service";
+import { VaultService } from "~/lib/vault";
 
 describe("VaultService - Concurrency & Atomic Balance Safety", () => {
   let vaultService: VaultService;

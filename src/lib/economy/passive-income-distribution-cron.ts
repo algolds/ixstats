@@ -21,7 +21,7 @@
  */
 
 import { db } from "~/server/db";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 
 /**
  * Distribute passive income to all users with countries

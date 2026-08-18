@@ -13,16 +13,16 @@ import {
   getBalance as ledgerGetBalance,
   getTransactionHistory as ledgerGetTransactionHistory,
   getEarningsSummary as ledgerGetEarningsSummary,
-} from "./vault/vault-ledger";
+} from "./vault-ledger";
 import {
   claimDailyBonus as bonusClaimDailyBonus,
   claimCombinedDailyClaim as bonusClaimCombinedDailyClaim,
   updateLoginStreak as bonusUpdateLoginStreak,
-} from "./vault/vault-daily-bonus";
+} from "./vault-daily-bonus";
 import {
   calculatePassiveIncome as incomeCalculatePassiveIncome,
   catchUpPassiveIncome as incomeCatchUpPassiveIncome,
-} from "./vault/vault-passive-income";
+} from "./vault-passive-income";
 import {
   getPurchasedItemsEffects as perksGetPurchasedItemsEffects,
   clearUserPerksCache as perksClearUserPerksCache,
@@ -34,7 +34,7 @@ import {
   type VaultEffectPerks,
   type VaultEffectItem,
   type VaultConfig,
-} from "./vault/vault-perks";
+} from "./vault-perks";
 
 export type { VaultEffectPerks, VaultEffectItem, VaultConfig };
 export { getVaultConfig, invalidateVaultConfigCache };

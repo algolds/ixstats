@@ -122,7 +122,7 @@ app
     // WebSocket: Market (always enabled)
     // ──────────────────────────────────────────────
     try {
-      const { initializeMarketWebSocket } = await import("./src/lib/market-websocket-server.js");
+      const { initializeMarketWebSocket } = await import("~/lib/websocket");
       marketWsInstance = initializeMarketWebSocket(httpServer, "/api/market-ws");
       subsystems.marketWS = { status: "ok", detail: "/api/market-ws" };
       console.log("[Server] ✓ Market WebSocket initialized at /api/market-ws");

@@ -14,7 +14,7 @@ import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/serve
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { ActivityGenerator } from "~/lib/activity";
 import {
   validatePointContainment,
   checkPointCollision,

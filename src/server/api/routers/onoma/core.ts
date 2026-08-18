@@ -9,7 +9,7 @@ import {
   publicProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { ActivityGenerator } from "~/lib/activity";
 
 // Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
 function parseVoiceMap(raw: string | undefined): Record<string, string> {

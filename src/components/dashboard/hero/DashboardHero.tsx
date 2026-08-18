@@ -20,7 +20,7 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { createUrl } from "~/lib/url-utils";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { cn } from "~/lib/utils";
-import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
+import { SECTION_THEME_CLASSES } from "~/lib/themes";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { EconomicTierBadge, PopulationTierBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";

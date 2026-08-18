@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { PieChart, BarChart3, Users } from "lucide-react";
 import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
-import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
+import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { getSectorColor, getEmploymentTypeColor } from "../utils/previewCalculations";
 

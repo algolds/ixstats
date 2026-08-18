@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
-import { exchangeService } from "../exchange-service";
+import { exchangeService } from "~/lib/vault";
 
 export type PredictionOutcome = "home" | "away" | "draw";
 

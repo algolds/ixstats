@@ -29,7 +29,7 @@ import { invalidateCache } from "~/lib/trpc-cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { ActivityGenerator } from "~/lib/activity";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 // eslint-disable-next-line unused-imports/no-unused-imports

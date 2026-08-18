@@ -2,10 +2,10 @@
 // Comprehensive activity generation hooks for all user/country interactions
 
 import { db } from "~/server/db";
-import { ActivityGenerator } from "./activity-generator";
-import { formatCurrency, formatPopulation } from "./chart-utils";
+import { ActivityGenerator } from "./generator";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { notificationHooks } from "~/lib/notifications";
-import { eventBus } from "./event-bus";
+import { eventBus } from "~/lib/event-bus";
 
 // Helper to asynchronously queue achievement evaluation from activity hooks
 async function triggerAchievementCheck(countryId: string, eventName: string, userId?: string) {
