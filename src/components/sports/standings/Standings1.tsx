@@ -109,9 +109,9 @@ export default function Standings1({
     const relegLimit = relegationCount ?? 0;
 
     return (
-      <div className="border-border/20 bg-muted/30 overflow-x-auto rounded-2xl border dark:bg-slate-950/20">
+      <div className="border-border/20 bg-muted/30 overflow-x-auto rounded-2xl border dark:bg-secondary/40">
         <table className="min-w-full table-auto border-collapse border-spacing-px text-sm">
-          <thead className="bg-muted/50 text-foreground text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40">
+          <thead className="bg-muted/50 text-foreground text-xs font-bold tracking-wider uppercase dark:bg-secondary/60">
             <tr>
               <th scope="col" className="w-16 px-4 py-3 text-start">
                 #

@@ -43,12 +43,12 @@ export function ImportNationStep({
             Trading Cards
           </h2>
           <div className="relative h-7 w-10 shrink-0 select-none">
-            <div className="absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950" />
-            <div className="absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950">
-              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
+            <div className="absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card" />
+            <div className="absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card">
+              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-foreground" />
             </div>
-            <div className="absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 border-slate-900 bg-white shadow-sm dark:border-white dark:bg-slate-950">
-              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-white" />
+            <div className="absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card">
+              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-foreground" />
             </div>
           </div>
         </div>

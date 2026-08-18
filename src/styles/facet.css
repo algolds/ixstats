@@ -51,7 +51,7 @@
   backdrop-filter: blur(var(--blur-intense)) saturate(220%) !important;
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  background-color: hsl(var(--card)) !important;
+  background-color: var(--card) !important;
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, var(--refraction-intense)) 0%,
@@ -65,7 +65,7 @@
 
 .dark [data-slot="dialog-content"].facet-modal {
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  background-color: hsl(var(--card)) !important;
+  background-color: var(--card) !important;
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, calc(var(--refraction-intense) * 0.8)) 0%,

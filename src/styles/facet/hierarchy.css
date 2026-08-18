@@ -7,9 +7,10 @@
   position: relative;
   backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
   -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: hsl(var(--foreground));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(248, 250, 252, 0.65) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--foreground);
 }
 
 /* Child elements nested in parent inherit and compound parent blur */
@@ -17,10 +18,11 @@
   position: relative;
   backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 0.5rem;
-  color: hsl(var(--foreground));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
+  color: var(--foreground);
 }
 
 /* Interactive sibling/child buttons increase saturation, sheens and depth on focus */
@@ -32,26 +34,22 @@
               box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
               background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
               border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 0.5rem;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
   cursor: pointer;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .facet-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   transform: translateY(-1px);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.12) 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  color: hsl(var(--foreground));
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
-}
-
-.dark .facet-hierarchy-interactive:hover {
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
+  color: var(--foreground);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -60,14 +58,14 @@
 
 .dark .facet-hierarchy-parent,
 [data-theme="dark"] .facet-hierarchy-parent {
-  background: linear-gradient(135deg, rgba(24, 24, 27, 0.4) 0%, rgba(24, 24, 27, 0.2) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(22, 24, 29, 0.6) 0%, rgba(15, 17, 20, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dark .facet-hierarchy-child,
 [data-theme="dark"] .facet-hierarchy-child {
-  background: linear-gradient(135deg, rgba(9, 9, 11, 0.5) 0%, rgba(9, 9, 11, 0.3) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(30, 32, 40, 0.6) 0%, rgba(22, 24, 29, 0.7) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .dark .facet-hierarchy-interactive,
@@ -89,7 +87,7 @@
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background-color: hsl(var(--popover));
+  background-color: var(--popover);
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, var(--refraction-strong)) 0%,
@@ -120,7 +118,7 @@
 
 .dark .facet-contextual-popover {
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: hsl(var(--popover));
+  background-color: var(--popover);
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, calc(var(--refraction-strong) * 0.8)) 0%,

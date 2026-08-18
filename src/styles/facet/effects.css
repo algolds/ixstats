@@ -206,14 +206,14 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 .facet-text-light {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   text-shadow:
     0 1px 2px rgba(255, 255, 255, 0.8),
     0 0 4px rgba(255, 255, 255, 0.4);
 }
 
 .facet-text-contrast {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
   border-radius: 4px;
   padding: 2px 6px;
@@ -706,7 +706,7 @@ select.glass-refraction-none::after,
 
 .facet-glow-accent:hover {
   transform: translateY(-2px);
-  border-color: var(--facet-lab-accent, hsl(var(--primary))) !important;
+  border-color: var(--facet-lab-accent, var(--primary)) !important;
   box-shadow:
     0 0 20px calc(var(--facet-lab-glow, 0.5) * 12px)
       var(--facet-lab-accent, rgba(99, 102, 241, 0.35)),

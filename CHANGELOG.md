@@ -5,12 +5,39 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.2 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
+**IxStates 1.3 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
 
-### Type System Hardening & Full-Platform Typecheck Verification
+### Dark & Light Mode Color System Harmonization & Dynamic Island Apple Glass Physics
+
+- **Dark Mode Elevation & Color System Harmonization (Approach A)**:
+  - Standardized the 4-tier dark elevation hierarchy across `src/styles/themes.css` and `src/styles/facet/` (`#090a0f` obsidian canvas, `#12141a` base cards, `#1a1d26` controls, `#222634` floating surface).
+  - High-luminance domain accents tuned for dark mode readability (amber-400, blue-400, indigo-400, emerald-400, red-400, purple-400, sky-400, orange-400).
+  - Modernized high-traffic components to semantic design tokens:
+    - [src/components/ui/select.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
+    - [src/components/profile/WikiPreferencesCard.tsx](file:///home/jxsig/projects/ixstats/src/components/profile/WikiPreferencesCard.tsx): Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
+    - Vault modals & marketplace: [DailyBonusWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/DailyBonusWidget.tsx), [ImportNationStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/VaultParticleExplosionModal.tsx).
+    - ThinkPages composer & social cards: [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), [MentionMenuPortal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/MentionMenuPortal.tsx), [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx).
+    - Maps & navigation HUDs: [TourHUD.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/components/TourHUD.tsx), [NotificationsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx), [MatchDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchDetailModal.tsx), [DevCountryViewToolbar.tsx](file:///home/jxsig/projects/ixstats/src/components/dev/DevCountryViewToolbar.tsx).
+    - Sports widgets: [PlayerCard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-cards/PlayerCard1.tsx), [Scoreboard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/scoreboards/Scoreboard1.tsx), [Standings1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/standings/Standings1.tsx), [LatestResults1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/latest-results/LatestResults1.tsx), [PlayerStats1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-stats/PlayerStats1.tsx), [MatchSchedule1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/match-schedules/MatchSchedule1.tsx).
+- **Light Mode & Base Theme Harmonization (Apple Design Standards)**:
+  - Fixed inverted light mode text contrast scale in [src/styles/themes.css](file:///home/jxsig/projects/ixstats/src/styles/themes.css): Primary text `#09090b` (zinc-950, **19.2:1 contrast**), secondary text `#52525b` (zinc-600, **6.8:1**), muted text `#71717a` (zinc-500, **4.6:1 WCAG AA**).
+  - Standardized 4-tier light elevation: `#f8fafc` porcelain canvas, `#ffffff` card surfaces (`rgba(255, 255, 255, 0.85)` frosted glass with `rgba(0, 0, 0, 0.08)` border and `inset 0 1px 0 rgba(255, 255, 255, 1)` specular light), `#f1f5f9` recessed controls, `rgba(255, 255, 255, 0.95)` popover surfaces.
+  - Saturated light domain accents in [src/styles/facet/tokens.css](file:///home/jxsig/projects/ixstats/src/styles/facet/tokens.css) ($\ge 5:1$ contrast on light surfaces).
+  - Updated `.facet-material-satin`, `.facet-hierarchy-parent`, and `.facet-hierarchy-child` in `src/styles/facet/` with specular top highlights and visible boundaries.
+  - Sanitized [src/styles/light-mode-overrides.css](file:///home/jxsig/projects/ixstats/src/styles/light-mode-overrides.css): Purged all dark-mode polluting rules (`.dark [class*="bg-card/95"]`, `.dark .command-palette-dropdown` injecting `#1f2937`) and fragile `!important` monkey patches.
+  - Added tactile button press physics (`active:scale-[0.98]`) to `.btn-primary` and `.btn-secondary` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css).
+- **Dynamic Island / Halo Apple Acrylic Shell & Interactive Material Physics**:
+  - Replaced fragile inline gradient styles with `.dynamic-island-shell` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css), eliminating Framer Motion layout morph interpolation bugs.
+  - Implemented Apple HIG dual-state translucency & interactive material physics:
+    - **Resting state**: Translucent acrylic (`65%/48%` light, `58%/48%` dark) with `blur(20px) saturate(180%)`, allowing background textures, auroras, and maps to blur through.
+    - **Interactive state** (`:hover`, `:focus-within`, `:active`, `[data-expanded="true"]`): Solid frosted acrylic (`94%/88%` light, `92%/95%` dark) with sharpened specular rim lights, `blur(28px) saturate(200%)`, and elevated shadows.
+    - Fluid Apple cubic-bezier timing curve (`cubic-bezier(0.16, 1, 0.3, 1)` over `350ms`).
+  - Updated [src/components/ui/dynamic-island.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/dynamic-island.tsx) and [src/components/maps/core/MapDynamicIsland.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/MapDynamicIsland.tsx) to attach `.dynamic-island-shell` and sync `data-expanded`.
+- **Verification**:
+  - Ran Jest unit test suite: **38 / 38 test suites passed (331 tests)**.
 
 - **Subproject Typechecks Verification (`typecheck:db`, `typecheck:trpc`, `typecheck:server`, `typecheck:ui`)**:
   - Resolved all compiler errors across the split subproject typecheck suites, bringing `bun run typecheck` to a clean exit code `0` with 0 errors across the entire codebase.

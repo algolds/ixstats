@@ -49,12 +49,12 @@ export function ComposerAccountSwitcher({
             </Avatar>
 
             {/* Floating Chevron Down Badge */}
-            <div className="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full border border-black/10 dark:border-white/20 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 shadow-md transition-all duration-200 group-hover:scale-110">
+            <div className="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full border border-black/10 dark:border-border bg-white dark:bg-secondary text-slate-600 dark:text-muted-foreground shadow-md transition-all duration-200 group-hover:scale-110">
               <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-200", showAccountManager && "rotate-180")} />
             </div>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">
+        <TooltipContent side="right" className="bg-popover/95 text-foreground border border-border shadow-xl backdrop-blur-md text-[11px] font-medium tracking-tight">
           Switch account
         </TooltipContent>
       </Tooltip>
@@ -67,10 +67,10 @@ export function ComposerAccountSwitcher({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 6 }}
             transition={{ type: "spring", stiffness: 420, damping: 30 }}
-            className="absolute top-11 left-0 z-50 w-64 rounded-2xl border border-black/10 dark:border-white/15 bg-white/90 dark:bg-slate-900/95 p-2.5 shadow-2xl backdrop-blur-2xl"
+            className="absolute top-11 left-0 z-50 w-64 rounded-2xl border border-black/10 dark:border-border bg-white/90 dark:bg-popover/98 p-2.5 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
           >
-            <div className="mb-2 flex items-center justify-between border-b border-black/5 dark:border-white/10 px-2.5 pb-2">
-              <span className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+            <div className="mb-2 flex items-center justify-between border-b border-black/5 dark:border-border/60 px-2.5 pb-2">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Switch Account
               </span>
               {isOwner && accounts.length < 25 && (
@@ -101,26 +101,26 @@ export function ComposerAccountSwitcher({
                     "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-2 text-left transition-all duration-150 active:scale-[0.98]",
                     acc.id === account.id
                       ? "border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "border-transparent text-slate-800 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10"
+                      : "border-transparent text-foreground hover:bg-black/5 dark:hover:bg-secondary/70"
                   )}
                 >
-                  <Avatar className="h-7 w-7 border border-white/20 dark:border-white/10">
+                  <Avatar className="h-7 w-7 border border-white/20 dark:border-border">
                     <AvatarImage src={getAccountAvatar(acc)} />
                     <AvatarFallback className="bg-muted text-muted-foreground text-[0.6rem]">
                       {acc.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-bold leading-tight tracking-tight">
+                    <div className="truncate text-xs font-bold leading-tight tracking-tight text-foreground">
                       {acc.displayName}
                     </div>
-                    <div className="mt-0.5 truncate text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="mt-0.5 truncate text-[10px] text-muted-foreground font-medium">
                       @{acc.username}
                     </div>
                   </div>
                   <Badge
                     variant="outline"
-                    className="h-4 border-slate-200 dark:border-white/10 px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                    className="h-4 border-slate-200 dark:border-border px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider text-muted-foreground"
                   >
                     {acc.accountType}
                   </Badge>

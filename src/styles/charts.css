@@ -28,8 +28,8 @@
   
   /* Chart tooltip styles */
   .chart-tooltip {
-    background: hsl(var(--popover));
-    color: hsl(var(--popover-foreground));
+    background: var(--popover);
+    color: var(--popover-foreground);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.75rem;
@@ -63,7 +63,7 @@
   
   /* Chart axis and grid styles */
   .chart-axis {
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     font-size: 0.75rem;
   }
   

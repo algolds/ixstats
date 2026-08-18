@@ -162,11 +162,11 @@
   --country-text-muted: #e5e7eb;   /* Default light gray */
 
   /* Satin Glass Volumetric System */
-  --glass-refraction-bg-start: rgba(30, 32, 40, 0.75);
-  --glass-refraction-bg-end: rgba(18, 20, 24, 0.85);
+  --glass-refraction-bg-start: rgba(22, 24, 29, 0.85);
+  --glass-refraction-bg-end: rgba(15, 17, 20, 0.92);
   --glass-refraction-border: rgba(255, 255, 255, 0.08);
   --glass-refraction-shadow-inset: rgba(255, 255, 255, 0.08);
-  --glass-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.3);
+  --glass-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.35);
   --glass-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.2);
   --refraction-opacity-base: 0.08;
   --refraction-opacity-hover: 0.15;
@@ -182,10 +182,10 @@
   --bg-gradient-government-end: rgba(16, 12, 24, 0.96);
 
   /* Volumetric Facet Design System - Dark Satin Glass */
-  --facet-bg-1: rgba(22, 24, 29, 0.7);
-  --facet-bg-2: rgba(22, 24, 29, 0.75);
-  --facet-bg-3: rgba(22, 24, 29, 0.8);
-  --facet-bg-4: rgba(22, 24, 29, 0.85);
+  --facet-bg-1: rgba(22, 24, 29, 0.75);
+  --facet-bg-2: rgba(22, 24, 29, 0.82);
+  --facet-bg-3: rgba(30, 32, 40, 0.88);
+  --facet-bg-4: rgba(22, 24, 29, 0.95);
 
   --facet-border-1: rgba(255, 255, 255, 0.08);
   --facet-border-2: rgba(255, 255, 255, 0.1);
@@ -193,76 +193,82 @@
   --facet-border-4: rgba(255, 255, 255, 0.15);
 
   --facet-shadow-1: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --facet-shadow-2: 
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.35),
     0 4px 16px rgba(0, 0, 0, 0.2);
   --facet-shadow-3: 
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 16px 48px rgba(0, 0, 0, 0.45),
     0 8px 24px rgba(0, 0, 0, 0.3);
   --facet-shadow-4: 
     inset 0 2px 0 rgba(255, 255, 255, 0.12),
-    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.55),
     0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* Dynamic Island / Halo Tokens */
+  --di-bg: linear-gradient(135deg, rgba(22, 24, 29, 0.92) 0%, rgba(15, 17, 20, 0.96) 100%);
+  --di-border: rgba(255, 255, 255, 0.12);
+  --di-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --di-refraction: rgba(255, 255, 255, 0.15);
 }
 
 /* Light Theme Overrides */
 .light {
-  --color-bg-primary: #f9fafb;        /* gray-50 */
-  --background-rgb: 249, 250, 251;    /* RGB values for light glassmorphic backgrounds */
-  --border-rgb: 229, 231, 235;        /* RGB values for light glassmorphic borders */
-  --color-bg-secondary: #ffffff;      /* white */
-  --color-bg-tertiary: #f3f4f6;       /* gray-100 */
-  --color-bg-accent: #e5e7eb;         /* gray-200 */
-  --color-bg-hover: #d1d5db;          /* gray-300 */
-  --color-bg-surface: #ffffff;        /* white */
+  --color-bg-primary: #f8fafc;        /* porcelain / slate-50 */
+  --background-rgb: 248, 250, 252;    /* RGB values for light glassmorphic backgrounds */
+  --border-rgb: 0, 0, 0;              /* RGB values for light glassmorphic borders */
+  --color-bg-secondary: #ffffff;      /* crisp white surface */
+  --color-bg-tertiary: #f1f5f9;       /* slate-100 / recessed controls */
+  --color-bg-accent: #e2e8f0;         /* slate-200 */
+  --color-bg-hover: #e2e8f0;          /* slate-200 */
+  --color-bg-surface: rgba(255, 255, 255, 0.95); /* frosted popover surface */
   --color-bg-elevated: #ffffff;       /* white */
 
-  --color-text-primary: #495057;      /* Custom light mode text color */
-  --color-text-secondary: #374151;    /* gray-700 */
-  --color-text-tertiary: #4b5563;     /* gray-600 */
-  --color-text-muted: #6b7280;        /* gray-500 */
-  --color-text-disabled: #9ca3af;     /* gray-400 */
+  --color-text-primary: #09090b;      /* zinc-950 (19.2:1 contrast) */
+  --color-text-secondary: #52525b;    /* zinc-600 (6.8:1 contrast) */
+  --color-text-tertiary: #71717a;     /* zinc-500 (4.6:1 contrast) */
+  --color-text-muted: #71717a;        /* zinc-500 (WCAG AA compliant) */
+  --color-text-disabled: #a1a1aa;     /* zinc-400 */
 
-  --color-border-primary: #e5e7eb;    /* gray-200 */
-  --color-border-secondary: #d1d5db;  /* gray-300 */
-  --color-border-accent: #9ca3af;     /* gray-400 */
+  --color-border-primary: rgba(0, 0, 0, 0.08);  /* subtle 1px border */
+  --color-border-secondary: rgba(0, 0, 0, 0.12); /* hover border */
+  --color-border-accent: rgba(0, 0, 0, 0.18);    /* active / focused border */
 
-  --color-overlay: rgba(255, 255, 255, 0.75);
-  --color-backdrop: rgba(0, 0, 0, 0.25);
-  --color-glass: rgba(255, 255, 255, 0.85); /* standard frosted white glass surface */
+  --color-overlay: rgba(0, 0, 0, 0.4);
+  --color-backdrop: rgba(0, 0, 0, 0.2);
+  --color-glass: rgba(255, 255, 255, 0.88); /* frosted white glass surface */
   --color-surface-blur: rgba(255, 255, 255, 0.95);
 
   --color-input-bg: #ffffff;
-  --color-input-border: #d1d5db;
+  --color-input-border: rgba(0, 0, 0, 0.1);
 
-  --color-button-secondary: #f3f4f6;
-  --color-button-secondary-hover: #e5e7eb;
+  --color-button-secondary: #f1f5f9;
+  --color-button-secondary-hover: #e2e8f0;
 
   --color-card-bg: #ffffff;
-  --color-card-border: #e5e7eb;
-  --color-card-hover: #f9fafb;
+  --color-card-border: rgba(0, 0, 0, 0.08);
+  --color-card-hover: #f8fafc;
 
-  /* Lighter shadows for light theme */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Layered Apple HIG shadows for light theme */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 
-  --glass-diplomatic: rgba(255, 255, 255, 0.8);
-  --glass-diplomatic-hover: rgba(255, 255, 255, 0.9);
-  --glass-economic: rgba(240, 253, 244, 0.8);
-  --glass-military: rgba(254, 242, 242, 0.8);
-  --glass-cultural: rgba(245, 243, 255, 0.8);
+  --glass-diplomatic: rgba(255, 255, 255, 0.85);
+  --glass-diplomatic-hover: rgba(255, 255, 255, 0.95);
+  --glass-economic: rgba(240, 253, 244, 0.85);
+  --glass-military: rgba(254, 242, 242, 0.85);
+  --glass-cultural: rgba(245, 243, 255, 0.85);
 
   /* Tailwind CSS Variables - Light Theme */
   --background: var(--color-bg-primary);
   --foreground: var(--color-text-primary);
   --card: var(--color-bg-secondary);
   --card-foreground: var(--color-text-primary);
-  --popover: var(--color-bg-secondary);
+  --popover: var(--color-bg-surface);
   --popover-foreground: var(--color-text-primary);
   --primary: var(--color-text-primary);
   --primary-foreground: var(--color-bg-primary);
@@ -273,16 +279,16 @@
   --accent: var(--color-bg-tertiary);
   --accent-foreground: var(--color-text-primary);
   --destructive: var(--color-error);
-  --destructive-foreground: var(--color-text-primary);
+  --destructive-foreground: #ffffff;
   --border: var(--color-border-primary);
   --input: var(--color-input-border);
   --ring: var(--color-brand-primary);
 
   /* Satin Glass Volumetric System */
-  --glass-refraction-bg-start: rgba(255, 255, 255, 0.8);
-  --glass-refraction-bg-end: rgba(245, 245, 247, 0.85);
+  --glass-refraction-bg-start: rgba(255, 255, 255, 0.88);
+  --glass-refraction-bg-end: rgba(248, 250, 252, 0.82);
   --glass-refraction-border: rgba(0, 0, 0, 0.08);
-  --glass-refraction-shadow-inset: rgba(255, 255, 255, 0.5);
+  --glass-refraction-shadow-inset: rgba(255, 255, 255, 1);
   --glass-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.04);
   --glass-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.02);
   --refraction-opacity-base: 0.2;
@@ -299,28 +305,34 @@
   --bg-gradient-government-end: rgba(244, 241, 255, 0.65);
 
   /* Volumetric Facet Design System - Light Frosted Glass */
-  --facet-bg-1: rgba(255, 255, 255, 0.65);
-  --facet-bg-2: rgba(255, 255, 255, 0.7);
-  --facet-bg-3: rgba(255, 255, 255, 0.75);
-  --facet-bg-4: rgba(255, 255, 255, 0.85);
+  --facet-bg-1: rgba(255, 255, 255, 0.75);
+  --facet-bg-2: rgba(255, 255, 255, 0.85);
+  --facet-bg-3: rgba(255, 255, 255, 0.92);
+  --facet-bg-4: rgba(255, 255, 255, 0.98);
 
   --facet-border-1: rgba(0, 0, 0, 0.06);
   --facet-border-2: rgba(0, 0, 0, 0.08);
-  --facet-border-3: rgba(0, 0, 0, 0.1);
-  --facet-border-4: rgba(0, 0, 0, 0.12);
+  --facet-border-3: rgba(0, 0, 0, 0.12);
+  --facet-border-4: rgba(0, 0, 0, 0.16);
 
   --facet-shadow-1: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 1);
   --facet-shadow-2: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 8px 32px rgba(0, 0, 0, 0.04),
-    0 4px 16px rgba(0, 0, 0, 0.02);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 16px -2px rgba(0, 0, 0, 0.05),
+    0 2px 6px -1px rgba(0, 0, 0, 0.03);
   --facet-shadow-3: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 16px 48px rgba(0, 0, 0, 0.06),
-    0 8px 24px rgba(0, 0, 0, 0.03);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 12px 32px -4px rgba(0, 0, 0, 0.08),
+    0 4px 12px -2px rgba(0, 0, 0, 0.04);
   --facet-shadow-4: 
-    inset 0 2px 0 rgba(255, 255, 255, 0.7),
-    0 24px 64px rgba(0, 0, 0, 0.08),
-    0 12px 32px rgba(0, 0, 0, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 20px 48px -8px rgba(0, 0, 0, 0.12),
+    0 8px 20px -4px rgba(0, 0, 0, 0.06);
+
+  /* Dynamic Island / Halo Tokens (Light Mode) */
+  --di-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.88) 100%);
+  --di-border: rgba(0, 0, 0, 0.1);
+  --di-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --di-refraction: rgba(0, 0, 0, 0.06);
 }

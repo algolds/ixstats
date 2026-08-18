@@ -58,9 +58,9 @@ export function ComposerPollModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 16 }}
           transition={{ type: "spring", stiffness: 420, damping: 30 }}
-          className="text-foreground relative z-10 w-full max-w-md space-y-4 rounded-3xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl backdrop-blur-2xl"
+          className="text-foreground relative z-10 w-full max-w-md space-y-4 rounded-3xl border border-black/10 dark:border-border bg-white/95 dark:bg-popover/98 p-6 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
         >
-          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-3">
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-border/60 pb-3">
             <div className="flex items-center gap-2 text-sm font-bold tracking-tight text-[#ff8a65]">
               <Vote className="h-4 w-4" />
               <span>Configure Poll Draft</span>
@@ -69,7 +69,7 @@ export function ComposerPollModal({
               variant="ghost"
               size="icon"
               onClick={() => setShowPollModal(false)}
-              className="h-7 w-7 rounded-full text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-slate-200 active:scale-95 transition-all"
+              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10 hover:text-foreground active:scale-95 transition-all"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -77,7 +77,7 @@ export function ComposerPollModal({
 
           {/* Poll Question */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+            <label className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Question / Topic *
             </label>
             <Input
@@ -85,7 +85,7 @@ export function ComposerPollModal({
               placeholder="Ask a question..."
               value={pollDraft.question}
               onChange={(e) => setPollDraft({ ...pollDraft, question: e.target.value })}
-              className="rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-medium focus-visible:ring-[#ff8a65]/50"
+              className="rounded-xl border-black/10 dark:border-border bg-black/[0.03] dark:bg-secondary/40 text-xs font-medium focus-visible:ring-[#ff8a65]/50"
               required
             />
           </div>
@@ -93,7 +93,7 @@ export function ComposerPollModal({
           {/* Poll Type & Multiple Options */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="mb-1 block text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+              <label className="mb-1 block text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Poll Type
               </label>
               <Select
@@ -105,10 +105,10 @@ export function ComposerPollModal({
                   })
                 }
               >
-                <SelectTrigger className="h-8 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs font-semibold focus:border-[#ff8a65]/50">
+                <SelectTrigger className="h-8 rounded-xl border border-black/10 dark:border-border bg-black/[0.03] dark:bg-secondary/40 text-xs font-semibold focus:border-[#ff8a65]/50">
                   <SelectValue placeholder="Select Poll Type" />
                 </SelectTrigger>
-                <SelectContent className="z-[100020] rounded-xl border border-black/10 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 text-xs shadow-2xl backdrop-blur-2xl">
+                <SelectContent className="z-[100020] rounded-xl border border-black/10 dark:border-border bg-white/95 dark:bg-popover/98 text-xs shadow-2xl backdrop-blur-2xl">
                   <SelectItem value="choice">Choice Poll</SelectItem>
                   {!isRegularUser && (
                     <SelectItem value="feature-poll">Feature Poll</SelectItem>

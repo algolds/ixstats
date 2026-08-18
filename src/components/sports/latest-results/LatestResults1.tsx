@@ -109,9 +109,9 @@ export default function LatestResults1({
             {visibleMatchDays.map((matchDay) => (
               <div
                 key={matchDay}
-                className="bg-muted/20 border-border/10 flex h-[250px] w-full shrink-0 snap-start snap-always flex-col overflow-hidden rounded-2xl border dark:bg-slate-950/20"
+                className="bg-muted/20 border-border/10 flex h-[250px] w-full shrink-0 snap-start snap-always flex-col overflow-hidden rounded-2xl border dark:bg-secondary/40"
               >
-                <h4 className="bg-muted/50 text-muted-foreground border-border/10 shrink-0 border-b px-4 py-2.5 text-center text-xs font-bold tracking-wider uppercase dark:bg-slate-900/40">
+                <h4 className="bg-muted/50 text-muted-foreground border-border/10 shrink-0 border-b px-4 py-2.5 text-center text-xs font-bold tracking-wider uppercase dark:bg-secondary/60">
                   Matchday {matchDay}
                 </h4>
 

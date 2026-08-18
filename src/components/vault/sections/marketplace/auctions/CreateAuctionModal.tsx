@@ -109,7 +109,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md backdrop-blur-md dark:bg-slate-900/98">
+      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md backdrop-blur-md">
         <DialogHeader>
           <DialogTitle className="text-sm font-black tracking-wider text-amber-600 uppercase dark:text-amber-500">
             Create Auction Listing

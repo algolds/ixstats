@@ -70,7 +70,7 @@ export function VaultParticleExplosionModal({
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: [0.8, 1.05, 1], opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-popover/95 relative flex flex-col items-center rounded-2xl border border-amber-500/35 border-t-amber-400/50 px-10 py-7 text-center shadow-[0_0_40px_rgba(245,158,11,0.25)] dark:bg-slate-950/95"
+              className="bg-popover/95 relative flex flex-col items-center rounded-2xl border border-amber-500/35 border-t-amber-400/50 px-10 py-7 text-center shadow-[0_0_40px_rgba(245,158,11,0.25)] backdrop-blur-xl"
             >
               <div className="mb-3 animate-bounce rounded-full border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-400">
                 {icon || <Sparkles className="h-7 w-7" />}

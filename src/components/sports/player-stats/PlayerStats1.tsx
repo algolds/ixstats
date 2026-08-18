@@ -200,7 +200,7 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
         </div>
 
         {/* Detailed Stats Grid */}
-        <div className="bg-muted/30 border-border/20 mt-1 rounded-2xl border-t py-6 dark:bg-slate-950/20">
+        <div className="bg-muted/30 border-border/20 mt-1 rounded-2xl border-t py-6 dark:bg-secondary/40">
           <div className="divide-border/20 grid grid-cols-2 gap-4 divide-y px-6 md:grid-cols-4 md:divide-x md:divide-y-0 lg:grid-cols-6">
             {statistics.map((statistic) => (
               <div

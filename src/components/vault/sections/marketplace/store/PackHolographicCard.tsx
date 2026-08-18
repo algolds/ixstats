@@ -137,7 +137,7 @@ export function PackHolographicCard({
           >
             <Info className="h-3.5 w-3.5" />
           </DialogTrigger>
-          <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md dark:bg-slate-900/98">
+          <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
             <DialogHeader>
               <DialogTitle className="text-sm font-black tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
                 {pack.name}

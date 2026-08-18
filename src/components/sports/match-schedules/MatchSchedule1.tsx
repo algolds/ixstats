@@ -108,8 +108,8 @@ export default function MatchSchedule1({
             <div key={match.id} className="space-y-1">
               <div
                 className={cn(
-                  "bg-muted/30 border-border/10 grid grid-cols-[1fr_80px_1fr] items-center gap-4 rounded-2xl border px-4 py-3 transition-colors dark:bg-slate-950/20",
-                  isCompleted ? "hover:bg-muted/40 cursor-pointer dark:hover:bg-slate-900/20" : ""
+                  "bg-muted/30 border-border/10 grid grid-cols-[1fr_80px_1fr] items-center gap-4 rounded-2xl border px-4 py-3 transition-colors dark:bg-secondary/40",
+                  isCompleted ? "hover:bg-muted/40 cursor-pointer dark:hover:bg-secondary/60" : ""
                 )}
                 onClick={() => {
                   if (isCompleted) {

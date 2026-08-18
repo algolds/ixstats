@@ -41,7 +41,7 @@ export function SportsBulletinCard({ data, author, className }: SportsBulletinCa
   return (
     <div
       className={cn(
-        "group relative my-3.5 overflow-hidden rounded-3xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl hover:border-black/15 dark:hover:border-white/20",
+        "group relative my-3.5 overflow-hidden rounded-3xl border border-black/10 dark:border-border bg-white/70 dark:bg-card/85 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl hover:border-black/15 dark:hover:border-border-secondary dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         className
       )}
     >

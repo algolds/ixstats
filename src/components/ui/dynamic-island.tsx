@@ -588,15 +588,16 @@ const DynamicIslandContent = ({
         )}
       </motion.div>
 
-      {/* Main dynamic island — matching maps DI background and borders */}
+      {/* Main dynamic island — Apple HIG Acrylic Shell */}
       <motion.div
         id={id}
         layout
         layoutId="dynamic-island-main"
-        className={`focus-within:bg-accent/80 force-gpu relative mx-auto items-center justify-center border text-center shadow-2xl shadow-black/40 transition-colors duration-200 ${
+        data-expanded={!isCompact ? "true" : undefined}
+        className={`dynamic-island-shell force-gpu relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
           isImpersonating
-            ? "border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.45)] dark:border-red-500/60"
-            : "border-white/20 dark:border-white/10"
+            ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]"
+            : ""
         }`}
         initial={{
           width: dimensions.width,
@@ -616,10 +617,6 @@ const DynamicIslandContent = ({
         }}
         style={{
           willChange: "transform, width, height, border-radius",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-          backdropFilter: "blur(20px) saturate(145%)",
-          WebkitBackdropFilter: "blur(20px) saturate(145%)",
           transform: "translate3d(0, 0, 0)",
           backfaceVisibility: "hidden",
           isolation: "isolate",
@@ -628,15 +625,15 @@ const DynamicIslandContent = ({
         {...props}
       >
         {/* Refraction edges */}
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/35 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 dark:via-white/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 dark:via-white/10 to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 dark:via-white/30 to-transparent" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 dark:via-white/10 to-transparent" />
           {/* Inner shimmer */}
           {isCompact && (
             <div
-              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent"
               style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
             />
           )}
@@ -647,7 +644,7 @@ const DynamicIslandContent = ({
           {!isCompact && (
             <motion.div
               key="card-backdrop-scrim"
-              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-white/80 backdrop-blur-[6px] dark:bg-black/65"
+              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-white/50 backdrop-blur-[6px] dark:bg-black/40"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

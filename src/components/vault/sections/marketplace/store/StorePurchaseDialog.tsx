@@ -24,12 +24,13 @@ export function StorePurchaseDialog({
   onClose,
   onConfirm,
   isPurchasing,
+  isOpen,
 }: StorePurchaseDialogProps) {
   if (!item) return null;
 
   return (
-    <Dialog open={!!item} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md dark:bg-slate-900/98">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
         <DialogHeader>
           <DialogTitle className="text-sm font-black tracking-wider text-amber-600 uppercase dark:text-amber-500">
             Confirm Purchase

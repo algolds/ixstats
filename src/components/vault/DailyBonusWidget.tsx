@@ -283,7 +283,7 @@ export const DailyBonusWidget: React.FC = () => {
                 <Button
                   size="sm"
                   onClick={handleClose}
-                  className="w-full bg-slate-900 py-2 text-xs font-bold text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700"
+                  className="w-full bg-slate-900 py-2 text-xs font-bold text-white hover:bg-slate-800 dark:bg-secondary dark:hover:bg-secondary/80 dark:text-foreground active:scale-[0.98] transition-transform"
                 >
                   Collect & Return to Vault
                 </Button>

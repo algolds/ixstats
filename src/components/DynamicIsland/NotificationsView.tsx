@@ -178,11 +178,11 @@ function NotificationRow({
       <SwipeableRow.Content>
         <div
           className={cn(
-            "relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.18] bg-white/[0.16] shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.24] hover:bg-white/[0.22] dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
+            "relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.18] bg-white/[0.16] shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.24] hover:bg-white/[0.22] dark:border-border dark:bg-card/85 dark:hover:bg-secondary/90 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
             !isRead &&
-              "border-blue-500/40 bg-gradient-to-r from-white/[0.24] to-white/[0.14] shadow-md shadow-blue-500/10 dark:from-slate-900/60 dark:to-slate-950/80",
+              "border-blue-500/40 bg-gradient-to-r from-white/[0.24] to-white/[0.14] shadow-md shadow-blue-500/10 dark:from-secondary/60 dark:to-card/80",
             isRead &&
-              "border-white/[0.08] bg-white/[0.1] opacity-80 hover:opacity-95 dark:border-white/[0.06] dark:bg-slate-950/60"
+              "border-white/[0.08] bg-white/[0.1] opacity-80 hover:opacity-95 dark:border-border/60 dark:bg-card/60"
           )}
         >
           {/* Left Accent Border Strip */}

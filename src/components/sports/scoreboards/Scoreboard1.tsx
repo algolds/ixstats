@@ -152,7 +152,7 @@ export default function Scoreboard1({
       </div>
 
       {/* Footer Info */}
-      <div className="text-muted-foreground bg-muted/30 border-border/20 flex justify-between gap-2 border-t px-6 py-3 text-[10px] font-bold dark:bg-slate-950/20">
+      <div className="text-muted-foreground bg-muted/30 border-border/20 flex justify-between gap-2 border-t px-6 py-3 text-[10px] font-bold dark:bg-secondary/40">
         <div className="truncate tracking-wider uppercase">{title}</div>
         {date && <span className="tabular-nums">{date}</span>}
       </div>

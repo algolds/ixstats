@@ -204,7 +204,7 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "relative flex flex-col gap-0 rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl"
+        "relative flex flex-col gap-0 rounded-2xl border border-black/10 dark:border-border bg-white/70 dark:bg-card/80 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       )}
       transition={{
         type: "spring",

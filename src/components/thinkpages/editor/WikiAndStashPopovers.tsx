@@ -101,10 +101,10 @@ export function WikiAndStashPopovers({
           side="bottom"
           align="start"
           sideOffset={8}
-          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-3.5 text-slate-900 dark:text-white shadow-2xl backdrop-blur-2xl"
+          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-border bg-white/95 dark:bg-popover/98 p-3.5 text-foreground shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
         >
-          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2.5">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-border/60 pb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <FaWikipediaW className="h-3.5 w-3.5 text-[#1d4e89] dark:text-[#3b82f6]" />
               Wiki Link / Embed
             </span>
@@ -223,10 +223,10 @@ export function WikiAndStashPopovers({
           side="bottom"
           align="center"
           sideOffset={8}
-          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-slate-900/95 p-3.5 text-slate-900 dark:text-white shadow-2xl backdrop-blur-2xl"
+          className="z-50 w-80 space-y-3 rounded-2xl border border-black/10 dark:border-border bg-white/95 dark:bg-popover/98 p-3.5 text-foreground shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
         >
-          <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2.5">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between border-b border-black/5 dark:border-border/60 pb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <Sparkles className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
               Insert Stash Assets
             </span>

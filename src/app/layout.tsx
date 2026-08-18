@@ -111,7 +111,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={`${geist.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`dark ${geist.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
         <ConsentManager>
           <ChunkLoadErrorHandler />

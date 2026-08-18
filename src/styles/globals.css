@@ -77,7 +77,7 @@
 @import "./layout/z-index.css";
 @import "./layout/scrollbars.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* Glow text effects for popover numbers and percentages */
 .glow-text {
@@ -160,10 +160,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
     @apply bg-background text-foreground;
   }
-
 }
 
 @layer utilities {

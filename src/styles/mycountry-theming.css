@@ -713,7 +713,7 @@
   border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   transition: all 200ms ease;
   cursor: pointer;
   border: none;
@@ -725,7 +725,7 @@
 
 .subtab-pill:hover {
   background: rgba(0, 0, 0, 0.06);
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .dark .subtab-pill:hover {
@@ -734,13 +734,13 @@
 
 /* Active pill state */
 .subtab-pill[data-state="active"] {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: var(--background);
+  color: var(--foreground);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .dark .subtab-pill[data-state="active"] {
-  background: hsl(var(--card));
+  background: var(--card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 

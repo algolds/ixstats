@@ -3,16 +3,16 @@
    ========================================================================== */
 
 :root {
-  /* Core Brand & Theme Colors */
-  --facet-mycountry: #ca8a04; /* yellow-600 */
-  --facet-global: #2563eb;    /* blue-600 */
-  --facet-overview: #6366f1;  /* indigo-500 */
-  --facet-economy: #10b981;   /* emerald-500 */
-  --facet-military: #ef4444;  /* red-500 */
-  --facet-cultural: #a855f7;  /* purple-500 */
-  --facet-security: #3b82f6;  /* blue-500 */
-  --facet-builder: #fb923c;   /* orange-400 */
-  --facet-forum: #f97316;     /* orange-500 */
+  /* Core Brand & Theme Colors (Light Mode High-Contrast) */
+  --facet-mycountry: #b45309; /* amber-700 / gold */
+  --facet-global: #1d4ed8;    /* blue-700 */
+  --facet-overview: #4338ca;  /* indigo-700 */
+  --facet-economy: #047857;   /* emerald-700 */
+  --facet-military: #b91c1c;  /* red-700 */
+  --facet-cultural: #7e22ce;  /* purple-700 */
+  --facet-security: #0369a1;  /* sky-700 */
+  --facet-builder: #c2410c;   /* orange-700 */
+  --facet-forum: #c2410c;     /* orange-700 */
 
   /* Volumetric Z-axis Depth Scale */
   --z-depth-background: -1;
@@ -40,9 +40,9 @@
   --refraction-intense: 0.35;
 
   /* Adaptive Light Mode Base Values */
-  --facet-light-bg: rgba(255, 255, 255, 0.8);
-  --facet-light-border: rgba(0, 0, 0, 0.1);
-  --facet-light-shadow: rgba(0, 0, 0, 0.08);
+  --facet-light-bg: rgba(255, 255, 255, 0.88);
+  --facet-light-border: rgba(0, 0, 0, 0.08);
+  --facet-light-shadow: rgba(0, 0, 0, 0.06);
 
   /* Texture Patterns Foreground Base Color */
   --facet-texture-color: rgba(0, 0, 0, 0.25);
@@ -55,4 +55,15 @@
 .dark {
   /* Texture Patterns dynamically adapt to translucent white in Dark Mode */
   --facet-texture-color: rgba(255, 255, 255, 0.08);
+
+  /* High-luminance domain accents tuned for dark surfaces */
+  --facet-mycountry: #fbbf24; /* amber-400 */
+  --facet-global: #60a5fa;    /* blue-400 */
+  --facet-overview: #818cf8;  /* indigo-400 */
+  --facet-economy: #34d399;   /* emerald-400 */
+  --facet-military: #f87171;  /* red-400 */
+  --facet-cultural: #c084fc;  /* purple-400 */
+  --facet-security: #38bdf8;  /* sky-400 */
+  --facet-builder: #fb923c;   /* orange-400 */
+  --facet-forum: #fb923c;     /* orange-400 */
 }

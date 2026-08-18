@@ -137,7 +137,7 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
         </div>
       </div>
 
-      <div className="divide-border/30 text-foreground bg-muted/30 border-border/20 mx-auto mt-1 grid grid-cols-3 divide-x rounded-b-3xl border-t py-3 dark:bg-slate-950/20">
+      <div className="divide-border/30 text-foreground bg-muted/30 border-border/20 mx-auto mt-1 grid grid-cols-3 divide-x rounded-b-3xl border-t py-3 dark:bg-secondary/40">
         {defaultStats.map((statistic) => (
           <div key={statistic.label} className="px-3 text-center">
             <div className="mb-0.5 text-xs font-bold tabular-nums">{statistic.value}</div>

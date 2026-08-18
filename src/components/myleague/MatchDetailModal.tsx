@@ -98,7 +98,7 @@ export default function MatchDetailModal({
         {!isLoading && match && (
           <div className="space-y-6">
             {/* Header / Score Board */}
-            <div className="bg-muted/30 border-border/10 grid grid-cols-3 items-center gap-2 rounded-2xl border p-4 text-center dark:bg-slate-950/20">
+            <div className="bg-muted/30 border-border/10 grid grid-cols-3 items-center gap-2 rounded-2xl border p-4 text-center dark:bg-secondary/40">
               {/* Home Team */}
               <div className="flex min-w-0 flex-col items-center gap-1.5">
                 <div className="border-border/40 bg-background flex h-14 w-14 items-center justify-center rounded-full border p-1 shadow-md">

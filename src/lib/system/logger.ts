@@ -16,8 +16,8 @@
 // Conditionally import server-only dependencies
 // This allows logger to be imported in client components without errors
 const isServer = typeof window === "undefined";
-const db = isServer ? require("~/server/db").db : null;
-const discordWebhook = isServer ? require("./discord-webhook").discordWebhook : null;
+const db = isServer ? require("../../server/db").db : null;
+const discordWebhook = isServer ? require("../discord/webhook").discordWebhook : null;
 
 // Log levels
 export enum LogLevel {
