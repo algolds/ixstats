@@ -190,7 +190,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const { data: diplomaticRelations } = api.diplomacy.getRelationships.useQuery(
+  const { data: diplomaticRelations } = api.diplomaticCore.getRelationships.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 30_000 }
   );
@@ -200,8 +200,8 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     { staleTime: 60_000 }
   );
 
-  const profile = econConfig?.economicProfile;
-  const fiscal = econConfig?.fiscalSystem;
+  const profile = (econConfig as any)?.economicProfile;
+  const fiscal = (econConfig as any)?.fiscalSystem;
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
   // Derive Exports, Imports, and Openness
@@ -250,9 +250,9 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     }
   }, [fiscal?.exciseTaxRates]);
 
-  const updateCountryMutation = api.countries.management.update.useMutation({
-    onError: (err) => {
-      notify.error(`Failed to save tariff rates: ${err.message}`);
+  const updateCountryMutation = api.countries.update.useMutation({
+    onError: (err: any) => {
+      notify.error(`Failed to save tariff rates: ${err?.message ?? "Unknown error"}`);
     },
   });
 
@@ -278,17 +278,15 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         }, 0);
 
         updateCountryMutation.mutate({
-          countryId,
-          data: {
-            fiscalSystem: {
-              salesTaxRate: fiscal?.salesTaxRate ?? 15,
-              exciseTaxRates: JSON.stringify({
-                weightedTariff: weighted,
-                sectorTariffs: newTariffs,
-              }),
-            },
+          id: countryId,
+          fiscalSystem: {
+            salesTaxRate: fiscal?.salesTaxRate ?? 15,
+            exciseTaxRates: JSON.stringify({
+              weightedTariff: weighted,
+              sectorTariffs: newTariffs,
+            }),
           },
-        });
+        } as any);
       }, 800);
     },
     [countryId, fiscal?.salesTaxRate, sectors, updateCountryMutation]
@@ -363,7 +361,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     }> = [];
 
     if (diplomaticRelations && diplomaticRelations.length > 0) {
-      diplomaticRelations.forEach((rel) => {
+      diplomaticRelations.forEach((rel: any) => {
         const name = rel.targetCountryName || rel.targetCountry;
         const flagUrl = rel.targetCountryFlag || rel.flagUrl;
         const vol =
@@ -636,7 +634,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const profile = econConfig?.economicProfile;
+  const profile = (econConfig as any)?.economicProfile;
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
   const exportsPct = profile?.exportsGDPPercent ?? 25.5;

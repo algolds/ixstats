@@ -5,5 +5,18 @@
 export * from "./cache";
 export * from "./rate-limiter";
 export * from "./advanced-cache-system";
-export * from "./external-api-cache";
+export {
+  type CacheService,
+  type CacheType,
+  type ValidationStatus,
+  type CacheMetadata,
+  type CacheOptions as ExternalCacheOptions,
+  type CacheEntry as ExternalCacheEntry,
+  generateCacheKey,
+  generateContentHash,
+  CACHE_TTL,
+  REVALIDATION_INTERVAL,
+  ExternalApiCacheService,
+  externalApiCache,
+} from "./external-api-cache";
 export * from "./trpc-cache";

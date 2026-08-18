@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Users as UsersIcon } from "lucide-react";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 
@@ -220,7 +220,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       className="flex items-center justify-between text-sm text-white/90"
                     >
                       <div className="flex items-center gap-2">
-                        <UsersIcon ref={usersIconRef} size={16} className="text-blue-400" />
+                        <UsersIcon size={16} className="text-blue-400" />
                         <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                           Population
                         </span>

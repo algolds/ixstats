@@ -329,7 +329,7 @@ export function MentionPopover({
   );
 
   const { data: countryData, isLoading: countryLoading } = api.countries.getWikiRichIntro.useQuery(
-    { name: entityId },
+    { countryName: entityId },
     { enabled: open && isCountry }
   );
 
@@ -421,10 +421,10 @@ export function MentionPopover({
                     <span className="text-lg">🌍</span>
                     <div>
                       <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                        {countryData.title}
+                        {(countryData as any)?.title ?? entityId}
                       </h4>
-                      <p className="text-[10px] text-neutral-500 dark:text-slate-400">
-                        Continent: {countryData.continent || "Unknown"}
+                      <p className="line-clamp-2 text-[10px] text-neutral-500 dark:text-slate-400">
+                        {countryData.paragraphs?.[0] || "Explore country details."}
                       </p>
                     </div>
                   </div>

@@ -290,8 +290,8 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const fiscal = econConfig?.fiscalSystem;
-  const profile = econConfig?.economicProfile;
+  const fiscal = (econConfig as any)?.fiscalSystem;
+  const profile = (econConfig as any)?.economicProfile;
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
   const taxEfficiency = fiscal?.taxEfficiency ?? 0.85;
 
@@ -357,9 +357,9 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   // Backend persistence (debounced)
   // ---------------------------------------------------------------------------
 
-  const updateMutation = api.countries.management.update.useMutation({
-    onError: (err) => {
-      notify.error(`Failed to save tax rates: ${err.message}`);
+  const updateMutation = api.countries.update.useMutation({
+    onError: (err: any) => {
+      notify.error(`Failed to save tax rates: ${err?.message ?? "Unknown error"}`);
     },
   });
 
@@ -370,24 +370,22 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         updateMutation.mutate({
-          countryId,
-          data: {
-            fiscalSystem: {
-              corporateTaxRates: JSON.stringify({ rate: newRates.corporate }),
-              personalIncomeTaxRates: JSON.stringify({ rate: newRates.income }),
-              salesTaxRate: newRates.vat,
-              exciseTaxRates: JSON.stringify({
-                tariffRate: newRates.tariff,
-                capitalGainsTax: newRates.capGains,
-              }),
-              wealthTaxRate: newRates.wealth,
-              taxEfficiency: taxEfficiency,
-            },
+          id: countryId,
+          fiscalSystem: {
+            corporateTaxRates: JSON.stringify({ corporateRate: newRates.corporate ?? 21 }),
+            personalIncomeTaxRates: JSON.stringify({ incomeRate: newRates.income ?? 24 }),
+            salesTaxRate: newRates.vat ?? 15,
+            exciseTaxRates: JSON.stringify({
+              tariffRate: newRates.tariff ?? 4.5,
+              capitalGainsRate: newRates.capGains ?? 15,
+            }),
+            wealthTaxRate: newRates.wealth ?? 1.5,
+            taxEfficiency: fiscal?.taxEfficiency ?? 0.85,
           },
-        });
+        } as any);
       }, 800);
     },
-    [countryId, taxEfficiency, updateMutation]
+    [countryId, taxEfficiency, updateMutation, fiscal]
   );
 
   // Slider change handler
@@ -536,8 +534,8 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const fiscal = econConfig?.fiscalSystem;
-  const profile = econConfig?.economicProfile;
+  const fiscal = (econConfig as any)?.fiscalSystem;
+  const profile = (econConfig as any)?.economicProfile;
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
   const taxEfficiency = fiscal?.taxEfficiency ?? 0.85;
 
@@ -567,7 +565,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
     const result: Record<string, number> = {};
     let total = 0;
     for (const ch of TAX_CHANNELS) {
-      const rate = rates[ch.key] ?? ch.defaultRate;
+      const rate = (rates as any)[ch.key] ?? ch.defaultRate;
       const weight = sectorWeights[ch.key] ?? ch.fallbackWeight;
       const yieldVal = gdpBase * (rate / 100) * weight * taxEfficiency;
       result[ch.key] = yieldVal;

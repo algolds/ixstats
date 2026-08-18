@@ -188,8 +188,8 @@ async function handleMediaWikiRequest(
         return NextResponse.json(
           {
             error:
-              typeof wikitext === "object" && wikitext.error
-                ? wikitext.error
+              wikitext && typeof wikitext === "object" && (wikitext as any).error
+                ? (wikitext as any).error
                 : "Failed to get page wikitext",
             page: pageName,
             timestamp: new Date().toISOString(),

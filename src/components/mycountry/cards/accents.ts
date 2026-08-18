@@ -84,6 +84,7 @@ export const SECTION_ACCENT: Record<MyCountrySection, MyCountryAccent> = {
   intelligence: "blue",
   defense: "red",
   politics: "indigo",
+  economy: "amber",
   "map-editor": "emerald",
 };
 

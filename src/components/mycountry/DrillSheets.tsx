@@ -192,7 +192,10 @@ function IntentDetail({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const items = useMemo(() => tree.data ?? [], [tree.data]);
+  const items = useMemo(
+    () => (tree.data as any)?.allIntents ?? (Array.isArray(tree.data) ? tree.data : []),
+    [tree.data]
+  );
   const intent = useMemo(() => items.find((i: any) => i.id === intentId), [items, intentId]);
   const parent = useMemo(
     () => (intent?.parentId ? items.find((i: any) => i.id === intent.parentId) : null),

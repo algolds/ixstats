@@ -93,7 +93,7 @@ export async function commitRealmMapToDatabase(
             displayName: String(props.name || props._displayName || featureId),
             areaSqKm: Number(props.areaSqKm || props._areaSqKm || 0) || null,
             centroid:
-              props._centroidLng !== undefined ? [props._centroidLng, props._centroidLat] : null,
+              props._centroidLng !== undefined ? ([props._centroidLng, props._centroidLat] as any) : undefined,
             boundingBox: props.boundingBox || null,
             worldId: realmId,
             isActive: true,
@@ -115,14 +115,9 @@ export async function commitRealmMapToDatabase(
 
       const countryRecord = await tx.country.upsert({
         where: {
-          slug_realmId: {
-            slug,
-            realmId,
-          },
+          name: c.name,
         },
         update: {
-          name: c.name,
-          color: c.color,
           boundingBox: c.boundingBox as any,
           geometry: c.centroid as any, // initial marker
           updatedAt: new Date(),
@@ -131,7 +126,17 @@ export async function commitRealmMapToDatabase(
           name: c.name,
           slug,
           realmId,
-          color: c.color,
+          baselinePopulation: 1000000,
+          baselineGdpPerCapita: 10000,
+          maxGdpGrowthRate: 0.05,
+          adjustedGdpGrowth: 0.03,
+          populationGrowthRate: 0.01,
+          currentPopulation: 1000000,
+          currentGdpPerCapita: 10000,
+          currentTotalGdp: 10000000000,
+          economicTier: "developing",
+          populationTier: "medium",
+          isDemo: false,
           boundingBox: c.boundingBox as any,
           geometry: c.centroid as any,
         },
@@ -224,7 +229,6 @@ export async function commitRealmMapToDatabase(
       await tx.city.create({
         data: {
           countryId,
-          realmId,
           name: city.name,
           type: city.type,
           coordinates: city.coordinates as any,
@@ -246,7 +250,6 @@ export async function commitRealmMapToDatabase(
           await tx.namedRiver.create({
             data: {
               countryId: defaultCountryId,
-              realmId,
               name: riv.name,
               geometry: riv.geometry,
               lengthKm: riv.lengthKm,

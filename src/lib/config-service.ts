@@ -390,7 +390,7 @@ const ALL_ECONOMIC_CONFIG_KEYS = [
 
 const CACHE_KEY = "economic_config";
 
-const configCache = new Cache({
+const configCache = new Cache<EconomicConfig>({
   defaultTtlMs: 60_000, // 60 seconds
   maxSize: 10,
 });
@@ -401,7 +401,7 @@ const configCache = new Cache({
  */
 export async function getEconomicConfigFromDB(db: any): Promise<EconomicConfig> {
   // Return cached value if still fresh
-  const cached = configCache.get<EconomicConfig>(CACHE_KEY);
+  const cached = configCache.get(CACHE_KEY);
   if (cached !== undefined) {
     return cached;
   }

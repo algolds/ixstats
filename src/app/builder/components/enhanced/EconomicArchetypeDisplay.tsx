@@ -290,7 +290,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   const renderArchetypeCard = (archetype: EconomicArchetype, showSelectButton: boolean = false) => {
     const IconComponent = getArchetypeIcon(archetype.id);
     const colors = getArchetypeColors(archetype.id);
-    const isSelected = currentState?.selectedArchetypeId === archetype.id;
+    const isSelected = (currentState as any)?.selectedArchetypeId === archetype.id;
 
     return (
       <div key={archetype.id} className="group relative">
@@ -391,7 +391,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   const renderArchetypeDetails = () => {
     if (!selectedArchetype) return null;
-    const isGloballySelected = currentState?.selectedArchetypeId === selectedArchetype.id;
+    const isGloballySelected = (currentState as any)?.selectedArchetypeId === selectedArchetype.id;
 
     return (
       <div className="text-foreground space-y-6">

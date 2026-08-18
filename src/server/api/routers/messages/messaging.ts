@@ -411,12 +411,13 @@ export const messagesMessagingRouter = createTRPCRouter({
       try {
         const wsServer = getThinkPagesServer();
         if (wsServer) {
-          wsServer.broadcast("message:new", {
+          wsServer.broadcastMessage({
+            type: "message:new",
             conversationId: input.conversationId,
             messageId: message.id,
             accountId: input.userId,
             content: input.content,
-            timestamp: message.ixTimeTimestamp,
+            timestamp: Date.now(),
           });
         }
       } catch {

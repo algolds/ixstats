@@ -350,7 +350,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           input.cascadedNeighbors.map((neighbor) =>
             ctx.db.subdivision.update({
               where: { id: neighbor.subdivisionId },
-              data: { geometry: neighbor.geometry },
+              data: { geometry: neighbor.geometry as any },
             })
           )
         );

@@ -13,7 +13,7 @@ interface AchievementDetailProps {
 
 // Child component to resolve country name dynamically
 function CountryNameResolver({ countryId }: { countryId: string }) {
-  const { data: country } = api.countries.getById.useQuery({ id: countryId });
+  const { data: country } = api.countries.getByIdAtTime.useQuery({ id: countryId });
   return (
     <span className="font-semibold text-cyan-400">{country?.name || countryId.slice(0, 8)}</span>
   );

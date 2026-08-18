@@ -115,7 +115,7 @@ export function SearchView({
                   {result.type === "country" && result.metadata?.countryName ? (
                     <UnifiedCountryFlag
                       showTooltip={false}
-                      countryName={result.metadata.countryName}
+                      countryName={String(result.metadata.countryName)}
                       className="h-3.5 w-5 rounded-sm object-cover"
                       showPlaceholder={true}
                     />

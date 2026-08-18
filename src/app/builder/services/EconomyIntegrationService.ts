@@ -838,7 +838,7 @@ export class EconomyIntegrationService extends BaseBuilderService<
 
       // Convert to legacy format for backward compatibility
       this.state.crossBuilderSynergies = this.state.crossBuilderAnalysis.synergies.map(
-        (synergy) => ({
+        (synergy: any) => ({
           id: synergy.id,
           type: synergy.type,
           components: synergy.components,
@@ -854,7 +854,7 @@ export class EconomyIntegrationService extends BaseBuilderService<
       );
 
       this.state.crossBuilderConflicts = this.state.crossBuilderAnalysis.conflicts.map(
-        (conflict) => ({
+        (conflict: any) => ({
           id: conflict.id,
           type: conflict.type,
           components: conflict.components,

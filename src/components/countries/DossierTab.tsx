@@ -20,6 +20,7 @@ import { BookOpen, Plus, Upload, Trash2, Edit3, Lock, Shield, Eye } from "lucide
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
 import { FileImportDropzone } from "./dossier/FileImportDropzone";
 import { LoreScannerPreferencesModal } from "./dossier/LoreScannerPreferencesModal";
+import { WikiSettingsView } from "./dossier/WikiSettingsView";
 
 /**
  * DossierTab Component

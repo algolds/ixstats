@@ -8,7 +8,7 @@ import {
   SignOutButton as ClerkSignOutButton,
   UserButton as ClerkUserButton,
 } from "@clerk/nextjs";
-import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
+import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
 import { Link2 } from "lucide-react";
 import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/logging";
@@ -17,8 +17,10 @@ if (typeof window !== "undefined") {
   initConsoleCapture();
 }
 
+type ClerkUser = ReturnType<typeof useClerkUser>["user"];
+
 interface AuthContextType {
-  user: UserResource | null;
+  user: ClerkUser;
   isLoaded: boolean;
   isSignedIn: boolean;
   signOut: (options?: SignOutOptions) => Promise<void>;

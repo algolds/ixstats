@@ -26,7 +26,7 @@ import {
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import type { V2Drill } from "./V2DrillSheets";
+import type { V2Drill } from "./DrillSheets";
 
 interface PulseEvent {
   id: string;

@@ -6,7 +6,7 @@
  */
 
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { ProjectionMode } from "../../../../lib/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 
 export interface ProjectionSpec {
   type: string | unknown[];

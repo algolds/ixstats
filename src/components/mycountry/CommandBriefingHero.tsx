@@ -6,7 +6,8 @@ import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "./primitives";
-import type { DrillSheetKind } from "./DrillSheets";
+import type { DrillSheetKind, V2Drill } from "./DrillSheets";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 function formatRolloutRemaining(remainingMs: number): string {
   if (remainingMs <= 0) return "Finalizing";
@@ -132,7 +133,7 @@ function CivilServiceWidget({
               <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-cyan-500 transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(0, item.progressPercent))}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, (item as any).progressPercent ?? (item as any).progress ?? 0))}%` }}
                 />
               </div>
             </div>
@@ -161,7 +162,7 @@ export function V2CommandBriefingHero({
     { countryId },
     { enabled: !!countryId }
   );
-  const pendingCount = pendingIssues.data?.count ?? 0;
+  const pendingCount = pendingIssues.data?.total ?? 0;
 
   // Fetch civil service status for opportunity signals
   const civilService = api.government.getCivilServiceStatus.useQuery(

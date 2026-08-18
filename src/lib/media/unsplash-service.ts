@@ -25,7 +25,7 @@ interface UnsplashSearchParams {
 class UnsplashService {
   private readonly accessKey = process.env.UNSPLASH_ACCESS_KEY || "";
   private readonly baseUrl = "https://api.unsplash.com";
-  private readonly unsplashCache = new Cache({
+  private readonly unsplashCache = new Cache<UnsplashImageData[]>({
     defaultTtlMs: 1000 * 60 * 60 * 24, // 24 hours
     maxSize: 200,
   });
@@ -43,20 +43,16 @@ class UnsplashService {
       "Very Strong": ["developed city", "modern infrastructure", "urban development", "progress"],
       Strong: ["growing city", "development", "modern buildings", "advancement"],
       Healthy: ["city development", "infrastructure", "urban growth", "community"],
-      Developed: ["developing city", "construction", "growth", "building"],
-      Developing: ["emerging market", "development", "construction", "progress"],
-      Impoverished: ["rural development", "community", "resilience", "growth potential"],
+      Developing: ["developing nation", "traditional life", "emerging economy", "culture"],
+      Struggling: ["rural landscape", "traditional culture", "natural beauty", "heritage"],
     };
 
     const populationKeywords = {
-      "Tier X": ["megacity", "massive population", "dense urban"],
-      "Tier 7": ["large metropolis", "major city", "urban center"],
-      "Tier 6": ["big city", "metropolitan", "urban"],
-      "Tier 5": ["city skyline", "urban area", "developed"],
-      "Tier 4": ["medium city", "growing urban", "development"],
-      "Tier 3": ["small city", "town development", "community"],
-      "Tier 2": ["town", "local community", "small urban"],
-      "Tier 1": ["village", "rural community", "countryside"],
+      Huge: ["crowded city", "metropolis", "busy streets"],
+      Large: ["bustling city", "urban center", "city life"],
+      Medium: ["balanced city", "town center", "community"],
+      Small: ["small town", "peaceful community", "scenic"],
+      Micro: ["island nation", "isolated beauty", "unique landscape"],
     };
 
     const continentKeywords = {
@@ -68,20 +64,14 @@ class UnsplashService {
       Oceania: ["pacific", "island", "coastal"],
     };
 
-    const economicTerms = economicKeywords[economicTier as keyof typeof economicKeywords] || [
-      "city",
-      "development",
-    ];
-    const populationTerms = populationKeywords[
-      populationTier as keyof typeof populationKeywords
-    ] || ["urban"];
-    const continentTerms = continent
-      ? continentKeywords[continent as keyof typeof continentKeywords] || []
-      : [];
+    const ecoTerms = economicKeywords[economicTier as keyof typeof economicKeywords] || ["city", "development"];
+    const popTerms = populationKeywords[populationTier as keyof typeof populationKeywords] || ["urban"];
+    const continentTerms = continent ? continentKeywords[continent as keyof typeof continentKeywords] || [] : [];
 
     // Combine terms strategically
     const selectedTerms = [
-      economicTerms[Math.floor(Math.random() * economicTerms.length)],
+      ecoTerms[Math.floor(Math.random() * ecoTerms.length)],
+      ...popTerms.slice(0, 1),
       ...continentTerms.slice(0, 1),
     ].filter(Boolean);
 
@@ -93,7 +83,7 @@ class UnsplashService {
    */
   private async fetchImages(params: UnsplashSearchParams): Promise<UnsplashImageData[]> {
     const cacheKey = JSON.stringify(params);
-    const cached = this.unsplashCache.get<UnsplashImageData[]>(cacheKey);
+    const cached = this.unsplashCache.get(cacheKey);
 
     if (cached !== undefined) {
       return cached;

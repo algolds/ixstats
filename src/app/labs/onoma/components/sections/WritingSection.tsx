@@ -78,7 +78,7 @@ export default function WritingSection() {
         setDirection(s.direction);
         setGlyphSize(s.glyphSize);
         setBaselineOffset(s.baselineOffset);
-        setGlyphs((s.glyphs as Glyph[]) || []);
+        setGlyphs(((s.glyphs as unknown) as Glyph[]) || []);
       }
     } else {
       setSystemName("New Writing System");

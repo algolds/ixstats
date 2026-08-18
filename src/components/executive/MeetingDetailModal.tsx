@@ -83,12 +83,9 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
         await recordDecisionMutation.mutateAsync({
           meetingId: meeting!.id,
           title: `Committed Intent: ${intent!.goal} (${res.intent.tier})`,
-          description: res.summary,
+          description: res.summary || `Committed to ${res.intent.tier} course`,
           decisionType: "strategic",
-          targetModel: "Intent",
-          targetField: "status",
-          operation: "set",
-          value: 1,
+          outcome: "approved",
         });
         await completeMutation.mutateAsync({
           meetingId: meeting!.id,
@@ -126,7 +123,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     },
   });
 
-  const recordDecisionMutation = api.quickActions.createDecision.useMutation({
+  const recordDecisionMutation = api.meetings.recordDecision.useMutation({
     onSuccess: () => {
       notify.success("Decision recorded successfully!");
       setNewDecisionTitle("");
@@ -135,8 +132,8 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
       void utils.meetings.getMeeting.invalidate({ id: meetingId! });
       void utils.meetings.getMeetings.invalidate();
     },
-    onError: (err) => {
-      notify.error(`Failed to record decision: ${err.message}`);
+    onError: (err: any) => {
+      notify.error(`Failed to record decision: ${err?.message ?? "Unknown error"}`);
     },
   });
 

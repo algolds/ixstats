@@ -5,8 +5,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { safeFormatCurrency } from "~/lib/utils";
-import { toTitleCase, cn } from "~/lib/utils";
+import { safeFormatCurrency, formatNumber, formatCurrency, toTitleCase, cn } from "~/lib/utils";
 import {
   PieChart,
   Pie,
@@ -74,22 +73,22 @@ export function BudgetManagementDashboard({
 
   // Calculate budget summary
   const budgetSummary: BudgetSummary = useMemo(() => {
-    const currentYearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
+    const currentYearAllocations = budgetAllocations.filter((a: BudgetAllocation) => a.budgetYear === selectedYear);
     const totalAllocated = currentYearAllocations.reduce(
-      (sum, a) => sum + (a.allocatedAmount ?? 0),
+      (sum: number, a: BudgetAllocation) => sum + (a.allocatedAmount ?? 0),
       0
     );
-    const totalSpent = currentYearAllocations.reduce((sum, a) => sum + (a.spentAmount ?? 0), 0);
+    const totalSpent = currentYearAllocations.reduce((sum: number, a: BudgetAllocation) => sum + (a.spentAmount ?? 0), 0);
     const totalAvailable = totalAllocated - totalSpent;
     const utilizationRate = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
 
     const topSpendingDepartments = currentYearAllocations
-      .map((allocation) => ({
-        department: departments.find((d) => d.id === allocation.departmentId)!,
+      .map((allocation: BudgetAllocation) => ({
+        department: departments.find((d: GovernmentDepartment) => d.id === allocation.departmentId)!,
         allocation,
       }))
-      .filter((item) => item.department)
-      .sort((a, b) => (b.allocation?.allocatedAmount ?? 0) - (a.allocation?.allocatedAmount ?? 0))
+      .filter((item: any) => item.department)
+      .sort((a: any, b: any) => (b.allocation?.allocatedAmount ?? 0) - (a.allocation?.allocatedAmount ?? 0))
       .slice(0, 5);
 
     return {
@@ -105,10 +104,10 @@ export function BudgetManagementDashboard({
 
   // Calculate revenue summary
   const revenueSummary: RevenueSummary = useMemo(() => {
-    const totalRevenue = revenueSources.reduce((sum, r) => sum + (r.revenueAmount ?? 0), 0);
+    const totalRevenue = revenueSources.reduce((sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0), 0);
     const totalTaxRevenue = revenueSources
-      .filter((r) => r.category?.includes("Tax"))
-      .reduce((sum, r) => sum + (r.revenueAmount ?? 0), 0);
+      .filter((r: RevenueSource) => r.category?.includes("Tax"))
+      .reduce((sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0), 0);
     const totalNonTaxRevenue = totalRevenue - totalTaxRevenue;
 
     const revenueCategories = [
@@ -121,18 +120,18 @@ export function BudgetManagementDashboard({
     const revenueBreakdown = revenueCategories
       .map((category) => {
         const amount = revenueSources
-          .filter((r) => r.category === category)
-          .reduce((sum, r) => sum + (r.revenueAmount ?? 0), 0);
+          .filter((r: RevenueSource) => r.category === category)
+          .reduce((sum: number, r: RevenueSource) => sum + (r.revenueAmount ?? 0), 0);
         return {
-          category,
+          category: category as any,
           amount,
-          percentage: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0,
+          percent: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0,
         };
       })
       .filter((item) => item.amount > 0);
 
     const topRevenueSources = [...revenueSources]
-      .sort((a, b) => (b.revenueAmount ?? 0) - (a.revenueAmount ?? 0))
+      .sort((a: RevenueSource, b: RevenueSource) => (b.revenueAmount ?? 0) - (a.revenueAmount ?? 0))
       .slice(0, 5);
 
     return {
@@ -158,9 +157,9 @@ export function BudgetManagementDashboard({
 
   // Prepare chart data
   const departmentChartData = budgetAllocations
-    .filter((a) => a.budgetYear === selectedYear)
-    .map((allocation) => {
-      const department = departments.find((d) => d.id === allocation.departmentId);
+    .filter((a: BudgetAllocation) => a.budgetYear === selectedYear)
+    .map((allocation: BudgetAllocation) => {
+      const department = departments.find((d: GovernmentDepartment) => d.id === allocation.departmentId);
       return {
         name: department?.shortName || department?.name || "Unknown",
         allocated: allocation.allocatedAmount,
@@ -170,7 +169,7 @@ export function BudgetManagementDashboard({
         color: department?.color || "#6b7280",
       };
     })
-    .sort((a, b) => b.allocated - a.allocated);
+    .sort((a: any, b: any) => b.allocated - a.allocated);
 
   const REVENUE_COLORS = ["#34d399", "#38bdf8", "#fbbf24", "#c084fc", "#2dd4bf", "#f43f5e"];
 
@@ -432,7 +431,7 @@ export function BudgetManagementDashboard({
                           `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`
                         }
                       >
-                        {departmentChartData.slice(0, 8).map((entry, index) => (
+                        {departmentChartData.slice(0, 8).map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>

@@ -2,6 +2,7 @@
  * src/lib/economy/index.ts — Master barrel export for Economic & Tax simulation.
  */
 
+export type { ValidationResult } from "./tax-builder-validation";
 export * from "./atomic-data";
 export * from "./atomic-integration";
 export * from "./atomic-integration.server";

@@ -250,8 +250,8 @@ export function DossierTocSidebar({
       : undefined;
 
   const coatUrl =
-    infobox?.image_coat || infobox?.coat
-      ? resolveImageUrl(infobox.image_coat || infobox.coat, wikiSource)
+    infobox?.image_coat || (infobox as any)?.coat
+      ? resolveImageUrl(infobox?.image_coat || (infobox as any)?.coat, wikiSource)
       : undefined;
 
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);

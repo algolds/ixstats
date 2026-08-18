@@ -81,10 +81,10 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const profile = econConfig?.economicProfile;
-  const labor = econConfig?.laborMarket;
-  const fiscal = econConfig?.fiscalSystem;
-  const income = econConfig?.incomeDistribution;
+  const profile = (econConfig as any)?.economicProfile;
+  const labor = (econConfig as any)?.laborMarket;
+  const fiscal = (econConfig as any)?.fiscalSystem;
+  const income = (econConfig as any)?.incomeDistribution;
 
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
@@ -269,7 +269,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   Median Annual Wage
                 </p>
                 <p className="mt-0.5 font-mono text-base font-black text-cyan-400">
-                  ${labor?.medianWage ? Math.round(labor.medianWage).toLocaleString() : "42,500"}
+                  ${(labor as any)?.medianWage ? Math.round((labor as any).medianWage).toLocaleString() : "42,500"}
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[10px]">Annual Full-Time</p>
               </div>
@@ -279,7 +279,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   Informal Labor
                 </p>
                 <p className="mt-0.5 font-mono text-base font-black text-purple-400">
-                  {labor?.informalEmploymentRate ? `${labor.informalEmploymentRate}%` : "4.1%"}
+                  {(labor as any)?.informalEmploymentRate ? `${(labor as any).informalEmploymentRate}%` : "4.1%"}
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[10px]">Unregulated Employment</p>
               </div>

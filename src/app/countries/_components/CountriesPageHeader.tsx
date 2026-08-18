@@ -99,7 +99,7 @@ export function CountriesPageHeader({
             isLoading={isLoading}
             type="gdp"
             topCountries={topGdpCountries}
-            formattedValue={isLoading ? undefined : formatCurrency(combinedGdp)}
+            formattedValue={isLoading || combinedGdp === undefined ? undefined : formatCurrency(combinedGdp)}
           />
           <ExpandableStatCard
             icon={<BarChart3 className="mr-2 h-5 w-5 text-green-500" />}

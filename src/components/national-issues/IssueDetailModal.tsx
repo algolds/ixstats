@@ -436,7 +436,7 @@ function IssueDetailModalInner({
                 issue.severity !== "HIGH" &&
                 issue.urgency <= 70 && (
                   <Button
-                    size="xs"
+                    size="sm"
                     variant="outline"
                     className="text-muted-foreground h-7 border-white/10 text-xs hover:text-white"
                     onClick={handleDismiss}

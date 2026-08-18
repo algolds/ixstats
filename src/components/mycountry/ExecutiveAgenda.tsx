@@ -33,7 +33,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft/calendar";
-import type { DrillSheetKind } from "./DrillSheets";
+import type { DrillSheetKind, V2Drill } from "./DrillSheets";
 
 interface AgendaEvent {
   id: string;
@@ -746,7 +746,7 @@ function ExecutiveAgendaComponent({
                 onClick={() => {
                   const goal = selectedEvent.directiveGoal;
                   setSelectedEvent(null);
-                  onDeclare?.(goal);
+                  onIssueDirective?.(goal);
                 }}
                 className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/20 px-4 py-2.5 text-xs font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
               >

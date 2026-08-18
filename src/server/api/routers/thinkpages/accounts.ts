@@ -482,7 +482,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           isActive: true,
           OR: [
             { username: { contains: input.query, mode: "insensitive" } },
-            { name: { contains: input.query, mode: "insensitive" } },
+            { displayName: { contains: input.query, mode: "insensitive" } },
           ],
         },
         take: 10,

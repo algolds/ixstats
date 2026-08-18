@@ -402,7 +402,7 @@ function TimeSeriesChart({ data }: TimeSeriesChartProps) {
             borderRadius: "8px",
             padding: "8px",
           }}
-          labelFormatter={(value) => new Date(value).toLocaleString()}
+          labelFormatter={(value: any) => (value ? new Date(value).toLocaleString() : "")}
         />
         <Legend />
         <Line

@@ -3,70 +3,12 @@
 // src/lib/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
-/**
- * Safely format a number as population with appropriate scale
- */
-export function formatPopulation(value: number | null | undefined): string {
-  if (value == null || !isFinite(value) || isNaN(value)) {
-    return "N/A";
-  }
-
-  if (value < 0) {
-    return "0";
-  }
-
-  if (value > 1e15) {
-    return "> 1,000T";
-  }
-
-  const absValue = Math.abs(value);
-
-  if (absValue >= 1e12) {
-    return `${Math.round(value / 1e12)}T`;
-  } else if (absValue >= 1e9) {
-    return `${Math.round(value / 1e9)}B`;
-  } else if (absValue >= 1e6) {
-    return `${Math.round(value / 1e6)}M`;
-  } else if (absValue >= 1e3) {
-    return `${Math.round(value / 1e3)}K`;
-  } else {
-    return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  }
-}
-
-/**
- * Safely format a number as currency with appropriate scale
- */
-export function formatCurrency(value: number | null | undefined): string {
-  if (value == null || !isFinite(value) || isNaN(value)) {
-    return "N/A";
-  }
-
-  if (value < 0) {
-    return "$0";
-  }
-
-  if (value > 1e15) {
-    return "> $1,000T";
-  }
-
-  const absValue = Math.abs(value);
-
-  if (absValue >= 1e12) {
-    return `$${(value / 1e12).toFixed(1)}T`;
-  } else if (absValue >= 1e9) {
-    return `$${(value / 1e9).toFixed(1)}B`;
-  } else if (absValue >= 1e6) {
-    return `$${(value / 1e6).toFixed(1)}M`;
-  } else if (absValue >= 1e3) {
-    return `$${(value / 1e3).toFixed(1)}K`;
-  } else {
-    return `$${value.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
-  }
-}
+import {
+  formatPopulation,
+  formatCurrency,
+  formatPercentage,
+  formatNumber,
+} from "./format-utils";
 
 /**
  * FIXED: Format growth rates from decimal to percentage
@@ -106,21 +48,7 @@ export function formatPopulationGrowthRate(value: number | null | undefined): st
   return formatGrowthRateFromDecimal(value, 2);
 }
 
-/**
- * Legacy percentage formatter - assumes value is already in percentage form
- * @param value The number to format (already as percentage, e.g., 0.5 for 0.5%)
- * @param decimals Number of decimal places to show
- */
-export function formatPercentage(value: number | null | undefined, decimals = 2): string {
-  if (value == null || !isFinite(value) || isNaN(value)) {
-    return "N/A";
-  }
 
-  // Value is already in percentage form
-  const cappedValue = Math.min(Math.max(value, -999), 9999);
-
-  return `${cappedValue.toFixed(decimals)}%`;
-}
 
 /**
  * Parse numeric value from potentially formatted Excel data
@@ -200,23 +128,7 @@ export function formatDensity(value: number | null | undefined, unit = "/km²"):
   }
 }
 
-/**
- * Format a raw number without currency or scale indicators
- */
-export function formatNumber(value: number | null | undefined, decimals = 0): string {
-  if (value == null || !isFinite(value) || isNaN(value)) {
-    return "N/A";
-  }
 
-  if (value > 1e15) {
-    return "> 1,000,000,000,000,000";
-  }
-
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
 
 /**
  * FIXED: Format growth rate with color coding info

@@ -315,9 +315,9 @@ export class IntelligenceBroadcastService {
           ...item,
           id: String(item.id ?? ""),
           title: String(item.title ?? ""),
-          description: String(item.description ?? item.content ?? ""),
+          description: String((item as any).description ?? item.content ?? ""),
           category: (item.category ?? "governance").toLowerCase(),
-          severity: (item.severity ?? item.priority ?? "medium").toLowerCase(),
+          severity: String((item as any).severity ?? item.priority ?? "medium").toLowerCase(),
           timestamp: item.timestamp ? new Date(item.timestamp).getTime() : Date.now(),
         });
       }

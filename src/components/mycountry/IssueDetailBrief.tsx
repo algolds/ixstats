@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useMemo } from "react";
 import {
   TrendingUp,
   Landmark,
@@ -169,7 +170,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     issue.urgency <= 70;
 
   const chosenDirective =
-    localDirective ?? options.find((o) => o.id === issue.chosenOptionId)?.recommendedDirective;
+    localDirective ?? options.find((o: ResponseOption) => o.id === issue.chosenOptionId)?.recommendedDirective;
 
   const handleSetMeeting = () => {
     if (!issue) return;
@@ -483,7 +484,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           </div>
 
           <div id="issue-brief-options" className="space-y-2.5 pt-1">
-            {options.map((option) => {
+            {options.map((option: ResponseOption) => {
               const isConfirming = confirmingOptionId === option.id;
               return (
                 <FacetCard

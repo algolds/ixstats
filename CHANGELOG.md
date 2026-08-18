@@ -10,6 +10,27 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Type System Hardening & Full-Platform Typecheck Verification
+
+- **Subproject Typechecks Verification (`typecheck:db`, `typecheck:trpc`, `typecheck:server`, `typecheck:ui`)**:
+  - Resolved all compiler errors across the split subproject typecheck suites, bringing `bun run typecheck` to a clean exit code `0` with 0 errors across the entire codebase.
+- **MyCountry & Executive Architecture**:
+  - Aligned tRPC procedure references to canonical domain routers (`api.mycountry.getCanonFeed`, `api.meetings.recordDecision`, `api.countryGeo.populateFromWiki`).
+  - Standardized mutation payloads in `FiscalPolicyConsole.tsx`, `TradeCommerceConsole.tsx`, and `MeetingDetailModal.tsx`.
+  - Added type-safety guards for drill-down goals, intents, and optional economy configuration/labor metrics in `EconomyDrillDown.tsx`, `CommandBriefingHero.tsx`, `ExecutiveAgenda.tsx`, and `ExecutiveOpportunityHero.tsx`.
+- **Builder & Maps Subsystems**:
+  - Implemented `CrossBuilderSynergyService.ts` to provide typed integration between `EconomyBuilder` and `GovernmentBuilder` states.
+  - Aligned MapLibre layer event callback parameter signatures in `useCountryMapEmbedLayers.ts`.
+  - Fixed `totalGdp` access in `CountryInfoContent.tsx` and normalized projection helper imports in `projectionTransition.ts`.
+- **Admin, Notifications & Labs**:
+  - Aligned `TestSuitePanel.tsx` with canonical `useNotificationStore` and `NotificationPriority`/`NotificationSeverity` type definitions.
+  - Fixed `useBulkFlagCache` imports across admin panels and country exploration views.
+  - Enhanced Onoma Labs type definitions for dictionary save promises, glyph arrays, and lexicon UI components.
+- **WikiOS & Shared UI Primitives**:
+  - Aligned `NativeLoreCanvasModal.tsx` with canonical `WikiVisualEditor` component props.
+  - Added `xs` size variant to `Button` component in `src/components/ui/button.tsx`.
+  - Added canonical hook re-export in `src/hooks/useIxMedia.ts`.
+
 ### Repository Optimization & Codebase Pruning (/ponytail)
 
 - **Native Web API Replacements & Dependency Pruning**:

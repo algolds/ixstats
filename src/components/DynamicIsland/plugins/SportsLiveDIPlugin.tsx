@@ -72,7 +72,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
 }
 
 function SportsLiveView({ context }: DIViewProps) {
-  const match = (context?.match ?? null) as LiveActivityMatch | null;
+  const match = ((context as any)?.match ?? null) as LiveActivityMatch | null;
   const state = useLiveMatchState(match);
   if (!match || !state) {
     return <div className="text-muted-foreground p-6 text-center text-sm">No live match.</div>;

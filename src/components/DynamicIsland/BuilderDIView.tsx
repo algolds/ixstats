@@ -63,13 +63,13 @@ import type { ViewMode } from "./types";
 interface BuilderDIViewProps {
   onClose: () => void;
   onSwitchMode?: (mode: ViewMode) => void;
-  filter?: Record<string, unknown>;
-  context?: Record<string, unknown>;
+  filter?: any;
+  context?: any;
 }
 
 interface BuilderProgressViewProps {
-  filter?: Record<string, unknown>;
-  context?: Record<string, unknown> | null;
+  filter?: any;
+  context?: any;
   onClose: () => void;
 }
 
@@ -520,7 +520,7 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
                   filter.confirmHandlerRef.current?.();
                   if (context.builderState.step === "foundation") {
                     const finalCountry = {
-                      ...filter.softSelectedCountry,
+                      ...(filter.softSelectedCountry ?? {}),
                       name: filter.newCountryName.trim(),
                       foundationCountryName: filter.softSelectedCountry?.name,
                     };
@@ -547,7 +547,7 @@ export function BuilderDIView({ onClose, onSwitchMode, filter, context }: Builde
                   filter.confirmHandlerRef.current?.();
                   if (context.builderState.step === "foundation") {
                     const finalCountry = {
-                      ...filter.softSelectedCountry,
+                      ...(filter.softSelectedCountry ?? {}),
                       name: filter.newCountryName.trim(),
                       foundationCountryName: filter.softSelectedCountry?.name,
                     };

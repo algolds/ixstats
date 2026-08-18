@@ -266,7 +266,7 @@ function resolveCardStats(card: CardInstance): Record<string, number> {
  */
 function formatSpecialStats(card: CardInstance): FormattedSpecialStatEntry[] {
   const specialDefs = getSpecialStatsForType(
-    card.cardType as unknown as import("~/lib/card-enums").CardType
+    card.cardType as unknown as import("./enums").CardType
   );
   if (specialDefs.length === 0) return [];
 

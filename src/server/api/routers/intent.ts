@@ -93,7 +93,7 @@ export const intentRouter = createTRPCRouter({
   suggest: publicProcedure
     .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
     .query(async ({ ctx, input }) => {
-      const { category, target, packages } = assemblePackages(input.goal);
+      const { category, packages } = assemblePackages(input.goal);
       const status = await cooldownStatus(ctx.db, input.countryId);
 
       // broker-weighted acceptance (falls back to tier-based if brokers unavailable)
@@ -117,8 +117,8 @@ export const intentRouter = createTRPCRouter({
       return {
         goal: input.goal,
         category,
-        target: target ?? null,
-        foreignNeedsTarget: category === "foreign" && !target,
+        target: null,
+        foreignNeedsTarget: false,
         packages: weighted,
         broker: broker
           ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied }
@@ -231,7 +231,7 @@ export const intentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryAccess(ctx, input.countryId);
 
-      const { category, target, packages } = assemblePackages(input.goal);
+      const { category, packages } = assemblePackages(input.goal);
       const now = IxTime.getCurrentIxTime();
 
       // Foreign policy is gated at classification time (assemble.classifyGoal throws
@@ -245,7 +245,7 @@ export const intentRouter = createTRPCRouter({
             goal: input.goal,
             tier: "proposed",
             category,
-            target: target ?? null,
+            target: null,
             status: "proposed",
             changesJson: "[]",
             summary: `Proposed Goal: ${input.goal}`,
@@ -349,7 +349,7 @@ export const intentRouter = createTRPCRouter({
             goal: input.goal,
             tier: input.tier,
             category,
-            target: target ?? null,
+            target: null,
             status: "active",
             changesJson: JSON.stringify(pkg.changes),
             summary,

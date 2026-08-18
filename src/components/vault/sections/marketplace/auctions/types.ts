@@ -8,6 +8,9 @@ export interface MarketAuctionItem {
   status: string;
   bidCount?: number;
   participation?: string;
+  finalPrice?: number | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
   CardOwnership?: {
     id: string;
     cards: {

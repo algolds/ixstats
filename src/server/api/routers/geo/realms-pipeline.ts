@@ -54,11 +54,12 @@ export const realmsPipelineRouter = createTRPCRouter({
       const world = generateWorld({
         seed: input.seed,
         cellCount: input.cellCount,
-        countryCount: input.countryCount,
+        countryCountRange: [input.countryCount, input.countryCount],
+        useV2Engine: false,
       });
 
       // 2. Normalize graph into GeoJSON & nation/city/river structures
-      const normalized = normalizeAzgaarGraph(world.graph, input.seed);
+      const normalized = normalizeAzgaarGraph(world.graph!, input.seed);
 
       // 3. Run enrichment pipeline
       const enrichedPackage = enrichMapDataset(
@@ -115,7 +116,7 @@ export const realmsPipelineRouter = createTRPCRouter({
         governmentType: z.string().optional(),
         capitalName: z.string().optional(),
         flagUrl: z.string().optional(),
-        details: z.record(z.unknown()).optional(),
+        details: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -228,8 +229,19 @@ export const realmsPipelineRouter = createTRPCRouter({
         data: {
           name: claim.nationName,
           slug,
-          realmId: claim.realmId,
-          color: "#3b82f6",
+          baselinePopulation: 1000000,
+          baselineGdpPerCapita: 10000,
+          maxGdpGrowthRate: 0.05,
+          adjustedGdpGrowth: 0.03,
+          populationGrowthRate: 0.01,
+          currentPopulation: 1000000,
+          currentGdpPerCapita: 10000,
+          currentTotalGdp: 10000000000,
+          economicTier: "developing",
+          populationTier: "medium",
+          isDemo: false,
+          governmentType: claim.governmentType || "Democracy",
+          flag: claim.flagUrl || null,
         },
       });
 

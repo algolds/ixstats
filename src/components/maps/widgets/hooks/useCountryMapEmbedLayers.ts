@@ -262,7 +262,7 @@ export function useCountryMapEmbedLayers({
             });
 
             if (onNeighborClick) {
-              map.on("click", "highlighted-labels", (e) => {
+              map.on("click", "highlighted-labels", (e: any) => {
                 const cid =
                   e.features?.[0]?.properties?.countryId || e.features?.[0]?.properties?._countryId;
                 if (cid) onNeighborClick(cid);
@@ -277,7 +277,7 @@ export function useCountryMapEmbedLayers({
           }
 
           if (onNeighborClick) {
-            map.on("click", "highlighted-countries-fill", (e) => {
+            map.on("click", "highlighted-countries-fill", (e: any) => {
               const cid =
                 e.features?.[0]?.properties?.countryId || e.features?.[0]?.properties?._countryId;
               if (cid) onNeighborClick(cid);
@@ -513,7 +513,7 @@ export function useCountryMapEmbedLayers({
 
           // Show non-capital labels on hover of city markers
           let hoveredCityId: string | null = null;
-          map.on("mousemove", "city-circles", (e) => {
+          map.on("mousemove", "city-circles", (e: any) => {
             const features = e.features;
             if (features && features.length > 0) {
               const id = features[0].properties._cityId;
@@ -610,7 +610,7 @@ export function useCountryMapEmbedLayers({
       }
 
       if (onNeighborClick && showNeighbors) {
-        map.on("click", "neighbor-labels", (e) => {
+        map.on("click", "neighbor-labels", (e: any) => {
           const cid = e.features?.[0]?.properties?.countryId;
           if (cid) onNeighborClick(cid);
         });
@@ -626,7 +626,7 @@ export function useCountryMapEmbedLayers({
       if (onFeatureClick) {
         const cityLayers = ["city-circles", "capital-star"];
         for (const layerId of cityLayers) {
-          map.on("click", layerId, (e) => {
+          map.on("click", layerId, (e: any) => {
             const id = e.features?.[0]?.properties?._cityId;
             if (id) onFeatureClick({ kind: "city", id: String(id) });
           });
@@ -639,7 +639,7 @@ export function useCountryMapEmbedLayers({
         }
 
         if (showSubdivisions) {
-          map.on("click", "subdivision-fill", (e) => {
+          map.on("click", "subdivision-fill", (e: any) => {
             const id = e.features?.[0]?.properties?._subId;
             if (id) onFeatureClick({ kind: "subdivision", id: String(id) });
           });

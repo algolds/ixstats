@@ -24,7 +24,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
   }, []);
 
   const { data: randomCountries } = api.countries.getRandomCountries.useQuery(
-    { limit: 3, _seed: seed },
+    { limit: 3 },
     { enabled: seed > 0, staleTime: 0 }
   );
   const followerCountryId = currentUserCountryId;

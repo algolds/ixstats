@@ -463,10 +463,15 @@ export class NationalIssuesConsequences {
     return `${label} ${direction} by ${absStr} (${previousValue.toFixed(1)} → ${newValue.toFixed(1)})`;
   }
 
-  /**
-   * Calculate IxCredits reward based on issue severity and resolution type.
-   */
-  private static calculateIxCredits(issue: { priority?: string | null }, isAutoResolve: boolean): number {
+  private static calculateIxCredits(
+    issue: {
+      priority?: string | null;
+      severity?: string | null;
+      deadlineIxTime?: number | null;
+      createdIxTime?: number | null;
+    } | any,
+    isAutoResolve: boolean
+  ): number {
     if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming
     if (isAutoResolve) return 0; // No reward for inaction
 
@@ -481,15 +486,18 @@ export class NationalIssuesConsequences {
       LOW: 3,
     };
 
-    const base = severityRewards[issue.severity as string] ?? 5;
+    const sevKey = issue.severity || issue.priority || "medium";
+    const base = severityRewards[sevKey as string] ?? 5;
 
     // Bonus for resolving before deadline
-    if (issue.deadlineIxTime) {
+    if (issue.deadlineIxTime && issue.createdIxTime) {
       const currentIxTime = IxTime.getCurrentIxTime();
       const remainingTime = issue.deadlineIxTime - currentIxTime;
       const totalTime = issue.deadlineIxTime - issue.createdIxTime;
-      const timeRatio = remainingTime / totalTime;
-      if (timeRatio > 0.5) return base + 5; // Early resolution bonus
+      if (totalTime > 0) {
+        const timeRatio = remainingTime / totalTime;
+        if (timeRatio > 0.5) return base + 5; // Early resolution bonus
+      }
     }
 
     return base;

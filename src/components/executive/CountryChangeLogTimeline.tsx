@@ -70,9 +70,9 @@ export function CountryChangeLogTimeline({
     { enabled: !!countryId }
   );
 
-  const canonFeed = api.myCountryDashboard.getCanonFeed.useQuery(
-    { countryId, limit: 30 },
-    { enabled: !!countryId }
+  const canonFeed = api.mycountry.getCanonFeed.useQuery(
+    { countryId, limit: 120 },
+    { enabled: !!countryId, staleTime: 30_000 }
   );
 
   const groupedEvents = useMemo(() => {
@@ -124,8 +124,11 @@ export function CountryChangeLogTimeline({
       });
     }
 
-    if (canonFeed.data?.items) {
-      canonFeed.data.items.forEach((item: any) => {
+    const canonItems = Array.isArray(canonFeed.data)
+      ? canonFeed.data
+      : (canonFeed.data as any)?.items ?? [];
+
+    canonItems.forEach((item: any) => {
         const key = `canon-${item.id}`;
         if (!groups[key]) {
           groups[key] = {
@@ -155,7 +158,6 @@ export function CountryChangeLogTimeline({
           };
         }
       });
-    }
 
     const allList = Object.values(groups).sort((a, b) => b.appliedIxTime - a.appliedIxTime);
 

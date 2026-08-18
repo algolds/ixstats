@@ -104,7 +104,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         if (notify.discordMirror) {
           try {
             const { mirrorThinkPagesPostToDiscordFeed } =
-              await import("~/lib/thinkpages-discord-feed");
+              await import("~/lib/discord/thinkpages-feed");
             await mirrorThinkPagesPostToDiscordFeed(prisma, post.id);
           } catch (mirrorErr) {
             console.error(
@@ -122,7 +122,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
   // 2. Map Head Coach development ratings for players
   const coachMap = new Map<string, number>();
   const playersForAging: Array<{ id: string; age: number; careerStage: any; ratings: Record<string, number> }> = [];
-  const coachesForAging: Array<{ id: string; age: number; careerStage: any; ratings: Record<string, number>; teamId: string }> = [];
+  const coachesForAging: Array<{ id: string; age: number; careerStage: any; ratings: { strategy: number; development: number; motivation: number; adaptability: number }; teamId: string }> = [];
 
   for (const team of season.league.teams) {
     const headCoach =
@@ -178,6 +178,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         });
       } else {
         const player = playersForAging.find((p) => p.id === pRes.playerId);
+        if (!player) continue;
         const newRatings = { ...player.ratings };
         for (const [k, v] of Object.entries(pRes.ratingChanges)) {
           newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
@@ -211,7 +212,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
         }
       } else {
         const coach = coachesForAging.find((c) => c.id === cRes.playerId);
-        const newRatings = { ...coach.ratings };
+        if (!coach) continue;
+        const newRatings: Record<string, number> = { ...coach.ratings };
         for (const [k, v] of Object.entries(cRes.ratingChanges)) {
           newRatings[k] = Math.max(1, Math.min(99, (newRatings[k] ?? 50) + v));
         }
@@ -338,7 +340,7 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
             if (notify.discordMirror) {
               try {
                 const { mirrorThinkPagesPostToDiscordFeed } =
-                  await import("~/lib/thinkpages-discord-feed");
+                  await import("~/lib/discord/thinkpages-feed");
                 await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
               } catch (mirrorErr) {
                 console.error(
@@ -644,7 +646,8 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
             draftPicksToCreate.push({
               seasonId: newSeason.id,
-              teamId,
+              originalTeamId: teamId,
+              currentTeamId: teamId,
               round,
               pickNumber,
               playerId: newPlayer.id,
@@ -832,8 +835,8 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     where: { NOT: { nationId: null } },
     select: { nationId: true },
   });
-  let nationIds = Array.from(
-    new Set(teams.map((t: { nationId: string | null }) => t.nationId).filter((id): id is string => !!id))
+  let nationIds: string[] = Array.from(
+    new Set(teams.map((t: { nationId: string | null }) => t.nationId).filter((id: string | null): id is string => !!id))
   );
   if (nationIds.length === 0) {
     // Fallback: fetch countries from Country table
@@ -1016,7 +1019,7 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
           if (notify.discordMirror) {
             try {
               const { mirrorThinkPagesPostToDiscordFeed } =
-                await import("~/lib/thinkpages-discord-feed");
+                await import("~/lib/discord/thinkpages-feed");
               await mirrorThinkPagesPostToDiscordFeed(tx, post.id);
             } catch (mirrorErr) {
               console.error("[World Cup Final bulletin] Failed to mirror to Discord:", mirrorErr);

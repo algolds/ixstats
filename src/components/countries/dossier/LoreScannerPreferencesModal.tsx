@@ -96,9 +96,9 @@ export function LoreScannerPreferencesModal({
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]">
                 <input
                   type="checkbox"
-                  checked={wikiSettings.enableIiWiki}
+                  checked={wikiSettings.enableIIWiki}
                   onChange={(e) =>
-                    setWikiSettings((prev) => ({ ...prev, enableIiWiki: e.target.checked }))
+                    setWikiSettings((prev) => ({ ...prev, enableIIWiki: e.target.checked }))
                   }
                   className="h-4 w-4 rounded text-blue-600 focus:ring-0"
                 />

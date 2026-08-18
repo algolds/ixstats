@@ -220,7 +220,9 @@ export function getCustomUploadableTypes(): CardImageType[] {
     .map((preset) => preset.type);
 }
 
-// Validate that a card type is valid
-export function isValidCardType(type: string): type is CardImageType {
+// Validate that a card image type is valid
+export function isValidCardImageType(type: string): type is CardImageType {
   return type in cardImagePresets;
 }
+
+export const isValidCardType = isValidCardImageType;

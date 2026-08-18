@@ -371,8 +371,8 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
         const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
         if (match && match[1]) {
           try {
-            const { removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
-            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err) =>
+            const { removeDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
+            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err: unknown) =>
               console.error("[ThinkPages] Remove Discord reaction promise error:", err)
             );
           } catch (error) {
@@ -411,10 +411,12 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
       if (match && match[1]) {
         try {
           const { addDiscordReaction, removeDiscordReaction } =
-            await import("~/lib/discord-ixtwitter-sync");
+            await import("~/lib/discord/ixtwitter-sync");
           removeDiscordReaction(match[1], existingReaction.reactionType)
             .then(() => addDiscordReaction(match[1], input.reactionType))
-            .catch((err) => console.error("[ThinkPages] Sync update Discord reaction error:", err));
+            .catch((err: unknown) =>
+              console.error("[ThinkPages] Sync update Discord reaction error:", err)
+            );
         } catch (error) {
           console.error("[ThinkPages] Failed to trigger Discord reaction update:", error);
         }
@@ -447,8 +449,8 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
       const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
       if (match && match[1]) {
         try {
-          const { addDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
-          addDiscordReaction(match[1], input.reactionType).catch((err) =>
+          const { addDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
+          addDiscordReaction(match[1], input.reactionType).catch((err: unknown) =>
             console.error("[ThinkPages] Add Discord reaction promise error:", err)
           );
         } catch (error) {
@@ -570,8 +572,8 @@ export const thinkpagesPostsReactionsMutationsRouter = createTRPCRouter({
         const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
         if (match && match[1]) {
           try {
-            const { removeDiscordReaction } = await import("~/lib/discord-ixtwitter-sync");
-            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err) =>
+            const { removeDiscordReaction } = await import("~/lib/discord/ixtwitter-sync");
+            removeDiscordReaction(match[1], existingReaction.reactionType).catch((err: unknown) =>
               console.error("[ThinkPages] Remove Discord reaction promise error:", err)
             );
           } catch (error) {

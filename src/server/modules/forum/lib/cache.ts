@@ -16,7 +16,7 @@ export const FORUM_CACHE_TTL = {
 
 export type ForumCacheType = keyof typeof FORUM_CACHE_TTL;
 
-const forumCache = new Cache({
+const forumCache = new Cache<any>({
   defaultTtlMs: 60_000,
   maxSize: 500,
   namespace: "forum",
@@ -27,7 +27,7 @@ export function cacheKey(type: ForumCacheType, ...parts: (string | number)[]): s
 }
 
 export function cacheGet<T>(key: string): T | null {
-  return forumCache.get<T>(key) ?? null;
+  return (forumCache.get(key) as T) ?? null;
 }
 
 export function cacheSet<T>(key: string, data: T, type: ForumCacheType): void {

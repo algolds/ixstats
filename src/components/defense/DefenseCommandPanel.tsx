@@ -36,7 +36,7 @@ const BorderThreatPanel = dynamic(
   }
 );
 
-const AssetManager = dynamic(
+const AssetManager = dynamic<any>(
   () =>
     import("~/components/defense/AssetManager").then((m) => ({
       default: m.AssetManager,

@@ -448,7 +448,7 @@ export function NameResultCard({
       {showDetailsModal && (
         <LinguisticProfile
           name={name}
-          morphology={morphology}
+          morphology={morphology as any}
           savedAt={savedAt}
           originLabel={originLabel}
           localSaved={localSaved}

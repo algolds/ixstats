@@ -13,7 +13,7 @@ export const achievementsManagementRouter = createTRPCRouter({
 
   // Admin action: Manually trigger baseline sync
   adminSync: adminProcedure.mutation(async ({ ctx }) => {
-    const { syncAchievements } = await import("~/lib/achievement-sync");
+    const { syncAchievements } = await import("~/lib/achievements/sync");
     await syncAchievements(ctx.db);
     return { success: true };
   }),

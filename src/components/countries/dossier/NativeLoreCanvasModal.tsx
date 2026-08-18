@@ -115,9 +115,11 @@ export function NativeLoreCanvasModal({
             </label>
             <div className="min-h-[360px] rounded-xl border border-white/10 bg-white/[0.02] p-2">
               <WikiVisualEditor
-                initialWikitext={content}
-                onChangeAction={setContent}
-                pageTitle={title || "Untitled Lore Document"}
+                initialHtml={content}
+                title={title || "Untitled Lore Document"}
+                onSave={async (html) => setContent(html)}
+                onCancel={onClose}
+                onSwitchToSource={(_dirty, currentHtml) => setContent(currentHtml)}
               />
             </div>
           </div>

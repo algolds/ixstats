@@ -35,10 +35,10 @@ export function PopulateFromWikiButton({
 }: PopulateFromWikiButtonProps) {
   const [result, setResult] = useState<ParseWikiResult | null>(null);
 
-  const mutate = api.wikiEntityParser.populate.useMutation({
-    onSuccess: (data) => {
+  const mutate = api.countryGeo.populateFromWiki.useMutation({
+    onSuccess: (data: any) => {
       setResult(data as ParseWikiResult);
-      if (data.appliedCount > 0) {
+      if (data?.appliedCount > 0 || (data?.applied && data.applied.length > 0)) {
         onApplied?.();
       }
     },
@@ -52,7 +52,7 @@ export function PopulateFromWikiButton({
     <div className="inline-flex flex-col items-start gap-1">
       <button
         type="button"
-        onClick={() => mutate.mutate({ countryId, kind, id, wikiTitle })}
+        onClick={() => mutate.mutate({ countryId, kind: kind as "city" | "subdivision" | "poi", id })}
         disabled={mutate.isPending}
         title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
         className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors hover:bg-violet-500/15 disabled:opacity-50"

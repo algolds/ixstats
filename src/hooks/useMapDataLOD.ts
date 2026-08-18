@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 import { useMapDataBatched } from "./useMapDataBatched";
-import type { MapLayerType } from "../lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
 
 export type LODTier = "overview" | "detailed";
 

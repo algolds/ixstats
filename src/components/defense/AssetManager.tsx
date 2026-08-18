@@ -45,8 +45,8 @@ import { useNotify } from "~/hooks/useNotify";
 import {
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
-  EXPANDED_MILITARY_DATABASE,
 } from "~/lib/military/equipment";
+import { EXPANDED_MILITARY_DATABASE } from "~/lib/military/equipment-extended";
 
 // Define a more specific type for our asset
 interface Asset {
@@ -64,11 +64,12 @@ interface Asset {
   imageUrl?: string | null;
 }
 
-interface AssetManagerProps {
-  branchId: string;
-  branchType: string;
-  assets: Asset[];
-  onRefetch: () => void;
+export interface AssetManagerProps {
+  countryId?: string;
+  branchId?: string;
+  branchType?: string;
+  assets?: Asset[];
+  onRefetch?: () => void;
 }
 
 const ASSET_TYPE_CONFIG = {
@@ -86,7 +87,13 @@ const STATUS_CONFIG = {
   retired: { label: "Retired", color: "bg-gray-500" },
 } as const;
 
-export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetManagerProps) {
+export function AssetManager({
+  countryId: _countryId,
+  branchId = "",
+  branchType = "army",
+  assets = [],
+  onRefetch = () => {},
+}: AssetManagerProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
@@ -911,3 +918,5 @@ function AssetDialog({
     </Dialog>
   );
 }
+
+export default AssetManager;

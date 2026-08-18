@@ -16,7 +16,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "./primitives";
-import type { DrillSheetKind } from "./DrillSheets";
+import type { DrillSheetKind, V2Drill } from "./DrillSheets";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface Opportunity {

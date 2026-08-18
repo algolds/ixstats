@@ -2,6 +2,8 @@
  * src/lib/maps/index.ts — Master barrel export for Maps, Geospatial, and Atlas systems.
  */
 
+export { calculateBBox } from "./map-utils";
+export { ELEVATION_ZONES } from "./elevation-config";
 export * from "./map-config";
 export * from "./map-conflict-detector";
 export * from "./map-engine";

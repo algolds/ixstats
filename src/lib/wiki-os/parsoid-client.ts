@@ -32,13 +32,13 @@ export interface ParsoidTransformResult {
 // Cache (in-memory LRU, same pattern as wiki-bridge.ts)
 // ---------------------------------------------------------------------------
 
-const parsoidCache = new Cache({
+const parsoidCache = new Cache<ParsoidArticle>({
   defaultTtlMs: 30 * 60 * 1000, // 30 minutes
   maxSize: 200,
 });
 
 function getCached(key: string): ParsoidArticle | null {
-  return parsoidCache.get<ParsoidArticle>(key) ?? null;
+  return parsoidCache.get(key) ?? null;
 }
 
 function setCache(key: string, data: ParsoidArticle) {

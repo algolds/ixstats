@@ -82,7 +82,7 @@ export class MemoryOptimizer {
       console.log("[MemoryOptimizer] Cleared globalCache");
 
       // Clear intelligence cache
-      const { intelligenceCache } = await import("./intelligence-cache");
+      const { intelligenceCache } = await import("~/lib/intelligence/cache");
       intelligenceCache.clear();
       console.log("[MemoryOptimizer] Cleared intelligenceCache");
 
@@ -606,9 +606,7 @@ export class ProductionStartup {
       const ids = topCountries.map((c) => c.id);
 
       if (ids.length > 0) {
-        const countries = await OptimizedCountryQueries.getCountriesByIds(ids, {
-          select: { id: true, name: true, slug: true },
-        });
+        const countries = await OptimizedCountryQueries.getCountriesByIds(ids);
         console.log(`[ProductionStartup] Cache warmed up with ${countries.length} countries`);
       } else {
         console.log("[ProductionStartup] Cache warm-up skipped (no countries with GDP found)");

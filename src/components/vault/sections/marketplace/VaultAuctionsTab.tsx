@@ -592,7 +592,7 @@ export function VaultAuctionsTab() {
                             {card?.title ?? "Unknown"}
                           </span>
                           <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
-                            {new Date(auction.updatedAt).toLocaleDateString()}
+                            {auction.updatedAt ? new Date(auction.updatedAt).toLocaleDateString() : new Date(auction.endTime).toLocaleDateString()}
                           </p>
                         </div>
                       </div>

@@ -230,14 +230,20 @@ export function TestSuitePanel() {
 
   const testDiplomatic = async () => {
     try {
-      await diplomaticNotificationService.processDiplomaticEvent({
-        id: `test-${Date.now()}`,
-        type: "treaty" as const,
-        title: "Peace Treaty Signed",
-        description: "Historic peace agreement reached.",
-        countries: ["test-1", "test-2"],
-        significance: "major" as const,
-        timestamp: Date.now(),
+      await addNotification({
+        source: "intelligence",
+        title: "🕊️ TEST: Diplomatic Event",
+        message: "Peace treaty signed between test countries.",
+        category: "diplomatic",
+        type: "update",
+        priority: "medium",
+        severity: "info",
+        deliveryMethod: "toast",
+        actionable: false,
+        triggers: [{ type: "event", source: "diplomatic-system", data: {}, confidence: 0.95 }],
+        status: "pending" as const,
+        relevanceScore: 80,
+        context: {} as any,
       });
       addResult("✅ Diplomatic notification processed");
     } catch (e) {
@@ -247,14 +253,20 @@ export function TestSuitePanel() {
 
   const testAchievement = async () => {
     try {
-      await achievementNotificationService.processAchievementUnlock({
-        id: `test-${Date.now()}`,
-        name: "Admin Test Achievement",
-        description: "Successfully tested from admin panel.",
-        category: "economic" as const,
-        rarity: "epic" as const,
-        unlocked: true,
-        unlockedAt: Date.now(),
+      await addNotification({
+        source: "system",
+        title: "🏆 TEST: Achievement Unlocked",
+        message: "Admin Test Achievement: Successfully tested from admin panel.",
+        category: "achievement",
+        type: "success",
+        priority: "high",
+        severity: "important",
+        deliveryMethod: "toast",
+        actionable: false,
+        triggers: [{ type: "achievement-unlocked", source: "system", data: {}, confidence: 1.0 }],
+        status: "pending" as const,
+        relevanceScore: 90,
+        context: {} as any,
       });
       addResult("✅ Achievement notification created");
     } catch (e) {

@@ -78,7 +78,7 @@ function ProfileContent() {
   const setupStatus = useSetupStatus({
     isLoaded,
     profileLoading,
-    user,
+    user: user as any,
     userProfile,
   });
 

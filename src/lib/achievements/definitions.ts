@@ -89,7 +89,7 @@ export interface ExtendedAchievementData {
    * keyed by metric then percentile. Populated per-check by the achievement
    * service so scale achievements stay relative to the real country distribution.
    */
-  scaleThresholds?: import("./achievement-scaling").ScaleThresholds;
+  scaleThresholds?: import("./scaling").ScaleThresholds;
 }
 
 export interface AchievementDefinition {

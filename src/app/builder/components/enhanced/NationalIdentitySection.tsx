@@ -216,7 +216,7 @@ export function NationalIdentitySection({
               <div className="bg-card/10 rounded-xl border border-white/10 p-5 backdrop-blur-md">
                 <EconomicArchetypeDisplay
                   era="all"
-                  currentState={builderState}
+                  currentState={builderState.economyBuilderState || (builderState as any)}
                   onArchetypeApplied={(_fallbackState, archetypeId, archetype) => {
                     if (archetypeId && archetype) {
                       updateArchetypeId(archetypeId);

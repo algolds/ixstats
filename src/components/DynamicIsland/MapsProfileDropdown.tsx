@@ -14,7 +14,9 @@ interface MapsProfileDropdownProps {
     id?: string;
     imageUrl?: string | null;
     fullName?: string | null;
+    firstName?: string | null;
     primaryEmailAddress?: { emailAddress?: string } | null;
+    emailAddresses?: Array<{ emailAddress?: string }> | null;
   } | null | undefined;
   isLoaded: boolean;
   userProfile?: UserProfile | null;
@@ -43,7 +45,7 @@ export function MapsProfileDropdown({
         <button className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10">
           <LogIn className="h-3 w-3 text-blue-400 opacity-70" />
           <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">
-            Sign in with IxnayID
+            Sign In
           </span>
         </button>
       </SignInButton>
@@ -51,6 +53,13 @@ export function MapsProfileDropdown({
   }
 
   const countryName = userProfile?.country?.name;
+  const displayName =
+    user.firstName ||
+    user.fullName?.split(" ")[0] ||
+    user.fullName ||
+    user.primaryEmailAddress?.emailAddress ||
+    user.emailAddresses?.[0]?.emailAddress ||
+    "User";
 
   return (
     <Popover>
@@ -67,7 +76,7 @@ export function MapsProfileDropdown({
           )}
           <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">
             {greeting}
-            {user.firstName ? `, ${user.firstName}` : ""}
+            {displayName !== "User" ? `, ${displayName}` : ""}
           </span>
         </span>
       </PopoverTrigger>
@@ -92,7 +101,7 @@ export function MapsProfileDropdown({
           )}
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">
-              {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
+              {displayName}
             </div>
             {countryName && (
               <div className="text-muted-foreground truncate text-[11px]">{countryName}</div>

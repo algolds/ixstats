@@ -10,6 +10,13 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { getNameOverride, setNameOverride } from "~/lib/onoma/ipa-overrides";
 import { useNotify } from "~/hooks/useNotify";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { LexiconAnalysis } from "./LexiconAnalysis";
 import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
 

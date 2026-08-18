@@ -60,7 +60,7 @@ export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard 
   // 2. Evaluate Continent Count from graph features (land components)
   const landFeatures =
     world.graph?.features?.filter(
-      (f) => f.type === "land" || f.type === "continent" || f.type === "island"
+      (f) => f.type === "land" || (f.type as string) === "continent" || (f.type as string) === "island"
     ) || [];
   const continentCount = Math.max(1, landFeatures.length);
   const continentPassed =

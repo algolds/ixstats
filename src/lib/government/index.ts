@@ -2,6 +2,7 @@
  * src/lib/government/index.ts — Master barrel export for Government & Political systems.
  */
 
+export { calculateGovernmentEffectiveness } from "./atomic-utils";
 export * from "./atomic-data";
 export * from "./atomic-utils";
 export * from "./builder-validation";

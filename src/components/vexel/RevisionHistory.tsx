@@ -41,7 +41,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
       </h4>
 
       <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
-        {revisions.map((rev) => {
+        {revisions.map((rev, idx) => {
           const comp = rev.compositionData as unknown as HeraldryComposition;
 
           return (
@@ -56,12 +56,12 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                 </div>
 
                 <div className="space-y-0.5">
-                  <span className="block font-semibold text-zinc-300">Version: {rev.version}</span>
+                  <span className="block font-semibold text-zinc-300">Version: {revisions.length - idx}</span>
                   <span className="block text-[10px] text-zinc-500">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>
-                  {rev.changeSummary && (
-                    <p className="text-[10px] text-zinc-400 italic">Change: {rev.changeSummary}</p>
+                  {rev.revisionNote && (
+                    <p className="text-[10px] text-zinc-400 italic">Change: {rev.revisionNote}</p>
                   )}
                 </div>
               </div>

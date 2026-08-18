@@ -38,10 +38,19 @@ export * from "./rarity-algorithm";
 export * from "./rarity-materials";
 export * from "./card-metadata-resolver";
 
-// Consolidated core card subsystems
 export * from "./enums";
 export * from "./general-settings";
-export * from "./image-presets";
+export {
+  type CardImageType,
+  type CardImagePreset,
+  cardImagePresets,
+  getCardImagePreset,
+  getUnsplashSearchUrl,
+  getFallbackGradient,
+  allowsCustomUpload,
+  getCustomUploadableTypes,
+  isValidCardImageType,
+} from "./image-presets";
 export * from "./pack-service";
 export * from "./card-service";
 export * from "./stat-config";

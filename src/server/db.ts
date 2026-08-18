@@ -394,13 +394,13 @@ export const isDatabaseReadOnly = isReadOnlyMode;
 
 if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
   // Asynchronously synchronize baseline achievements in background on server start
-  import("~/lib/achievement-sync")
+  import("~/lib/achievements/sync")
     .then(({ syncAchievements }) => {
-      syncAchievements(db).catch((err) =>
+      syncAchievements(db).catch((err: unknown) =>
         console.error("[DATABASE] Baseline achievements sync failed:", err)
       );
     })
-    .catch((err) => console.error("[DATABASE] Failed to load achievement-sync:", err));
+    .catch((err: unknown) => console.error("[DATABASE] Failed to load achievement-sync:", err));
 }
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = db as unknown as PrismaClient;

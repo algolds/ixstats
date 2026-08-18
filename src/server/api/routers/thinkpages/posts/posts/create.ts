@@ -557,7 +557,7 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
     // 📣 Autopost public, non-repost posts to Discord IxTwitter channel
     if (input.postToDiscord && post.visibility === "public" && post.postType !== "repost") {
       try {
-        const { postThinkPagesToDiscord } = await import("~/lib/discord-ixtwitter-sync");
+        const { postThinkPagesToDiscord } = await import("~/lib/discord/ixtwitter-sync");
         // Run asynchronously without awaiting to keep createPost response fast
         postThinkPagesToDiscord(
           db as any,
@@ -569,7 +569,9 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
             profileImageUrl: account.profileImageUrl,
           },
           input.mediaUrls
-        ).catch((err) => console.error("[ThinkPages] Autopost to Discord promise error:", err));
+        ).catch((err: unknown) =>
+          console.error("[ThinkPages] Autopost to Discord promise error:", err)
+        );
       } catch (error) {
         console.error("[ThinkPages] Failed to trigger Discord autopost:", error);
       }
@@ -579,9 +581,9 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
     // Independent of the IxTwitter autopost above; the filter/enable lives in admin config.
     if (post.visibility === "public") {
       try {
-        const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/thinkpages-discord-feed");
-        mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch((err) =>
-          console.error("[ThinkPages] Discord feed mirror promise error:", err)
+        const { mirrorThinkPagesPostToDiscordFeed } = await import("~/lib/discord/thinkpages-feed");
+        mirrorThinkPagesPostToDiscordFeed(db as any, post.id, input.mediaUrls).catch(
+          (err: unknown) => console.error("[ThinkPages] Discord feed mirror promise error:", err)
         );
       } catch (error) {
         console.error("[ThinkPages] Failed to trigger Discord feed mirror:", error);

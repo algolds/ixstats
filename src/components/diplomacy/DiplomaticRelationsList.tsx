@@ -233,9 +233,9 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
             )}
 
             {/* Recent Activity / Pain Points */}
-            {rel.recentActivity && (
+            {(rel as any).recentActivity && (
               <div className="bg-muted/40 border-border/20 text-muted-foreground mt-2 rounded border px-2 py-1 text-[9px] italic">
-                Status: {rel.recentActivity}
+                Status: {(rel as any).recentActivity}
               </div>
             )}
 

@@ -665,9 +665,9 @@ function DefenseContext({ countryId }: { countryId: string }) {
 
       {/* Defense Log Activity Feed */}
       <DomainActivityCard
+        domain="defense"
         title="Defense Log"
         icon={Shield}
-        iconColor="text-red-400"
         entries={activity}
         emptyMessage="No defense activity yet"
       />
@@ -870,9 +870,9 @@ function PoliticsContext({ countryId }: { countryId: string }) {
 
       {/* Political Activity Feed */}
       <DomainActivityCard
+        domain="politics"
         title="Political Log"
         icon={Vote}
-        iconColor="text-purple-400"
         entries={activity}
         emptyMessage="No political activity yet"
       />

@@ -35,7 +35,7 @@ export interface GlobalIntelligenceChannel {
   totalUpdates: number;
 }
 
-export interface WebSocketIntelligenceEvent<T = Record<string, unknown>> {
+export interface WebSocketIntelligenceEvent<T = IntelligenceUpdate> {
   type: "intelligence:update" | "intelligence:alert" | "intelligence:initial" | "vitality:update";
   data: T;
   timestamp: number;

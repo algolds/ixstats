@@ -7,6 +7,7 @@ import {
   Brain,
   Shield,
   Crown,
+  Crown as CrownIcon,
   Users,
   Vote,
   Lock,
