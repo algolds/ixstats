@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/map-config";
+import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
 
 const EMBED_LAYER_IDS = [

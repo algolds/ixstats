@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 
 const CountryFlag = ({
   countryCode,

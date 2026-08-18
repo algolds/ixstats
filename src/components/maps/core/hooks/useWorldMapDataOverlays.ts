@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
-import { registerStoryPinIcons } from "~/lib/story-pin-icons";
+import { registerStoryPinIcons } from "~/lib/maps/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseWorldMapDataOverlaysProps {

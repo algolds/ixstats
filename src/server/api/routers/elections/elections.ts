@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notifications/api";
-import { parseChambers, simulateElectionCore } from "~/lib/election-simulation";
+import { parseChambers, simulateElectionCore } from "~/lib/government/election-simulation";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System

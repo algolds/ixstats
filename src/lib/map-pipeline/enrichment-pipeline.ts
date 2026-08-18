@@ -11,7 +11,7 @@
  */
 
 import type { FeatureCollection, Polygon, MultiPolygon } from "geojson";
-import { ELEVATION_ZONES, getZoneByColor } from "../elevation-config";
+import { ELEVATION_ZONES, getZoneByColor } from "~/lib/maps/elevation-config;
 
 export interface GeoProfilePayload {
   countryFeatureId: string;

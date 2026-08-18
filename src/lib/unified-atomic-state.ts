@@ -40,7 +40,7 @@ import {
   SYNERGY_RULES,
   CONFLICT_RULES,
 } from "./atomic-builder-state";
-import { calculateAtomicTaxEffectiveness } from "./atomic-tax-integration";
+import { calculateAtomicTaxEffectiveness } from "~/lib/economy/atomic-tax-integration;
 import {
   calculateClientAtomicEconomicImpact,
   type ClientAtomicEconomicModifiers,

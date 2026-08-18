@@ -27,7 +27,7 @@ import { GAMEPLAY_FLAGS } from "./gameplay-flags";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "./atomic-government-utils";
+} from "~/lib/government/atomic-utils;
 import { mapTaxComponentTypeToId } from "./enums";
 import type { PrismaClient } from "@prisma/client";
 import { getNationalIssuesConfig } from "./national-issues-config";

@@ -8,7 +8,7 @@
 // ✅ Always returns EconomyDataSchema.parse() validated data.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { createEmptyEconomyData } from "~/lib/economy-factory";
+import { createEmptyEconomyData } from "./factory";
 import {
   safeParseEconomyData,
   type EconomyData,

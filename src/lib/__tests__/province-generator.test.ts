@@ -6,7 +6,7 @@
  */
 
 import type { Polygon, MultiPolygon, Position } from "geojson";
-import { generateProvinces, totalProvinceArea } from "../province-generator";
+import { generateProvinces, totalProvinceArea } from "~/lib/maps/province-generator;
 
 // ──────────────────────────────────────────────────────────────
 // Fixtures

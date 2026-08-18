@@ -23,7 +23,7 @@ import {
 import { validateEconomy } from "./utils/validation";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 interface EconomySectorsTabProps {
   economyBuilder: EconomyBuilderState;

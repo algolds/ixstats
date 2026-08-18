@@ -37,7 +37,7 @@ import { ComponentType } from "@prisma/client";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
 import { AtomicGovernmentComponents } from "~/components/government/atoms/AtomicGovernmentComponents";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { AtomicWelcomeModal } from "~/components/government/atomic";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";

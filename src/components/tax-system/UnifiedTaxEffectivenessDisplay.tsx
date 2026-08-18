@@ -39,7 +39,7 @@ import type { CoreEconomicIndicatorsData } from "~/types/economics";
 import {
   calculateAtomicTaxEffectiveness,
   getAtomicTaxRecommendations,
-} from "~/lib/atomic-tax-integration";
+} from "~/lib/economy/atomic-tax-integration";
 
 interface TaxComponent {
   id: string;

@@ -2,7 +2,7 @@
  * Country Data Transformers — transforms database models into formatted telemetry & economics structures
  */
 
-import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
+import { createDefaultGovernmentSpendingData } from "~/lib/government/spending-defaults";
 import type {
   CoreEconomicIndicatorsData,
   DemographicsData,

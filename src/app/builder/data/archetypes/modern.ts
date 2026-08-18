@@ -6,7 +6,7 @@
  */
 
 import type { EconomicArchetype } from "../archetype-types";
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ComponentType } from "~/lib/enums";
 
 export const modernArchetypes = new Map<string, EconomicArchetype>([

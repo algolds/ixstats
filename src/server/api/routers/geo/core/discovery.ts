@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import type { LayerInfoItemDto } from "~/shared/types/geo.dto";
-import { featureIdToDisplayName } from "~/lib/map-utils";
-import { MAP_LAYER_TYPES } from "~/lib/map-config";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import { computeVisualCenter } from "./geometry";
 import { getColorForFeature } from "./layer-loader";
 

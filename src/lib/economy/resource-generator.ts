@@ -13,7 +13,7 @@
  * - Agricultural → high arable land (arableLandPercent > 30%)
  */
 
-import type { GeoProfile } from "./geo-analytics";
+import type { GeoProfile } from "~/lib/maps/geo-analytics";
 
 export interface GeneratedResource {
   resourceType: string;

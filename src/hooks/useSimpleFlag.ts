@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 
 export function useSimpleFlag(countryName?: string) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);

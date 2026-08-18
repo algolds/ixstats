@@ -26,12 +26,12 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { ActivityGenerator } from "~/lib/activity-generator";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
-import { featureIdToDisplayName } from "~/lib/map-utils";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
 
 // ──────────────────────────────────────────────

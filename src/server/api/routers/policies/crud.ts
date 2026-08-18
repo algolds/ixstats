@@ -14,7 +14,7 @@ import { IxTime } from "~/lib/ixtime";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const RECON_CAPACITY_COST = 20;

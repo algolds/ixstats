@@ -24,8 +24,8 @@ import { bezierSpline } from "@turf/bezier-spline";
 import { transformRotate } from "@turf/transform-rotate";
 import { transformScale } from "@turf/transform-scale";
 import { api } from "~/trpc/react";
-import { clampToGeometry, pointInGeometry } from "~/lib/border-editor";
-import { buildRouteGeometry } from "~/lib/route-geometry";
+import { clampToGeometry, pointInGeometry } from "~/lib/maps/border-editor";
+import { buildRouteGeometry } from "~/lib/maps/route-geometry";
 
 // ── Pure duplicate transform (exported for unit testing) ──
 

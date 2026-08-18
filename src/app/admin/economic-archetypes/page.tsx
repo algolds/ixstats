@@ -52,7 +52,7 @@ import {
 import Link from "next/link";
 
 // Import component types
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 
 type ArchetypeEra = "modern" | "historical";

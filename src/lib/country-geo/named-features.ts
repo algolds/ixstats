@@ -1,9 +1,9 @@
 import { findSubdivisionAtPoint } from "./spatial";
-import { polylineLengthKm, geometryAreaSqKm } from "~/lib/geo-math";
+import { polylineLengthKm, geometryAreaSqKm } from "~/lib/maps/geo-math";
 
 export async function upsertPeak(db: any, countryId: string, data: any): Promise<any> {
   const { validatePointContainment, snapPointToCountryBorder } =
-    await import("~/lib/geo-validation");
+    await import("~/lib/maps/geo-validation/);
 
   let coordinates = data.coordinates;
   if (coordinates) {
@@ -93,7 +93,7 @@ export async function upsertPeak(db: any, countryId: string, data: any): Promise
 
 export async function upsertNamedRiver(db: any, countryId: string, data: any): Promise<any> {
   const { validateGeometryBounds, validatePolygonContainment } =
-    await import("~/lib/geo-validation");
+    await import("~/lib/maps/geo-validation/);
   const geometry = data.geometry;
 
   if (geometry) {
@@ -156,7 +156,7 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
 
 export async function upsertNamedLake(db: any, countryId: string, data: any): Promise<any> {
   const { validateGeometryBounds, validatePolygonContainment } =
-    await import("~/lib/geo-validation");
+    await import("~/lib/maps/geo-validation/);
   const geometry = data.geometry;
 
   if (geometry) {

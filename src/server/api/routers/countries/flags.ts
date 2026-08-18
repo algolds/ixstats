@@ -4,7 +4,7 @@ import {
   cachedStaticProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
-import { resolveFlags, getAllCachedFlags } from "~/lib/server-flag-cache";
+import { resolveFlags, getAllCachedFlags } from "~/lib/flags/server-flag-cache";
 
 export const flagsProcedures = createTRPCRouter({
   resolveBatch: cachedStaticProcedure

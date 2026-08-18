@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault-service";
-import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
+import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { type VaultTransactionType } from "@prisma/client";
 import { globalCache } from "~/lib/advanced-cache-system";
 

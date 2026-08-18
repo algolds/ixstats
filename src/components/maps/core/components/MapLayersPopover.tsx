@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import { Layers, Eye, EyeOff } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/map-config";
-import { overlaysByCategory } from "~/lib/overlay-registry";
+import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
+import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "../IxWorldMap";
 
 interface MapLayersPopoverProps {

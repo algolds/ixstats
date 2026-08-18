@@ -15,7 +15,7 @@ import {
   ELEVATION_ZONES,
   type ClimateZoneEntry,
   type ElevationZoneEntry,
-} from "~/lib/geo-analytics";
+} from "~/lib/maps/geo-analytics";
 import { estimateBboxOverlap } from "./geometry";
 
 export const geoProfileProcedures = {

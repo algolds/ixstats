@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
-import { checkComponentSynergy } from "~/lib/government-synergy";
+import { checkComponentSynergy } from "~/lib/government/synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache } from "~/lib/trpc-cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";

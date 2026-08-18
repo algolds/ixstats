@@ -11,7 +11,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Zap, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 
 export interface SynergyDisplayProps {
   synergies: Array<{

@@ -5,7 +5,7 @@
  * across economy, government, and tax systems.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 export interface SynergyValidationResult {
   id: string;

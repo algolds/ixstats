@@ -6,7 +6,7 @@ import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 import { vaultService } from "~/lib/vault-service";
 
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

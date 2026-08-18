@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
-import type { ProjectionMode, MapLayerType } from "~/lib/map-config";
+import type { ProjectionMode, MapLayerType } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import type { OverlayVisibility } from "./IxWorldMap";

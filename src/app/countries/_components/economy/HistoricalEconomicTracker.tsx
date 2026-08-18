@@ -20,7 +20,7 @@ import { useHistoricalEconomicData } from "~/hooks/useHistoricalEconomicData";
 import type {
   EconomicEvent,
   HistoricalDataPoint,
-} from "~/lib/historical-economic-data-transformers";
+} from "~/lib/economy/historical-transformers";
 import {
   TimeSeriesChart,
   EconomicHealthCard,

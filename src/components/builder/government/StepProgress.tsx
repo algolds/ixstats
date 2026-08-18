@@ -6,7 +6,7 @@
 
 import React from "react";
 import { CheckCircle, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
-import type { ValidationErrors } from "~/lib/government-builder-validation";
+import type { ValidationErrors } from "~/lib/government/builder-validation";
 
 export interface Step {
   id: string;

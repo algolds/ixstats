@@ -10,7 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import type { EconomicYearData, StorytellerEffect } from "~/server/db/schema";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 
 interface ModelingPageProps {
   params: Promise<{ slug?: string; id?: string }>;

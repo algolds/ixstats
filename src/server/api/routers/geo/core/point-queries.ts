@@ -1,9 +1,9 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { rateLimitedPublicProcedure, countryOwnerProcedure } from "~/server/api/trpc";
-import { featureIdToDisplayName } from "~/lib/map-utils";
-import { getZoneByColor } from "~/lib/elevation-config";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { CLIMATE_COLOR_MAP } from "./shared";
 import { getColorForFeature } from "./layer-loader";
 

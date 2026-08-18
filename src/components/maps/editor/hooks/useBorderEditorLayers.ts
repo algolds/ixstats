@@ -13,8 +13,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
-import type { VertexRef } from "~/lib/border-editor";
-import { getVertices, getAllRings } from "~/lib/border-editor";
+import type { VertexRef } from "~/lib/maps/border-editor";
+import { getVertices, getAllRings } from "~/lib/maps/border-editor";
 
 const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
 

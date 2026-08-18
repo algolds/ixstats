@@ -5,12 +5,12 @@
  * color scale and labels. Appears bottom-left when an overlay is active,
  * auto-hides when none are on.
  *
- * Legends are sourced from the overlay registry (`~/lib/overlay-registry`) so a
+ * Legends are sourced from the overlay registry (`~/lib/maps/overlay-registry/) so a
  * new overlay's legend ships with its registry entry — no edits here required.
  */
 
-import { OVERLAY_LIST } from "~/lib/overlay-registry";
-import type { OverlayLegend } from "~/lib/overlay-types";
+import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
+import type { OverlayLegend } from "~/lib/maps/overlay-types";
 import type { OverlayVisibility } from "./IxWorldMap";
 
 interface AnalyticsLegendProps {

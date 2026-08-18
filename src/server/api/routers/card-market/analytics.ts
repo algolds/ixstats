@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { auctionService } from "~/lib/auction-service";
+import { auctionService } from "~/lib/economy/auction-service";
 
 /**
  * Card Market Router

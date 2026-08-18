@@ -15,7 +15,7 @@ import { useNotify } from "~/hooks/useNotify";
 import type { TaxBuilderState } from "./useTaxBuilderState";
 import type { TaxBracketInput } from "~/types/tax-system";
 import type { SuggestionItem } from "~/components/builders/SuggestionsPanel";
-import { parseEconomicDataForTaxSystem } from "~/lib/tax-data-parser";
+import { parseEconomicDataForTaxSystem } from "~/lib/economy/tax-data-parser";
 import { revenueTaxIntegrationService } from "~/app/builder/services/RevenueTaxIntegrationService";
 import { bidirectionalTaxSyncService } from "~/app/builder/services/BidirectionalTaxSyncService";
 import type { TaxSystem } from "~/types/tax-system";

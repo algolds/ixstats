@@ -8,16 +8,16 @@ import { COMPONENT_TYPE_VALUES } from "~/types/government";
 import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { notificationAPI } from "~/lib/notifications/api";
-import { applyGovernmentComponentEffects } from "~/lib/government-component-effects";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "~/components/tax-system/atoms/AtomicTaxComponents";
 import {
   calculateImplementationDate,
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
   parseTimeToImplement,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
 

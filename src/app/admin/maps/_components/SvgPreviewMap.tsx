@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { buildBaseStyle } from "~/lib/map-config";
+import { buildBaseStyle } from "~/lib/maps/map-config";
 import type { FeatureCollection } from "geojson";
 
 interface SvgPreviewMapProps {

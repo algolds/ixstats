@@ -19,7 +19,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 // ============================================================================
 // Type Definitions
@@ -606,7 +606,7 @@ export const economicComponentsCatalogRouter = createTRPCRouter({
 
       // If database is empty, use fallback
       if (dbTemplates.length === 0) {
-        const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
+        const { ECONOMIC_TEMPLATES } = await import("~/lib/economy/atomic-data/);
         return {
           success: true,
           templates: ECONOMIC_TEMPLATES,

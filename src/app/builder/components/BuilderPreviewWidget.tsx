@@ -32,12 +32,12 @@ import { useBuilderActions } from "../hooks/useBuilderActions";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   detectSynergies as detectGovSynergies,
   detectConflicts as detectGovConflicts,
   calculateGovernmentEffectiveness,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 import { ComponentType as GovComponentType } from "@prisma/client";
 
 interface BuilderPreviewWidgetProps {

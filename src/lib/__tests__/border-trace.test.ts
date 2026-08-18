@@ -4,8 +4,8 @@
  * Pure-function unit tests; no React or database dependencies.
  */
 
-import { traceAlongLayer } from "../border-trace";
-import type { TraceFeature } from "../border-trace";
+import { traceAlongLayer } from "~/lib/maps/border-trace;
+import type { TraceFeature } from "~/lib/maps/border-trace;
 
 /**
  * Build a simple 5-point river feature as a LineString running left-to-right:

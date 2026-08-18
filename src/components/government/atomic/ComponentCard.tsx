@@ -11,7 +11,7 @@ import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Plus, Minus, Zap, AlertTriangle, Check } from "lucide-react";
-import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";

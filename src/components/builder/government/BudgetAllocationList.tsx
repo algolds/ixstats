@@ -14,7 +14,7 @@ import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Info } from "luc
 import { BudgetAllocationForm } from "~/components/government/atoms/BudgetAllocationForm";
 import { BudgetMeter } from "./BudgetMeter";
 import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";
-import type { BudgetSummary } from "~/lib/government-builder-validation";
+import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { IxTime } from "~/lib/ixtime";
 
 export interface BudgetAllocationListProps {

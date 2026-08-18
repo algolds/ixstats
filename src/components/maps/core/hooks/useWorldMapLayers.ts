@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerData } from "../IxWorldMap";
-import type { ProjectionMode } from "~/lib/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import {
   LAYER_CONFIGS,
   WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
   getProjectionSpec,
   MAP_LAYER_TYPES,
-} from "~/lib/map-config";
+} from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
 import { getMinArea, filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";

@@ -15,13 +15,13 @@
  */
 
 import { ComponentType } from "@prisma/client";
-import type { AtomicGovernmentComponent } from "./atomic-government-data";
-import { ATOMIC_COMPONENTS } from "./atomic-government-data";
+import type { AtomicGovernmentComponent } from "./atomic-data";
+import { ATOMIC_COMPONENTS } from "./atomic-data";
 import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
-import { EconomicComponentType } from "./atomic-economic-data";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "./atomic-economic-data";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "~/components/tax-system/atoms/AtomicTaxComponents";
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 
 /**
  * Calculate government effectiveness metrics based on selected components

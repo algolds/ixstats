@@ -12,7 +12,7 @@ import {
   CLIMATE_NAMES,
   CLIMATE_COLORS,
   type IxWorldClimate,
-} from "./procedural-archive/climate-system";
+} from "~/lib/procedural-archive/climate-system";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
@@ -659,7 +659,7 @@ export const WATER_BODY_LABELS: WaterBodyLabel[] = [
   },
 ];
 
-import { getMapGlyphsUrl } from "./base-path";
+import { getMapGlyphsUrl } from "~/lib/base-path";
 
 /**
  * Symbol-layer `text-font` stacks. Must match PBFs available at `getMapGlyphsUrl()`
@@ -678,7 +678,7 @@ export const MAP_SYMBOL_FONTS =
         sans: ["DejaVu Sans"] as [string],
       };
 
-import { getStyleForTheme, type MapTheme } from "./map-styles/registry";
+import { getStyleForTheme, type MapTheme } from "~/lib/map-styles/registry";
 
 /** Build the base MapLibre style for a given theme */
 export function buildBaseStyle(

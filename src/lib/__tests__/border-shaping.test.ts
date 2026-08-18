@@ -11,7 +11,7 @@ import {
   naturalizeGeometry,
   getAllRings,
   validateGeometry,
-} from "../border-editor";
+} from "~/lib/maps/border-editor;
 
 /** Build a closed square ring (lng, lat) → [lng, lat] ring with closing duplicate. */
 function square(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {

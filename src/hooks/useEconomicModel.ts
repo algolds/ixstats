@@ -31,7 +31,7 @@ import {
   calculateModelHealth,
   validateModelParameters,
   generateYearlyProjectionData,
-} from "~/lib/economic-modeling-engine";
+} from "~/lib/economy/modeling-engine";
 
 /**
  * Country data with related economic information

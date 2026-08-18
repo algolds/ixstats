@@ -9,8 +9,8 @@
  */
 
 import { createRequire } from "module";
-import { pathCommandsToRings } from "../svg-parser";
-import type { SvgPathCommand } from "../svg-parser";
+import { pathCommandsToRings } from "~/lib/flags/svg-parser;
+import type { SvgPathCommand } from "~/lib/flags/svg-parser;
 
 const _require = createRequire(import.meta.url);
 const { parseSVG, makeAbsolute } = _require("svg-path-parser") as {

@@ -25,7 +25,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
 
-import { STORY_PIN_COLORS } from "~/lib/story-pin-icons";
+import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
 
 // Extracted Subcomponents, Hooks, and Helpers
 import { useStoryPinModalState } from "~/components/maps/core/hooks/useStoryPinModalState";

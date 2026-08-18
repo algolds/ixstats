@@ -13,8 +13,8 @@ import {
   estimateCoastalCities,
   type CityNode,
   type RouteType,
-} from "~/lib/transport-generator";
-import { calculateRouteCosts } from "~/lib/transport-costs";
+} from "~/lib/economy/transport-generator";
+import { calculateRouteCosts } from "~/lib/economy/transport-costs";
 import { syncResourcePoolModifiers } from "../geo/features";
 
 export async function syncTransportEconomicModifiers(db: any, countryId: string) {
@@ -505,7 +505,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-import { polylineLengthKm, normalizeTerrainDifficulty, samplePolylinePoints } from "~/lib/geo-math";
+import { polylineLengthKm, normalizeTerrainDifficulty, samplePolylinePoints } from "~/lib/maps/geo-math";
 import { getTerrainAtPoint } from "~/lib/base-layer-query";
 
 /**

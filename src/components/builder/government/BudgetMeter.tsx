@@ -7,7 +7,7 @@
 "use client";
 
 import React from "react";
-import type { BudgetSummary } from "~/lib/government-builder-validation";
+import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { cn } from "~/lib/utils";
 import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";

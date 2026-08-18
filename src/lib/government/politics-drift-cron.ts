@@ -12,7 +12,7 @@
  * numbers move sensibly; swap for a richer model if it ever needs to.
  */
 import { db } from "~/server/db";
-import { applyGovernmentComponentEffects } from "./government-component-effects";
+import { applyGovernmentComponentEffects } from "./component-effects";
 import { isNewsworthySwing } from "./approval";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";

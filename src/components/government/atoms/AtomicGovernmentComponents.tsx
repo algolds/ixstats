@@ -33,8 +33,8 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
-import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/atomic-government-data";
-import { getCategories } from "~/lib/atomic-government-utils";
+import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
+import { getCategories } from "~/lib/government/atomic-utils";
 import { useGovernmentComponentsData } from "~/hooks/useGovernmentComponentsData";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import {
@@ -741,13 +741,13 @@ export function AtomicGovernmentComponents({
 
 // Re-export types and utilities for convenience
 export { ComponentType } from "~/lib/enums";
-export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/atomic-government-data";
-export type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
+export type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 export {
   calculateGovernmentEffectiveness,
   checkGovernmentSynergy,
   checkGovernmentConflict,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 
 // Export alias for backward compatibility
 export { AtomicGovernmentComponents as AtomicComponentSelector };

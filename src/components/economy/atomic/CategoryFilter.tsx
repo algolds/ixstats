@@ -10,7 +10,7 @@
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { COMPONENT_CATEGORIES, type EconomicCategory } from "~/lib/atomic-economic-data";
+import { COMPONENT_CATEGORIES, type EconomicCategory } from "~/lib/economy/atomic-data";
 
 export interface CategoryFilterProps {
   category: EconomicCategory | null;

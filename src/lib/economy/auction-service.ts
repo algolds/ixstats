@@ -14,7 +14,7 @@
  * - Bid validation (5% minimum increment)
  */
 
-import { vaultService, getVaultConfig } from "./vault-service";
+import { vaultService, getVaultConfig } from "~/lib/vault-service";
 import { TRPCError } from "@trpc/server";
 import { type PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";

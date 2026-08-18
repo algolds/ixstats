@@ -14,7 +14,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Keyboard, X } from "lucide-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
-import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/map-config";
+import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 
 interface MapKeyboardControlsProps {
   mapRef: React.RefObject<IxWorldMapRef | null>;

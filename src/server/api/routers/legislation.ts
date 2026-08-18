@@ -12,7 +12,7 @@ import {
   type VotingBloc,
   type VoteResult,
 } from "~/lib/statecraft/legislative-vote";
-import { computeApproval } from "~/lib/approval";
+import { computeApproval } from "~/lib/government/approval";
 import { fogVoteProjection } from "~/lib/statecraft/whip";
 
 /**

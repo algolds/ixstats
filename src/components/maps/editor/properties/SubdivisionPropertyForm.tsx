@@ -6,7 +6,7 @@ import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
 import { Ruler } from "lucide-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
-import { geometryAreaSqKm } from "~/lib/geo-math";
+import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 
 const SUBDIVISION_TYPES = [
   "province",

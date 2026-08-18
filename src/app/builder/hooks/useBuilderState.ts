@@ -30,7 +30,7 @@ import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
 import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";

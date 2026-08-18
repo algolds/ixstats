@@ -9,7 +9,7 @@
 
 import React from "react";
 import { ComponentCard } from "./ComponentCard";
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Info } from "lucide-react";
 

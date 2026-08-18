@@ -17,10 +17,10 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/base-layer-query";
-import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/geo-validation";
-import { generateProvinces } from "~/lib/province-generator";
+import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
+import { generateProvinces } from "~/lib/maps/province-generator";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z

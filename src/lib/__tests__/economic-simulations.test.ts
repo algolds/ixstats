@@ -1,11 +1,11 @@
 import { IxStatsCalculator, EconomicTier, PopulationTier } from "../calculations";
 import { IxTime } from "../ixtime";
-import { EconomicCalculationGroups } from "../economic-calculation-groups";
+import { EconomicCalculationGroups } from "~/lib/economy/calculation-groups;
 import {
   calculateModelHealth,
   validateModelParameters,
   calculateGdpProjections,
-} from "../economic-modeling-engine";
+} from "~/lib/economy/modeling-engine;
 import type { BaseCountryData, CountryStats, EconomicConfig } from "../../types/ixstats";
 import type { EconomyData } from "../../types/economics";
 

@@ -54,7 +54,7 @@ import {
   ATOMIC_ECONOMIC_COMPONENTS,
   type AtomicEconomicComponent,
   type EconomicComponentType,
-} from "~/lib/atomic-economic-data";
+} from "~/lib/economy/atomic-data";
 
 // Manual icon registry — only the ~30 icons used by economic components.
 // Avoids `import * from "lucide-react"` which pulls all 3,824 icons (~40MB) into the module graph.

@@ -5,14 +5,14 @@ import {
   splitCollectionAtAntimeridian,
   preparePoliticalFeatures,
   featureIdToDisplayName,
-} from "~/lib/map-utils";
-import { compressFeatureCollection } from "~/lib/geojson-compress";
+} from "~/lib/maps/map-utils";
+import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
 import {
   DEFAULT_COUNTRY_COLORS,
   SOVEREIGNTY_TYPE_MAP,
   getSovereigntyColor,
   DEMOTED_COUNTRY_NAMES,
-} from "~/lib/map-config";
+} from "~/lib/maps/map-config";
 import { getCached, setCache, getCompressionForLayer, type ZoomBucket } from "./cache";
 import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 

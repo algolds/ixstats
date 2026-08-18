@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { detectConflicts, type FeatureData } from "~/lib/map-conflict-detector";
+import { detectConflicts, type FeatureData } from "~/lib/maps/map-conflict-detector";
 
 export const statsProcedures = {
   getMapStats: cachedPublicProcedure.query(async ({ ctx }) => {

@@ -7,7 +7,7 @@
  * Usage: new EventSource('/api/sse/map-updates')
  */
 
-import { mapUpdateBus } from "~/lib/map-update-bus";
+import { mapUpdateBus } from "~/lib/maps/map-update-bus";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -1,5 +1,5 @@
 import type { FeatureCollection } from "geojson";
-import type { CompressOptions } from "~/lib/geojson-compress";
+import type { CompressOptions } from "~/lib/maps/geojson-compress";
 import { layerCache, clearLayerCache } from "~/server/shared/layer-cache";
 
 // The shared cache primitive lives in src/server/shared/layer-cache.ts so the

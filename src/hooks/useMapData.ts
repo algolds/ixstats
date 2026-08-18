@@ -15,10 +15,10 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
-import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/map-config";
+import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, setCachedMapLayers } from "~/lib/map-idb-cache";
+import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
 
 /** Layers that are always visible and cannot be toggled off */
 export const LOCKED_LAYERS: MapLayerType[] = ["background"];

@@ -3,8 +3,8 @@ import { publicProcedure } from "~/server/api/trpc";
 import {
   calculateCountryDataWithAtomicEnhancement,
   getAtomicIntelligenceRecommendations,
-} from "~/lib/atomic-economic-integration.server";
-import { type CountryWithAtomicComponents } from "~/lib/atomic-economic-integration";
+} from "~/lib/economy/atomic-integration.server";
+import { type CountryWithAtomicComponents } from "~/lib/economy/atomic-integration";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
 import { ComponentType } from "@prisma/client";
 

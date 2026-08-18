@@ -23,7 +23,7 @@
  *    the first acquire of a freshly-created instance skips the reset.
  */
 
-import { buildBaseStyle, type ProjectionMode } from "~/lib/map-config";
+import { buildBaseStyle, type ProjectionMode } from "./map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 export type MapRole = "world" | "editor";

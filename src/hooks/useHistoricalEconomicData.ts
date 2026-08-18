@@ -18,13 +18,13 @@ import type {
   EconomicTrend,
   VolatilityMetrics,
   ExportFormat,
-} from "~/lib/historical-economic-data-transformers";
+} from "~/lib/economy/historical-transformers";
 import {
   transformHistoricalGdpData,
   detectEconomicTrends,
   calculateVolatility,
   exportToTimeSeries,
-} from "~/lib/historical-economic-data-transformers";
+} from "~/lib/economy/historical-transformers";
 
 /**
  * Time range option

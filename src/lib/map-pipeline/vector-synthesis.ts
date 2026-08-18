@@ -18,7 +18,7 @@ import type {
   Position,
 } from "geojson";
 import { makeRng } from "../worldgen/rng";
-import { ELEVATION_ZONES } from "../elevation-config";
+import { ELEVATION_ZONES } from "~/lib/maps/elevation-config;
 
 // Load vector seed datasets (bundled statically)
 import CONTINENTS_SEED from "../../../public/data/vector-seeds/continents.json";

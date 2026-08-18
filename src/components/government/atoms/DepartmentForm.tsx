@@ -55,8 +55,8 @@ import {
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ComponentType } from "@prisma/client";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
-import { checkGovernmentConflict } from "~/lib/atomic-government-utils";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { checkGovernmentConflict } from "~/lib/government/atomic-utils";
 import type { DepartmentInput, DepartmentCategory, OrganizationalLevel } from "~/types/government";
 
 interface DepartmentFormProps {

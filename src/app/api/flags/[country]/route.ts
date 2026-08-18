@@ -1,6 +1,6 @@
 // API endpoint for individual country flag retrieval using unified flag service
 import { NextRequest, NextResponse } from "next/server";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { wikiCacheService } from "~/lib/services/wiki-cache-service";
 
 // Register persistent L1/L2 server cache for flag resolution

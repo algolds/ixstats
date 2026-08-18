@@ -1,7 +1,7 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { wikiCacheService } from "~/lib/services/wiki-cache-service";
 
 // Register persistent L1/L2 server cache for flag resolution

@@ -20,7 +20,7 @@ import {
   Palette,
 } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { cn } from "~/lib/utils";
 import type { BannerMode, BannerOption } from "../_types";
 import { FloatingRibbonRack } from "~/components/achievements/FloatingRibbonRack";

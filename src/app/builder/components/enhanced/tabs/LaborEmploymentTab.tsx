@@ -11,7 +11,7 @@ import { Users, TrendingUp, TrendingDown, DollarSign, Shield, Briefcase, Zap } f
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   calculateDerivedLabor,
   getEmploymentTypeColor,

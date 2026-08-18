@@ -5,7 +5,7 @@ import {
   countryFlagService,
   countryFlagServiceCommonsOnly,
   type CountryFlag,
-} from "~/lib/country-flag-service";
+} from "~/lib/flags/country-flag-service";
 
 /**
  * Hook for a single country flag with route-aware service selection

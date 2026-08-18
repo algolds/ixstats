@@ -45,7 +45,7 @@ import type { FiscalSystemData } from "~/types/economics";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { Button } from "~/components/ui/button";
 import { useFiscalData } from "~/hooks/useFiscalData";
-import { FISCAL_CHART_COLORS } from "~/lib/fiscal-calculations";
+import { FISCAL_CHART_COLORS } from "~/lib/economy/fiscal-calculations";
 
 interface FiscalSystemComponentProps {
   fiscalData: FiscalSystemData;

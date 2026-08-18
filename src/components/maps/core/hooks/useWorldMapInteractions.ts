@@ -4,7 +4,7 @@ import { useEffect, useCallback, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/map-config";
+import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/maps/map-config";
 import { escHtml, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 import { transientMapStore } from "../../editor/utils/transientStore";
 

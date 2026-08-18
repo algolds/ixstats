@@ -7,7 +7,7 @@ import { TaxBuilderStateSchema } from "~/types/validation/tax";
 import {
   parseEconomicDataForTaxSystem,
   calculateRecommendedTaxRevenue,
-} from "~/lib/tax-data-parser";
+} from "~/lib/economy/tax-data-parser";
 
 // Validation helpers for brackets
 function validateBracketsState(

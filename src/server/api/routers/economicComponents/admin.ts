@@ -19,7 +19,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 // ============================================================================
 // Type Definitions
@@ -287,7 +287,7 @@ export const economicComponentsAdminRouter = createTRPCRouter({
       const totalSynergies = components.reduce((sum, comp) => sum + comp.synergies.length, 0);
 
       // Get template count
-      const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
+      const { ECONOMIC_TEMPLATES } = await import("~/lib/economy/atomic-data/);
 
       return {
         totalComponents: components.length,

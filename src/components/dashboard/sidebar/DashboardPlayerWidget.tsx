@@ -22,7 +22,7 @@ import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/url-utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import {
   CutoutCard,
   CutoutCardContent,

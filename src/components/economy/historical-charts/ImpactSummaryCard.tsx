@@ -7,7 +7,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import type { EconomicEvent } from "~/lib/historical-economic-data-transformers";
+import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 
 interface ImpactSummaryCardProps {
   allEvents: EconomicEvent[];

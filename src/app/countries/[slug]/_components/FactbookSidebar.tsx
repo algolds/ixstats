@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { createUrl } from "~/lib/url-utils";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { useCountryData } from "~/components/mycountry/primitives";

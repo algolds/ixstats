@@ -11,7 +11,7 @@
 import type { FeatureCollection, Feature, Polygon, Position } from "geojson";
 import type { PackedGraph } from "./types";
 import { cellLng, cellLat } from "./voronoi-mesh";
-import { ELEVATION_ZONES } from "../elevation-config";
+import { ELEVATION_ZONES } from "~/lib/maps/elevation-config;
 
 function round4(val: number): number {
   return Math.round(val * 10000) / 10000;

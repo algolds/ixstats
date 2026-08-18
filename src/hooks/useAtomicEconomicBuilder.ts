@@ -23,7 +23,7 @@ import {
   type EconomicTemplate,
   ECONOMIC_TEMPLATES,
   COMPONENT_CATEGORIES,
-} from "~/lib/atomic-economic-data";
+} from "~/lib/economy/atomic-data";
 import {
   filterAndSearchComponents,
   detectEconomicSynergies,
@@ -33,7 +33,7 @@ import {
   getAllComponents,
   type EconomicMetrics,
   type ValidationResult,
-} from "~/lib/atomic-economic-utils";
+} from "~/lib/economy/atomic-utils";
 import { useEconomicComponentsData } from "./useEconomicComponentsData";
 
 /**

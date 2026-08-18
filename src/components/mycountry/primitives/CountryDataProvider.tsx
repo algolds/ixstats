@@ -3,7 +3,7 @@
 import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
-import { mapCountryToEconomyData } from "~/lib/economy-data-mapper";
+import { mapCountryToEconomyData } from "~/lib/economy/data-mapper";
 import { AlertTriangle, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

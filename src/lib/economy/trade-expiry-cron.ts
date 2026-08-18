@@ -1,5 +1,5 @@
 import { db } from "~/server/db";
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 
 /**
  * Process all expired pending trades every 5 minutes

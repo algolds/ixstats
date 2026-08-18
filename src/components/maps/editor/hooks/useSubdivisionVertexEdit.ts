@@ -16,11 +16,11 @@ import {
   snapPointToGeometries,
   snapToNeighborBorders,
   sanitizeRegionShape,
-} from "~/lib/border-editor";
-import type { VertexRef } from "~/lib/border-editor";
+} from "~/lib/maps/border-editor";
+import type { VertexRef } from "~/lib/maps/border-editor";
 import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/topology-engine";
+import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
 import {
   getGeoJSONSource,
   updateSnapGuide,

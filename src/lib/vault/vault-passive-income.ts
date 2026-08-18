@@ -1,5 +1,5 @@
 import { type PrismaClient } from "@prisma/client";
-import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
+import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { getOrCreateVault, earnCredits } from "~/lib/vault/vault-ledger";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
 

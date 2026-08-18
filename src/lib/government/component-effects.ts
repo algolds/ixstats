@@ -10,8 +10,8 @@
  */
 
 import { ComponentType, type PrismaClient } from "@prisma/client";
-import { COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
-import { calculateGovernmentEffectiveness } from "~/lib/atomic-government-utils";
+import { COMPONENT_CATEGORIES } from "./atomic-data";
+import { calculateGovernmentEffectiveness } from "./atomic-utils";
 import { IxTime } from "~/lib/ixtime";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 

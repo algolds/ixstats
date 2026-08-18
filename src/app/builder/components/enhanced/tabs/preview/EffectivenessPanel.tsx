@@ -8,7 +8,7 @@ import { Progress } from "~/components/ui/progress";
 import { Zap, Gauge } from "lucide-react";
 import type { EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 interface EffectivenessPanelProps {
   componentEffectiveness: number;

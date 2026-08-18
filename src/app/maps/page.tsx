@@ -27,7 +27,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
-import type { MapLayerType } from "~/lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
 
 const isStandalone = isStandaloneClient();
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { DynamicIslandSearch } from "../../import/_components/DynamicIslandSearch";
 import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";

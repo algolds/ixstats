@@ -23,7 +23,7 @@ import type { ComponentType } from "~/types/government";
 import {
   calculateAtomicEconomicEffectiveness,
   getAtomicEconomicRecommendations,
-} from "~/lib/atomic-economic-integration";
+} from "~/lib/economy/atomic-integration";
 
 interface AtomicEconomicEffectivenessPanelProps {
   components: ComponentType[];

@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { LineChart } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
-import type { ChartDataPoint, EventMarker } from "~/lib/historical-economic-data-transformers";
+import type { ChartDataPoint, EventMarker } from "~/lib/economy/historical-transformers";
 
 interface TimeSeriesChartProps {
   chartData: ChartDataPoint[];

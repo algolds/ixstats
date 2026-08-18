@@ -40,7 +40,7 @@ import type {
 } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
 import type { GovernmentBuilderState } from "~/types/government";
-import { TaxCalculatorEngine } from "~/lib/tax-calculator";
+import { TaxCalculatorEngine } from "~/lib/economy/tax-calculator";
 import { ComponentType } from "~/lib/enums";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { calculateUnifiedAtomicModifiers } from "~/lib/atomic-client-calculations";

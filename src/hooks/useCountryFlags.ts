@@ -1,6 +1,6 @@
 // React hook for country flag management
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { countryFlagService, type CountryFlag } from "~/lib/country-flag-service";
+import { countryFlagService, type CountryFlag } from "~/lib/flags/country-flag-service";
 
 interface UseCountryFlagsOptions {
   countries: string[];

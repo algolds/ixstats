@@ -33,7 +33,7 @@ import { useCiteTooltips } from "~/components/wiki-os/reader/useCiteTooltips";
 import { useWikiNarrator } from "~/hooks/useWikiNarrator";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
-import { getFlagColors } from "~/lib/flag-color-extractor";
+import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";

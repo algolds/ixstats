@@ -10,6 +10,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 3 Economy, Government, Flags & Maps Isolation)
+
+- **Domain & Geospatial Package Isolation (/ponytail)**:
+  - **Flags & SVG Processing Package (`src/lib/flags/`)**: Consolidated country flag resolution, palette extraction, flag cache, unified flag service, Commons flag importer, PNG-to-SVG converter, SVG coordinate configuration, and SVG parser into `src/lib/flags/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/flags/index.ts)).
+  - **Government & Politics Package (`src/lib/government/`)**: Consolidated atomic government component data, evaluation utilities, builder validation, component effects, spending defaults, component synergy, election simulation, election cron, politics drift cron, and approval ratings into `src/lib/government/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/government/index.ts)).
+  - **Economy & Tax Simulation Package (`src/lib/economy/`)**: Consolidated atomic economic data, client/server integration engines, atomic tax evaluation, unified tax integration, calculation groups, modeling engine, data mapper, factory presets, fiscal calculations, historical transformers, tax builder validation, tax calculator, suggestions engine, budget vault calculator, trade expiry cron, passive income distribution cron, auction completion cron, auction service, transport generators, and resource generators into `src/lib/economy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/economy/index.ts)).
+  - **Maps & Geospatial Intelligence Package (`src/lib/maps/`)**: Consolidated map configurations, conflict detector, IndexedDB caching, conversion pipeline, point-in-polygon queries, real-time update bus, geo utilities, geospatial analytics, geodesic mathematics, PostGIS geometry validation, GeoJSON compression, border editor, border history as-of queries, border tracing, shared vertex topology, topology engine, territory brush, procedural province generation, great-circle route geometry, route network graphs, story pin enrichment, story pin icons, overlay metrics, overlay registry, overlay types, and elevation zone configs into `src/lib/maps/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/maps/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 200+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/flags`, `~/lib/government`, `~/lib/economy`, and `~/lib/maps`, completely deleting 47 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (90/90 Phase 3 tests and 113/113 full-platform tests passing).
+
 ### Refactored & Consolidated (`src/lib/` Phase 2 Simulation & Core Engine Isolation)
 
 - **Simulation & Core Engine Package Isolation (/ponytail)**:

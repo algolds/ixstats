@@ -8,8 +8,8 @@ import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { ATOMIC_ECONOMIC_COMPONENTS, EconomicComponentType } from "~/lib/atomic-economic-data";
-import { calculateImplementationDate } from "~/lib/atomic-government-utils";
+import { ATOMIC_ECONOMIC_COMPONENTS, EconomicComponentType } from "~/lib/economy/atomic-data";
+import { calculateImplementationDate } from "~/lib/government/atomic-utils";
 
 const economicsBuilderRouter = createTRPCRouter({
   // ==================== ECONOMIC PROFILE ====================

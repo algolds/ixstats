@@ -11,7 +11,7 @@ import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { X, Package, Check, AlertTriangle } from "lucide-react";
-import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";

@@ -48,7 +48,7 @@ import { vaultService } from "~/lib/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

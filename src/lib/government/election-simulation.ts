@@ -6,7 +6,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { notificationAPI } from "./notification-api";
+import { notificationAPI } from "~/lib/notifications";
 
 // ── Seat-allocation helpers (single source of truth) ──
 

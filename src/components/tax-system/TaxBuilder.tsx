@@ -18,8 +18,8 @@ import {
 import { useTaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { useTaxDataSync } from "~/hooks/useTaxDataSync";
-import { validateTaxBuilderState } from "~/lib/tax-builder-validation";
-import { computeTaxSuggestions } from "~/lib/tax-suggestions-engine";
+import { validateTaxBuilderState } from "~/lib/economy/tax-builder-validation";
+import { computeTaxSuggestions } from "~/lib/economy/tax-suggestions-engine";
 
 // Extracted tab components
 import { SettingsTab } from "./tabs/SettingsTab";

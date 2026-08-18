@@ -11,7 +11,7 @@ import React from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FileText } from "lucide-react";
-import type { EconomicTemplate } from "~/lib/atomic-economic-data";
+import type { EconomicTemplate } from "~/lib/economy/atomic-data";
 
 export interface TemplateSelectorProps {
   templates: EconomicTemplate[];

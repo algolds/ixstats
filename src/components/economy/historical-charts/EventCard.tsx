@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { AlertCircle, Clock, Edit, Trash2, Zap, FileText, TrendingUp } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
-import type { EconomicEvent } from "~/lib/historical-economic-data-transformers";
+import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 
 interface EventCardProps {
   event: EconomicEvent;

@@ -9,10 +9,10 @@
 
 import React from "react";
 import { ComponentCard, type InteractionInfo } from "./ComponentCard";
-import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
+import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
-import { checkGovernmentSynergy, checkGovernmentConflict } from "~/lib/atomic-government-utils";
+import { checkGovernmentSynergy, checkGovernmentConflict } from "~/lib/government/atomic-utils";
 
 export interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;

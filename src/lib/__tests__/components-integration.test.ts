@@ -16,8 +16,8 @@ import {
   calculateComponentEconomicModifiers,
   parseTimeToImplement,
   calculateImplementationDate,
-} from "~/lib/atomic-government-utils";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
+} from "~/lib/government/atomic-utils";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues-engine";
 import { IxTime } from "~/lib/ixtime";
 

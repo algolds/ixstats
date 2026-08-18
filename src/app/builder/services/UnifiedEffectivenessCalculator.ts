@@ -6,7 +6,7 @@
  * synergies, conflicts, and optimization opportunities across all builders.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   ComponentType,
   ATOMIC_COMPONENTS,

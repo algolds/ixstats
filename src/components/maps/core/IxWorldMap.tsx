@@ -14,15 +14,15 @@
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
 import type { FeatureCollection } from "geojson";
-import type { MapLayerType } from "~/lib/map-config";
-import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
+import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
 import { acquireSurface } from "~/lib/maps/map-engine";
 
 // Overlay components + their wiring
-import { OVERLAY_LIST } from "~/lib/overlay-registry";
+import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 
 // Hooks & Helpers
 import { useWorldMapLayers } from "./hooks/useWorldMapLayers";

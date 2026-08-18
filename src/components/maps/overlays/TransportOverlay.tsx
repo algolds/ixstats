@@ -17,7 +17,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { ROUTE_STYLES } from "~/lib/map-config";
+import { ROUTE_STYLES } from "~/lib/maps/map-config";
 
 // ── Layer / Source IDs ──────────────────────────────────────────────
 

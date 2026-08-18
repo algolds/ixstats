@@ -21,7 +21,7 @@ import { revealConsequences } from "~/lib/statecraft/recon";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";

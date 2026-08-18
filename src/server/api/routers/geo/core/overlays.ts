@@ -2,12 +2,12 @@ import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
-import { computeCrisisRiskFactors } from "~/lib/geo-analytics";
+import { computeCrisisRiskFactors } from "~/lib/maps/geo-analytics";
 import {
   deriveNationalHealthScore,
   deriveNetTradeBalance,
   type HealthInput,
-} from "~/lib/overlay-metrics";
+} from "~/lib/maps/overlay-metrics";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is

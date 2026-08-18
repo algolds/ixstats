@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { STORY_PIN_COLORS } from "~/lib/story-pin-icons";
+import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
 import { CATEGORY_ICONS } from "~/components/maps/core/utils/story-pin-helpers";
 
 interface RelatedPinCardProps {

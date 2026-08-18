@@ -8,7 +8,7 @@ import {
   type EmbassyConnection,
 } from "~/lib/diplomacy/cultural-compatibility";
 
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

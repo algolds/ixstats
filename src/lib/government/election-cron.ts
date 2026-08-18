@@ -9,7 +9,7 @@
  * ⚠️ Compares against IxTime.getCurrentIxTime(), never the wall clock.
  */
 import { db } from "~/server/db";
-import { IxTime } from "./ixtime";
+import { IxTime } from "~/lib/ixtime";
 import { simulateElectionCore } from "./election-simulation";
 
 const GAME_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;

@@ -12,8 +12,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Plus, Check } from "lucide-react";
-import { COMPONENT_CATEGORIES, type AtomicEconomicComponent } from "~/lib/atomic-economic-data";
-import { formatCurrency } from "~/lib/atomic-economic-utils";
+import { COMPONENT_CATEGORIES, type AtomicEconomicComponent } from "~/lib/economy/atomic-data";
+import { formatCurrency } from "~/lib/economy/atomic-utils";
 
 export interface ComponentCardProps {
   component: AtomicEconomicComponent;

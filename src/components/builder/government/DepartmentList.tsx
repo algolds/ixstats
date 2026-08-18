@@ -23,10 +23,10 @@ import { Badge } from "~/components/ui/badge";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import type { DepartmentInput, ComponentType } from "~/types/government";
-import type { ValidationErrors } from "~/lib/government-builder-validation";
+import type { ValidationErrors } from "~/lib/government/builder-validation";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { GlassCard, GlassCardContent, GlassCardFooter } from "~/app/builder/components/glass";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { motion, AnimatePresence } from "motion/react";
 
 export interface DepartmentListProps {

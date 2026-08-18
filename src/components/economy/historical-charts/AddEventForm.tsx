@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { IxTime } from "~/lib/ixtime";
-import type { EconomicEvent } from "~/lib/historical-economic-data-transformers";
+import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 
 interface AddEventFormProps {
   onSubmit: (event: Omit<EconomicEvent, "id">) => void;

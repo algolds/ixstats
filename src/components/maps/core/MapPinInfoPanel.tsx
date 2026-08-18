@@ -10,9 +10,9 @@
 
 import { useMemo } from "react";
 import { X, MapPin, Mountain, Cloud, Flag, Map } from "lucide-react";
-import type { ClientPointQueryResult } from "~/lib/map-point-query";
+import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
-import { getZoneByColor } from "~/lib/elevation-config";
+import { getZoneByColor } from "~/lib/maps/elevation-config";
 
 interface PointInfoServerResult {
   coordinates: { lng: number; lat: number };

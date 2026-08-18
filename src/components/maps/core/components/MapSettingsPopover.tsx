@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Settings, Sun, Moon, Monitor, User, LayoutDashboard, Magnet } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import type { ProjectionMode } from "~/lib/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { Theme } from "~/context/theme-context";
 import { useRouter } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";

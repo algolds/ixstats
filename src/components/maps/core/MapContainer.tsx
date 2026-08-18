@@ -28,7 +28,7 @@ import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
 import type { FeatureCollection } from "geojson";
-import type { MapLayerType } from "~/lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
 
 // MapLibre CSS - imported here so it's in the main bundle

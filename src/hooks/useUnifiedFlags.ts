@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { api } from "~/trpc/react";
 
 // Single flag hook result

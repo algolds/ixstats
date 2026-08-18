@@ -33,7 +33,7 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
-} from "~/lib/atomic-economic-data";
+} from "~/lib/economy/atomic-data";
 
 // Hook import for database integration
 import { useEconomicComponentsData } from "~/hooks/useEconomicComponentsData";
@@ -801,13 +801,13 @@ export {
   formatComponentName,
   EconomicComponentType,
   EconomicCategory,
-} from "~/lib/atomic-economic-data";
+} from "~/lib/economy/atomic-data";
 
 export {
   calculateEconomicEffectiveness,
   checkEconomicSynergy,
   checkEconomicConflict,
-} from "~/lib/atomic-economic-utils";
+} from "~/lib/economy/atomic-utils";
 
 // Default export for convenience
 export default AtomicEconomicBuilder;

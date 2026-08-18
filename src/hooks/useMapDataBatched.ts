@@ -14,14 +14,14 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
-import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/map-config";
+import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type {
   MapLayerData,
   MapOverlayFeatures,
   CapitalsGeoJson,
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, setCachedMapLayers } from "~/lib/map-idb-cache";
+import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
 import { LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
 
 const DEFAULT_VISIBLE: MapLayerType[] = [

@@ -12,7 +12,7 @@ import {
   type ChartDataItem,
   type SpendingDataItem,
   type FiscalMetric,
-} from "~/lib/fiscal-calculations";
+} from "~/lib/economy/fiscal-calculations";
 
 /**
  * Props for useFiscalData hook

@@ -57,7 +57,7 @@ import type {
   EconomicModel,
 } from "~/server/db/schema";
 import { useEconomicModel, type UseEconomicModelReturn } from "~/hooks/useEconomicModel";
-import type { ModelParameters } from "~/lib/economic-modeling-engine";
+import type { ModelParameters } from "~/lib/economy/modeling-engine";
 
 interface EconomicModelingEngineProps {
   country: Country & {

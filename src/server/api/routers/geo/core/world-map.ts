@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cachedPublicProcedure, publicProcedure } from "~/server/api/trpc";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
-import { MAP_LAYER_TYPES, MAP_SYMBOL_FONTS } from "~/lib/map-config";
+import { MAP_LAYER_TYPES, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { getZoomBucket } from "./cache";
 import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
 import { getMapGlyphsUrl } from "~/lib/base-path";

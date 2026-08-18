@@ -9,7 +9,7 @@
  */
 
 import { BaseBuilderService } from "./base";
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentBuilderState } from "~/types/government";

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Trophy, TrendingUp, DollarSign, Users, Crown, Medal, Award } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 
 // Use a simplified interface for display purposes
 interface LeaderboardCountry {

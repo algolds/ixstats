@@ -3,7 +3,7 @@
  * Intelligently parses data from Core Indicators and Government Builder to pre-populate Tax Builder
  */
 
-import { formatExactCurrency } from "./format-utils";
+import { formatExactCurrency } from "~/lib/format-utils";
 import type {
   TaxSystemInput,
   TaxCategoryInput,

@@ -21,7 +21,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { ixnayWiki } from "~/lib/wiki/legacy-service";
-import { flagService } from "~/lib/flag-service";
+import { flagService } from "~/lib/flags/flag-service";
 import type { CountryInfobox as CountryInfoboxType } from "~/lib/wiki/legacy-service"; // Renamed to avoid conflict
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";

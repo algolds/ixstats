@@ -18,7 +18,7 @@ import type {
 } from "geojson";
 import type { PackedGraph } from "./types";
 import { isLand, cellLng, cellLat, cellAreaKm2 } from "./voronoi-mesh";
-import { ELEVATION_ZONES } from "../elevation-config";
+import { ELEVATION_ZONES } from "~/lib/maps/elevation-config;
 
 // ──────────────────────────────────────────────
 // Main Export

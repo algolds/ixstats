@@ -13,7 +13,7 @@ import { auth } from "@clerk/nextjs/server";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
-import { extractSvgMetadata } from "~/lib/svg-parser";
+import { extractSvgMetadata } from "~/lib/flags/svg-parser";
 
 const VALID_LAYER_TYPES = [
   "political",

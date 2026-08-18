@@ -25,7 +25,7 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/map-config";
+import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { acquireSurface } from "~/lib/maps/map-engine";
 

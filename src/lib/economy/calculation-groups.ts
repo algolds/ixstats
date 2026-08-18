@@ -1,6 +1,6 @@
-import { EconomicTier } from "../types/ixstats";
-import type { CountryStats, EconomicConfig, HistoricalDataPoint } from "../types/ixstats";
-import type { EconomyData } from "../types/economics";
+import { EconomicTier } from "~/types/ixstats";
+import type { CountryStats, EconomicConfig, HistoricalDataPoint } from "~/types/ixstats";
+import type { EconomyData } from "~/types/economics";
 
 // ===== CALCULATION GROUP INTERFACES =====
 

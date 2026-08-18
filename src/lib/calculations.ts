@@ -9,7 +9,7 @@ import type {
   StorytellerEffect as StorytellerEffectRecord,
   HistoricalDataPoint,
 } from "../types/ixstats";
-import { calculateComponentEconomicModifiers } from "./atomic-government-utils";
+import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils;
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {

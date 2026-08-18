@@ -39,7 +39,7 @@ import {
   snapPointToCountryBorderJS,
 } from "~/lib/province-importer/topology";
 import type { ConformanceResult } from "~/lib/province-importer/topology";
-import { sanitizeRegionShape } from "~/lib/border-editor";
+import { sanitizeRegionShape } from "~/lib/maps/border-editor";
 import type { Polygon, MultiPolygon } from "geojson";
 
 const STEPS: ImportStep[] = ["upload", "names", "align", "snap", "validate", "commit"];

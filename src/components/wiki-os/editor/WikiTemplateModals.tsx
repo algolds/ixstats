@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
-import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
+import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 // eslint-disable-next-line unused-imports/no-unused-imports

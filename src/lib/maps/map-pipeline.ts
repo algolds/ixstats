@@ -8,9 +8,9 @@
  */
 
 import type { FeatureCollection } from "geojson";
-import type { SvgCoordinateConfig } from "./svg-coordinate-config";
-import type { WorldGenParams } from "./worldgen/types";
-import type { PngToSvgConfig } from "./png-to-svg";
+import type { SvgCoordinateConfig } from "~/lib/flags/svg-coordinate-config";
+import type { WorldGenParams } from "~/lib/worldgen/types";
+import type { PngToSvgConfig } from "~/lib/flags/png-to-svg";
 import { getZoneByColor } from "./elevation-config";
 
 // ──────────────────────────────────────────────
@@ -87,7 +87,7 @@ export async function runMapPipeline(
 
       if (!input.pngBuffer) throw new Error("PNG buffer required for PNG source");
 
-      const { convertPngToSvg } = await import("./png-to-svg");
+      const { convertPngToSvg } = await import("~/lib/flags/png-to-svg");
       const pngResult = await convertPngToSvg(input.pngBuffer, input.pngConfig);
       log.push(...pngResult.log);
 
@@ -102,7 +102,7 @@ export async function runMapPipeline(
 
       if (!input.svgContent) throw new Error("SVG content required for SVG source");
 
-      const { parseSvgToGeoJson } = await import("./svg-parser");
+      const { parseSvgToGeoJson } = await import("~/lib/flags/svg-parser");
       const parseResult = parseSvgToGeoJson(input.svgContent, "political", {
         coordinateConfig: coordConfig ?? undefined,
         referenceGeoJson: input.referenceGeoJson,
@@ -138,7 +138,7 @@ export async function runMapPipeline(
 
       if (!input.worldGenParams) throw new Error("World gen params required for procedural source");
 
-      const { generateWorld } = await import("./worldgen/engine");
+      const { generateWorld } = await import("~/lib/worldgen/engine");
       const world = generateWorld(input.worldGenParams);
 
       // Copy all generated layers

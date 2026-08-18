@@ -16,8 +16,8 @@ import {
   ATOMIC_ECONOMIC_COMPONENTS,
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
-} from "~/lib/atomic-economic-data";
-import { formatCurrency } from "~/lib/atomic-economic-utils";
+} from "~/lib/economy/atomic-data";
+import { formatCurrency } from "~/lib/economy/atomic-utils";
 
 export interface SelectedComponentsListProps {
   selectedComponents: EconomicComponentType[];

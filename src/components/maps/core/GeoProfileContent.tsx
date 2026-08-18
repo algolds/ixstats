@@ -32,7 +32,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { ELEVATION_ZONES } from "~/lib/geo-analytics";
+import { ELEVATION_ZONES } from "~/lib/maps/geo-analytics";
 
 /** Color lookup for climate zones — match by name substring */
 const CLIMATE_COLORS: Record<string, string> = {
