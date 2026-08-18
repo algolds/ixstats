@@ -6,7 +6,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { syncCurrentWinners } from "~/lib/lorewards-sync";
+import { syncCurrentWinners } from "~/lib/lorewards";
 
 export const lorewardsCalendarsRouter = createTRPCRouter({
   /** Streak calendar — day-by-day award status for a month. */

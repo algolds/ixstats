@@ -44,8 +44,8 @@ export interface WikiSection {
   lastModified: string;
 }
 
-import { cleanWikiMarkup } from "../wiki/wikitext-parser";
-import { parseInfobox } from "../wiki/infobox-parser";
+import { cleanWikiMarkup } from "~/lib/wiki/wikitext-parser";
+import { parseInfobox } from "~/lib/wiki/infobox-parser";
 
 /**
  * Parse wiki markup content into structured data

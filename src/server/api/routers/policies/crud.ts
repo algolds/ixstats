@@ -6,7 +6,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
+import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policies";
 import { CountryEventSpine } from "~/lib/country-event-spine";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";

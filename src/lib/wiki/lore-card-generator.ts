@@ -22,7 +22,7 @@ import { CardType, CardRarity } from "@prisma/client";
 import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
 import type { WikiSource } from "./config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "./config";
-import { LORE_CATEGORIES } from "~/lib/lore-card-constants";
+import { LORE_CATEGORIES } from "~/lib/lorewards";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "~/lib/card-valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { LoreCategory, classifyLoreArticle, type LoreCategory as LoreCategoryType } from "~/lib/cards";

@@ -19,7 +19,7 @@ process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/ixstats";
 
 import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
-import { LORE_CATEGORIES } from "~/lib/lore-card-constants";
+import { LORE_CATEGORIES } from "~/lib/lorewards";
 import { CardRarity } from "@prisma/client";
 
 const VALID_CATEGORIES = Object.values(LORE_CATEGORIES);

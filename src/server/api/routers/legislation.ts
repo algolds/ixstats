@@ -4,7 +4,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { applyPolicyEffect } from "~/lib/policy-effects-sync";
+import { applyPolicyEffect } from "~/lib/policies";
 import {
   tallyVote,
   IDEOLOGY_AXIS,

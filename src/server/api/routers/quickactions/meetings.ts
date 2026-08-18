@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { CountryEventSpine } from "~/lib/country-event-spine";
-import { applyPolicyEffect } from "~/lib/policy-effects-sync";
+import { applyPolicyEffect } from "~/lib/policies";
 
 /**
  * QUICK ACTIONS ROUTER

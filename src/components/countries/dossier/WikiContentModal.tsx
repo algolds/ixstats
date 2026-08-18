@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
 import { BookOpen, ExternalLink, X } from "lucide-react";
-import { parseWikiContent } from "~/lib/dossier-parser";
+import { parseWikiContent } from "~/lib/builder";
 
 interface WikiContentModalProps {
   isOpen: boolean;

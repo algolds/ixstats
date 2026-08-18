@@ -19,7 +19,7 @@ import {
 import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
-import { parseInfoboxValue } from "~/lib/dossier-parser";
+import { parseInfoboxValue } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 import type { CountryInfobox } from "~/lib/wiki/legacy-service";
 import type { WikiSource } from "~/lib/wiki/config";

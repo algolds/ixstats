@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { useToastHelpers } from "~/components/ui/toast";
-import { getConsoleLogs, type CapturedLog } from "~/lib/console-capture";
+import { getConsoleLogs, type CapturedLog } from "~/lib/logging";
 import {
   Select,
   SelectContent,

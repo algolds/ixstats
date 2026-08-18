@@ -39,12 +39,12 @@ import {
   type AtomicEconomicModifiers,
   SYNERGY_RULES,
   CONFLICT_RULES,
-} from "./atomic-builder-state";
-import { calculateAtomicTaxEffectiveness } from "~/lib/economy/atomic-tax-integration;
+} from "./atomic-state";
+import { calculateAtomicTaxEffectiveness } from "~/lib/economy/atomic-tax-integration";
 import {
   calculateClientAtomicEconomicImpact,
   type ClientAtomicEconomicModifiers,
-} from "./atomic-client-calculations";
+} from "./client-calculations";
 
 export interface UnifiedAtomicState {
   // Core Component State

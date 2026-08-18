@@ -9,8 +9,8 @@
  * No-ops entirely when auto-generation is disabled (narrative mode).
  */
 import { db } from "~/server/db";
-import { NationalIssuesEngine } from "./national-issues-engine";
-import { GAMEPLAY_FLAGS } from "./gameplay-flags";
+import { NationalIssuesEngine } from "./engine";
+import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 
 export interface IssuesGenerationResult {
   countriesChecked: number;

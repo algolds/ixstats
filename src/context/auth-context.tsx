@@ -11,7 +11,7 @@ import {
 import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
 import { Link2 } from "lucide-react";
 import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
-import { initConsoleCapture } from "~/lib/console-capture";
+import { initConsoleCapture } from "~/lib/logging";
 
 if (typeof window !== "undefined") {
   initConsoleCapture();

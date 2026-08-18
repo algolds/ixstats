@@ -19,8 +19,8 @@ import {
   FileText,
 } from "lucide-react";
 import { SECTION_ICONS } from "./constants";
-import { parseWikiContent, truncateContent } from "~/lib/dossier-parser";
-import type { WikiSection } from "~/lib/dossier-parser";
+import { parseWikiContent, truncateContent } from "~/lib/builder";
+import type { WikiSection } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 import { type WikiSource } from "~/lib/wiki/config";
 

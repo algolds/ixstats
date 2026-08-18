@@ -24,7 +24,7 @@ import { RiGlobalLine, RiShieldLine, RiBookOpenLine, RiRefreshLine } from "react
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { type CountryInfobox } from "~/lib/wiki/legacy-service";
-import { parseInfoboxValue } from "~/lib/dossier-parser";
+import { parseInfoboxValue } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 import { type WikiSource } from "~/lib/wiki/config";
 

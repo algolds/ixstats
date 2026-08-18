@@ -21,19 +21,19 @@
  * 7. Persist to DB
  */
 
-import { IxTime } from "./ixtime";
-import { formatCurrency, formatPopulation } from "./chart-utils";
-import { GAMEPLAY_FLAGS } from "./gameplay-flags";
+import { IxTime } from "~/lib/ixtime";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils;
-import { mapTaxComponentTypeToId } from "./enums";
+} from "~/lib/government/atomic-utils";
+import { mapTaxComponentTypeToId } from "~/lib/enums";
 import type { PrismaClient } from "@prisma/client";
-import { getNationalIssuesConfig } from "./national-issues-config";
-import { INTENT_CATEGORY_TO_TEMPLATE } from "./intent/resistance";
-import { buildGroundedContext } from "./national-issues/snapshot";
-import { resolveNeighbors } from "./national-issues/neighbors";
+import { getNationalIssuesConfig } from "./config";
+import { INTENT_CATEGORY_TO_TEMPLATE } from "~/lib/intent/resistance";
+import { buildGroundedContext } from "./snapshot";
+import { resolveNeighbors } from "./neighbors";
 
 // ==================== TYPES ====================
 

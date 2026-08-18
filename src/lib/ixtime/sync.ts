@@ -6,8 +6,8 @@
  * verification and automatic drift correction.
  */
 
-import { IxTime } from "./ixtime";
-import { IxTimeAccuracyVerifier } from "./ixtime-accuracy";
+import { IxTime } from "./core";
+import { IxTimeAccuracyVerifier } from "./accuracy";
 
 export interface SyncTarget {
   id: string;

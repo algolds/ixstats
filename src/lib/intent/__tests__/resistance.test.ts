@@ -20,7 +20,7 @@ jest.mock("~/lib/national-issues-engine", () => ({
   NationalIssuesEngine: { forceGenerate: jest.fn() },
 }));
 
-import { NationalIssuesEngine } from "~/lib/national-issues-engine";
+import { NationalIssuesEngine } from "~/lib/national-issues";
 import {
   INTENT_CATEGORY_TO_TEMPLATE,
   spawnIntentResistance,

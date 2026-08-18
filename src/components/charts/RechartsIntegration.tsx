@@ -21,7 +21,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { GlassChart, chartTheme } from "./GlassChart";
-import { generateChartColors } from "~/lib/builder-theme-utils";
+import { generateChartColors } from "~/lib/builder";
 
 interface BaseChartProps {
   data: any[];

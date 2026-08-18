@@ -11,15 +11,19 @@
  * - IxCredits rewards
  */
 
-import { IxTime } from "./ixtime";
-import { GAMEPLAY_FLAGS } from "./gameplay-flags";
+import { IxTime } from "~/lib/ixtime";
+import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
+import {
+  calculateCivilServiceCapacity,
+  calculateTotalConsumedStaff,
+} from "~/lib/government/atomic-utils";
 import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
   type ConsequenceDefinition,
-} from "./national-issues-engine";
+} from "./engine";
 import type { PrismaClient } from "@prisma/client";
-import { CountryEventSpine } from "./country-event-spine";
+import { CountryEventSpine } from "~/lib/country-event-spine";
 
 // ==================== FIELD BOUNDS ====================
 

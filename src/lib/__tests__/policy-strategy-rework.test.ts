@@ -23,7 +23,7 @@ jest.mock("~/lib/activity-hooks", () => ({
 }));
 
 import { PREDEFINED_DECRETALS } from "../policies/registry";
-import { NationalIssuesEngine, type CountrySnapshot } from "../national-issues-engine";
+import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues";
 import { createCallerFactory } from "../../server/api/trpc";
 import { policiesRouter } from "../../server/api/routers/policies";
 

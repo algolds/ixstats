@@ -1,9 +1,9 @@
 import { db } from "~/server/db";
-import { CountryEventSpine } from "./country-event-spine";
-import { NationalIssuesEngine } from "./national-issues-engine";
-import { getNationalIssuesConfig } from "./national-issues-config";
-import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "./intent/resistance";
-import type { Category } from "./intent/assemble";
+import { CountryEventSpine } from "~/lib/country-event-spine";
+import { NationalIssuesEngine } from "~/lib/national-issues/engine";
+import { getNationalIssuesConfig } from "~/lib/national-issues/config";
+import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
+import type { Category } from "~/lib/intent/assemble";
 
 export interface PolicyMaintenanceResult {
   countriesProcessed: number;

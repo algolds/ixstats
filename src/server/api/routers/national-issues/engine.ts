@@ -11,12 +11,12 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { NationalIssuesEngine } from "~/lib/national-issues-engine";
+import { NationalIssuesEngine } from "~/lib/national-issues";
 import {
   getNationalIssuesConfig,
   saveNationalIssuesConfig,
   completeNationalIssuesConfig,
-} from "~/lib/national-issues-config";
+} from "~/lib/national-issues";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 

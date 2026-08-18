@@ -13,7 +13,7 @@ import {
   OOL_YEARS,
   parseActiveMembers,
   parseAnnualWinners,
-} from "~/lib/lorewards-ool-parser";
+} from "./ool-parser";
 import { getWikiDbPool } from "~/lib/wiki/bridge";
 import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
 

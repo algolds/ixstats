@@ -7,9 +7,9 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { UserLogger } from "~/lib/user-logger";
-import { UserActivityAnalytics } from "~/lib/user-activity-analytics";
-import { ErrorLogger } from "~/lib/error-logger";
+import { UserLogger } from "~/lib/logging";
+import { UserActivityAnalytics } from "~/lib/logging";
+import { ErrorLogger } from "~/lib/logging";
 import { TRPCError } from "@trpc/server";
 
 export const userLoggingRouter = createTRPCRouter({

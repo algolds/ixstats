@@ -223,7 +223,7 @@ app
       // 3. Card value tracking (every 6 hours default)
       scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
         try {
-          const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
+          const { updateCardValues } = await import("~/lib/lorewards");
           await updateCardValues();
         } catch (error) {
           console.error("[Cron] Card value update failed:", error);
@@ -233,7 +233,7 @@ app
       // 4. Lore card generation (daily at 02:00 UTC)
       scheduleCron("Lore card generation", "0 2 * * *", async () => {
         try {
-          const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
+          const { generateDailyLoreCards } = await import("~/lib/lorewards");
           await generateDailyLoreCards();
         } catch (error) {
           console.error("[Cron] Lore card generation failed:", error);
@@ -270,7 +270,7 @@ app
       // 6. Lorewards full sync
       scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
         try {
-          const { runLorewardsFullSync } = await import("./src/lib/lorewards-sync.js");
+          const { runLorewardsFullSync } = await import("~/lib/lorewards");
           await runLorewardsFullSync();
         } catch (error) {
           console.error("[Cron] ✗ Lorewards fullSync cron error:", error.message);

@@ -15,7 +15,7 @@ import {
   completeNationalIssuesConfig,
   getNationalIssuesConfig,
   type NationalIssuesConfig,
-} from "~/lib/national-issues-config";
+} from "~/lib/national-issues/config";
 
 describe("national-issues-config spawnMode", () => {
   it("defaults spawnMode to probability", () => {

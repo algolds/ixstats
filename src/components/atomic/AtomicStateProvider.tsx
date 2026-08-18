@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { ComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
-import { UnifiedAtomicStateManager, type UnifiedAtomicState } from "~/lib/unified-atomic-state";
+import { UnifiedAtomicStateManager, type UnifiedAtomicState } from "~/lib/builder";
 
 interface AtomicStateContextValue {
   state: UnifiedAtomicState;

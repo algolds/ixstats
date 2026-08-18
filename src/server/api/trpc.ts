@@ -12,7 +12,7 @@ import { ZodError } from "zod";
 import { getAuth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
-import { ErrorLogger } from "~/lib/error-logger";
+import { ErrorLogger } from "~/lib/logging";
 
 import { db, isDatabaseReadOnly } from "~/server/db";
 
@@ -31,7 +31,7 @@ import {
   RateLimitError,
   InternalError,
 } from "~/lib/app-error";
-import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
+import { userLoggingMiddleware } from "~/lib/logging";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";

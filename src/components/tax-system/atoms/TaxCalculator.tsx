@@ -43,7 +43,7 @@ import type { GovernmentBuilderState } from "~/types/government";
 import { TaxCalculatorEngine } from "~/lib/economy/tax-calculator";
 import { ComponentType } from "~/lib/enums";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { calculateUnifiedAtomicModifiers } from "~/lib/atomic-client-calculations";
+import { calculateUnifiedAtomicModifiers } from "~/lib/builder";
 import { api } from "~/trpc/react";
 
 const EMPTY_ARRAY: any[] = [];

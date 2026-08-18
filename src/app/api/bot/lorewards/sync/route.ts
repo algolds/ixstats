@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { recomputeUserStats } from "~/lib/lorewards-sync";
+import { recomputeUserStats } from "~/lib/lorewards";
 import { invalidateCache } from "~/lib/trpc-cache";
 
 export const dynamic = "force-dynamic";

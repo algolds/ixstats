@@ -10,6 +10,18 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### Refactored & Consolidated (`src/lib/` Phase 4 Builder, Policies, Issues, Lorewards, Logging & IxTime Isolation)
+
+- **Systems, Builders & Simulation Engine Isolation (/ponytail)**:
+  - **Builder & Atomic State Package (`src/lib/builder/`)**: Consolidated atomic builder state manager, client calculations, builder theme utilities, unified atomic state coordinator, and MediaWiki dossier parser into `src/lib/builder/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/builder/index.ts)).
+  - **Policies & Reform Engine Package (`src/lib/policies/`)**: Consolidated policy registry, policy recommender, maintenance cron worker, and policy effects synchronizer into `src/lib/policies/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/policies/index.ts)).
+  - **National Issues Simulation Engine Package (`src/lib/national-issues/`)**: Consolidated national issues configuration store, core evaluation/generation engine, choice consequence applicators, generation cron scheduler, geographical neighbor discovery, and grounded context snapshot builders into `src/lib/national-issues/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues/index.ts)).
+  - **Lorewards & Card Analytics Package (`src/lib/lorewards/`)**: Consolidated Order of Lore wikitext parser, scoring calculator, synchronization worker, constants, card generation cron, and card market value updater into `src/lib/lorewards/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/lorewards/index.ts)).
+  - **Logging & Audit Streams Package (`src/lib/logging/`)**: Consolidated user activity logger, error logger, user action logging middleware, activity analytics aggregators, and browser console capture into `src/lib/logging/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/logging/index.ts)).
+  - **IxTime Chronometry Package (`src/lib/ixtime/`)**: Consolidated IxTime epoch converter, time synchronization service, and sub-millisecond accuracy verifier into `src/lib/ixtime/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ixtime/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated ~60 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/builder`, `~/lib/policies`, `~/lib/national-issues`, `~/lib/lorewards`, `~/lib/logging`, and `~/lib/ixtime`, completely deleting 26 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (504/504 full-platform tests passing across 39 test suites).
+
 ### Refactored & Consolidated (`src/lib/` Phase 3 Economy, Government, Flags & Maps Isolation)
 
 - **Domain & Geospatial Package Isolation (/ponytail)**:

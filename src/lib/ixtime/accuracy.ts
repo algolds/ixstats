@@ -5,7 +5,7 @@
  * to ensure >99.9998% accuracy across all time periods and transitions.
  */
 
-import { IxTime } from "./ixtime";
+import { IxTime } from "./core";
 
 export interface TimeAccuracyTest {
   id: string;

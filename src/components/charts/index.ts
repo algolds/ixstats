@@ -30,4 +30,4 @@ export {
   getTextColors,
   getBackgroundColors,
   getBorderColors,
-} from "~/lib/builder-theme-utils";
+} from "~/lib/builder";

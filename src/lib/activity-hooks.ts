@@ -4,7 +4,7 @@
 import { db } from "~/server/db";
 import { ActivityGenerator } from "./activity-generator";
 import { formatCurrency, formatPopulation } from "./chart-utils";
-import { notificationHooks } from "./notification-hooks";
+import { notificationHooks } from "~/lib/notifications";
 import { eventBus } from "./event-bus";
 
 // Helper to asynchronously queue achievement evaluation from activity hooks

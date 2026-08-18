@@ -11,7 +11,7 @@ jest.mock("~/lib/gameplay-flags", () => ({
   GAMEPLAY_FLAGS: {},
 }));
 
-jest.mock("~/lib/national-issues-engine", () => ({
+jest.mock("~/lib/national-issues/engine", () => ({
   NationalIssuesEngine: { forceGenerate: jest.fn() },
 }));
 
@@ -19,7 +19,7 @@ jest.mock("~/lib/country-event-spine", () => ({
   CountryEventSpine: { recordCountryEvent: jest.fn() },
 }));
 
-import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
+import { NationalIssuesConsequences } from "~/lib/national-issues";
 
 function makeDb(overrides: Record<string, unknown> = {}) {
   return {

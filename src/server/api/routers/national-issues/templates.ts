@@ -11,7 +11,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { NationalIssuesEngine } from "~/lib/national-issues-engine";
+import { NationalIssuesEngine } from "~/lib/national-issues";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 const DM_EVENT_TAG = "DM event";

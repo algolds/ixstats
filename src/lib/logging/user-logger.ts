@@ -17,7 +17,7 @@
  */
 
 import { db } from "~/server/db";
-import { logger, LogLevel, LogCategory } from "./logger";
+import { logger, LogLevel, LogCategory } from "~/lib/logger";
 import { ErrorLogger } from "./error-logger";
 import { appendFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
