@@ -236,7 +236,15 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
 
     if [ "$NEWEST_SCHEMA_TS" -gt "$STAMP_TS" ]; then
         echo "🔄 Schema changes detected. Syncing database schema with codebase..."
-        if [ -f ".env" ]; then
+        if [ -f ".env.local.dev" ]; then
+            set -a
+            source .env.local.dev 2>/dev/null || true
+            set +a
+        elif [ -f ".env.local" ]; then
+            set -a
+            source .env.local 2>/dev/null || true
+            set +a
+        elif [ -f ".env" ]; then
             set -a
             source .env 2>/dev/null || true
             set +a

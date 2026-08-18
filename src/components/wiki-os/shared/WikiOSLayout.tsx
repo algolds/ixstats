@@ -6,6 +6,7 @@
 "use client";
 
 import { type ReactNode, useState, useEffect } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -217,6 +218,15 @@ export function WikiOSLayout({
           size="sm"
           className="border-white/5 bg-transparent"
         />
+        <div className="flex items-center justify-center gap-4 text-[11px] text-muted-foreground/60">
+          <Link href="/terms" className="hover:text-amber-400 transition-colors">
+            Terms of Service
+          </Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-amber-400 transition-colors">
+            Privacy Policy
+          </Link>
+        </div>
       </footer>
 
       {/* Search Modal */}
