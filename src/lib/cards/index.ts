@@ -58,5 +58,6 @@ export * from "./valuation";
 export * from "./xp-utils";
 export * from "./season";
 export * from "./pack-opening-service";
+export * from "./lore-card-generator";
 export * from "./ns-image-proxy";
 export * from "./display-utils";

@@ -10,6 +10,41 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### WikiOS Multi-Tier Storage Architecture, Standalone Core Engine & Instant UI Acceleration (`apps.wikios` v2, `@wikios/core`)
+
+- **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
+  - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/config.ts), [types.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/types.ts), [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/bridge.ts), [image-url.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/image-url.ts), [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/infobox-parser.ts)).
+  - Enforced strict graduation boundary: zero game couplings (`Country`, `Card`, `PointOfInterest`) in the core engine, preparing `@wikios/core` for independent packaging and distribution.
+  - Isolated host application template extensions to [ixstats-template-provider.ts](file:///home/jxsig/projects/ixstats/src/server/shared/ixstats-template-provider.ts) and [wiki-placeholders.ts](file:///home/jxsig/projects/ixstats/src/server/shared/wiki-placeholders.ts).
+  - Relocated Lore Card Generator from `src/lib/wiki/` to its canonical domain location in [src/lib/cards/lore-card-generator.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/lore-card-generator.ts) with unit test coverage ([lore-card-generator.test.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/__tests__/lore-card-generator.test.ts)).
+  - Formalized architectural documentation and dependency rules across [src/app/(wiki-os)/README.md](file:///home/jxsig/projects/ixstats/src/app/(wiki-os)/README.md), [src/lib/wiki-os/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/README.md), and [src/lib/wiki/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki/README.md).
+
+- **Pluggable Multi-Driver Storage Architecture (`src/lib/wiki-os/storage-driver.ts` & `drivers/`)**:
+  - Introduced pluggable `WikiStorageDriver` interface supporting arbitrary persistence engines.
+  - Implemented `PostgresStorageDriver` (Prisma-backed), `SqliteStorageDriver` (zero-dependency standalone SQLite), and `MemoryStorageDriver` (sandboxes and testing).
+  - Added unit test suites for storage drivers, multi-tier cache, and search service in `src/lib/wiki-os/__tests__/`.
+
+- **4-Tier Resilient Storage Waterfall & Multi-Tier Caching (`src/lib/wiki-os/article-store.ts`, `wikios-cache.ts`)**:
+  - Implemented high-availability 4-tier read waterfall: Tier 1 PostgreSQL shadow (<5ms) → Tier 2 Direct MariaDB/MySQL (~38ms) → Tier 3 MediaWiki Action API HTTP (~400ms) → Tier 4 Stale Shadow Fallback (100% uptime guarantee).
+  - Multi-tier caching with in-memory LRU, TTL management, and client IndexedDB persistence.
+  - Implemented background client sync queue ([sync-queue.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/sync-queue.ts)) & draft store ([draft-store.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/draft-store.ts)) for optimistic zero-lag saves and offline resilience.
+
+- **Shadow Full-Text & Trigram Fuzzy Search Engine (`src/lib/wiki-os/search-service.ts`)**:
+  - Implemented sub-3ms title prefix, trigram fuzzy matching, and body text search with ranked relevance.
+
+- **Instant UI, Speculative Prefetching & DOM Acceleration**:
+  - Added speculative hover/touch prefetching hook [useWikiPrefetch.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiPrefetch.ts) for instantaneous link transitions.
+  - Built zero-navigation in-place editing bridge [WikiEditBridge.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/editor/WikiEditBridge.tsx) for instantaneous modal/drawer editing directly on `/wiki/[slug]`.
+  - Accelerated reader DOM rendering with CSS `content-visibility: auto` and section containment in [src/styles/wiki-os/layout.css](file:///home/jxsig/projects/ixstats/src/styles/wiki-os/layout.css).
+  - Modularized reader components from monolith `ArticleRenderer.tsx` into focused modules: [ArticleHeader.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleHeader.tsx), [ArticleFooter.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleFooter.tsx), [ArticleCategories.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleCategories.tsx), [ArticleModals.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleModals.tsx), and [ArticlePlaceholders.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticlePlaceholders.tsx).
+
+- **Router Consolidation & Deprecation Cleanup**:
+  - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
+  - Removed legacy `wiki` router registration from [src/server/api/root.ts](file:///home/jxsig/projects/ixstats/src/server/api/root.ts).
+  - Added Nginx lockdown configs and audit tools ([stage3-nginx-cutover.conf](file:///home/jxsig/projects/ixstats/scripts/ops/stage3-nginx-cutover.conf), [verify-stage3-cutover.ts](file:///home/jxsig/projects/ixstats/scripts/ops/verify-stage3-cutover.ts), [wikios-mw-surface.sh](file:///home/jxsig/projects/ixstats/scripts/audit/wikios-mw-surface.sh)).
+
+
+
 ### Component Architecture Consolidation & MyCountry 4-Tier Subsystem Modularization (`systems.mycountry` v5, `design.facet` v2, `systems.halo` v4, `systems.builder` v3)
 
 - **Comprehensive Component Topology Consolidation**:

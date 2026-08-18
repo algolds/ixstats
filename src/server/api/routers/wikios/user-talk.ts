@@ -13,7 +13,6 @@ import {
   getUserContribs,
   getUserInfo,
   getBacklinks,
-  getRevisionWikitext as getRevisionWikitextMySQL,
   getNamespacedWikitext,
 } from "~/lib/wiki/bridge";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
@@ -170,7 +169,10 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       const signedContent = `${input.content}\n\n~~~~`;
 
       let attempt = 0;
-      let editData: any;
+      let editData: {
+        edit?: { result: string; newrevid?: number };
+        error?: { code: string; info: string };
+      } | null = null;
 
       while (attempt < 2) {
         const editParams = new URLSearchParams({
@@ -221,13 +223,13 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       }
 
       const { wikiUsername } = getWikiAuth(ctx);
-      const revId = editData.edit?.newrevid ?? null;
+      const revId = editData?.edit?.newrevid ?? null;
       if (revId && wikiUsername) {
         await updateRevisionActor(revId, wikiUsername);
       }
 
       return {
-        success: editData.edit?.result === "Success",
+        success: editData?.edit?.result === "Success",
         revisionId: revId,
       };
     }),
@@ -267,7 +269,10 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       const newText = `${currentText.trimEnd()}\n\n${signedContent}`;
 
       let attempt = 0;
-      let editData: any;
+      let editData: {
+        edit?: { result: string; newrevid?: number };
+        error?: { code: string; info: string };
+      } | null = null;
 
       while (attempt < 2) {
         const editParams = new URLSearchParams({
@@ -317,13 +322,13 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       }
 
       const { wikiUsername } = getWikiAuth(ctx);
-      const revId = editData.edit?.newrevid ?? null;
+      const revId = editData?.edit?.newrevid ?? null;
       if (revId && wikiUsername) {
         await updateRevisionActor(revId, wikiUsername);
       }
 
       return {
-        success: editData.edit?.result === "Success",
+        success: editData?.edit?.result === "Success",
         revisionId: revId,
       };
     }),
@@ -376,9 +381,3 @@ export const wikiosUserTalkRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 });
 
-/**
- * Get the wikitext content of a specific revision by ID via direct MySQL.
- */
-async function getRevisionWikitext(revid: number) {
-  return getRevisionWikitextMySQL(revid);
-}

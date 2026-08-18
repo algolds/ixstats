@@ -1,9 +1,6 @@
-// src/lib/wiki-os/parsoid-client.ts
-// Parsoid REST API client for fetching rendered HTML from MediaWiki
-// Uses localhost loopback for minimal latency (~10ms network + rendering time)
-
 import { Cache } from "~/lib/cache";
 import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,6 +81,8 @@ export async function getArticleHtmlViaParsoid(title: string): Promise<ParsoidAr
   const response = await fetch(`${PARSOID_BASE}/page/${encodedTitle}/html`, {
     headers: {
       Accept: 'text/html; charset=utf-8; profile="https://www.mediawiki.org/wiki/Specs/HTML/2.8.0"',
+      "User-Agent": DEFAULT_USER_AGENT,
+      "Api-User-Agent": DEFAULT_USER_AGENT,
     },
     signal: AbortSignal.timeout(15000),
   });
@@ -104,9 +103,14 @@ export async function getArticleHtmlViaParsoid(title: string): Promise<ParsoidAr
  */
 async function getArticleHtmlViaActionApi(title: string): Promise<ParsoidArticle> {
   const encodedTitle = encodeURIComponent(title);
-  const url = `${MEDIAWIKI_API}?action=parse&page=${encodedTitle}&prop=text|categories|revid&formatversion=2&format=json`;
+  const mwApi = getMediaWikiApiUrl("ixwiki");
+  const url = `${mwApi}?action=parse&page=${encodedTitle}&prop=text|categories|revid&formatversion=2&format=json`;
 
   const response = await fetch(url, {
+    headers: {
+      "User-Agent": DEFAULT_USER_AGENT,
+      "Api-User-Agent": DEFAULT_USER_AGENT,
+    },
     signal: AbortSignal.timeout(15000),
   });
 
@@ -190,7 +194,11 @@ export async function htmlToWikitext(html: string, title: string): Promise<Parso
   const encodedTitle = encodeURIComponent(title.replace(/ /g, "_"));
   const response = await fetch(`${PARSOID_BASE}/transform/html/to/wikitext/${encodedTitle}`, {
     method: "POST",
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "User-Agent": DEFAULT_USER_AGENT,
+      "Api-User-Agent": DEFAULT_USER_AGENT,
+    },
     body: html,
     signal: AbortSignal.timeout(15000),
   });
@@ -211,7 +219,11 @@ export async function wikitextToHtml(wikitext: string, title: string): Promise<s
   const encodedTitle = encodeURIComponent(title.replace(/ /g, "_"));
   const response = await fetch(`${PARSOID_BASE}/transform/wikitext/to/html/${encodedTitle}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": DEFAULT_USER_AGENT,
+      "Api-User-Agent": DEFAULT_USER_AGENT,
+    },
     body: JSON.stringify({ wikitext }),
     signal: AbortSignal.timeout(15000),
   });

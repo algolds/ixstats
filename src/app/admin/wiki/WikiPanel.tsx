@@ -356,7 +356,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
 
   const selectedCountry = countries.find((c) => c.id === selectedCountryId);
 
-  const wikiIntroQuery = api.wiki.getIntro.useQuery(
+  const wikiIntroQuery = api.wikios.getIntro.useQuery(
     { title: wikiPageTitle, wiki: wikiSource },
     { enabled: false }
   );
@@ -586,15 +586,15 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       setScanProgress({ current: i + 1, total: unlinkedCountries.length });
 
       try {
-        const searchResult = await utils.wiki.searchWithFallback.fetch({
+        const searchResult = await utils.wikios.searchArticles.fetch({
           query: country.name,
         });
 
-        if (searchResult && typeof searchResult === "object") {
-          const sr = searchResult as any;
-          const title = sr.title ?? sr.matchedTitle ?? country.name;
-          const source = sr.source ?? "ixwiki";
-          const isExact = (title as string).toLowerCase() === country.name.toLowerCase();
+        if (searchResult && Array.isArray(searchResult) && searchResult.length > 0) {
+          const first = searchResult[0]!;
+          const title = first.title ?? country.name;
+          const source = first.source ?? "ixwiki";
+          const isExact = title.toLowerCase() === country.name.toLowerCase();
 
           results.push({
             countryId: country.id,

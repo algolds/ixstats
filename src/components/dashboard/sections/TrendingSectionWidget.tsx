@@ -62,7 +62,7 @@ const TRENDING_SOURCE: Record<
 };
 
 export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
-  const { data: intro } = api.wiki.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+  const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
 }
 
 export function ForumPreviewContent({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wiki.getForumThreadPreview.useQuery(
+  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { staleTime: 10 * 60_000 }
   );

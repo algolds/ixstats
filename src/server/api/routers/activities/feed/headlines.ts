@@ -449,33 +449,55 @@ export const activitiesFeedHeadlinesRouter = createTRPCRouter({
         });
       });
 
-      // ── 8. Wiki recent edits ──
+      // ── 8. Wiki recent edits (from PostgreSQL WikiRevision shadow store) ──
       try {
-        const wikiChanges = await getWikiBridgeRecentChanges(8);
-        for (const rc of wikiChanges) {
-          const sizeChange = rc.newLen - rc.oldLen;
-          const sizeLabel = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
-          const isNewPage = rc.type === "new";
-          // Clean up edit summary: drop auto-generated "Created page with ..." noise
-          let summary = "";
-          if (!isNewPage && rc.comment) {
-            const clean = rc.comment.replace(/\/\*.*?\*\/\s*/, "").trim();
-            if (clean && clean.length <= 80) summary = ` — ${clean}`;
-            else if (clean) summary = ` — ${clean.slice(0, 77)}...`;
+        const localRevs = await ctx.db.wikiRevision.findMany({
+          where: { minor: false },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          include: { article: { select: { title: true } } },
+        });
+
+        if (localRevs.length > 0) {
+          for (const rev of localRevs) {
+            const title = rev.article.title.replace(/_/g, " ");
+            const author = rev.author ?? "A contributor";
+            const summary = rev.summary ? ` — ${rev.summary.slice(0, 77)}` : "";
+            headlines.push({
+              id: `wiki_${rev.id}`,
+              text: `Wiki: ${author} edited "${title}"${summary} (${rev.wikitext.length} bytes)`,
+              category: "wiki",
+              priority: "low",
+              timestamp: rev.createdAt.toISOString(),
+              url: `/wiki/${encodeURIComponent(rev.article.title)}`,
+            });
           }
-          const verb = isNewPage ? "created" : "edited";
-          const wikiDate = new Date(rc.timestamp);
-          const wikiTimestamp = isNaN(wikiDate.getTime())
-            ? new Date().toISOString()
-            : wikiDate.toISOString();
-          headlines.push({
-            id: `wiki_${rc.title}_${rc.timestamp}`,
-            text: `Wiki: ${rc.user} ${verb} "${rc.title}"${summary} (${sizeLabel} bytes)`,
-            category: "wiki",
-            priority: isNewPage ? "medium" : "low",
-            timestamp: wikiTimestamp,
-            url: `/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
-          });
+        } else {
+          const wikiChanges = await getWikiBridgeRecentChanges(8);
+          for (const rc of wikiChanges) {
+            const sizeChange = rc.newLen - rc.oldLen;
+            const sizeLabel = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
+            const isNewPage = rc.type === "new";
+            let summary = "";
+            if (!isNewPage && rc.comment) {
+              const clean = rc.comment.replace(/\/\*.*?\*\/\s*/, "").trim();
+              if (clean && clean.length <= 80) summary = ` — ${clean}`;
+              else if (clean) summary = ` — ${clean.slice(0, 77)}...`;
+            }
+            const verb = isNewPage ? "created" : "edited";
+            const wikiDate = new Date(rc.timestamp);
+            const wikiTimestamp = isNaN(wikiDate.getTime())
+              ? new Date().toISOString()
+              : wikiDate.toISOString();
+            headlines.push({
+              id: `wiki_${rc.title}_${rc.timestamp}`,
+              text: `Wiki: ${rc.user} ${verb} "${rc.title}"${summary} (${sizeLabel} bytes)`,
+              category: "wiki",
+              priority: isNewPage ? "medium" : "low",
+              timestamp: wikiTimestamp,
+              url: `/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+            });
+          }
         }
       } catch (error) {
         console.error("[Headlines] Wiki recent changes failed:", error);

@@ -7,16 +7,14 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import {
-  getRevisionWikitext as getRevisionWikitextMySQL,
-  searchTemplates as searchTemplatesDB,
-} from "~/lib/wiki/bridge";
+import { searchTemplates as searchTemplatesDB } from "~/lib/wiki/bridge";
 import {
   fetchTemplateData,
   getTemplatePreview as renderTemplatePreview,
   categorizeTemplate,
 } from "~/lib/wiki-os/template-registry";
 import { db } from "~/server/db";
+import type { Prisma } from "@prisma/client";
 
 export const wikiosTemplatesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -36,168 +34,177 @@ export const wikiosTemplatesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 
   /**
-   * Search templates by name prefix. Checks local cache first, falls back to wiki.
+   * Search templates with metadata and categorization.
    */
   searchTemplates: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(200),
+        query: z.string().max(200).default(""),
+        category: z.string().optional(),
         limit: z.number().min(1).max(50).default(20),
       })
     )
     .query(async ({ input }) => {
-      // Search local registry first
-      const cached = await db.wikiTemplate.findMany({
-        where: { name: { contains: input.query, mode: "insensitive" } },
+      // 1. Try local WikiTemplate registry first
+      const where: {
+        category?: string;
+        OR?: Array<{ name: { contains: string; mode: "insensitive" } }>;
+      } = {};
+
+      if (input.category && input.category !== "all") {
+        where.category = input.category;
+      }
+      if (input.query) {
+        where.OR = [{ name: { contains: input.query, mode: "insensitive" } }];
+      }
+
+      const localTemplates = await db.wikiTemplate.findMany({
+        where,
         take: input.limit,
-        orderBy: { usageCount: "desc" },
-        select: {
-          name: true,
-          description: true,
-          category: true,
-          paramCount: true,
-          usageCount: true,
-        },
+        orderBy: { paramCount: "desc" },
       });
 
-      if (cached.length >= 5) return { templates: cached, source: "cache" as const };
+      if (localTemplates.length > 0) {
+        return {
+          templates: localTemplates.map((t) => ({
+            name: t.name,
+            description: t.description,
+            category: t.category ?? "other",
+            paramCount: t.paramCount,
+            hasTemplateData: !!t.templateData,
+          })),
+        };
+      }
 
-      // Fall back to direct MySQL search (was API, now ~20ms)
+      // 2. Fall back to MediaWiki search via direct MySQL
       const wikiResults = await searchTemplatesDB(input.query, input.limit);
       return {
         templates: wikiResults.map((name) => ({
           name,
           description: null,
-          category: null,
+          category: categorizeTemplate(name),
           paramCount: 0,
-          usageCount: 0,
+          hasTemplateData: false,
         })),
-        source: "wiki" as const,
       };
     }),
 
   /**
    * Get TemplateData schema for a specific template.
-   * Fetches from cache or syncs from MediaWiki on miss.
    */
   getTemplateData: publicProcedure
-    .input(z.object({ name: z.string().min(1).max(500) }))
+    .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      // Check local cache
-      const cached = await db.wikiTemplate.findUnique({
-        where: { name: input.name },
-      });
+      const templateName = input.title.replace(/^Template:/i, "");
 
-      // If cached and synced within last 24 hours, return it
-      if (cached?.templateData && cached.lastSynced > new Date(Date.now() - 86400000)) {
+      // 1. Check local DB cache
+      const cached = await db.wikiTemplate.findUnique({
+        where: { name: templateName },
+      });
+      if (cached?.templateData) {
         return {
           name: cached.name,
           description: cached.description,
           category: cached.category,
           templateData: cached.templateData as Record<string, unknown>,
-          paramCount: cached.paramCount,
+          cached: true,
         };
       }
 
-      // Fetch from MediaWiki
-      const tdMap = await fetchTemplateData([input.name]);
-      const td = tdMap.get(input.name);
-
-      if (td) {
-        const category = categorizeTemplate(input.name, td.description);
-        const paramCount = Object.keys(td.params).length;
-
-        // Upsert into cache
-        await db.wikiTemplate.upsert({
-          where: { name: input.name },
-          create: {
-            name: input.name,
-            description: td.description ?? null,
-            category,
-            templateData: td as any,
-            paramCount,
-            lastSynced: new Date(),
-          },
-          update: {
-            description: td.description ?? null,
-            category,
-            templateData: td as any,
-            paramCount,
-            lastSynced: new Date(),
-          },
-        });
-
+      // 2. Fetch from MediaWiki API
+      const tdMap = await fetchTemplateData([templateName]);
+      const data = tdMap.get(templateName);
+      if (!data) {
         return {
-          name: input.name,
-          description: td.description ?? null,
-          category,
-          templateData: td as any,
-          paramCount,
+          name: templateName,
+          description: null,
+          category: categorizeTemplate(templateName),
+          templateData: null,
+          cached: false,
         };
       }
+
+      // 3. Cache in DB for future requests
+      const category = categorizeTemplate(templateName, data.description);
+      const paramCount = data.params ? Object.keys(data.params).length : 0;
+
+      await db.wikiTemplate.upsert({
+        where: { name: templateName },
+        create: {
+          name: templateName,
+          description: data.description ?? null,
+          category,
+          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
+          paramCount,
+        },
+        update: {
+          description: data.description ?? null,
+          category,
+          templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
+          paramCount,
+        },
+      });
 
       return {
-        name: input.name,
-        description: null,
-        category: null,
-        templateData: null,
-        paramCount: 0,
+        name: templateName,
+        description: data.description ?? null,
+        category,
+        templateData: data as unknown as Record<string, unknown>,
+        cached: false,
       };
     }),
 
   /**
-   * Get a rendered preview of a template with given parameters.
+   * Get rendered preview of a template with given parameters.
    */
   getTemplatePreview: publicProcedure
     .input(
       z.object({
-        name: z.string().min(1).max(500),
+        template: z.string().min(1).max(500),
         params: z.record(z.string(), z.string()),
       })
     )
     .query(async ({ input }) => {
-      const html = await renderTemplatePreview(input.name, input.params);
-      return { html };
+      return renderTemplatePreview(input.template, input.params);
     }),
 
   /**
-   * Sync a batch of templates from MediaWiki into the local registry.
-   * Admin-only: used for bulk population.
+   * Sync/backfill all Template: pages into the WikiTemplate registry.
    */
   syncTemplates: protectedProcedure
-    .input(
-      z.object({
-        names: z.array(z.string().min(1).max(500)).min(1).max(50),
-      })
-    )
+    .input(z.object({ limit: z.number().min(1).max(200).default(50) }))
     .mutation(async ({ input }) => {
-      const tdMap = await fetchTemplateData(input.names);
+      // Find all Template: pages from direct MySQL
+      const templates = await searchTemplatesDB("", input.limit);
+      const cleanNames = templates.map((t) => t.replace(/^Template:/i, ""));
+      const tdMap = await fetchTemplateData(cleanNames);
       let synced = 0;
 
-      for (const [name, td] of tdMap) {
-        const category = categorizeTemplate(name, td.description);
+      for (const name of cleanNames) {
+        const data = tdMap.get(name);
+        const category = categorizeTemplate(name, data?.description);
+        const paramCount = data?.params ? Object.keys(data.params).length : 0;
+
         await db.wikiTemplate.upsert({
           where: { name },
           create: {
             name,
-            description: td.description ?? null,
+            description: data?.description ?? null,
             category,
-            templateData: td as any,
-            paramCount: Object.keys(td.params).length,
-            lastSynced: new Date(),
+            templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
+            paramCount,
           },
           update: {
-            description: td.description ?? null,
+            description: data?.description ?? null,
             category,
-            templateData: td as any,
-            paramCount: Object.keys(td.params).length,
-            lastSynced: new Date(),
+            templateData: (data ?? null) as unknown as Prisma.InputJsonValue,
+            paramCount,
           },
         });
         synced++;
       }
 
-      return { synced, total: input.names.length };
+      return { synced, total: templates.length };
     }),
 
   // ---------------------------------------------------------------------------
@@ -240,10 +247,3 @@ export const wikiosTemplatesRouter = createTRPCRouter({
   // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
   // ---------------------------------------------------------------------------
 });
-
-/**
- * Get the wikitext content of a specific revision by ID via direct MySQL.
- */
-async function getRevisionWikitext(revid: number) {
-  return getRevisionWikitextMySQL(revid);
-}

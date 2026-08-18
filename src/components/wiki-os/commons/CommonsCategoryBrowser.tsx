@@ -276,7 +276,7 @@ export function CommonsCategoryBrowser({
 }: CommonsCategoryBrowserProps) {
   const isCommons = wiki === "commons";
 
-  const { data: localDynamicCats } = api.wiki.getCategories.useQuery(
+  const { data: localDynamicCats } = api.wikios.getCategories.useQuery(
     { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
   );
@@ -347,7 +347,7 @@ export function CommonsCategoryBrowser({
     { enabled: isCommons && isSearching, staleTime: 60_000 }
   );
 
-  const { data: localAutocomplete } = api.wiki.autocompleteCategories.useQuery(
+  const { data: localAutocomplete } = api.wikios.autocompleteCategories.useQuery(
     { prefix: debouncedQuery, limit: 15, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     { enabled: !isCommons && isSearching, staleTime: 60_000 }
   );
@@ -362,7 +362,7 @@ export function CommonsCategoryBrowser({
     }
   );
 
-  const { data: localSearchCounts } = api.wiki.getCategoryTotalCounts.useQuery(
+  const { data: localSearchCounts } = api.wikios.getCategoryTotalCounts.useQuery(
     { categories: autocompleteResults ?? [], wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     {
       enabled: !isCommons && isSearching && !!autocompleteResults && autocompleteResults.length > 0,
@@ -537,7 +537,7 @@ function CategoryRow({
     { enabled: isCommons && isExpanded, staleTime: 5 * 60 * 1000 }
   );
 
-  const { data: localSubcats } = api.wiki.getSubcategories.useQuery(
+  const { data: localSubcats } = api.wikios.getSubcategories.useQuery(
     { category: name, limit: 20, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     { enabled: !isCommons && isExpanded, staleTime: 5 * 60 * 1000 }
   );

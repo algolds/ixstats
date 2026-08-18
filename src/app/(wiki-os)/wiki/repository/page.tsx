@@ -129,7 +129,7 @@ export default function RepositoryPage() {
     (tab === "ixwiki" || tab === "iiwiki") && !debouncedQuery && !!browsingCategory;
 
   // Search local or external wiki files query
-  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wiki.searchFiles.useQuery(
+  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wikios.searchFiles.useQuery(
     {
       query: debouncedQuery || undefined,
       category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,

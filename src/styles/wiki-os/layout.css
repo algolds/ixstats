@@ -1080,3 +1080,21 @@ html:not([data-theme="dark"]) .wikios-brand-lockup:hover .wikios-brand-title-ix 
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Instant Performance & Content-Visibility Rules
+   --------------------------------------------------------------------------- */
+.wikios-article-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 400px;
+}
+
+.wikios-infobox-container {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 450px;
+}
+
+.wikios-references {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 300px;
+}
+

@@ -72,12 +72,12 @@ export function useGlassPlateEditor({
     { enabled: isWikiOpen && wikiSearchQuery.trim().length > 1, staleTime: 10_000 }
   );
 
-  const wikiIntroQuery = api.wiki.getIntro.useQuery(
+  const wikiIntroQuery = api.wikios.getIntro.useQuery(
     { title: wikiTarget, wiki: selectedWikiSource },
     { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
   );
 
-  const wikiImagesQuery = api.wiki.getPageImages.useQuery(
+  const wikiImagesQuery = api.wikios.getPageImages.useQuery(
     { title: wikiTarget },
     { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
   );

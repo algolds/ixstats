@@ -11,26 +11,37 @@ import {
   getArticleWikitext,
   getPageSections,
   getPageHistory,
-  resolveRedirect as resolveRedirectMySQL,
+  resolveRedirect,
   getCurrentRevMeta,
   getPageProps,
   getPageProtection,
   getPageLog,
-} from "~/lib/wiki/bridge";
+} from "~/lib/wiki-os/bridge";
+import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
 import {
   extractTemplateKeys,
   resolveTemplates,
   applyResolvedTemplates,
+  registerTemplateProvider,
+  type ResolvedTemplate,
 } from "~/lib/wiki-os/template-resolver";
+import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
 import { computeWikitextDiff } from "~/lib/wiki-os/wikitext-diff";
 import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
+  saveArticleHtmlShadow,
+  getArticleHtmlShadow,
 } from "~/lib/wiki-os/article-store";
+import { getArticleSummaryFromShadow } from "~/lib/wiki-os/search-service";
+import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 
 import { db } from "~/server/db";
+
+// Register host-app template data provider
+registerTemplateProvider(ixstatsTemplateProvider);
 
 export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -122,7 +133,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       // Pre-resolve custom templates (CountryData, BusinessData) server-side
       // so they render immediately without a client-side second pass.
       const templateKeys = extractTemplateKeys(transformed.contentHtml);
-      let resolvedMap: Map<string, any> | undefined;
+      let resolvedMap: Map<string, ResolvedTemplate> | undefined;
       try {
         const myCountryId = await resolveActiveCountryId(ctx);
         resolvedMap = await resolveTemplates(templateKeys, {
@@ -143,6 +154,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
         resolvedMap && transformed.noticesHtml
           ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
           : transformed.noticesHtml;
+
+      // Phase 8: Backfill HTML shadow cache in background
+      void saveArticleHtmlShadow(resolvedTitle, contentHtml, "ixwiki");
 
       return {
         contentHtml,
@@ -180,8 +194,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
   checkPageExists: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      const resolvedTitle = await resolveRedirectMySQL(input.title);
-      const article = await getArticleWikitext(resolvedTitle, "ixwiki");
+      const resolvedTitle = await resolveRedirect(input.title);
+      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
       return { exists: !!article, resolvedTitle };
     }),
 
@@ -210,8 +224,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
           revid: revMeta?.revid ?? null,
           timestamp: revMeta?.timestamp ?? null,
         };
-      } catch (err: any) {
-        if (err.message?.includes("returned 404") || err.message?.includes("404")) {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("404")) {
           return {
             html: "",
             title: input.title,
@@ -256,6 +271,218 @@ export const wikiosPageContentRouter = createTRPCRouter({
         text: intro.substring(0, 400),
         redirectedFrom: resolvedTitle !== input.title ? input.title : null,
       };
+    }),
+
+  /**
+   * Get fast article intro/summary (plain text) for preview cards and tooltips.
+   * Serves from PostgreSQL shadow store in <3ms.
+   */
+  getArticleSummary: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        source: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      const summary = await getArticleSummaryFromShadow(input.title, input.source);
+      return {
+        title: summary.title,
+        intro: summary.intro,
+        text: summary.intro,
+        source: input.source,
+      };
+    }),
+
+  /**
+   * Resolve dynamic stat placeholders (e.g. {{CountryData:...}}) in arbitrary text.
+   */
+  resolvePlaceholders: publicProcedure
+    .input(
+      z.object({
+        placeholders: z.array(z.string()).optional(),
+        text: z.string().optional(),
+        countryId: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const keys = input.placeholders ?? [];
+      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
+      return resolved;
+    }),
+
+  /**
+   * Alias for resolvePlaceholders.
+   */
+  resolveWikiPlaceholders: publicProcedure
+    .input(
+      z.object({
+        placeholders: z.array(z.string()).optional(),
+        text: z.string().optional(),
+        countryId: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const keys = input.placeholders ?? [];
+      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
+      return resolved;
+    }),
+
+  /**
+   * Get intro with backward compatible input signature { title, wiki }.
+   */
+  getIntro: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      const summary = await getArticleSummaryFromShadow(input.title, input.wiki);
+      return {
+        title: summary.title,
+        intro: summary.intro,
+        text: summary.intro,
+        source: input.wiki,
+      };
+    }),
+
+  /**
+   * Get content of a specific section from a wiki article.
+   */
+  getSectionContent: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        section: z.string().min(1),
+        source: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      const src = input.source ?? input.wiki ?? "ixwiki";
+      const article = await getArticleWikitextShadow(input.title, src);
+      if (!article) return null;
+
+      const lines = article.wikitext.split("\n");
+      let capturing = false;
+      let sectionLevel = 0;
+      const content: string[] = [];
+      const sectionLower = input.section.toLowerCase();
+
+      for (const line of lines) {
+        const headingMatch = line.match(/^(={2,})\s*(.+?)\s*={2,}$/);
+        if (headingMatch) {
+          const level = headingMatch[1]!.length;
+          const title = headingMatch[2]!.trim().toLowerCase();
+
+          if (capturing) {
+            if (level <= sectionLevel) break;
+          }
+
+          if (title.includes(sectionLower)) {
+            capturing = true;
+            sectionLevel = level;
+            continue;
+          }
+        }
+
+        if (capturing) {
+          content.push(line);
+        }
+      }
+
+      if (content.length === 0) return null;
+
+      const fileRefs: string[] = [];
+      const filePattern = /\[\[(?:File|Image):([^\]|]+)/gi;
+      const fullContent = content.join("\n");
+      let match;
+      while ((match = filePattern.exec(fullContent)) !== null) {
+        fileRefs.push(match[1]!.trim());
+      }
+
+      return {
+        content: fullContent.trim(),
+        fileReferences: fileRefs,
+        lineCount: content.length,
+      };
+    }),
+
+  /**
+   * Get page images from an article.
+   */
+  getPageImages: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      const { getPageImages } = await import("~/lib/wiki/bridge");
+      return getPageImages(input.title);
+    }),
+
+  /**
+   * Get forum thread preview by threadId.
+   */
+  getForumThreadPreview: publicProcedure
+    .input(z.object({ threadId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
+      const apiKey = getXfApiKey();
+      if (!apiKey) return null;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${getXfApiUrl()}/threads/${input.threadId}/`, {
+          headers: { "XF-Api-Key": apiKey },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) return null;
+        const data = (await res.json()) as {
+          thread?: {
+            thread_id: number;
+            title: string;
+            username: string;
+            post_date: number;
+            reply_count: number;
+            view_count: number;
+            Forum?: { title: string };
+            first_post?: { message: string };
+          };
+        };
+
+        const t = data.thread;
+        if (!t) return null;
+
+        const rawMsg = t.first_post?.message ?? "";
+        const excerpt = rawMsg
+          .replace(/\[ATTACH[^\]]*\]\d+\[\/ATTACH\]/gi, "")
+          .replace(/\[\/?(?:b|i|u|url|quote|code|img|media)[^\]]*\]/gi, "")
+          .replace(/\n+/g, " ")
+          .trim()
+          .slice(0, 200);
+
+        return {
+          threadId: t.thread_id,
+          title: t.title,
+          author: t.username,
+          postDate: t.post_date,
+          replyCount: t.reply_count,
+          viewCount: t.view_count,
+          forumTitle: t.Forum?.title ?? null,
+          forumName: t.Forum?.title ?? null,
+          excerpt: excerpt || null,
+        };
+      } catch {
+        return null;
+      }
     }),
 
   /**
@@ -427,14 +654,13 @@ export const wikiosPageContentRouter = createTRPCRouter({
   // Category Tree (Phase 1)
   // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
-  // ---------------------------------------------------------------------------
+  /**
+   * Sync recent changes from MediaWiki into local shadow store.
+   */
+  syncRecentChanges: publicProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
+    .mutation(async ({ input }) => {
+      return syncWikiRecentChanges(input?.limit ?? 50);
+    }),
 });
 
-/**
- * Resolve a page title through redirects via direct MySQL.
- */
-async function resolveRedirect(title: string): Promise<string> {
-  return resolveRedirectMySQL(title);
-}

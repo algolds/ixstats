@@ -36,7 +36,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
   const { data: userWithRole } = api.users.getCurrentUserWithRole.useQuery();
   const viewerCountryId = userWithRole?.user?.country?.id;
 
-  const { data: businesses, isLoading: searchLoading } = api.wiki.searchBusinesses.useQuery(
+  const { data: businesses, isLoading: searchLoading } = api.wikios.searchBusinesses.useQuery(
     { query: searchQuery, countryId: viewerCountryId },
     { enabled: isOpen }
   );

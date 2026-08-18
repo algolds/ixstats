@@ -16,7 +16,7 @@ export function InlineWikiArticlePreview({
   title: string;
   wiki?: "ixwiki" | "iiwiki";
 }) {
-  const { data: intro } = api.wiki.getIntro.useQuery(
+  const { data: intro } = api.wikios.getIntro.useQuery(
     { title, wiki },
     { enabled: !!title, staleTime: 30 * 60_000 }
   );

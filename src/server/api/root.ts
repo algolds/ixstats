@@ -119,7 +119,6 @@ import { transportRouter } from "./routers/transport";
 import { studioRouter } from "./routers/studio";
 
 // ─── Wiki & WikiOS ───────────────────────────────────────────────────────────
-import { wikiRouter } from "./routers/wiki";
 import { wikiosRouter } from "./routers/wikios";
 import { wikiCacheRouter } from "./routers/wikiCache";
 import { wikiImporterRouter } from "./routers/wikiImporter";
@@ -252,7 +251,6 @@ export const appRouter = createTRPCRouter({
   studio: safeRouter("studio", () => studioRouter),
 
   // ─── Wiki & WikiOS ─────────────────────────────────────────────────────────
-  wiki: safeRouter("wiki", () => wikiRouter),
   wikios: safeRouter("wikios", () => wikiosRouter),
   wikiCache: safeRouter("wikiCache", () => wikiCacheRouter),
   wikiImporter: safeRouter("wikiImporter", () => wikiImporterRouter),

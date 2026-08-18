@@ -5,7 +5,7 @@
  * and provides lookup/search for the editor's template inserter.
  */
 
-const MW_API = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,7 +60,12 @@ export async function fetchTemplateData(titles: string[]): Promise<Map<string, T
     });
 
     try {
-      const res = await fetch(`${MW_API}?${params}`, {
+      const mwApi = getMediaWikiApiUrl("ixwiki");
+      const res = await fetch(`${mwApi}?${params}`, {
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+          "Api-User-Agent": DEFAULT_USER_AGENT,
+        },
         signal: AbortSignal.timeout(15000),
       });
       const data = (await res.json()) as {
@@ -119,7 +124,12 @@ export async function searchTemplatesFromWiki(
   });
 
   try {
-    const res = await fetch(`${MW_API}?${params}`, {
+    const mwApi = getMediaWikiApiUrl("ixwiki");
+    const res = await fetch(`${mwApi}?${params}`, {
+      headers: {
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
       signal: AbortSignal.timeout(10000),
     });
     const data = (await res.json()) as {
@@ -160,7 +170,12 @@ export async function getTemplatePreview(
   });
 
   try {
-    const res = await fetch(`${MW_API}?${apiParams}`, {
+    const mwApi = getMediaWikiApiUrl("ixwiki");
+    const res = await fetch(`${mwApi}?${apiParams}`, {
+      headers: {
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
       signal: AbortSignal.timeout(15000),
     });
     const data = (await res.json()) as {

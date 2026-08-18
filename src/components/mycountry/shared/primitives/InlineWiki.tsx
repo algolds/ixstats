@@ -36,7 +36,7 @@ function InlineWikiExcerpt({
   accent: MyCountryAccent;
 }) {
   const a = ACCENT_CLASSES[accent];
-  const { data, isLoading } = api.wiki.getSectionContent.useQuery(
+  const { data, isLoading } = api.wikios.getSectionContent.useQuery(
     { title: countryName, section: title, source: "ixwiki" },
     { enabled: !!countryName, staleTime: 10 * 60_000 }
   );

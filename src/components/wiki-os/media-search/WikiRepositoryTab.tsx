@@ -111,7 +111,7 @@ export function WikiRepositoryTab({
     (wikiSource === "ixwiki" || wikiSource === "iiwiki") &&
     !debouncedWikiQuery &&
     !!browsingCategory;
-  const { data: wikiFileData, isFetching: isFetchingWikiFiles } = api.wiki.searchFiles.useQuery(
+  const { data: wikiFileData, isFetching: isFetchingWikiFiles } = api.wikios.searchFiles.useQuery(
     {
       query: debouncedWikiQuery || undefined,
       category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,

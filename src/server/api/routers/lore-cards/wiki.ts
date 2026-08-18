@@ -17,7 +17,8 @@ import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource, autoMatchSubcategory } from "~/lib/cards";
 import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
-import { searchPages, getRecentChanges, getArticleWikitext } from "~/lib/wiki/bridge";
+import { searchPages, getRecentChanges } from "~/lib/wiki/bridge";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/article-store";
 import { getWikiUserAgent, getMediaWikiApiUrl } from "~/lib/wiki/config";
 import { cleanWikitextExcerpt } from "~/lib/wiki/wikitext-parser";
 
@@ -408,9 +409,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
             try {
               const recents = await getRecentChanges(30);
               if (recents && recents.length > 0) {
-                recentTitles = Array.from(
-                  new Set(recents.map((r) => r.title).filter(Boolean))
-                ).filter(isArticleTitle);
+                const titles = recents
+                  .map((r: { title: string }) => r.title)
+                  .filter((t: string): t is string => Boolean(t) && isArticleTitle(t));
+                recentTitles = Array.from(new Set(titles));
               }
             } catch (recentErr) {
               console.warn("[Lore Cards] getRecentChanges error:", recentErr);
@@ -530,11 +532,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
             }
 
             if (!rawExcerpt) {
-              const articleRes = await getArticleWikitext(input.pageTitle, wikiSrc as any);
-              const textContent =
-                typeof articleRes === "string"
-                  ? articleRes
-                  : (articleRes as any)?.wikitext || (articleRes as any)?.text || "";
+              const articleRes = await getArticleWikitextShadow(input.pageTitle, wikiSrc as any);
+              const textContent = articleRes?.wikitext || "";
               if (textContent) {
                 rawExcerpt = cleanWikitextExcerpt(textContent, 400);
               }

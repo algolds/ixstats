@@ -1,24 +1,57 @@
 // src/app/(wiki-os)/wiki/[slug]/page.tsx
-// WikiOS Article Reader — renders a wiki article in reader mode
+// WikiOS Article Reader & In-Place Editor with Instant Caching
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
+import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { useLinkPreviews } from "~/components/wiki-os/reader/LinkPreview";
 import { withBasePath } from "~/lib/base-path";
+import { getCachedArticle, setCachedArticle } from "~/lib/wiki-os/wikios-cache";
+import type { CachedArticleData, ArticleMode } from "~/lib/wiki/types";
 
 export default function WikiOSArticlePage() {
   const params = useParams<{ slug: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const utils = api.useUtils();
   const articleRef = useRef<HTMLDivElement>(null);
+
   const slug = params.slug;
   const title = decodeURIComponent(slug).replace(/_/g, " ");
-
   const isMainPage = title === "Main Page" || title === "Main_Page";
+
+  // Check URL search param for edit mode (e.g. ?action=edit)
+  const isEditAction = searchParams.get("action") === "edit";
+  const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
+  const [cachedData, setCachedData] = useState<CachedArticleData | null>(null);
+
+  // Sync mode with URL
+  useEffect(() => {
+    if (isEditAction && mode === "reading") {
+      setMode("source");
+    }
+  }, [isEditAction, mode]);
+
+  // Attempt instant retrieval from IndexedDB/memory cache on mount
+  useEffect(() => {
+    if (isMainPage || !title) return;
+    let isMounted = true;
+    async function loadCache() {
+      const hit = await getCachedArticle(title);
+      if (hit && isMounted) {
+        setCachedData(hit);
+      }
+    }
+    void loadCache();
+    return () => {
+      isMounted = false;
+    };
+  }, [title, isMainPage]);
 
   // Redirect Category: pages to the category browser
   useEffect(() => {
@@ -30,32 +63,78 @@ export default function WikiOSArticlePage() {
     }
   }, [title, router]);
 
-  // Fetch article HTML (disabled for Main Page — uses custom component)
-  const { data, isLoading, error } = api.wikios.getArticleHtml.useQuery(
+  // Fetch article HTML
+  const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
     { title },
-    { enabled: !!title && !isMainPage, staleTime: 5 * 60 * 1000 }
+    {
+      enabled: !!title && !isMainPage,
+      staleTime: 10 * 60 * 1000,
+    }
   );
+
+  // Store freshly fetched data into persistent client cache & trigger idle wikitext warmup
+  useEffect(() => {
+    if (data && !isMainPage) {
+      void setCachedArticle(title, {
+        title: data.title,
+        contentHtml: data.contentHtml,
+        infoboxHtml: data.infoboxHtml,
+        noticesHtml: data.noticesHtml,
+        toc: data.toc,
+        categories: data.categories,
+        lastModified: data.lastModified ?? null,
+      });
+
+      // Background idle wikitext warmup so clicking Edit is 0ms
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(() => {
+          void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
+        });
+      }
+    }
+  }, [data, title, isMainPage, utils]);
+
+  // Use either freshly fetched data or cached data
+  const displayData = data ?? cachedData;
 
   // Canonical link and page title
   useEffect(() => {
     if (isMainPage) {
       document.title = "IxWiki — WikiOS";
-    } else if (data?.title) {
-      document.title = `${data.title} — IxWiki`;
+    } else if (displayData?.title) {
+      const prefix = mode !== "reading" ? `Editing ${displayData.title}` : displayData.title;
+      document.title = `${prefix} — IxWiki`;
       let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
         canonical = document.createElement("link");
         canonical.rel = "canonical";
         document.head.appendChild(canonical);
       }
-      canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`;
+      canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(displayData.title.replace(/ /g, "_"))}`;
     }
-  }, [data?.title, isMainPage]);
+  }, [displayData?.title, isMainPage, mode]);
 
   // Link hover previews
   const previewPortal = useLinkPreviews(articleRef);
 
-  // Main Page — render custom component
+  const handleEnterEdit = useCallback((editMode: "source" | "visual" = "source") => {
+    setMode(editMode);
+    const newUrl = `${window.location.pathname}?action=edit`;
+    window.history.pushState(null, "", newUrl);
+  }, []);
+
+  const handleExitEdit = useCallback(() => {
+    setMode("reading");
+    const newUrl = window.location.pathname;
+    window.history.pushState(null, "", newUrl);
+  }, []);
+
+  const handleSaveSuccess = useCallback(() => {
+    void refetch();
+    handleExitEdit();
+  }, [refetch, handleExitEdit]);
+
+  // Main Page
   if (isMainPage) {
     return (
       <WikiOSLayout>
@@ -64,48 +143,53 @@ export default function WikiOSArticlePage() {
     );
   }
 
-  // Standard article
   return (
     <WikiOSLayout>
-      <div ref={articleRef}>
-        {isLoading && (
-          <div className="wikios-loading">
-            <div className="wikios-loading-spinner" />
-            <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
-          </div>
-        )}
-        {error && (
-          <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
-            <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
-            <p className="text-sm text-zinc-400">
-              The page &ldquo;{title}&rdquo; does not exist on IxWiki.
-            </p>
-            <div className="mt-4 flex gap-3">
-              <a
-                href={`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}
-                className="wikios-action-btn"
-              >
-                Try MediaWiki
-              </a>
-              <a
-                href={`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}?action=edit`}
-                className="wikios-action-btn"
-              >
-                Create this page
-              </a>
-            </div>
-          </div>
-        )}
-        {data && (
-          <ArticleRenderer
-            title={data.title}
-            contentHtml={data.contentHtml}
-            infoboxHtml={data.infoboxHtml}
-            noticesHtml={data.noticesHtml}
-            toc={data.toc}
-            categories={data.categories}
-            lastModified={data.lastModified}
+      <div ref={articleRef} className="wikios-article-container min-h-[500px]">
+        {mode !== "reading" ? (
+          <WikiEditBridge
+            title={title}
+            initialMode={mode === "visual" ? "visual" : "source"}
+            onClose={handleExitEdit}
+            onSaveSuccess={handleSaveSuccess}
           />
+        ) : (
+          <>
+            {isLoading && !displayData && (
+              <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
+                <div className="wikios-loading-spinner" />
+                <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
+              </div>
+            )}
+            {error && !displayData && (
+              <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
+                <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
+                <p className="text-sm text-zinc-400">
+                  The page &ldquo;{title}&rdquo; does not exist on IxWiki.
+                </p>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleEnterEdit("source")}
+                    className="wikios-action-btn cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+                  >
+                    Create this page
+                  </button>
+                </div>
+              </div>
+            )}
+            {displayData && (
+              <ArticleRenderer
+                title={displayData.title}
+                contentHtml={displayData.contentHtml}
+                infoboxHtml={displayData.infoboxHtml}
+                noticesHtml={displayData.noticesHtml}
+                toc={displayData.toc}
+                categories={displayData.categories}
+                lastModified={displayData.lastModified ?? null}
+              />
+            )}
+          </>
         )}
       </div>
       {previewPortal}

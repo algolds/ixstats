@@ -164,7 +164,7 @@ export function UnifiedFeedContent({
     { limit: 50 },
     { refetchInterval: 60_000, staleTime: 30_000 }
   );
-  const { data: wikiRecentChanges } = api.wiki.getRecentChanges.useQuery(
+  const { data: wikiRecentChanges } = api.wikios.getRecentChanges.useQuery(
     { limit: 20 },
     {
       enabled: activeTab === "all" || activeTab === "community",

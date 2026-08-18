@@ -66,7 +66,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
 }
 
 export function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
-  const { data: thread } = api.wiki.getForumThreadPreview.useQuery(
+  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { enabled: threadId > 0 }
   );

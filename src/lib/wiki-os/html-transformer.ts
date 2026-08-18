@@ -105,8 +105,9 @@ export function transformArticleHtml(
   // 7. Transform image URLs to be absolute
   processed = transformImages(processed, wikiSource);
 
-  // 8. Add section edit links styling class
+  // 8. Add section edit links styling class & performance optimization
   processed = styleEditSectionLinks(processed);
+  processed = applySectionOptimization(processed);
 
   // 9. Extract image URLs
   const images = extractImageUrls(processed);
@@ -122,6 +123,13 @@ export function transformArticleHtml(
     toc,
     images,
   };
+}
+
+function applySectionOptimization(html: string): string {
+  return html.replace(
+    /class="mw-heading mw-heading2"/gu,
+    'class="mw-heading mw-heading2 wikios-article-section"'
+  );
 }
 
 // ---------------------------------------------------------------------------

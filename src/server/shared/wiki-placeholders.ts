@@ -1,64 +1,13 @@
-/**
- * wikiDataRouter — Unified tRPC router for dynamic wiki data placeholders and business search.
- */
+// src/server/shared/wiki-placeholders.ts
+// Shared helper to resolve CountryData/BusinessData/MyCountry placeholders from live DB data.
+// Extracted from routers/wiki/data.ts to decouple lib/wiki-os from routers.
 
-import { z } from "zod/v4";
 import type { Prisma } from "@prisma/client";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 
-export const wikiDataRouter = createTRPCRouter({
-  /** Resolve wikitext placeholders for dynamic country and business stats. */
-  resolveWikiPlaceholders: publicProcedure
-    .input(
-      z.object({
-        placeholders: z.array(z.string()),
-        activeCountryId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      return resolveWikiPlaceholdersInternal(input.placeholders, ctx, input.activeCountryId);
-    }),
-
-  /** Search approved businesses / commercial points of interest */
-  searchBusinesses: publicProcedure
-    .input(
-      z.object({
-        query: z.string().optional(),
-        countryId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const where: Prisma.PointOfInterestWhereInput = {
-        status: "approved",
-        category: { in: ["commercial", "office", "industrial", "factory"] },
-      };
-      if (input.countryId) {
-        where.countryId = input.countryId;
-      }
-      if (input.query) {
-        where.name = {
-          contains: input.query,
-          mode: "insensitive",
-        };
-      }
-      return ctx.db.pointOfInterest.findMany({
-        where,
-        take: 30,
-        select: {
-          id: true,
-          name: true,
-          category: true,
-          coordinates: true,
-          countryId: true,
-        },
-      });
-    }),
-});
-
-interface WikiPlaceholderMetadata {
+export interface WikiPlaceholderMetadata {
   label: string;
   countryName?: string;
   companyName?: string;

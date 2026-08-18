@@ -213,7 +213,7 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
 // ──────────────────────────────────────────────
 
 function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
-  const { data: intro } = api.wiki.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+  const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
   const articleUrl =
     wiki === "ixwiki"
@@ -253,7 +253,7 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
 // ──────────────────────────────────────────────
 
 function ForumTooltipBody({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wiki.getForumThreadPreview.useQuery(
+  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { staleTime: 10 * 60_000 }
   );
