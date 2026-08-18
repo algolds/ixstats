@@ -80,16 +80,16 @@ export default function Scoreboard1({
                 )}
               </div>
               <div className="text-foreground min-w-0">
-                <div className="truncate text-sm font-extrabold">{homeTeam.name}</div>
+                <div className="truncate text-sm font-semibold">{homeTeam.name}</div>
                 {homeTeam.city && (
-                  <div className="text-muted-foreground mt-0.5 text-[10px] leading-none font-bold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-0.5 text-[10px] leading-none font-medium tracking-wider uppercase">
                     {homeTeam.city}
                   </div>
                 )}
               </div>
             </button>
             {isCompleted && (
-              <span className="text-foreground shrink-0 text-lg font-black tabular-nums">
+              <span className="text-foreground shrink-0 text-lg font-bold tabular-nums">
                 {homeScore ?? 0}
               </span>
             )}
@@ -98,7 +98,7 @@ export default function Scoreboard1({
           {/* VS Divider */}
           <div className="flex items-center gap-2">
             <div className="bg-border/40 h-[1px] flex-1"></div>
-            <div className="text-muted-foreground px-1 text-[10px] font-black tracking-widest uppercase">
+            <div className="text-muted-foreground px-1 text-[10px] font-bold tracking-widest uppercase">
               VS
             </div>
             <div className="bg-border/40 h-[1px] flex-1"></div>
@@ -134,16 +134,16 @@ export default function Scoreboard1({
                 )}
               </div>
               <div className="text-foreground min-w-0">
-                <div className="truncate text-sm font-extrabold">{awayTeam.name}</div>
+                <div className="truncate text-sm font-semibold">{awayTeam.name}</div>
                 {awayTeam.city && (
-                  <div className="text-muted-foreground mt-0.5 text-[10px] leading-none font-bold tracking-wider uppercase">
+                  <div className="text-muted-foreground mt-0.5 text-[10px] leading-none font-medium tracking-wider uppercase">
                     {awayTeam.city}
                   </div>
                 )}
               </div>
             </button>
             {isCompleted && (
-              <span className="text-foreground shrink-0 text-lg font-black tabular-nums">
+              <span className="text-foreground shrink-0 text-lg font-bold tabular-nums">
                 {awayScore ?? 0}
               </span>
             )}
@@ -152,7 +152,7 @@ export default function Scoreboard1({
       </div>
 
       {/* Footer Info */}
-      <div className="text-muted-foreground bg-muted/30 border-border/20 flex justify-between gap-2 border-t px-6 py-3 text-[10px] font-bold dark:bg-secondary/40">
+      <div className="text-muted-foreground bg-muted/30 border-border/20 dark:bg-secondary/40 flex justify-between gap-2 border-t px-6 py-3 text-[10px] font-medium">
         <div className="truncate tracking-wider uppercase">{title}</div>
         {date && <span className="tabular-nums">{date}</span>}
       </div>

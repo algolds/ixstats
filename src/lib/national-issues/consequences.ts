@@ -464,12 +464,14 @@ export class NationalIssuesConsequences {
   }
 
   private static calculateIxCredits(
-    issue: {
-      priority?: string | null;
-      severity?: string | null;
-      deadlineIxTime?: number | null;
-      createdIxTime?: number | null;
-    } | any,
+    issue:
+      | {
+          priority?: string | null;
+          severity?: string | null;
+          deadlineIxTime?: number | null;
+          createdIxTime?: number | null;
+        }
+      | any,
     isAutoResolve: boolean
   ): number {
     if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming

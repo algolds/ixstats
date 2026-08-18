@@ -454,7 +454,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
   return (
     <div className="space-y-4">
       {/* Category Pill Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
         <div className="flex flex-wrap gap-1.5">
           {CATEGORIES.map((cat) => (
             <button
@@ -498,16 +498,16 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                 "group flex cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 active:scale-[0.98]",
                 isSelected
                   ? "border-amber-500 bg-amber-500/15 shadow-md ring-2 ring-amber-500/40"
-                  : "border-border/50 bg-card/60 hover:border-amber-500/40 hover:bg-card hover:shadow-sm"
+                  : "border-border/50 bg-card/60 hover:bg-card hover:border-amber-500/40 hover:shadow-sm"
               )}
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/40 text-lg shadow-xs">
+              <span className="bg-muted/40 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg shadow-xs">
                 {item.icon}
               </span>
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
-                    "text-xs font-bold leading-snug transition-colors",
+                    "text-xs leading-snug font-bold transition-colors",
                     isSelected
                       ? "text-amber-800 dark:text-amber-300"
                       : "text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400"

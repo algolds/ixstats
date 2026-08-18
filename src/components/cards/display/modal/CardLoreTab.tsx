@@ -6,18 +6,20 @@ import { Globe, PenTool } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
-import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, type LoreCategory } from "~/lib/cards";
+import {
+  getCategoryTheme,
+  getCategoryLabel,
+  isValidLoreCategory,
+  classifyFromWikitext,
+  type LoreCategory,
+} from "~/lib/cards";
 import { CategoryIcon } from "~/components/cards/icons";
 
-export function CardLoreTab({
-  card,
-  wikiUrl,
-}: {
-  card: CardInstance;
-  wikiUrl: string | null;
-}) {
+export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: string | null }) {
   const meta = card.metadata as Record<string, unknown> | null | undefined;
-  const rawAuthor = (meta?.authorInfo as { displayAuthor?: string } | undefined)?.displayAuthor || (meta?.author as string);
+  const rawAuthor =
+    (meta?.authorInfo as { displayAuthor?: string } | undefined)?.displayAuthor ||
+    (meta?.author as string);
   let cleanAuthor = rawAuthor
     ? String(rawAuthor)
         .replace(/(?:imported|import)\s*>\s*/gi, "")
@@ -67,7 +69,7 @@ export function CardLoreTab({
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-xs",
+            "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md",
             card.wikiSource === "iiwiki"
               ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
               : "border-sky-500/30 bg-sky-500/15 text-sky-600 dark:text-sky-400"
@@ -79,7 +81,7 @@ export function CardLoreTab({
 
         {resolvedCategory && categoryLabel && (
           <span
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-card/60 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-md shadow-xs"
+            className="border-border/40 bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-xs backdrop-blur-md"
             style={
               categoryTheme
                 ? {
@@ -89,13 +91,18 @@ export function CardLoreTab({
                 : undefined
             }
           >
-            <CategoryIcon category={resolvedCategory} treatment="seal" size="xs" color={categoryTheme?.accentColor} />
+            <CategoryIcon
+              category={resolvedCategory}
+              treatment="seal"
+              size="xs"
+              color={categoryTheme?.accentColor}
+            />
             {categoryLabel}
           </span>
         )}
 
         {cleanAuthor && (
-          <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 backdrop-blur-md shadow-xs">
+          <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-600 shadow-xs backdrop-blur-md dark:text-amber-400">
             <PenTool className="h-3 w-3 text-amber-500" />
             {cleanAuthor}
           </span>
@@ -108,26 +115,25 @@ export function CardLoreTab({
       {/* Lore-specific historical metrics */}
       {(() => {
         const loreStats = meta?.loreStats as
-          | { historicalSignificance?: number; culturalImpact?: number }
-          | undefined;
+          { historicalSignificance?: number; culturalImpact?: number } | undefined;
         if (!loreStats) return null;
         return (
-          <div className="glass-hierarchy-child rounded-xl border border-border/40 p-4 backdrop-blur-md space-y-3">
-            <h4 className="text-foreground text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
+          <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+            <h4 className="text-foreground text-muted-foreground/80 text-xs font-bold tracking-wider uppercase">
               Historical Metrics
             </h4>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border/40 bg-card/60 p-3">
+              <div className="border-border/40 bg-card/60 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs font-medium">
                   Historical Significance
                 </div>
-                <div className="mt-1 text-xl font-black text-amber-500 dark:text-amber-400">
+                <div className="mt-1 font-mono text-xl font-bold text-amber-500 tabular-nums dark:text-amber-400">
                   {loreStats.historicalSignificance ?? 0}/100
                 </div>
               </div>
-              <div className="rounded-lg border border-border/40 bg-card/60 p-3">
+              <div className="border-border/40 bg-card/60 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs font-medium">Cultural Impact</div>
-                <div className="mt-1 text-xl font-black text-purple-500 dark:text-purple-400">
+                <div className="mt-1 font-mono text-xl font-bold text-purple-500 tabular-nums dark:text-purple-400">
                   {loreStats.culturalImpact ?? 0}/100
                 </div>
               </div>

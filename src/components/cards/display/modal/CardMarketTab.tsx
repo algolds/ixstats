@@ -2,7 +2,16 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BarChart3, History, Package, Award, Gift, ArrowRightLeft, ShoppingBag, Star } from "lucide-react";
+import {
+  BarChart3,
+  History,
+  Package,
+  Award,
+  Gift,
+  ArrowRightLeft,
+  ShoppingBag,
+  Star,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
@@ -86,7 +95,7 @@ export function CardMarketTab({
             No ownership transfer events recorded for this card
           </div>
         ) : (
-          <div className="relative ml-3 space-y-6 border-l border-border/60 pl-6">
+          <div className="border-border/60 relative ml-3 space-y-6 border-l pl-6">
             {provenanceEvents.map((event) => {
               let icon = <Package className="h-4 w-4 text-white" />;
               let actionLabel = "Transferred";
@@ -112,10 +121,7 @@ export function CardMarketTab({
                   ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                   : `Traded to ${event.toUserName}`;
                 colorClass = "bg-teal-500";
-              } else if (
-                event.action === "AUCTION_BUYOUT" ||
-                event.action === "AUCTION_END"
-              ) {
+              } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
                 icon = <ShoppingBag className="h-4 w-4 text-white" />;
                 actionLabel = `Purchased at Auction by ${event.toUserName}`;
                 if (event.price) {
@@ -158,4 +164,3 @@ export function CardMarketTab({
     </motion.div>
   );
 }
-

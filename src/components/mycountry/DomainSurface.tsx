@@ -108,10 +108,10 @@ function DomainSurfaceComponent({
               <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-foreground text-xl font-black tracking-tight sm:text-2xl">
+              <h1 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
                 {meta.title}
               </h1>
-              <p className="text-muted-foreground mt-0.5 max-w-xl text-xs leading-relaxed font-medium">
+              <p className="text-muted-foreground mt-0.5 max-w-xl text-xs leading-relaxed font-normal">
                 {meta.blurb}
               </p>
             </div>

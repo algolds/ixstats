@@ -2,13 +2,7 @@
  * Centralized, strongly-typed theme tokens & helpers for the IxVault system.
  */
 
-export type CardRarity =
-  | "LEGENDARY"
-  | "EPIC"
-  | "ULTRA_RARE"
-  | "RARE"
-  | "UNCOMMON"
-  | "COMMON";
+export type CardRarity = "LEGENDARY" | "EPIC" | "ULTRA_RARE" | "RARE" | "UNCOMMON" | "COMMON";
 
 export interface RarityThemeConfig {
   glow: string;

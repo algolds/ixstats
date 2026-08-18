@@ -25,13 +25,7 @@ export interface UnifiedNotification {
 }
 
 export type NotificationSource =
-  | "realtime"
-  | "admin"
-  | "system"
-  | "user"
-  | "intelligence"
-  | "external"
-  | "scheduled";
+  "realtime" | "admin" | "system" | "user" | "intelligence" | "external" | "scheduled";
 
 export type NotificationCategory =
   | "economic"
@@ -50,37 +44,17 @@ export type NotificationCategory =
   | string;
 
 export type NotificationType =
-  | "alert"
-  | "update"
-  | "opportunity"
-  | "warning"
-  | "critical"
-  | "info"
-  | "success"
-  | "error";
+  "alert" | "update" | "opportunity" | "warning" | "critical" | "info" | "success" | "error";
 
 export type NotificationPriority = "critical" | "high" | "medium" | "low";
 
 export type NotificationSeverity = "urgent" | "important" | "informational" | "info";
 
 export type DeliveryMethod =
-  | "dynamic-island"
-  | "toast"
-  | "modal"
-  | "command-palette"
-  | "badge"
-  | "silent"
-  | "push";
+  "dynamic-island" | "toast" | "modal" | "command-palette" | "badge" | "silent" | "push";
 
 export type NotificationStatus =
-  | "pending"
-  | "delivered"
-  | "deferred"
-  | "read"
-  | "dismissed"
-  | "expired"
-  | "suppressed"
-  | "failed";
+  "pending" | "delivered" | "deferred" | "read" | "dismissed" | "expired" | "suppressed" | "failed";
 
 export interface NotificationAction {
   id: string;

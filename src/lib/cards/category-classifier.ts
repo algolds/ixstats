@@ -13,7 +13,11 @@
  *   DIPLOMACY / MILITARY / PEOPLE / RELIGION / SCIENCE / ECONOMY > GOVERNMENT / CULTURE > GEOGRAPHY / HISTORY > NATION > SPECIAL
  */
 
-import { LoreCategory, CATEGORY_SYNONYMS, type LoreCategory as LoreCategoryType } from "./category-enums";
+import {
+  LoreCategory,
+  CATEGORY_SYNONYMS,
+  type LoreCategory as LoreCategoryType,
+} from "./category-enums";
 
 export interface ArticleClassificationInput {
   title?: string | null;
@@ -182,40 +186,88 @@ export const CATEGORY_TAXONOMY_PATTERNS: Array<{
   category: LoreCategoryType;
 }> = [
   // PEOPLE
-  { pattern: /\b(?:people|persons|biograph(?:y|ies)|births|deaths|politicians|presidents|prime ministers|monarchs|kings|queens|emperors|leaders|heads of state|generals|admirals|artists|writers|scientists|nobility|royalty)\b/i, category: LoreCategory.PEOPLE },
-  
+  {
+    pattern:
+      /\b(?:people|persons|biograph(?:y|ies)|births|deaths|politicians|presidents|prime ministers|monarchs|kings|queens|emperors|leaders|heads of state|generals|admirals|artists|writers|scientists|nobility|royalty)\b/i,
+    category: LoreCategory.PEOPLE,
+  },
+
   // MILITARY
-  { pattern: /\b(?:military|war(?:s|fare)?|battles?|conflicts?|sieges?|campaigns?|armed forces|arm(?:y|ies)|nav(?:y|al|ies)|air force|regiments?|divisions?|weapons?|operations?)\b/i, category: LoreCategory.MILITARY },
-  
+  {
+    pattern:
+      /\b(?:military|war(?:s|fare)?|battles?|conflicts?|sieges?|campaigns?|armed forces|arm(?:y|ies)|nav(?:y|al|ies)|air force|regiments?|divisions?|weapons?|operations?)\b/i,
+    category: LoreCategory.MILITARY,
+  },
+
   // DIPLOMACY
-  { pattern: /\b(?:treat(?:y|ies)|alliances?|diploma(?:cy|tic)|accords?|pacts?|summits?|embass(?:y|ies)|bilateral relations|foreign relations|international organizations?)\b/i, category: LoreCategory.DIPLOMACY },
-  
+  {
+    pattern:
+      /\b(?:treat(?:y|ies)|alliances?|diploma(?:cy|tic)|accords?|pacts?|summits?|embass(?:y|ies)|bilateral relations|foreign relations|international organizations?)\b/i,
+    category: LoreCategory.DIPLOMACY,
+  },
+
   // GEOGRAPHY
-  { pattern: /\b(?:geograph(?:y|ic)|cities|towns|villages|settlements|rivers|lakes|mountains?|ranges?|islands?|archipelago|seas|oceans|valleys|deserts|peninsulas|fjords|landforms?)\b/i, category: LoreCategory.GEOGRAPHY },
-  
+  {
+    pattern:
+      /\b(?:geograph(?:y|ic)|cities|towns|villages|settlements|rivers|lakes|mountains?|ranges?|islands?|archipelago|seas|oceans|valleys|deserts|peninsulas|fjords|landforms?)\b/i,
+    category: LoreCategory.GEOGRAPHY,
+  },
+
   // RELIGION
-  { pattern: /\b(?:religions?|religious|faiths?|churches|temples?|monasteries|mosques?|cathedrals?|deities|gods|goddesses|mytholog(?:y|ies)|cults?|clergy|priesthood|sacred)\b/i, category: LoreCategory.RELIGION },
-  
+  {
+    pattern:
+      /\b(?:religions?|religious|faiths?|churches|temples?|monasteries|mosques?|cathedrals?|deities|gods|goddesses|mytholog(?:y|ies)|cults?|clergy|priesthood|sacred)\b/i,
+    category: LoreCategory.RELIGION,
+  },
+
   // GOVERNMENT
-  { pattern: /\b(?:governments?|governance|parliaments?|legislatures?|senates?|ministries|courts?|judiciar(?:y|ies)|elections?|political parties|constitutions?|laws?|statutes?|decrees?)\b/i, category: LoreCategory.GOVERNMENT },
-  
+  {
+    pattern:
+      /\b(?:governments?|governance|parliaments?|legislatures?|senates?|ministries|courts?|judiciar(?:y|ies)|elections?|political parties|constitutions?|laws?|statutes?|decrees?)\b/i,
+    category: LoreCategory.GOVERNMENT,
+  },
+
   // ECONOMY
-  { pattern: /\b(?:econom(?:y|ic|ics)|trade|commerce|finance|financial|banks?|banking|currencies|money|corporations?|companies|markets?|stock exchanges?|enterprises?|tariffs?|treasury)\b/i, category: LoreCategory.ECONOMY },
-  
+  {
+    pattern:
+      /\b(?:econom(?:y|ic|ics)|trade|commerce|finance|financial|banks?|banking|currencies|money|corporations?|companies|markets?|stock exchanges?|enterprises?|tariffs?|treasury)\b/i,
+    category: LoreCategory.ECONOMY,
+  },
+
   // SCIENCE
-  { pattern: /\b(?:science|scientific|technolog(?:y|ies)|innovations?|railways?|railroads?|aviation|aerospace|spaceflights?|observatories|laboratories|universities|academies|research institutes?|engineering)\b/i, category: LoreCategory.SCIENCE },
-  
+  {
+    pattern:
+      /\b(?:science|scientific|technolog(?:y|ies)|innovations?|railways?|railroads?|aviation|aerospace|spaceflights?|observatories|laboratories|universities|academies|research institutes?|engineering)\b/i,
+    category: LoreCategory.SCIENCE,
+  },
+
   // CULTURE
-  { pattern: /\b(?:culture|cultural|monuments?|heritage|traditions?|arts?|architecture|palaces?|castles?|museums?|festivals?|landmarks?|folklore|literature|symbols?|regalia|relics?)\b/i, category: LoreCategory.CULTURE },
-  
+  {
+    pattern:
+      /\b(?:culture|cultural|monuments?|heritage|traditions?|arts?|architecture|palaces?|castles?|museums?|festivals?|landmarks?|folklore|literature|symbols?|regalia|relics?)\b/i,
+    category: LoreCategory.CULTURE,
+  },
+
   // HISTORY
-  { pattern: /\b(?:history|historical|eras?|epochs?|centur(?:y|ies)|decades?|antiquity|medieval|renaissance|revolutions?|rebellions?|crises|timelines?|annals|chronicles?)\b/i, category: LoreCategory.HISTORY },
-  
+  {
+    pattern:
+      /\b(?:history|historical|eras?|epochs?|centur(?:y|ies)|decades?|antiquity|medieval|renaissance|revolutions?|rebellions?|crises|timelines?|annals|chronicles?)\b/i,
+    category: LoreCategory.HISTORY,
+  },
+
   // NATION
-  { pattern: /\b(?:countries|nations|sovereign states|former countries|realms|dominions|confederations|federations)\b/i, category: LoreCategory.NATION },
-  
+  {
+    pattern:
+      /\b(?:countries|nations|sovereign states|former countries|realms|dominions|confederations|federations)\b/i,
+    category: LoreCategory.NATION,
+  },
+
   // SPECIAL
-  { pattern: /\b(?:artifacts?|relics?|wonders of the world|anomalies|mysteries|tomes?|masterpieces?)\b/i, category: LoreCategory.SPECIAL },
+  {
+    pattern:
+      /\b(?:artifacts?|relics?|wonders of the world|anomalies|mysteries|tomes?|masterpieces?)\b/i,
+    category: LoreCategory.SPECIAL,
+  },
 ];
 
 /**
@@ -267,14 +319,18 @@ export function classifyLoreArticle(input: ArticleClassificationInput): LoreCate
 
   const rawWikitext = input.text || "";
   const rawTitle = input.title || "";
-  
+
   // 1. Resolve Infobox Templates (Tier 1: 50 pts)
-  const infoboxList = input.infoboxes && input.infoboxes.length > 0
-    ? input.infoboxes
-    : extractInfoboxTemplatesFromWikitext(rawWikitext);
+  const infoboxList =
+    input.infoboxes && input.infoboxes.length > 0
+      ? input.infoboxes
+      : extractInfoboxTemplatesFromWikitext(rawWikitext);
 
   for (const rawInfobox of infoboxList) {
-    const cleanInfobox = rawInfobox.replace(/^template:\s*/i, "").trim().toLowerCase();
+    const cleanInfobox = rawInfobox
+      .replace(/^template:\s*/i, "")
+      .trim()
+      .toLowerCase();
     const matchedCategory = INFOBOX_CATEGORY_MAP[cleanInfobox];
     if (matchedCategory) {
       addScore(matchedCategory, 50);

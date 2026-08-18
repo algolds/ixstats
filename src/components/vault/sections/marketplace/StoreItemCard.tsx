@@ -165,7 +165,7 @@ export function StoreItemCard({
           >
             <Icon className={cn("h-7 w-7", colors.text)} />
           </div>
-          <h4 className="text-center text-xs font-black tracking-wide text-slate-900 dark:text-white/95">
+          <h4 className="text-center text-xs font-semibold tracking-tight text-slate-900 dark:text-white/95">
             {item.name}
           </h4>
           <p className="text-muted-foreground mt-1 text-center text-[9px] leading-tight">

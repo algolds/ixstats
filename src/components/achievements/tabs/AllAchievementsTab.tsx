@@ -31,7 +31,13 @@ interface AllAchievementsTabProps {
 
 const ACHIEVEMENT_TIER_CONFIG: Record<
   TrophyTier,
-  { label: string; icon: React.ComponentType<{ className?: string }>; bg: string; border: string; text: string }
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    bg: string;
+    border: string;
+    text: string;
+  }
 > = {
   platinum: {
     label: "Legendary",
@@ -78,35 +84,37 @@ const RARITY_CONFIG: Record<
     icon: Layers,
     color: "text-amber-400",
     activeBg: "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]",
-    textColor: "text-slate-950 font-black",
+    textColor: "text-slate-950 font-bold",
   },
   Legendary: {
     label: "Legendary",
     icon: Zap,
     color: "text-cyan-300 fill-cyan-300/30 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]",
     activeBg: "bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_14px_rgba(34,211,238,0.5)]",
-    textColor: "text-white font-extrabold",
+    textColor: "text-white font-bold",
   },
   Epic: {
     label: "Epic",
     icon: Gem,
     color: "text-amber-400 fill-amber-400/20 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]",
-    activeBg: "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 shadow-[0_0_14px_rgba(251,191,36,0.5)]",
-    textColor: "text-slate-950 font-black",
+    activeBg:
+      "bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 shadow-[0_0_14px_rgba(251,191,36,0.5)]",
+    textColor: "text-slate-950 font-bold",
   },
   Rare: {
     label: "Rare",
     icon: Hexagon,
     color: "text-purple-400 fill-purple-400/20",
-    activeBg: "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_14px_rgba(168,85,247,0.5)]",
-    textColor: "text-white font-extrabold",
+    activeBg:
+      "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_14px_rgba(168,85,247,0.5)]",
+    textColor: "text-white font-bold",
   },
   Uncommon: {
     label: "Uncommon",
     icon: Target,
     color: "text-blue-400",
     activeBg: "bg-gradient-to-r from-blue-600 to-cyan-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]",
-    textColor: "text-white font-extrabold",
+    textColor: "text-white font-bold",
   },
   Common: {
     label: "Common",
@@ -144,24 +152,24 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
   return (
     <div className="space-y-4">
       {/* Apple Frosted Glass Filter & Search Control Center */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 p-3 shadow-xl backdrop-blur-2xl transition-all border-t-white/20 dark:bg-black/70 dark:border-white/12 dark:border-t-white/25">
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/80 p-3 shadow-xl backdrop-blur-2xl transition-all dark:border-white/12 dark:border-t-white/25 dark:bg-black/70">
         <TextureOverlay texture="dots" opacity={0.03} />
 
         <div className="relative z-10 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Instant Search Field */}
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative max-w-sm flex-1">
             <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <Input
               type="text"
               placeholder="Search achievements..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 rounded-full border-white/10 bg-slate-900/80 pl-8 pr-8 text-xs font-medium text-slate-200 placeholder:text-slate-400 focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 backdrop-blur-md transition-all"
+              className="h-8 rounded-full border-white/10 bg-slate-900/80 pr-8 pl-8 text-xs font-medium text-slate-200 backdrop-blur-md transition-all placeholder:text-slate-400 focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 transition-colors hover:text-white"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -185,7 +193,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     key={r}
                     onClick={() => setSelectedRarity(r)}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold capitalize transition-all duration-200 active:scale-95 select-none",
+                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold capitalize transition-all duration-200 select-none active:scale-95",
                       isSelected ? config.textColor : "text-slate-400 hover:text-slate-200"
                     )}
                   >
@@ -199,7 +207,11 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     <RarityIcon
                       className={cn(
                         "relative z-10 h-3 w-3 transition-colors",
-                        isSelected ? (config.textColor.includes("slate-950") ? "text-slate-950" : "text-white") : config.color
+                        isSelected
+                          ? config.textColor.includes("slate-950")
+                            ? "text-slate-950"
+                            : "text-white"
+                          : config.color
                       )}
                     />
                     <span className="relative z-10">{config.label}</span>
@@ -213,7 +225,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "flex h-6 px-2.5 items-center gap-1 rounded-full text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
                   viewMode === "list"
                     ? "bg-slate-100 text-slate-950 shadow-md"
                     : "text-slate-400 hover:text-slate-200"
@@ -226,7 +238,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex h-6 px-2.5 items-center gap-1 rounded-full text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
                   viewMode === "grid"
                     ? "bg-slate-100 text-slate-950 shadow-md"
                     : "text-slate-400 hover:text-slate-200"
@@ -243,217 +255,55 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
 
       {/* Achievements Catalog Layout with Apple Inline Scroll */}
       {filteredAchievements && filteredAchievements.length > 0 ? (
-        <div className="relative max-h-[580px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20">
+        <div className="relative max-h-[580px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-y-auto pr-1.5 hover:scrollbar-thumb-white/20">
           {viewMode === "list" ? (
-          /* High-Density Apple Sleek List View */
-          <div className="space-y-2.5">
-            {filteredAchievements.map((achievement, idx) => {
-              const isUnlocked = achievement.isUnlocked;
-              const isSecret =
-                (achievement.key.startsWith("vid-") || achievement.key.startsWith("meme-")) &&
-                !isUnlocked;
-              const isRevealed = revealedSecrets.has(achievement.key);
-              const tier = getTrophyTier(achievement.rarity);
-              const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
-              const TierIcon = tierConfig.icon;
-              const isUltraRare = (achievement.globalUnlockPercent || 100) < 5;
+            /* High-Density Apple Sleek List View */
+            <div className="space-y-2.5">
+              {filteredAchievements.map((achievement, idx) => {
+                const isUnlocked = achievement.isUnlocked;
+                const isSecret =
+                  (achievement.key.startsWith("vid-") || achievement.key.startsWith("meme-")) &&
+                  !isUnlocked;
+                const isRevealed = revealedSecrets.has(achievement.key);
+                const tier = getTrophyTier(achievement.rarity);
+                const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
+                const TierIcon = tierConfig.icon;
+                const isUltraRare = (achievement.globalUnlockPercent || 100) < 5;
 
-              return (
-                <motion.div
-                  key={achievement.key}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.22,
-                    delay: Math.min(idx * 0.015, 0.2),
-                    ease: [0.23, 1, 0.32, 1],
-                  }}
-                  whileHover={{ y: -2, scale: 1.005 }}
-                  whileTap={{ scale: 0.985 }}
-                  className={cn(
-                    "relative flex flex-col items-start justify-between gap-3.5 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all border-t-white/20 sm:flex-row sm:items-center dark:bg-black/60 dark:border-white/12",
-                    !isUnlocked
-                      ? "bg-slate-950/40 border-dashed border-white/10 backdrop-blur-md select-none opacity-85"
-                      : "hover:border-white/25 hover:shadow-2xl"
-                  )}
-                >
-                  <TextureOverlay texture="dots" opacity={0.02} />
+                return (
+                  <motion.div
+                    key={achievement.key}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.22,
+                      delay: Math.min(idx * 0.015, 0.2),
+                      ease: [0.23, 1, 0.32, 1],
+                    }}
+                    whileHover={{ y: -2, scale: 1.005 }}
+                    whileTap={{ scale: 0.985 }}
+                    className={cn(
+                      "relative flex flex-col items-start justify-between gap-3.5 overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all sm:flex-row sm:items-center dark:border-white/12 dark:bg-black/60",
+                      !isUnlocked
+                        ? "border-dashed border-white/10 bg-slate-950/40 opacity-85 backdrop-blur-md select-none"
+                        : "hover:border-white/25 hover:shadow-2xl"
+                    )}
+                  >
+                    <TextureOverlay texture="dots" opacity={0.02} />
 
-                  {/* Status Bar Indicator */}
-                  {isUnlocked && (
-                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-green-400 via-emerald-500 to-teal-500 shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
-                  )}
-
-                  <div className="flex min-w-0 flex-1 items-center gap-3.5 pl-2">
-                    {/* Icon Pedestal */}
-                    <div
-                      className={cn(
-                        "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-xl shadow-inner backdrop-blur-md transition-all duration-300 select-none",
-                        isUnlocked
-                          ? "border-green-500/35 bg-gradient-to-b from-green-500/20 to-emerald-500/10 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.2)]"
-                          : "border-white/10 bg-white/5 text-slate-500 opacity-60"
-                      )}
-                    >
-                      {isUnlocked ? (
-                        achievement.iconUrl?.startsWith("http") ||
-                        achievement.iconUrl?.startsWith("/") ? (
-                          <img
-                            src={
-                              achievement.iconUrl?.startsWith("/")
-                                ? createUrl(achievement.iconUrl)
-                                : achievement.iconUrl
-                            }
-                            alt={achievement.title}
-                            className="h-5.5 w-5.5 object-contain drop-shadow-md"
-                          />
-                        ) : (
-                          achievement.iconUrl
-                        )
-                      ) : (
-                        <Lock className="h-4.5 w-4.5 text-slate-500" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {/* Achievement Tier Tag */}
-                        <span
-                          className={cn(
-                            "flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase backdrop-blur-md",
-                            tierConfig.bg
-                          )}
-                        >
-                          <TierIcon className="h-3 w-3" />
-                          <span>{tierConfig.label}</span>
-                        </span>
-
-                        {/* Ultra-Rare Diamond Pill */}
-                        {isUltraRare && (
-                          <span className="flex items-center gap-1 rounded-full border border-cyan-400/40 bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] font-extrabold text-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.25)] backdrop-blur-md uppercase">
-                            <Diamond className="h-3 w-3 text-cyan-300 animate-pulse" />
-                            <span>{achievement.globalUnlockPercent}% Ultra-Rare</span>
-                          </span>
-                        )}
-
-                        <h4
-                          className={cn(
-                            "text-xs font-extrabold tracking-tight",
-                            isUnlocked ? "text-slate-100" : "text-slate-400/80"
-                          )}
-                        >
-                          {isSecret && !isRevealed ? "Secret Achievement" : achievement.title}
-                        </h4>
-                      </div>
-
-                      <p
-                        className={cn(
-                          "max-w-xl truncate text-[11px] font-medium leading-snug select-none",
-                          isUnlocked
-                            ? "text-slate-300/90"
-                            : "text-slate-500/60 blur-[3px] opacity-40 pointer-events-none"
-                        )}
-                      >
-                        {isSecret && !isRevealed
-                          ? "Hidden challenge. Click the eye icon to preview secret details."
-                          : achievement.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right Side Achievement Points & Date */}
-                  <div className="mt-1 flex w-full shrink-0 items-center justify-end gap-3 border-t border-white/10 pt-2 sm:mt-0 sm:w-auto sm:border-t-0 sm:pt-0">
-                    {/* Secret Reveal Button */}
-                    {isSecret && (
-                      <button
-                        onClick={() => toggleSecretReveal(achievement.key)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-white transition-all active:scale-95"
-                        title={isRevealed ? "Hide Secret" : "Reveal Secret"}
-                      >
-                        {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </button>
+                    {/* Status Bar Indicator */}
+                    {isUnlocked && (
+                      <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-green-400 via-emerald-500 to-teal-500 shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
                     )}
 
-                    {/* Apple Metallic Points Pill */}
-                    <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-teal-500/20 px-3 py-1 font-mono text-xs font-black text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)] backdrop-blur-md select-none">
-                      <span>+{achievement.points || 10}</span>
-                      <span className="text-[9px] font-bold tracking-wide text-emerald-400/80 uppercase">
-                        pts
-                      </span>
-                    </div>
-
-                    {/* Date Details */}
-                    <div className="w-20 text-right text-[10px] text-slate-400">
-                      {isUnlocked && achievement.unlockedAt ? (
-                        <>
-                          <span className="block text-[8px] font-extrabold tracking-wider text-slate-400 uppercase">
-                            Unlocked
-                          </span>
-                          <span className="mt-0.5 block font-mono font-bold text-slate-200">
-                            {new Date(achievement.unlockedAt).toLocaleDateString()}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="italic opacity-40">Locked</span>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          /* High-Density Compact Grid View */
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {filteredAchievements.map((achievement, idx) => {
-              const isUnlocked = achievement.isUnlocked;
-              const tier = getTrophyTier(achievement.rarity);
-              const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
-              const TierIcon = tierConfig.icon;
-              const isUltraRare = (achievement.globalUnlockPercent || 100) < 5;
-
-              return (
-                <motion.div
-                  key={achievement.key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.25,
-                    delay: Math.min(idx * 0.02, 0.25),
-                    ease: [0.23, 1, 0.32, 1],
-                  }}
-                  whileHover={{ y: -3, scale: 1.015 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all border-t-white/20 dark:bg-black/60 dark:border-white/12",
-                    !isUnlocked
-                      ? "bg-slate-950/40 border-dashed border-white/10 backdrop-blur-md select-none opacity-85"
-                      : "hover:border-amber-500/30"
-                  )}
-                >
-                  <TextureOverlay texture="dots" opacity={0.03} />
-
-                  <div className="relative z-10 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className={cn("flex items-center gap-1 rounded-full border px-2 py-0.2 font-mono text-[8px] uppercase backdrop-blur-md", tierConfig.bg)}>
-                        <TierIcon className="h-2.5 w-2.5" />
-                        <span>{tierConfig.label}</span>
-                      </span>
-
-                      {isUltraRare && (
-                        <span className="flex items-center gap-1 font-mono text-[8px] font-bold text-cyan-300">
-                          <Diamond className="h-2.5 w-2.5 text-cyan-300 animate-pulse" />
-                          <span>{achievement.globalUnlockPercent}%</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-3.5 pl-2">
+                      {/* Icon Pedestal */}
                       <div
                         className={cn(
-                          "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-lg shadow-inner backdrop-blur-md transition-all duration-300",
+                          "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-xl shadow-inner backdrop-blur-md transition-all duration-300 select-none",
                           isUnlocked
-                            ? "border-white/15 bg-white/5"
-                            : "border-white/10 bg-white/5 opacity-60"
+                            ? "border-green-500/35 bg-gradient-to-b from-green-500/20 to-emerald-500/10 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.2)]"
+                            : "border-white/10 bg-white/5 text-slate-500 opacity-60"
                         )}
                       >
                         {isUnlocked ? (
@@ -466,63 +316,239 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                                   : achievement.iconUrl
                               }
                               alt={achievement.title}
-                              className="h-5 w-5 object-contain drop-shadow-md"
+                              className="h-5.5 w-5.5 object-contain drop-shadow-md"
                             />
                           ) : (
                             achievement.iconUrl
                           )
                         ) : (
-                          <Lock className="h-4 w-4 text-slate-500" />
+                          <Lock className="h-4.5 w-4.5 text-slate-500" />
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3
-                          className={cn(
-                            "truncate text-xs font-bold tracking-tight",
-                            isUnlocked ? "text-slate-100" : "text-slate-400/80"
+
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Achievement Tier Tag */}
+                          <span
+                            className={cn(
+                              "flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] font-bold uppercase backdrop-blur-md",
+                              tierConfig.bg
+                            )}
+                          >
+                            <TierIcon className="h-3 w-3" />
+                            <span>{tierConfig.label}</span>
+                          </span>
+
+                          {/* Ultra-Rare Diamond Pill */}
+                          {isUltraRare && (
+                            <span className="flex items-center gap-1 rounded-full border border-cyan-400/40 bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] font-extrabold text-cyan-300 uppercase shadow-[0_0_8px_rgba(34,211,238,0.25)] backdrop-blur-md">
+                              <Diamond className="h-3 w-3 animate-pulse text-cyan-300" />
+                              <span>{achievement.globalUnlockPercent}% Ultra-Rare</span>
+                            </span>
                           )}
-                        >
-                          {achievement.title}
-                        </h3>
+
+                          <h4
+                            className={cn(
+                              "text-xs font-extrabold tracking-tight",
+                              isUnlocked ? "text-slate-100" : "text-slate-400/80"
+                            )}
+                          >
+                            {isSecret && !isRevealed ? "Secret Achievement" : achievement.title}
+                          </h4>
+                        </div>
+
                         <p
                           className={cn(
-                            "line-clamp-2 text-[11px] leading-snug select-none",
+                            "max-w-xl truncate text-[11px] leading-snug font-medium select-none",
                             isUnlocked
-                              ? "text-slate-300/80"
-                              : "text-slate-500/60 blur-[3px] opacity-40 pointer-events-none"
+                              ? "text-slate-300/90"
+                              : "pointer-events-none text-slate-500/60 opacity-40 blur-[3px]"
                           )}
                         >
-                          {achievement.description}
+                          {isSecret && !isRevealed
+                            ? "Hidden challenge. Click the eye icon to preview secret details."
+                            : achievement.description}
                         </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="relative z-10 mt-3 flex items-center justify-between border-t border-white/10 pt-2 text-[9px]">
-                    <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 font-mono font-bold text-emerald-400">
-                      <span>+{achievement.points || 10} pts</span>
+                    {/* Right Side Achievement Points & Date */}
+                    <div className="mt-1 flex w-full shrink-0 items-center justify-end gap-3 border-t border-white/10 pt-2 sm:mt-0 sm:w-auto sm:border-t-0 sm:pt-0">
+                      {/* Secret Reveal Button */}
+                      {isSecret && (
+                        <button
+                          onClick={() => toggleSecretReveal(achievement.key)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 transition-all hover:text-white active:scale-95"
+                          title={isRevealed ? "Hide Secret" : "Reveal Secret"}
+                        >
+                          {isRevealed ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Apple Metallic Points Pill */}
+                      <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-teal-500/20 px-3 py-1 font-mono text-xs font-bold text-emerald-300 tabular-nums shadow-[0_0_10px_rgba(16,185,129,0.2)] backdrop-blur-md select-none">
+                        <span>+{achievement.points || 10}</span>
+                        <span className="text-[9px] font-semibold tracking-wider text-emerald-400/80 uppercase">
+                          pts
+                        </span>
+                      </div>
+
+                      {/* Date Details */}
+                      <div className="w-20 text-right text-[10px] text-slate-400">
+                        {isUnlocked && achievement.unlockedAt ? (
+                          <>
+                            <span className="block text-[8px] font-semibold tracking-wider text-slate-400 uppercase">
+                              Unlocked
+                            </span>
+                            <span className="mt-0.5 block font-mono text-[10px] font-bold text-slate-200 tabular-nums">
+                              {new Date(achievement.unlockedAt).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[10px] font-medium tracking-wide text-slate-500 uppercase">
+                            Locked
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {achievement.unlockedAt && (
-                      <span className="font-mono text-slate-400">
-                        {new Date(achievement.unlockedAt).toLocaleDateString()}
-                      </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            /* High-Density Compact Grid View */
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {filteredAchievements.map((achievement, idx) => {
+                const isUnlocked = achievement.isUnlocked;
+                const tier = getTrophyTier(achievement.rarity);
+                const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
+                const TierIcon = tierConfig.icon;
+                const isUltraRare = (achievement.globalUnlockPercent || 100) < 5;
+
+                return (
+                  <motion.div
+                    key={achievement.key}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.25,
+                      delay: Math.min(idx * 0.02, 0.25),
+                      ease: [0.23, 1, 0.32, 1],
+                    }}
+                    whileHover={{ y: -3, scale: 1.015 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={cn(
+                      "relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all dark:border-white/12 dark:bg-black/60",
+                      !isUnlocked
+                        ? "border-dashed border-white/10 bg-slate-950/40 opacity-85 backdrop-blur-md select-none"
+                        : "hover:border-amber-500/30"
                     )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    ) : (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 p-8 text-center shadow-xl backdrop-blur-2xl border-t-white/20 dark:bg-black/60 dark:border-white/12">
+                  >
+                    <TextureOverlay texture="dots" opacity={0.03} />
+
+                    <div className="relative z-10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={cn(
+                            "py-0.2 flex items-center gap-1 rounded-full border px-2 font-mono text-[8px] uppercase backdrop-blur-md",
+                            tierConfig.bg
+                          )}
+                        >
+                          <TierIcon className="h-2.5 w-2.5" />
+                          <span>{tierConfig.label}</span>
+                        </span>
+
+                        {isUltraRare && (
+                          <span className="flex items-center gap-1 font-mono text-[8px] font-bold text-cyan-300">
+                            <Diamond className="h-2.5 w-2.5 animate-pulse text-cyan-300" />
+                            <span>{achievement.globalUnlockPercent}%</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-1">
+                        <div
+                          className={cn(
+                            "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-lg shadow-inner backdrop-blur-md transition-all duration-300",
+                            isUnlocked
+                              ? "border-white/15 bg-white/5"
+                              : "border-white/10 bg-white/5 opacity-60"
+                          )}
+                        >
+                          {isUnlocked ? (
+                            achievement.iconUrl?.startsWith("http") ||
+                            achievement.iconUrl?.startsWith("/") ? (
+                              <img
+                                src={
+                                  achievement.iconUrl?.startsWith("/")
+                                    ? createUrl(achievement.iconUrl)
+                                    : achievement.iconUrl
+                                }
+                                alt={achievement.title}
+                                className="h-5 w-5 object-contain drop-shadow-md"
+                              />
+                            ) : (
+                              achievement.iconUrl
+                            )
+                          ) : (
+                            <Lock className="h-4 w-4 text-slate-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3
+                            className={cn(
+                              "truncate text-xs font-bold tracking-tight",
+                              isUnlocked ? "text-slate-100" : "text-slate-400/80"
+                            )}
+                          >
+                            {achievement.title}
+                          </h3>
+                          <p
+                            className={cn(
+                              "line-clamp-2 text-[11px] leading-snug select-none",
+                              isUnlocked
+                                ? "text-slate-300/80"
+                                : "pointer-events-none text-slate-500/60 opacity-40 blur-[3px]"
+                            )}
+                          >
+                            {achievement.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 mt-3 flex items-center justify-between border-t border-white/10 pt-2 text-[9px]">
+                      <div className="flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 font-mono font-bold text-emerald-400">
+                        <span>+{achievement.points || 10} pts</span>
+                      </div>
+                      {achievement.unlockedAt && (
+                        <span className="font-mono text-slate-400">
+                          {new Date(achievement.unlockedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-white/12 dark:bg-black/60">
           <TextureOverlay texture="dots" opacity={0.03} />
-          <div className="relative z-10 max-w-sm mx-auto space-y-2">
+          <div className="relative z-10 mx-auto max-w-sm space-y-2">
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-md backdrop-blur-md">
               <Award className="h-5 w-5 text-amber-400" />
             </div>
             <h3 className="text-xs font-bold text-slate-100">No Matching Achievements</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-slate-400">
               Try adjusting your search query or rarity filter.
             </p>
           </div>

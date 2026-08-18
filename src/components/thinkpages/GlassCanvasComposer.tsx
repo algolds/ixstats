@@ -6,12 +6,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import {
-  X,
-  Repeat2,
-  Newspaper,
-  Vote,
-} from "lucide-react";
+import { X, Repeat2, Newspaper, Vote } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -204,7 +199,7 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "relative flex flex-col gap-0 rounded-2xl border border-black/10 dark:border-border bg-white/70 dark:bg-card/80 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       )}
       transition={{
         type: "spring",

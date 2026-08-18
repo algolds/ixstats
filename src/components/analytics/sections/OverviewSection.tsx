@@ -12,11 +12,7 @@ import { EconomicOverviewChart } from "../charts/EconomicOverviewChart";
 import { EconomicHealthRadar } from "../charts/EconomicHealthRadar";
 import { GlassTooltip } from "../charts/GlassTooltip";
 import { DataTable } from "~/components/shared/data-display/DataTable";
-import type {
-  SummaryMetric,
-  EconomicChartDataPoint,
-  EconomicHealthIndicator,
-} from "~/lib/utils";
+import type { SummaryMetric, EconomicChartDataPoint, EconomicHealthIndicator } from "~/lib/utils";
 
 interface OverviewSectionProps {
   summaryMetrics: SummaryMetric[];

@@ -68,10 +68,7 @@ export function CardProvenanceTab({
                   ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                   : `Traded to ${event.toUserName}`;
                 colorClass = "bg-teal-500";
-              } else if (
-                event.action === "AUCTION_BUYOUT" ||
-                event.action === "AUCTION_END"
-              ) {
+              } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
                 icon = <ShoppingBag className="h-4 w-4 text-white" />;
                 actionLabel = `Purchased at Auction by ${event.toUserName}`;
                 if (event.price) {

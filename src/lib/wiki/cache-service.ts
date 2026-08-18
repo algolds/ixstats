@@ -83,7 +83,6 @@ export function cleanWikitextForDisplay(raw: string): string {
   return cleanWikiMarkup(raw);
 }
 
-
 export class WikiCacheService {
   private wikiServices = new Map<WikiSource, IxnayWikiService>();
   private redisClient: RedisClient | null = null;

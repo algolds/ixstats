@@ -5,7 +5,16 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, ArrowLeft, Users, ShoppingBag, History, Settings, Coins, Gift } from "lucide-react";
+import {
+  Shield,
+  ArrowLeft,
+  Users,
+  ShoppingBag,
+  History,
+  Settings,
+  Coins,
+  Gift,
+} from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -21,7 +30,6 @@ import { VaultPurchaseLogs } from "./VaultPurchaseLogs";
 import { VaultSystemConfig } from "./VaultSystemConfig";
 
 type VaultTab = "users" | "store" | "bonuses" | "logs" | "config";
-
 
 export default function AdminVaultPage() {
   usePageTitle({ title: "Admin - Vault Store & Economy" });
@@ -126,7 +134,6 @@ export default function AdminVaultPage() {
         {activeTab === "logs" && <VaultPurchaseLogs />}
         {activeTab === "config" && <VaultSystemConfig />}
       </div>
-
     </div>
   );
 }

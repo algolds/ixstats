@@ -17,7 +17,11 @@ export interface PostMediaGridProps {
   onOpenLightbox: (media: { url: string; id: string }) => void;
 }
 
-export function PostMediaGrid({ mediaAttachments = [], postId, onOpenLightbox }: PostMediaGridProps) {
+export function PostMediaGrid({
+  mediaAttachments = [],
+  postId,
+  onOpenLightbox,
+}: PostMediaGridProps) {
   if (!mediaAttachments || mediaAttachments.length === 0) return null;
 
   return (

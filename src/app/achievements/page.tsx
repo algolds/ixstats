@@ -86,16 +86,14 @@ export default function AchievementsPage() {
 
   const { flagUrl: simpleFlagUrl } = useSimpleFlag(userProfile?.country?.name);
   const countryFlagUrl =
-    (userProfile?.country as any)?.flagUrl ||
-    (userProfile?.country as any)?.flag ||
-    simpleFlagUrl;
+    (userProfile?.country as any)?.flagUrl || (userProfile?.country as any)?.flag || simpleFlagUrl;
 
   return (
     <VaultSidebarLayout activeSection="achievements">
       <div className="space-y-6">
         {/* Country Profile Header Card */}
         {isMounted && userProfile && (
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 border-t-white/20 dark:bg-black/60 dark:border-white/12 dark:border-t-white/25">
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 border-t-white/20 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all duration-300 dark:border-white/12 dark:border-t-white/25 dark:bg-black/60">
             <TextureOverlay texture="dots" opacity={0.03} />
 
             {/* Country Flag Background Wash & Watermark */}
@@ -123,9 +121,9 @@ export default function AchievementsPage() {
             <div className="relative z-10 space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-black text-slate-100 tracking-tight flex flex-wrap items-center gap-3">
+                  <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-slate-100">
                     <span>Achievements</span>
-                    <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                    <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-400 backdrop-blur-md">
                       {completionPercent}% Mastered
                     </span>
                   </h1>
@@ -135,7 +133,7 @@ export default function AchievementsPage() {
                   {/* Global Leaderboards Badge Link */}
                   <Link
                     href="/leaderboards"
-                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-slate-300 transition-all hover:bg-white/10 hover:text-white active:scale-95 backdrop-blur-md"
+                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-slate-300 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
                   >
                     <Award className="h-3.5 w-3.5 text-amber-400" />
                     <span>Global Leaderboards</span>

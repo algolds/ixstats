@@ -52,7 +52,7 @@ export function GallerySidebarContent({
     <div className="space-y-3">
       {/* Source Toggle */}
       <div>
-        <p className="text-muted-foreground mb-1.5 text-[10px] font-bold tracking-widest uppercase">
+        <p className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
           Source
         </p>
         <div className="flex gap-1">
@@ -61,9 +61,9 @@ export function GallerySidebarContent({
               key={s}
               onClick={() => setSource(s)}
               className={cn(
-                "flex-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-all flex items-center justify-center gap-1",
+                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold transition-all",
                 source === s
-                  ? "bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold shadow-xs"
+                  ? "bg-purple-500/20 font-bold text-purple-600 shadow-xs dark:text-purple-400"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
@@ -89,7 +89,7 @@ export function GallerySidebarContent({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search cards..."
-          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-muted/30 pr-6 pl-6.5 text-xs focus:bg-background"
+          className="border-border/50 placeholder:text-muted-foreground/50 bg-muted/30 focus:bg-background h-7 pr-6 pl-6.5 text-xs"
         />
         {search && (
           <button
@@ -109,7 +109,8 @@ export function GallerySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold"
+            season !== "all" &&
+              "border-purple-500/30 bg-purple-500/20 font-bold text-purple-600 dark:text-purple-300"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -128,7 +129,8 @@ export function GallerySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold"
+            rarity !== "all" &&
+              "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
           )}
         >
           <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
@@ -154,7 +156,9 @@ export function GallerySidebarContent({
           <SelectTrigger
             className={cn(
               "h-7 w-full px-2 text-xs",
-              cteFilter && cteFilter !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold"
+              cteFilter &&
+                cteFilter !== "all" &&
+                "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
             )}
           >
             <SelectValue placeholder="Nation Status" />
@@ -169,7 +173,7 @@ export function GallerySidebarContent({
 
       {/* Sort */}
       <div>
-        <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+        <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
           Sort By
         </p>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -205,7 +209,7 @@ export function GallerySidebarContent({
       {(search || rarity !== "all" || season !== "all") && (
         <button
           onClick={onClearFilters}
-          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-muted/50"
+          className="border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
         >
           <X className="h-3 w-3" /> Clear Filters
         </button>
@@ -213,4 +217,3 @@ export function GallerySidebarContent({
     </div>
   );
 }
-

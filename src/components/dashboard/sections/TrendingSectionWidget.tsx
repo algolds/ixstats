@@ -211,27 +211,27 @@ export function TrendingSectionWidget() {
   return (
     <div
       className={cn(
-        "no-wiki-tooltip relative overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl p-3 space-y-3"
+        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-3 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40"
       )}
     >
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-wider text-foreground">
+          <span className="text-foreground text-xs font-semibold tracking-tight">
             Trending Topics
           </span>
         </div>
 
         {/* Category Segment Control Bar */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-black/5 dark:bg-white/10 p-1 border border-black/5 dark:border-white/10 backdrop-blur-md">
+        <div className="grid grid-cols-3 gap-1 rounded-xl border border-black/5 bg-black/5 p-1 backdrop-blur-md dark:border-white/10 dark:bg-white/10">
           {(["all", "forum", "wiki"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveFilter(tab)}
               className={cn(
-                "rounded-lg py-1 text-[10px] capitalize transition-all duration-150 cursor-pointer text-center font-extrabold",
+                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150",
                 activeFilter === tab
-                  ? "bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-300 shadow-sm border border-black/10 dark:border-white/15 font-black"
-                  : "text-muted-foreground/80 hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 font-bold"
+                  ? "border border-black/10 bg-white font-semibold text-amber-800 shadow-xs dark:border-white/15 dark:bg-zinc-800 dark:text-amber-300"
+                  : "text-muted-foreground/80 hover:text-foreground font-medium hover:bg-black/5 dark:hover:bg-white/5"
               )}
             >
               {tab}
@@ -243,14 +243,14 @@ export function TrendingSectionWidget() {
       <div className="space-y-2 pt-1">
         {isLoading && (
           <div className="space-y-2 py-4">
-            <div className="h-10 bg-black/5 dark:bg-white/5 animate-pulse rounded-xl" />
-            <div className="h-10 bg-black/5 dark:bg-white/5 animate-pulse rounded-xl" />
-            <div className="h-10 bg-black/5 dark:bg-white/5 animate-pulse rounded-xl" />
+            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
           </div>
         )}
 
         {!isLoading && trendingItems.length === 0 && (
-          <p className="text-muted-foreground py-6 text-center text-[11px] font-semibold">
+          <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
             No trending content found
           </p>
         )}
@@ -285,7 +285,9 @@ export function TrendingSectionWidget() {
               }
             }
 
-            let displayExcerpt = (item.excerpt || "").replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "").trim();
+            let displayExcerpt = (item.excerpt || "")
+              .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
+              .trim();
             if (!displayExcerpt && item.source === "thinkpages") {
               displayExcerpt = "Sports News & Matchday Bulletin";
             }
@@ -296,14 +298,14 @@ export function TrendingSectionWidget() {
             const linkProps = isInternal
               ? { href: itemHref }
               : itemHref
-              ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
-              : {};
+                ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
+                : {};
 
             const el = (
               <W
                 key={item.id}
                 {...(linkProps as any)}
-                className="group/item border-black/10 dark:border-white/10 hover:border-amber-500/40 bg-white/40 dark:bg-white/[0.04] hover:bg-white/80 dark:hover:bg-white/[0.08] flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 transition-all duration-200 active:scale-[0.98] shadow-2xs"
+                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-black/10 bg-white/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-white/80 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
               >
                 <div
                   className={cn(
@@ -316,13 +318,13 @@ export function TrendingSectionWidget() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-foreground font-black truncate text-[11px] tracking-tight group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400 transition-colors">
+                    <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
                       {displayTitle}
                     </span>
                     <Badge
                       variant="outline"
                       className={cn(
-                        "px-1.5 py-0 text-[8px] font-extrabold uppercase tracking-wider border shrink-0",
+                        "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
                         src.color,
                         src.bg
                       )}
@@ -332,12 +334,12 @@ export function TrendingSectionWidget() {
                   </div>
 
                   {displayExcerpt && (
-                    <p className="text-muted-foreground/80 line-clamp-1 text-[10px] leading-snug mt-0.5">
+                    <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
                       {displayExcerpt}
                     </p>
                   )}
 
-                  <div className="text-muted-foreground/70 flex items-center gap-2.5 text-[9px] font-bold mt-1">
+                  <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
                     {item.engagement?.likes > 0 && (
                       <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
                         <Heart className="h-2.5 w-2.5 fill-current" />

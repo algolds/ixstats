@@ -221,9 +221,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                     ? getMetallicGradient("purple")
                     : getMetallicGradient("gold"),
             backgroundSize: "200% 200%",
-            backgroundPosition: isHovered && containerRef.current
-              ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
-              : "50% 50%",
+            backgroundPosition:
+              isHovered && containerRef.current
+                ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                : "50% 50%",
             opacity: isHovered ? 0.75 : 0,
             transition: "background-position 0.1s ease-out, opacity 0.3s ease-out",
             willChange: "background-position, opacity",
@@ -251,11 +252,11 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
 
         {/* Animated light rays - originating from mouse cursor */}
         {showLightRays && isHovered && (
-          <div className="absolute inset-0 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0">
             {lightRays.map((ray, index) => (
               <motion.div
                 key={index}
-                className="absolute w-1 origin-left bg-gradient-to-r from-white/60 to-transparent pointer-events-none"
+                className="pointer-events-none absolute w-1 origin-left bg-gradient-to-r from-white/60 to-transparent"
                 style={{
                   left: `${mousePosition.x}px`,
                   top: `${mousePosition.y}px`,

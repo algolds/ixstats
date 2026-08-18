@@ -94,14 +94,14 @@ export function DevCountryViewToolbar() {
       className={cn(
         "fixed right-4 bottom-4 z-50",
         "w-80 rounded-2xl shadow-2xl",
-        "bg-white/95 dark:bg-popover/95",
+        "dark:bg-popover/95 bg-white/95",
         "backdrop-blur-xl",
-        "border border-slate-200 dark:border-border dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
+        "dark:border-border border border-slate-200 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
         "transition-all duration-300 ease-out"
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-border">
+      <div className="dark:border-border flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-blue-500" />
           <span className="text-sm font-semibold text-slate-900 dark:text-white">

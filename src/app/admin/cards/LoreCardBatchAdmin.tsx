@@ -570,10 +570,6 @@ export const CATEGORY_PRESETS = [
   },
 ] as const;
 
-
-
-
-
 interface BatchCandidate {
   id: string;
   articleTitle: string;
@@ -609,14 +605,28 @@ export function LoreCardBatchAdmin() {
   // Batch candidate queue
   const [candidates, setCandidates] = useState<BatchCandidate[]>([]);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
-  const [candidateStatusFilter, setCandidateStatusFilter] = useState<"ALL" | "idle" | "generating" | "success" | "error">("ALL");
+  const [candidateStatusFilter, setCandidateStatusFilter] = useState<
+    "ALL" | "idle" | "generating" | "success" | "error"
+  >("ALL");
   const [selectedErrorCandidate, setSelectedErrorCandidate] = useState<BatchCandidate | null>(null);
 
   // Computed queue metrics
-  const idleCount = useMemo(() => candidates.filter((c) => c.status === "idle").length, [candidates]);
-  const generatingCount = useMemo(() => candidates.filter((c) => c.status === "generating").length, [candidates]);
-  const successCount = useMemo(() => candidates.filter((c) => c.status === "success").length, [candidates]);
-  const errorCount = useMemo(() => candidates.filter((c) => c.status === "error").length, [candidates]);
+  const idleCount = useMemo(
+    () => candidates.filter((c) => c.status === "idle").length,
+    [candidates]
+  );
+  const generatingCount = useMemo(
+    () => candidates.filter((c) => c.status === "generating").length,
+    [candidates]
+  );
+  const successCount = useMemo(
+    () => candidates.filter((c) => c.status === "success").length,
+    [candidates]
+  );
+  const errorCount = useMemo(
+    () => candidates.filter((c) => c.status === "error").length,
+    [candidates]
+  );
 
   const filteredCandidates = useMemo(() => {
     if (candidateStatusFilter === "ALL") return candidates;
@@ -706,7 +716,10 @@ export function LoreCardBatchAdmin() {
     }
     setCandidates(deduplicated);
     if (removed > 0) {
-      notify.success("Queue Deduplicated", `Removed ${removed} redundant duplicate item(s) from candidate queue.`);
+      notify.success(
+        "Queue Deduplicated",
+        `Removed ${removed} redundant duplicate item(s) from candidate queue.`
+      );
     } else {
       notify.info("Queue Clean", "No duplicate items found in candidate queue.");
     }
@@ -785,7 +798,6 @@ export function LoreCardBatchAdmin() {
     },
     onError: (err) => notify.error("Generation Error", err.message),
   });
-
 
   const generateCardMutation = api.loreCards.generateLoreCard.useMutation();
 
@@ -867,7 +879,6 @@ export function LoreCardBatchAdmin() {
     }
   };
 
-
   // Crawl All Main Namespace (0) Pages
   const handleCrawlAllMainPages = async () => {
     setIsCrawlingAllPages(true);
@@ -899,7 +910,10 @@ export function LoreCardBatchAdmin() {
         `Loaded ${newCandidates.length} namespace-0 articles from ${globalWikiSource.toUpperCase()} into batch queue.`
       );
     } catch (err: any) {
-      notify.error("Namespace 0 Crawl Failed", err?.message || "Failed to fetch all namespace 0 pages.");
+      notify.error(
+        "Namespace 0 Crawl Failed",
+        err?.message || "Failed to fetch all namespace 0 pages."
+      );
     } finally {
       setIsCrawlingAllPages(false);
     }
@@ -983,9 +997,8 @@ export function LoreCardBatchAdmin() {
     }
   };
 
-
   // Preset Crawler Loader - crawls all live category pages & files (up to 10,000)
-  const handleApplyPreset = async (preset: typeof CATEGORY_PRESETS[number]) => {
+  const handleApplyPreset = async (preset: (typeof CATEGORY_PRESETS)[number]) => {
     setCrawlingPresetName(preset.name);
     try {
       // 1. Live crawl category from MediaWiki (fetching all pages & files up to 10,000)
@@ -1058,7 +1071,6 @@ export function LoreCardBatchAdmin() {
     }
   };
 
-
   // CSV/JSON File Import
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1089,7 +1101,11 @@ export function LoreCardBatchAdmin() {
           const newCandidates: BatchCandidate[] = [];
           lines.forEach((line, i) => {
             const cols = line.split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
-            if (cols[0] && cols[0].toLowerCase() !== "title" && cols[0].toLowerCase() !== "articletitle") {
+            if (
+              cols[0] &&
+              cols[0].toLowerCase() !== "title" &&
+              cols[0].toLowerCase() !== "articletitle"
+            ) {
               newCandidates.push({
                 id: `csv-${Date.now()}-${i}`,
                 articleTitle: cols[0],
@@ -1116,7 +1132,8 @@ export function LoreCardBatchAdmin() {
   // Export Batch to JSON
   const handleExportJSON = () => {
     if (candidates.length === 0) return;
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(candidates, null, 2));
+    const dataStr =
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(candidates, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `lore_batch_${Date.now()}.json`);
@@ -1132,7 +1149,9 @@ export function LoreCardBatchAdmin() {
     if (!item) return;
 
     setCandidates((prev) =>
-      prev.map((c) => (c.id === candidateId ? { ...c, status: "generating", errorMessage: undefined } : c))
+      prev.map((c) =>
+        c.id === candidateId ? { ...c, status: "generating", errorMessage: undefined } : c
+      )
     );
 
     try {
@@ -1161,9 +1180,7 @@ export function LoreCardBatchAdmin() {
       const errorMsg = err?.message || "Generation failed";
       setCandidates((prev) =>
         prev.map((c) =>
-          c.id === candidateId
-            ? { ...c, status: "error", errorMessage: errorMsg }
-            : c
+          c.id === candidateId ? { ...c, status: "error", errorMessage: errorMsg } : c
         )
       );
       notify.error("Retry Failed", errorMsg);
@@ -1179,16 +1196,24 @@ export function LoreCardBatchAdmin() {
     }
 
     setCandidates((prev) =>
-      prev.map((c) => (c.status === "error" ? { ...c, status: "idle", errorMessage: undefined } : c))
+      prev.map((c) =>
+        c.status === "error" ? { ...c, status: "idle", errorMessage: undefined } : c
+      )
     );
-    notify.info("Resetting Failed Items", `Reset ${failedItems.length} candidate(s) to queued status.`);
+    notify.info(
+      "Resetting Failed Items",
+      `Reset ${failedItems.length} candidate(s) to queued status.`
+    );
   };
 
   // Clear only failed candidates from queue
   const handleClearFailed = () => {
     const count = candidates.filter((c) => c.status === "error").length;
     setCandidates((prev) => prev.filter((c) => c.status !== "error"));
-    notify.info("Failed Candidates Cleared", `Removed ${count} failed candidate(s) from the queue.`);
+    notify.info(
+      "Failed Candidates Cleared",
+      `Removed ${count} failed candidate(s) from the queue.`
+    );
   };
 
   // Copy error report of failed candidates
@@ -1210,7 +1235,10 @@ export function LoreCardBatchAdmin() {
     ].join("\n");
 
     void navigator.clipboard.writeText(report);
-    notify.success("Error Report Copied", `Copied diagnostic details for ${failedItems.length} failed articles to clipboard.`);
+    notify.success(
+      "Error Report Copied",
+      `Copied diagnostic details for ${failedItems.length} failed articles to clipboard.`
+    );
   };
 
   // Process Entire Batch
@@ -1227,7 +1255,9 @@ export function LoreCardBatchAdmin() {
 
     for (const item of idleCandidates) {
       setCandidates((prev) =>
-        prev.map((c) => (c.id === item.id ? { ...c, status: "generating", errorMessage: undefined } : c))
+        prev.map((c) =>
+          c.id === item.id ? { ...c, status: "generating", errorMessage: undefined } : c
+        )
       );
 
       try {
@@ -1256,9 +1286,7 @@ export function LoreCardBatchAdmin() {
         const errorMsg = err?.message || "Generation failed";
         setCandidates((prev) =>
           prev.map((c) =>
-            c.id === item.id
-              ? { ...c, status: "error", errorMessage: errorMsg }
-              : c
+            c.id === item.id ? { ...c, status: "error", errorMessage: errorMsg } : c
           )
         );
         failCount++;
@@ -1272,50 +1300,61 @@ export function LoreCardBatchAdmin() {
         `Finished: ${successCount} minted, ${failCount} failed. Check the error reasons in the queue.`
       );
     } else {
-      notify.success("Batch Process Complete", `All ${successCount} lore card(s) minted successfully.`);
+      notify.success(
+        "Batch Process Complete",
+        `All ${successCount} lore card(s) minted successfully.`
+      );
     }
   };
 
   return (
-    <FacetCard depth={2} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-xl shadow-xl space-y-6 text-card-foreground">
+    <FacetCard
+      depth={2}
+      className="border-border bg-card/70 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
+    >
       {/* ─── Header & Sub-Tab Navigation Bar ────────────────────────── */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-border pb-4">
+      <div className="border-border flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2.5 backdrop-blur-md">
             <BookOpen className="h-5 w-5 text-purple-500" />
           </div>
           <div>
-            <h2 className="text-foreground tracking-tight text-xl font-bold">
+            <h2 className="text-foreground text-xl font-bold tracking-tight">
               Lore Card Batch Studio & Requests
             </h2>
             <p className="text-muted-foreground text-xs font-medium">
-              AI wiki card generation, category preset crawlers, CSV/JSON bulk import, and request queue.
+              AI wiki card generation, category preset crawlers, CSV/JSON bulk import, and request
+              queue.
             </p>
           </div>
         </div>
 
         {/* Sub-Tab Switcher */}
-        <FacetContainer depth={1} enableRefraction={true} className="bg-card/60 p-1 rounded-xl border border-border backdrop-blur-md flex items-center gap-1">
+        <FacetContainer
+          depth={1}
+          enableRefraction={true}
+          className="bg-card/60 border-border flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md"
+        >
           <button
             onClick={() => setActiveTab("generator")}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               activeTab === "generator"
-                ? "bg-primary/15 border border-primary/40 text-foreground shadow-xs"
+                ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
             }`}
           >
-            <BookOpen className="h-3.5 w-3.5 text-primary" />
+            <BookOpen className="text-primary h-3.5 w-3.5" />
             Batch Studio ({candidates.length})
           </button>
           <button
             onClick={() => setActiveTab("requests")}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               activeTab === "requests"
-                ? "bg-primary/15 border border-primary/40 text-foreground shadow-xs"
+                ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
             }`}
           >
-            <UserCheck className="h-3.5 w-3.5 text-primary" />
+            <UserCheck className="text-primary h-3.5 w-3.5" />
             User Queue ({requestStats.data?.pending ?? 0})
           </button>
         </FacetContainer>
@@ -1325,8 +1364,12 @@ export function LoreCardBatchAdmin() {
       {activeTab === "generator" && (
         <div className="space-y-6">
           {/* Global Parameter Controls */}
-          <FacetContainer depth={1} enableRefraction={true} className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-md space-y-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+          <FacetContainer
+            depth={1}
+            enableRefraction={true}
+            className="border-border bg-card/60 space-y-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md"
+          >
+            <div className="text-foreground flex items-center gap-2 text-xs font-semibold">
               <Sliders className="h-4 w-4 text-purple-500" />
               <span>Batch Generation Parameters</span>
             </div>
@@ -1334,52 +1377,76 @@ export function LoreCardBatchAdmin() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-3">
               {/* Wiki Source */}
               <div>
-                <label className="text-muted-foreground text-[11px] font-medium block mb-1">
+                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
                   Default Wiki Source
                 </label>
                 <select
                   value={globalWikiSource}
                   onChange={(e) => setGlobalWikiSource(e.target.value as any)}
-                  className="h-8.5 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
                 >
-                  <option value="ixwiki" className="bg-card text-card-foreground">IxWiki (Primary)</option>
-                  <option value="iiwiki" className="bg-card text-card-foreground">IIWiki (Secondary)</option>
+                  <option value="ixwiki" className="bg-card text-card-foreground">
+                    IxWiki (Primary)
+                  </option>
+                  <option value="iiwiki" className="bg-card text-card-foreground">
+                    IIWiki (Secondary)
+                  </option>
                 </select>
               </div>
 
               {/* Target Rarity */}
               <div>
-                <label className="text-muted-foreground text-[11px] font-medium block mb-1">
+                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
                   Target Rarity Strategy
                 </label>
                 <select
                   value={globalTargetRarity}
                   onChange={(e) => setGlobalTargetRarity(e.target.value as any)}
-                  className="h-8.5 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
                 >
-                  <option value="AUTO" className="bg-card text-card-foreground">Auto (AI-determined)</option>
-                  <option value="COMMON" className="bg-card text-card-foreground">Common</option>
-                  <option value="UNCOMMON" className="bg-card text-card-foreground">Uncommon</option>
-                  <option value="RARE" className="bg-card text-card-foreground">Rare</option>
-                  <option value="ULTRA_RARE" className="bg-card text-card-foreground">Ultra Rare</option>
-                  <option value="EPIC" className="bg-card text-card-foreground">Epic</option>
-                  <option value="LEGENDARY" className="bg-card text-card-foreground">Legendary</option>
+                  <option value="AUTO" className="bg-card text-card-foreground">
+                    Auto (AI-determined)
+                  </option>
+                  <option value="COMMON" className="bg-card text-card-foreground">
+                    Common
+                  </option>
+                  <option value="UNCOMMON" className="bg-card text-card-foreground">
+                    Uncommon
+                  </option>
+                  <option value="RARE" className="bg-card text-card-foreground">
+                    Rare
+                  </option>
+                  <option value="ULTRA_RARE" className="bg-card text-card-foreground">
+                    Ultra Rare
+                  </option>
+                  <option value="EPIC" className="bg-card text-card-foreground">
+                    Epic
+                  </option>
+                  <option value="LEGENDARY" className="bg-card text-card-foreground">
+                    Legendary
+                  </option>
                 </select>
               </div>
 
               {/* Card Season */}
               <div>
-                <label className="text-muted-foreground text-[11px] font-medium block mb-1">
+                <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
                   Target Card Season
                 </label>
                 <select
                   value={globalSeason}
                   onChange={(e) => setGlobalSeason(parseInt(e.target.value, 10))}
-                  className="h-8.5 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:ring-1 focus:outline-none"
                 >
-                  <option value={1} className="bg-card text-card-foreground">Season 1</option>
-                  <option value={2} className="bg-card text-card-foreground">Season 2</option>
-                  <option value={3} className="bg-card text-card-foreground">Season 3</option>
+                  <option value={1} className="bg-card text-card-foreground">
+                    Season 1
+                  </option>
+                  <option value={2} className="bg-card text-card-foreground">
+                    Season 2
+                  </option>
+                  <option value={3} className="bg-card text-card-foreground">
+                    Season 3
+                  </option>
                 </select>
               </div>
             </div>
@@ -1388,7 +1455,7 @@ export function LoreCardBatchAdmin() {
           {/* Quick Category Presets & Bulk Import Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground text-[11px] font-semibold flex items-center gap-1">
+              <span className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
                 <BookOpen className="h-3 w-3 text-amber-500" /> Category Presets:
               </span>
               {CATEGORY_PRESETS.filter(
@@ -1401,10 +1468,9 @@ export function LoreCardBatchAdmin() {
                 const stats =
                   categoryStatsData?.stats?.[preset.categoryName] ||
                   categoryStatsData?.stats?.[`Category:${preset.categoryName}`];
-                const liveCount =
-                  stats
-                    ? stats.size || stats.pages + stats.files
-                    : preset.categoryName === "IXWB"
+                const liveCount = stats
+                  ? stats.size || stats.pages + stats.files
+                  : preset.categoryName === "IXWB"
                     ? 3371
                     : preset.terms.length;
 
@@ -1414,21 +1480,20 @@ export function LoreCardBatchAdmin() {
                     disabled={Boolean(crawlingPresetName)}
                     onClick={() => handleApplyPreset(preset)}
                     title={`Add all ${liveCount.toLocaleString()} verified ${preset.name} articles & files to batch queue\nCategory: Category:${preset.categoryName}\nSynonyms & Keywords: ${preset.synonyms.slice(0, 10).join(", ")}...`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card/60 px-2.5 py-1 text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all shadow-2xs disabled:opacity-60"
+                    className="border-border bg-card/60 text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold shadow-2xs transition-all active:scale-95 disabled:opacity-60"
                   >
                     {isPresetCrawling ? (
-                      <Loader2 className="h-3.5 w-3.5 text-purple-400 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
                     ) : (
                       <Icon className="h-3.5 w-3.5 text-purple-500" />
                     )}
                     <span>{preset.name}</span>
-                    <span className="text-[10px] font-mono text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded-md">
+                    <span className="text-muted-foreground bg-muted/80 rounded-md px-1.5 py-0.5 font-mono text-[10px]">
                       {isPresetCrawling ? "Crawling..." : liveCount.toLocaleString()}
                     </span>
                   </button>
                 );
               })}
-
             </div>
 
             <div className="flex items-center gap-2">
@@ -1443,7 +1508,7 @@ export function LoreCardBatchAdmin() {
                 size="sm"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 rounded-xl border-border bg-card text-xs font-semibold text-foreground hover:bg-accent active:scale-95 transition-all"
+                className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-all active:scale-95"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5" /> Import CSV/JSON
               </Button>
@@ -1452,7 +1517,7 @@ export function LoreCardBatchAdmin() {
                   size="sm"
                   variant="outline"
                   onClick={handleExportJSON}
-                  className="h-8 rounded-xl border-border bg-card text-xs font-semibold text-foreground hover:bg-accent active:scale-95 transition-all"
+                  className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-all active:scale-95"
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" /> Export JSON
                 </Button>
@@ -1461,12 +1526,16 @@ export function LoreCardBatchAdmin() {
           </div>
 
           {/* Live Wiki Category Search & Namespace 0 Crawlers */}
-          <FacetContainer depth={1} enableRefraction={true} className="rounded-2xl border border-border bg-card/60 p-3.5 backdrop-blur-md space-y-3 shadow-xs">
+          <FacetContainer
+            depth={1}
+            enableRefraction={true}
+            className="border-border bg-card/60 space-y-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md"
+          >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               {/* Category Search Input with Autocomplete Dropdown */}
               <div className="relative flex-1">
                 <div className="relative flex items-center">
-                  <Search className="absolute left-3 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute left-3 h-3.5 w-3.5" />
                   <Input
                     value={categorySearchQuery}
                     onChange={(e) => {
@@ -1475,19 +1544,19 @@ export function LoreCardBatchAdmin() {
                     }}
                     onFocus={() => setIsCategoryDropdownOpen(true)}
                     placeholder={`Search ${globalWikiSource.toUpperCase()} categories (e.g. IXWB, Countries, Wars, Treaties)...`}
-                    className="h-8.5 pl-8.5 pr-24 rounded-xl border-border bg-card/80 text-xs text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
+                    className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:ring-primary h-8.5 rounded-xl pr-24 pl-8.5 text-xs focus:ring-1"
                   />
                   {categorySearchQuery.trim() && (
                     <Button
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
-                      className="absolute right-1 h-6.5 rounded-lg px-2.5 text-[11px] font-semibold bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 active:scale-95 transition-all"
+                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-[11px] font-semibold transition-all active:scale-95"
                     >
                       {isCrawlingCategory ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                       ) : (
-                        <BookOpen className="h-3 w-3 mr-1" />
+                        <BookOpen className="mr-1 h-3 w-3" />
                       )}
                       Crawl
                     </Button>
@@ -1498,8 +1567,8 @@ export function LoreCardBatchAdmin() {
                 {isCategoryDropdownOpen &&
                   categorySearchData?.categories &&
                   categorySearchData.categories.length > 0 && (
-                    <div className="absolute left-0 right-0 top-10 z-50 max-h-48 overflow-y-auto rounded-xl border border-border bg-popover/95 p-1.5 shadow-xl backdrop-blur-xl space-y-0.5">
-                      <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground flex items-center justify-between border-b border-border/50 pb-1">
+                    <div className="border-border bg-popover/95 absolute top-10 right-0 left-0 z-50 max-h-48 space-y-0.5 overflow-y-auto rounded-xl border p-1.5 shadow-xl backdrop-blur-xl">
+                      <div className="text-muted-foreground border-border/50 flex items-center justify-between border-b px-2 py-1 pb-1 text-[10px] font-semibold">
                         <span>Matching {globalWikiSource.toUpperCase()} Categories</span>
                         <button
                           onClick={() => setIsCategoryDropdownOpen(false)}
@@ -1512,13 +1581,13 @@ export function LoreCardBatchAdmin() {
                         <button
                           key={cat}
                           onClick={() => handleCrawlCategory(cat)}
-                          className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-foreground hover:bg-accent/80 transition-all group"
+                          className="text-foreground hover:bg-accent/80 group flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-all"
                         >
-                          <span className="font-medium flex items-center gap-1.5">
+                          <span className="flex items-center gap-1.5 font-medium">
                             <BookOpen className="h-3 w-3 text-purple-400" />
                             {cat}
                           </span>
-                          <span className="text-[10px] font-mono text-muted-foreground group-hover:text-primary transition-colors">
+                          <span className="text-muted-foreground group-hover:text-primary font-mono text-[10px] transition-colors">
                             Crawl Category →
                           </span>
                         </button>
@@ -1534,7 +1603,7 @@ export function LoreCardBatchAdmin() {
                 disabled={isCrawlingAllPages}
                 onClick={handleCrawlAllMainPages}
                 title={`Fetch all articles in the main namespace (namespace 0) on ${globalWikiSource.toUpperCase()}`}
-                className="h-8.5 rounded-xl border-purple-500/40 bg-purple-500/10 text-xs font-semibold text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all shrink-0"
+                className="h-8.5 shrink-0 rounded-xl border-purple-500/40 bg-purple-500/10 text-xs font-semibold text-purple-400 transition-all hover:bg-purple-500/20 active:scale-95"
               >
                 {isCrawlingAllPages ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -1547,17 +1616,21 @@ export function LoreCardBatchAdmin() {
           </FacetContainer>
 
           {/* Manual Input Box */}
-          <FacetContainer depth={1} enableRefraction={true} className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-md space-y-3">
+          <FacetContainer
+            depth={1}
+            enableRefraction={true}
+            className="border-border bg-card/60 space-y-3 rounded-2xl border p-4 backdrop-blur-md"
+          >
             <div className="flex items-center justify-between">
-              <label className="text-foreground text-xs font-semibold flex items-center gap-1.5">
-                <FileText className="h-4 w-4 text-primary" />
+              <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+                <FileText className="text-primary h-4 w-4" />
                 Add Articles & Categories to Queue (Comma or Newline Separated)
               </label>
               <Button
                 size="sm"
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
-                className="h-7 rounded-lg border border-primary/30 bg-primary/20 text-xs font-semibold text-primary hover:bg-primary/30 active:scale-95 transition-all"
+                className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-7 rounded-lg border text-xs font-semibold transition-all active:scale-95"
               >
                 Add to Queue
               </Button>
@@ -1566,18 +1639,25 @@ export function LoreCardBatchAdmin() {
               value={articleInput}
               onChange={(e) => setArticleInput(e.target.value)}
               placeholder="e.g. Caphiria, Daxia, Category:IXWB, Category:Wars, Category:Treaties, Urcea..."
-              className="h-20 w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-20 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:ring-1"
             />
-            <p className="text-[11px] text-muted-foreground">
-              💡 Supports individual article titles, comma-separated lists, and <code className="text-purple-400 bg-purple-500/10 px-1 py-0.5 rounded font-mono">Category:&lt;Name&gt;</code> to automatically crawl and load all member pages.
+            <p className="text-muted-foreground text-[11px]">
+              💡 Supports individual article titles, comma-separated lists, and{" "}
+              <code className="rounded bg-purple-500/10 px-1 py-0.5 font-mono text-purple-400">
+                Category:&lt;Name&gt;
+              </code>{" "}
+              to automatically crawl and load all member pages.
             </p>
           </FacetContainer>
 
-
           {/* Batch Candidate Queue Table */}
           {candidates.length > 0 && (
-            <FacetContainer depth={1} enableRefraction={true} className="overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-md shadow-inner space-y-3 p-4">
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-border">
+            <FacetContainer
+              depth={1}
+              enableRefraction={true}
+              className="border-border bg-card/40 space-y-3 overflow-hidden rounded-2xl border p-4 shadow-inner backdrop-blur-md"
+            >
+              <div className="border-border flex flex-col gap-2.5 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-purple-500" />
                   <span className="text-foreground text-xs font-bold">
@@ -1591,7 +1671,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={handleDeduplicateQueue}
                     disabled={isProcessingBatch || candidates.length <= 1}
-                    className="h-7.5 rounded-lg border border-border px-2.5 text-xs font-semibold text-foreground hover:bg-accent active:scale-95 transition-all shadow-xs"
+                    className="border-border text-foreground hover:bg-accent h-7.5 rounded-lg border px-2.5 text-xs font-semibold shadow-xs transition-all active:scale-95"
                     title="Remove duplicate articles currently in this queue"
                   >
                     <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Deduplicate Queue
@@ -1603,10 +1683,11 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsPurgeDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95 transition-all shadow-xs"
+                    className="h-7.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 shadow-xs transition-all hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
                     title="Scan and purge duplicate cards from the database"
                   >
-                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge DB Duplicates ({duplicateStats?.totalDuplicates ?? 0})
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge DB Duplicates (
+                    {duplicateStats?.totalDuplicates ?? 0})
                   </Button>
 
                   {/* Backfill Authors Button */}
@@ -1615,7 +1696,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsBackfillDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:scale-95 transition-all shadow-xs"
+                    className="h-7.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
                     title="Backfill page creator and contributor attribution for existing lore cards"
                   >
                     <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" /> Backfill Wiki Authors
@@ -1627,7 +1708,7 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={() => setIsReclassifyDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-500/20 active:scale-95 transition-all shadow-xs"
+                    className="h-7.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-semibold text-purple-600 shadow-xs transition-all hover:bg-purple-500/20 active:scale-95 dark:text-purple-300"
                     title="Re-scan and categorize lore cards with multi-signal infobox & category tree classifier"
                   >
                     <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Re-Catalog Categories
@@ -1638,7 +1719,7 @@ export function LoreCardBatchAdmin() {
                     variant="ghost"
                     onClick={() => setCandidates([])}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg px-2 text-rose-500 hover:bg-rose-500/10 text-xs font-medium"
+                    className="h-7.5 rounded-lg px-2 text-xs font-medium text-rose-500 hover:bg-rose-500/10"
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear All
                   </Button>
@@ -1647,7 +1728,7 @@ export function LoreCardBatchAdmin() {
                     size="sm"
                     onClick={handleProcessBatch}
                     disabled={isProcessingBatch || candidates.every((c) => c.status !== "idle")}
-                    className="h-8 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/30 active:scale-95 transition-all shadow-xs"
+                    className="h-8 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                   >
                     {isProcessingBatch ? (
                       <>
@@ -1657,7 +1738,8 @@ export function LoreCardBatchAdmin() {
                     ) : (
                       <>
                         <Play className="mr-1.5 h-3.5 w-3.5" />
-                        Mint Batch Lore Cards ({candidates.filter((c) => c.status === "idle").length})
+                        Mint Batch Lore Cards (
+                        {candidates.filter((c) => c.status === "idle").length})
                       </>
                     )}
                   </Button>
@@ -1669,9 +1751,9 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("ALL")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                     candidateStatusFilter === "ALL"
-                      ? "bg-primary/20 text-primary border border-primary/30"
+                      ? "bg-primary/20 text-primary border-primary/30 border"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                   }`}
                 >
@@ -1680,9 +1762,9 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("idle")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                     candidateStatusFilter === "idle"
-                      ? "bg-muted text-foreground border border-border"
+                      ? "bg-muted text-foreground border-border border"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                   }`}
                 >
@@ -1691,9 +1773,9 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("generating")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                     candidateStatusFilter === "generating"
-                      ? "bg-blue-500/20 text-blue-500 border border-blue-500/30"
+                      ? "border border-blue-500/30 bg-blue-500/20 text-blue-500"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                   }`}
                 >
@@ -1702,9 +1784,9 @@ export function LoreCardBatchAdmin() {
                 <button
                   type="button"
                   onClick={() => setCandidateStatusFilter("success")}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
                     candidateStatusFilter === "success"
-                      ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                      ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                   }`}
                 >
@@ -1714,10 +1796,10 @@ export function LoreCardBatchAdmin() {
                   <button
                     type="button"
                     onClick={() => setCandidateStatusFilter("error")}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                    className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
                       candidateStatusFilter === "error"
-                        ? "bg-rose-500/25 text-rose-500 border border-rose-500/40 shadow-xs"
-                        : "text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/10"
+                        ? "border border-rose-500/40 bg-rose-500/25 text-rose-500 shadow-xs"
+                        : "text-rose-500/80 hover:bg-rose-500/10 hover:text-rose-500"
                     }`}
                   >
                     Failed ({errorCount})
@@ -1727,24 +1809,25 @@ export function LoreCardBatchAdmin() {
 
               {/* Failed Imports Diagnostic Alert Banner */}
               {errorCount > 0 && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex flex-col justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs backdrop-blur-md sm:flex-row sm:items-center">
                   <div className="flex items-start gap-2.5">
-                    <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
                     <div>
                       <div className="font-bold text-rose-600 dark:text-rose-400">
                         {errorCount} candidate{errorCount > 1 ? "s" : ""} failed during generation
                       </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Common issues: Article missing on wiki, stub/short article, duplicate card, or API timeout.
+                      <div className="text-muted-foreground mt-0.5 text-[11px]">
+                        Common issues: Article missing on wiki, stub/short article, duplicate card,
+                        or API timeout.
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                  <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={handleCopyErrorReport}
-                      className="h-7 text-[11px] font-semibold border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20"
+                      className="h-7 border-rose-500/30 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
                     >
                       <Copy className="mr-1 h-3 w-3" /> Copy Error Log
                     </Button>
@@ -1752,7 +1835,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       variant="outline"
                       onClick={handleClearFailed}
-                      className="h-7 text-[11px] font-semibold border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                      className="border-border text-muted-foreground hover:bg-accent hover:text-foreground h-7 text-[11px] font-semibold"
                     >
                       <Trash2 className="mr-1 h-3 w-3" /> Clear Failed
                     </Button>
@@ -1760,7 +1843,7 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       onClick={handleRetryAllFailed}
                       disabled={isProcessingBatch}
-                      className="h-7 text-[11px] font-semibold bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-300 hover:bg-rose-500/30"
+                      className="h-7 border border-rose-500/40 bg-rose-500/20 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                     >
                       <RotateCcw className="mr-1 h-3 w-3" /> Retry All Failed ({errorCount})
                     </Button>
@@ -1768,11 +1851,11 @@ export function LoreCardBatchAdmin() {
                 </div>
               )}
 
-              <div className="max-h-[440px] overflow-y-auto overflow-x-auto">
+              <div className="max-h-[440px] overflow-x-auto overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xl text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
+                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-[10px] font-semibold tracking-wider uppercase backdrop-blur-xl">
                     <tr>
-                      <th className="px-3 py-2.5 w-14 text-center">Artwork</th>
+                      <th className="w-14 px-3 py-2.5 text-center">Artwork</th>
                       <th className="px-4 py-2.5">Article Title</th>
                       <th className="px-4 py-2.5">Source</th>
                       <th className="px-4 py-2.5">Target Rarity</th>
@@ -1781,7 +1864,7 @@ export function LoreCardBatchAdmin() {
                       <th className="px-4 py-2.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-border/60 divide-y">
                     {filteredCandidates.map((c) => {
                       const artworkToShow = c.mintedArtwork || c.imageUrl;
                       return (
@@ -1802,7 +1885,7 @@ export function LoreCardBatchAdmin() {
                                     season: c.season,
                                   })
                                 }
-                                className="group relative mx-auto h-10 w-10 overflow-hidden rounded-lg border border-border/80 bg-black/40 shadow-xs transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                                className="group border-border/80 relative mx-auto h-10 w-10 cursor-pointer overflow-hidden rounded-lg border bg-black/40 shadow-xs transition-transform hover:scale-105 active:scale-95"
                                 title="Click to inspect full image"
                               >
                                 <img
@@ -1810,7 +1893,7 @@ export function LoreCardBatchAdmin() {
                                   alt={c.articleTitle}
                                   className="h-full w-full object-cover"
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                   <Eye className="h-3.5 w-3.5 text-white" />
                                 </div>
                               </button>
@@ -1828,7 +1911,7 @@ export function LoreCardBatchAdmin() {
                                     season: c.season,
                                   })
                                 }
-                                className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                                className="border-border/60 bg-muted/40 text-muted-foreground/60 hover:text-foreground mx-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border transition-colors"
                                 title="No primary image parsed. Click to inspect details"
                               >
                                 <ImageIcon className="h-4 w-4" />
@@ -1836,54 +1919,58 @@ export function LoreCardBatchAdmin() {
                             )}
                           </td>
 
-                          <td className="px-4 py-2.5 font-semibold text-foreground">
+                          <td className="text-foreground px-4 py-2.5 font-semibold">
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1.5">
                                 <span>{c.articleTitle}</span>
                                 {c.category && (
-                                  <span className="rounded-full bg-primary/10 border border-primary/20 px-1.5 py-0.2 text-[8px] font-bold text-primary uppercase">
+                                  <span className="bg-primary/10 border-primary/20 py-0.2 text-primary rounded-full border px-1.5 text-[8px] font-bold uppercase">
                                     {c.category}
                                   </span>
                                 )}
                               </div>
-                              {c.author && c.author !== "Unknown" && !c.author.toLowerCase().includes("community") && (
-                                <span className="line-clamp-1 text-[10px] text-amber-500/90 font-medium">
-                                  ✍️ {c.author}
-                                </span>
-                              )}
-                              {c.extract && (!c.author || c.author === "Unknown" || c.author.toLowerCase().includes("community")) && (
-                                <span className="line-clamp-1 text-[10px] text-muted-foreground font-normal">
-                                  {c.extract}
-                                </span>
-                              )}
+                              {c.author &&
+                                c.author !== "Unknown" &&
+                                !c.author.toLowerCase().includes("community") && (
+                                  <span className="line-clamp-1 text-[10px] font-medium text-amber-500/90">
+                                    ✍️ {c.author}
+                                  </span>
+                                )}
+                              {c.extract &&
+                                (!c.author ||
+                                  c.author === "Unknown" ||
+                                  c.author.toLowerCase().includes("community")) && (
+                                  <span className="text-muted-foreground line-clamp-1 text-[10px] font-normal">
+                                    {c.extract}
+                                  </span>
+                                )}
                             </div>
                           </td>
                           <td className="px-4 py-2.5">
                             {c.wikiSource === "iiwiki" ? (
                               <IIWikiBadge size="xs" />
                             ) : (
-                              <span className="rounded-full bg-muted border border-border px-2 py-0.5 text-[9px] font-bold text-foreground uppercase">
+                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase">
                                 {c.wikiSource}
                               </span>
                             )}
                           </td>
                           <td className="px-4 py-2.5">
-                            <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-300">
+                            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-300">
                               {c.targetRarity}
                             </span>
                           </td>
-                          <td className="px-4 py-2.5 text-muted-foreground">
-                            S{c.season}
-                          </td>
+                          <td className="text-muted-foreground px-4 py-2.5">S{c.season}</td>
                           <td className="px-4 py-2.5">
                             {c.status === "generating" && (
-                              <span className="inline-flex items-center gap-1 text-blue-500 font-semibold text-[11px]">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-500">
                                 <Loader2 className="h-3 w-3 animate-spin" /> Generating...
                               </span>
                             )}
                             {c.status === "success" && (
-                              <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold text-[11px]">
-                                <CheckCircle2 className="h-3 w-3" /> Minted ({c.generatedCardId?.slice(0, 8)})
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
+                                <CheckCircle2 className="h-3 w-3" /> Minted (
+                                {c.generatedCardId?.slice(0, 8)})
                               </span>
                             )}
                             {c.status === "error" && (
@@ -1891,7 +1978,7 @@ export function LoreCardBatchAdmin() {
                                 <button
                                   type="button"
                                   onClick={() => setSelectedErrorCandidate(c)}
-                                  className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400 w-fit hover:bg-rose-500/25 transition-all cursor-pointer"
+                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-500/25 dark:text-rose-400"
                                   title="Click to view full failure diagnostic"
                                 >
                                   <XCircle className="h-3 w-3 text-rose-500" />
@@ -1900,7 +1987,7 @@ export function LoreCardBatchAdmin() {
                                 {c.errorMessage && (
                                   <span
                                     onClick={() => setSelectedErrorCandidate(c)}
-                                    className="text-[10px] text-rose-500/90 font-medium line-clamp-1 max-w-[240px] cursor-pointer hover:underline"
+                                    className="line-clamp-1 max-w-[240px] cursor-pointer text-[10px] font-medium text-rose-500/90 hover:underline"
                                     title={c.errorMessage}
                                   >
                                     {c.errorMessage}
@@ -1909,7 +1996,7 @@ export function LoreCardBatchAdmin() {
                               </div>
                             )}
                             {c.status === "idle" && (
-                              <span className="inline-flex items-center gap-1 text-muted-foreground text-[11px]">
+                              <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px]">
                                 <Clock className="h-3 w-3" /> Queued
                               </span>
                             )}
@@ -1921,7 +2008,7 @@ export function LoreCardBatchAdmin() {
                                   type="button"
                                   onClick={() => handleRetryCandidate(c.id)}
                                   disabled={isProcessingBatch}
-                                  className="rounded p-1 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-all cursor-pointer"
+                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-blue-500/10 hover:text-blue-400"
                                   title="Retry Import"
                                 >
                                   <RotateCcw className="h-3.5 w-3.5" />
@@ -1941,7 +2028,7 @@ export function LoreCardBatchAdmin() {
                                       season: c.season,
                                     })
                                   }
-                                  className="rounded p-1 text-muted-foreground hover:text-purple-400 hover:bg-purple-500/10 transition-all cursor-pointer"
+                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-purple-500/10 hover:text-purple-400"
                                   title="Inspect Artwork"
                                 >
                                   <Eye className="h-3.5 w-3.5" />
@@ -1949,8 +2036,10 @@ export function LoreCardBatchAdmin() {
                               )}
                               <button
                                 type="button"
-                                onClick={() => setCandidates((prev) => prev.filter((item) => item.id !== c.id))}
-                                className="rounded p-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-all cursor-pointer"
+                                onClick={() =>
+                                  setCandidates((prev) => prev.filter((item) => item.id !== c.id))
+                                }
+                                className="text-muted-foreground cursor-pointer rounded p-1 transition-all hover:bg-rose-500/10 hover:text-rose-500"
                                 title="Remove Candidate"
                               >
                                 <X className="h-3.5 w-3.5" />
@@ -1965,7 +2054,6 @@ export function LoreCardBatchAdmin() {
               </div>
             </FacetContainer>
           )}
-
         </div>
       )}
 
@@ -1975,21 +2063,45 @@ export function LoreCardBatchAdmin() {
           {/* Stats Bar */}
           {requestStats.data && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <FacetCard depth={1} interactive="hover" className="rounded-xl border border-border bg-card/70 p-3 backdrop-blur-md">
+              <FacetCard
+                depth={1}
+                interactive="hover"
+                className="border-border bg-card/70 rounded-xl border p-3 backdrop-blur-md"
+              >
                 <div className="text-muted-foreground text-[11px]">Total Requests</div>
-                <div className="text-lg font-bold text-foreground mt-0.5">{requestStats.data.total}</div>
+                <div className="text-foreground mt-0.5 text-lg font-bold">
+                  {requestStats.data.total}
+                </div>
               </FacetCard>
-              <FacetCard depth={1} interactive="hover" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-md">
+              <FacetCard
+                depth={1}
+                interactive="hover"
+                className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 backdrop-blur-md"
+              >
                 <div className="text-muted-foreground text-[11px]">Pending Approval</div>
-                <div className="text-lg font-bold text-amber-500 dark:text-amber-300 mt-0.5">{requestStats.data.pending}</div>
+                <div className="mt-0.5 text-lg font-bold text-amber-500 dark:text-amber-300">
+                  {requestStats.data.pending}
+                </div>
               </FacetCard>
-              <FacetCard depth={1} interactive="hover" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 backdrop-blur-md">
+              <FacetCard
+                depth={1}
+                interactive="hover"
+                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 backdrop-blur-md"
+              >
                 <div className="text-muted-foreground text-[11px]">Generated Cards</div>
-                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{requestStats.data.generated}</div>
+                <div className="mt-0.5 text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {requestStats.data.generated}
+                </div>
               </FacetCard>
-              <FacetCard depth={1} interactive="hover" className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 backdrop-blur-md">
+              <FacetCard
+                depth={1}
+                interactive="hover"
+                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 backdrop-blur-md"
+              >
                 <div className="text-muted-foreground text-[11px]">Rejected</div>
-                <div className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">{requestStats.data.rejected}</div>
+                <div className="mt-0.5 text-lg font-bold text-rose-600 dark:text-rose-400">
+                  {requestStats.data.rejected}
+                </div>
               </FacetCard>
             </div>
           )}
@@ -2001,32 +2113,46 @@ export function LoreCardBatchAdmin() {
               <select
                 value={requestStatusFilter}
                 onChange={(e) => setRequestStatusFilter(e.target.value)}
-                className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground transition-all hover:bg-accent focus:outline-none"
+                className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
               >
-                <option value="ALL" className="bg-card text-card-foreground">All Requests</option>
-                <option value="PENDING" className="bg-card text-card-foreground">Pending Only</option>
-                <option value="APPROVED" className="bg-card text-card-foreground">Approved Only</option>
-                <option value="GENERATED" className="bg-card text-card-foreground">Generated Only</option>
-                <option value="REJECTED" className="bg-card text-card-foreground">Rejected Only</option>
+                <option value="ALL" className="bg-card text-card-foreground">
+                  All Requests
+                </option>
+                <option value="PENDING" className="bg-card text-card-foreground">
+                  Pending Only
+                </option>
+                <option value="APPROVED" className="bg-card text-card-foreground">
+                  Approved Only
+                </option>
+                <option value="GENERATED" className="bg-card text-card-foreground">
+                  Generated Only
+                </option>
+                <option value="REJECTED" className="bg-card text-card-foreground">
+                  Rejected Only
+                </option>
               </select>
             </div>
           </div>
 
           {/* Request Queue Table */}
           {requestQueue.isLoading ? (
-            <div className="flex h-48 items-center justify-center rounded-xl border border-border bg-card/40 backdrop-blur-md">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="border-border bg-card/40 flex h-48 items-center justify-center rounded-xl border backdrop-blur-md">
+              <Loader2 className="text-primary h-6 w-6 animate-spin" />
             </div>
           ) : !requestQueue.data || requestQueue.data.requests.length === 0 ? (
-            <div className="flex h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/30 backdrop-blur-md">
-              <BookOpen className="h-8 w-8 text-muted-foreground/40 mb-1.5" />
+            <div className="border-border bg-card/30 flex h-40 flex-col items-center justify-center rounded-xl border border-dashed backdrop-blur-md">
+              <BookOpen className="text-muted-foreground/40 mb-1.5 h-8 w-8" />
               <p className="text-foreground text-sm font-semibold">No requests found in queue</p>
             </div>
           ) : (
-            <FacetContainer depth={1} enableRefraction={true} className="overflow-hidden rounded-2xl border border-border bg-card/40 backdrop-blur-md shadow-inner">
-              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
+            <FacetContainer
+              depth={1}
+              enableRefraction={true}
+              className="border-border bg-card/40 overflow-hidden rounded-2xl border shadow-inner backdrop-blur-md"
+            >
+              <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xl text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
+                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-[10px] font-semibold tracking-wider uppercase backdrop-blur-xl">
                     <tr>
                       <th className="px-4 py-3">Article Title</th>
                       <th className="px-4 py-3">Wiki Source</th>
@@ -2036,7 +2162,7 @@ export function LoreCardBatchAdmin() {
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="divide-border/60 divide-y">
                     {requestQueue.data.requests.map((request: any) => {
                       const isPending = request.status === "PENDING";
                       const isApproved = request.status === "APPROVED";
@@ -2045,45 +2171,45 @@ export function LoreCardBatchAdmin() {
 
                       return (
                         <tr key={request.id} className="hover:bg-accent/40 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-foreground">
+                          <td className="text-foreground px-4 py-3 font-semibold">
                             {request.articleTitle}
                           </td>
                           <td className="px-4 py-3">
                             {request.wikiSource === "iiwiki" ? (
                               <IIWikiBadge size="xs" />
                             ) : (
-                              <span className="rounded-full bg-muted border border-border px-2 py-0.5 text-[9px] font-bold text-foreground">
+                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-[9px] font-bold">
                                 {request.wikiSource}
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 font-medium text-foreground">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                          <td className="text-foreground px-4 py-3 font-medium">
+                            <span className="bg-primary/10 border-primary/20 text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold">
                               <UserCheck className="h-3 w-3" />
                               {request.requesterName || request.userId}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
+                          <td className="text-muted-foreground px-4 py-3">
                             {new Date(request.requestedAt).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3">
                             {isPending && (
-                              <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-500 dark:text-amber-300">
+                              <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-500 dark:text-amber-300">
                                 Pending
                               </span>
                             )}
                             {isApproved && (
-                              <span className="rounded-full bg-blue-500/20 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
+                              <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-300">
                                 Approved
                               </span>
                             )}
                             {isGenerated && (
-                              <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
+                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300">
                                 Generated
                               </span>
                             )}
                             {isRejected && (
-                              <span className="rounded-full bg-rose-500/20 border border-rose-500/30 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300">
+                              <span className="rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300">
                                 Rejected
                               </span>
                             )}
@@ -2094,9 +2220,11 @@ export function LoreCardBatchAdmin() {
                                 <>
                                   <Button
                                     size="sm"
-                                    onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                    onClick={() =>
+                                      approveMutation.mutate({ requestId: request.id })
+                                    }
                                     disabled={approveMutation.isPending}
-                                    className="h-7 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-[11px] font-semibold"
+                                    className="h-7 rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
                                   >
                                     Approve
                                   </Button>
@@ -2104,7 +2232,7 @@ export function LoreCardBatchAdmin() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setRejectionRequestId(request.id)}
-                                    className="h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 text-[11px] font-semibold"
+                                    className="h-7 rounded-lg border border-rose-500/20 bg-rose-500/10 text-[11px] font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-300"
                                   >
                                     Reject
                                   </Button>
@@ -2113,9 +2241,11 @@ export function LoreCardBatchAdmin() {
                               {(isPending || isApproved) && (
                                 <Button
                                   size="sm"
-                                  onClick={() => generateRequestedMutation.mutate({ requestId: request.id })}
+                                  onClick={() =>
+                                    generateRequestedMutation.mutate({ requestId: request.id })
+                                  }
                                   disabled={generateRequestedMutation.isPending}
-                                  className="h-7 rounded-lg bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 text-[11px] font-semibold"
+                                  className="h-7 rounded-lg border border-purple-500/30 bg-purple-500/20 text-[11px] font-semibold text-purple-600 hover:bg-purple-500/30 dark:text-purple-300"
                                 >
                                   Mint Card
                                 </Button>
@@ -2134,25 +2264,31 @@ export function LoreCardBatchAdmin() {
       )}
 
       {/* Rejection Modal */}
-      <Dialog open={rejectionRequestId !== null} onOpenChange={(open) => !open && setRejectionRequestId(null)}>
-        <DialogContent className="border border-border bg-card text-card-foreground shadow-2xl backdrop-blur-2xl">
+      <Dialog
+        open={rejectionRequestId !== null}
+        onOpenChange={(open) => !open && setRejectionRequestId(null)}
+      >
+        <DialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
+            <DialogTitle className="text-foreground flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-rose-500" />
               Reject Lore Card Request & Refund 50 IxC?
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
-              Provide an optional reason for the user. The 50 IxC request fee will be automatically refunded to their vault.
+              Provide an optional reason for the user. The 50 IxC request fee will be automatically
+              refunded to their vault.
             </DialogDescription>
           </DialogHeader>
           <Input
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Reason for rejection (e.g. Article non-existent or duplicate)"
-            className="h-9 rounded-xl border-border bg-card text-xs text-foreground placeholder:text-muted-foreground"
+            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 rounded-xl text-xs"
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRejectionRequestId(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setRejectionRequestId(null)}>
+              Cancel
+            </Button>
             <Button
               onClick={() => {
                 if (rejectionRequestId) {
@@ -2163,7 +2299,7 @@ export function LoreCardBatchAdmin() {
                 }
               }}
               disabled={rejectMutation.isPending}
-              className="bg-rose-500 text-white font-semibold hover:bg-rose-600"
+              className="bg-rose-500 font-semibold text-white hover:bg-rose-600"
             >
               {rejectMutation.isPending ? "Rejecting..." : "Confirm Rejection"}
             </Button>
@@ -2173,32 +2309,32 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Artwork & Image Inspector Lightbox Modal ──────────── */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="max-w-2xl border border-border/80 bg-card/95 text-card-foreground backdrop-blur-2xl shadow-2xl p-0 overflow-hidden rounded-2xl">
+        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-2xl overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl">
           {previewImage && (
             <div>
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
+              <div className="border-border/60 flex items-center justify-between border-b px-6 py-4">
                 <div className="flex items-center gap-2.5">
                   <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2">
                     <Sparkles className="h-4 w-4 text-purple-400" />
                   </div>
                   <div>
-                    <DialogTitle className="text-base font-bold text-foreground">
+                    <DialogTitle className="text-foreground text-base font-bold">
                       {previewImage.title}
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground">
+                    <DialogDescription className="text-muted-foreground text-xs">
                       Parsed Wiki Artwork & Media Inspector
                     </DialogDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {previewImage.wikiSource && (
-                    <span className="rounded-full bg-muted border border-border px-2.5 py-0.5 text-[10px] font-bold text-foreground uppercase font-mono">
+                    <span className="bg-muted border-border text-foreground rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase">
                       {previewImage.wikiSource}
                     </span>
                   )}
                   {previewImage.rarity && (
-                    <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 text-[10px] font-bold text-purple-400">
+                    <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-[10px] font-bold text-purple-400">
                       {previewImage.rarity}
                     </span>
                   )}
@@ -2206,7 +2342,7 @@ export function LoreCardBatchAdmin() {
               </div>
 
               {/* Main Image Stage */}
-              <div className="relative flex min-h-[300px] max-h-[480px] w-full items-center justify-center bg-black/60 p-4 border-b border-border/60">
+              <div className="border-border/60 relative flex max-h-[480px] min-h-[300px] w-full items-center justify-center border-b bg-black/60 p-4">
                 {previewImage.imageUrl ? (
                   <img
                     src={previewImage.imageUrl}
@@ -2214,34 +2350,38 @@ export function LoreCardBatchAdmin() {
                     className="max-h-[420px] w-auto max-w-full rounded-xl object-contain shadow-2xl transition-transform duration-300 hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-muted-foreground py-12">
-                    <ImageIcon className="h-12 w-12 stroke-[1.5] mb-2 opacity-50" />
+                  <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+                    <ImageIcon className="mb-2 h-12 w-12 stroke-[1.5] opacity-50" />
                     <p className="text-xs">No primary artwork detected for this article</p>
                   </div>
                 )}
               </div>
 
               {/* Details & Excerpt */}
-              <div className="p-6 space-y-3">
-                {previewImage.author && previewImage.author !== "Unknown" && !previewImage.author.toLowerCase().includes("community") && (
-                  <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">
-                      Wiki Author:
-                    </span>
-                    <span className="font-semibold">{previewImage.author}</span>
-                  </div>
-                )}
+              <div className="space-y-3 p-6">
+                {previewImage.author &&
+                  previewImage.author !== "Unknown" &&
+                  !previewImage.author.toLowerCase().includes("community") && (
+                    <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+                        Wiki Author:
+                      </span>
+                      <span className="font-semibold">{previewImage.author}</span>
+                    </div>
+                  )}
 
                 {previewImage.extract && (
-                  <div className="rounded-xl bg-card/60 border border-border/60 p-3 text-xs text-muted-foreground leading-relaxed max-h-24 overflow-y-auto">
-                    <p className="font-semibold text-foreground mb-1 text-[11px]">Article Summary:</p>
+                  <div className="bg-card/60 border-border/60 text-muted-foreground max-h-24 overflow-y-auto rounded-xl border p-3 text-xs leading-relaxed">
+                    <p className="text-foreground mb-1 text-[11px] font-semibold">
+                      Article Summary:
+                    </p>
                     {previewImage.extract}
                   </div>
                 )}
 
                 {previewImage.imageUrl && (
-                  <div className="flex items-center justify-between rounded-xl bg-muted/40 border border-border/40 px-3 py-2 text-[11px] font-mono">
-                    <span className="truncate text-muted-foreground max-w-[400px]">
+                  <div className="bg-muted/40 border-border/40 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-[11px]">
+                    <span className="text-muted-foreground max-w-[400px] truncate">
                       {previewImage.imageUrl}
                     </span>
                     <button
@@ -2250,7 +2390,7 @@ export function LoreCardBatchAdmin() {
                         void navigator.clipboard.writeText(previewImage.imageUrl);
                         notify.success("Copied", "Image URL copied to clipboard.");
                       }}
-                      className="ml-2 flex items-center gap-1 text-primary hover:underline shrink-0 cursor-pointer font-sans"
+                      className="text-primary ml-2 flex shrink-0 cursor-pointer items-center gap-1 font-sans hover:underline"
                     >
                       <Copy className="h-3 w-3" /> Copy URL
                     </button>
@@ -2259,7 +2399,7 @@ export function LoreCardBatchAdmin() {
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between border-t border-border/60 px-6 py-3.5 bg-card/40">
+              <div className="border-border/60 bg-card/40 flex items-center justify-between border-t px-6 py-3.5">
                 {previewImage.wikiSource ? (
                   <a
                     href={
@@ -2269,7 +2409,7 @@ export function LoreCardBatchAdmin() {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-semibold"
+                    className="text-primary inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View Wiki Article
                   </a>
@@ -2280,7 +2420,7 @@ export function LoreCardBatchAdmin() {
                   size="sm"
                   variant="outline"
                   onClick={() => setPreviewImage(null)}
-                  className="rounded-xl border border-border text-xs"
+                  className="border-border rounded-xl border text-xs"
                 >
                   Close
                 </Button>
@@ -2292,17 +2432,17 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Purge Duplicates Modal ──────────────────────────────── */}
       <Dialog open={isPurgeDialogOpen} onOpenChange={setIsPurgeDialogOpen}>
-        <DialogContent className="max-w-xl border border-border/80 bg-card/95 text-card-foreground backdrop-blur-2xl shadow-2xl rounded-2xl">
+        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-xl rounded-2xl border shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5">
                 <Trash2 className="h-5 w-5 text-rose-500" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-foreground text-base font-bold">
                   Purge Duplicate Cards ({duplicateStats?.totalDuplicates ?? 0} Redundant)
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-muted-foreground text-xs">
                   Safely consolidate duplicate cards and clean up redundant database copies.
                 </DialogDescription>
               </div>
@@ -2310,42 +2450,56 @@ export function LoreCardBatchAdmin() {
           </DialogHeader>
 
           <div className="space-y-4 py-2 text-xs">
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-700 dark:text-amber-300 space-y-1">
-              <p className="font-bold flex items-center gap-1.5">
+            <div className="space-y-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-700 dark:text-amber-300">
+              <p className="flex items-center gap-1.5 font-bold">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 How Duplicate Purging Works:
               </p>
               <p className="text-[11px] leading-relaxed opacity-90">
-                For each article with duplicate cards, the system selects the highest-level / most referenced card as the Primary Keeper. All user ownerships, auctions, and value history are re-linked to the keeper card before deleting redundant copies.
+                For each article with duplicate cards, the system selects the highest-level / most
+                referenced card as the Primary Keeper. All user ownerships, auctions, and value
+                history are re-linked to the keeper card before deleting redundant copies.
               </p>
             </div>
 
             {duplicateStats?.loreGroups && duplicateStats.loreGroups.length > 0 ? (
               <div className="space-y-2">
-                <span className="font-semibold text-foreground block">
+                <span className="text-foreground block font-semibold">
                   Duplicate Groups ({duplicateStats.loreGroups.length} unique articles):
                 </span>
-                <div className="max-h-52 overflow-y-auto rounded-xl border border-border bg-card/60 divide-y divide-border/60">
-                  {duplicateStats.loreGroups.map((g: { title: string; wikiSource: string; count: number; redundantCount: number }, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-2.5">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground truncate">{g.title}</p>
-                        <span className="text-[10px] text-muted-foreground uppercase font-mono">
-                          {g.wikiSource}
+                <div className="border-border bg-card/60 divide-border/60 max-h-52 divide-y overflow-y-auto rounded-xl border">
+                  {duplicateStats.loreGroups.map(
+                    (
+                      g: {
+                        title: string;
+                        wikiSource: string;
+                        count: number;
+                        redundantCount: number;
+                      },
+                      idx: number
+                    ) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5">
+                        <div className="min-w-0">
+                          <p className="text-foreground truncate font-semibold">{g.title}</p>
+                          <span className="text-muted-foreground font-mono text-[10px] uppercase">
+                            {g.wikiSource}
+                          </span>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                          {g.count} copies (+{g.redundantCount} redundant)
                         </span>
                       </div>
-                      <span className="shrink-0 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold px-2 py-0.5 text-[10px]">
-                        {g.count} copies (+{g.redundantCount} redundant)
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-1.5 opacity-80" />
-                <p className="font-semibold text-foreground">No Duplicate Lore Cards Found</p>
-                <p className="text-[11px]">Your database is clean with no redundant lore card records.</p>
+              <div className="text-muted-foreground py-4 text-center">
+                <CheckCircle2 className="mx-auto mb-1.5 h-8 w-8 text-emerald-500 opacity-80" />
+                <p className="text-foreground font-semibold">No Duplicate Lore Cards Found</p>
+                <p className="text-[11px]">
+                  Your database is clean with no redundant lore card records.
+                </p>
               </div>
             )}
           </div>
@@ -2355,15 +2509,17 @@ export function LoreCardBatchAdmin() {
               variant="outline"
               size="sm"
               onClick={() => setIsPurgeDialogOpen(false)}
-              className="rounded-xl border border-border text-xs"
+              className="border-border rounded-xl border text-xs"
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              disabled={purgeDuplicatesMutation.isPending || (duplicateStats?.totalDuplicates ?? 0) === 0}
+              disabled={
+                purgeDuplicatesMutation.isPending || (duplicateStats?.totalDuplicates ?? 0) === 0
+              }
               onClick={() => purgeDuplicatesMutation.mutate({ mode: "wiki_lore" })}
-              className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold active:scale-95 transition-all shadow-xs"
+              className="rounded-xl bg-rose-500 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-600 active:scale-95"
             >
               {purgeDuplicatesMutation.isPending ? (
                 <>
@@ -2371,7 +2527,8 @@ export function LoreCardBatchAdmin() {
                 </>
               ) : (
                 <>
-                  <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge {duplicateStats?.totalDuplicates ?? 0} Duplicates
+                  <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge{" "}
+                  {duplicateStats?.totalDuplicates ?? 0} Duplicates
                 </>
               )}
             </Button>
@@ -2381,18 +2538,19 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Backfill Authors Modal ──────────────────────────────── */}
       <Dialog open={isBackfillDialogOpen} onOpenChange={setIsBackfillDialogOpen}>
-        <DialogContent className="max-w-md border border-border/80 bg-card/95 text-card-foreground backdrop-blur-2xl shadow-2xl rounded-2xl">
+        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-md rounded-2xl border shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
                 <Sparkles className="h-5 w-5 text-amber-500" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-foreground text-base font-bold">
                   Backfill Wiki Authors
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
-                  Query MediaWiki API to parse and store creator & top contributor attribution on lore cards.
+                <DialogDescription className="text-muted-foreground text-xs">
+                  Query MediaWiki API to parse and store creator & top contributor attribution on
+                  lore cards.
                 </DialogDescription>
               </div>
             </div>
@@ -2400,8 +2558,8 @@ export function LoreCardBatchAdmin() {
 
           <div className="space-y-4 py-2 text-xs">
             {/* Wiki Source Selector */}
-            <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
-              <label className="text-foreground font-semibold block text-xs">Wiki Source:</label>
+            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
+              <label className="text-foreground block text-xs font-semibold">Wiki Source:</label>
               <div className="flex items-center gap-2">
                 {[
                   { id: "all", label: "All Sources" },
@@ -2412,7 +2570,7 @@ export function LoreCardBatchAdmin() {
                     key={src.id}
                     type="button"
                     onClick={() => setBackfillSource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
                       backfillSource === src.id
                         ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2425,15 +2583,15 @@ export function LoreCardBatchAdmin() {
             </div>
 
             {/* Batch Limit Selector */}
-            <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
-              <label className="text-foreground font-semibold block text-xs">Batch Limit:</label>
+            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
+              <label className="text-foreground block text-xs font-semibold">Batch Limit:</label>
               <div className="flex items-center gap-2">
                 {[50, 100, 250, 500].map((num) => (
                   <button
                     key={num}
                     type="button"
                     onClick={() => setBackfillLimit(num)}
-                    className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
                       backfillLimit === num
                         ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2444,8 +2602,17 @@ export function LoreCardBatchAdmin() {
                 ))}
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              This will find lore cards from <strong className="text-foreground">{backfillSource === "all" ? "all wikis" : backfillSource.toUpperCase()}</strong> without saved <code className="text-amber-500 bg-amber-500/10 px-1 py-0.5 rounded font-mono">authorInfo</code>, fetch their revision history to locate human page creators and top editors, and persist the attribution to the database.
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              This will find lore cards from{" "}
+              <strong className="text-foreground">
+                {backfillSource === "all" ? "all wikis" : backfillSource.toUpperCase()}
+              </strong>{" "}
+              without saved{" "}
+              <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-amber-500">
+                authorInfo
+              </code>
+              , fetch their revision history to locate human page creators and top editors, and
+              persist the attribution to the database.
             </p>
           </div>
 
@@ -2454,15 +2621,17 @@ export function LoreCardBatchAdmin() {
               variant="outline"
               size="sm"
               onClick={() => setIsBackfillDialogOpen(false)}
-              className="rounded-xl border border-border text-xs"
+              className="border-border rounded-xl border text-xs"
             >
               Cancel
             </Button>
             <Button
               size="sm"
               disabled={backfillAuthorsMutation.isPending}
-              onClick={() => backfillAuthorsMutation.mutate({ limit: backfillLimit, wikiSource: backfillSource })}
-              className="rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold active:scale-95 transition-all shadow-xs"
+              onClick={() =>
+                backfillAuthorsMutation.mutate({ limit: backfillLimit, wikiSource: backfillSource })
+              }
+              className="rounded-xl bg-amber-500 text-xs font-bold text-black shadow-xs transition-all hover:bg-amber-600 active:scale-95"
             >
               {backfillAuthorsMutation.isPending ? (
                 <>
@@ -2480,17 +2649,17 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Re-Catalog Categories Modal ──────────────────────────── */}
       <Dialog open={isReclassifyDialogOpen} onOpenChange={setIsReclassifyDialogOpen}>
-        <DialogContent className="max-w-md bg-card/95 border-border/80 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl space-y-4">
+        <DialogContent className="bg-card/95 border-border/80 max-w-md space-y-4 rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2.5">
                 <Layers className="h-5 w-5 text-purple-500" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-foreground text-base font-bold">
                   Re-Catalog Lore Categories
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-muted-foreground text-xs">
                   Re-evaluate existing lore cards using Infobox template and category tree scoring.
                 </DialogDescription>
               </div>
@@ -2499,8 +2668,8 @@ export function LoreCardBatchAdmin() {
 
           <div className="space-y-4 py-2 text-xs">
             {/* Wiki Source Selector */}
-            <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
-              <label className="text-foreground font-semibold block text-xs">Wiki Source:</label>
+            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
+              <label className="text-foreground block text-xs font-semibold">Wiki Source:</label>
               <div className="flex items-center gap-2">
                 {[
                   { id: "all", label: "All Sources" },
@@ -2511,7 +2680,7 @@ export function LoreCardBatchAdmin() {
                     key={src.id}
                     type="button"
                     onClick={() => setReclassifySource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
                       reclassifySource === src.id
                         ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2524,15 +2693,15 @@ export function LoreCardBatchAdmin() {
             </div>
 
             {/* Batch Limit Selector */}
-            <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-2">
-              <label className="text-foreground font-semibold block text-xs">Batch Limit:</label>
+            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
+              <label className="text-foreground block text-xs font-semibold">Batch Limit:</label>
               <div className="flex items-center gap-2">
                 {[50, 100, 250, 500].map((num) => (
                   <button
                     key={num}
                     type="button"
                     onClick={() => setReclassifyLimit(num)}
-                    className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-all ${
                       reclassifyLimit === num
                         ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
                         : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
@@ -2545,21 +2714,28 @@ export function LoreCardBatchAdmin() {
             </div>
 
             {/* Overwrite Toggle */}
-            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-3">
+            <div className="border-border/60 bg-muted/30 flex items-center justify-between rounded-xl border p-3">
               <div>
-                <span className="text-foreground font-semibold block text-xs">Force Overwrite</span>
-                <span className="text-muted-foreground text-[10px]">Re-classify all cards, not just unclassified/defaults</span>
+                <span className="text-foreground block text-xs font-semibold">Force Overwrite</span>
+                <span className="text-muted-foreground text-[10px]">
+                  Re-classify all cards, not just unclassified/defaults
+                </span>
               </div>
               <input
                 type="checkbox"
                 checked={reclassifyForce}
                 onChange={(e) => setReclassifyForce(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-purple-600 focus:ring-purple-500"
+                className="border-border h-4 w-4 rounded text-purple-600 focus:ring-purple-500"
               />
             </div>
 
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              This will analyze lore cards from <strong className="text-foreground">{reclassifySource === "all" ? "all wikis" : reclassifySource.toUpperCase()}</strong> against the 12 canonical LoreCategory enums, matching infobox types (e.g. officeholders, treaties, battles, settlements) and persisting accurate category seals.
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              This will analyze lore cards from{" "}
+              <strong className="text-foreground">
+                {reclassifySource === "all" ? "all wikis" : reclassifySource.toUpperCase()}
+              </strong>{" "}
+              against the 12 canonical LoreCategory enums, matching infobox types (e.g.
+              officeholders, treaties, battles, settlements) and persisting accurate category seals.
             </p>
           </div>
 
@@ -2568,7 +2744,7 @@ export function LoreCardBatchAdmin() {
               variant="outline"
               size="sm"
               onClick={() => setIsReclassifyDialogOpen(false)}
-              className="rounded-xl border border-border text-xs"
+              className="border-border rounded-xl border text-xs"
             >
               Cancel
             </Button>
@@ -2582,7 +2758,7 @@ export function LoreCardBatchAdmin() {
                   forceOverwrite: reclassifyForce,
                 })
               }
-              className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold active:scale-95 transition-all shadow-xs"
+              className="rounded-xl bg-purple-600 text-xs font-bold text-white shadow-xs transition-all hover:bg-purple-700 active:scale-95"
             >
               {reclassifyCategoriesMutation.isPending ? (
                 <>
@@ -2603,14 +2779,14 @@ export function LoreCardBatchAdmin() {
         open={!!selectedErrorCandidate}
         onOpenChange={(isOpen) => !isOpen && setSelectedErrorCandidate(null)}
       >
-        <DialogContent className="max-w-md bg-card/95 border-border/80 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl space-y-4">
+        <DialogContent className="bg-card/95 border-border/80 max-w-md space-y-4 rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5">
                 <AlertTriangle className="h-5 w-5 text-rose-500" />
               </div>
               <div>
-                <DialogTitle className="text-foreground tracking-tight text-base font-bold">
+                <DialogTitle className="text-foreground text-base font-bold tracking-tight">
                   Import Failure Diagnostics
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground text-xs">
@@ -2622,37 +2798,49 @@ export function LoreCardBatchAdmin() {
 
           {selectedErrorCandidate && (
             <div className="space-y-3 py-1 text-xs">
-              <div className="rounded-xl border border-border/60 bg-muted/40 p-3 space-y-2">
-                <div className="flex justify-between items-center">
+              <div className="border-border/60 bg-muted/40 space-y-2 rounded-xl border p-3">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Article Title:</span>
-                  <span className="font-bold text-foreground">{selectedErrorCandidate.articleTitle}</span>
+                  <span className="text-foreground font-bold">
+                    {selectedErrorCandidate.articleTitle}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Wiki Source:</span>
-                  <span className="font-bold uppercase text-foreground">{selectedErrorCandidate.wikiSource}</span>
+                  <span className="text-foreground font-bold uppercase">
+                    {selectedErrorCandidate.wikiSource}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Target Rarity:</span>
-                  <span className="font-bold text-purple-400">{selectedErrorCandidate.targetRarity}</span>
+                  <span className="font-bold text-purple-400">
+                    {selectedErrorCandidate.targetRarity}
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 space-y-1.5">
-                <div className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5 text-xs">
+              <div className="space-y-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
                   <XCircle className="h-4 w-4 text-rose-500" /> Error Reason
                 </div>
-                <div className="font-mono text-[11px] text-rose-700 dark:text-rose-300 break-words whitespace-pre-wrap leading-relaxed">
-                  {selectedErrorCandidate.errorMessage || "Unknown error occurred during generation."}
+                <div className="font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap text-rose-700 dark:text-rose-300">
+                  {selectedErrorCandidate.errorMessage ||
+                    "Unknown error occurred during generation."}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border/40 bg-card/60 p-3 space-y-1 text-muted-foreground text-[11px]">
-                <div className="font-semibold text-foreground flex items-center gap-1">
-                  <Info className="h-3.5 w-3.5 text-primary" /> Troubleshooting Tips:
+              <div className="border-border/40 bg-card/60 text-muted-foreground space-y-1 rounded-xl border p-3 text-[11px]">
+                <div className="text-foreground flex items-center gap-1 font-semibold">
+                  <Info className="text-primary h-3.5 w-3.5" /> Troubleshooting Tips:
                 </div>
-                <ul className="list-disc pl-4 space-y-0.5 mt-1">
-                  <li>Verify article spelling, casing, and underscores on {selectedErrorCandidate.wikiSource.toUpperCase()}.</li>
-                  <li>Ensure the article has sufficient prose content (not an empty stub or redirect).</li>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  <li>
+                    Verify article spelling, casing, and underscores on{" "}
+                    {selectedErrorCandidate.wikiSource.toUpperCase()}.
+                  </li>
+                  <li>
+                    Ensure the article has sufficient prose content (not an empty stub or redirect).
+                  </li>
                   <li>Check if a card for this article title already exists in the database.</li>
                 </ul>
               </div>
@@ -2664,7 +2852,7 @@ export function LoreCardBatchAdmin() {
               variant="outline"
               size="sm"
               onClick={() => setSelectedErrorCandidate(null)}
-              className="rounded-xl border border-border text-xs"
+              className="border-border rounded-xl border text-xs"
             >
               Close
             </Button>
@@ -2677,7 +2865,7 @@ export function LoreCardBatchAdmin() {
                   void handleRetryCandidate(id);
                 }}
                 disabled={isProcessingBatch}
-                className="rounded-xl bg-primary text-primary-foreground text-xs font-bold active:scale-95 transition-all shadow-xs"
+                className="bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95"
               >
                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Retry Import Now
               </Button>
@@ -2688,4 +2876,3 @@ export function LoreCardBatchAdmin() {
     </FacetCard>
   );
 }
-

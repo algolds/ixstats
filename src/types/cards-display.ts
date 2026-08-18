@@ -45,8 +45,6 @@ export interface CardAuthorInfo {
   [key: string]: unknown;
 }
 
-
-
 export interface LoreCardMetadata {
   category?: string;
   subcategory?: string;
@@ -183,10 +181,7 @@ export interface NationCardInstance extends CardInstance {
   } | null;
 }
 
-export type DiscriminatedCardInstance =
-  | LoreCardInstance
-  | NSCardInstance
-  | NationCardInstance;
+export type DiscriminatedCardInstance = LoreCardInstance | NSCardInstance | NationCardInstance;
 
 /**
  * Type predicates (Guards)

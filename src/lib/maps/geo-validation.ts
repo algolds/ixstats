@@ -179,7 +179,8 @@ export async function validatePolygonContainment(
  * Filters out line strings, points, and other non-polygon components.
  */
 export function cleanPostGISGeometry(
-  geometry: Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
+  geometry:
+    Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
 ): Polygon | MultiPolygon | null {
   if (!geometry) return null;
   if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {

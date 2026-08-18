@@ -455,12 +455,12 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
             <h4 className="text-foreground text-sm font-bold">National Tax Rate Controls</h4>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
               Total Revenue:
             </span>
-            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-black tracking-tight text-emerald-400 shadow-md shadow-emerald-500/10 sm:text-base">
-              <CurrencyFlow value={yields._total ?? 0} className="font-black text-emerald-400" />
-              <span className="ml-1 text-xs font-bold text-emerald-400/70">/ yr</span>
+            <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-emerald-400 tabular-nums shadow-md shadow-emerald-500/10 sm:text-base">
+              <CurrencyFlow value={yields._total ?? 0} className="font-bold text-emerald-400" />
+              <span className="ml-1 text-xs font-semibold text-emerald-400/70">/ yr</span>
             </span>
           </div>
         </div>
@@ -488,7 +488,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <Landmark className="h-4 w-4 shrink-0 text-emerald-400" />
-            <h4 className="text-foreground text-xs font-extrabold">Tax Revenue Projections</h4>
+            <h4 className="text-foreground text-xs font-semibold">Tax Revenue Projections</h4>
           </div>
         </div>
 
@@ -501,10 +501,10 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
                 ACCENT_BORDER[ch.accent] ?? "border-border/20"
               )}
             >
-              <p className="text-muted-foreground text-[10px] font-bold uppercase">
+              <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
                 {ch.shortLabel} Yield
               </p>
-              <p className={cn("font-mono text-base font-black", ch.accentClass)}>
+              <p className={cn("font-mono text-base font-bold tabular-nums", ch.accentClass)}>
                 <CurrencyFlow value={yields[ch.key] ?? 0} decimalPlaces={2} />
               </p>
               <p className="text-muted-foreground font-mono text-[10px]">
@@ -628,7 +628,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             <span className="text-muted-foreground text-xs font-semibold">
               Effective GDP Tax Burden
             </span>
-            <span className="font-mono text-base font-black text-amber-400">
+            <span className="font-mono text-base font-bold text-amber-400 tabular-nums">
               <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
             </span>
           </div>
@@ -653,7 +653,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
           </div>
           <div className="text-muted-foreground/70 flex justify-between font-mono text-[10px]">
             <span>0%</span>
-            <span className="font-extrabold text-emerald-400">Optimal Zone (15-35%)</span>
+            <span className="font-semibold text-emerald-400">Optimal Zone (15-35%)</span>
             <span>50%+</span>
           </div>
         </div>
@@ -667,7 +667,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 shrink-0 text-cyan-400" />
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Revenue Stream Composition
             </h4>
           </div>
@@ -697,11 +697,16 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
               >
                 <div className="flex min-w-0 items-center gap-1.5">
                   <div className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])} />
-                  <span className="text-muted-foreground truncate text-[11px] font-semibold">
+                  <span className="text-muted-foreground truncate text-[11px] font-medium">
                     {ch.shortLabel}
                   </span>
                 </div>
-                <span className={cn("shrink-0 font-mono text-[11px] font-black", ch.accentClass)}>
+                <span
+                  className={cn(
+                    "shrink-0 font-mono text-[11px] font-semibold tabular-nums",
+                    ch.accentClass
+                  )}
+                >
                   <PercentageFlow value={seg.pct} decimalPlaces={1} />
                 </span>
               </div>
@@ -718,7 +723,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Fiscal Health & Telemetry
             </h4>
           </div>
@@ -726,16 +731,20 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
 
         <div className="grid grid-cols-3 gap-2">
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-bold uppercase">Efficiency</p>
-            <p className="mt-0.5 font-mono text-base font-black text-emerald-400">
+            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+              Efficiency
+            </p>
+            <p className="mt-0.5 font-mono text-base font-bold text-emerald-400 tabular-nums">
               <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-bold uppercase">Budget Δ</p>
+            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+              Budget Δ
+            </p>
             <p
               className={cn(
-                "mt-0.5 font-mono text-base font-black",
+                "mt-0.5 font-mono text-base font-bold tabular-nums",
                 budgetImpact >= 0 ? "text-emerald-400" : "text-rose-400"
               )}
             >
@@ -748,10 +757,12 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
             </p>
           </div>
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-bold uppercase">Burden</p>
+            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+              Burden
+            </p>
             <p
               className={cn(
-                "mt-1 font-mono text-xs font-black",
+                "mt-1 font-mono text-xs font-semibold tabular-nums",
                 lafferPosition === "optimal"
                   ? "text-emerald-400"
                   : lafferPosition === "below-optimal"
@@ -763,7 +774,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
                 ? "Optimal"
                 : lafferPosition === "below-optimal"
                   ? "Low"
-                  : "High"}
+                  : "Severe"}
             </p>
           </div>
         </div>
@@ -834,16 +845,16 @@ function TaxRateCard({
           >
             {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
-          <span className="text-muted-foreground text-[11px] font-bold">{channel.label}</span>
+          <span className="text-muted-foreground text-[11px] font-semibold">{channel.label}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
           {!isLocked && (
-            <span className="animate-pulse text-[9px] font-bold tracking-wider text-amber-400 uppercase">
+            <span className="animate-pulse text-[9px] font-semibold tracking-wider text-amber-400 uppercase">
               Editing
             </span>
           )}
-          <span className={cn("font-mono text-base font-black tabular-nums", channel.accentClass)}>
+          <span className={cn("font-mono text-base font-bold tabular-nums", channel.accentClass)}>
             <PercentageFlow value={rate} decimalPlaces={1} />
           </span>
         </div>

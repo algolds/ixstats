@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  adminProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 
 export const intelTemplatesRouter = createTRPCRouter({
   getAllTemplates: publicProcedure.query(async ({ ctx }) => {

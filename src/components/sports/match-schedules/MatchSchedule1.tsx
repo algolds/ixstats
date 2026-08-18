@@ -73,8 +73,8 @@ export default function MatchSchedule1({
     >
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
-        <span className="bg-muted border-border/20 text-muted-foreground rounded-full border px-3 py-1 text-xs font-bold uppercase">
+        <h3 className="text-foreground text-lg font-bold tracking-tight">{title}</h3>
+        <span className="bg-muted border-border/20 text-muted-foreground rounded-full border px-3 py-1 text-xs font-semibold uppercase">
           Matchday {matchday}
         </span>
       </div>
@@ -108,8 +108,8 @@ export default function MatchSchedule1({
             <div key={match.id} className="space-y-1">
               <div
                 className={cn(
-                  "bg-muted/30 border-border/10 grid grid-cols-[1fr_80px_1fr] items-center gap-4 rounded-2xl border px-4 py-3 transition-colors dark:bg-secondary/40",
-                  isCompleted ? "hover:bg-muted/40 cursor-pointer dark:hover:bg-secondary/60" : ""
+                  "bg-muted/30 border-border/10 dark:bg-secondary/40 grid grid-cols-[1fr_80px_1fr] items-center gap-4 rounded-2xl border px-4 py-3 transition-colors",
+                  isCompleted ? "hover:bg-muted/40 dark:hover:bg-secondary/60 cursor-pointer" : ""
                 )}
                 onClick={() => {
                   if (isCompleted) {
@@ -168,7 +168,7 @@ export default function MatchSchedule1({
                 {/* Center Match State / Score */}
                 <div className="flex flex-col items-center justify-center">
                   {isCompleted ? (
-                    <div className="bg-muted border-border/20 text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-extrabold tabular-nums">
+                    <div className="bg-muted border-border/20 text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold tabular-nums">
                       <span className={cn(homeOutcome !== "win" && "font-semibold opacity-75")}>
                         {hScore}
                       </span>
@@ -179,7 +179,7 @@ export default function MatchSchedule1({
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center">
-                      <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
+                      <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                         {match.time ?? "TBD"}
                       </span>
                       {match.date && (
@@ -192,7 +192,7 @@ export default function MatchSchedule1({
                   {match.isRivalry && (
                     <span
                       title={`Rivalry match${match.rivalryIntensity ? ` · intensity ${match.rivalryIntensity}` : ""}`}
-                      className="mt-1 flex items-center gap-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 text-[8px] font-black tracking-wider text-rose-400 uppercase"
+                      className="mt-1 flex items-center gap-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-1.5 text-[8px] font-semibold tracking-wider text-rose-400 uppercase"
                     >
                       🔥 Rivalry
                     </span>

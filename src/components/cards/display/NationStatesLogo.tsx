@@ -23,7 +23,7 @@ export function NationStatesLogo({ className, size = "sm" }: NationStatesLogoPro
     <img
       src={NATIONSTATES_LOGO_URL}
       alt="NationStates"
-      className={cn("object-contain shrink-0 inline-block", sizeClasses[size], className)}
+      className={cn("inline-block shrink-0 object-contain", sizeClasses[size], className)}
       loading="lazy"
       onError={(e) => {
         (e.target as HTMLImageElement).style.display = "none";
@@ -36,7 +36,7 @@ export function NationStatesBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center gap-1 rounded-md border border-blue-400/30 bg-blue-600/20 px-1.5 py-0.5 backdrop-blur-md shadow-xs",
+        "inline-flex items-center justify-center gap-1 rounded-md border border-blue-400/30 bg-blue-600/20 px-1.5 py-0.5 shadow-xs backdrop-blur-md",
         className
       )}
       title="NationStates Card"

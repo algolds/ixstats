@@ -70,32 +70,20 @@ export function CollectionCarouselTab({
 
           {/* Carousel controls */}
           <div className="flex items-center gap-4">
-            <Button
-              onClick={onPrev}
-              variant="outline"
-              size="sm"
-              className="glass-hierarchy-child"
-            >
+            <Button onClick={onPrev} variant="outline" size="sm" className="glass-hierarchy-child">
               Previous
             </Button>
             <span className="text-sm text-white/70">
               {currentIndex + 1} / {cards.length}
             </span>
-            <Button
-              onClick={onNext}
-              variant="outline"
-              size="sm"
-              className="glass-hierarchy-child"
-            >
+            <Button onClick={onNext} variant="outline" size="sm" className="glass-hierarchy-child">
               Next
             </Button>
           </div>
 
           {/* Card info */}
           <div className="glass-hierarchy-child max-w-md rounded-lg p-4 text-center">
-            <h3 className="mb-2 text-lg font-bold text-white">
-              {cards[currentIndex]?.title}
-            </h3>
+            <h3 className="mb-2 text-lg font-bold text-white">{cards[currentIndex]?.title}</h3>
             <p className="text-sm text-white/70">
               {cards[currentIndex]?.description || "No description"}
             </p>

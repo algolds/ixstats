@@ -39,9 +39,7 @@ export function RepostCard({
           </AvatarFallback>
         </Avatar>
         <span className="text-sm font-semibold">{post.repostOf.account?.displayName}</span>
-        <span className="text-muted-foreground text-xs">
-          @{post.repostOf.account?.username}
-        </span>
+        <span className="text-muted-foreground text-xs">@{post.repostOf.account?.username}</span>
       </div>
       <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanRepostContent)} />
       {repostMediaAttachments && repostMediaAttachments.length > 0 && (

@@ -3,14 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  CheckSquare,
-  Folder,
-  ShoppingBag,
-  Trash2,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { CheckSquare, Folder, ShoppingBag, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { vaultNotify } from "~/lib/vault";
 import { api } from "~/trpc/react";
@@ -168,7 +161,7 @@ export function InventoryTab({
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="h-5 w-5 text-amber-400" />
-                  <span className="text-sm font-semibold text-foreground">
+                  <span className="text-foreground text-sm font-semibold">
                     {selectedCards.size} card{selectedCards.size !== 1 ? "s" : ""} selected
                   </span>
                 </div>
@@ -194,13 +187,13 @@ export function InventoryTab({
                     Deselect All
                   </Button>
 
-                  <div className="h-4 w-px bg-border/60" />
+                  <div className="bg-border/60 h-4 w-px" />
 
                   <Button
                     variant="outline"
                     size="sm"
                     disabled
-                    className="h-8 text-xs text-muted-foreground opacity-50"
+                    className="text-muted-foreground h-8 text-xs opacity-50"
                   >
                     <Folder className="mr-1.5 h-3.5 w-3.5" /> Move
                   </Button>
@@ -208,12 +201,12 @@ export function InventoryTab({
                     variant="outline"
                     size="sm"
                     disabled
-                    className="h-8 text-xs text-muted-foreground opacity-50"
+                    className="text-muted-foreground h-8 text-xs opacity-50"
                   >
                     <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> List Market
                   </Button>
 
-                  <div className="flex items-center gap-2 border-l border-border/60 pl-2">
+                  <div className="border-border/60 flex items-center gap-2 border-l pl-2">
                     <Button
                       variant="outline"
                       size="sm"

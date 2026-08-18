@@ -173,12 +173,12 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
         {/* Main Feed */}
         <div className="space-y-4 lg:col-span-3">
           {/* Header */}
-          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
+          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
             <CardHeader className="pb-3">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base font-extrabold tracking-tight">
-                    <Activity className="h-5 w-5 text-primary" />
+                    <Activity className="text-primary h-5 w-5" />
                     Activity Feed
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -223,7 +223,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
           {/* Feed Items */}
           {isLoading ? (
-            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
+            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
               <CardContent className="space-y-4 pt-6">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="flex animate-pulse items-start gap-3">
@@ -238,12 +238,12 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               </CardContent>
             </Card>
           ) : feed.length > 0 ? (
-            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
+            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
               <CardContent className="space-y-1 pt-6">
                 {feed.map((item, idx) => (
                   <div
                     key={item.id}
-                    className={`flex items-start gap-3 py-3 rounded-xl px-2 transition-colors duration-150 hover:bg-white/[0.03] ${
+                    className={`flex items-start gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${
                       idx < feed.length - 1 ? "border-border/40 border-b" : ""
                     }`}
                   >
@@ -316,7 +316,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
+            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
               <CardContent className="py-12 text-center">
                 <Activity className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
                 <p className="text-muted-foreground text-sm font-semibold">
@@ -333,9 +333,9 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Quick Stats */}
-          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180">
+          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-extrabold uppercase tracking-wider">
+              <CardTitle className="text-xs font-extrabold tracking-wider uppercase">
                 Activity Summary
               </CardTitle>
             </CardHeader>
@@ -366,7 +366,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
           </Card>
 
           {/* Wiki Link */}
-          <Card className="bg-card/40 border-white/10 backdrop-blur-xl saturate-180 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]">
+          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]">
             <CardContent className="pt-6">
               <WikiLinkPreview title={countryName}>
                 <Link

@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, unlinkSync, statSync } from "fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  statSync,
+} from "fs";
 import { join, relative } from "path";
 import { execSync } from "child_process";
 
@@ -8,18 +16,18 @@ const OUTPUT_DIR = join(process.cwd(), "public/icons/game-icons");
 const MANIFEST_PATH = join(process.cwd(), "public/icons/game-icons-manifest.json");
 
 export interface GameIconMeta {
-  id: string;          // e.g. "lorc/crossed-swords"
-  name: string;        // e.g. "Crossed Swords"
-  slug: string;        // e.g. "crossed-swords"
-  author: string;      // e.g. "lorc"
-  path: string;        // e.g. "/icons/game-icons/lorc/crossed-swords.svg"
-  tags: string[];      // generated keyword tags
+  id: string; // e.g. "lorc/crossed-swords"
+  name: string; // e.g. "Crossed Swords"
+  slug: string; // e.g. "crossed-swords"
+  author: string; // e.g. "lorc"
+  path: string; // e.g. "/icons/game-icons/lorc/crossed-swords.svg"
+  tags: string[]; // generated keyword tags
 }
 
 function slugToName(slug: string): string {
   return slug
     .split("-")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -27,68 +35,196 @@ function generateTags(slug: string, author: string, folder: string): string[] {
   const parts = slug.toLowerCase().split("-");
   const tags = new Set<string>([...parts, author.toLowerCase()]);
   if (folder && folder !== author) {
-    folder.toLowerCase().split("/").forEach(f => tags.add(f));
+    folder
+      .toLowerCase()
+      .split("/")
+      .forEach((f) => tags.add(f));
   }
 
   // Common category associations
   const s = slug.toLowerCase();
-  if (s.includes("sword") || s.includes("blade") || s.includes("axe") || s.includes("shield") || s.includes("helm") || s.includes("armor") || s.includes("spear") || s.includes("bow") || s.includes("arrow") || s.includes("gun") || s.includes("cannon")) {
+  if (
+    s.includes("sword") ||
+    s.includes("blade") ||
+    s.includes("axe") ||
+    s.includes("shield") ||
+    s.includes("helm") ||
+    s.includes("armor") ||
+    s.includes("spear") ||
+    s.includes("bow") ||
+    s.includes("arrow") ||
+    s.includes("gun") ||
+    s.includes("cannon")
+  ) {
     tags.add("military");
     tags.add("combat");
     tags.add("weapon");
   }
-  if (s.includes("crown") || s.includes("castle") || s.includes("palace") || s.includes("throne") || s.includes("king") || s.includes("queen") || s.includes("gavel") || s.includes("pillar") || s.includes("capitol") || s.includes("column")) {
+  if (
+    s.includes("crown") ||
+    s.includes("castle") ||
+    s.includes("palace") ||
+    s.includes("throne") ||
+    s.includes("king") ||
+    s.includes("queen") ||
+    s.includes("gavel") ||
+    s.includes("pillar") ||
+    s.includes("capitol") ||
+    s.includes("column")
+  ) {
     tags.add("government");
     tags.add("politics");
     tags.add("authority");
   }
-  if (s.includes("scroll") || s.includes("laurel") || s.includes("quill") || s.includes("treaty") || s.includes("diploma") || s.includes("handshake") || s.includes("peace") || s.includes("feather")) {
+  if (
+    s.includes("scroll") ||
+    s.includes("laurel") ||
+    s.includes("quill") ||
+    s.includes("treaty") ||
+    s.includes("diploma") ||
+    s.includes("handshake") ||
+    s.includes("peace") ||
+    s.includes("feather")
+  ) {
     tags.add("diplomacy");
     tags.add("treaty");
     tags.add("documents");
   }
-  if (s.includes("coin") || s.includes("cash") || s.includes("scale") || s.includes("gold") || s.includes("bank") || s.includes("money") || s.includes("chest") || s.includes("bag") || s.includes("gem") || s.includes("diamond")) {
+  if (
+    s.includes("coin") ||
+    s.includes("cash") ||
+    s.includes("scale") ||
+    s.includes("gold") ||
+    s.includes("bank") ||
+    s.includes("money") ||
+    s.includes("chest") ||
+    s.includes("bag") ||
+    s.includes("gem") ||
+    s.includes("diamond")
+  ) {
     tags.add("economy");
     tags.add("finance");
     tags.add("wealth");
     tags.add("trade");
   }
-  if (s.includes("sun") || s.includes("church") || s.includes("temple") || s.includes("cross") || s.includes("priest") || s.includes("halo") || s.includes("angel") || s.includes("pray") || s.includes("altar") || s.includes("god")) {
+  if (
+    s.includes("sun") ||
+    s.includes("church") ||
+    s.includes("temple") ||
+    s.includes("cross") ||
+    s.includes("priest") ||
+    s.includes("halo") ||
+    s.includes("angel") ||
+    s.includes("pray") ||
+    s.includes("altar") ||
+    s.includes("god")
+  ) {
     tags.add("religion");
     tags.add("faith");
     tags.add("holy");
   }
-  if (s.includes("compass") || s.includes("map") || s.includes("mountain") || s.includes("tree") || s.includes("forest") || s.includes("ocean") || s.includes("river") || s.includes("island") || s.includes("globe") || s.includes("earth")) {
+  if (
+    s.includes("compass") ||
+    s.includes("map") ||
+    s.includes("mountain") ||
+    s.includes("tree") ||
+    s.includes("forest") ||
+    s.includes("ocean") ||
+    s.includes("river") ||
+    s.includes("island") ||
+    s.includes("globe") ||
+    s.includes("earth")
+  ) {
     tags.add("geography");
     tags.add("nature");
     tags.add("world");
   }
-  if (s.includes("flask") || s.includes("potion") || s.includes("atom") || s.includes("test") || s.includes("telescope") || s.includes("microscope") || s.includes("chemical") || s.includes("molecule") || s.includes("gear") || s.includes("machine")) {
+  if (
+    s.includes("flask") ||
+    s.includes("potion") ||
+    s.includes("atom") ||
+    s.includes("test") ||
+    s.includes("telescope") ||
+    s.includes("microscope") ||
+    s.includes("chemical") ||
+    s.includes("molecule") ||
+    s.includes("gear") ||
+    s.includes("machine")
+  ) {
     tags.add("science");
     tags.add("tech");
     tags.add("alchemy");
   }
-  if (s.includes("book") || s.includes("music") || s.includes("lyre") || s.includes("art") || s.includes("mask") || s.includes("paint") || s.includes("drama") || s.includes("song") || s.includes("flute") || s.includes("harp")) {
+  if (
+    s.includes("book") ||
+    s.includes("music") ||
+    s.includes("lyre") ||
+    s.includes("art") ||
+    s.includes("mask") ||
+    s.includes("paint") ||
+    s.includes("drama") ||
+    s.includes("song") ||
+    s.includes("flute") ||
+    s.includes("harp")
+  ) {
     tags.add("culture");
     tags.add("arts");
     tags.add("music");
   }
-  if (s.includes("flag") || s.includes("banner") || s.includes("pennant") || s.includes("emblem") || s.includes("insignia") || s.includes("crest") || s.includes("badge")) {
+  if (
+    s.includes("flag") ||
+    s.includes("banner") ||
+    s.includes("pennant") ||
+    s.includes("emblem") ||
+    s.includes("insignia") ||
+    s.includes("crest") ||
+    s.includes("badge")
+  ) {
     tags.add("nation");
     tags.add("heraldry");
     tags.add("symbol");
   }
-  if (s.includes("hour") || s.includes("time") || s.includes("ancient") || s.includes("fossil") || s.includes("clock") || s.includes("sand") || s.includes("ruin") || s.includes("pyramid") || s.includes("scroll")) {
+  if (
+    s.includes("hour") ||
+    s.includes("time") ||
+    s.includes("ancient") ||
+    s.includes("fossil") ||
+    s.includes("clock") ||
+    s.includes("sand") ||
+    s.includes("ruin") ||
+    s.includes("pyramid") ||
+    s.includes("scroll")
+  ) {
     tags.add("history");
     tags.add("antiquity");
     tags.add("lore");
   }
-  if (s.includes("person") || s.includes("face") || s.includes("man") || s.includes("woman") || s.includes("head") || s.includes("crowd") || s.includes("child") || s.includes("people") || s.includes("hood") || s.includes("cowled")) {
+  if (
+    s.includes("person") ||
+    s.includes("face") ||
+    s.includes("man") ||
+    s.includes("woman") ||
+    s.includes("head") ||
+    s.includes("crowd") ||
+    s.includes("child") ||
+    s.includes("people") ||
+    s.includes("hood") ||
+    s.includes("cowled")
+  ) {
     tags.add("people");
     tags.add("character");
     tags.add("figure");
   }
-  if (s.includes("star") || s.includes("magic") || s.includes("sparkle") || s.includes("crystal") || s.includes("orb") || s.includes("mystic") || s.includes("special") || s.includes("portal")) {
+  if (
+    s.includes("star") ||
+    s.includes("magic") ||
+    s.includes("sparkle") ||
+    s.includes("crystal") ||
+    s.includes("orb") ||
+    s.includes("mystic") ||
+    s.includes("special") ||
+    s.includes("portal")
+  ) {
     tags.add("special");
     tags.add("arcane");
     tags.add("magic");
@@ -169,7 +305,7 @@ async function main() {
   console.log("Manifest successfully written!");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Pipeline failed:", err);
   process.exit(1);
 });

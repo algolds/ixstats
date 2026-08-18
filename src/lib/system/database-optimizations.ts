@@ -36,10 +36,15 @@ export class OptimizedCountryQueries {
             user: { select: { id: true, clerkUserId: true, membershipTier: true, isActive: true } },
           }),
           ...(options.include?.government && {
-            governmentStructure: { select: { id: true, governmentName: true, governmentType: true, totalBudget: true } },
+            governmentStructure: {
+              select: { id: true, governmentName: true, governmentType: true, totalBudget: true },
+            },
           }),
           ...(options.include?.embassies && {
-            embassiesHosting: { select: { id: true, name: true, level: true, status: true }, take: 10 },
+            embassiesHosting: {
+              select: { id: true, name: true, level: true, status: true },
+              take: 10,
+            },
           }),
           _count: {
             select: { storytellerEffects: true, embassiesHosting: true, embassiesGuest: true },
@@ -73,7 +78,10 @@ export class OptimizedCountryQueries {
   /**
    * Get multiple countries with batching and performance telemetry
    */
-  static async getCountriesByIds(ids: string[], options: OptimizedQueryOptions = {}): Promise<any[]> {
+  static async getCountriesByIds(
+    ids: string[],
+    options: OptimizedQueryOptions = {}
+  ): Promise<any[]> {
     const startTime = performance.now();
 
     try {

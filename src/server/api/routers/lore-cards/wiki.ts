@@ -23,7 +23,11 @@ import { cleanWikitextExcerpt } from "~/lib/wiki/wikitext-parser";
 
 const isArticleTitle = (title: string): boolean => {
   if (!title || !title.trim()) return false;
-  if (/^(File|Image|Media|Category|User|Talk|Template|Help|Draft|Module|Special|MediaWiki):/i.test(title)) {
+  if (
+    /^(File|Image|Media|Category|User|Talk|Template|Help|Draft|Module|Special|MediaWiki):/i.test(
+      title
+    )
+  ) {
     return false;
   }
   if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(title)) {
@@ -97,7 +101,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
           rarity: candidate.rarity,
           category: candidate.category,
         };
-
       } catch (error) {
         console.error("[Lore Cards] Error in generateLoreCard:", error);
         if (error instanceof TRPCError) throw error;
@@ -214,7 +217,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
       }
     }),
 
-
   /**
    * Multi-source Lore Archive Search (IxWiki, IIWiki, WikiOS, Stash)
    */
@@ -265,7 +267,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
               id: item.id,
               title: item.pageTitle,
               pageSlug: item.pageSlug,
-              snippet: item.note || item.annotations[0]?.selectedText || `Saved in ${item.stash.name}`,
+              snippet:
+                item.note || item.annotations[0]?.selectedText || `Saved in ${item.stash.name}`,
               stashName: item.stash.name,
               stashColor: item.stash.color,
               source: "stash" as const,
@@ -313,7 +316,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
                   id: `card-${c.id}`,
                   title: c.title,
                   pageSlug: c.slug || encodeURIComponent(c.title),
-                  snippet: c.description || c.wikiExcerpt || `Canonical ${c.category || "Lore"} card: ${c.title}`,
+                  snippet:
+                    c.description ||
+                    c.wikiExcerpt ||
+                    `Canonical ${c.category || "Lore"} card: ${c.title}`,
                   source: "wikios" as const,
                   imageUrl: c.artworkUrl || c.artwork || null,
                   category: c.category || "SPECIAL",
@@ -324,7 +330,9 @@ export const loreCardsWikiRouter = createTRPCRouter({
                   id: `art-${a.id}`,
                   title: a.title,
                   pageSlug: encodeURIComponent(a.title),
-                  snippet: a.wikitext.slice(0, 180).replace(/^\[\[[^\]]+\]\]\s*/, "") || `WikiOS article: ${a.title}`,
+                  snippet:
+                    a.wikitext.slice(0, 180).replace(/^\[\[[^\]]+\]\]\s*/, "") ||
+                    `WikiOS article: ${a.title}`,
                   source: "wikios" as const,
                   imageUrl: null,
                   category: "SPECIAL",
@@ -380,8 +388,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
 
           if (wikiSrc === "iiwiki") {
             try {
-              const iiUrl =
-                `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`;
+              const iiUrl = `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`;
               const res = await fetch(iiUrl, {
                 headers: { "User-Agent": getWikiUserAgent("iiwiki") },
               });
@@ -534,7 +541,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
             } else {
               rawExcerpt = cleanWikitextExcerpt(rawExcerpt, 400);
             }
-
           } catch (wikiErr) {
             console.warn("[Lore Cards] Wiki fetch error in fetchLoreMetadata:", wikiErr);
           }
@@ -555,7 +561,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
 
         const analysis = analyzeWikiSignals(input.pageTitle, signals);
         const resolvedCategory = analysis.suggestedCategory || LoreCategory.SPECIAL;
-        const matchedSubcategory = stashName || autoMatchSubcategory(resolvedCategory, rawExcerpt || input.pageTitle);
+        const matchedSubcategory =
+          stashName || autoMatchSubcategory(resolvedCategory, rawExcerpt || input.pageTitle);
 
         return {
           title: input.pageTitle,
@@ -625,10 +632,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
-        const stats = await wikiLoreCardGenerator.getCategoriesInfo(
-          input.categories,
-          input.source
-        );
+        const stats = await wikiLoreCardGenerator.getCategoriesInfo(input.categories, input.source);
         return { stats, source: input.source };
       } catch (error) {
         console.error("[Lore Cards] Error getting category stats:", error);
@@ -729,8 +733,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
           [input.articleTitle],
           input.source
         );
-        const authorInfo =
-          authorMap.get(titleKey) ||
+        const authorInfo = authorMap.get(titleKey) ||
           authorMap.get(input.articleTitle.toLowerCase()) ||
           authorMap.get(input.articleTitle) || {
             creator: "Unknown",
@@ -776,6 +779,3 @@ export const loreCardsWikiRouter = createTRPCRouter({
       }
     }),
 });
-
-
-

@@ -41,7 +41,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
           {(rarestAll?.length || 0) > 3 && (
             <button
               onClick={() => setShowAll(!showAll)}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] font-bold text-slate-300 transition-all hover:bg-white/10 hover:text-white active:scale-95 backdrop-blur-md"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-[10px] font-bold text-slate-300 backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
             >
               {showAll ? "Show Top 3 Only" : "See All Top 9"}
             </button>
@@ -80,7 +80,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 whileHover={{ y: -3, scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all border-t-white/20 dark:bg-black/60 dark:border-white/12 dark:border-t-white/25 hover:border-amber-500/30 hover:shadow-amber-500/10"
+                  "relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all hover:border-amber-500/30 hover:shadow-amber-500/10 dark:border-white/12 dark:border-t-white/25 dark:bg-black/60"
                 )}
               >
                 <TextureOverlay texture="dots" opacity={0.03} />
@@ -97,7 +97,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                   <div className="mb-2 flex items-center justify-between">
                     <Badge
                       className={cn(
-                        "rounded-full px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase backdrop-blur-md border border-white/10",
+                        "rounded-full border border-white/10 px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase backdrop-blur-md",
                         getRarityColor(achievement.rarity),
                         getRarityBg(achievement.rarity, isUnlocked)
                       )}
@@ -128,17 +128,17 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                         achievement.iconUrl
                       )}
                       {isUnlocked && count > 1 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-amber-300/40 bg-amber-400 px-1 text-[9px] font-black text-slate-950 shadow-md">
+                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-amber-300/40 bg-amber-400 px-1 text-[9px] font-bold text-slate-950 tabular-nums shadow-md">
                           {count}
                         </span>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-xs font-bold text-slate-100 tracking-tight">
+                      <h3 className="truncate text-xs font-bold tracking-tight text-slate-100">
                         {achievement.title}
                       </h3>
-                      <span className="block text-[8px] font-extrabold tracking-widest text-slate-400 uppercase">
+                      <span className="block text-[8px] font-semibold tracking-wider text-slate-400 uppercase">
                         {achievement.category}
                       </span>
                     </div>
@@ -165,14 +165,14 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
           })}
         </div>
       ) : (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 p-8 text-center shadow-xl backdrop-blur-2xl border-t-white/20 dark:bg-black/60 dark:border-white/12">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 border-t-white/20 bg-slate-950/70 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-white/12 dark:bg-black/60">
           <TextureOverlay texture="dots" opacity={0.03} />
-          <div className="relative z-10 max-w-sm mx-auto space-y-2">
+          <div className="relative z-10 mx-auto max-w-sm space-y-2">
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-md backdrop-blur-md">
               <Trophy className="h-5 w-5 text-amber-400" />
             </div>
             <h3 className="text-xs font-bold text-slate-100">Showcase Cabinet Empty</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-slate-400">
               Unlock rarest achievement badges to populate your showcase shelf!
             </p>
           </div>

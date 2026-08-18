@@ -96,7 +96,10 @@ export const WikiEmbedPlugin = createPlatePlugin({
   node: { isElement: true, isVoid: true },
   render: {
     node: ({ children, element, attributes }: any) => (
-      <div {...attributes} className="my-2 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
+      <div
+        {...attributes}
+        className="my-2 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3"
+      >
         <span className="text-xs font-bold text-purple-300">📖 {element?.title}</span>
         <p className="mt-1 text-xs text-slate-300">{element?.summary}</p>
         {children}

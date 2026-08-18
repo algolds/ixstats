@@ -28,9 +28,11 @@ export function ImportVerifyStep({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-foreground text-xl font-black">Verify Ownership</h2>
+        <h2 className="text-foreground text-xl font-bold tracking-tight">Verify Ownership</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Prove you own <span className="font-semibold text-rose-600 dark:text-rose-400">{nationName}</span> via NationStates login verification
+          Prove you own{" "}
+          <span className="font-semibold text-rose-600 dark:text-rose-400">{nationName}</span> via
+          NationStates login verification
         </p>
       </div>
 
@@ -39,7 +41,7 @@ export function ImportVerifyStep({
         <h4 className="text-foreground text-sm font-bold">Instructions</h4>
         <ol className="text-muted-foreground list-inside space-y-2.5 text-sm">
           <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-[10px] font-bold text-foreground">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
               1
             </span>
             <span>
@@ -48,13 +50,13 @@ export function ImportVerifyStep({
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-[10px] font-bold text-foreground">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
               2
             </span>
             NationStates will display a verification code
           </li>
           <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-[10px] font-bold text-foreground">
+            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
               3
             </span>
             Copy that code and paste it in the field below
@@ -68,7 +70,7 @@ export function ImportVerifyStep({
           href={verificationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-5 py-3.5 text-sm font-bold text-blue-600 dark:text-blue-400 transition-colors hover:bg-blue-500/20 active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-5 py-3.5 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-500/20 active:scale-[0.98] dark:text-blue-400"
         >
           <ExternalLink className="h-4 w-4" />
           Open NationStates Verification Page
@@ -76,8 +78,11 @@ export function ImportVerifyStep({
       )}
 
       {/* Code input */}
-      <FacetCard depth={2} className="space-y-2 rounded-xl border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-5">
-        <label className="text-xs font-semibold tracking-wider text-amber-600 dark:text-amber-400 uppercase">
+      <FacetCard
+        depth={2}
+        className="space-y-2 rounded-xl border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-5"
+      >
+        <label className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
           Paste Verification Code from NationStates
         </label>
         <Input
@@ -89,7 +94,7 @@ export function ImportVerifyStep({
             }
           }}
           placeholder="Paste the code NationStates gave you..."
-          className="glass-hierarchy-interactive h-12 bg-background font-mono text-base"
+          className="glass-hierarchy-interactive bg-background h-12 font-mono text-base"
         />
       </FacetCard>
 
@@ -114,4 +119,3 @@ export function ImportVerifyStep({
     </div>
   );
 }
-

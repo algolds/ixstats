@@ -96,7 +96,7 @@ export function WikiPreferencesCard() {
 
   return (
     <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
-      <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-card/60">
+      <div className="dark:bg-card/60 relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="relative z-10 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -104,21 +104,21 @@ export function WikiPreferencesCard() {
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-foreground">LoreScanner</h2>
+              <h2 className="dark:text-foreground text-xl font-bold text-slate-900">LoreScanner</h2>
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-secondary/50">
+          <div className="dark:bg-secondary/50 flex items-center justify-between rounded-2xl bg-slate-50/50 p-4">
             <div>
               <Label
                 htmlFor="wiki-auto-scan"
-                className="text-sm font-bold text-slate-900 dark:text-foreground"
+                className="dark:text-foreground text-sm font-bold text-slate-900"
               >
                 Autonomous Intelligence
               </Label>
-              <p className="text-xs font-medium text-slate-500 dark:text-muted-foreground">
+              <p className="dark:text-muted-foreground text-xs font-medium text-slate-500">
                 Auto-scan for relevant lore
               </p>
             </div>
@@ -132,7 +132,7 @@ export function WikiPreferencesCard() {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-muted-foreground">
+            <label className="dark:text-muted-foreground block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
               Primary Knowledge Base
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -145,8 +145,8 @@ export function WikiPreferencesCard() {
                   className={cn(
                     "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
                     localPrefs.wikiSourcePriority === option.value
-                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5 dark:text-foreground"
-                      : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary"
+                      ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
+                      : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
                   )}
                 >
                   <span className="text-xs font-bold tracking-widest uppercase">
@@ -159,7 +159,7 @@ export function WikiPreferencesCard() {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-muted-foreground">
+            <label className="dark:text-muted-foreground block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
               Interface Integration
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -172,8 +172,8 @@ export function WikiPreferencesCard() {
                   className={cn(
                     "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
                     localPrefs.loreDisplayMode === option.value
-                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5 dark:text-foreground"
-                      : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary"
+                      ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
+                      : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
                   )}
                 >
                   <span className="text-xs font-bold tracking-widest uppercase">

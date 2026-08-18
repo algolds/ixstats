@@ -230,7 +230,9 @@ export const activitiesTrendingRouter = createTRPCRouter({
             post.repostCount * 3 + post.replyCount * 2 + post.likeCount + post.impressions * 0.01;
           const score = raw * timeDecay(post.createdAt);
           let title = `@${post.account?.username ?? "unknown"}`;
-          const cleanContent = post.content.replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "").trim();
+          const cleanContent = post.content
+            .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
+            .trim();
           const previewText = cleanContent || "Sports News Bulletin";
           let excerpt = previewText.length > 100 ? previewText.slice(0, 97) + "..." : previewText;
           let targetUrl = `/thinkpages/post/${post.id}`;
@@ -246,11 +248,15 @@ export const activitiesTrendingRouter = createTRPCRouter({
                 if (data.championId) targetUrl = `/myclub/${data.championId}`;
               } else if (data.isPlayoffBulletin) {
                 title = `${emoji} ${leagueName} ${data.roundName || "Playoff"}`;
-                excerpt = data.llmSummary ? data.llmSummary.slice(0, 95) + "..." : "Playoff round results and highlights";
+                excerpt = data.llmSummary
+                  ? data.llmSummary.slice(0, 95) + "..."
+                  : "Playoff round results and highlights";
                 if (data.league?.id) targetUrl = `/myleague/${data.league.id}`;
               } else {
                 title = `${emoji} ${leagueName} ${data.matchDay ? `— Matchday ${data.matchDay}` : ""}`;
-                excerpt = data.llmSummary ? data.llmSummary.slice(0, 95) + "..." : "Latest matchday results and table movers";
+                excerpt = data.llmSummary
+                  ? data.llmSummary.slice(0, 95) + "..."
+                  : "Latest matchday results and table movers";
                 if (data.league?.id) targetUrl = `/myleague/${data.league.id}`;
               }
             } catch (_err) {

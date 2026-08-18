@@ -115,7 +115,7 @@ export const DirectiveDiffPreview = React.memo(function DirectiveDiffPreview({
         type="button"
         disabled={committing}
         onClick={onCommit}
-        className="w-full cursor-pointer rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+        className="w-full cursor-pointer rounded-xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-2.5 text-xs font-bold tracking-tight text-slate-950 shadow-md transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
       >
         {committing ? "Enacting Executive Order..." : "Enact Executive Order"}
       </button>

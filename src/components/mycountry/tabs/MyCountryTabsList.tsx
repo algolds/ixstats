@@ -162,7 +162,7 @@ export function MyCountryTabsList({
 
   if (variant === "underline") {
     return (
-      <div className="relative flex items-center gap-1 sm:gap-2 border-b border-white/10 pb-0.5 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden select-none">
+      <div className="relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-white/10 pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
         {resolvedTabs.map((tab) => {
           const isActive = resolvedActiveTab === tab.id;
           const Icon = tab.icon;
@@ -171,7 +171,7 @@ export function MyCountryTabsList({
               key={tab.id}
               onClick={() => handleChange(tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold transition-all duration-150 active:scale-[0.97]",
+                "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-150 active:scale-[0.97] sm:text-sm",
                 isActive
                   ? tab.activeTextClassName || "text-foreground font-bold"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
@@ -200,11 +200,12 @@ export function MyCountryTabsList({
                 <motion.div
                   layoutId="factbookUnderline"
                   className={cn(
-                    "absolute bottom-0 inset-x-2 h-0.5 rounded-full shadow-sm",
+                    "absolute inset-x-2 bottom-0 h-0.5 rounded-full shadow-sm",
                     tab.id === "overview" && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]",
                     tab.id === "economy" && "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]",
                     tab.id === "labor" && "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]",
-                    tab.id === "government" && "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]",
+                    tab.id === "government" &&
+                      "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]",
                     tab.id === "geography" && "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                   )}
                   transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
@@ -218,7 +219,7 @@ export function MyCountryTabsList({
   }
 
   return (
-    <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-0.5">
+    <div className="[scrollbar-width:none] overflow-x-auto p-0.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <FacetTabs
         tabs={resolvedTabs}
         activeTab={resolvedActiveTab}
@@ -228,7 +229,7 @@ export function MyCountryTabsList({
         className={cn(
           "w-full min-w-fit rounded-xl p-1 transition-all duration-200",
           variant === "rail"
-            ? "border-0 bg-black/10 dark:bg-white/[0.03] shadow-none backdrop-blur-md"
+            ? "border-0 bg-black/10 shadow-none backdrop-blur-md dark:bg-white/[0.03]"
             : "facet-surface facet-refraction border border-white/5"
         )}
       />

@@ -391,7 +391,7 @@ function WikiOSHeader({
                         />
 
                         {awardsData.awards.length > 1 && (
-                          <span className="text-[10px] leading-none font-black opacity-80">
+                          <span className="text-[10px] leading-none font-bold tabular-nums opacity-80">
                             +{awardsData.awards.length - 1}
                           </span>
                         )}
@@ -405,7 +405,7 @@ function WikiOSHeader({
                       sideOffset={8}
                       className="z-[100055] w-72 space-y-2.5 rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-xs shadow-[0_12px_36px_rgba(0,0,0,0.15)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90 dark:shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
                     >
-                      <div className="text-muted-foreground text-left text-[9px] font-bold tracking-wider uppercase">
+                      <div className="text-muted-foreground text-left text-[9px] font-semibold tracking-wider uppercase">
                         Awards & Achievements
                       </div>
                       <div className="max-h-48 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto pr-1">

@@ -3,12 +3,7 @@
 // src/lib/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
-import {
-  formatPopulation,
-  formatCurrency,
-  formatPercentage,
-  formatNumber,
-} from "./format-utils";
+import { formatPopulation, formatCurrency, formatPercentage, formatNumber } from "./format-utils";
 
 /**
  * FIXED: Format growth rates from decimal to percentage
@@ -47,8 +42,6 @@ export function formatGdpGrowthRate(value: number | null | undefined): string {
 export function formatPopulationGrowthRate(value: number | null | undefined): string {
   return formatGrowthRateFromDecimal(value, 2);
 }
-
-
 
 /**
  * Parse numeric value from potentially formatted Excel data
@@ -127,8 +120,6 @@ export function formatDensity(value: number | null | undefined, unit = "/km²"):
     return `< 0.01${unit}`;
   }
 }
-
-
 
 /**
  * FIXED: Format growth rate with color coding info

@@ -127,7 +127,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     <>
       <FacetCard
         depth={1}
-        className="group/card relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-black/35 dark:shadow-2xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent"
+        className="group/card relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-300 before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent dark:border-white/10 dark:bg-black/35 dark:shadow-2xl"
       >
         {/* Cinematic Background Flag Watermark Scrim */}
         {flagUrl && (
@@ -197,7 +197,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   className="group flex cursor-pointer items-center gap-1.5 text-xs transition-colors"
                   title="Click to toggle exact population count"
                 >
-                  <Users className="h-3.5 w-3.5 text-blue-400 transition-colors group-hover:text-foreground" />
+                  <Users className="group-hover:text-foreground h-3.5 w-3.5 text-blue-400 transition-colors" />
                   <span className="text-muted-foreground/70 text-[8px] font-bold tracking-wider uppercase">
                     Pop:
                   </span>
@@ -277,10 +277,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   <span className="text-muted-foreground/70 group-hover/ring:text-foreground block truncate text-[8px] font-bold tracking-wider uppercase transition-colors">
                     {ring.label}
                   </span>
-                  <span
-                    className="text-foreground text-xs font-bold"
-                    style={{ color: ring.color }}
-                  >
+                  <span className="text-foreground text-xs font-bold" style={{ color: ring.color }}>
                     {ring.value}
                     <span className="text-muted-foreground/60 text-[8px] font-normal">/100</span>
                   </span>

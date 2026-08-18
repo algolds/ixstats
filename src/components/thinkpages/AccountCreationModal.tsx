@@ -54,8 +54,6 @@ interface ThinkpagesAccountInput {
   profileImageUrl?: string;
 }
 
-
-
 export function AccountCreationModal({
   isOpen,
   onClose,
@@ -295,7 +293,7 @@ export function AccountCreationModal({
                     />
                   </div>
                   <div>
-                    <h3 className="flex items-center gap-1.5 text-base font-extrabold tracking-wide text-[var(--color-text-primary)] sm:text-lg">
+                    <h3 className="flex items-center gap-1.5 text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:text-lg">
                       <span>Create Thinkpages Account</span>
                       <Tooltip>
                         <TooltipTrigger asChild>

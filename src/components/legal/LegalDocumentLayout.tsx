@@ -116,20 +116,20 @@ export function LegalDocumentLayout({
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-amber-500/20 selection:text-amber-600 dark:selection:text-amber-400">
+    <div className="bg-background text-foreground min-h-screen selection:bg-amber-500/20 selection:text-amber-600 dark:selection:text-amber-400">
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Top Breadcrumb & Actions Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border/50 pb-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="border-border/50 mb-6 flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <Link
               href="/"
-              className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground active:scale-[0.97]"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors active:scale-[0.97]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Home
             </Link>
-            <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
-            <span className="font-medium text-foreground">{badge}</span>
+            <ChevronRight className="text-muted-foreground/40 h-3 w-3" />
+            <span className="text-foreground font-medium">{badge}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export function LegalDocumentLayout({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="h-8 border-border bg-card/60 text-xs text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.97] transition-all"
+              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-all active:scale-[0.97]"
             >
               {copied ? (
                 <>
@@ -155,7 +155,7 @@ export function LegalDocumentLayout({
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="h-8 border-border bg-card/60 text-xs text-muted-foreground hover:bg-accent hover:text-foreground active:scale-[0.97] transition-all print:hidden"
+              className="border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground h-8 text-xs transition-all active:scale-[0.97] print:hidden"
             >
               <Printer className="mr-1.5 h-3.5 w-3.5" />
               Print
@@ -173,9 +173,9 @@ export function LegalDocumentLayout({
           <CutoutCard
             texture="triangular"
             textureOpacity={0.02}
-            className="border-border bg-card/75 backdrop-blur-xl shadow-xs"
+            className="border-border bg-card/75 shadow-xs backdrop-blur-xl"
           >
-            <CutoutCardContent className="p-6 sm:p-10 space-y-4">
+            <CutoutCardContent className="space-y-4 p-6 sm:p-10">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Badge
@@ -187,13 +187,13 @@ export function LegalDocumentLayout({
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="border-border bg-muted/30 px-2.5 py-0.5 text-xs font-mono text-muted-foreground"
+                    className="border-border bg-muted/30 text-muted-foreground px-2.5 py-0.5 font-mono text-xs"
                   >
                     <Layers className="mr-1 h-3 w-3" />
                     {version}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
                   <Calendar className="h-3.5 w-3.5 text-amber-500" />
                   <span>
                     Effective: <strong className="text-foreground">{lastUpdated}</strong>
@@ -202,10 +202,10 @@ export function LegalDocumentLayout({
               </div>
 
               <div>
-                <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                <h1 className="text-foreground text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
                   {title}
                 </h1>
-                <p className="mt-3 max-w-3xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed sm:text-base">
                   {subtitle}
                 </p>
               </div>
@@ -215,8 +215,8 @@ export function LegalDocumentLayout({
 
         {/* Mobile Quick Section Navigation */}
         <div className="mb-6 lg:hidden">
-          <div className="rounded-xl border border-border bg-card/80 p-3 backdrop-blur-md">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <div className="border-border bg-card/80 rounded-xl border p-3 backdrop-blur-md">
+            <p className="text-muted-foreground mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
               <FileText className="h-3.5 w-3.5 text-amber-500" />
               Quick Navigation
             </p>
@@ -229,7 +229,7 @@ export function LegalDocumentLayout({
                     onClick={() => scrollToSection(section.id)}
                     className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.97] ${
                       isActive
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold"
+                        ? "border border-amber-500/30 bg-amber-500/15 font-semibold text-amber-600 dark:text-amber-400"
                         : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   >
@@ -242,16 +242,16 @@ export function LegalDocumentLayout({
         </div>
 
         {/* Two-Column Grid: Sticky TOC + Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           {/* Sticky Desktop Sidebar */}
-          <div className="hidden lg:block lg:col-span-4 sticky top-24">
-            <div className="rounded-2xl border border-border bg-card/60 p-5 backdrop-blur-xl shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-border/50 pb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+          <div className="sticky top-24 hidden lg:col-span-4 lg:block">
+            <div className="border-border bg-card/60 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-xl">
+              <div className="border-border/50 flex items-center justify-between border-b pb-3">
+                <h3 className="text-muted-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
                   <FileText className="h-4 w-4 text-amber-500" />
                   Table of Contents
                 </h3>
-                <span className="text-[11px] text-muted-foreground font-mono">
+                <span className="text-muted-foreground font-mono text-[11px]">
                   {sections.length} Sections
                 </span>
               </div>
@@ -267,13 +267,13 @@ export function LegalDocumentLayout({
                       onClick={() => scrollToSection(section.id)}
                       className={`group flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left text-xs transition-all active:scale-[0.98] ${
                         isActive
-                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20 shadow-xs"
+                          ? "border border-amber-500/20 bg-amber-500/10 font-semibold text-amber-600 shadow-xs dark:text-amber-400"
                           : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                       }`}
                     >
                       {Icon ? (
                         <Icon
-                          className={`h-4 w-4 shrink-0 mt-0.5 transition-colors ${
+                          className={`mt-0.5 h-4 w-4 shrink-0 transition-colors ${
                             isActive
                               ? "text-amber-600 dark:text-amber-400"
                               : "text-muted-foreground/60 group-hover:text-foreground"
@@ -281,15 +281,17 @@ export function LegalDocumentLayout({
                         />
                       ) : (
                         <div
-                          className={`h-1.5 w-1.5 rounded-full mt-1.5 shrink-0 transition-colors ${
-                            isActive ? "bg-amber-500" : "bg-muted-foreground/40 group-hover:bg-foreground"
+                          className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                            isActive
+                              ? "bg-amber-500"
+                              : "bg-muted-foreground/40 group-hover:bg-foreground"
                           }`}
                         />
                       )}
-                      <div className="flex-1 min-w-0">
-                        <p className="leading-snug truncate">{section.title}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate leading-snug">{section.title}</p>
                         {section.summary && (
-                          <p className="mt-0.5 text-[11px] text-muted-foreground/70 line-clamp-1 group-hover:text-muted-foreground">
+                          <p className="text-muted-foreground/70 group-hover:text-muted-foreground mt-0.5 line-clamp-1 text-[11px]">
                             {section.summary}
                           </p>
                         )}
@@ -299,11 +301,11 @@ export function LegalDocumentLayout({
                 })}
               </nav>
 
-              <div className="pt-3 border-t border-border/40 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="border-border/40 text-muted-foreground border-t pt-3 text-[11px] leading-relaxed">
                 Questions or legal inquiries? Reach out to{" "}
                 <a
                   href="mailto:admin@ixwiki.com"
-                  className="text-amber-600 dark:text-amber-400 underline hover:opacity-80 font-medium"
+                  className="font-medium text-amber-600 underline hover:opacity-80 dark:text-amber-400"
                 >
                   admin@ixwiki.com
                 </a>
@@ -312,9 +314,7 @@ export function LegalDocumentLayout({
           </div>
 
           {/* Main Legal Content */}
-          <main className="lg:col-span-8 space-y-6">
-            {children}
-          </main>
+          <main className="space-y-6 lg:col-span-8">{children}</main>
         </div>
       </div>
     </div>

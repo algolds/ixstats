@@ -2,13 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  BarChart3,
-  Image,
-  Loader2,
-  Send,
-  Vote,
-} from "lucide-react";
+import { BarChart3, Image, Loader2, Send, Vote } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -79,7 +73,7 @@ export function ComposerActionBar({
             className={cn(
               "font-semibold tracking-tight transition-colors duration-150",
               remainingChars < 20
-                ? "text-red-500 font-bold"
+                ? "font-bold text-red-500"
                 : remainingChars < 50
                   ? "text-amber-500"
                   : "text-slate-400 dark:text-slate-500"
@@ -98,7 +92,7 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
                   className={cn(
-                    "h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-300",
+                    "h-8 w-8 rounded-xl p-0 text-blue-600 transition-all duration-150 hover:bg-blue-500/10 hover:text-blue-700 active:scale-95 dark:text-blue-400 dark:hover:text-blue-300",
                     showVisualizationPanel && "bg-blue-500/15 ring-1 ring-blue-500/30"
                   )}
                   aria-label="Add live data chart"
@@ -110,7 +104,12 @@ export function ComposerActionBar({
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add live data chart</TooltipContent>
+              <TooltipContent
+                side="top"
+                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+              >
+                Add live data chart
+              </TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -120,7 +119,7 @@ export function ComposerActionBar({
                   size="sm"
                   onClick={() => setShowMediaModal(true)}
                   disabled={isUploadingImage || selectedImages.length >= 4}
-                  className="h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-300"
+                  className="h-8 w-8 rounded-xl p-0 text-emerald-600 transition-all duration-150 hover:bg-emerald-500/10 hover:text-emerald-700 active:scale-95 dark:text-emerald-400 dark:hover:text-emerald-300"
                   aria-label="Add media or images"
                 >
                   {isUploadingImage ? (
@@ -131,7 +130,7 @@ export function ComposerActionBar({
                       {selectedImages.length > 0 && (
                         <Badge
                           variant="secondary"
-                          className="absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-background bg-emerald-500 p-0 text-[7px] font-bold text-white shadow-sm"
+                          className="border-background absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border bg-emerald-500 p-0 text-[7px] font-bold text-white shadow-sm"
                         >
                           {selectedImages.length}
                         </Badge>
@@ -140,17 +139,24 @@ export function ComposerActionBar({
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add media / images</TooltipContent>
+              <TooltipContent
+                side="top"
+                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+              >
+                Add media / images
+              </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <GifPicker
-                  onSelectGif={handleInsertGif}
-                  disabled={selectedImages.length >= 4}
-                />
+                <GifPicker onSelectGif={handleInsertGif} disabled={selectedImages.length >= 4} />
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Insert GIF</TooltipContent>
+              <TooltipContent
+                side="top"
+                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+              >
+                Insert GIF
+              </TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -170,7 +176,7 @@ export function ComposerActionBar({
                     setShowPollModal(true);
                   }}
                   className={cn(
-                    "h-8 w-8 rounded-xl p-0 transition-all duration-150 active:scale-95 text-[#ff8a65] hover:bg-[#ff8a65]/10 hover:text-[#ff8a65]",
+                    "h-8 w-8 rounded-xl p-0 text-[#ff8a65] transition-all duration-150 hover:bg-[#ff8a65]/10 hover:text-[#ff8a65] active:scale-95",
                     pollDraft && "bg-[#ff8a65]/15 ring-1 ring-[#ff8a65]/30"
                   )}
                   aria-label="Add Poll"
@@ -178,10 +184,15 @@ export function ComposerActionBar({
                   <Vote className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-slate-900/90 text-white backdrop-blur-md text-[11px] font-medium tracking-tight">Add Poll</TooltipContent>
+              <TooltipContent
+                side="top"
+                className="bg-slate-900/90 text-[11px] font-medium tracking-tight text-white backdrop-blur-md"
+              >
+                Add Poll
+              </TooltipContent>
             </Tooltip>
 
-            <div className="flex h-5 items-center gap-2 border-l border-black/10 dark:border-white/10 px-2.5">
+            <div className="flex h-5 items-center gap-2 border-l border-black/10 px-2.5 dark:border-white/10">
               <Switch
                 id="share-to-discord-toggle"
                 checked={postToDiscord}
@@ -191,7 +202,7 @@ export function ComposerActionBar({
               />
               <label
                 htmlFor="share-to-discord-toggle"
-                className="flex cursor-pointer items-center gap-1.5 text-[10px] font-semibold tracking-tight text-slate-500 dark:text-neutral-400 select-none hover:text-slate-800 dark:hover:text-neutral-200 transition-colors"
+                className="flex cursor-pointer items-center gap-1.5 text-[10px] font-semibold tracking-tight text-slate-500 transition-colors select-none hover:text-slate-800 dark:text-neutral-400 dark:hover:text-neutral-200"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -217,7 +228,7 @@ export function ComposerActionBar({
                 selectedVisualizations.length === 0 &&
                 selectedImages.length === 0)
             }
-            className="h-8 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.97] px-4 text-xs font-bold text-white shadow-md transition-all duration-150 tracking-tight"
+            className="h-8 rounded-xl bg-blue-600 px-4 text-xs font-bold tracking-tight text-white shadow-md transition-all duration-150 hover:bg-blue-500 active:scale-[0.97]"
           >
             {isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

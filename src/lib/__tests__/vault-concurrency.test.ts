@@ -33,7 +33,7 @@ describe("VaultService - Concurrency & Atomic Balance Safety", () => {
         findUnique: jest.fn().mockImplementation(async () => ({
           id: "vault_123",
           credits: mockCredits,
-         })),
+        })),
         findUniqueOrThrow: jest.fn().mockImplementation(async () => ({
           id: "vault_123",
           credits: mockCredits,

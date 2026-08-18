@@ -20,34 +20,19 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-
-
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/log-viewer";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { LoreCategory } from "~/lib/cards";
-import {
-  FacetContainer,
-  FacetCard,
-  FacetNavigation,
-} from "~/components/ui/facet-container";
+import { FacetContainer, FacetCard, FacetNavigation } from "~/components/ui/facet-container";
 import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";
 import { CardSettingsAdmin, type SettingsSubtab } from "./CardSettingsAdmin";
 import { CardDesignerStudio } from "~/components/cards/designer";
 
-
-type AdminTab =
-  | "overview"
-  | "designer"
-  | "explorer"
-  | "imports"
-  | "settings";
-
-
-
+type AdminTab = "overview" | "designer" | "explorer" | "imports" | "settings";
 
 function _getStatusColor(status: string) {
   switch (status) {
@@ -96,13 +81,20 @@ export default function CardAdminDashboardPage() {
     return "general";
   });
 
-
   const [activeTab, setActiveTabState] = useState<AdminTab>(() => {
     const tab = searchParams.get("tab");
     if (tab === "designer") return "designer";
     if (tab === "explorer" || tab === "library") return "explorer";
-    if (tab === "imports" || tab === "import" || tab === "lore" || tab === "commons") return "imports";
-    if (tab === "settings" || tab === "market" || tab === "takedowns" || tab === "packs" || tab === "rarity") return "settings";
+    if (tab === "imports" || tab === "import" || tab === "lore" || tab === "commons")
+      return "imports";
+    if (
+      tab === "settings" ||
+      tab === "market" ||
+      tab === "takedowns" ||
+      tab === "packs" ||
+      tab === "rarity"
+    )
+      return "settings";
     return "overview";
   });
 
@@ -129,33 +121,30 @@ export default function CardAdminDashboardPage() {
 
   const isSyncTabActive = activeTab === "overview";
 
-  const { data: healthStats } =
-    api.nsImport.getSyncHealth.useQuery(undefined, {
-      enabled: isSyncTabActive,
-      refetchInterval: refreshInterval ?? false,
-    });
+  const { data: healthStats } = api.nsImport.getSyncHealth.useQuery(undefined, {
+    enabled: isSyncTabActive,
+    refetchInterval: refreshInterval ?? false,
+  });
 
-  const {
-    data: unifiedLogsData,
-    refetch: refetchUnifiedLogs,
-  } = api.cards.getUnifiedAuditLogs.useQuery(
-    {
-      category: logCategoryFilter,
-      limit: 200,
-    },
-    {
-      enabled: isSyncTabActive,
-      refetchInterval: refreshInterval ?? false,
-    }
-  );
+  const { data: unifiedLogsData, refetch: refetchUnifiedLogs } =
+    api.cards.getUnifiedAuditLogs.useQuery(
+      {
+        category: logCategoryFilter,
+        limit: 200,
+      },
+      {
+        enabled: isSyncTabActive,
+        refetchInterval: refreshInterval ?? false,
+      }
+    );
 
   const { data: _libraryStats } = api.cards.getNSLibraryStats.useQuery();
   const { data: loreStats } = api.cards.getLoreStats.useQuery();
-  const [selectedExplorerCategory, _setSelectedExplorerCategory] = useState<LoreCategory | "all">("all");
-
-  useVisibleRefetch(
-    isSyncTabActive ? refreshInterval ?? 10000 : false
+  const [selectedExplorerCategory, _setSelectedExplorerCategory] = useState<LoreCategory | "all">(
+    "all"
   );
+
+  useVisibleRefetch(isSyncTabActive ? (refreshInterval ?? 10000) : false);
 
   const operationsLogEntries: LogEntry[] = useMemo(() => {
     if (!unifiedLogsData?.logs) return [];
@@ -171,21 +160,20 @@ export default function CardAdminDashboardPage() {
     });
   }, [unifiedLogsData?.logs]);
 
-
   return (
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* ─── Facet Navigation Top Header ─────────────────────────── */}
-        <FacetNavigation className="rounded-2xl border border-border bg-card/80 p-6 backdrop-blur-2xl shadow-xl space-y-6 text-card-foreground">
+        <FacetNavigation className="border-border bg-card/80 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-2xl">
           {/* Header Title Row */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3.5 backdrop-blur-md shadow-sm">
-                <Database className="h-6 w-6 text-primary" />
+              <div className="border-primary/30 bg-primary/10 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md">
+                <Database className="text-primary h-6 w-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-foreground tracking-tight text-2xl font-extrabold md:text-3xl">
+                  <h1 className="text-foreground text-2xl font-extrabold tracking-tight md:text-3xl">
                     Cards Administration
                   </h1>
                 </div>
@@ -193,25 +181,28 @@ export default function CardAdminDashboardPage() {
             </div>
           </div>
 
-
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
             const isNSTab = activeTab === "imports" && importSubtab === "ns";
 
             if (isNSTab) {
               return (
-                <div className="space-y-2.5 pt-2 border-t border-border">
+                <div className="border-border space-y-2.5 border-t pt-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Total Sync Operations */}
-                    <FacetCard depth={1} interactive="hover" className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                      <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                    <FacetCard
+                      depth={1}
+                      interactive="hover"
+                      className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    >
+                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                         <span>Total Sync Operations</span>
                         <Database className="h-3.5 w-3.5 text-blue-500" />
                       </div>
-                      <div className="text-base font-bold tracking-tight text-blue-600 dark:text-blue-300 mt-0.5 font-mono">
+                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
                         {(healthStats?.overall.totalSyncs ?? 0).toLocaleString()}
                       </div>
-                      <div className="text-blue-600/80 dark:text-blue-300/60 text-[9px] font-medium truncate font-mono">
+                      <div className="truncate font-mono text-[9px] font-medium text-blue-600/80 dark:text-blue-300/60">
                         {healthStats?.overall.lastSyncAt
                           ? `Last: ${new Date(healthStats.overall.lastSyncAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
                           : "Never run"}
@@ -219,43 +210,56 @@ export default function CardAdminDashboardPage() {
                     </FacetCard>
 
                     {/* Success Rate */}
-                    <FacetCard depth={1} interactive="hover" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                      <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                    <FacetCard
+                      depth={1}
+                      interactive="hover"
+                      className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    >
+                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                         <span>Success Rate</span>
                         <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                       </div>
-                      <div className="text-base font-bold tracking-tight text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
-                        {(((healthStats?.overall.successRate ?? 0) * 100)).toFixed(1)}%
+                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                        {((healthStats?.overall.successRate ?? 0) * 100).toFixed(1)}%
                       </div>
-                      <div className="text-emerald-600/80 dark:text-emerald-300/70 text-[9px] font-medium">
-                        {(healthStats?.overall.successfulSyncs ?? 0).toLocaleString()} successful operations
+                      <div className="text-[9px] font-medium text-emerald-600/80 dark:text-emerald-300/70">
+                        {(healthStats?.overall.successfulSyncs ?? 0).toLocaleString()} successful
+                        operations
                       </div>
                     </FacetCard>
 
                     {/* Failure / Error Rate */}
-                    <FacetCard depth={1} interactive="hover" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                      <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                    <FacetCard
+                      depth={1}
+                      interactive="hover"
+                      className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    >
+                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                         <span>Failure Rate</span>
                         <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
                       </div>
-                      <div className="text-base font-bold tracking-tight text-rose-600 dark:text-rose-400 mt-0.5 font-mono">
-                        {(((healthStats?.overall.errorRate ?? 0) * 100)).toFixed(1)}%
+                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-rose-600 dark:text-rose-400">
+                        {((healthStats?.overall.errorRate ?? 0) * 100).toFixed(1)}%
                       </div>
-                      <div className="text-rose-600/80 dark:text-rose-400/70 text-[9px] font-medium">
+                      <div className="text-[9px] font-medium text-rose-600/80 dark:text-rose-400/70">
                         {(healthStats?.overall.failedSyncs ?? 0).toLocaleString()} failed operations
                       </div>
                     </FacetCard>
 
                     {/* Avg Cards / Sync */}
-                    <FacetCard depth={1} interactive="hover" className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                      <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                    <FacetCard
+                      depth={1}
+                      interactive="hover"
+                      className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                    >
+                      <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                         <span>Avg Cards / Sync</span>
                         <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
                       </div>
-                      <div className="text-base font-bold tracking-tight text-purple-600 dark:text-purple-300 mt-0.5 font-mono">
+                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
                         {(healthStats?.overall.avgCardsProcessed ?? 0).toFixed(0)}
                       </div>
-                      <div className="text-purple-600/80 dark:text-purple-300/70 text-[9px] font-medium">
+                      <div className="text-[9px] font-medium text-purple-600/80 dark:text-purple-300/70">
                         Average throughput per batch
                       </div>
                     </FacetCard>
@@ -265,61 +269,77 @@ export default function CardAdminDashboardPage() {
             }
 
             return (
-              <div className="space-y-2.5 pt-2 border-t border-border">
+              <div className="border-border space-y-2.5 border-t pt-2">
                 {/* 4 Hero Stat Cards */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Active Cards */}
-                  <FacetCard depth={1} interactive="hover" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                    <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                  <FacetCard
+                    depth={1}
+                    interactive="hover"
+                    className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                  >
+                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                       <span>Active Cards</span>
                       <BookOpen className="h-3.5 w-3.5 text-amber-500" />
                     </div>
-                    <div className="text-base font-bold tracking-tight text-amber-600 dark:text-amber-300 mt-0.5">
+                    <div className="mt-0.5 text-base font-bold tracking-tight text-amber-600 dark:text-amber-300">
                       {(loreStats?.totalLoreCards ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-amber-600/80 dark:text-amber-300/60 text-[9px] font-medium">
+                    <div className="text-[9px] font-medium text-amber-600/80 dark:text-amber-300/60">
                       Cards in circulation
                     </div>
                   </FacetCard>
 
                   {/* Active Categories */}
-                  <FacetCard depth={1} interactive="hover" className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                    <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                  <FacetCard
+                    depth={1}
+                    interactive="hover"
+                    className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                  >
+                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                       <span>Lore Categories</span>
                       <Layers className="h-3.5 w-3.5 text-cyan-500" />
                     </div>
-                    <div className="text-base font-bold tracking-tight text-cyan-600 dark:text-cyan-300 mt-0.5">
+                    <div className="mt-0.5 text-base font-bold tracking-tight text-cyan-600 dark:text-cyan-300">
                       {Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13
                     </div>
-                    <div className="text-cyan-600/80 dark:text-cyan-300/70 text-[9px] font-medium">
+                    <div className="text-[9px] font-medium text-cyan-600/80 dark:text-cyan-300/70">
                       Super-categories in active circulation
                     </div>
                   </FacetCard>
 
                   {/* Pending Requests */}
-                  <FacetCard depth={1} interactive="hover" className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                    <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                  <FacetCard
+                    depth={1}
+                    interactive="hover"
+                    className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                  >
+                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                       <span>Pending Requests</span>
                       <Sparkles className="h-3.5 w-3.5 text-purple-500" />
                     </div>
-                    <div className="text-base font-bold tracking-tight text-purple-600 dark:text-purple-300 mt-0.5">
+                    <div className="mt-0.5 text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
                       {(loreStats?.pendingRequests ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-purple-600/80 dark:text-purple-300/70 text-[9px] font-medium">
+                    <div className="text-[9px] font-medium text-purple-600/80 dark:text-purple-300/70">
                       User requests awaiting approval
                     </div>
                   </FacetCard>
 
                   {/* NS Cards */}
-                  <FacetCard depth={1} interactive="hover" className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all">
-                    <div className="text-muted-foreground text-[11px] font-medium flex items-center justify-between">
+                  <FacetCard
+                    depth={1}
+                    interactive="hover"
+                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-all"
+                  >
+                    <div className="text-muted-foreground flex items-center justify-between text-[11px] font-medium">
                       <span>NS Cards</span>
                       <Globe className="h-3.5 w-3.5 text-blue-500" />
                     </div>
-                    <div className="text-base font-bold tracking-tight text-blue-600 dark:text-blue-300 mt-0.5">
+                    <div className="mt-0.5 text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
                       {(loreStats?.totalNSCards ?? 0).toLocaleString()}
                     </div>
-                    <div className="text-blue-600/80 dark:text-blue-300/70 text-[9px] font-medium">
+                    <div className="text-[9px] font-medium text-blue-600/80 dark:text-blue-300/70">
                       NationStates imports
                     </div>
                   </FacetCard>
@@ -328,9 +348,12 @@ export default function CardAdminDashboardPage() {
             );
           })()}
 
-
           {/* Facet Segmented Tab Control Container */}
-          <FacetContainer depth={2} enableRefraction={true} className="bg-card/60 p-1.5 rounded-2xl border border-border backdrop-blur-xl flex flex-wrap gap-1">
+          <FacetContainer
+            depth={2}
+            enableRefraction={true}
+            className="bg-card/60 border-border flex flex-wrap gap-1 rounded-2xl border p-1.5 backdrop-blur-xl"
+          >
             {[
               { id: "overview" as AdminTab, label: "Overview", icon: Layers },
               { id: "designer" as AdminTab, label: "Card Designer", icon: Palette },
@@ -346,11 +369,13 @@ export default function CardAdminDashboardPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 active:scale-95 ${
                     isActive
-                      ? "bg-primary/15 border border-primary/40 text-foreground shadow-sm scale-[1.02]"
+                      ? "bg-primary/15 border-primary/40 text-foreground scale-[1.02] border shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                  <Icon
+                    className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   {tab.label}
                 </button>
               );
@@ -365,18 +390,22 @@ export default function CardAdminDashboardPage() {
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Operations Log & Audit Trail Card inside Overview */}
-            <FacetCard depth={2} className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4 text-card-foreground">
+            <FacetCard
+              depth={2}
+              className="border-border bg-card text-card-foreground space-y-4 rounded-2xl border p-6 shadow-sm"
+            >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary">
-                    <FileText className="h-5 w-5 text-primary" />
+                  <div className="border-primary/20 bg-primary/10 text-primary rounded-xl border p-2">
+                    <FileText className="text-primary h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-foreground tracking-tight text-lg font-bold">
+                    <h2 className="text-foreground text-lg font-bold tracking-tight">
                       Operations Log & Audit Trail
                     </h2>
                     <p className="text-muted-foreground text-xs font-medium">
-                      All admin actions, designer mints, import syncs, batch generations, takedowns, and system operations
+                      All admin actions, designer mints, import syncs, batch generations, takedowns,
+                      and system operations
                     </p>
                   </div>
                 </div>
@@ -385,7 +414,7 @@ export default function CardAdminDashboardPage() {
                   <select
                     value={logCategoryFilter}
                     onChange={(e) => setLogCategoryFilter(e.target.value as any)}
-                    className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground transition-all hover:bg-accent focus:outline-none"
+                    className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
                   >
                     <option value="all" className="bg-card text-card-foreground">
                       All Logs ({unifiedLogsData?.stats.all ?? 0})
@@ -417,7 +446,7 @@ export default function CardAdminDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => void refetchUnifiedLogs()}
-                    className="h-8.5 rounded-xl border border-border text-xs active:scale-95 transition-all shadow-xs"
+                    className="border-border h-8.5 rounded-xl border text-xs shadow-xs transition-all active:scale-95"
                   >
                     <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
                   </Button>
@@ -428,20 +457,55 @@ export default function CardAdminDashboardPage() {
               {unifiedLogsData?.stats && (
                 <div className="flex flex-wrap gap-1.5 pt-1 text-[11px]">
                   {[
-                    { id: "all", label: "All", count: unifiedLogsData.stats.all, color: "text-foreground bg-muted" },
-                    { id: "imports", label: "Imports & Syncs", count: unifiedLogsData.stats.imports, color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
-                    { id: "designer", label: "Card Designer", count: unifiedLogsData.stats.designer, color: "text-purple-500 bg-purple-500/10 border-purple-500/20" },
-                    { id: "lore_batch", label: "Lore Batch", count: unifiedLogsData.stats.lore_batch, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
-                    { id: "explorer", label: "Explorer & Actions", count: unifiedLogsData.stats.explorer, color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20" },
-                    { id: "settings", label: "Settings", count: unifiedLogsData.stats.settings, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-                    { id: "duplicates", label: "Purges", count: unifiedLogsData.stats.duplicates, color: "text-rose-500 bg-rose-500/10 border-rose-500/20" },
+                    {
+                      id: "all",
+                      label: "All",
+                      count: unifiedLogsData.stats.all,
+                      color: "text-foreground bg-muted",
+                    },
+                    {
+                      id: "imports",
+                      label: "Imports & Syncs",
+                      count: unifiedLogsData.stats.imports,
+                      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+                    },
+                    {
+                      id: "designer",
+                      label: "Card Designer",
+                      count: unifiedLogsData.stats.designer,
+                      color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+                    },
+                    {
+                      id: "lore_batch",
+                      label: "Lore Batch",
+                      count: unifiedLogsData.stats.lore_batch,
+                      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+                    },
+                    {
+                      id: "explorer",
+                      label: "Explorer & Actions",
+                      count: unifiedLogsData.stats.explorer,
+                      color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
+                    },
+                    {
+                      id: "settings",
+                      label: "Settings",
+                      count: unifiedLogsData.stats.settings,
+                      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+                    },
+                    {
+                      id: "duplicates",
+                      label: "Purges",
+                      count: unifiedLogsData.stats.duplicates,
+                      color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+                    },
                   ].map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setLogCategoryFilter(item.id as any)}
-                      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-medium transition-all cursor-pointer ${
+                      className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 font-medium transition-all ${
                         logCategoryFilter === item.id
-                          ? "border-primary bg-primary text-primary-foreground shadow-xs font-bold"
+                          ? "border-primary bg-primary text-primary-foreground font-bold shadow-xs"
                           : `${item.color} hover:opacity-80`
                       }`}
                     >
@@ -456,12 +520,11 @@ export default function CardAdminDashboardPage() {
                 entries={operationsLogEntries}
                 title="Unified Cards Audit Trail & Operations Stream"
                 maxHeight={460}
-                className="border border-border bg-card/40"
+                className="border-border bg-card/40 border"
               />
             </FacetCard>
           </div>
         )}
-
 
         {/* ─── TAB: CARD EXPLORER ──────────────────────────────────── */}
         {activeTab === "explorer" && (
@@ -487,5 +550,3 @@ export default function CardAdminDashboardPage() {
     </div>
   );
 }
-
-

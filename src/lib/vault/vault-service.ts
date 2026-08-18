@@ -40,11 +40,7 @@ export type { VaultEffectPerks, VaultEffectItem, VaultConfig };
 export { getVaultConfig, invalidateVaultConfigCache };
 
 export class VaultService {
-  checkDailyCap(
-    userId: string,
-    earnType: "EARN_ACTIVE" | "EARN_SOCIAL",
-    db: PrismaClient
-  ) {
+  checkDailyCap(userId: string, earnType: "EARN_ACTIVE" | "EARN_SOCIAL", db: PrismaClient) {
     return ledgerCheckDailyCap(userId, earnType, db);
   }
 

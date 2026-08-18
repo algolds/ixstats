@@ -25,4 +25,3 @@ export const cardsRouter = mergeRouters(
   cardsCollectionsRouter,
   cardsOperationsRouter
 );
-

@@ -39,18 +39,18 @@ export async function calculateAtomicEconomicImpactServer(
 
     // Innovation effects (primarily from technocratic components)
     if (
-      ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES] as ComponentType[]).includes(
-        component.type
-      )
+      (
+        [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES] as ComponentType[]
+      ).includes(component.type)
     ) {
       modifiers.innovationMultiplier *= 1.15;
     }
 
     // International trade bonuses (from rule of law, stability)
     if (
-      ([ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY] as ComponentType[]).includes(
-        component.type
-      )
+      (
+        [ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY] as ComponentType[]
+      ).includes(component.type)
     ) {
       modifiers.internationalTradeBonus += 5;
     }

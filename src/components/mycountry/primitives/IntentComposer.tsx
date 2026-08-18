@@ -109,7 +109,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
             <Command className="h-4 w-4" />
@@ -133,7 +133,7 @@ export const IntentComposer = React.memo(function IntentComposer({
           <button
             type="button"
             onClick={() => setShowPolicySheet(true)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1 text-xs font-bold text-foreground transition-all hover:bg-card active:scale-95"
+            className="border-border/60 bg-card/60 text-foreground hover:bg-card flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all active:scale-95"
           >
             <span>+ Policy Sheet</span>
           </button>
@@ -153,7 +153,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             setGoal(e.target.value);
           }}
           placeholder="Search directive presets or type a custom goal..."
-          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-all duration-200 focus:border-amber-500/60 focus:bg-card focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
+          className="border-border/70 bg-card/70 text-foreground placeholder:text-muted-foreground/70 focus:bg-card w-full rounded-2xl border py-4 pr-32 pl-12 text-sm font-semibold tracking-tight shadow-md backdrop-blur-xl transition-all duration-200 focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/40 focus:outline-hidden sm:text-base"
         />
 
         <div className="absolute top-1/2 right-3.5 flex -translate-y-1/2 items-center gap-1.5">
@@ -164,7 +164,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 setGoal("");
                 setQueryInput("");
               }}
-              className="text-muted-foreground hover:text-foreground active:scale-90 rounded-xl p-1.5 transition-all hover:bg-muted"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl p-1.5 transition-all active:scale-90"
               title="Clear active directive"
             >
               <X className="h-4 w-4" />
@@ -213,7 +213,7 @@ export const IntentComposer = React.memo(function IntentComposer({
       {hasActiveGoal && (
         <div className="animate-in fade-in slide-in-from-top-3 space-y-5 duration-200">
           {/* Active Directive Badge Bar */}
-          <div className="border-amber-500/30 bg-amber-500/10 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-xs font-bold text-amber-900 backdrop-blur-md dark:text-amber-300">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-900 backdrop-blur-md dark:text-amber-300">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
               <span>Selected Goal: &ldquo;{goal}&rdquo;</span>
@@ -251,15 +251,18 @@ export const IntentComposer = React.memo(function IntentComposer({
                   label: "Measured",
                   defaultCap: "-15 CivCap",
                   defaultDesc: "Targeted administrative adjustment with low political friction.",
-                  borderCls: "border-emerald-500/50 bg-emerald-500/10 text-emerald-950 dark:text-emerald-300",
+                  borderCls:
+                    "border-emerald-500/50 bg-emerald-500/10 text-emerald-950 dark:text-emerald-300",
                   badgeCls: "bg-emerald-500/20 text-emerald-800 dark:text-emerald-300",
                 },
                 {
                   id: "moderate" as const,
                   label: "Moderate",
                   defaultCap: "-35 CivCap",
-                  defaultDesc: "Comprehensive structural reform carrying moderate stakeholder interest.",
-                  borderCls: "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-300",
+                  defaultDesc:
+                    "Comprehensive structural reform carrying moderate stakeholder interest.",
+                  borderCls:
+                    "border-amber-500/50 bg-amber-500/10 text-amber-950 dark:text-amber-300",
                   badgeCls: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
                 },
                 {
@@ -273,7 +276,9 @@ export const IntentComposer = React.memo(function IntentComposer({
               ].map((tierItem) => {
                 const isSelected = tier === tierItem.id;
                 const pkg = suggestQuery.data?.packages.find((p) => p.tier === tierItem.id);
-                const civCapDisplay = pkg?.civCapCost ? `-${pkg.civCapCost} CivCap` : tierItem.defaultCap;
+                const civCapDisplay = pkg?.civCapCost
+                  ? `-${pkg.civCapCost} CivCap`
+                  : tierItem.defaultCap;
 
                 return (
                   <button
@@ -290,11 +295,16 @@ export const IntentComposer = React.memo(function IntentComposer({
                     <div>
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-xs font-extrabold">{tierItem.label}</span>
-                        <span className={cn("rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold", tierItem.badgeCls)}>
+                        <span
+                          className={cn(
+                            "rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold",
+                            tierItem.badgeCls
+                          )}
+                        >
                           {civCapDisplay}
                         </span>
                       </div>
-                      <p className="mt-2 text-[11px] font-medium leading-relaxed opacity-90">
+                      <p className="mt-2 text-[11px] leading-relaxed font-medium opacity-90">
                         {pkg?.title ?? tierItem.defaultDesc}
                       </p>
                     </div>
@@ -336,7 +346,7 @@ export const IntentComposer = React.memo(function IntentComposer({
 
                 {/* Package Blurb */}
                 {activePackage?.blurb && (
-                  <p className="text-muted-foreground text-xs font-medium leading-relaxed">
+                  <p className="text-muted-foreground text-xs leading-relaxed font-medium">
                     {activePackage.blurb}
                   </p>
                 )}
@@ -356,7 +366,9 @@ export const IntentComposer = React.memo(function IntentComposer({
                           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
                           <div>
                             <strong className="text-foreground font-bold">{c.label}</strong>
-                            <p className="text-muted-foreground text-[11px] leading-snug">{c.detail}</p>
+                            <p className="text-muted-foreground text-[11px] leading-snug">
+                              {c.detail}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -411,7 +423,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                       parentId: parentId ?? undefined,
                     });
                   }}
-                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-3.5 text-xs font-black text-slate-950 shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full cursor-pointer rounded-2xl border border-amber-500/50 bg-gradient-to-r from-amber-500 to-yellow-600 px-4 py-3.5 text-xs font-bold tracking-tight text-slate-950 shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {commitMutation.isPending
                     ? "Enacting Executive Order..."

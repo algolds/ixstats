@@ -139,7 +139,8 @@ export const geoAdminUploadsRouter = createTRPCRouter({
       });
 
       try {
-        const { parseSvgToGeoJson, matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
+        const { parseSvgToGeoJson, matchFeaturesToCountries } =
+          await import("~/lib/flags/svg-parser");
         const { readFileSync, existsSync } = await import("fs");
         const { join } = await import("path");
 

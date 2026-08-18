@@ -58,7 +58,9 @@ export function useGlassPlateEditor({
   const [wikiInsertMode, setWikiInsertMode] = useState<"link" | "embed">("link");
   const [wikiTarget, setWikiTarget] = useState("");
   const [wikiText, setWikiText] = useState("");
-  const [selectedWikiSource, setSelectedWikiSource] = useState<"ixwiki" | "iiwiki" | "althistory">("ixwiki");
+  const [selectedWikiSource, setSelectedWikiSource] = useState<"ixwiki" | "iiwiki" | "althistory">(
+    "ixwiki"
+  );
   const [selectedWikiImageUrl, setSelectedWikiImageUrl] = useState("");
   const [wikiSearchQuery, setWikiSearchQuery] = useState("");
 
@@ -317,14 +319,17 @@ export function useGlassPlateEditor({
       if (item.type === "user") {
         Transforms.insertText(editor as any, `@${item.name} `);
       } else {
-        Transforms.insertNodes(editor as any, [
-          {
-            type: "link",
-            url: item.url,
-            children: [{ text: item.name }],
-          },
-          { text: " " },
-        ] as any);
+        Transforms.insertNodes(
+          editor as any,
+          [
+            {
+              type: "link",
+              url: item.url,
+              children: [{ text: item.name }],
+            },
+            { text: " " },
+          ] as any
+        );
       }
 
       setShowMentionMenu(false);
@@ -411,14 +416,17 @@ export function useGlassPlateEditor({
 
     safeFocus();
 
-    Transforms.insertNodes(editor as any, [
-      {
-        type: "link",
-        url: linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`,
-        children: [{ text: linkText.trim() || linkUrl }],
-      },
-      { text: " " },
-    ] as any);
+    Transforms.insertNodes(
+      editor as any,
+      [
+        {
+          type: "link",
+          url: linkUrl.startsWith("http") ? linkUrl : `https://${linkUrl}`,
+          children: [{ text: linkText.trim() || linkUrl }],
+        },
+        { text: " " },
+      ] as any
+    );
 
     setLinkUrl("");
     setLinkText("");
@@ -432,29 +440,35 @@ export function useGlassPlateEditor({
     safeFocus();
 
     if (wikiInsertMode === "embed") {
-      Transforms.insertNodes(editor as any, [
-        {
-          type: "wikiembed",
-          title: wikiTarget.trim(),
-          summary: wikiIntroQuery.data?.text || "No description available.",
-          imageUrl: selectedWikiImageUrl || "",
-          source: selectedWikiSource || "ixwiki",
-          children: [{ text: "" }],
-        },
-        {
-          type: "p",
-          children: [{ text: "" }],
-        },
-      ] as any);
+      Transforms.insertNodes(
+        editor as any,
+        [
+          {
+            type: "wikiembed",
+            title: wikiTarget.trim(),
+            summary: wikiIntroQuery.data?.text || "No description available.",
+            imageUrl: selectedWikiImageUrl || "",
+            source: selectedWikiSource || "ixwiki",
+            children: [{ text: "" }],
+          },
+          {
+            type: "p",
+            children: [{ text: "" }],
+          },
+        ] as any
+      );
     } else {
-      Transforms.insertNodes(editor as any, [
-        {
-          type: "wikilink",
-          target: wikiTarget.trim(),
-          children: [{ text: wikiText.trim() || wikiTarget }],
-        },
-        { text: " " },
-      ] as any);
+      Transforms.insertNodes(
+        editor as any,
+        [
+          {
+            type: "wikilink",
+            target: wikiTarget.trim(),
+            children: [{ text: wikiText.trim() || wikiTarget }],
+          },
+          { text: " " },
+        ] as any
+      );
     }
 
     setWikiTarget("");
@@ -477,18 +491,21 @@ export function useGlassPlateEditor({
     (imageUrl: string, title: string) => {
       safeFocus();
 
-      Transforms.insertNodes(editor as any, [
-        {
-          type: "img",
-          src: imageUrl,
-          alt: title || "Stashed Image",
-          children: [{ text: "" }],
-        },
-        {
-          type: "p",
-          children: [{ text: "" }],
-        },
-      ] as any);
+      Transforms.insertNodes(
+        editor as any,
+        [
+          {
+            type: "img",
+            src: imageUrl,
+            alt: title || "Stashed Image",
+            children: [{ text: "" }],
+          },
+          {
+            type: "p",
+            children: [{ text: "" }],
+          },
+        ] as any
+      );
 
       setIsStashesOpen(false);
       handleEditorChange();

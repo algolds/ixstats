@@ -106,8 +106,10 @@ export default function TeamLineup1({
     >
       {/* Header */}
       <div className="mb-4 text-center">
-        <h3 className="text-foreground text-lg leading-none font-extrabold">{teamName} Lineup</h3>
-        <span className="text-muted-foreground mt-1 inline-block text-[10px] font-bold uppercase">
+        <h3 className="text-foreground text-lg leading-none font-bold tracking-tight">
+          {teamName} Lineup
+        </h3>
+        <span className="text-muted-foreground mt-1 inline-block text-[10px] font-semibold tracking-wider uppercase">
           Active Formation • {sportPreset}
         </span>
       </div>
@@ -154,35 +156,35 @@ export default function TeamLineup1({
                     <div className="flex flex-col items-center">
                       {/* Player Circle Token */}
                       <div
-                        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-black text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+                        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
                         style={{ backgroundColor: teamColor }}
                       >
                         {player.number ?? initials}
 
                         {/* Rating Overlay Badge */}
-                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-[8px] font-black text-white">
+                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-[8px] font-bold text-white tabular-nums">
                           {player.overallRating}
                         </div>
                       </div>
 
                       {/* Mini Name underneath */}
-                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-[8px] leading-none font-bold tracking-tight text-white shadow-xs backdrop-blur-xs">
+                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-[8px] leading-none font-semibold tracking-tight text-white shadow-xs backdrop-blur-xs">
                         {player.lastName}
                       </span>
                     </div>
                   </TooltipTrigger>
 
                   <TooltipContent className="bg-popover text-popover-foreground border-border max-w-[180px] rounded-xl border p-3 shadow-xl">
-                    <div className="text-popover-foreground text-xs leading-tight font-black">
+                    <div className="text-popover-foreground text-xs leading-tight font-bold">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-wide uppercase">
+                    <div className="text-muted-foreground mt-0.5 text-[10px] font-semibold tracking-wider uppercase">
                       {SPORTS_ABBREVIATIONS[player.position] || player.position} #
                       {player.number ?? "--"}
                     </div>
                     <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-1.5 text-[10px]">
-                      <span className="text-muted-foreground font-bold">RATING:</span>
-                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-muted-foreground font-semibold">RATING:</span>
+                      <span className="font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
                         {player.overallRating} Overall
                       </span>
                     </div>

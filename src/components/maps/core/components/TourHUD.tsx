@@ -90,14 +90,14 @@ export function TourHUD({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed bottom-6 left-6 z-[40] w-full max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-2xl backdrop-blur-xl dark:border-border dark:bg-popover/90 dark:text-foreground dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+        className="dark:border-border dark:bg-popover/90 dark:text-foreground fixed bottom-6 left-6 z-[40] w-full max-w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white/90 text-slate-800 shadow-2xl backdrop-blur-xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
       >
         {/* Floating background gradient glow */}
         <div className="pointer-events-none absolute -top-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
         <div className="pointer-events-none absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl" />
 
         {/* HUD Header */}
-        <div className="relative border-b border-slate-100 px-5 py-4 dark:border-border/60">
+        <div className="dark:border-border/60 relative border-b border-slate-100 px-5 py-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               {isCountryLoading || isStatsLoading ? (
@@ -106,13 +106,13 @@ export function TourHUD({
                 <img
                   src={stats.flagUrl}
                   alt={`${currentStepData.name} Flag`}
-                  className="h-5 w-8 rounded border border-slate-200 object-cover shadow-md dark:border-border"
+                  className="dark:border-border h-5 w-8 rounded border border-slate-200 object-cover shadow-md"
                 />
               ) : (
-                <div className="h-5 w-8 rounded border border-slate-200 bg-slate-100 dark:border-border dark:bg-secondary" />
+                <div className="dark:border-border dark:bg-secondary h-5 w-8 rounded border border-slate-200 bg-slate-100" />
               )}
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-foreground">
+                <h3 className="dark:text-foreground text-base font-bold text-slate-900">
                   {currentStepData.name}
                 </h3>
                 <span className="text-[10px] font-semibold tracking-wider text-blue-600 uppercase dark:text-blue-400">
@@ -122,7 +122,7 @@ export function TourHUD({
             </div>
             <button
               onClick={exitTour}
-              className="rounded-full bg-slate-100 p-1 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:bg-secondary dark:text-muted-foreground dark:hover:bg-white/10 dark:hover:text-foreground"
+              className="dark:bg-secondary dark:text-muted-foreground dark:hover:text-foreground rounded-full bg-slate-100 p-1 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 dark:hover:bg-white/10"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -144,42 +144,42 @@ export function TourHUD({
           )}
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 dark:border-border/60">
-            <div className="space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center dark:border-border/40 dark:bg-secondary/40">
-              <span className="flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase dark:text-muted-foreground">
+          <div className="dark:border-border/60 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
+            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
                 <MapPin className="h-2.5 w-2.5 text-blue-500 dark:text-blue-400" />
                 Capital
               </span>
               {isCountryLoading || isStatsLoading ? (
                 <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
               ) : (
-                <p className="truncate text-xs font-semibold text-slate-900 dark:text-foreground">
+                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
                   {capital || "—"}
                 </p>
               )}
             </div>
-            <div className="space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center dark:border-border/40 dark:bg-secondary/40">
-              <span className="flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase dark:text-muted-foreground">
+            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
                 <Users className="h-2.5 w-2.5 text-cyan-500 dark:text-cyan-400" />
                 Population
               </span>
               {isCountryLoading || isStatsLoading ? (
                 <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
               ) : (
-                <p className="truncate text-xs font-semibold text-slate-900 dark:text-foreground">
+                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
                   {formatPopulation(stats?.population)}
                 </p>
               )}
             </div>
-            <div className="space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center dark:border-border/40 dark:bg-secondary/40">
-              <span className="flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase dark:text-muted-foreground">
+            <div className="dark:border-border/40 dark:bg-secondary/40 space-y-0.5 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-center">
+              <span className="dark:text-muted-foreground flex items-center justify-center gap-1 text-[9px] tracking-wider text-slate-500 uppercase">
                 <TrendingUp className="h-2.5 w-2.5 text-emerald-500 dark:text-emerald-400" />
                 GDP (Total)
               </span>
               {isCountryLoading || isStatsLoading ? (
                 <div className="mx-auto mt-1 h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
               ) : (
-                <p className="truncate text-xs font-semibold text-slate-900 dark:text-foreground">
+                <p className="dark:text-foreground truncate text-xs font-semibold text-slate-900">
                   {formatGDP(stats?.totalGdp)}
                 </p>
               )}
@@ -188,12 +188,12 @@ export function TourHUD({
         </div>
 
         {/* Playback Controls & Skip button */}
-        <div className="relative flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5 dark:border-border/60 dark:bg-secondary/50">
+        <div className="dark:border-border/60 dark:bg-secondary/50 relative flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3.5">
           <div className="flex items-center gap-2">
             <button
               onClick={prevStep}
               disabled={currentStepIndex === 0}
-              className="rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 dark:bg-secondary dark:text-slate-300 dark:hover:bg-secondary/80 dark:hover:text-white dark:disabled:hover:bg-secondary dark:disabled:hover:text-slate-300"
+              className="dark:bg-secondary dark:hover:bg-secondary/80 dark:disabled:hover:bg-secondary rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-600 dark:text-slate-300 dark:hover:text-white dark:disabled:hover:text-slate-300"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>

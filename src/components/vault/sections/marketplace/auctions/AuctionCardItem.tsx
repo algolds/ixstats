@@ -43,13 +43,13 @@ export function AuctionCardItem({
   const theme = getRarityTheme(rarity);
 
   return (
-    <div className="glass-surface border-border/50 relative flex gap-3 overflow-hidden rounded-xl border bg-muted/30 p-3 backdrop-blur-md dark:bg-black/20">
+    <div className="glass-surface border-border/50 bg-muted/30 relative flex gap-3 overflow-hidden rounded-xl border p-3 backdrop-blur-md dark:bg-black/20">
       <TextureOverlay texture="dots" opacity={0.015} />
 
       {/* Artwork thumbnail — click to view details */}
       <button
         onClick={() => onShowDetails(auction)}
-        className="relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border/60"
+        className="border-border/60 relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border"
       >
         <CardHolographicCover cardType="NS_IMPORT" rarity={rarity} title={title} />
         {artwork && artwork !== "/images/cards/placeholder-nation.png" && (
@@ -70,9 +70,7 @@ export function AuctionCardItem({
         className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-bold text-foreground">
-            {title}
-          </span>
+          <span className="text-foreground truncate text-xs font-bold">{title}</span>
           <Badge
             variant="outline"
             className={cn("shrink-0 px-1 py-0 text-[8px] font-bold uppercase", theme.badgeStyle)}
@@ -99,8 +97,10 @@ export function AuctionCardItem({
       {/* Bidding Actions */}
       <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
         <div className="text-right">
-          <span className="text-muted-foreground block text-[9px] leading-none">Current Bid</span>
-          <span className="mt-0.5 flex items-center justify-end gap-0.5 text-sm leading-none font-black text-amber-600 dark:text-amber-400">
+          <span className="text-muted-foreground block text-[9px] leading-none font-medium tracking-wider uppercase">
+            Current Bid
+          </span>
+          <span className="mt-0.5 flex items-center justify-end gap-0.5 text-sm leading-none font-bold text-amber-600 tabular-nums dark:text-amber-400">
             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
             {currentBid.toLocaleString()}
           </span>
@@ -114,13 +114,13 @@ export function AuctionCardItem({
               min={minNextBid}
               value={customAmount}
               onChange={(e) => setCustomAmount(parseInt(e.target.value) || minNextBid)}
-              className="h-6 w-16 border border-border/60 bg-background px-1 font-mono text-[10px] text-foreground"
+              className="border-border/60 bg-background text-foreground h-6 w-16 border px-1 font-mono text-[10px]"
             />
             <Button
               size="sm"
               onClick={() => onBid(auction.id, customAmount)}
               disabled={isBidding || customAmount < minNextBid}
-              className="h-6 border border-border/60 bg-muted/60 px-2 text-[10px] font-semibold text-foreground hover:bg-muted"
+              className="border-border/60 bg-muted/60 text-foreground hover:bg-muted h-6 border px-2 text-[10px] font-semibold"
             >
               {isBidding ? "..." : "Bid"}
             </Button>

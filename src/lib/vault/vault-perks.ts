@@ -203,7 +203,10 @@ export async function getVaultConfig(db: {
 /**
  * Helper to fetch active effects from purchased store items
  */
-export async function getPurchasedItemsEffects(userId: string, db: PrismaClient): Promise<VaultEffectItem[]> {
+export async function getPurchasedItemsEffects(
+  userId: string,
+  db: PrismaClient
+): Promise<VaultEffectItem[]> {
   const cacheKey = `user_perks:${userId}`;
   const cached = userPerksCache.get(cacheKey);
   if (cached) return cached;

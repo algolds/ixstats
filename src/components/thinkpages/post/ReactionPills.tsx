@@ -10,7 +10,11 @@ export interface ReactionPillsProps {
   onOpenReactionsDialog: () => void;
 }
 
-export function ReactionPills({ post, apiDiscordEmojis, onOpenReactionsDialog }: ReactionPillsProps) {
+export function ReactionPills({
+  post,
+  apiDiscordEmojis,
+  onOpenReactionsDialog,
+}: ReactionPillsProps) {
   let reactionCounts: Record<string, number> = {};
   try {
     reactionCounts =

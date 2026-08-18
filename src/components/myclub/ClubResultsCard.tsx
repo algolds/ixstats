@@ -124,7 +124,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
                         )}
                       </div>
                       <span
-                        className={`text-3xl font-black tabular-nums ${won ? "" : "text-muted-foreground"}`}
+                        className={`text-3xl font-bold tabular-nums ${won ? "" : "text-muted-foreground"}`}
                       >
                         {score}
                       </span>

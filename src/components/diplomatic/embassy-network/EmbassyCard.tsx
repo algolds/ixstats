@@ -159,14 +159,19 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           <div className="flex flex-col items-end gap-1">
             <Badge
               className={cn(
-                "border font-extrabold shadow-sm",
+                "border font-bold shadow-sm",
                 getSynergyBand(embassy.totalSynergyScore).badgeClass
               )}
             >
               <ShieldCheck className="mr-1 h-3 w-3" />
               {getSynergyBand(embassy.totalSynergyScore).label} Synergy
             </Badge>
-            <Badge className={cn("border text-[10px] font-bold shadow-xs", asymmetry.badgeColor)}>
+            <Badge
+              className={cn(
+                "border text-[10px] font-semibold tracking-wider uppercase shadow-xs",
+                asymmetry.badgeColor
+              )}
+            >
               {asymmetry.label}
             </Badge>
           </div>

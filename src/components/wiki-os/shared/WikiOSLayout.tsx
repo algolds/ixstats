@@ -218,12 +218,12 @@ export function WikiOSLayout({
           size="sm"
           className="border-white/5 bg-transparent"
         />
-        <div className="flex items-center justify-center gap-4 text-[11px] text-muted-foreground/60">
-          <Link href="/terms" className="hover:text-amber-400 transition-colors">
+        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
+          <Link href="/terms" className="transition-colors hover:text-amber-400">
             Terms of Service
           </Link>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-amber-400 transition-colors">
+          <Link href="/privacy" className="transition-colors hover:text-amber-400">
             Privacy Policy
           </Link>
         </div>

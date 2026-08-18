@@ -4,21 +4,11 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Sliders,
-  Package,
-  Calendar,
-  Coins,
-  ShieldAlert,
-  Gavel,
-} from "lucide-react";
+import { Sliders, Package, Calendar, Coins, ShieldAlert, Gavel } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  FacetContainer,
-  FacetCard,
-} from "~/components/ui/facet-container";
+import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -34,13 +24,7 @@ import { IxCardSeasonAdmin } from "./IxCardSeasonAdmin";
 import { ValuationAdmin } from "./ValuationAdmin";
 import { CardTakedownsAdmin } from "./CardTakedownsAdmin";
 
-export type SettingsSubtab =
-  | "general"
-  | "packs"
-  | "seasons"
-  | "valuation"
-  | "takedowns";
-
+export type SettingsSubtab = "general" | "packs" | "seasons" | "valuation" | "takedowns";
 
 interface CardSettingsAdminProps {
   initialSubtab?: SettingsSubtab;
@@ -64,14 +48,18 @@ function SeedDemoAuctionsButton() {
 
   return (
     <>
-      <FacetCard depth={1} interactive="hover" className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 backdrop-blur-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <FacetCard
+        depth={1}
+        interactive="hover"
+        className="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
+      >
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-amber-400/30 bg-amber-500/20 p-2.5 backdrop-blur-md">
             <Gavel className="h-5 w-5 text-amber-500 dark:text-amber-300" />
           </div>
           <div>
             <p className="text-foreground text-sm font-semibold">Demo Marketplace Auctions</p>
-            <p className="text-muted-foreground text-xs mt-0.5">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               Seed synthetic market auctions with active bidding for test environments.
             </p>
           </div>
@@ -79,16 +67,16 @@ function SeedDemoAuctionsButton() {
         <Button
           onClick={() => setConfirmOpen(true)}
           disabled={seedMutation.isPending}
-          className="h-9 rounded-xl border border-amber-400/30 bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-200 hover:bg-amber-500/30 active:scale-95 transition-all shadow-xs"
+          className="h-9 rounded-xl border border-amber-400/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
         >
           {seedMutation.isPending ? "Seeding..." : "Seed Demo Auctions"}
         </Button>
       </FacetCard>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="border border-border bg-card text-card-foreground backdrop-blur-2xl shadow-2xl">
+        <AlertDialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+            <AlertDialogTitle className="text-foreground flex items-center gap-2">
               <Gavel className="h-5 w-5 text-amber-500" />
               Seed Demo Card Auctions?
             </AlertDialogTitle>
@@ -101,7 +89,7 @@ function SeedDemoAuctionsButton() {
             <Button
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              className="bg-amber-500 font-semibold text-black hover:bg-amber-400 active:scale-95 transition-all"
+              className="bg-amber-500 font-semibold text-black transition-all hover:bg-amber-400 active:scale-95"
             >
               {seedMutation.isPending ? "Seeding..." : "Confirm Seed"}
             </Button>
@@ -198,7 +186,7 @@ export function CardSettingsAdmin({
       <FacetContainer
         depth={2}
         enableRefraction={true}
-        className="rounded-2xl border border-border bg-card/60 p-2 backdrop-blur-xl shadow-md"
+        className="border-border bg-card/60 rounded-2xl border p-2 shadow-md backdrop-blur-xl"
       >
         <div className="flex flex-wrap items-center gap-1.5">
           {SUBTABS.map((subtab) => {
@@ -210,7 +198,7 @@ export function CardSettingsAdmin({
                 onClick={() => setActiveSubtab(subtab.id)}
                 className={`group flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
                   isActive
-                    ? "border border-primary/40 bg-primary/20 text-foreground shadow-sm scale-[1.02]"
+                    ? "border-primary/40 bg-primary/20 text-foreground scale-[1.02] border shadow-sm"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                 }`}
               >
@@ -224,8 +212,8 @@ export function CardSettingsAdmin({
                   <span
                     className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       subtab.badgeVariant === "destructive"
-                        ? "bg-rose-500/20 text-rose-500 border border-rose-500/30"
-                        : "bg-muted text-muted-foreground border border-border"
+                        ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
+                        : "bg-muted text-muted-foreground border-border border"
                     }`}
                   >
                     {subtab.badge}
@@ -271,4 +259,3 @@ export function CardSettingsAdmin({
     </div>
   );
 }
-

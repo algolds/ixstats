@@ -3,14 +3,7 @@
 import { useState, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import {
-  Crown,
-  Calendar,
-  Globe,
-  Swords,
-  ChevronUp,
-  ChevronRight,
-} from "lucide-react";
+import { Crown, Calendar, Globe, Swords, ChevronUp, ChevronRight } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
@@ -112,9 +105,14 @@ export function DashboardHeroComponent({
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
   const CrownIcon = (LucideIcons as Record<string, any>)[chatBadge.icon] || LucideIcons.Crown;
 
-  const [activeModal, setActiveModal] = useState<"gdp" | "population" | "government" | "vitality" | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    "gdp" | "population" | "government" | "vitality" | null
+  >(null);
 
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id, staleTime: 300_000 });
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user?.id,
+    staleTime: 300_000,
+  });
   const countryId = userProfile?.countryId || "";
   const hasCountry = !!countryId && countryId.trim() !== "";
 
@@ -132,10 +130,15 @@ export function DashboardHeroComponent({
   );
 
   const vitalityRings = createVitalityRingsFromCountry({
-    economicVitality: (activityRingsData as any)?.economicVitality ?? (country as any)?.economicVitality,
-    populationWellbeing: (activityRingsData as any)?.populationWellbeing ?? (country as any)?.populationWellbeing,
-    diplomaticStanding: (activityRingsData as any)?.diplomaticStanding ?? (country as any)?.diplomaticStanding,
-    governmentalEfficiency: (activityRingsData as any)?.governmentalEfficiency ?? (country as any)?.governmentalEfficiency,
+    economicVitality:
+      (activityRingsData as any)?.economicVitality ?? (country as any)?.economicVitality,
+    populationWellbeing:
+      (activityRingsData as any)?.populationWellbeing ?? (country as any)?.populationWellbeing,
+    diplomaticStanding:
+      (activityRingsData as any)?.diplomaticStanding ?? (country as any)?.diplomaticStanding,
+    governmentalEfficiency:
+      (activityRingsData as any)?.governmentalEfficiency ??
+      (country as any)?.governmentalEfficiency,
   });
   const newStats = (country as Record<string, any>)?.newStats ?? {};
   const stats = useMemo(
@@ -171,11 +174,13 @@ export function DashboardHeroComponent({
 
   if (!isSignedIn || !hasCountry || !country) return null;
 
-  const flagUrl = (country as any)?.flagUrl || (country as any)?.flag || (country as any)?.newStats?.flagUrl;
-  const profileSlug = stats.slug || (country as any)?.slug || (country as any)?.newStats?.slug || countryId;
+  const flagUrl =
+    (country as any)?.flagUrl || (country as any)?.flag || (country as any)?.newStats?.flagUrl;
+  const profileSlug =
+    stats.slug || (country as any)?.slug || (country as any)?.newStats?.slug || countryId;
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/15 bg-white/[0.05] shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/35 before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/15 bg-white/[0.05] shadow-xl backdrop-blur-2xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent dark:border-white/10 dark:bg-black/35">
       {/* Cinematic Background Flag Watermark Scrim */}
       {flagUrl && (
         <div className="pointer-events-none absolute -top-12 -right-12 h-80 w-80 overflow-hidden opacity-[0.14] transition-all duration-700 select-none group-hover:scale-105 group-hover:opacity-[0.25] dark:opacity-[0.18]">
@@ -216,7 +221,7 @@ export function DashboardHeroComponent({
             <div className="mb-2 flex items-center justify-between gap-2">
               <Link
                 href={`/countries/${profileSlug}`}
-                className="group/title flex min-w-0 items-center gap-2.5 cursor-pointer"
+                className="group/title flex min-w-0 cursor-pointer items-center gap-2.5"
                 title={`View ${stats.countryName} Profile`}
               >
                 <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-lg" className="shadow-md">
@@ -230,27 +235,24 @@ export function DashboardHeroComponent({
                   </div>
                 </AvatarGlow>
 
-                <div className="min-w-0 flex flex-col">
+                <div className="flex min-w-0 flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-base sm:text-lg font-black tracking-tight text-foreground group-hover/title:text-amber-400 group-hover/title:underline transition-colors">
+                    <span className="text-foreground truncate text-base font-bold tracking-tight transition-colors group-hover/title:text-amber-400 group-hover/title:underline sm:text-lg">
                       {stats.countryName}
                     </span>
                     {chatBadge.enabled && (
-                      <CrownIcon
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: chatBadge.color }}
-                      />
+                      <CrownIcon className="h-4 w-4 shrink-0" style={{ color: chatBadge.color }} />
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                     {stats.governmentType && (
-                      <span className="rounded-md border border-white/15 bg-white/[0.08] px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wider text-muted-foreground/90 backdrop-blur-md">
+                      <span className="text-muted-foreground/90 rounded-md border border-white/15 bg-white/[0.08] px-1.5 py-0.5 text-[8px] font-semibold tracking-wider uppercase backdrop-blur-md">
                         {stats.governmentType}
                       </span>
                     )}
                     {stats.continent && (
-                      <span className="text-[9px] font-bold text-muted-foreground/70 hidden sm:inline">
+                      <span className="text-muted-foreground/70 hidden text-[9px] font-normal sm:inline">
                         • {stats.continent}
                       </span>
                     )}
@@ -260,10 +262,10 @@ export function DashboardHeroComponent({
 
               <Link
                 href="/mycountry"
-                className="group/btn flex shrink-0 items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[9.5px] font-extrabold text-amber-700 hover:border-amber-500/60 hover:bg-amber-500/25 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 backdrop-blur-md"
+                className="group/btn flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[9px] font-semibold text-amber-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/60 hover:bg-amber-500/25 active:scale-95 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:border-amber-400/50 dark:hover:bg-amber-500/20"
               >
                 <span>MyCountry</span>
-                <ChevronRight className="h-3 w-3 shrink-0 text-amber-700 dark:text-amber-300 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                <ChevronRight className="h-3 w-3 shrink-0 text-amber-700 transition-transform duration-200 group-hover/btn:translate-x-0.5 dark:text-amber-300" />
               </Link>
             </div>
 

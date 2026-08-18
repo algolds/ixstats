@@ -209,7 +209,7 @@ export function CountryHeader({
 
           {/* Apple Design Frosted glass bar behind content */}
           {hasImage && (
-            <div className="absolute inset-x-0 bottom-0 h-32 border-t border-white/10 bg-black/40 backdrop-blur-xl saturate-180 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] md:h-36" />
+            <div className="absolute inset-x-0 bottom-0 h-32 border-t border-white/10 bg-black/40 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] saturate-180 backdrop-blur-xl md:h-36" />
           )}
 
           {/* Country Header Content */}
@@ -246,7 +246,6 @@ export function CountryHeader({
                   <FloatingRibbonRack />
                 </div>
                 <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
-
                   <Badge
                     className={cn(
                       "cursor-pointer font-semibold transition-transform duration-100 ease-out active:scale-[0.96]",
@@ -322,7 +321,7 @@ export function CountryHeader({
                 className="glass-off border-border z-[100011] w-72 rounded-xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
               >
                 <div className="space-y-1">
-                  <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-wider">
+                  <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold tracking-wider uppercase">
                     Banner Style
                   </p>
                   {bannerOptions.map((option) => {
@@ -335,7 +334,9 @@ export function CountryHeader({
                         onClick={() => handleModeSelect(option.mode)}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.98]",
-                          isActive ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted"
+                          isActive
+                            ? "bg-primary/10 text-primary font-semibold"
+                            : "text-foreground hover:bg-muted"
                         )}
                       >
                         <Icon className="h-4 w-4 shrink-0" />

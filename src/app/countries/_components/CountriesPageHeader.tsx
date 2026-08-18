@@ -32,11 +32,7 @@ function FlagWaveBackground({ flagUrl }: { flagUrl: string }) {
         />
       )}
       <div style={{ position: "absolute", bottom: 0, width: "100%", height: "100%" }}>
-        <svg
-          viewBox="0 0 1440 120"
-          className="h-full w-full opacity-70"
-          preserveAspectRatio="none"
-        >
+        <svg viewBox="0 0 1440 120" className="h-full w-full opacity-70" preserveAspectRatio="none">
           <defs>
             <linearGradient id="flag-gradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#fff" stopOpacity="0.7" />
@@ -99,7 +95,9 @@ export function CountriesPageHeader({
             isLoading={isLoading}
             type="gdp"
             topCountries={topGdpCountries}
-            formattedValue={isLoading || combinedGdp === undefined ? undefined : formatCurrency(combinedGdp)}
+            formattedValue={
+              isLoading || combinedGdp === undefined ? undefined : formatCurrency(combinedGdp)
+            }
           />
           <ExpandableStatCard
             icon={<BarChart3 className="mr-2 h-5 w-5 text-green-500" />}

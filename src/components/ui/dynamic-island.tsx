@@ -471,8 +471,10 @@ const isCompactSize = (size: SizePresets | undefined): boolean => {
   );
 };
 
-interface DynamicIslandContentProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "id"> {
+interface DynamicIslandContentProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof motion.div>,
+  "id"
+> {
   children: React.ReactNode;
   id: string;
   screenSize: string;
@@ -595,9 +597,7 @@ const DynamicIslandContent = ({
         layoutId="dynamic-island-main"
         data-expanded={!isCompact ? "true" : undefined}
         className={`dynamic-island-shell force-gpu relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
-          isImpersonating
-            ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]"
-            : ""
+          isImpersonating ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]" : ""
         }`}
         initial={{
           width: dimensions.width,
@@ -626,14 +626,14 @@ const DynamicIslandContent = ({
       >
         {/* Refraction edges */}
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 dark:via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 dark:via-white/10 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 dark:via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 dark:via-white/10 to-transparent" />
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
           {/* Inner shimmer */}
           {isCompact && (
             <div
-              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent"
+              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10"
               style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
             />
           )}

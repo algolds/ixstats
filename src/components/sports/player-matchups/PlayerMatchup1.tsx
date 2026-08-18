@@ -53,7 +53,7 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
     >
       {/* Title / Header */}
       <div className="mb-6 text-center">
-        <h3 className="text-muted-foreground text-base font-extrabold tracking-wider uppercase">
+        <h3 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
           Head to Head Comparison
         </h3>
       </div>
@@ -78,17 +78,17 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
               />
             </div>
             <div
-              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-black text-white shadow-md"
+              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-bold text-white tabular-nums shadow-md"
               style={{ backgroundColor: colorA }}
             >
               {playerA.overallRating}
             </div>
           </div>
-          <h4 className="text-foreground text-sm leading-tight font-extrabold">
+          <h4 className="text-foreground text-sm leading-tight font-semibold">
             {playerA.firstName} {playerA.lastName}
           </h4>
           <PositionTooltip position={playerA.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-bold uppercase decoration-dotted hover:underline">
+            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-semibold tracking-wider uppercase decoration-dotted hover:underline">
               {playerA.position}
             </span>
           </PositionTooltip>
@@ -96,7 +96,7 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
 
         {/* VS Indicator */}
         <div className="flex flex-col items-center justify-center">
-          <span className="text-muted-foreground/30 dark:text-muted-foreground/20 text-xl font-black tracking-widest uppercase">
+          <span className="text-muted-foreground/30 dark:text-muted-foreground/20 text-xl font-bold tracking-widest uppercase">
             VS
           </span>
         </div>
@@ -120,17 +120,17 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
               />
             </div>
             <div
-              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-black text-white shadow-md"
+              className="absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-xs font-bold text-white tabular-nums shadow-md"
               style={{ backgroundColor: colorB }}
             >
               {playerB.overallRating}
             </div>
           </div>
-          <h4 className="text-foreground text-sm leading-tight font-extrabold">
+          <h4 className="text-foreground text-sm leading-tight font-semibold">
             {playerB.firstName} {playerB.lastName}
           </h4>
           <PositionTooltip position={playerB.position}>
-            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-bold uppercase decoration-dotted hover:underline">
+            <span className="text-muted-foreground mt-1 cursor-help text-[10px] font-semibold tracking-wider uppercase decoration-dotted hover:underline">
               {playerB.position}
             </span>
           </PositionTooltip>
@@ -148,18 +148,18 @@ export default function PlayerMatchup1({ playerA, playerB, className }: PlayerMa
 
           return (
             <div key={key} className="space-y-1">
-              <div className="text-foreground/80 flex items-center justify-between text-xs font-extrabold uppercase">
+              <div className="text-foreground/80 flex items-center justify-between text-xs font-bold uppercase tabular-nums">
                 <span
-                  className={cn(isAHigher && "font-black")}
+                  className={cn(isAHigher && "font-bold")}
                   style={{ color: isAHigher ? colorA : undefined }}
                 >
                   {valA}
                 </span>
-                <span className="text-muted-foreground text-[10px] font-bold tracking-wider">
+                <span className="text-muted-foreground text-[10px] font-medium tracking-wider">
                   {key}
                 </span>
                 <span
-                  className={cn(isBHigher && "font-black")}
+                  className={cn(isBHigher && "font-bold")}
                   style={{ color: isBHigher ? colorB : undefined }}
                 >
                   {valB}

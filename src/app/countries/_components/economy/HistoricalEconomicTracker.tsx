@@ -17,10 +17,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { useHistoricalEconomicData } from "~/hooks/useHistoricalEconomicData";
-import type {
-  EconomicEvent,
-  HistoricalDataPoint,
-} from "~/lib/economy/historical-transformers";
+import type { EconomicEvent, HistoricalDataPoint } from "~/lib/economy/historical-transformers";
 import {
   TimeSeriesChart,
   EconomicHealthCard,

@@ -3,7 +3,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Gift, RefreshCw, Save, Sparkles, UserCheck, Globe, Trophy, Award, CheckCircle2 } from "lucide-react";
+import {
+  Gift,
+  RefreshCw,
+  Save,
+  Sparkles,
+  UserCheck,
+  Globe,
+  Trophy,
+  Award,
+  CheckCircle2,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
@@ -31,8 +41,16 @@ const GROUPS: BonusGroup[] = [
     icon: UserCheck,
     accentColor: "text-emerald-500",
     fields: [
-      { key: "newPlayer", label: "New Player Bonus", hint: "Granted on first country link or account creation" },
-      { key: "wikiImport", label: "Wiki Country Import", hint: "Granted when founding from a canonical wiki nation" },
+      {
+        key: "newPlayer",
+        label: "New Player Bonus",
+        hint: "Granted on first country link or account creation",
+      },
+      {
+        key: "wikiImport",
+        label: "Wiki Country Import",
+        hint: "Granted when founding from a canonical wiki nation",
+      },
     ],
   },
   {
@@ -42,7 +60,11 @@ const GROUPS: BonusGroup[] = [
     accentColor: "text-blue-500",
     fields: [
       { key: "nsPerCard", label: "Credits Per Card", hint: "Credits awarded per imported card" },
-      { key: "nsCap", label: "Per-Import Cap", hint: "Maximum total credits earned per single deck import" },
+      {
+        key: "nsCap",
+        label: "Per-Import Cap",
+        hint: "Maximum total credits earned per single deck import",
+      },
     ],
   },
   {
@@ -64,7 +86,11 @@ const GROUPS: BonusGroup[] = [
     icon: Award,
     accentColor: "text-purple-500",
     fields: [
-      { key: "loreward", label: "Per-Win Payout", hint: "Granted to winners of mapped wiki lore challenges" },
+      {
+        key: "loreward",
+        label: "Per-Win Payout",
+        hint: "Granted to winners of mapped wiki lore challenges",
+      },
     ],
   },
 ];
@@ -91,7 +117,7 @@ export function VaultBonusAdmin() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+        <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -99,8 +125,11 @@ export function VaultBonusAdmin() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <FacetCard depth={2} className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 backdrop-blur-xl shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <FacetCard
+        depth={2}
+        className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 shadow-lg backdrop-blur-xl"
+      >
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/20 p-2.5 backdrop-blur-md">
               <Gift className="h-6 w-6 text-emerald-400" />
@@ -114,14 +143,14 @@ export function VaultBonusAdmin() {
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer bg-card/60 px-3 py-1.5 rounded-xl border border-border">
+            <label className="bg-card/60 border-border flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5">
               <input
                 type="checkbox"
                 checked={enabled}
                 onChange={(e) => setForm((p) => ({ ...p, enabled: e.target.checked ? 1 : 0 }))}
-                className="h-4 w-4 rounded border-border accent-emerald-500"
+                className="border-border h-4 w-4 rounded accent-emerald-500"
               />
-              <span className="text-xs font-semibold text-foreground">
+              <span className="text-foreground text-xs font-semibold">
                 {enabled ? "Bonuses Active" : "Bonuses Paused"}
               </span>
             </label>
@@ -130,20 +159,20 @@ export function VaultBonusAdmin() {
       </FacetCard>
 
       {/* Group Sections Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {GROUPS.map((group) => {
           const GroupIcon = group.icon;
           return (
             <FacetCard
               key={group.title}
               depth={1}
-              className="rounded-2xl border border-border bg-card/80 p-5 space-y-4 backdrop-blur-xl shadow-sm"
+              className="border-border bg-card/80 space-y-4 rounded-2xl border p-5 shadow-sm backdrop-blur-xl"
             >
-              <div className="flex items-center gap-2.5 pb-2 border-b border-border">
+              <div className="border-border flex items-center gap-2.5 border-b pb-2">
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">{group.title}</h3>
-                  <p className="text-[11px] text-muted-foreground">{group.description}</p>
+                  <h3 className="text-foreground text-sm font-bold">{group.title}</h3>
+                  <p className="text-muted-foreground text-[11px]">{group.description}</p>
                 </div>
               </div>
 
@@ -151,9 +180,11 @@ export function VaultBonusAdmin() {
                 {group.fields.map((field) => (
                   <div key={field.key} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-foreground">{field.label}</label>
+                      <label className="text-foreground text-xs font-semibold">{field.label}</label>
                       {field.hint && (
-                        <span className="text-[10px] text-muted-foreground hidden sm:inline">{field.hint}</span>
+                        <span className="text-muted-foreground hidden text-[10px] sm:inline">
+                          {field.hint}
+                        </span>
                       )}
                     </div>
                     <div className="relative">
@@ -166,9 +197,9 @@ export function VaultBonusAdmin() {
                           setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
-                        className="w-full h-8 rounded-lg border border-border bg-background/60 px-3 text-xs font-mono text-foreground focus:border-emerald-500 focus:outline-none transition-all"
+                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-all focus:border-emerald-500 focus:outline-none"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground uppercase">
+                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[10px] uppercase">
                         Credits
                       </span>
                     </div>
@@ -185,7 +216,7 @@ export function VaultBonusAdmin() {
         <Button
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
-          className="h-10 px-6 rounded-xl border border-emerald-400/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/30 active:scale-95 transition-all shadow-sm"
+          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
         >
           {saveMutation.isPending ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

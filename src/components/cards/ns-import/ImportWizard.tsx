@@ -357,8 +357,12 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                 className="mt-1 h-4 w-4 rounded border-white/30 text-amber-400 focus:ring-amber-400"
               />
               <div className="text-sm text-white/90">
-                <span className="font-semibold text-white">First-Party Content Permission & Grant:</span>{" "}
-                I verify that I am the owner or authorized operator of <strong>{nationName || "this nation"}</strong> on NationStates, and I grant permission to display my nation's flag and card representation on IxCards.
+                <span className="font-semibold text-white">
+                  First-Party Content Permission & Grant:
+                </span>{" "}
+                I verify that I am the owner or authorized operator of{" "}
+                <strong>{nationName || "this nation"}</strong> on NationStates, and I grant
+                permission to display my nation's flag and card representation on IxCards.
               </div>
             </label>
           </div>

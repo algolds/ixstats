@@ -158,7 +158,6 @@ function splitByPipe(content: string): string[] {
   return parts;
 }
 
-
 function processSwitcher(value: string): string {
   const match = /\{\{\s*[Ss]witcher\s*\|([\s\S]*?)\}\}/.exec(value);
   if (!match) return value;
@@ -669,4 +668,3 @@ export async function fetchAndParseInfobox(
     return null;
   }
 }
-

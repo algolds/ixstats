@@ -139,23 +139,23 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-5xl h-[88vh] max-h-[800px] flex flex-col p-0 gap-0 overflow-hidden border-border bg-background">
+        <DialogContent className="border-border bg-background flex h-[88vh] max-h-[800px] max-w-5xl flex-col gap-0 overflow-hidden p-0">
           {/* Header */}
-          <DialogHeader className="p-5 pb-4 border-b border-border bg-card/50">
+          <DialogHeader className="border-border bg-card/50 border-b p-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2 text-primary">
+              <div className="bg-primary/10 text-primary rounded-lg p-2">
                 <Layers className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-semibold flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 text-base font-semibold">
                   Game-Icons Vector Library
-                  <Badge variant="secondary" className="text-xs font-mono">
+                  <Badge variant="secondary" className="font-mono text-xs">
                     {filteredIcons.length.toLocaleString()} icons
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-muted-foreground text-xs">
                   Selecting for:{" "}
-                  <span className="font-semibold text-foreground">
+                  <span className="text-foreground font-semibold">
                     {targetSlot === "emblem" ? "Center Emblem / Sigil" : "Background Watermark"}
                   </span>
                 </DialogDescription>
@@ -164,23 +164,23 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           </DialogHeader>
 
           {/* Search & Tag Filter Toolbar */}
-          <div className="p-3 border-b border-border bg-muted/20 space-y-2.5">
+          <div className="border-border bg-muted/20 space-y-2.5 border-b p-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   type="text"
                   placeholder="Search 4,100+ icons (e.g. sword, crown, dragon, scale, astrolabe)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-8 h-9 text-xs"
+                  className="h-9 pr-8 pl-9 text-xs"
                   autoFocus
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -189,7 +189,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
 
               {/* Author Filter Dropdown */}
               <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
-                <SelectTrigger className="w-[160px] h-9 text-xs">
+                <SelectTrigger className="h-9 w-[160px] text-xs">
                   <SelectValue placeholder="All Authors" />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,7 +214,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                     variant={isActive ? "default" : "outline"}
                     size="sm"
                     onClick={() => setActiveTag(preset.tag)}
-                    className="h-7 px-2.5 text-xs font-medium shrink-0 gap-1 rounded-md"
+                    className="h-7 shrink-0 gap-1 rounded-md px-2.5 text-xs font-medium"
                   >
                     {IconComponent && <IconComponent className="h-3 w-3" />}
                     <span>{preset.label}</span>
@@ -227,21 +227,21 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           {/* Icons Grid Content */}
           <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground text-xs gap-2">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="text-muted-foreground flex h-64 flex-col items-center justify-center gap-2 text-xs">
+                <Loader2 className="text-primary h-6 w-6 animate-spin" />
                 <span>Loading 4,100+ Game-Icons library...</span>
               </div>
             ) : filteredIcons.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground text-xs text-center p-6">
-                <Layers className="h-8 w-8 mb-2 opacity-30" />
-                <p className="font-medium text-foreground">No matching icons found</p>
-                <p className="text-muted-foreground text-[11px] mt-1">
+              <div className="text-muted-foreground flex h-64 flex-col items-center justify-center p-6 text-center text-xs">
+                <Layers className="mb-2 h-8 w-8 opacity-30" />
+                <p className="text-foreground font-medium">No matching icons found</p>
+                <p className="text-muted-foreground mt-1 text-[11px]">
                   Try searching with broader terms or clearing category filters.
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-9 gap-2">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-9">
                   {displayedIcons.map((icon) => {
                     const isSelected = selectedIcon?.id === icon.id;
                     return (
@@ -254,29 +254,29 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                         }}
                         title={`${icon.name} (by ${icon.author})`}
                         className={cn(
-                          "group relative flex flex-col items-center justify-center p-2 rounded-lg border transition-colors aspect-square text-center",
+                          "group relative flex aspect-square flex-col items-center justify-center rounded-lg border p-2 text-center transition-colors",
                           isSelected
-                            ? "bg-primary text-primary-foreground border-primary shadow-xs ring-2 ring-primary/40"
+                            ? "bg-primary text-primary-foreground border-primary ring-primary/40 shadow-xs ring-2"
                             : "border-border bg-card hover:bg-muted text-foreground"
                         )}
                       >
-                        <div className="w-8 h-8 flex items-center justify-center mb-1">
+                        <div className="mb-1 flex h-8 w-8 items-center justify-center">
                           <img
                             src={icon.path}
                             alt={icon.name}
                             className={cn(
-                              "w-full h-full object-contain filter invert dark:filter-none",
+                              "h-full w-full object-contain invert filter dark:filter-none",
                               isSelected ? "brightness-200" : "opacity-80 group-hover:opacity-100"
                             )}
                             loading="lazy"
                           />
                         </div>
-                        <span className="text-[10px] leading-tight line-clamp-1 w-full font-medium">
+                        <span className="line-clamp-1 w-full text-[10px] leading-tight font-medium">
                           {icon.name}
                         </span>
 
                         {isSelected && (
-                          <div className="absolute top-1 right-1 rounded-full bg-primary-foreground text-primary p-0.5 shadow-xs">
+                          <div className="bg-primary-foreground text-primary absolute top-1 right-1 rounded-full p-0.5 shadow-xs">
                             <Check className="h-2.5 w-2.5" />
                           </div>
                         )}
@@ -293,7 +293,8 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                       onClick={() => setPage((p) => p + 1)}
                       className="text-xs"
                     >
-                      Load More Icons ({(filteredIcons.length - displayedIcons.length).toLocaleString()} remaining)
+                      Load More Icons (
+                      {(filteredIcons.length - displayedIcons.length).toLocaleString()} remaining)
                     </Button>
                   </div>
                 )}
@@ -302,14 +303,14 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           </div>
 
           {/* Footer */}
-          <div className="p-3 px-5 border-t border-border bg-card/30 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="border-border bg-card/30 text-muted-foreground flex items-center justify-between border-t p-3 px-5 text-xs">
             <span>
               Icons by Lorc, Delapouite & contributors,{" "}
               <a
                 href="https://game-icons.net"
                 target="_blank"
                 rel="noreferrer"
-                className="text-primary hover:underline font-medium"
+                className="text-primary font-medium hover:underline"
               >
                 game-icons.net
               </a>{" "}

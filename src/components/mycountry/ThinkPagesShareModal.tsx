@@ -100,7 +100,7 @@ export function ThinkPagesShareModal({
               Official Government Account
             </Badge>
           </div>
-          <DialogTitle className="text-foreground text-lg font-black tracking-tight">
+          <DialogTitle className="text-foreground text-lg font-semibold tracking-tight">
             Share Directive Summation to ThinkPages
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-xs">
@@ -111,7 +111,7 @@ export function ThinkPagesShareModal({
         {publishStatus !== "idle" ? (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
             <CheckCircle2 className="h-12 w-12 animate-bounce text-emerald-400" />
-            <h3 className="text-foreground text-base font-extrabold">
+            <h3 className="text-foreground text-base font-semibold">
               {publishStatus === "published"
                 ? "Published Live to ThinkPages!"
                 : "Saved as Draft in ThinkPages!"}

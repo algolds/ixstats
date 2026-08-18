@@ -52,16 +52,46 @@ const CATEGORIES = [
 const FILTERS = [
   { id: "achievements", label: "Achievements", icon: Trophy, fmt: "achievements", domain: "all" },
   { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency", domain: "economy" },
-  { id: "gdpPerCapita", label: "GDP per Capita", icon: DollarSign, fmt: "currency", domain: "economy" },
+  {
+    id: "gdpPerCapita",
+    label: "GDP per Capita",
+    icon: DollarSign,
+    fmt: "currency",
+    domain: "economy",
+  },
   { id: "population", label: "Population", icon: Users, fmt: "number", domain: "demographics" },
-  { id: "populationDensity", label: "Pop. Density", icon: Gauge, fmt: "number", domain: "demographics" },
+  {
+    id: "populationDensity",
+    label: "Pop. Density",
+    icon: Gauge,
+    fmt: "number",
+    domain: "demographics",
+  },
   { id: "landArea", label: "Land Area", icon: Map, fmt: "number", domain: "demographics" },
   { id: "gdpGrowth", label: "GDP Growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
   { id: "avgIncome", label: "Avg Income", icon: DollarSign, fmt: "currency", domain: "economy" },
   { id: "workforce", label: "Workforce", icon: Users, fmt: "number", domain: "demographics" },
-  { id: "employmentRate", label: "Employment", icon: Briefcase, fmt: "percent", domain: "demographics" },
-  { id: "literacyRate", label: "Literacy", icon: GraduationCap, fmt: "percent", domain: "governance" },
-  { id: "lifeExpectancy", label: "Life Expectancy", icon: Heart, fmt: "years", domain: "governance" },
+  {
+    id: "employmentRate",
+    label: "Employment",
+    icon: Briefcase,
+    fmt: "percent",
+    domain: "demographics",
+  },
+  {
+    id: "literacyRate",
+    label: "Literacy",
+    icon: GraduationCap,
+    fmt: "percent",
+    domain: "governance",
+  },
+  {
+    id: "lifeExpectancy",
+    label: "Life Expectancy",
+    icon: Heart,
+    fmt: "years",
+    domain: "governance",
+  },
   { id: "govRevenue", label: "Gov. Revenue", icon: Landmark, fmt: "currency", domain: "economy" },
   { id: "govSpending", label: "Gov. Spending", icon: Landmark, fmt: "currency", domain: "economy" },
 ] as const;
@@ -96,7 +126,13 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
       />
     );
   }
-  return <EnhancedCountryFlag countryName={countryName} size="sm" className="h-5 w-7 rounded shadow-sm object-cover" />;
+  return (
+    <EnhancedCountryFlag
+      countryName={countryName}
+      size="sm"
+      className="h-5 w-7 rounded object-cover shadow-sm"
+    />
+  );
 }
 
 function PodiumCard({
@@ -114,7 +150,8 @@ function PodiumCard({
 }) {
   const styles = {
     1: {
-      badgeBg: "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]",
+      badgeBg:
+        "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]",
       cardBg: "from-amber-500/15 via-amber-500/5 to-slate-950/80 border-amber-500/30",
       icon: Crown,
       iconColor: "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]",
@@ -144,7 +181,7 @@ function PodiumCard({
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 350, damping: 25 }}
       className={cn(
-        "relative overflow-hidden rounded-3xl border bg-gradient-to-b p-5 shadow-2xl backdrop-blur-2xl transition-all border-t-white/20",
+        "relative overflow-hidden rounded-3xl border border-t-white/20 bg-gradient-to-b p-5 shadow-2xl backdrop-blur-2xl transition-all",
         styles.cardBg
       )}
     >
@@ -153,13 +190,13 @@ function PodiumCard({
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black backdrop-blur-md",
+              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold tabular-nums backdrop-blur-md",
               styles.badgeBg
             )}
           >
             #{rank}
           </span>
-          <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+          <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
             {styles.label}
           </span>
         </div>
@@ -171,7 +208,7 @@ function PodiumCard({
           <FlagGraphic countryName={name} flag={flag} />
           <div className="truncate text-base font-bold text-slate-100">{name}</div>
         </div>
-        <div className="font-mono text-2xl font-black text-slate-100">{primary}</div>
+        <div className="font-mono text-2xl font-bold text-slate-100 tabular-nums">{primary}</div>
         <div className="text-xs text-slate-400">{secondary}</div>
       </div>
     </motion.div>
@@ -201,7 +238,7 @@ function Row({
         ease: [0.23, 1, 0.32, 1],
       }}
       className={cn(
-        "flex items-center justify-between rounded-2xl border p-4 backdrop-blur-2xl transition-all border-t-white/10 hover:border-white/20",
+        "flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-all hover:border-white/20",
         index < 3
           ? "border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-slate-950/70 to-slate-950/70"
           : "border-white/10 bg-slate-950/60 dark:bg-black/40"
@@ -210,7 +247,7 @@ function Row({
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            "w-8 font-mono text-center text-xl font-black",
+            "w-8 text-center font-mono text-xl font-bold tabular-nums",
             index === 0
               ? "text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]"
               : index === 1
@@ -232,7 +269,7 @@ function Row({
       </div>
       <div className="flex items-center gap-2">
         <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-400" />
-        <span className="font-mono text-lg font-black text-slate-100">{primary}</span>
+        <span className="font-mono text-lg font-bold text-slate-100 tabular-nums">{primary}</span>
       </div>
     </motion.div>
   );
@@ -287,14 +324,16 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all border-t-white/20 dark:bg-black/60 dark:border-white/12">
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 border-t-white/20 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-2xl transition-all dark:border-white/12 dark:bg-black/60">
       <TextureOverlay texture="dots" opacity={0.03} />
 
       <div className="relative z-10 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-100 tracking-tight">Global World Leaderboards</h3>
-            <p className="text-xs text-slate-400 font-medium">
+            <h3 className="text-xl font-bold tracking-tight text-slate-100">
+              Global World Leaderboards
+            </h3>
+            <p className="text-xs font-medium text-slate-400">
               Rankings across {active.label.toLowerCase()} • {limit} nations displayed
             </p>
           </div>
@@ -307,7 +346,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 placeholder="Search nation..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 border-white/10 bg-slate-900/80 pl-9 text-xs font-medium text-slate-200 rounded-full focus:border-purple-500/50"
+                className="h-9 rounded-full border-white/10 bg-slate-900/80 pl-9 text-xs font-medium text-slate-200 focus:border-purple-500/50"
               />
             </div>
 
@@ -370,9 +409,27 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
 
         {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
           <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-            <PodiumCard rank={1} name={topThree[0].countryName} primary={topThree[0].primary} secondary={topThree[0].secondary} flag={topThree[0].flag} />
-            <PodiumCard rank={2} name={topThree[1].countryName} primary={topThree[1].primary} secondary={topThree[1].secondary} flag={topThree[1].flag} />
-            <PodiumCard rank={3} name={topThree[2].countryName} primary={topThree[2].primary} secondary={topThree[2].secondary} flag={topThree[2].flag} />
+            <PodiumCard
+              rank={1}
+              name={topThree[0].countryName}
+              primary={topThree[0].primary}
+              secondary={topThree[0].secondary}
+              flag={topThree[0].flag}
+            />
+            <PodiumCard
+              rank={2}
+              name={topThree[1].countryName}
+              primary={topThree[1].primary}
+              secondary={topThree[1].secondary}
+              flag={topThree[1].flag}
+            />
+            <PodiumCard
+              rank={3}
+              name={topThree[2].countryName}
+              primary={topThree[2].primary}
+              secondary={topThree[2].secondary}
+              flag={topThree[2].flag}
+            />
           </div>
         )}
 
@@ -380,11 +437,20 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           filteredAchievements && filteredAchievements.length > 0 ? (
             <div className="space-y-2.5">
               {filteredAchievements.map((entry, index) => (
-                <Row key={entry.countryId} index={index} name={entry.countryName} flag={entry.flag} primary={`${entry.totalPoints} pts`} secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`} />
+                <Row
+                  key={entry.countryId}
+                  index={index}
+                  name={entry.countryName}
+                  flag={entry.flag}
+                  primary={`${entry.totalPoints} pts`}
+                  secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`}
+                />
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-slate-400">No achievement data available for search query</div>
+            <div className="py-12 text-center text-xs text-slate-400">
+              No achievement data available for search query
+            </div>
           )
         ) : isLoading ? (
           <div className="flex h-48 items-center justify-center">
@@ -393,11 +459,20 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         ) : countryBoard && countryBoard.length > 0 ? (
           <div className="space-y-2.5">
             {countryBoard.map((entry, index) => (
-              <Row key={entry.countryId} index={index} name={entry.countryName} flag={entry.flag} primary={fmt(active.fmt, entry.value)} secondary={`${entry.economicTier} • ${entry.populationTier}`} />
+              <Row
+                key={entry.countryId}
+                index={index}
+                name={entry.countryName}
+                flag={entry.flag}
+                primary={fmt(active.fmt, entry.value)}
+                secondary={`${entry.economicTier} • ${entry.populationTier}`}
+              />
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center text-xs text-slate-400">No nation metrics found matching your criteria</div>
+          <div className="py-12 text-center text-xs text-slate-400">
+            No nation metrics found matching your criteria
+          </div>
         )}
       </div>
     </div>

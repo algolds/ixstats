@@ -92,9 +92,7 @@ export async function catchUpPassiveIncome(
     }
 
     if (activeCatchUps.has(user.id)) {
-      console.log(
-        `[Vault Service] Passive income catchup already in progress for user ${user.id}`
-      );
+      console.log(`[Vault Service] Passive income catchup already in progress for user ${user.id}`);
       return { success: true, count: 0, totalCreditsAwarded: 0 };
     }
 

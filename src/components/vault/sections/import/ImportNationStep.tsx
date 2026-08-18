@@ -39,21 +39,22 @@ export function ImportNationStep({
       {/* Hero visual / Header */}
       <div className="flex flex-col items-center py-4 text-center">
         <div className="mb-2.5 flex items-center justify-center gap-2.5">
-          <h2 className="text-foreground text-3xl font-black tracking-tight select-none sm:text-4xl">
+          <h2 className="text-foreground text-3xl font-bold tracking-tight select-none sm:text-4xl">
             Trading Cards
           </h2>
           <div className="relative h-7 w-10 shrink-0 select-none">
-            <div className="absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card" />
-            <div className="absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card">
-              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-foreground" />
+            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 bg-white shadow-sm" />
+            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 bg-white shadow-sm">
+              <div className="dark:bg-foreground h-1.5 w-1.5 rounded-full bg-slate-900" />
             </div>
-            <div className="absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 border-foreground/80 bg-white shadow-sm dark:border-border dark:bg-card">
-              <div className="h-1.5 w-1.5 rounded-full bg-slate-900 dark:bg-foreground" />
+            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 bg-white shadow-sm">
+              <div className="dark:bg-foreground h-1.5 w-1.5 rounded-full bg-slate-900" />
             </div>
           </div>
         </div>
         <p className="text-muted-foreground max-w-md text-sm">
-          Bring your NationStates trading cards into IxCards. Verify nation ownership and import in minutes.
+          Bring your NationStates trading cards into IxCards. Verify nation ownership and import in
+          minutes.
         </p>
       </div>
 
@@ -96,7 +97,7 @@ export function ImportNationStep({
           >
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-black text-white shadow-sm",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-bold text-white shadow-sm",
                 item.color === "rose" && "from-rose-500 to-rose-600",
                 item.color === "amber" && "from-amber-500 to-amber-600",
                 item.color === "green" && "from-green-500 to-green-600",
@@ -106,7 +107,7 @@ export function ImportNationStep({
               {item.step}
             </div>
             <div>
-              <p className="text-foreground text-sm font-bold">{item.title}</p>
+              <p className="text-foreground text-sm font-semibold">{item.title}</p>
               <p className="text-muted-foreground text-xs">{item.desc}</p>
             </div>
           </FacetCard>
@@ -114,7 +115,10 @@ export function ImportNationStep({
       </div>
 
       {/* Safety Disclaimer */}
-      <FacetCard depth={1} className="text-muted-foreground flex items-start gap-2.5 rounded-xl p-4 text-xs select-none">
+      <FacetCard
+        depth={1}
+        className="text-muted-foreground flex items-start gap-2.5 rounded-xl p-4 text-xs select-none"
+      >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
         <div className="space-y-0.5">
           <p className="text-foreground font-bold">Important</p>
@@ -128,7 +132,8 @@ export function ImportNationStep({
             >
               NationStates API
             </a>{" "}
-            and only grants read-only access to verify public deck contents. We will never ask for your NationStates password or account credentials.
+            and only grants read-only access to verify public deck contents. We will never ask for
+            your NationStates password or account credentials.
           </p>
           <NationStatesAttribution className="pt-1" />
         </div>
@@ -162,9 +167,7 @@ export function ImportNationStep({
           >
             <FacetCard depth={2} className="space-y-3 rounded-xl p-5">
               <div className="flex items-center justify-between">
-                <label className="text-foreground text-sm font-semibold">
-                  Your Nation Name
-                </label>
+                <label className="text-foreground text-sm font-semibold">Your Nation Name</label>
                 <button
                   onClick={() => {
                     setNationName("");
@@ -186,7 +189,7 @@ export function ImportNationStep({
                     }
                   }}
                   placeholder="e.g. Testlandia"
-                  className="glass-hierarchy-interactive h-12 bg-muted/30 pl-10 text-base focus:bg-background"
+                  className="glass-hierarchy-interactive bg-muted/30 focus:bg-background h-12 pl-10 text-base"
                   autoFocus
                 />
               </div>
@@ -210,4 +213,3 @@ export function ImportNationStep({
     </div>
   );
 }
-

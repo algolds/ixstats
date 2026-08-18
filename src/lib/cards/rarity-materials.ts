@@ -34,10 +34,19 @@ export interface RarityMaterialConfig {
   borderStyle: string;
   borderColor: string;
   borderGlow: string;
-  cornerTreatment: "none" | "chamfer" | "engraved_bracket" | "laser_emitter" | "filigree" | "celestial_rune";
+  cornerTreatment:
+    "none" | "chamfer" | "engraved_bracket" | "laser_emitter" | "filigree" | "celestial_rune";
 
   // Emblem / Sigil treatment
-  emblemTreatment: "matte" | "gloss" | "prismatic_chrome" | "cyan_crystal" | "amethyst_glow" | "gilded_gold" | "astral_hologram" | "solar_incandescent";
+  emblemTreatment:
+    | "matte"
+    | "gloss"
+    | "prismatic_chrome"
+    | "cyan_crystal"
+    | "amethyst_glow"
+    | "gilded_gold"
+    | "astral_hologram"
+    | "solar_incandescent";
   emblemFilter: string;
 
   // Particle & Lighting FX
@@ -61,7 +70,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     description: "Pressed tactile linen paper with fine graphite bevels and diffuse matte finish.",
     defaultFinish: "MATTE_PAPER",
     baseGradient: "from-stone-900 via-zinc-900 to-neutral-950",
-    surfaceTexture: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 80%)",
+    surfaceTexture:
+      "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 80%)",
     specularColor: "rgba(255, 255, 255, 0.08)",
     glareIntensity: 0.15,
     borderStyle: "border border-white/10",
@@ -97,7 +107,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_15px_rgba(16,185,129,0.2)]",
     cornerTreatment: "chamfer",
     emblemTreatment: "gloss",
-    emblemFilter: "drop-shadow(0 0 8px rgba(16,185,129,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))",
+    emblemFilter:
+      "drop-shadow(0 0 8px rgba(16,185,129,0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))",
     particles: {
       enabled: false,
       count: 0,
@@ -117,7 +128,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     description: "Micro-etched holographic foil with multi-angle rainbow dispersion lines.",
     defaultFinish: "PRISMATIC_FOIL",
     baseGradient: "from-blue-950 via-indigo-950 to-slate-950",
-    surfaceTexture: "linear-gradient(45deg, rgba(59,130,246,0.15) 0%, rgba(99,102,241,0.2) 50%, rgba(147,51,234,0.15) 100%)",
+    surfaceTexture:
+      "linear-gradient(45deg, rgba(59,130,246,0.15) 0%, rgba(99,102,241,0.2) 50%, rgba(147,51,234,0.15) 100%)",
     specularColor: "rgba(96, 165, 250, 0.5)",
     glareIntensity: 0.55,
     borderStyle: "border-2 border-blue-500/60",
@@ -125,7 +137,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_20px_rgba(59,130,246,0.35)]",
     cornerTreatment: "engraved_bracket",
     emblemTreatment: "prismatic_chrome",
-    emblemFilter: "drop-shadow(0 0 10px rgba(59,130,246,0.7)) drop-shadow(0 4px 8px rgba(0,0,0,0.9))",
+    emblemFilter:
+      "drop-shadow(0 0 10px rgba(59,130,246,0.7)) drop-shadow(0 4px 8px rgba(0,0,0,0.9))",
     particles: {
       enabled: true,
       count: 8,
@@ -153,7 +166,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_25px_rgba(6,182,212,0.45),inset_0_0_10px_rgba(6,182,212,0.2)]",
     cornerTreatment: "laser_emitter",
     emblemTreatment: "cyan_crystal",
-    emblemFilter: "drop-shadow(0 0 12px rgba(6,182,212,0.9)) drop-shadow(0 0 20px rgba(59,130,246,0.5))",
+    emblemFilter:
+      "drop-shadow(0 0 12px rgba(6,182,212,0.9)) drop-shadow(0 0 20px rgba(59,130,246,0.5))",
     particles: {
       enabled: true,
       count: 14,
@@ -170,7 +184,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     rarity: "EPIC",
     name: "Epic",
     materialName: "Amethyst Starry Lattice",
-    description: "Deep cosmic amethyst crystalline matrix with floating stardust and starry twinkle grid.",
+    description:
+      "Deep cosmic amethyst crystalline matrix with floating stardust and starry twinkle grid.",
     defaultFinish: "COSMIC_STARDUST",
     baseGradient: "from-purple-950 via-indigo-950 to-pink-950",
     surfaceTexture: "radial-gradient(circle at 70% 30%, rgba(168,85,247,0.3) 0%, transparent 60%)",
@@ -181,7 +196,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_30px_rgba(168,85,247,0.5),inset_0_0_15px_rgba(236,72,153,0.3)]",
     cornerTreatment: "engraved_bracket",
     emblemTreatment: "amethyst_glow",
-    emblemFilter: "drop-shadow(0 0 14px rgba(168,85,247,0.9)) drop-shadow(0 0 25px rgba(236,72,153,0.6))",
+    emblemFilter:
+      "drop-shadow(0 0 14px rgba(168,85,247,0.9)) drop-shadow(0 0 25px rgba(236,72,153,0.6))",
     particles: {
       enabled: true,
       count: 20,
@@ -198,7 +214,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     rarity: "LEGENDARY",
     name: "Legendary",
     materialName: "24K Stamped Gilded Relic",
-    description: "Heavy 24K gold foil embossed over obsidian slate with molten radial rays and ornate filigree.",
+    description:
+      "Heavy 24K gold foil embossed over obsidian slate with molten radial rays and ornate filigree.",
     defaultFinish: "GILDED_GOLD",
     baseGradient: "from-amber-950/90 via-slate-950 to-yellow-950/90",
     surfaceTexture: "radial-gradient(circle at 50% 40%, rgba(234,179,8,0.35) 0%, transparent 70%)",
@@ -209,7 +226,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_35px_rgba(234,179,8,0.6),inset_0_0_20px_rgba(245,158,11,0.4)]",
     cornerTreatment: "filigree",
     emblemTreatment: "gilded_gold",
-    emblemFilter: "drop-shadow(0 0 16px rgba(234,179,8,1)) drop-shadow(0 0 30px rgba(245,158,11,0.7))",
+    emblemFilter:
+      "drop-shadow(0 0 16px rgba(234,179,8,1)) drop-shadow(0 0 30px rgba(245,158,11,0.7))",
     particles: {
       enabled: true,
       count: 26,
@@ -226,10 +244,12 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     rarity: "MYTHIC",
     name: "Mythic",
     materialName: "Astral Void Glass",
-    description: "Deep black cosmic void with swirling nebula core and prismatic chromatic aberration.",
+    description:
+      "Deep black cosmic void with swirling nebula core and prismatic chromatic aberration.",
     defaultFinish: "ASTRAL_VOID",
     baseGradient: "from-rose-950 via-slate-950 to-purple-950",
-    surfaceTexture: "radial-gradient(circle at 40% 60%, rgba(244,63,94,0.3) 0%, rgba(139,92,246,0.3) 50%, transparent 80%)",
+    surfaceTexture:
+      "radial-gradient(circle at 40% 60%, rgba(244,63,94,0.3) 0%, rgba(139,92,246,0.3) 50%, transparent 80%)",
     specularColor: "rgba(251, 113, 133, 0.9)",
     glareIntensity: 0.95,
     borderStyle: "border-[2.5px] border-rose-500/90 ring-2 ring-purple-500/50",
@@ -237,7 +257,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_40px_rgba(244,63,94,0.6),inset_0_0_25px_rgba(139,92,246,0.5)]",
     cornerTreatment: "engraved_bracket",
     emblemTreatment: "astral_hologram",
-    emblemFilter: "drop-shadow(0 0 18px rgba(244,63,94,1)) drop-shadow(0 0 35px rgba(139,92,246,0.8))",
+    emblemFilter:
+      "drop-shadow(0 0 18px rgba(244,63,94,1)) drop-shadow(0 0 35px rgba(139,92,246,0.8))",
     particles: {
       enabled: true,
       count: 32,
@@ -254,10 +275,12 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     rarity: "DIVINE",
     name: "Divine",
     materialName: "Solar Celestial Crown",
-    description: "Blinding celestial solar pearl with sacred runes, corona flares, and radiant aura.",
+    description:
+      "Blinding celestial solar pearl with sacred runes, corona flares, and radiant aura.",
     defaultFinish: "SOLAR_CROWN",
     baseGradient: "from-amber-950 via-yellow-950 to-slate-950",
-    surfaceTexture: "radial-gradient(circle at 50% 50%, rgba(253,224,71,0.45) 0%, rgba(245,158,11,0.2) 60%, transparent 90%)",
+    surfaceTexture:
+      "radial-gradient(circle at 50% 50%, rgba(253,224,71,0.45) 0%, rgba(245,158,11,0.2) 60%, transparent 90%)",
     specularColor: "rgba(255, 255, 255, 1)",
     glareIntensity: 1.0,
     borderStyle: "border-[3px] border-yellow-200 ring-4 ring-amber-400/50",
@@ -265,7 +288,8 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     borderGlow: "shadow-[0_0_50px_rgba(250,204,21,0.8),inset_0_0_30px_rgba(253,224,71,0.6)]",
     cornerTreatment: "celestial_rune",
     emblemTreatment: "solar_incandescent",
-    emblemFilter: "drop-shadow(0 0 22px rgba(255,255,255,1)) drop-shadow(0 0 45px rgba(250,204,21,0.9))",
+    emblemFilter:
+      "drop-shadow(0 0 22px rgba(255,255,255,1)) drop-shadow(0 0 45px rgba(250,204,21,0.9))",
     particles: {
       enabled: true,
       count: 40,

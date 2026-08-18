@@ -63,9 +63,7 @@ export function CollectionCommentsTab({
                 <div className="flex items-start gap-3">
                   <div className="flex-1">
                     <div className="mb-2 flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white">
-                        {comment.userId}
-                      </span>
+                      <span className="text-sm font-semibold text-white">{comment.userId}</span>
                       <span className="text-xs text-white/50">
                         {new Date(comment.createdAt).toLocaleDateString()}
                       </span>

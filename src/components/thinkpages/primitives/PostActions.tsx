@@ -11,10 +11,7 @@ import { RepostModal } from "../RepostModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 
-import {
-  updateReactionsInCacheData,
-  updatePostReactionsList,
-} from "./ReactionCacheUpdater";
+import { updateReactionsInCacheData, updatePostReactionsList } from "./ReactionCacheUpdater";
 
 interface PostActionsProps {
   postId: string;

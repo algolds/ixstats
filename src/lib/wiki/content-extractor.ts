@@ -62,7 +62,6 @@ export interface WikiExtractedContent {
   lists: WikiList[];
 }
 
-
 // ── Section Extraction ──
 
 /**

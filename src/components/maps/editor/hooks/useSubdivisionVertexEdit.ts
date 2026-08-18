@@ -18,7 +18,10 @@ import {
   sanitizeRegionShape,
 } from "~/lib/maps/border-editor";
 import type { VertexRef } from "~/lib/maps/border-editor";
-import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/maps/province-importer/alignment";
+import {
+  findNearestBorderRing,
+  snapGeometryToBorder,
+} from "~/lib/maps/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
 import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
 import {

@@ -704,4 +704,3 @@ export function findMatchingCategory(term: string): LoreCategory | null {
   }
   return null;
 }
-

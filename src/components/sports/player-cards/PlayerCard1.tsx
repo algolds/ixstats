@@ -60,7 +60,7 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
               style={gradientStyle}
             >
               {/* Big Name Background Overlay */}
-              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-extrabold tracking-tighter text-white uppercase italic opacity-25 mix-blend-overlay select-none">
+              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-bold tracking-tighter text-white uppercase italic opacity-25 mix-blend-overlay select-none">
                 <div>{player.firstName.slice(0, 8)}</div>
                 <div>{player.lastName.slice(0, 8)}</div>
               </div>
@@ -79,7 +79,7 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
 
           {/* Bottom Badge for Number / Overall */}
           <div
-            className="absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-2xl border border-white/20 text-2xl/none font-black tracking-tighter text-white shadow-lg"
+            className="absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-2xl border border-white/20 text-2xl/none font-bold tracking-tight text-white tabular-nums shadow-lg"
             style={{ backgroundColor: teamColor }}
           >
             {player.number ?? overallRating}
@@ -111,14 +111,14 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
 
           {/* Top-Right Badge */}
           <div className="border-border/40 bg-card absolute end-0 top-0 flex aspect-square w-[44px] translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full border shadow-md">
-            <span className="text-sm font-black" style={{ color: teamColor }}>
+            <span className="text-sm font-bold tabular-nums" style={{ color: teamColor }}>
               {overallRating}
             </span>
           </div>
         </div>
 
         <div className="pt-3 pb-1 text-center">
-          <h2 className="text-foreground mt-0! truncate text-lg font-extrabold tracking-tight">
+          <h2 className="text-foreground mt-0! truncate text-lg font-bold tracking-tight">
             {player.firstName} {player.lastName}
           </h2>
           <div className="text-muted-foreground mt-0.5 flex items-center justify-center gap-1 text-xs font-semibold capitalize">
@@ -137,7 +137,7 @@ export default function PlayerCard1({ player, team, statistics, className }: Pla
         </div>
       </div>
 
-      <div className="divide-border/30 text-foreground bg-muted/30 border-border/20 mx-auto mt-1 grid grid-cols-3 divide-x rounded-b-3xl border-t py-3 dark:bg-secondary/40">
+      <div className="divide-border/30 text-foreground bg-muted/30 border-border/20 dark:bg-secondary/40 mx-auto mt-1 grid grid-cols-3 divide-x rounded-b-3xl border-t py-3">
         {defaultStats.map((statistic) => (
           <div key={statistic.label} className="px-3 text-center">
             <div className="mb-0.5 text-xs font-bold tabular-nums">{statistic.value}</div>

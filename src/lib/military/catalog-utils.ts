@@ -111,8 +111,7 @@ export function filterEquipment<T extends FilterableEquipmentItem>(
 
     // Tech level filter
     const techLevel = item.technologyLevel ?? 0;
-    if (techLevel < techLevelRange[0]! || techLevel > techLevelRange[1]!)
-      return false;
+    if (techLevel < techLevelRange[0]! || techLevel > techLevelRange[1]!) return false;
 
     // Cost filter
     const cost = item.acquisitionCost ?? 0;

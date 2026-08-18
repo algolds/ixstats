@@ -42,7 +42,7 @@ export default function FactbookLayout({
     <FactbookMetricsProvider section={section}>
       <div className="space-y-4">
         {/* Tier 2 — inner section pills (minimalist text rail + sliding underline) */}
-        <div className="min-w-0 w-full">
+        <div className="w-full min-w-0">
           <MyCountryTabsList
             activeTab={section}
             onChangeAction={() => {}}

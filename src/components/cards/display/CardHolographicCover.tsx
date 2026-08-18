@@ -160,7 +160,16 @@ function _getSweepSpeed(rarity: CardRarity): number {
 // ─── Component ──────────────────────────────────────────────────
 
 export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
-  ({ cardType = "SPECIAL", category, rarity: rarityStr, wikiSource, title, designMetadata, isHovered = false, className }) => {
+  ({
+    cardType = "SPECIAL",
+    category,
+    rarity: rarityStr,
+    wikiSource,
+    title,
+    designMetadata,
+    isHovered = false,
+    className,
+  }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -207,7 +216,10 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
     const showMotifs = rarity !== "COMMON";
 
     return (
-      <div ref={containerRef} className={cn("absolute inset-0 overflow-hidden select-none", className)}>
+      <div
+        ref={containerRef}
+        className={cn("absolute inset-0 overflow-hidden select-none", className)}
+      >
         {/* Layer 1: Base gradient */}
         <div
           className={cn(
@@ -219,7 +231,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {/* Layer 2: Category Pattern or Ink-flow ambient pattern */}
         {categoryTheme ? (
           <div
-            className="absolute inset-0 opacity-40 pointer-events-none"
+            className="pointer-events-none absolute inset-0 opacity-40"
             style={{
               background: categoryTheme.pattern,
             }}
@@ -242,7 +254,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {/* Layer 2b: Custom Watermark Icon or Category Icon Watermark */}
         {designMetadata?.watermarkIcon ? (
           <div
-            className="pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-300 overflow-hidden"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden transition-all duration-300"
             style={{
               opacity: designMetadata.watermarkOpacity ?? 0.35,
               transform: `scale(${designMetadata.watermarkScale ?? 1.2})`,
@@ -250,7 +262,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
           >
             {designMetadata.watermarkColor ? (
               <div
-                className="w-full h-full"
+                className="h-full w-full"
                 style={{
                   maskImage: `url(${designMetadata.watermarkIcon.path})`,
                   WebkitMaskImage: `url(${designMetadata.watermarkIcon.path})`,
@@ -267,7 +279,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
               <img
                 src={designMetadata.watermarkIcon.path}
                 alt="Watermark"
-                className="w-full h-full object-contain filter invert opacity-90"
+                className="h-full w-full object-contain opacity-90 invert filter"
               />
             )}
           </div>
@@ -276,7 +288,11 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
             <CategoryIcon
               category={resolvedCategory}
               treatment="watermark"
-              color={designMetadata?.watermarkColor || designMetadata?.accentColorOverride || categoryTheme?.accentColor}
+              color={
+                designMetadata?.watermarkColor ||
+                designMetadata?.accentColorOverride ||
+                categoryTheme?.accentColor
+              }
               className="max-h-[60%] max-w-[60%]"
             />
           </div>
@@ -284,7 +300,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
 
         {/* Layer 2c: Center Emblem Icon if provided */}
         {designMetadata?.emblemIcon && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div
               className="relative flex items-center justify-center rounded-full p-6 transition-all duration-300"
               style={{
@@ -294,7 +310,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
             >
               {designMetadata.emblemColor ? (
                 <div
-                  className="w-20 h-20"
+                  className="h-20 w-20"
                   style={{
                     maskImage: `url(${designMetadata.emblemIcon.path})`,
                     WebkitMaskImage: `url(${designMetadata.emblemIcon.path})`,
@@ -311,7 +327,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
                 <img
                   src={designMetadata.emblemIcon.path}
                   alt="Emblem"
-                  className="w-20 h-20 object-contain filter invert"
+                  className="h-20 w-20 object-contain invert filter"
                 />
               )}
             </div>
@@ -324,9 +340,10 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
           style={{
             backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
-            backgroundPosition: isHovered && containerRef.current
-              ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
-              : "50% 50%",
+            backgroundPosition:
+              isHovered && containerRef.current
+                ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                : "50% 50%",
             mixBlendMode: "overlay",
             opacity: holoOpacity,
             filter: theme.hueRotate ? `hue-rotate(${theme.hueRotate}deg)` : undefined,
@@ -393,7 +410,9 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
               <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
                 {theme.label}
               </p>
-              <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">{theme.sublabel}</p>
+              <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">
+                {theme.sublabel}
+              </p>
             </div>
           </div>
         )}

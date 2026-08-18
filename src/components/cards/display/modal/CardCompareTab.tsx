@@ -39,9 +39,7 @@ export function CardCompareTab({
 
         {/* Comparison card */}
         <div className="glass-hierarchy-child rounded-lg p-4">
-          <h4 className="text-foreground mb-4 text-sm font-semibold">
-            {comparisonCard.title}
-          </h4>
+          <h4 className="text-foreground mb-4 text-sm font-semibold">{comparisonCard.title}</h4>
           <div className="space-y-3">
             {Object.entries(comparisonStats.base).map(([key, stat]) => (
               <div key={key}>

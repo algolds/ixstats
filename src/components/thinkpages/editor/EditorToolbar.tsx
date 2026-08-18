@@ -117,7 +117,10 @@ export function EditorToolbar({
             <LinkIcon className="h-4 w-4" />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 border-white/10 bg-slate-900/95 p-3 backdrop-blur-xl">
+        <PopoverContent
+          align="start"
+          className="w-64 border-white/10 bg-slate-900/95 p-3 backdrop-blur-xl"
+        >
           <div className="space-y-2">
             <span className="text-xs font-semibold text-white">Insert Web Link</span>
             <Input
@@ -145,7 +148,10 @@ export function EditorToolbar({
             <span className="text-sm">😊</span>
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="p-0 border-white/10 bg-slate-900/95 backdrop-blur-xl">
+        <PopoverContent
+          align="start"
+          className="border-white/10 bg-slate-900/95 p-0 backdrop-blur-xl"
+        >
           <EmojiPicker onSelectEmoji={(emoji: string) => onInsertEmoji(emoji)} />
         </PopoverContent>
       </Popover>

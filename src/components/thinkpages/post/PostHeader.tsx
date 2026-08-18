@@ -1,16 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  MoreHorizontal,
-  Pin,
-  Edit,
-  Trash2,
-  Flag,
-  Crown,
-  Newspaper,
-  Users,
-} from "lucide-react";
+import { MoreHorizontal, Pin, Edit, Trash2, Flag, Crown, Newspaper, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -62,7 +53,7 @@ export function PostHeader({
   return (
     <div className={cn("flex items-start justify-between gap-3", className)}>
       {/* Author Details & Avatar */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex min-w-0 items-center gap-3">
         <Link
           href={`/thinkpages/u/${account.username}`}
           className="group relative shrink-0 transition-transform duration-150 active:scale-[0.95]"
@@ -78,19 +69,19 @@ export function PostHeader({
 
           {/* Account Type Icon Indicator */}
           {account.type === "OFFICIAL" && (
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] text-white shadow-sm">
+            <span className="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[9px] text-white shadow-sm">
               <Crown className="h-2.5 w-2.5" />
             </span>
           )}
           {account.type === "NEWS" && (
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] text-white shadow-sm">
+            <span className="absolute -right-1 -bottom-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] text-white shadow-sm">
               <Newspaper className="h-2.5 w-2.5" />
             </span>
           )}
         </Link>
 
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Link
               href={`/thinkpages/u/${account.username}`}
               className="truncate text-sm font-bold tracking-tight text-white transition-colors hover:text-purple-300"
@@ -120,7 +111,7 @@ export function PostHeader({
           <div className="flex items-center gap-1.5 text-xs font-medium tracking-tight text-slate-400">
             <span className="truncate">@{account.username}</span>
             <span>·</span>
-            <span className="tabular-nums text-slate-400/80">{timeAgo}</span>
+            <span className="text-slate-400/80 tabular-nums">{timeAgo}</span>
           </div>
         </div>
       </div>
@@ -132,16 +123,19 @@ export function PostHeader({
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44 border-white/10 bg-slate-900/95 backdrop-blur-xl">
+        <DropdownMenuContent
+          align="end"
+          className="w-44 border-white/10 bg-slate-900/95 backdrop-blur-xl"
+        >
           {onPin && (
-            <DropdownMenuItem onClick={onPin} className="text-xs font-medium cursor-pointer">
+            <DropdownMenuItem onClick={onPin} className="cursor-pointer text-xs font-medium">
               <Pin className="mr-2 h-3.5 w-3.5" />
               {isPinned ? "Unpin Post" : "Pin Post"}
             </DropdownMenuItem>
           )}
 
           {canEdit && onEdit && (
-            <DropdownMenuItem onClick={onEdit} className="text-xs font-medium cursor-pointer">
+            <DropdownMenuItem onClick={onEdit} className="cursor-pointer text-xs font-medium">
               <Edit className="mr-2 h-3.5 w-3.5" />
               Edit Post
             </DropdownMenuItem>
@@ -150,7 +144,10 @@ export function PostHeader({
           {canDelete && onDelete && (
             <>
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem onClick={onDelete} className="text-xs font-medium text-rose-400 cursor-pointer focus:text-rose-300">
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="cursor-pointer text-xs font-medium text-rose-400 focus:text-rose-300"
+              >
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
                 Delete Post
               </DropdownMenuItem>
@@ -160,7 +157,10 @@ export function PostHeader({
           {onReport && (
             <>
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem onClick={onReport} className="text-xs font-medium text-slate-400 cursor-pointer">
+              <DropdownMenuItem
+                onClick={onReport}
+                className="cursor-pointer text-xs font-medium text-slate-400"
+              >
                 <Flag className="mr-2 h-3.5 w-3.5" />
                 Report Post
               </DropdownMenuItem>

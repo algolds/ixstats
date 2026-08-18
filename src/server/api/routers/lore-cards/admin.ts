@@ -57,10 +57,7 @@ export const loreCardsAdminRouter = createTRPCRouter({
         const [users, verifications] = await Promise.all([
           ctx.db.user.findMany({
             where: {
-              OR: [
-                { clerkUserId: { in: userIds } },
-                { id: { in: userIds } },
-              ],
+              OR: [{ clerkUserId: { in: userIds } }, { id: { in: userIds } }],
             },
             select: { id: true, clerkUserId: true, countryId: true },
           }),
@@ -74,12 +71,13 @@ export const loreCardsAdminRouter = createTRPCRouter({
         ]);
 
         const countryIds = users.map((u) => u.countryId).filter((id): id is string => Boolean(id));
-        const countries = countryIds.length > 0
-          ? await ctx.db.country.findMany({
-              where: { id: { in: countryIds } },
-              select: { id: true, name: true },
-            })
-          : [];
+        const countries =
+          countryIds.length > 0
+            ? await ctx.db.country.findMany({
+                where: { id: { in: countryIds } },
+                select: { id: true, name: true },
+              })
+            : [];
 
         const countryMap = new Map(countries.map((c) => [c.id, c.name]));
         const verificationMap = new Map(verifications.map((v) => [v.userId, v.nationName]));
@@ -98,7 +96,9 @@ export const loreCardsAdminRouter = createTRPCRouter({
 
         const enrichedRequests = requests.map((r) => {
           const resolvedName = userMap.get(r.userId) || verificationMap.get(r.userId);
-          const shortId = r.userId.startsWith("user_") ? r.userId.slice(5, 12) : r.userId.slice(0, 8);
+          const shortId = r.userId.startsWith("user_")
+            ? r.userId.slice(5, 12)
+            : r.userId.slice(0, 8);
           return {
             ...r,
             requesterName: resolvedName ? resolvedName : `User (${shortId})`,
@@ -455,5 +455,3 @@ export const loreCardsAdminRouter = createTRPCRouter({
       }
     }),
 });
-
-

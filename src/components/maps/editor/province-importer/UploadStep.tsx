@@ -14,20 +14,29 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
   const handleFile = useCallback(
     (file?: File) => {
-      if (file && (file.type === "image/svg+xml" || file.type === "image/png" || file.name.endsWith(".svg") || file.name.endsWith(".png"))) {
+      if (
+        file &&
+        (file.type === "image/svg+xml" ||
+          file.type === "image/png" ||
+          file.name.endsWith(".svg") ||
+          file.name.endsWith(".png"))
+      ) {
         importer.handleUpload(file);
       }
     },
     [importer]
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!importer.isProcessing) {
-      setIsDragActive(true);
-    }
-  }, [importer.isProcessing]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!importer.isProcessing) {
+        setIsDragActive(true);
+      }
+    },
+    [importer.isProcessing]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();

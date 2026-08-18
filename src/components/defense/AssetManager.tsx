@@ -42,10 +42,7 @@ import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  DEFENSE_MANUFACTURERS,
-  MILITARY_ERAS,
-} from "~/lib/military/equipment";
+import { DEFENSE_MANUFACTURERS, MILITARY_ERAS } from "~/lib/military/equipment";
 import { EXPANDED_MILITARY_DATABASE } from "~/lib/military/equipment-extended";
 
 // Define a more specific type for our asset

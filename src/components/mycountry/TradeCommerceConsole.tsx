@@ -433,12 +433,12 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Est. Customs Yield:
               </span>
-              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 font-mono text-sm font-black tracking-tight text-cyan-400 shadow-md shadow-cyan-500/10 sm:text-base">
-                <CurrencyFlow value={estimatedCustomsYield} className="font-black text-cyan-400" />
-                <span className="ml-1 text-xs font-bold text-cyan-400/70">/ yr</span>
+              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-3 py-1.5 font-mono text-sm font-bold tracking-tight text-cyan-400 tabular-nums shadow-md shadow-cyan-500/10 sm:text-base">
+                <CurrencyFlow value={estimatedCustomsYield} className="font-bold text-cyan-400" />
+                <span className="ml-1 text-xs font-semibold text-cyan-400/70">/ yr</span>
               </span>
             </div>
           </div>
@@ -467,11 +467,11 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <Handshake className="h-4 w-4 shrink-0 text-emerald-400" />
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Bilateral Trade Partner Matrix
             </h4>
           </div>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-extrabold text-emerald-400">
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
             {tradePartners.length} Active Partners
           </span>
         </div>
@@ -489,9 +489,9 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
                     countryName={partner.name}
                     className="h-4 w-6 shrink-0 rounded-xs border border-white/20 object-cover"
                   />
-                  <p className="text-foreground truncate text-xs font-bold">{partner.name}</p>
+                  <p className="text-foreground truncate text-xs font-semibold">{partner.name}</p>
                 </div>
-                <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
+                <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
                   {partner.strength}% Trust
                 </span>
               </div>
@@ -500,7 +500,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
                 <span className="text-muted-foreground text-[10px] font-medium uppercase">
                   Annual Volume
                 </span>
-                <span className="text-foreground font-mono font-black">
+                <span className="text-foreground font-mono font-bold tabular-nums">
                   <CurrencyFlow value={partner.volume} decimalPlaces={1} />
                 </span>
               </div>
@@ -511,7 +511,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
                 </span>
                 <span
                   className={cn(
-                    "font-mono text-[11px] font-bold",
+                    "font-mono text-[11px] font-semibold tabular-nums",
                     partner.balance >= 0 ? "text-emerald-400" : "text-rose-400"
                   )}
                 >
@@ -531,10 +531,10 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
         >
           <div className="border-border/20 flex items-center justify-between border-b pb-2">
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Top Export Commodities ({sectors.length} Sectors)
             </h4>
-            <span className="text-muted-foreground font-mono text-[10px] font-semibold">
+            <span className="text-muted-foreground font-mono text-[10px] font-medium">
               Total Exports: ${formatCompact(totalExports)}
             </span>
           </div>
@@ -553,14 +553,14 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
                       className={cn("h-2.5 w-2.5 shrink-0 rounded-full", ACCENT_BG[sec.accent])}
                     />
                     <div>
-                      <p className="text-foreground font-bold">{sec.label}</p>
+                      <p className="text-foreground font-semibold">{sec.label}</p>
                       <p className="text-muted-foreground font-mono text-[10px]">
                         Tariff Rate: {tariffs[sec.key] ?? sec.defaultTariff}%
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={cn("font-mono text-sm font-black", accentCls)}>
+                    <span className={cn("font-mono text-sm font-bold tabular-nums", accentCls)}>
                       <PercentageFlow value={sec.defaultShare} decimalPlaces={1} />
                     </span>
                     <p className="text-muted-foreground font-mono text-[10px]">
@@ -578,18 +578,18 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
         >
           <div className="border-border/20 flex items-center justify-between border-b pb-2">
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Customs Controls & Trade Blocs
             </h4>
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
               Active Commerce
             </span>
           </div>
 
           <div className="space-y-2 text-xs">
             <div className="bg-muted/15 border-border/20 flex items-center justify-between rounded-lg border p-2.5">
-              <span className="text-muted-foreground font-semibold">Weighted Tariff Rate</span>
-              <span className="font-mono font-black text-purple-400">
+              <span className="text-muted-foreground font-medium">Weighted Tariff Rate</span>
+              <span className="font-mono font-bold text-purple-400 tabular-nums">
                 <PercentageFlow value={weightedTariff} decimalPlaces={2} />
               </span>
             </div>
@@ -675,7 +675,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
             <span className="text-muted-foreground text-xs font-semibold">
               Trade Openness Index
             </span>
-            <span className="font-mono text-base font-black text-cyan-400">
+            <span className="font-mono text-base font-bold text-cyan-400 tabular-nums">
               <PercentageFlow value={opennessIndex} decimalPlaces={1} />
             </span>
           </div>
@@ -701,13 +701,13 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
           <div className="flex justify-between font-mono text-[10px]">
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-              <span className="font-bold text-emerald-400">
+              <span className="font-semibold text-emerald-400 tabular-nums">
                 Exports: <CurrencyFlow value={totalExports} decimalPlaces={1} />
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
-              <span className="font-bold text-cyan-400">
+              <span className="font-semibold text-cyan-400 tabular-nums">
                 Imports: <CurrencyFlow value={totalImports} decimalPlaces={1} />
               </span>
             </div>
@@ -722,7 +722,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
         <div className="border-border/20 flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <Ship className="h-4 w-4 shrink-0 text-amber-400" />
-            <h4 className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+            <h4 className="text-foreground text-xs font-semibold tracking-wider uppercase">
               Commercial Telemetry
             </h4>
           </div>
@@ -730,17 +730,21 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-bold uppercase">Trade Volume</p>
-            <p className="text-foreground mt-0.5 font-mono text-sm font-black">
+            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+              Trade Volume
+            </p>
+            <p className="text-foreground mt-0.5 font-mono text-sm font-bold tabular-nums">
               <CurrencyFlow value={annualTradeVolume} decimalPlaces={1} />
             </p>
           </div>
 
           <div className="border-border/20 bg-muted/15 rounded-xl border p-2 text-center">
-            <p className="text-muted-foreground text-[9px] font-bold uppercase">Net Balance</p>
+            <p className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">
+              Net Balance
+            </p>
             <p
               className={cn(
-                "mt-0.5 font-mono text-sm font-black",
+                "mt-0.5 font-mono text-sm font-bold tabular-nums",
                 tradeBalance >= 0 ? "text-emerald-400" : "text-rose-400"
               )}
             >
@@ -815,12 +819,12 @@ function TariffRateCard({
           >
             {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
           </button>
-          <span className="text-muted-foreground truncate text-[11px] font-bold">
+          <span className="text-muted-foreground truncate text-[11px] font-semibold">
             {sector.shortLabel}
           </span>
         </div>
 
-        <span className={cn("shrink-0 font-mono text-base font-black tabular-nums", accentCls)}>
+        <span className={cn("shrink-0 font-mono text-base font-bold tabular-nums", accentCls)}>
           <PercentageFlow value={tariff} decimalPlaces={1} />
         </span>
       </div>
@@ -847,7 +851,7 @@ function TariffRateCard({
       {/* Yield preview */}
       <div className="flex items-center justify-between pt-0.5 text-[10px]">
         <span className="text-muted-foreground font-medium">Customs Yield</span>
-        <span className={cn("font-mono font-bold", accentCls)}>
+        <span className={cn("font-mono font-semibold tabular-nums", accentCls)}>
           <CurrencyFlow value={estimatedYield} decimalPlaces={1} className={accentCls} />
         </span>
       </div>
@@ -922,7 +926,7 @@ function ManageSectorsModal({
         <div className="border-border/20 flex shrink-0 items-center justify-between border-b pb-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-5 w-5 text-cyan-400" />
-            <h3 className="text-foreground text-base font-extrabold">
+            <h3 className="text-foreground text-base font-semibold">
               Manage Economic Sectors & Commodities
             </h3>
           </div>
@@ -938,10 +942,10 @@ function ManageSectorsModal({
         {/* Share Total Banner */}
         <div className="border-border/30 bg-muted/20 flex shrink-0 items-center justify-between rounded-xl border px-3.5 py-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground font-bold">Export Share Distribution:</span>
+            <span className="text-muted-foreground font-semibold">Export Share Distribution:</span>
             <span
               className={cn(
-                "font-mono text-sm font-black",
+                "font-mono text-sm font-bold tabular-nums",
                 Math.abs(totalShare - 100) < 0.5 ? "text-emerald-400" : "text-amber-400"
               )}
             >

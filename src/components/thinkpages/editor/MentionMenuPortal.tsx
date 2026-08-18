@@ -38,11 +38,11 @@ export function MentionMenuPortal({
         left: coords.left,
         zIndex: 200000,
       }}
-      className="animate-in fade-in-50 slide-in-from-top-1 w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl duration-150 dark:border-border dark:bg-popover/98 dark:text-foreground dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+      className="animate-in fade-in-50 slide-in-from-top-1 dark:border-border dark:bg-popover/98 dark:text-foreground w-64 rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-800 shadow-2xl backdrop-blur-xl duration-150 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
     >
       <div className="thin-scrollbar max-h-56 overflow-y-auto">
         {isLoading && results.length === 0 ? (
-          <div className="flex items-center justify-center py-4 text-xs text-neutral-400 dark:text-muted-foreground">
+          <div className="dark:text-muted-foreground flex items-center justify-center py-4 text-xs text-neutral-400">
             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin text-blue-500" />
             <span>Searching...</span>
           </div>

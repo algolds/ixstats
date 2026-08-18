@@ -8,7 +8,13 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { getOwnerCount } from "~/lib/cards";
 import type { CardInstance, FormattedStats, CardAuthorInfo } from "~/types/cards-display";
 import { CategoryIcon } from "~/components/cards/icons";
-import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, LoreCategory } from "~/lib/cards";
+import {
+  getCategoryTheme,
+  getCategoryLabel,
+  isValidLoreCategory,
+  classifyFromWikitext,
+  LoreCategory,
+} from "~/lib/cards";
 import { RarityBadge } from "../RarityBadge";
 import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
@@ -66,11 +72,7 @@ export function CardOverviewTab({
       source: (card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki",
     },
     {
-      enabled: Boolean(
-        isLoreCard &&
-        card.wikiArticleTitle &&
-        !hasStoredAuthor
-      ),
+      enabled: Boolean(isLoreCard && card.wikiArticleTitle && !hasStoredAuthor),
       staleTime: 1000 * 60 * 60,
     }
   );
@@ -109,10 +111,10 @@ export function CardOverviewTab({
         className="space-y-4"
       >
         {/* Interactive 3D Viewer Container */}
-        <div className="relative flex min-h-[380px] flex-col items-center justify-center rounded-2xl border border-border/40 bg-muted/20 p-4 backdrop-blur-md">
+        <div className="border-border/40 bg-muted/20 relative flex min-h-[380px] flex-col items-center justify-center rounded-2xl border p-4 backdrop-blur-md">
           {card.isRetired && (
             <div className="pointer-events-none absolute top-4 z-30 flex items-center justify-center">
-              <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-1 text-center text-sm font-black tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
+              <div className="rotate-[-12deg] rounded-lg border-4 border-red-500/80 bg-red-950/90 px-4 py-1 text-center text-sm font-bold tracking-widest text-red-500 uppercase shadow-2xl backdrop-blur-xs select-none">
                 Retired
               </div>
             </div>
@@ -138,10 +140,7 @@ export function CardOverviewTab({
               Market Value
             </div>
             <div
-              className={cn(
-                "mt-1 flex items-baseline gap-1 text-xl font-bold",
-                rarityConfig.color
-              )}
+              className={cn("mt-1 flex items-baseline gap-1 text-xl font-bold", rarityConfig.color)}
             >
               <IxCreditsSymbol size="1em" variant="ic" />
               {card.marketValue.toLocaleString()}
@@ -222,10 +221,8 @@ export function CardOverviewTab({
               "{card.inscription}"
             </p>
             <div className="text-muted-foreground mt-2 text-right text-[10px] font-medium">
-              Inscribed by user{" "}
-              {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
-              {card.inscribedAt &&
-                ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
+              Inscribed by user {card.inscribedById ? card.inscribedById.substring(0, 8) : "System"}
+              {card.inscribedAt && ` on ${new Date(card.inscribedAt).toLocaleDateString()}`}
             </div>
           </div>
         )}
@@ -234,8 +231,10 @@ export function CardOverviewTab({
         {card.description && (
           <div className="glass-hierarchy-child rounded-lg p-4">
             <h3 className="text-foreground mb-2 text-sm font-semibold">Description</h3>
-            <div className="text-muted-foreground text-sm leading-relaxed space-y-1">
-              <WikiHtmlContent html={parseWikitextToHtml(card.description, card.wikiSource || undefined)} />
+            <div className="text-muted-foreground space-y-1 text-sm leading-relaxed">
+              <WikiHtmlContent
+                html={parseWikitextToHtml(card.description, card.wikiSource || undefined)}
+              />
             </div>
           </div>
         )}
@@ -270,18 +269,23 @@ export function CardOverviewTab({
 
           if (isLoreCard) {
             return (
-              <div className="glass-hierarchy-child rounded-xl p-4 border border-border/40 backdrop-blur-md space-y-3">
-                <h3 className="text-foreground text-xs font-bold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5 mb-2">
-                  <Layers className="h-3.5 w-3.5 text-primary" />
+              <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+                <h3 className="text-foreground text-muted-foreground/80 mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                  <Layers className="text-primary h-3.5 w-3.5" />
                   Card Specifications
                 </h3>
 
-                <div className="space-y-2.5 text-xs divide-y divide-white/5">
+                <div className="space-y-2.5 divide-y divide-white/5 text-xs">
                   {resolvedCategory && (
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-muted-foreground font-medium">Category</span>
-                      <span className="inline-flex items-center gap-1.5 font-bold text-foreground">
-                        <CategoryIcon category={resolvedCategory} treatment="seal" size="xs" color={categoryTheme?.accentColor} />
+                      <span className="text-foreground inline-flex items-center gap-1.5 font-bold">
+                        <CategoryIcon
+                          category={resolvedCategory}
+                          treatment="seal"
+                          size="xs"
+                          color={categoryTheme?.accentColor}
+                        />
                         {getCategoryLabel(resolvedCategory)}
                       </span>
                     </div>
@@ -291,7 +295,7 @@ export function CardOverviewTab({
                     <span className="text-muted-foreground font-medium">Tier & Season</span>
                     <div className="inline-flex items-center gap-2">
                       <RarityBadge rarity={card.rarity} size="small" />
-                      <span className="font-semibold text-foreground">Season {card.season}</span>
+                      <span className="text-foreground font-semibold">Season {card.season}</span>
                     </div>
                   </div>
 
@@ -300,7 +304,7 @@ export function CardOverviewTab({
                     {isIIWiki ? (
                       <IIWikiBadge size="sm" />
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold text-xs">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400">
                         <Globe className="h-3 w-3" /> IxWiki
                       </span>
                     )}
@@ -309,7 +313,10 @@ export function CardOverviewTab({
                   {wikiAuthor && (
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-muted-foreground font-medium">Wiki Author</span>
-                      <span className="font-semibold text-foreground truncate max-w-[200px]" title={wikiAuthor}>
+                      <span
+                        className="text-foreground max-w-[200px] truncate font-semibold"
+                        title={wikiAuthor}
+                      >
                         {wikiAuthor}
                       </span>
                     </div>
@@ -320,7 +327,7 @@ export function CardOverviewTab({
           }
 
           return Object.keys(stats.base).length > 0 ? (
-            <div className="glass-hierarchy-child rounded-xl p-4 border border-border/40 backdrop-blur-md space-y-3">
+            <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <h3 className="text-foreground text-sm font-bold">NS Simulation Stats</h3>
                 {card.level > 1 && (
@@ -332,9 +339,14 @@ export function CardOverviewTab({
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(stats.base).map(([key, stat]) => (
                   <div key={key} className="rounded-lg border border-white/10 bg-black/40 p-2.5">
-                    <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider">{stat.def.label}</div>
+                    <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                      {stat.def.label}
+                    </div>
                     <div className="mt-0.5 flex items-baseline gap-2">
-                      <span className="text-lg font-extrabold" style={{ color: stat.def.color }}>
+                      <span
+                        className="font-mono text-lg font-bold tabular-nums"
+                        style={{ color: stat.def.color }}
+                      >
                         {stat.value}
                       </span>
                       <span className="text-muted-foreground/50 text-[10px]">/100</span>

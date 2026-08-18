@@ -6,11 +6,11 @@ import type { CardBackVariant } from "~/components/cards/display/CardBack";
 export type { MaterialFinishType, CardBackVariant };
 
 export interface GameIconItem {
-  id: string;          // e.g. "lorc/crossed-swords"
-  name: string;        // e.g. "Crossed Swords"
-  slug: string;        // e.g. "crossed-swords"
-  author: string;      // e.g. "lorc"
-  path: string;        // e.g. "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crossed-swords.svg"
+  id: string; // e.g. "lorc/crossed-swords"
+  name: string; // e.g. "Crossed Swords"
+  slug: string; // e.g. "crossed-swords"
+  author: string; // e.g. "lorc"
+  path: string; // e.g. "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/crossed-swords.svg"
   tags: string[];
 }
 
@@ -60,7 +60,7 @@ export interface CardDesignState {
   useAutoValuation: boolean;
   isLimitedSupply: boolean;
   totalSupply: number | null;
-};
+}
 
 export interface CardDesignPreset {
   id: string;
@@ -116,8 +116,10 @@ export const DEFAULT_DESIGN_STATE: CardDesignState = {
 
   wikiSource: "wikios",
   wikiArticleTitle: "Concord of Nations",
-  wikiExcerpt: "The '''Concord of Nations''' serves as the supreme diplomatic council, uniting sovereign states across IxWorld under a unified charter of peace, trade, and non-aggression.",
-  description: "Supreme diplomatic council uniting sovereign states under a unified charter of peace and trade.",
+  wikiExcerpt:
+    "The '''Concord of Nations''' serves as the supreme diplomatic council, uniting sovereign states across IxWorld under a unified charter of peace, trade, and non-aggression.",
+  description:
+    "Supreme diplomatic council uniting sovereign states under a unified charter of peace and trade.",
 
   marketValue: 6000,
   useAutoValuation: true,
@@ -135,4 +137,3 @@ export const RARITY_BASE_VALUES: Record<string, number> = {
   MYTHIC: 15000,
   DIVINE: 50000,
 };
-

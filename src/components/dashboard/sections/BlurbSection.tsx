@@ -19,40 +19,41 @@ export function BlurbSection() {
 
   return (
     <>
-      <div className="no-wiki-tooltip relative overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl p-3.5 space-y-3">
+      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-3.5 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquareQuote className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <span className="text-xs font-black uppercase tracking-wider text-foreground">
+            <span className="text-foreground text-xs font-semibold tracking-tight">
               Blurb of the Day
             </span>
           </div>
 
-          <span className="rounded-md border border-purple-500/30 bg-purple-500/15 px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+          <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-medium tracking-wider text-purple-700 uppercase dark:text-purple-300">
             Daily Prompt
           </span>
         </div>
 
         {/* Editorial Quote Vignette (No input borders) */}
         <div className="relative overflow-hidden rounded-2xl border-l-3 border-purple-500 bg-gradient-to-br from-purple-500/10 via-purple-500/[0.03] to-transparent p-3.5 shadow-xs dark:border-purple-400 dark:from-purple-500/15 dark:via-purple-500/[0.05]">
-          <Quote className="absolute -right-2 -bottom-2 h-12 w-12 text-purple-500/10 dark:text-purple-400/10 pointer-events-none select-none" />
-          <p className="relative z-10 text-foreground text-xs sm:text-[12.5px] leading-relaxed font-semibold tracking-tight select-text">
+          <Quote className="pointer-events-none absolute -right-2 -bottom-2 h-12 w-12 text-purple-500/10 select-none dark:text-purple-400/10" />
+          <p className="text-foreground relative z-10 text-xs leading-relaxed font-normal tracking-normal select-text">
             &ldquo;{prompt.question}&rdquo;
           </p>
         </div>
 
         <div className="flex items-center justify-between pt-0.5">
-          <span className="text-muted-foreground/80 text-[10px] font-bold flex items-center gap-1">
+          <span className="text-muted-foreground/80 flex items-center gap-1 text-[10px] font-medium tabular-nums">
             <MessageCircle className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-            {prompt._count?.responses ?? 0} {prompt._count?.responses === 1 ? "response" : "responses"}
+            {prompt._count?.responses ?? 0}{" "}
+            {prompt._count?.responses === 1 ? "response" : "responses"}
           </span>
 
           <button
             onClick={() => setModalOpen(true)}
-            className="group/btn flex items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[10px] font-extrabold text-purple-700 dark:text-purple-300 hover:border-purple-500/60 hover:bg-purple-500/25 dark:border-purple-500/30 dark:bg-purple-500/20 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 backdrop-blur-md"
+            className="group/btn flex cursor-pointer items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[10px] font-semibold text-purple-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-purple-500/60 hover:bg-purple-500/25 active:scale-95 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300"
           >
             <span>Write Response</span>
-            <ChevronRight className="h-3 w-3 shrink-0 text-purple-700 dark:text-purple-300 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+            <ChevronRight className="h-3 w-3 shrink-0 text-purple-700 transition-transform duration-200 group-hover/btn:translate-x-0.5 dark:text-purple-300" />
           </button>
         </div>
       </div>

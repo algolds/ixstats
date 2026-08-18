@@ -265,17 +265,17 @@ export function PrivacySecurityCard({
           </div>
 
           {/* Legal Documents & Data Rights */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+          <div className="flex flex-col justify-between gap-4 rounded-2xl bg-slate-50/50 p-4 sm:flex-row sm:items-center dark:bg-slate-800/30">
             <div>
               <Label className="text-sm font-bold text-slate-900 dark:text-white">
                 Legal &amp; Privacy Rights
               </Label>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 max-w-md">
+              <p className="max-w-md text-xs font-medium text-slate-500 dark:text-slate-400">
                 Review our platform terms, acceptable use guidelines, zero-sale privacy policy, and
                 GDPR/CCPA data erasure procedures.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               <Link
                 href="/terms"
                 className="glass-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"

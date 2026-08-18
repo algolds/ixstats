@@ -4,20 +4,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  BookOpen,
-  Globe,
-  Flag,
-  Sparkles,
-  RefreshCw,
-  Layers,
-} from "lucide-react";
+import { BookOpen, Globe, Flag, Sparkles, RefreshCw, Layers } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
-import {
-  FacetContainer,
-  FacetCard,
-} from "~/components/ui/facet-container";
+import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
 import { NSImportSuiteAdmin } from "./NSImportSuiteAdmin";
 import { CommonsFlagImporterAdmin } from "./CommonsFlagImporterAdmin";
@@ -101,17 +91,18 @@ export function CardImportStudio({
       {/* ─── Import Studio Subnavigation Header ───────────────────── */}
       <FacetCard
         depth={1}
-        className="rounded-2xl border border-border bg-card/80 p-4 backdrop-blur-2xl shadow-md text-card-foreground"
+        className="border-border bg-card/80 text-card-foreground rounded-2xl border p-4 shadow-md backdrop-blur-2xl"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary">
-              <Layers className="w-5 h-5" />
+            <div className="bg-primary/10 border-primary/20 text-primary flex h-10 w-10 items-center justify-center rounded-xl border">
+              <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">Card Import Studio</h2>
-              <p className="text-xs text-muted-foreground">
-                Unified data ingestion pipeline: Wiki lore archives, NationStates collections, and Commons flags
+              <h2 className="text-foreground text-base font-bold">Card Import Studio</h2>
+              <p className="text-muted-foreground text-xs">
+                Unified data ingestion pipeline: Wiki lore archives, NationStates collections, and
+                Commons flags
               </p>
             </div>
           </div>
@@ -120,7 +111,7 @@ export function CardImportStudio({
           <FacetContainer
             depth={1}
             enableRefraction={true}
-            className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl border border-border bg-muted/40 backdrop-blur-md"
+            className="border-border bg-muted/40 flex flex-wrap items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md"
           >
             {SUBTABS.map((tab) => {
               const Icon = tab.icon;
@@ -131,16 +122,18 @@ export function CardImportStudio({
                   onClick={() => setActiveSubtab(tab.id)}
                   className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
                     isActive
-                      ? "bg-background border border-border text-foreground shadow-xs font-bold"
+                      ? "bg-background border-border text-foreground border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-card/60"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                  <Icon
+                    className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <span>{tab.label}</span>
                   {tab.badge && (
                     <Badge
                       variant={tab.badgeVariant || "secondary"}
-                      className="text-[9px] px-1.5 py-0 font-mono font-medium ml-0.5"
+                      className="ml-0.5 px-1.5 py-0 font-mono text-[9px] font-medium"
                     >
                       {tab.badge}
                     </Badge>

@@ -58,8 +58,8 @@ export function VaultShowcaseGrid({
                 Import NationStates Cards!
               </h4>
               <p className="text-muted-foreground text-[11px] leading-relaxed">
-                You haven't imported your NationStates deck yet. Verify your nation and import
-                your collection to earn bonus IxCredits!
+                You haven't imported your NationStates deck yet. Verify your nation and import your
+                collection to earn bonus IxCredits!
               </p>
               <button
                 onClick={() => onNavigate?.("import")}

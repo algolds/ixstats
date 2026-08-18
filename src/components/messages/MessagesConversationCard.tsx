@@ -165,7 +165,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             <MessagesIdentityBadge identity={identity} />
             <span
               className={cn(
-                "shrink-0 rounded border px-1.5 py-0.5 text-[8px] font-bold",
+                "shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-semibold tracking-wider uppercase",
                 typeTag.classes
               )}
             >
@@ -175,7 +175,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           <div className="flex shrink-0 items-center gap-1.5">
             {isMuted && <BellOff className="h-3 w-3 shrink-0 text-slate-400" />}
             {lastMessage && (
-              <span className="text-muted-foreground text-[11px]">
+              <span className="text-muted-foreground text-[10px] font-medium tabular-nums">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
               </span>
             )}
@@ -183,7 +183,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
               <Badge
                 variant="secondary"
                 className={cn(
-                  "h-5 min-w-[20px] px-1.5 text-[10px] transition-colors",
+                  "h-5 min-w-[20px] rounded-full px-1.5 text-[10px] font-bold tabular-nums transition-colors",
                   isMuted
                     ? "border-none bg-slate-700 text-slate-300 hover:bg-slate-700"
                     : "bg-primary text-primary-foreground"

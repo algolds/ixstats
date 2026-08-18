@@ -59,7 +59,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         className={cn(
           // Base styles
           "inline-flex items-center justify-center font-bold tracking-wide",
-          "rounded-full border backdrop-blur-md shadow-xs",
+          "rounded-full border shadow-xs backdrop-blur-md",
           // Glass background
           "bg-background/80 dark:bg-black/50",
           // Rarity-specific styles
@@ -87,8 +87,8 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
                   rarity === CARD_RARITIES.DIVINE
                     ? "0 0 20px rgba(253, 224, 71, 0.6)"
                     : rarity === CARD_RARITIES.MYTHIC
-                    ? "0 0 15px rgba(244, 63, 94, 0.5)"
-                    : "0 0 15px rgba(251, 191, 36, 0.4)",
+                      ? "0 0 15px rgba(244, 63, 94, 0.5)"
+                      : "0 0 15px rgba(251, 191, 36, 0.4)",
               }
             : undefined
         }
@@ -108,7 +108,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
         {/* Label or Season */}
         {season !== undefined ? (
-          <span className="relative z-10 leading-none font-bold tracking-wide text-foreground">
+          <span className="text-foreground relative z-10 leading-none font-bold tracking-wide">
             S{season}
           </span>
         ) : (
@@ -120,13 +120,13 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           <div
             className="pointer-events-none absolute inset-0 rounded-full opacity-30"
             style={{
-              backgroundImage: "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
+              backgroundImage:
+                "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",
               backgroundPosition: "50% 50%",
             }}
           />
         )}
-
       </motion.div>
     );
   }

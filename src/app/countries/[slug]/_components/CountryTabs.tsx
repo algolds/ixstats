@@ -54,7 +54,7 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
   return (
     <nav
       aria-label="Country profile sections"
-      className="facet-surface facet-refraction w-full rounded-2xl border border-white/10 p-1.5 shadow-sm backdrop-blur-xl saturate-180"
+      className="facet-surface facet-refraction w-full rounded-2xl border border-white/10 p-1.5 shadow-sm saturate-180 backdrop-blur-xl"
     >
       <div className="grid w-full grid-cols-3 gap-1.5">
         {items.map((item) => {
@@ -67,7 +67,7 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               onClick={() => onTabChange(item.id)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-bold transition-all duration-150 ease-out active:scale-[0.97]",
+                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-150 ease-out active:scale-[0.97] sm:text-sm",
                 isActive
                   ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30 backdrop-blur-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"

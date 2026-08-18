@@ -18,7 +18,15 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 export interface UnifiedLogItem {
   id: string;
   timestamp: string;
-  category: "all" | "imports" | "designer" | "lore_batch" | "explorer" | "settings" | "duplicates" | "admin";
+  category:
+    | "all"
+    | "imports"
+    | "designer"
+    | "lore_batch"
+    | "explorer"
+    | "settings"
+    | "duplicates"
+    | "admin";
   action: string;
   actor?: string | null;
   target?: string | null;
@@ -37,7 +45,18 @@ export const cardsOperationsRouter = createTRPCRouter({
   getUnifiedAuditLogs: adminProcedure
     .input(
       z.object({
-        category: z.enum(["all", "imports", "designer", "lore_batch", "explorer", "settings", "duplicates", "admin"]).default("all"),
+        category: z
+          .enum([
+            "all",
+            "imports",
+            "designer",
+            "lore_batch",
+            "explorer",
+            "settings",
+            "duplicates",
+            "admin",
+          ])
+          .default("all"),
         limit: z.number().int().min(1).max(250).default(100),
         offset: z.number().int().min(0).default(0),
         search: z.string().optional(),
@@ -125,11 +144,25 @@ export const cardsOperationsRouter = createTRPCRouter({
             category = "designer";
           } else if (actionUpper.includes("LORE") || actionUpper.includes("WIKI_CARD")) {
             category = "lore_batch";
-          } else if (actionUpper.includes("IMPORT") || actionUpper.includes("SYNC") || actionUpper.includes("FLAG")) {
+          } else if (
+            actionUpper.includes("IMPORT") ||
+            actionUpper.includes("SYNC") ||
+            actionUpper.includes("FLAG")
+          ) {
             category = "imports";
-          } else if (actionUpper.includes("TAKEDOWN") || actionUpper.includes("RETIRE") || actionUpper.includes("VISIBILITY") || actionUpper.includes("TRANSFER")) {
+          } else if (
+            actionUpper.includes("TAKEDOWN") ||
+            actionUpper.includes("RETIRE") ||
+            actionUpper.includes("VISIBILITY") ||
+            actionUpper.includes("TRANSFER")
+          ) {
             category = "explorer";
-          } else if (actionUpper.includes("VALUATION") || actionUpper.includes("SETTING") || actionUpper.includes("BONUS") || actionUpper.includes("PACK")) {
+          } else if (
+            actionUpper.includes("VALUATION") ||
+            actionUpper.includes("SETTING") ||
+            actionUpper.includes("BONUS") ||
+            actionUpper.includes("PACK")
+          ) {
             category = "settings";
           } else if (actionUpper.includes("DUPLICATE") || actionUpper.includes("PURGE")) {
             category = "duplicates";
@@ -148,7 +181,9 @@ export const cardsOperationsRouter = createTRPCRouter({
             status,
             level,
             title: `[${category.toUpperCase()}] ${log.action.replace(/_/g, " ")}`,
-            message: log.details || `Admin action performed on ${log.target || log.entityType || "system"}`,
+            message:
+              log.details ||
+              `Admin action performed on ${log.target || log.entityType || "system"}`,
             details: log.error || log.details || null,
             metadata: {
               ipAddress: log.ipAddress,
@@ -158,7 +193,9 @@ export const cardsOperationsRouter = createTRPCRouter({
         }
 
         // Sort by timestamp descending
-        unifiedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        unifiedLogs.sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
 
         // Category breakdown stats
         const stats = {

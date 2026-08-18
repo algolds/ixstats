@@ -65,12 +65,12 @@ export function CommitmentsAgendaRail({
       <div className="border-border/60 flex items-center justify-between gap-2 border-b pb-2.5 dark:border-white/10">
         <div className="flex items-center gap-2">
           <Command className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-          <h4 className="text-xs font-black tracking-widest text-amber-800 uppercase dark:text-amber-400">
+          <h4 className="text-xs font-semibold tracking-wider text-amber-800 uppercase dark:text-amber-400">
             Active Directives
           </h4>
         </div>
 
-        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-amber-800 dark:text-amber-300">
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-800 dark:text-amber-300">
           {usedSlots} / {slotCap} Slots
         </span>
       </div>

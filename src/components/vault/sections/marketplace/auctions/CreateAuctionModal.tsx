@@ -45,7 +45,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
 
   const cards = useMemo(
     () =>
-      (inventoryData
+      inventoryData
         ?.filter((ownership) => !ownership.isLocked)
         .map((ownership) => ({
           id: ownership.cards?.id ?? ownership.id,
@@ -55,7 +55,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
           artwork: ownership.cards?.artwork || "/images/cards/placeholder-nation.png",
           marketValue: ownership.cards?.marketValue || 0,
           cardType: ownership.cards?.cardType ?? "NS_IMPORT",
-        }))) || [],
+        })) || [],
     [inventoryData]
   );
 
@@ -111,7 +111,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md backdrop-blur-md">
         <DialogHeader>
-          <DialogTitle className="text-sm font-black tracking-wider text-amber-600 uppercase dark:text-amber-500">
+          <DialogTitle className="text-sm font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
             Create Auction Listing
           </DialogTitle>
         </DialogHeader>
@@ -119,7 +119,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
-            <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">
+            <label className="text-muted-foreground mb-1.5 block text-[10px] font-semibold tracking-wider uppercase">
               Select Card to Sell
             </label>
             {inventoryLoading ? (

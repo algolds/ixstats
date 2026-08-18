@@ -96,7 +96,7 @@ export const CategoryIcon = React.memo<CategoryIconProps>(
         <path d={iconDef.path} fill="currentColor" />
       </svg>
     );
-  },
+  }
 );
 
 CategoryIcon.displayName = "CategoryIcon";

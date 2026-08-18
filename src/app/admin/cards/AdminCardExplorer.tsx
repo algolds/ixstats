@@ -76,7 +76,6 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     }
   }, [initialCategory]);
 
-
   // 3D Card Modal Viewer state
   const [selectedCardForViewer, setSelectedCardForViewer] = useState<CardInstance | null>(null);
 
@@ -113,8 +112,13 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       artwork: artUrl,
       artworkUrl: artUrl,
       artworkSource: initialArtSource,
-      cardType: isWikiCard ? "LORE" : (card.cardType || "NS_IMPORT"),
-      category: card.category && card.category !== "NS_IMPORT" ? (card.category as LoreCategory) : (isWikiCard ? "NATION" : undefined),
+      cardType: isWikiCard ? "LORE" : card.cardType || "NS_IMPORT",
+      category:
+        card.category && card.category !== "NS_IMPORT"
+          ? (card.category as LoreCategory)
+          : isWikiCard
+            ? "NATION"
+            : undefined,
     };
 
     setSelectedCardForViewer(instance);
@@ -182,7 +186,17 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       marketValue: editMarketValue,
       isRetired: editIsRetired,
     } as CardInstance;
-  }, [selectedCardForEdit, editTitle, editCategory, editCardType, editRarity, editArtworkUrl, editArtworkSource, editMarketValue, editIsRetired]);
+  }, [
+    selectedCardForEdit,
+    editTitle,
+    editCategory,
+    editCardType,
+    editRarity,
+    editArtworkUrl,
+    editArtworkSource,
+    editMarketValue,
+    editIsRetired,
+  ]);
 
   // Inline edit state tracking
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
@@ -193,7 +207,9 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
   // Bulk visibility control states
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [bulkTargetType, setBulkTargetType] = useState<"all" | "NS_IMPORT" | "LORE" | "USER_CUSTOM" | "COMMONS_IMPORT">("all");
+  const [bulkTargetType, setBulkTargetType] = useState<
+    "all" | "NS_IMPORT" | "LORE" | "USER_CUSTOM" | "COMMONS_IMPORT"
+  >("all");
   const [bulkCteFilter, setBulkCteFilter] = useState<"all" | "active" | "cte">("all");
   const [bulkCategoryFilter, setBulkCategoryFilter] = useState<"all" | LoreCategory>("all");
   const [bulkSeason, setBulkSeason] = useState<"all" | "1" | "2" | "3">("all");
@@ -219,7 +235,8 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     season: season !== "all" ? season : undefined,
     rarity: rarity !== "all" ? rarity : undefined,
     cteFilter,
-    isRetired: takedownFilter === "takedown" ? true : takedownFilter === "visible" ? false : undefined,
+    isRetired:
+      takedownFilter === "takedown" ? true : takedownFilter === "visible" ? false : undefined,
     includeRetired: takedownFilter === "all" ? true : undefined,
     sortBy,
   };
@@ -285,12 +302,15 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
     const isIIWiki = isIIWikiCard(card as any);
 
-    if (isIIWiki || (isWiki && (!card.nsCardId || card.cardType === "LORE" || card.cardType === "LORE_BATCH"))) {
+    if (
+      isIIWiki ||
+      (isWiki && (!card.nsCardId || card.cardType === "LORE" || card.cardType === "LORE_BATCH"))
+    ) {
       if (isIIWiki) {
         return <IIWikiBadge size="xs" />;
       }
       return (
-        <span className="inline-flex items-center rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-bold text-amber-500 dark:text-amber-300 backdrop-blur-md">
+        <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-500 backdrop-blur-md dark:text-amber-300">
           Wiki
         </span>
       );
@@ -298,22 +318,27 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
     if (card.cardType === "COMMONS_IMPORT") {
       return (
-        <span className="inline-flex items-center rounded-full bg-teal-500/15 border border-teal-500/30 px-2 py-0.5 text-[9px] font-bold text-teal-600 dark:text-teal-300 backdrop-blur-md">
+        <span className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.5 text-[9px] font-bold text-teal-600 backdrop-blur-md dark:text-teal-300">
           Commons Import
         </span>
       );
     }
 
-    if (card.nsCardId !== null && card.nsCardId !== undefined && card.nsCardId > 0 && card.cardType === "NS_IMPORT") {
+    if (
+      card.nsCardId !== null &&
+      card.nsCardId !== undefined &&
+      card.nsCardId > 0 &&
+      card.cardType === "NS_IMPORT"
+    ) {
       return (
-        <span className="inline-flex items-center rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-300 backdrop-blur-md">
+        <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/15 px-2 py-0.5 text-[9px] font-bold text-blue-600 backdrop-blur-md dark:text-blue-300">
           NS Import
         </span>
       );
     }
 
     return (
-      <span className="inline-flex items-center rounded-full bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 text-[9px] font-bold text-cyan-600 dark:text-cyan-300 backdrop-blur-md">
+      <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-bold text-cyan-600 backdrop-blur-md dark:text-cyan-300">
         User Imported
       </span>
     );
@@ -350,30 +375,31 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
   };
 
   return (
-    <FacetCard depth={2} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-xl shadow-xl space-y-6 text-card-foreground">
+    <FacetCard
+      depth={2}
+      className="border-border bg-card/70 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
+    >
       {/* ─── Facet & Apple Design Header Section ────────────────── */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-primary/30 bg-primary/10 p-2.5 backdrop-blur-md">
-            <SlidersHorizontal className="h-5 w-5 text-primary" />
+          <div className="border-primary/30 bg-primary/10 rounded-xl border p-2.5 backdrop-blur-md">
+            <SlidersHorizontal className="text-primary h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-foreground tracking-tight text-xl font-bold">
-              Card Explorer
-            </h3>
+            <h3 className="text-foreground text-xl font-bold tracking-tight">Card Explorer</h3>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             onClick={() => setIsBulkModalOpen(true)}
-            className="h-8 rounded-xl border border-primary/30 bg-primary/20 text-xs font-semibold text-primary hover:bg-primary/30 active:scale-95 transition-all shadow-xs"
+            className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-8 rounded-xl border text-xs font-semibold shadow-xs transition-all active:scale-95"
           >
             <EyeOff className="mr-1.5 h-3.5 w-3.5" />
             Bulk Visibility Controls
           </Button>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur-md">
-            <Layers className="h-3.5 w-3.5 text-primary" />
+          <span className="border-border bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-md">
+            <Layers className="text-primary h-3.5 w-3.5" />
             Showing <strong className="text-foreground">{cards.length}</strong> of{" "}
             <strong className="text-foreground">{total.toLocaleString()}</strong>
           </span>
@@ -384,10 +410,10 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       <FacetContainer
         depth={1}
         enableRefraction={true}
-        className="flex flex-wrap items-center gap-2.5 bg-card/60 p-3.5 rounded-2xl border border-border backdrop-blur-xl shadow-sm"
+        className="bg-card/60 border-border flex flex-wrap items-center gap-2.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl"
       >
         {/* Search Input */}
-        <div className="relative min-w-[220px] flex-1 max-w-md">
+        <div className="relative max-w-md min-w-[220px] flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             value={search}
@@ -396,7 +422,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               setOffset(0);
             }}
             placeholder="Search title, nation, or keyword..."
-            className="h-8.5 rounded-xl border-border bg-card/80 pl-8 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-8.5 rounded-xl pl-8 text-xs transition-all focus:ring-1"
           />
         </div>
 
@@ -407,13 +433,23 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             setCardTypeFilter(e.target.value as CardTypeFilter);
             setOffset(0);
           }}
-          className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+          className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
         >
-          <option value="all" className="bg-card text-card-foreground">All Card Sources</option>
-          <option value="LORE_BATCH" className="bg-card text-card-foreground">Wiki Lore Cards</option>
-          <option value="NS_IMPORT" className="bg-card text-card-foreground">NS Official Imports</option>
-          <option value="USER_CUSTOM" className="bg-card text-card-foreground">User Imported / Custom</option>
-          <option value="COMMONS_IMPORT" className="bg-card text-card-foreground">Commons Flag Imports</option>
+          <option value="all" className="bg-card text-card-foreground">
+            All Card Sources
+          </option>
+          <option value="LORE_BATCH" className="bg-card text-card-foreground">
+            Wiki Lore Cards
+          </option>
+          <option value="NS_IMPORT" className="bg-card text-card-foreground">
+            NS Official Imports
+          </option>
+          <option value="USER_CUSTOM" className="bg-card text-card-foreground">
+            User Imported / Custom
+          </option>
+          <option value="COMMONS_IMPORT" className="bg-card text-card-foreground">
+            Commons Flag Imports
+          </option>
         </select>
 
         {/* Lore Category Filter */}
@@ -424,9 +460,11 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               setCategoryFilter(e.target.value as any);
               setOffset(0);
             }}
-            className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+            className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
           >
-            <option value="all" className="bg-card text-card-foreground">All Lore Categories</option>
+            <option value="all" className="bg-card text-card-foreground">
+              All Lore Categories
+            </option>
             {Object.values(LoreCategory).map((cat) => (
               <option key={cat} value={cat} className="bg-card text-card-foreground">
                 {cat} — {getCategoryLabel(cat)}
@@ -443,11 +481,17 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               setCteFilter(e.target.value as any);
               setOffset(0);
             }}
-            className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+            className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
           >
-            <option value="all" className="bg-card text-card-foreground">All Nation Statuses</option>
-            <option value="active_only" className="bg-card text-card-foreground">Active Nations Only</option>
-            <option value="cte_only" className="bg-card text-card-foreground">CTE Defunct Only</option>
+            <option value="all" className="bg-card text-card-foreground">
+              All Nation Statuses
+            </option>
+            <option value="active_only" className="bg-card text-card-foreground">
+              Active Nations Only
+            </option>
+            <option value="cte_only" className="bg-card text-card-foreground">
+              CTE Defunct Only
+            </option>
           </select>
         )}
 
@@ -458,11 +502,17 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             setTakedownFilter(e.target.value as any);
             setOffset(0);
           }}
-          className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+          className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
         >
-          <option value="all" className="bg-card text-card-foreground">All Takedown States</option>
-          <option value="visible" className="bg-card text-card-foreground">Visible Cards Only</option>
-          <option value="takedown" className="bg-card text-card-foreground">Takedowns / Hidden</option>
+          <option value="all" className="bg-card text-card-foreground">
+            All Takedown States
+          </option>
+          <option value="visible" className="bg-card text-card-foreground">
+            Visible Cards Only
+          </option>
+          <option value="takedown" className="bg-card text-card-foreground">
+            Takedowns / Hidden
+          </option>
         </select>
 
         {/* Season Selector */}
@@ -472,12 +522,20 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             setSeason(e.target.value === "all" ? "all" : parseInt(e.target.value, 10));
             setOffset(0);
           }}
-          className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+          className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
         >
-          <option value="all" className="bg-card text-card-foreground">All Seasons</option>
-          <option value="1" className="bg-card text-card-foreground">Season 1</option>
-          <option value="2" className="bg-card text-card-foreground">Season 2</option>
-          <option value="3" className="bg-card text-card-foreground">Season 3</option>
+          <option value="all" className="bg-card text-card-foreground">
+            All Seasons
+          </option>
+          <option value="1" className="bg-card text-card-foreground">
+            Season 1
+          </option>
+          <option value="2" className="bg-card text-card-foreground">
+            Season 2
+          </option>
+          <option value="3" className="bg-card text-card-foreground">
+            Season 3
+          </option>
         </select>
 
         {/* Rarity Selector */}
@@ -487,20 +545,34 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             setRarity(e.target.value as any);
             setOffset(0);
           }}
-          className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+          className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
         >
-          <option value="all" className="bg-card text-card-foreground">All Rarities</option>
-          <option value="COMMON" className="bg-card text-card-foreground">Common</option>
-          <option value="UNCOMMON" className="bg-card text-card-foreground">Uncommon</option>
-          <option value="RARE" className="bg-card text-card-foreground">Rare</option>
-          <option value="ULTRA_RARE" className="bg-card text-card-foreground">Ultra Rare</option>
-          <option value="EPIC" className="bg-card text-card-foreground">Epic</option>
-          <option value="LEGENDARY" className="bg-card text-card-foreground">Legendary</option>
+          <option value="all" className="bg-card text-card-foreground">
+            All Rarities
+          </option>
+          <option value="COMMON" className="bg-card text-card-foreground">
+            Common
+          </option>
+          <option value="UNCOMMON" className="bg-card text-card-foreground">
+            Uncommon
+          </option>
+          <option value="RARE" className="bg-card text-card-foreground">
+            Rare
+          </option>
+          <option value="ULTRA_RARE" className="bg-card text-card-foreground">
+            Ultra Rare
+          </option>
+          <option value="EPIC" className="bg-card text-card-foreground">
+            Epic
+          </option>
+          <option value="LEGENDARY" className="bg-card text-card-foreground">
+            Legendary
+          </option>
         </select>
 
         {/* Sort By Selector */}
-        <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-muted-foreground font-medium text-[11px] flex items-center gap-1 shrink-0">
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-[11px] font-medium">
             <ArrowUpDown className="h-3 w-3" /> Sort:
           </span>
           <select
@@ -509,12 +581,20 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               setSortBy(e.target.value as SortByOption);
               setOffset(0);
             }}
-            className="h-8.5 rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground shadow-xs transition-all hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
+            className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 rounded-xl border px-3 text-xs font-medium shadow-xs transition-all focus:ring-1 focus:outline-none"
           >
-            <option value="recent" className="bg-card text-card-foreground">Newest First</option>
-            <option value="marketValue" className="bg-card text-card-foreground">Market Value (High to Low)</option>
-            <option value="marketValue_asc" className="bg-card text-card-foreground">Market Value (Low to High)</option>
-            <option value="name" className="bg-card text-card-foreground">Title (A-Z)</option>
+            <option value="recent" className="bg-card text-card-foreground">
+              Newest First
+            </option>
+            <option value="marketValue" className="bg-card text-card-foreground">
+              Market Value (High to Low)
+            </option>
+            <option value="marketValue_asc" className="bg-card text-card-foreground">
+              Market Value (Low to High)
+            </option>
+            <option value="name" className="bg-card text-card-foreground">
+              Title (A-Z)
+            </option>
           </select>
 
           {isFiltered && (
@@ -522,7 +602,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
               size="sm"
               variant="ghost"
               onClick={resetAllFilters}
-              className="h-8.5 rounded-xl px-2.5 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 active:scale-95 transition-all text-xs font-medium"
+              className="h-8.5 rounded-xl px-2.5 text-xs font-medium text-rose-500 transition-all hover:bg-rose-500/10 hover:text-rose-600 active:scale-95"
             >
               <X className="mr-1 h-3.5 w-3.5" /> Reset
             </Button>
@@ -532,29 +612,37 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
       {/* ─── Inline Scroll Data Table Container ─────────────────────── */}
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center rounded-xl border border-border/60 bg-card/40 backdrop-blur-md">
-          <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+        <div className="border-border/60 bg-card/40 flex h-64 items-center justify-center rounded-xl border backdrop-blur-md">
+          <RefreshCw className="text-primary h-6 w-6 animate-spin" />
         </div>
       ) : cards.length === 0 ? (
-        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card/30 backdrop-blur-md">
-          <Globe className="h-8 w-8 text-muted-foreground/50 mb-2" />
-          <p className="text-foreground text-sm font-semibold">No cards match these active filters</p>
-          <p className="text-muted-foreground text-xs mt-0.5">Try resetting your dropdown filters or search term.</p>
+        <div className="border-border/80 bg-card/30 flex h-48 flex-col items-center justify-center rounded-xl border border-dashed backdrop-blur-md">
+          <Globe className="text-muted-foreground/50 mb-2 h-8 w-8" />
+          <p className="text-foreground text-sm font-semibold">
+            No cards match these active filters
+          </p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Try resetting your dropdown filters or search term.
+          </p>
           {isFiltered && (
             <Button
               size="sm"
               onClick={resetAllFilters}
-              className="mt-3 h-8 rounded-xl border border-border bg-card text-xs text-foreground hover:bg-accent active:scale-95 transition-all"
+              className="border-border bg-card text-foreground hover:bg-accent mt-3 h-8 rounded-xl border text-xs transition-all active:scale-95"
             >
               Clear All Filters
             </Button>
           )}
         </div>
       ) : (
-        <FacetContainer depth={1} enableRefraction={true} className="overflow-hidden rounded-xl border border-border bg-card/40 backdrop-blur-md shadow-inner">
-          <div className="max-h-[560px] overflow-y-auto overflow-x-auto">
+        <FacetContainer
+          depth={1}
+          enableRefraction={true}
+          className="border-border bg-card/40 overflow-hidden rounded-xl border shadow-inner backdrop-blur-md"
+        >
+          <div className="max-h-[560px] overflow-x-auto overflow-y-auto">
             <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xl text-muted-foreground font-semibold tracking-wider uppercase text-[10px]">
+              <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-[10px] font-semibold tracking-wider uppercase backdrop-blur-xl">
                 <tr>
                   <th className="px-4 py-3">Card</th>
                   <th className="px-4 py-3">Title</th>
@@ -566,7 +654,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   <th className="px-4 py-3 text-right">Studio & Edit</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-border/60 divide-y">
                 {cards.map((card: any) => {
                   const meta = (card.metadata as Record<string, any>) || {};
                   const isCTE = meta.isCTE === true;
@@ -583,7 +671,9 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                     (card.category && card.category !== "NS_IMPORT");
 
                   const resolvedCategory = (
-                    card.category && isValidLoreCategory(card.category) && card.category !== "NS_IMPORT"
+                    card.category &&
+                    isValidLoreCategory(card.category) &&
+                    card.category !== "NS_IMPORT"
                       ? (card.category as LoreCategory)
                       : isLoreCard
                         ? classifyFromWikitext(
@@ -597,10 +687,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   const isEditingValue = editingValueId === card.id;
 
                   return (
-                    <tr
-                      key={card.id}
-                      className="group transition-colors hover:bg-accent/40"
-                    >
+                    <tr key={card.id} className="group hover:bg-accent/40 transition-colors">
                       {/* Thumbnail (Click to open 3D Card Modal) */}
                       <td className="px-4 py-2.5">
                         {(() => {
@@ -611,10 +698,10 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                               type="button"
                               onClick={() => handleOpen3DViewer(card)}
                               title="Click to view interactive 3D card"
-                              className="relative h-11 w-8 overflow-hidden rounded-md border border-border bg-muted/60 shadow-xs transition-all hover:scale-110 hover:border-primary/60 hover:shadow-md active:scale-95 flex items-center justify-center cursor-pointer group/thumb"
+                              className="border-border bg-muted/60 hover:border-primary/60 group/thumb relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border shadow-xs transition-all hover:scale-110 hover:shadow-md active:scale-95"
                             >
                               {/* Baseline CategoryIcon seal background layer */}
-                              <div className="absolute inset-0 flex items-center justify-center p-1 bg-black/80">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
                                 <CategoryIcon
                                   category={card.category || "SPECIAL"}
                                   treatment="seal"
@@ -638,7 +725,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                       </td>
 
                       {/* Title (Inline Editable) */}
-                      <td className="px-4 py-2.5 max-w-[220px]">
+                      <td className="max-w-[220px] px-4 py-2.5">
                         {isEditingTitle ? (
                           <div className="flex items-center gap-1.5">
                             <input
@@ -648,19 +735,19 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                                 if (e.key === "Enter") handleSaveTitle(card.id);
                                 else if (e.key === "Escape") setEditingTitleId(null);
                               }}
-                              className="h-7 w-full rounded-lg border border-primary bg-card px-2 text-xs font-semibold text-foreground focus:outline-none"
+                              className="border-primary bg-card text-foreground h-7 w-full rounded-lg border px-2 text-xs font-semibold focus:outline-none"
                               autoFocus
                             />
                             <button
                               onClick={() => handleSaveTitle(card.id)}
                               disabled={updateDetailsMutation.isPending}
-                              className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/30"
+                              className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => setEditingTitleId(null)}
-                              className="rounded-md bg-rose-500/20 p-1 text-rose-600 dark:text-rose-300 hover:bg-rose-500/30"
+                              className="rounded-md bg-rose-500/20 p-1 text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -668,11 +755,13 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                         ) : (
                           <div className="group/title flex items-center justify-between gap-2">
                             <div>
-                              <div className="font-semibold text-foreground truncate max-w-[180px]">
+                              <div className="text-foreground max-w-[180px] truncate font-semibold">
                                 {card.title}
                               </div>
-                              <div className="font-mono text-[10px] text-muted-foreground">
-                                {card.nsCardId ? `NS ID: ${card.nsCardId}` : `ID: ${card.id.slice(0, 8)}`}
+                              <div className="text-muted-foreground font-mono text-[10px]">
+                                {card.nsCardId
+                                  ? `NS ID: ${card.nsCardId}`
+                                  : `ID: ${card.id.slice(0, 8)}`}
                               </div>
                             </div>
                             <button
@@ -680,7 +769,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                                 setEditingTitleId(card.id);
                                 setEditingTitleValue(card.title);
                               }}
-                              className="opacity-0 group-hover/title:opacity-100 rounded p-1 text-muted-foreground hover:text-primary hover:bg-accent transition-all"
+                              className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-all group-hover/title:opacity-100"
                               title="Edit Title"
                             >
                               <Edit2 className="h-3 w-3" />
@@ -690,17 +779,15 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                       </td>
 
                       {/* Origin Badge */}
-                      <td className="px-4 py-2.5">
-                        {getCardTypeBadge(card)}
-                      </td>
+                      <td className="px-4 py-2.5">{getCardTypeBadge(card)}</td>
 
                       {/* Season / Rarity */}
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-300 backdrop-blur-md">
+                          <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold text-purple-600 backdrop-blur-md dark:text-purple-300">
                             S{card.season}
                           </span>
-                          <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 backdrop-blur-md">
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-600 backdrop-blur-md dark:text-amber-300">
                             {card.rarity}
                           </span>
                         </div>
@@ -713,40 +800,42 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                             <input
                               type="number"
                               value={editingValueNum}
-                              onChange={(e) => setEditingValueNum(parseInt(e.target.value, 10) || 0)}
+                              onChange={(e) =>
+                                setEditingValueNum(parseInt(e.target.value, 10) || 0)
+                              }
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") handleSaveValue(card.id);
                                 else if (e.key === "Escape") setEditingValueId(null);
                               }}
-                              className="h-7 w-20 rounded-lg border border-primary bg-card px-2 text-xs font-semibold text-foreground focus:outline-none"
+                              className="border-primary bg-card text-foreground h-7 w-20 rounded-lg border px-2 text-xs font-semibold focus:outline-none"
                               autoFocus
                             />
                             <button
                               onClick={() => handleSaveValue(card.id)}
                               disabled={updateDetailsMutation.isPending}
-                              className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/30"
+                              className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => setEditingValueId(null)}
-                              className="rounded-md bg-rose-500/20 p-1 text-rose-600 dark:text-rose-300 hover:bg-rose-500/30"
+                              className="rounded-md bg-rose-500/20 p-1 text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         ) : (
                           <div className="group/val flex items-center gap-2">
-                            <span className="font-semibold text-foreground">
+                            <span className="text-foreground font-semibold">
                               {(card.marketValue || 0).toLocaleString()}{" "}
-                              <span className="text-[9px] text-muted-foreground">CR</span>
+                              <span className="text-muted-foreground text-[9px]">CR</span>
                             </span>
                             <button
                               onClick={() => {
                                 setEditingValueId(card.id);
                                 setEditingValueNum(card.marketValue || 0);
                               }}
-                              className="opacity-0 group-hover/val:opacity-100 rounded p-1 text-muted-foreground hover:text-primary hover:bg-accent transition-all"
+                              className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-all group-hover/val:opacity-100"
                               title="Edit Value"
                             >
                               <Edit2 className="h-3 w-3" />
@@ -758,23 +847,23 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                       {/* Category / Status */}
                       <td className="px-4 py-2.5">
                         {isLoreCard ? (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 backdrop-blur-md">
+                          <div className="bg-primary/10 border-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 backdrop-blur-md">
                             <CategoryIcon
                               category={resolvedCategory || "SPECIAL"}
                               treatment="seal"
                               size="xs"
                             />
-                            <span className="text-[10px] font-bold text-primary">
+                            <span className="text-primary text-[10px] font-bold">
                               {resolvedCategory ? getCategoryLabel(resolvedCategory) : "Lore"}
                             </span>
                           </div>
                         ) : isCTE ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300 backdrop-blur-md">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-0.5 text-[10px] font-bold text-rose-600 backdrop-blur-md dark:text-rose-300">
                             <AlertTriangle className="h-3 w-3 text-rose-500" />
                             CTE (Defunct)
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-300 backdrop-blur-md">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-300">
                             <CheckCircle className="h-3 w-3 text-emerald-500" />
                             Active Nation
                           </span>
@@ -788,8 +877,8 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                           disabled={updateDetailsMutation.isPending}
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold transition-all active:scale-95 ${
                             isRetired
-                              ? "bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/30"
-                              : "bg-muted/80 border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                              ? "border border-amber-500/30 bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
+                              : "bg-muted/80 border-border text-muted-foreground hover:bg-accent hover:text-foreground border"
                           }`}
                           title="Click to toggle visibility / takedown state"
                         >
@@ -813,7 +902,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                           size="sm"
                           variant="outline"
                           onClick={() => handleOpenEditModal(card)}
-                          className="h-7 rounded-lg border-primary/30 bg-primary/10 text-[11px] font-semibold text-primary hover:bg-primary/20 active:scale-95 transition-all shadow-xs"
+                          className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-[11px] font-semibold shadow-xs transition-all active:scale-95"
                         >
                           <Eye className="mr-1 h-3 w-3" /> Edit Studio
                         </Button>
@@ -839,7 +928,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             variant="outline"
             disabled={offset === 0 || isFetching}
             onClick={() => setOffset((prev) => Math.max(0, prev - PAGE_SIZE))}
-            className="h-7 rounded-lg border-border bg-card text-xs text-foreground hover:bg-accent active:scale-95 transition-all"
+            className="border-border bg-card text-foreground hover:bg-accent h-7 rounded-lg text-xs transition-all active:scale-95"
           >
             <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Previous
           </Button>
@@ -848,7 +937,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             variant="outline"
             disabled={offset + PAGE_SIZE >= total || isFetching}
             onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
-            className="h-7 rounded-lg border-border bg-card text-xs text-foreground hover:bg-accent active:scale-95 transition-all"
+            className="border-border bg-card text-foreground hover:bg-accent h-7 rounded-lg text-xs transition-all active:scale-95"
           >
             Next <ChevronRight className="ml-1 h-3.5 w-3.5" />
           </Button>
@@ -857,21 +946,24 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
       {/* ─── Granular Bulk Visibility Controls Modal ────────────────── */}
       <Dialog open={isBulkModalOpen} onOpenChange={setIsBulkModalOpen}>
-        <DialogContent className="border border-border bg-card text-card-foreground shadow-2xl backdrop-blur-2xl max-w-lg">
+        <DialogContent className="border-border bg-card text-card-foreground max-w-lg border shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground text-lg font-bold">
-              <EyeOff className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-foreground flex items-center gap-2 text-lg font-bold">
+              <EyeOff className="text-primary h-5 w-5" />
               Granular Bulk Visibility Controls
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
-              Perform bulk visibility updates across all cards or target specific card origins, nation statuses, rarities, or seasons.
+              Perform bulk visibility updates across all cards or target specific card origins,
+              nation statuses, rarities, or seasons.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Quick 1-Click Global Toggles */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-              <div className="text-foreground text-xs font-semibold">1-Click Global NS Card Actions</div>
+            <div className="border-primary/20 bg-primary/5 space-y-2 rounded-xl border p-3">
+              <div className="text-foreground text-xs font-semibold">
+                1-Click Global NS Card Actions
+              </div>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -882,7 +974,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                     })
                   }
                   disabled={bulkVisibilityMutation.isPending}
-                  className="flex-1 h-8 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 text-xs font-semibold"
+                  className="h-8 flex-1 rounded-lg border border-rose-500/30 bg-rose-500/20 text-xs font-semibold text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                 >
                   <EyeOff className="mr-1.5 h-3.5 w-3.5" /> Hide All NS Cards
                 </Button>
@@ -895,7 +987,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                     })
                   }
                   disabled={bulkVisibilityMutation.isPending}
-                  className="flex-1 h-8 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-semibold"
+                  className="h-8 flex-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" /> Restore All NS Cards
                 </Button>
@@ -904,34 +996,52 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
             {/* Granular Filtering Selector */}
             <div className="space-y-3 pt-1">
-              <div className="text-foreground text-xs font-semibold">Granular Criteria Selection</div>
+              <div className="text-foreground text-xs font-semibold">
+                Granular Criteria Selection
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 {/* Target Source */}
                 <div>
-                  <label className="text-muted-foreground text-[11px] font-medium block mb-1">Card Origin / Type</label>
+                  <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                    Card Origin / Type
+                  </label>
                   <select
                     value={bulkTargetType}
                     onChange={(e) => setBulkTargetType(e.target.value as any)}
-                    className="h-8.5 w-full rounded-xl border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent focus:outline-none"
+                    className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
                   >
-                    <option value="all" className="bg-card text-card-foreground">All Card Types</option>
-                    <option value="NS_IMPORT" className="bg-card text-card-foreground">NS Import Only</option>
-                    <option value="LORE" className="bg-card text-card-foreground">Lore Cards Only</option>
-                    <option value="USER_CUSTOM" className="bg-card text-card-foreground">User Custom Only</option>
-                    <option value="COMMONS_IMPORT" className="bg-card text-card-foreground">Commons Import Only</option>
+                    <option value="all" className="bg-card text-card-foreground">
+                      All Card Types
+                    </option>
+                    <option value="NS_IMPORT" className="bg-card text-card-foreground">
+                      NS Import Only
+                    </option>
+                    <option value="LORE" className="bg-card text-card-foreground">
+                      Lore Cards Only
+                    </option>
+                    <option value="USER_CUSTOM" className="bg-card text-card-foreground">
+                      User Custom Only
+                    </option>
+                    <option value="COMMONS_IMPORT" className="bg-card text-card-foreground">
+                      Commons Import Only
+                    </option>
                   </select>
                 </div>
 
                 {/* Nation Status or Lore Category */}
                 {bulkTargetType === "LORE" ? (
                   <div>
-                    <label className="text-muted-foreground text-[11px] font-medium block mb-1">Lore Category</label>
+                    <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                      Lore Category
+                    </label>
                     <select
                       value={bulkCategoryFilter}
                       onChange={(e) => setBulkCategoryFilter(e.target.value as any)}
-                      className="h-8.5 w-full rounded-xl border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent focus:outline-none"
+                      className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
                     >
-                      <option value="all" className="bg-card text-card-foreground">All Lore Categories</option>
+                      <option value="all" className="bg-card text-card-foreground">
+                        All Lore Categories
+                      </option>
                       {Object.values(LoreCategory).map((cat) => (
                         <option key={cat} value={cat} className="bg-card text-card-foreground">
                           {cat} — {getCategoryLabel(cat)}
@@ -941,49 +1051,83 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   </div>
                 ) : (
                   <div>
-                    <label className="text-muted-foreground text-[11px] font-medium block mb-1">Nation Status</label>
+                    <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                      Nation Status
+                    </label>
                     <select
                       value={bulkCteFilter}
                       onChange={(e) => setBulkCteFilter(e.target.value as any)}
-                      className="h-8.5 w-full rounded-xl border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent focus:outline-none"
+                      className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
                     >
-                      <option value="all" className="bg-card text-card-foreground">All Statuses</option>
-                      <option value="active" className="bg-card text-card-foreground">Active Nations Only</option>
-                      <option value="cte" className="bg-card text-card-foreground">Defunct (CTE) Only</option>
+                      <option value="all" className="bg-card text-card-foreground">
+                        All Statuses
+                      </option>
+                      <option value="active" className="bg-card text-card-foreground">
+                        Active Nations Only
+                      </option>
+                      <option value="cte" className="bg-card text-card-foreground">
+                        Defunct (CTE) Only
+                      </option>
                     </select>
                   </div>
                 )}
 
                 {/* Season */}
                 <div>
-                  <label className="text-muted-foreground text-[11px] font-medium block mb-1">Card Season</label>
+                  <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                    Card Season
+                  </label>
                   <select
                     value={bulkSeason}
                     onChange={(e) => setBulkSeason(e.target.value as any)}
-                    className="h-8.5 w-full rounded-xl border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent focus:outline-none"
+                    className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
                   >
-                    <option value="all" className="bg-card text-card-foreground">All Seasons</option>
-                    <option value="1" className="bg-card text-card-foreground">Season 1</option>
-                    <option value="2" className="bg-card text-card-foreground">Season 2</option>
-                    <option value="3" className="bg-card text-card-foreground">Season 3</option>
+                    <option value="all" className="bg-card text-card-foreground">
+                      All Seasons
+                    </option>
+                    <option value="1" className="bg-card text-card-foreground">
+                      Season 1
+                    </option>
+                    <option value="2" className="bg-card text-card-foreground">
+                      Season 2
+                    </option>
+                    <option value="3" className="bg-card text-card-foreground">
+                      Season 3
+                    </option>
                   </select>
                 </div>
 
                 {/* Rarity */}
                 <div>
-                  <label className="text-muted-foreground text-[11px] font-medium block mb-1">Card Rarity</label>
+                  <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
+                    Card Rarity
+                  </label>
                   <select
                     value={bulkRarity}
                     onChange={(e) => setBulkRarity(e.target.value as any)}
-                    className="h-8.5 w-full rounded-xl border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent focus:outline-none"
+                    className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
                   >
-                    <option value="all" className="bg-card text-card-foreground">All Rarities</option>
-                    <option value="COMMON" className="bg-card text-card-foreground">Common</option>
-                    <option value="UNCOMMON" className="bg-card text-card-foreground">Uncommon</option>
-                    <option value="RARE" className="bg-card text-card-foreground">Rare</option>
-                    <option value="ULTRA_RARE" className="bg-card text-card-foreground">Ultra Rare</option>
-                    <option value="EPIC" className="bg-card text-card-foreground">Epic</option>
-                    <option value="LEGENDARY" className="bg-card text-card-foreground">Legendary</option>
+                    <option value="all" className="bg-card text-card-foreground">
+                      All Rarities
+                    </option>
+                    <option value="COMMON" className="bg-card text-card-foreground">
+                      Common
+                    </option>
+                    <option value="UNCOMMON" className="bg-card text-card-foreground">
+                      Uncommon
+                    </option>
+                    <option value="RARE" className="bg-card text-card-foreground">
+                      Rare
+                    </option>
+                    <option value="ULTRA_RARE" className="bg-card text-card-foreground">
+                      Ultra Rare
+                    </option>
+                    <option value="EPIC" className="bg-card text-card-foreground">
+                      Epic
+                    </option>
+                    <option value="LEGENDARY" className="bg-card text-card-foreground">
+                      Legendary
+                    </option>
                   </select>
                 </div>
               </div>
@@ -991,7 +1135,9 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsBulkModalOpen(false)}>
+              Cancel
+            </Button>
             <Button
               onClick={() =>
                 bulkVisibilityMutation.mutate({
@@ -1004,7 +1150,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                 })
               }
               disabled={bulkVisibilityMutation.isPending}
-              className="bg-rose-500 text-white font-semibold hover:bg-rose-600"
+              className="bg-rose-500 font-semibold text-white hover:bg-rose-600"
             >
               Hide Selected Cards
             </Button>
@@ -1020,7 +1166,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                 })
               }
               disabled={bulkVisibilityMutation.isPending}
-              className="bg-emerald-600 text-white font-semibold hover:bg-emerald-700"
+              className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
             >
               Restore Selected Cards
             </Button>
@@ -1030,37 +1176,43 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
       {/* ─── Live Card Studio & Inspector Modal ──────────────────────── */}
       {selectedCardForEdit && livePreviewCard && (
-        <Dialog open={!!selectedCardForEdit} onOpenChange={(open) => !open && setSelectedCardForEdit(null)}>
-          <DialogContent className="border border-border bg-card text-card-foreground shadow-2xl backdrop-blur-2xl max-w-4xl max-h-[90vh] overflow-y-auto">
+        <Dialog
+          open={!!selectedCardForEdit}
+          onOpenChange={(open) => !open && setSelectedCardForEdit(null)}
+        >
+          <DialogContent className="border-border bg-card text-card-foreground max-h-[90vh] max-w-4xl overflow-y-auto border shadow-2xl backdrop-blur-2xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-foreground text-xl font-bold">
-                <SlidersHorizontal className="h-5 w-5 text-primary" />
+              <DialogTitle className="text-foreground flex items-center gap-2 text-xl font-bold">
+                <SlidersHorizontal className="text-primary h-5 w-5" />
                 Lore Card Studio & Inspector
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs">
-                Inspect live card rendering, customize categories, rarity materials, artwork sources, and market values in real time.
+                Inspect live card rendering, customize categories, rarity materials, artwork
+                sources, and market values in real time.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 py-4">
+            <div className="grid grid-cols-1 gap-6 py-4 md:grid-cols-12">
               {/* Left Column: Live Card Display */}
-              <div className="md:col-span-5 flex flex-col items-center justify-center rounded-2xl border border-border bg-black/40 p-6 backdrop-blur-md">
-                <div className="text-xs font-semibold text-muted-foreground mb-4 flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5 text-primary" /> Live Card Face Preview
+              <div className="border-border flex flex-col items-center justify-center rounded-2xl border bg-black/40 p-6 backdrop-blur-md md:col-span-5">
+                <div className="text-muted-foreground mb-4 flex items-center gap-1.5 text-xs font-semibold">
+                  <Eye className="text-primary h-3.5 w-3.5" /> Live Card Face Preview
                 </div>
                 <CardDisplay card={livePreviewCard} size="medium" enable3D={true} />
               </div>
 
               {/* Right Column: Interactive Editor Form */}
-              <div className="md:col-span-7 space-y-4">
+              <div className="space-y-4 md:col-span-7">
                 {/* Origin & Title */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Card Origin / Type</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Card Origin / Type
+                    </label>
                     <select
                       value={editCardType}
                       onChange={(e) => setEditCardType(e.target.value)}
-                      className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-accent focus:outline-none"
+                      className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
                     >
                       <option value="LORE">Wiki Lore Card (Wiki)</option>
                       <option value="NS_IMPORT">NationStates Import (NS Import)</option>
@@ -1070,26 +1222,30 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Card Title</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Card Title
+                    </label>
                     <Input
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       placeholder="Article title..."
-                      className="h-9 border-border bg-card text-xs text-foreground font-semibold"
+                      className="border-border bg-card text-foreground h-9 text-xs font-semibold"
                     />
                   </div>
                 </div>
 
                 {/* Lore Category */}
                 <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1 flex items-center justify-between">
+                  <label className="text-foreground mb-1 block flex items-center justify-between text-xs font-semibold">
                     <span>Lore Category</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">Sets background theme & icon watermark</span>
+                    <span className="text-muted-foreground text-[10px] font-normal">
+                      Sets background theme & icon watermark
+                    </span>
                   </label>
                   <select
                     value={editCategory === "NS_IMPORT" ? "" : editCategory}
                     onChange={(e) => setEditCategory(e.target.value as LoreCategory)}
-                    className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-accent focus:outline-none"
+                    className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
                   >
                     <option value="">(Default / Unassigned)</option>
                     {BROWSABLE_CATEGORIES.map((cat) => (
@@ -1103,11 +1259,13 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                 {/* Rarity & Market Value */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Rarity Tier</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Rarity Tier
+                    </label>
                     <select
                       value={editRarity}
                       onChange={(e) => setEditRarity(e.target.value as CardRarity)}
-                      className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-accent focus:outline-none"
+                      className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
                     >
                       <option value="COMMON">COMMON</option>
                       <option value="UNCOMMON">UNCOMMON</option>
@@ -1119,12 +1277,14 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Est. Market Value (IxC)</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Est. Market Value (IxC)
+                    </label>
                     <Input
                       type="number"
                       value={editMarketValue}
                       onChange={(e) => setEditMarketValue(parseInt(e.target.value, 10) || 0)}
-                      className="h-9 border-border bg-card text-xs text-foreground font-semibold"
+                      className="border-border bg-card text-foreground h-9 text-xs font-semibold"
                     />
                   </div>
                 </div>
@@ -1132,13 +1292,17 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                 {/* Artwork Source & URL */}
                 <div className="space-y-2">
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Artwork Source Tier</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Artwork Source Tier
+                    </label>
                     <select
                       value={editArtworkSource}
                       onChange={(e) => setEditArtworkSource(e.target.value as ArtworkSource)}
-                      className="h-9 w-full rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground hover:bg-accent focus:outline-none"
+                      className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
                     >
-                      <option value="PROCEDURAL">Tier 1-2: Procedural Icon Emblem (No Image)</option>
+                      <option value="PROCEDURAL">
+                        Tier 1-2: Procedural Icon Emblem (No Image)
+                      </option>
                       <option value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</option>
                       <option value="FLAG">Tier 3: National Flag Artwork</option>
                       <option value="UPLOADED">Tier 3: Admin Custom Upload</option>
@@ -1146,7 +1310,9 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-foreground block mb-1">Artwork URL</label>
+                    <label className="text-foreground mb-1 block text-xs font-semibold">
+                      Artwork URL
+                    </label>
                     <Input
                       value={editArtworkUrl}
                       onChange={(e) => {
@@ -1157,24 +1323,28 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
                         }
                       }}
                       placeholder="https://... image URL (optional)"
-                      className="h-9 border-border bg-card text-xs text-foreground font-mono text-[11px]"
+                      className="border-border bg-card text-foreground h-9 font-mono text-xs text-[11px]"
                     />
                   </div>
                 </div>
 
                 {/* Visibility / Takedown Toggle */}
-                <div className="flex items-center justify-between rounded-xl border border-border bg-card/60 p-3">
+                <div className="border-border bg-card/60 flex items-center justify-between rounded-xl border p-3">
                   <div>
-                    <div className="text-xs font-semibold text-foreground">Card Visibility Status</div>
-                    <div className="text-[11px] text-muted-foreground">Hidden cards are retired from packs & marketplace.</div>
+                    <div className="text-foreground text-xs font-semibold">
+                      Card Visibility Status
+                    </div>
+                    <div className="text-muted-foreground text-[11px]">
+                      Hidden cards are retired from packs & marketplace.
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setEditIsRetired(!editIsRetired)}
                     className={`rounded-full px-3 py-1 text-xs font-bold transition-all ${
                       editIsRetired
-                        ? "bg-rose-500/20 text-rose-500 border border-rose-500/30"
-                        : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                        ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
+                        : "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"
                     }`}
                   >
                     {editIsRetired ? "Hidden / Retired" : "Visible"}
@@ -1184,7 +1354,9 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
             </div>
 
             <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={() => setSelectedCardForEdit(null)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setSelectedCardForEdit(null)}>
+                Cancel
+              </Button>
               <Button
                 onClick={handleSaveModalCard}
                 disabled={updateDetailsMutation.isPending}

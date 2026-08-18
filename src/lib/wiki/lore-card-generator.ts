@@ -25,7 +25,11 @@ import { getMediaWikiApiUrl, getWikiUserAgent } from "./config";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "~/lib/cards";
 import type { CardAuthorInfo } from "~/types/cards-display";
-import { LoreCategory, classifyLoreArticle, type LoreCategory as LoreCategoryType } from "~/lib/cards";
+import {
+  LoreCategory,
+  classifyLoreArticle,
+  type LoreCategory as LoreCategoryType,
+} from "~/lib/cards";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
@@ -154,18 +158,24 @@ export class WikiLoreCardGenerator {
       // Fetch article data
       const articleData = await this.fetchArticleData(articleTitle, wikiSource);
       if (!articleData) {
-        throw new Error(`Article "${articleTitle}" was not found or could not be loaded from ${wikiSource}.`);
+        throw new Error(
+          `Article "${articleTitle}" was not found or could not be loaded from ${wikiSource}.`
+        );
       }
 
       // Check image requirement
       if (options?.requireImage && !articleData.image) {
-        throw new Error(`Article "${articleTitle}" has no usable images (image requirement enabled).`);
+        throw new Error(
+          `Article "${articleTitle}" has no usable images (image requirement enabled).`
+        );
       }
 
       // Check if card already exists
       const exists = await this.checkCardExists(articleTitle, wikiSource);
       if (exists) {
-        throw new Error(`A lore card for "${articleTitle}" (${wikiSource}) already exists in the collection.`);
+        throw new Error(
+          `A lore card for "${articleTitle}" (${wikiSource}) already exists in the collection.`
+        );
       }
 
       // Calculate quality score
@@ -247,7 +257,10 @@ export class WikiLoreCardGenerator {
       url.searchParams.set("action", "query");
       url.searchParams.set("format", "json");
       url.searchParams.set("titles", title);
-      url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions|images|contributors");
+      url.searchParams.set(
+        "prop",
+        "extracts|pageimages|info|categories|links|revisions|images|contributors"
+      );
       url.searchParams.set("exchars", "2000"); // Get first ~2000 chars for full excerpt
       url.searchParams.set("exlimit", "1");
       url.searchParams.set("explaintext", "1"); // Plain text
@@ -265,7 +278,9 @@ export class WikiLoreCardGenerator {
       });
 
       if (!response.ok) {
-        throw new Error(`MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`);
+        throw new Error(
+          `MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`
+        );
       }
 
       const data = await response.json();
@@ -276,10 +291,14 @@ export class WikiLoreCardGenerator {
 
       const page = Object.values(pages)[0] as any;
       if (page.missing !== undefined) {
-        throw new Error(`Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`);
+        throw new Error(
+          `Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`
+        );
       }
       if (page.invalid !== undefined) {
-        throw new Error(`Article title "${title}" is invalid: ${page.invalidreason || "bad characters"}`);
+        throw new Error(
+          `Article title "${title}" is invalid: ${page.invalidreason || "bad characters"}`
+        );
       }
 
       // Get wikitext
@@ -364,7 +383,10 @@ export class WikiLoreCardGenerator {
         if (creatorRes.ok) {
           const creatorData = await creatorRes.json();
           const creatorPage = Object.values(creatorData.query?.pages ?? {})[0] as any;
-          const earlyRevs = (creatorPage?.revisions || []) as Array<{ user: string; timestamp: string }>;
+          const earlyRevs = (creatorPage?.revisions || []) as Array<{
+            user: string;
+            timestamp: string;
+          }>;
           for (const r of earlyRevs) {
             const u = cleanWikiUsername(r.user);
             if (u && !BOT_REGEX.test(u)) {
@@ -629,11 +651,18 @@ export class WikiLoreCardGenerator {
             }
 
             // 2. Primary Contributor
-            const contributors = (p.contributors || []) as Array<{ name: string; editcount?: number }>;
+            const contributors = (p.contributors || []) as Array<{
+              name: string;
+              editcount?: number;
+            }>;
             let primaryContributor: string | null = null;
             for (const c of contributors) {
               const u = cleanWikiUsername(c.name);
-              if (u && (!creator || u.toLowerCase() !== creator.toLowerCase()) && !BOT_REGEX.test(u)) {
+              if (
+                u &&
+                (!creator || u.toLowerCase() !== creator.toLowerCase()) &&
+                !BOT_REGEX.test(u)
+              ) {
                 primaryContributor = u;
                 break;
               }
@@ -677,15 +706,27 @@ export class WikiLoreCardGenerator {
 
             if (data.query?.normalized) {
               for (const n of data.query.normalized) {
-                if (n.from) keys.push(n.from, n.from.toLowerCase(), n.from.replace(/_/g, " ").trim().toLowerCase());
-                if (n.to) keys.push(n.to, n.to.toLowerCase(), n.to.replace(/_/g, " ").trim().toLowerCase());
+                if (n.from)
+                  keys.push(
+                    n.from,
+                    n.from.toLowerCase(),
+                    n.from.replace(/_/g, " ").trim().toLowerCase()
+                  );
+                if (n.to)
+                  keys.push(n.to, n.to.toLowerCase(), n.to.replace(/_/g, " ").trim().toLowerCase());
               }
             }
 
             if (data.query?.redirects) {
               for (const r of data.query.redirects) {
-                if (r.from) keys.push(r.from, r.from.toLowerCase(), r.from.replace(/_/g, " ").trim().toLowerCase());
-                if (r.to) keys.push(r.to, r.to.toLowerCase(), r.to.replace(/_/g, " ").trim().toLowerCase());
+                if (r.from)
+                  keys.push(
+                    r.from,
+                    r.from.toLowerCase(),
+                    r.from.replace(/_/g, " ").trim().toLowerCase()
+                  );
+                if (r.to)
+                  keys.push(r.to, r.to.toLowerCase(), r.to.replace(/_/g, " ").trim().toLowerCase());
               }
             }
 
@@ -796,7 +837,8 @@ export class WikiLoreCardGenerator {
   ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
-    const result: Record<string, { size: number; pages: number; files: number; subcats: number }> = {};
+    const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
+      {};
 
     const formattedTitles = categories
       .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
@@ -840,10 +882,7 @@ export class WikiLoreCardGenerator {
   /**
    * List all pages in the main namespace (namespace 0, excluding redirects).
    */
-  async fetchAllMainNamespacePages(
-    wikiSource: WikiSource,
-    limit = 10000
-  ): Promise<string[]> {
+  async fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const titles: string[] = [];
@@ -885,8 +924,6 @@ export class WikiLoreCardGenerator {
 
     return titles.slice(0, limit);
   }
-
-
 
   /**
    * Parse infobox template from wikitext
@@ -960,7 +997,6 @@ export class WikiLoreCardGenerator {
    * Get image URL from filename via MediaWiki API
    */
   async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
-
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -1230,7 +1266,9 @@ export class WikiLoreCardGenerator {
           loreStats: candidate.loreStats,
           fullExcerpt: candidate.fullExcerpt,
           ...(candidate.authorInfo ? { authorInfo: candidate.authorInfo as any } : {}),
-          ...(candidate.authorInfo?.displayAuthor ? { author: candidate.authorInfo.displayAuthor } : {}),
+          ...(candidate.authorInfo?.displayAuthor
+            ? { author: candidate.authorInfo.displayAuthor }
+            : {}),
         },
         totalSupply: 0, // Unlimited for lore cards
         marketValue: this.getBaseMarketValue(candidate.rarity),

@@ -56,7 +56,9 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                 </div>
 
                 <div className="space-y-0.5">
-                  <span className="block font-semibold text-zinc-300">Version: {revisions.length - idx}</span>
+                  <span className="block font-semibold text-zinc-300">
+                    Version: {revisions.length - idx}
+                  </span>
                   <span className="block text-[10px] text-zinc-500">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>

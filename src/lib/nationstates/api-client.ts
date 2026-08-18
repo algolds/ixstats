@@ -668,7 +668,10 @@ export class NSApiClient {
             if (start !== -1) {
               const end = line.indexOf("</NAME>", start + 6);
               if (end !== -1) {
-                const name = line.substring(start + 6, end).trim().toLowerCase();
+                const name = line
+                  .substring(start + 6, end)
+                  .trim()
+                  .toLowerCase();
                 if (name) {
                   activeSet.add(name);
                 }
@@ -677,7 +680,9 @@ export class NSApiClient {
           });
 
           rl.on("close", () => {
-            console.log(`[NS API] ✓ Streamed and parsed ${activeSet.size} active nations from dump`);
+            console.log(
+              `[NS API] ✓ Streamed and parsed ${activeSet.size} active nations from dump`
+            );
             resolve(activeSet);
           });
 

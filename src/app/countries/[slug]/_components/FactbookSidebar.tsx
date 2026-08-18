@@ -136,7 +136,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
       <FacetCard
         depth={1}
         interactive="none"
-        className="group bg-card/30 relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-sm backdrop-blur-xl saturate-180"
+        className="group bg-card/30 relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-sm saturate-180 backdrop-blur-xl"
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-[var(--flag-glow-primary)] opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35" />
@@ -180,7 +180,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         <FacetCard
           depth={1}
           interactive="none"
-          className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl saturate-180"
+          className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
         >
           <CardContent className="p-0">
             <CountryMapEmbed
@@ -211,7 +211,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
       <FacetCard
         depth={1}
         interactive="none"
-        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm backdrop-blur-xl saturate-180"
+        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
       >
         <CardHeader className="px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                 return (
                   <div
                     key={activity.id}
-                    className={`flex items-start gap-2.5 transition-colors duration-150 hover:bg-white/[0.02] p-1.5 rounded-lg ${
+                    className={`flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-150 hover:bg-white/[0.02] ${
                       idx < activityData.activities.length - 1
                         ? "border-border/40 border-b pb-3"
                         : ""

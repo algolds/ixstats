@@ -12,7 +12,11 @@ import { proxyNSImage } from "~/lib/cards";
 import { ImportStepIndicator, type WizardStep } from "./import/ImportStepIndicator";
 import { ImportNationStep } from "./import/ImportNationStep";
 import { ImportVerifyStep } from "./import/ImportVerifyStep";
-import { ImportConfirmStep, ImportCompleteStep, type ImportResult } from "./import/ImportConfirmStep";
+import {
+  ImportConfirmStep,
+  ImportCompleteStep,
+  type ImportResult,
+} from "./import/ImportConfirmStep";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -239,9 +243,12 @@ function ImportDeckTab() {
                     </div>
 
                     <div className="space-y-2 text-center">
-                      <p className="text-foreground text-xl font-black">Importing Cards...</p>
+                      <p className="text-foreground text-xl font-bold tracking-tight">
+                        Importing Cards...
+                      </p>
                       <p className="text-muted-foreground max-w-xs text-sm">
-                        Fetching your deck from NationStates and creating IxCards. This may take a moment.
+                        Fetching your deck from NationStates and creating IxCards. This may take a
+                        moment.
                       </p>
                     </div>
 

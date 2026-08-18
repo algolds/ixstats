@@ -48,7 +48,9 @@ export function VaultCardsSection() {
   const [gallerySearch, setGallerySearch] = useState("");
   const [gallerySeason, setGallerySeason] = useState<number | "all">("all");
   const [galleryRarity, setGalleryRarity] = useState<CardRarity | "all">("all");
-  const [galleryCteFilter, setGalleryCteFilter] = useState<"all" | "cte_only" | "active_only">("all");
+  const [galleryCteFilter, setGalleryCteFilter] = useState<"all" | "cte_only" | "active_only">(
+    "all"
+  );
   const [gallerySortBy, setGallerySortBy] = useState("rarity");
 
   const { data: userStatsData } = api.vault.getUserStats.useQuery(undefined, {
@@ -112,11 +114,7 @@ export function VaultCardsSection() {
   // Render current sidebar content
   const sidebarContent = useMemo(() => {
     if (activeTab === "collections") {
-      return (
-        <CollectionsSidebarContent
-          onCreateCollection={() => setCreateCollectionOpen(true)}
-        />
-      );
+      return <CollectionsSidebarContent onCreateCollection={() => setCreateCollectionOpen(true)} />;
     }
     if (activeTab === "gallery" && isDev) {
       return (

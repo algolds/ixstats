@@ -76,8 +76,8 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
             key={s.label}
             className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-center shadow-inner"
           >
-            <div className="text-sm font-black text-amber-500">{s.value}</div>
-            <div className="text-muted-foreground/60 mt-0.5 text-[9px] font-bold tracking-wider uppercase">
+            <div className="text-sm font-bold text-amber-500 tabular-nums">{s.value}</div>
+            <div className="text-muted-foreground/70 mt-0.5 text-[9px] font-medium tracking-wider uppercase">
               {s.label}
             </div>
           </div>
@@ -87,14 +87,14 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
       {/* Feed Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             News Feed
           </span>
         </div>
         {!isLoading && (
           <Badge
             variant="outline"
-            className="text-muted-foreground/60 px-1.5 py-0 text-[9px] font-bold"
+            className="text-muted-foreground/60 px-1.5 py-0 text-[9px] font-medium tabular-nums"
           >
             {canonItems?.length ?? 0}
           </Badge>
@@ -130,7 +130,7 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
                   {/* Visual Circle/Glyph indicator */}
                   <div
                     className={cn(
-                      "grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-gradient-to-br text-[10px] font-black text-white shadow-sm",
+                      "grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-gradient-to-br text-[10px] font-semibold text-white shadow-sm",
                       meta.gradient
                     )}
                   >
@@ -138,7 +138,7 @@ export function OverviewSidebarWidget({ countryId }: OverviewSidebarWidgetProps)
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <div className="text-foreground/80 truncate text-[10px] font-bold">
+                      <div className="text-foreground/80 truncate text-[10px] font-semibold">
                         {meta.who}
                       </div>
                       {isLedger && item.targetField && (

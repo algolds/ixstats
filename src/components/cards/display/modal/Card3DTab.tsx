@@ -23,9 +23,7 @@ export function Card3DTab({ card }: { card: CardInstance }) {
         />
         <div className="space-y-2 text-center">
           <p className="text-muted-foreground text-sm">Drag to rotate • Click to flip</p>
-          <p className="text-muted-foreground/60 text-xs">
-            Experience the card in interactive 3D
-          </p>
+          <p className="text-muted-foreground/60 text-xs">Experience the card in interactive 3D</p>
         </div>
       </motion.div>
     </div>

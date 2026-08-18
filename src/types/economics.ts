@@ -582,4 +582,3 @@ export type EconomicModel = {
   sectoralOutputs: SectoralOutput[];
   policyEffects: PolicyEffect[];
 };
-

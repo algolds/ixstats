@@ -57,7 +57,16 @@ describe("Card Designer Studio & Game-Icons Library", () => {
   });
 
   it("should have 8 distinct physical material profiles with custom shaders", () => {
-    const rarities = ["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "MYTHIC", "DIVINE"];
+    const rarities = [
+      "COMMON",
+      "UNCOMMON",
+      "RARE",
+      "ULTRA_RARE",
+      "EPIC",
+      "LEGENDARY",
+      "MYTHIC",
+      "DIVINE",
+    ];
     rarities.forEach((r) => {
       const mat = getRarityMaterial(r);
       expect(mat).toBeDefined();
@@ -72,10 +81,9 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(RARITY_MATERIALS.DIVINE.particles.enabled).toBe(true);
   });
 
-
   it("should have comprehensive synonyms and keywords for all 13 LoreCategory entries", () => {
     const { CATEGORY_SYNONYMS, findMatchingCategory, LoreCategory } = require("~/lib/cards");
-    
+
     // Check Nations synonyms
     const nationSynonyms = CATEGORY_SYNONYMS[LoreCategory.NATION];
     expect(nationSynonyms).toContain("country");
@@ -155,8 +163,3 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(nsImportSyncRouter._def.procedures.getSyncHealth).toBeDefined();
   });
 });
-
-
-
-
-

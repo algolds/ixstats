@@ -258,14 +258,14 @@ export function MapDynamicIsland({
       >
         {/* Inner refraction edges */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 dark:via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 dark:via-white/10 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 dark:via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 dark:via-white/10 to-transparent" />
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
           {/* Inner shimmer */}
           <div
             className={cn(
-              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent will-change-transform",
+              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent will-change-transform dark:via-white/10",
               isFlashing && "bg-red-500/10"
             )}
             style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}

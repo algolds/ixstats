@@ -93,7 +93,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="border-destructive/50 p-8 rounded-2xl backdrop-blur-xl">
+        <Card className="border-destructive/50 rounded-2xl p-8 backdrop-blur-xl">
           <div className="text-destructive flex items-center gap-3">
             <AlertTriangle className="h-6 w-6" />
             <div>
@@ -109,7 +109,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (!country) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="p-8 text-center rounded-2xl backdrop-blur-xl">
+        <Card className="rounded-2xl p-8 text-center backdrop-blur-xl">
           <AlertTriangle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <h3 className="mb-2 text-xl font-semibold">Country Not Found</h3>
           <p className="text-muted-foreground">The requested country could not be found.</p>

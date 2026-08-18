@@ -271,7 +271,7 @@ export function WikiLoreTab({
       {subTab === "standings" && (
         <div className="space-y-4">
           <div className="mx-auto max-w-xl space-y-1 text-center">
-            <h3 className="text-foreground flex items-center justify-center gap-2 text-lg font-black tracking-tight">
+            <h3 className="text-foreground flex items-center justify-center gap-2 text-lg font-bold tracking-tight">
               <Trophy className="h-5 w-5 text-amber-500" />
               Top 15 Loremasters
             </h3>
@@ -317,7 +317,7 @@ export function WikiLoreTab({
                           <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20">
                             <Crown className="h-8 w-8 animate-pulse text-amber-500" />
                           </div>
-                          <span className="absolute -top-1 -left-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black tracking-wider text-black uppercase shadow-md">
+                          <span className="absolute -top-1 -left-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-black uppercase shadow-md">
                             Champ
                           </span>
                         </div>
@@ -329,7 +329,7 @@ export function WikiLoreTab({
                               size="sm"
                               showTooltip={false}
                             />
-                            <h4 className="text-foreground text-xl font-black tracking-tight">
+                            <h4 className="text-foreground text-xl font-bold tracking-tight">
                               {champ.username}
                             </h4>
                           </div>
@@ -342,7 +342,7 @@ export function WikiLoreTab({
                             <span>
                               Record:{" "}
                               <span
-                                className="text-foreground font-black"
+                                className="text-foreground font-bold tabular-nums"
                                 title="Wins - Runner-ups - Major Edits (Edits >= 5KB)"
                               >
                                 {champ.dailyWins}-{champ.dailyRunnerUps}-{champ.majorEdits || 0}
@@ -352,13 +352,16 @@ export function WikiLoreTab({
                             <span className="flex items-center gap-1">
                               Stats:{" "}
                               <span
-                                className="font-extrabold text-amber-500"
+                                className="font-bold text-amber-500 tabular-nums"
                                 title="Major Edit Rate (Edits >= 5KB / Total Edits)"
                               >
                                 {formatSlashRate(champ.majorEditRate)}
                               </span>
                               <span className="text-muted-foreground/40">/</span>
-                              <span className="text-foreground" title="Average Bytes per Edit">
+                              <span
+                                className="text-foreground tabular-nums"
+                                title="Average Bytes per Edit"
+                              >
                                 {champ.avgBytesPerEdit
                                   ? champ.avgBytesPerEdit >= 1000
                                     ? `${(champ.avgBytesPerEdit / 1000).toFixed(1)}K`
@@ -367,7 +370,7 @@ export function WikiLoreTab({
                               </span>
                               <span className="text-muted-foreground/40">/</span>
                               <span
-                                className="font-extrabold text-red-500"
+                                className="font-bold text-red-500 tabular-nums"
                                 title="Peak Contribution (Largest Edit)"
                               >
                                 {champ.largestEdit
@@ -383,34 +386,34 @@ export function WikiLoreTab({
 
                       <div className="relative z-10 grid grid-cols-2 gap-4 rounded-xl border border-white/40 bg-white/60 p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)] backdrop-blur-md sm:grid-cols-4 dark:border-white/10 dark:bg-black/40">
                         <div className="text-center sm:text-left">
-                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-semibold tracking-wider uppercase">
                             Rank Score
                           </span>
-                          <span className="font-mono text-lg font-black text-amber-500">
+                          <span className="font-mono text-lg font-bold text-amber-500 tabular-nums">
                             <NumberFlowDisplay value={champRankScore} decimalPlaces={0} /> pts
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-semibold tracking-wider uppercase">
                             Career Edits
                           </span>
-                          <span className="text-foreground font-mono text-lg font-black">
+                          <span className="text-foreground font-mono text-lg font-bold tabular-nums">
                             <NumberFlowDisplay value={champ.totalEdits} decimalPlaces={0} />
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-semibold tracking-wider uppercase">
                             Career Bytes
                           </span>
-                          <span className="text-foreground font-mono text-lg font-black">
+                          <span className="text-foreground font-mono text-lg font-bold tabular-nums">
                             <NumberFlowDisplay value={champ.totalBytes || 0} format="compact" />
                           </span>
                         </div>
                         <div className="text-center sm:text-left">
-                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-black tracking-wider uppercase">
+                          <span className="text-muted-foreground dark:text-muted-foreground/80 block text-[10px] font-semibold tracking-wider uppercase">
                             Peak Edit
                           </span>
-                          <span className="text-foreground font-mono text-lg font-black">
+                          <span className="text-foreground font-mono text-lg font-bold tabular-nums">
                             <NumberFlowDisplay value={champ.largestEdit || 0} format="compact" />
                           </span>
                         </div>
@@ -469,12 +472,12 @@ export function WikiLoreTab({
                       <div className="relative z-10 flex w-full items-center gap-4">
                         {/* Rank + movement */}
                         <div className="flex w-10 shrink-0 flex-col items-center justify-center">
-                          <span className="text-muted-foreground/60 text-2xl font-black tracking-tight">
+                          <span className="text-muted-foreground/60 text-2xl font-bold tracking-tight tabular-nums">
                             #{rank}
                           </span>
                           <div className="mt-0.5 flex items-center gap-0.5">
                             {movement === "new" ? (
-                              <span className="py-0.2 rounded bg-emerald-500/10 px-1 text-[9px] font-black text-emerald-500 uppercase">
+                              <span className="py-0.2 rounded bg-emerald-500/10 px-1 text-[9px] font-bold tracking-wider text-emerald-500 uppercase">
                                 NEW
                               </span>
                             ) : typeof movement === "number" && movement > 0 ? (
@@ -596,7 +599,7 @@ export function WikiLoreTab({
             <TextureCardContent className="space-y-4 p-6">
               <div className="border-border/40 flex items-center justify-between border-b pb-4 dark:border-white/5">
                 <div>
-                  <h4 className="text-foreground flex items-center gap-2 text-sm font-black tracking-wider uppercase">
+                  <h4 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight uppercase">
                     <Calendar className="h-4 w-4 text-amber-500" />
                     Calendar
                   </h4>
@@ -686,7 +689,7 @@ export function WikiLoreTab({
 
                 return (
                   <div className="space-y-2">
-                    <div className="text-muted-foreground grid grid-cols-7 gap-2 text-center text-[10px] font-black tracking-wider uppercase">
+                    <div className="text-muted-foreground grid grid-cols-7 gap-2 text-center text-[10px] font-semibold tracking-wider uppercase">
                       {weekDays.map((wd) => (
                         <div key={wd} className="py-1">
                           {wd}
@@ -738,7 +741,7 @@ export function WikiLoreTab({
 
                             <span
                               className={cn(
-                                "relative z-10 font-mono text-xs font-black",
+                                "relative z-10 font-mono text-xs font-bold tabular-nums",
                                 isWinner ? "text-amber-500" : "text-muted-foreground"
                               )}
                             >
@@ -763,7 +766,7 @@ export function WikiLoreTab({
                                   </span>
                                 )}
                                 {entry.winnerScore !== null && (
-                                  <span className="text-muted-foreground block font-mono text-[8px]">
+                                  <span className="text-muted-foreground block font-mono text-[8px] tabular-nums">
                                     Score: {entry.winnerScore}
                                   </span>
                                 )}
@@ -790,7 +793,7 @@ export function WikiLoreTab({
         <div className="mx-auto max-w-5xl space-y-6">
           <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 md:flex-row md:items-center dark:border-white/5">
             <div>
-              <h4 className="text-foreground flex items-center gap-2 text-sm font-black tracking-wider uppercase">
+              <h4 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight uppercase">
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 Article Awards & Milestones
               </h4>
@@ -856,13 +859,13 @@ export function WikiLoreTab({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span
                         className={cn(
-                          "rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider uppercase",
+                          "rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase",
                           getCategoryStyles(a.category)
                         )}
                       >
                         {getCategoryLabel(a.category)}
                       </span>
-                      <span className="text-muted-foreground font-mono text-[10px]">
+                      <span className="text-muted-foreground font-mono text-[10px] tabular-nums">
                         {new Date(a.awardedAt).toLocaleDateString()}
                       </span>
                     </div>

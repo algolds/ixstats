@@ -96,10 +96,15 @@ export function VaultTradingTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-bold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
-              <p className={cn("mt-1 font-mono text-base leading-none font-black", stat.color)}>
+              <p
+                className={cn(
+                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
+                  stat.color
+                )}
+              >
                 {stat.value}
               </p>
             </div>

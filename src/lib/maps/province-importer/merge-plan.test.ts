@@ -1,4 +1,7 @@
-import { buildProvinceMergePlan, subdivisionNameKey } from "~/lib/maps/province-importer/merge-plan";
+import {
+  buildProvinceMergePlan,
+  subdivisionNameKey,
+} from "~/lib/maps/province-importer/merge-plan";
 
 describe("buildProvinceMergePlan", () => {
   it("creates all when no existing subdivisions", () => {

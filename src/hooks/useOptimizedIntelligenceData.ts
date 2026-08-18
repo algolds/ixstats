@@ -102,8 +102,7 @@ export function useOptimizedIntelligenceData({
           message: item.content || "New intelligence information available",
           category: "security" as const,
           type: "alert" as const,
-          priority: (item.priority || "medium") as
-            "low" | "medium" | "high" | "critical",
+          priority: (item.priority || "medium") as "low" | "medium" | "high" | "critical",
           severity: "important" as const,
           deliveryMethod: "dynamic-island" as const,
           actionable: true,

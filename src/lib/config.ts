@@ -1,5 +1,5 @@
 /**
- * Global Developer Configuration Registry 
+ * Global Developer Configuration Registry
  *
  *
  * Usage:

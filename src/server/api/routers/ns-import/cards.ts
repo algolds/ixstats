@@ -6,7 +6,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { nsImportService } from "~/lib/nationstates/import-service";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
@@ -60,7 +65,8 @@ export const nsImportCardsRouter = createTRPCRouter({
       if (!isVerified) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "NationStates verification failed. Please check your nation name and checksum code.",
+          message:
+            "NationStates verification failed. Please check your nation name and checksum code.",
         });
       }
 

@@ -95,7 +95,8 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
 
       // Generate NPC personality based on observables
       const { NPCPersonalitySystem } = await import("~/lib/diplomacy/npc-personality");
-      const { NPCCulturalParticipation } = await import("~/lib/diplomacy/npc-cultural-participation");
+      const { NPCCulturalParticipation } =
+        await import("~/lib/diplomacy/npc-cultural-participation");
 
       const observableData = {
         relationships: relationship

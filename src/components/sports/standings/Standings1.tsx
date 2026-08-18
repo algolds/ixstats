@@ -109,9 +109,9 @@ export default function Standings1({
     const relegLimit = relegationCount ?? 0;
 
     return (
-      <div className="border-border/20 bg-muted/30 overflow-x-auto rounded-2xl border dark:bg-secondary/40">
+      <div className="border-border/20 bg-muted/30 dark:bg-secondary/40 overflow-x-auto rounded-2xl border">
         <table className="min-w-full table-auto border-collapse border-spacing-px text-sm">
-          <thead className="bg-muted/50 text-foreground text-xs font-bold tracking-wider uppercase dark:bg-secondary/60">
+          <thead className="bg-muted/50 text-foreground dark:bg-secondary/60 text-xs font-bold tracking-wider uppercase">
             <tr>
               <th scope="col" className="w-16 px-4 py-3 text-start">
                 #
@@ -128,7 +128,7 @@ export default function Standings1({
               <th scope="col" className="px-2.5 py-3 text-center">
                 D
               </th>
-              <th scope="col" className="px-2.5 py-3 text-center font-extrabold">
+              <th scope="col" className="px-2.5 py-3 text-center font-bold">
                 PTS
               </th>
               <th scope="col" className="px-4 py-3 text-end">
@@ -162,7 +162,7 @@ export default function Standings1({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onTeamClick?.(team.teamId)}
-                        className="group flex cursor-pointer items-center gap-2 text-left font-bold hover:underline"
+                        className="group flex cursor-pointer items-center gap-2 text-left font-semibold hover:underline"
                       >
                         {team.logo ? (
                           <img
@@ -269,12 +269,12 @@ export default function Standings1({
       )}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-foreground text-lg font-extrabold">{title}</h3>
+        <h3 className="text-foreground text-lg font-bold tracking-tight">{title}</h3>
         <button
           type="button"
           onClick={() => exportStandingsCsv(title, standings)}
           title="Export standings as CSV"
-          className="border-border/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold uppercase transition-colors"
+          className="border-border/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-semibold tracking-wider uppercase transition-colors"
         >
           <Download className="h-3 w-3" />
           CSV
@@ -286,7 +286,7 @@ export default function Standings1({
           ? grouped.map((group) => (
               <div key={group.key} className="space-y-2">
                 {group.label && (
-                  <h4 className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
+                  <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     {group.label}
                   </h4>
                 )}

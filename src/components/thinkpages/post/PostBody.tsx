@@ -7,10 +7,7 @@ import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
-import {
-  PostInlineLinkPreview,
-  getInlinePreviewLink,
-} from "./PostInlineLinkPreview";
+import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 
 export interface PostBodyProps {
@@ -77,8 +74,8 @@ export function PostBody({
         <div
           className={
             isHero
-              ? "mt-2 select-text text-[20px] font-normal leading-relaxed text-slate-100 whitespace-pre-wrap"
-              : "select-text text-sm font-normal leading-relaxed text-slate-200 whitespace-pre-wrap"
+              ? "mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text"
+              : "text-sm leading-relaxed font-normal whitespace-pre-wrap text-slate-200 select-text"
           }
         >
           <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanContent)} />
@@ -93,7 +90,8 @@ export function PostBody({
       )}
 
       {/* Inline Link Preview (suppressed if sports bulletin active) */}
-      {!sportsBulletin && (inlinePreview || (matchedLink && <PostInlineLinkPreview url={matchedLink} />))}
+      {!sportsBulletin &&
+        (inlinePreview || (matchedLink && <PostInlineLinkPreview url={matchedLink} />))}
     </div>
   );
 }

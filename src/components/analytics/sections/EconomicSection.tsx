@@ -13,11 +13,7 @@ import { VolatilityMetricsCard } from "../metrics/VolatilityMetricsCard";
 import { ComparativeBenchmarkingCard } from "../metrics/ComparativeBenchmarkingCard";
 import { GlassTooltip } from "../charts/GlassTooltip";
 import { DataTable } from "~/components/shared/data-display/DataTable";
-import type {
-  SectorPerformance,
-  VolatilityMetric,
-  ComparativeBenchmark,
-} from "~/lib/utils";
+import type { SectorPerformance, VolatilityMetric, ComparativeBenchmark } from "~/lib/utils";
 
 interface EconomicSectionProps {
   sectorPerformanceData: SectorPerformance[];

@@ -21,14 +21,14 @@ export default function Page() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-8">
-      <div className="w-full max-w-md flex flex-col items-center gap-4">
+      <div className="flex w-full max-w-md flex-col items-center gap-4">
         <SignIn fallbackRedirectUrl={withBasePath("/dashboard")} />
         <p className="text-center text-xs text-slate-400">
-          <Link href="/terms" className="text-slate-400 hover:text-amber-400 transition-colors">
+          <Link href="/terms" className="text-slate-400 transition-colors hover:text-amber-400">
             Terms of Service
           </Link>
           <span className="mx-2 text-slate-600">•</span>
-          <Link href="/privacy" className="text-slate-400 hover:text-amber-400 transition-colors">
+          <Link href="/privacy" className="text-slate-400 transition-colors hover:text-amber-400">
             Privacy Policy
           </Link>
         </p>

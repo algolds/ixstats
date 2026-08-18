@@ -46,7 +46,10 @@ export interface UseCountryPageStateReturn {
 }
 
 export function useCountryPageState(
-  country: Partial<BaseCountryData> & Pick<BaseCountryData, "id" | "name" | "economicTier" | "populationTier"> | undefined
+  country:
+    | (Partial<BaseCountryData> &
+        Pick<BaseCountryData, "id" | "name" | "economicTier" | "populationTier">)
+    | undefined
 ): UseCountryPageStateReturn {
   // Tab management
   const [activeTab, setActiveTab] = useState<ProfileTabType>("overview");

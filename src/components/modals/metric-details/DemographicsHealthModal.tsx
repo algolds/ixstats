@@ -237,35 +237,35 @@ export function DemographicsHealthModal({
             <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-rose-450 text-lg font-bold">
+                  <div className="text-lg font-bold text-rose-400 tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
                     Death Rate
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-green-400">
+                  <div className="text-lg font-bold text-green-400 tabular-nums">
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
                     Natural Growth
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-cyan-400">
+                  <div className="text-lg font-bold text-cyan-400 tabular-nums">
                     {(demographics?.migrationRate || 0).toFixed(1)}/1k
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
                     Migration Rate
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 text-center">
-                  <div className="text-lg font-bold text-purple-400">
+                  <div className="text-lg font-bold text-purple-400 tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
-                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold uppercase">
+                  <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
                     Dependency Ratio
                   </div>
                 </div>

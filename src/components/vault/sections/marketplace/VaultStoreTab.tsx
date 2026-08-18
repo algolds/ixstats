@@ -133,8 +133,11 @@ export function VaultStoreTab() {
 
   const utils = api.useUtils();
 
-  const { data: myPacksData, isLoading: myPacksLoading, refetch: refetchMyPacks } =
-    api.cardPacks.getMyPacks.useQuery();
+  const {
+    data: myPacksData,
+    isLoading: myPacksLoading,
+    refetch: refetchMyPacks,
+  } = api.cardPacks.getMyPacks.useQuery();
   const { data: packsData, isLoading: packsLoading } = api.cardPacks.getAvailablePacks.useQuery();
   const { data: storeItemsData, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
   const { data: ownedData } = api.vault.getPurchasedItems.useQuery();
@@ -178,7 +181,8 @@ export function VaultStoreTab() {
   });
 
   const packs: any[] = (packsData as any)?.packs || (Array.isArray(packsData) ? packsData : []);
-  const myPacks: any[] = (myPacksData as any)?.packs || (Array.isArray(myPacksData) ? myPacksData : []);
+  const myPacks: any[] =
+    (myPacksData as any)?.packs || (Array.isArray(myPacksData) ? myPacksData : []);
 
   const cosmeticItems: StoreItem[] = ((storeItemsData || []) as any[])
     .filter((item) => item.category === "cosmetics")
@@ -198,7 +202,9 @@ export function VaultStoreTab() {
     .filter((item) => item.category === "upgrades")
     .filter((item) => {
       if (item.id === "upgrade_card_capacity_mega") {
-        const purchaseCounts = (ownedData as { purchaseCounts?: Record<string, number> } | undefined)?.purchaseCounts;
+        const purchaseCounts = (
+          ownedData as { purchaseCounts?: Record<string, number> } | undefined
+        )?.purchaseCounts;
         const standardCount = purchaseCounts?.["upgrade_card_capacity"] || 0;
         return standardCount >= 5;
       }
@@ -320,7 +326,7 @@ export function VaultStoreTab() {
           </div>
           <span
             className={cn(
-              "rounded-full border px-2 py-0.5 text-[9px] font-black tracking-widest uppercase",
+              "rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase",
               activeConfig.badgeStyle
             )}
           >
@@ -447,8 +453,15 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={!!(ownedData as { purchasedIds?: string[] } | undefined)?.purchasedIds?.includes(item.id)}
-                        purchaseCount={(ownedData as { purchaseCounts?: Record<string, number> } | undefined)?.purchaseCounts?.[item.id] ?? 0}
+                        isOwned={
+                          !!(
+                            ownedData as { purchasedIds?: string[] } | undefined
+                          )?.purchasedIds?.includes(item.id)
+                        }
+                        purchaseCount={
+                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
+                            ?.purchaseCounts?.[item.id] ?? 0
+                        }
                       />
                     ))}
                   </div>
@@ -471,8 +484,15 @@ export function VaultStoreTab() {
                         item={item}
                         onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
                         isPurchasing={purchasingItemId === item.id}
-                        isOwned={!!(ownedData as { purchasedIds?: string[] } | undefined)?.purchasedIds?.includes(item.id)}
-                        purchaseCount={(ownedData as { purchaseCounts?: Record<string, number> } | undefined)?.purchaseCounts?.[item.id] ?? 0}
+                        isOwned={
+                          !!(
+                            ownedData as { purchasedIds?: string[] } | undefined
+                          )?.purchasedIds?.includes(item.id)
+                        }
+                        purchaseCount={
+                          (ownedData as { purchaseCounts?: Record<string, number> } | undefined)
+                            ?.purchaseCounts?.[item.id] ?? 0
+                        }
                       />
                     ))}
                   </div>

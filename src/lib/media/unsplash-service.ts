@@ -64,9 +64,16 @@ class UnsplashService {
       Oceania: ["pacific", "island", "coastal"],
     };
 
-    const ecoTerms = economicKeywords[economicTier as keyof typeof economicKeywords] || ["city", "development"];
-    const popTerms = populationKeywords[populationTier as keyof typeof populationKeywords] || ["urban"];
-    const continentTerms = continent ? continentKeywords[continent as keyof typeof continentKeywords] || [] : [];
+    const ecoTerms = economicKeywords[economicTier as keyof typeof economicKeywords] || [
+      "city",
+      "development",
+    ];
+    const popTerms = populationKeywords[populationTier as keyof typeof populationKeywords] || [
+      "urban",
+    ];
+    const continentTerms = continent
+      ? continentKeywords[continent as keyof typeof continentKeywords] || []
+      : [];
 
     // Combine terms strategically
     const selectedTerms = [

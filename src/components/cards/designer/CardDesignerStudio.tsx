@@ -22,7 +22,6 @@ import {
   DEFAULT_DESIGN_STATE,
 } from "./types";
 
-
 const LOCAL_STORAGE_PRESETS_KEY = "ix_card_designer_presets_v1";
 
 export const CardDesignerStudio: React.FC = () => {
@@ -138,7 +137,10 @@ export const CardDesignerStudio: React.FC = () => {
       wikiArticleTitle: state.wikiArticleTitle,
       wikiExcerpt: state.wikiExcerpt,
       artworkUrl: state.artworkUrl ?? undefined,
-      artworkCredit: state.artworkSource === "WIKI_FETCHED" ? `${state.wikiSource.toUpperCase()} Article` : undefined,
+      artworkCredit:
+        state.artworkSource === "WIKI_FETCHED"
+          ? `${state.wikiSource.toUpperCase()} Article`
+          : undefined,
       attributes: {
         designerCreated: true,
         materialFinish: state.materialFinish,
@@ -164,19 +166,16 @@ export const CardDesignerStudio: React.FC = () => {
   }, [state, publishMutation]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex h-full w-full flex-col">
       {/* Main Two-Column Split Workspace */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 items-start">
+      <div className="grid flex-1 grid-cols-1 items-start gap-6 p-6 lg:grid-cols-12">
         {/* Left Column: 3D Physics Viewport (5 of 12 cols = ~42%) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-4 self-start h-[calc(100vh-140px)] min-h-[580px] max-h-[820px] flex flex-col rounded-2xl bg-card border border-border shadow-xs overflow-hidden">
-          <DesignerStage3D
-            state={state}
-            onReset={() => setState(DEFAULT_DESIGN_STATE)}
-          />
+        <div className="bg-card border-border flex h-[calc(100vh-140px)] max-h-[820px] min-h-[580px] flex-col self-start overflow-hidden rounded-2xl border shadow-xs lg:sticky lg:top-4 lg:col-span-5">
+          <DesignerStage3D state={state} onReset={() => setState(DEFAULT_DESIGN_STATE)} />
         </div>
 
         {/* Right Column: Multi-Section Tuning Rack (7 of 12 cols = ~58%) */}
-        <div className="lg:col-span-7 lg:sticky lg:top-4 self-start max-h-[calc(100vh-140px)] overflow-y-auto flex flex-col rounded-2xl bg-card border border-border shadow-xs p-6">
+        <div className="bg-card border-border flex max-h-[calc(100vh-140px)] flex-col self-start overflow-y-auto rounded-2xl border p-6 shadow-xs lg:sticky lg:top-4 lg:col-span-7">
           <DesignerControlRack
             state={state}
             onChange={setState}
@@ -191,7 +190,6 @@ export const CardDesignerStudio: React.FC = () => {
           />
         </div>
       </div>
-
 
       {/* 4,180+ Game-Icons Picker Modal */}
       <GameIconsBrowser

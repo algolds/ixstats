@@ -32,7 +32,7 @@ export function StorePurchaseDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
         <DialogHeader>
-          <DialogTitle className="text-sm font-black tracking-wider text-amber-600 uppercase dark:text-amber-500">
+          <DialogTitle className="text-sm font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
             Confirm Purchase
           </DialogTitle>
           <DialogDescription className="text-muted-foreground mt-2 text-xs leading-relaxed">
@@ -44,12 +44,7 @@ export function StorePurchaseDialog({
 
         <div className="my-3 flex justify-center">
           <div className="w-full max-w-[260px]">
-            <StoreItemCard
-              item={item}
-              onPurchase={() => {}}
-              isPurchasing={false}
-              isOwned={false}
-            />
+            <StoreItemCard item={item} onPurchase={() => {}} isPurchasing={false} isOwned={false} />
           </div>
         </div>
 

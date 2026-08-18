@@ -36,12 +36,12 @@ export function InlineWikiArticlePreview({
       <div className="min-w-0 flex-1">
         <WikiHtmlContent
           html={formattedHtml}
-          className="line-clamp-2 text-[11px] leading-relaxed font-normal tracking-tight text-foreground/80 group-hover/preview:text-foreground [&_a]:transition-colors"
+          className="text-foreground/80 group-hover/preview:text-foreground line-clamp-2 text-[11px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
         />
       </div>
       <Link
         href={wikiHref}
-        className="text-teal-400/80 hover:text-teal-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+        className="ml-1.5 shrink-0 text-[10px] font-semibold text-teal-400/80 transition-colors hover:text-teal-300 active:scale-95"
       >
         Read →
       </Link>

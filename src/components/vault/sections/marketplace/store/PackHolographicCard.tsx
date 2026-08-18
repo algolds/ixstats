@@ -139,7 +139,7 @@ export function PackHolographicCard({
           </DialogTrigger>
           <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
             <DialogHeader>
-              <DialogTitle className="text-sm font-black tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
+              <DialogTitle className="text-sm font-semibold tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
                 {pack.name}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground mt-2 text-xs leading-relaxed">
@@ -192,12 +192,15 @@ export function PackHolographicCard({
 
         <div className="mt-2.5 space-y-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="line-clamp-1 text-[11px] font-black text-foreground">
+            <span className="text-foreground line-clamp-1 text-[11px] font-semibold">
               {pack.name}
             </span>
             <Badge
               variant="outline"
-              className={cn("px-1 py-0 text-[8px] font-bold uppercase", config.color)}
+              className={cn(
+                "px-1 py-0 text-[8px] font-medium tracking-wider uppercase",
+                config.color
+              )}
             >
               {config.label}
             </Badge>

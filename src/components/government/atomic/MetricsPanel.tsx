@@ -122,10 +122,12 @@ export const MetricsPanel = React.memo<MetricsPanelProps>(
                 <Icon className={cn("h-4 w-4", item.iconColor)} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                <p className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   {item.label}
                 </p>
-                <p className="text-foreground truncate text-sm font-black">{item.value}</p>
+                <p className="text-foreground truncate text-sm font-bold tabular-nums">
+                  {item.value}
+                </p>
               </div>
             </Component>
           );

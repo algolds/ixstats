@@ -5,7 +5,11 @@ import { Clock, ExternalLink, Rss } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { formatTimeAgo } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
-import { WikiHtmlContent, WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import {
+  WikiHtmlContent,
+  WikiLinkPreview,
+  ForumLinkPreview,
+} from "~/components/wiki/WikiLinkPreview";
 import { cn } from "~/lib/utils";
 
 export interface FeedItemHeaderProps {
@@ -35,7 +39,7 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium tracking-tight text-muted-foreground transition-all duration-150 hover:bg-white/10 hover:text-foreground active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-white/10 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>
@@ -76,24 +80,24 @@ export function FeedItemHeader({
         {isWiki && wikiPageTitle ? (
           <Link
             href={wikiHref ?? "#"}
-            className="truncate text-sm font-bold tracking-tight text-foreground transition-colors hover:text-teal-300"
+            className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-teal-300"
           >
             {wikiPageTitle}
           </Link>
         ) : sportsBulletin ? (
-          <span className="truncate text-sm font-bold tracking-tight text-foreground">
+          <span className="text-foreground truncate text-sm font-semibold tracking-tight">
             Sports News Bulletin
           </span>
         ) : (
           <WikiHtmlContent
             html={titleHtml}
             as="span"
-            className="truncate text-sm font-bold tracking-tight text-foreground"
+            className="text-foreground truncate text-sm font-semibold tracking-tight"
           />
         )}
 
         {activity._isNew && (
-          <Badge className="shrink-0 rounded-full border-teal-500/30 bg-teal-500/15 text-[8px] font-bold text-teal-400">
+          <Badge className="shrink-0 rounded-full border-teal-500/30 bg-teal-500/15 text-[8px] font-semibold tracking-wider text-teal-400 uppercase">
             NEW
           </Badge>
         )}
@@ -105,7 +109,7 @@ export function FeedItemHeader({
           <Badge
             variant="outline"
             className={cn(
-              "shrink-0 rounded-full text-[9px] font-semibold tracking-tight border-current/30",
+              "shrink-0 rounded-full border-current/30 text-[8.5px] font-medium tracking-wider uppercase",
               resolvedConfig.color
             )}
           >
@@ -117,12 +121,12 @@ export function FeedItemHeader({
         {isWiki && isGrouped && activity._totalBytes !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-tight tabular-nums shadow-sm",
+              "inline-flex items-center rounded-full border px-2 py-0.5 text-[8.5px] font-medium tracking-tight tabular-nums shadow-xs",
               activity._totalBytes > 0
                 ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
                 : activity._totalBytes < 0
                   ? "border-red-500/25 bg-red-500/10 text-red-400"
-                  : "border-white/10 bg-white/5 text-muted-foreground"
+                  : "text-muted-foreground border-white/10 bg-white/5"
             )}
           >
             {activity._totalBytes > 0 ? "+" : ""}
@@ -131,7 +135,7 @@ export function FeedItemHeader({
         )}
 
         {/* Timestamp */}
-        <span className="flex items-center gap-1 text-[10px] font-medium tracking-tight text-muted-foreground/70 tabular-nums">
+        <span className="text-muted-foreground/70 flex items-center gap-1 text-[10px] font-normal tracking-normal tabular-nums">
           <Clock className="h-3 w-3" />
           {formatTimeAgo(new Date(activity.timestamp))}
         </span>

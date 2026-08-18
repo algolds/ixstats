@@ -152,7 +152,10 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
     const showMotifs = rarity !== "COMMON";
 
     return (
-      <div ref={containerRef} className={cn("absolute inset-0 overflow-hidden select-none", className)}>
+      <div
+        ref={containerRef}
+        className={cn("absolute inset-0 overflow-hidden select-none", className)}
+      >
         {/* Layer 1: Base gradient */}
         <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
 
@@ -176,9 +179,10 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
           style={{
             backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
-            backgroundPosition: isHovered && containerRef.current
-              ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
-              : "50% 50%",
+            backgroundPosition:
+              isHovered && containerRef.current
+                ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                : "50% 50%",
             mixBlendMode: "overlay",
             opacity: holoOpacity,
             filter: theme.hueRotate ? `hue-rotate(${theme.hueRotate}deg)` : undefined,

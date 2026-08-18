@@ -574,8 +574,8 @@ export function AtomicWelcomeModal({
                           },
                         ].map((faq, idx) => (
                           <div key={idx} className="space-y-1 text-left">
-                            <h4 className="text-foreground flex items-start gap-1.5 text-xs font-bold">
-                              <span className="font-black text-purple-500">Q:</span>
+                            <h4 className="text-foreground flex items-start gap-1.5 text-xs font-semibold">
+                              <span className="font-bold text-purple-500">Q:</span>
                               {faq.q}
                             </h4>
                             <p className="text-muted-foreground pl-4 text-[10px] leading-relaxed">

@@ -37,10 +37,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
-import {
-  FacetContainer,
-  FacetCard,
-} from "~/components/ui/facet-container";
+import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -100,21 +97,23 @@ export function NSImportSuiteAdmin() {
   const [fetchSeasons, setFetchSeasons] = useState("1-13");
   const [confirmStopJobId, setConfirmStopJobId] = useState<string | null>(null);
 
-  const { data: healthStats, isLoading: loadingHealth, refetch: refetchHealth } =
-    api.nsImport.getSyncHealth.useQuery(undefined, {
-      refetchInterval: refreshInterval ?? false,
-    });
+  const {
+    data: healthStats,
+    isLoading: loadingHealth,
+    refetch: refetchHealth,
+  } = api.nsImport.getSyncHealth.useQuery(undefined, {
+    refetchInterval: refreshInterval ?? false,
+  });
 
-  const { data: rawLogsData, refetch: refetchLogs } =
-    api.nsImport.getSyncLogs.useQuery(
-      {
-        limit: 50,
-        syncTypeFilter: syncTypeFilter === "all" ? "all" : "region",
-      },
-      {
-        refetchInterval: refreshInterval ?? false,
-      }
-    );
+  const { data: rawLogsData, refetch: refetchLogs } = api.nsImport.getSyncLogs.useQuery(
+    {
+      limit: 50,
+      syncTypeFilter: syncTypeFilter === "all" ? "all" : "region",
+    },
+    {
+      refetchInterval: refreshInterval ?? false,
+    }
+  );
 
   const { data: syncLogCardsData, isLoading: loadingSyncCards } =
     api.nsImport.getSyncLogCards.useQuery(
@@ -129,10 +128,12 @@ export function NSImportSuiteAdmin() {
       }
     );
 
-  const { data: activeJobs, refetch: refetchActiveJobs } =
-    api.nsImport.getActiveJobs.useQuery(undefined, {
+  const { data: activeJobs, refetch: refetchActiveJobs } = api.nsImport.getActiveJobs.useQuery(
+    undefined,
+    {
       refetchInterval: refreshInterval ?? false,
-    });
+    }
+  );
 
   useVisibleRefetch(refreshInterval ?? 10000);
 
@@ -144,7 +145,10 @@ export function NSImportSuiteAdmin() {
   const parsedErrors = useMemo(() => {
     if (!selectedSyncLog?.errorMessage) return null;
     const raw = selectedSyncLog.errorMessage;
-    const items = raw.split(";").map((s) => s.trim()).filter(Boolean);
+    const items = raw
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const isRateLimit = items.some((item) => item.toUpperCase().includes("RATE_LIMIT"));
     const nations = items.map((item) => {
       const match = item.match(/Nation\s+([^:]+):\s*(.*)/i);
@@ -162,7 +166,6 @@ export function NSImportSuiteAdmin() {
     };
   }, [selectedSyncLog?.errorMessage]);
 
-
   const filteredLogs = useMemo(() => {
     if (!rawLogsData) return [];
     if (selectedSyncLogId) {
@@ -172,7 +175,10 @@ export function NSImportSuiteAdmin() {
   }, [rawLogsData, selectedSyncLogId]);
 
   const fetchRegionMutation = api.nsImport.fetchRegionCards.useMutation({
-    onSuccess: (data: { message: string; results: { regionName: string; syncLogId: string }[] }) => {
+    onSuccess: (data: {
+      message: string;
+      results: { regionName: string; syncLogId: string }[];
+    }) => {
       notify.success("Fetch Started", data.message);
       setConfirmFetchRegions(null);
       void refetchActiveJobs();
@@ -182,9 +188,15 @@ export function NSImportSuiteAdmin() {
   });
 
   const discoverRegionsMutation = api.nsImport.discoverTopRegions.useMutation({
-    onSuccess: (data: { regions: { id: string; name: string; numnations: number }[]; totalScanned: number }) => {
+    onSuccess: (data: {
+      regions: { id: string; name: string; numnations: number }[];
+      totalScanned: number;
+    }) => {
       setDiscoveredRegions(data.regions);
-      notify.success("Discovery Complete", `Found ${data.regions.length} regions with tag "${discoveryTag}"`);
+      notify.success(
+        "Discovery Complete",
+        `Found ${data.regions.length} regions with tag "${discoveryTag}"`
+      );
     },
     onError: (err: { message: string }) => notify.error("Discovery Error", err.message),
   });
@@ -218,7 +230,12 @@ export function NSImportSuiteAdmin() {
   });
 
   const filterCTENationsMutation = api.nsImport.filterCTECards.useMutation({
-    onSuccess: (data: { totalProcessed: number; cteCount: number; activeCount: number; message: string }) => {
+    onSuccess: (data: {
+      totalProcessed: number;
+      cteCount: number;
+      activeCount: number;
+      message: string;
+    }) => {
       notify.success("CTE Filter Complete", data.message);
       void refetchHealth();
     },
@@ -265,15 +282,14 @@ export function NSImportSuiteAdmin() {
     void refetchActiveJobs();
   };
 
-
   return (
     <div className="space-y-6">
-
-
-
       {/* ─── Active & Paused Background Sync Jobs ───────────────── */}
       {activeJobs && activeJobs.length > 0 && (
-        <FacetCard depth={2} className="rounded-2xl border border-blue-500/30 bg-blue-500/5 p-6 backdrop-blur-xl shadow-xl space-y-4">
+        <FacetCard
+          depth={2}
+          className="space-y-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 p-6 shadow-xl backdrop-blur-xl"
+        >
           <h2 className="text-foreground flex items-center gap-2 text-lg font-bold">
             <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
             Active / Paused Sync Jobs ({activeJobs.length})
@@ -288,7 +304,7 @@ export function NSImportSuiteAdmin() {
                 <FacetCard
                   key={job.id}
                   depth={1}
-                  className="rounded-xl border border-border bg-card/60 p-4 backdrop-blur-md flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                  className="border-border bg-card/60 flex flex-col gap-3 rounded-xl border p-4 backdrop-blur-md md:flex-row md:items-center md:justify-between"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2">
@@ -301,14 +317,16 @@ export function NSImportSuiteAdmin() {
                         {job.status}
                       </span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
                       <div
                         className="h-full bg-blue-500 transition-all duration-300"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                      <span>Cards: {job.cardsProcessed}/{job.totalCards} ({pct}%)</span>
+                      <span>
+                        Cards: {job.cardsProcessed}/{job.totalCards} ({pct}%)
+                      </span>
                       <span>Created: +{job.cardsCreated}</span>
                       <span>Updated: +{job.cardsUpdated}</span>
                       <span>Errors: {job.errorCount}</span>
@@ -320,7 +338,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => pauseJobMutation.mutate({ syncLogId: job.id })}
                         disabled={pauseJobMutation.isPending}
                         size="sm"
-                        className="bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/30 active:scale-95 transition-all text-xs"
+                        className="border border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
                       >
                         <Pause className="mr-1 h-3.5 w-3.5" /> Pause
                       </Button>
@@ -330,7 +348,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                         disabled={resumeJobMutation.isPending}
                         size="sm"
-                        className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/30 active:scale-95 transition-all text-xs"
+                        className="border border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                       >
                         <Play className="mr-1 h-3.5 w-3.5" /> Resume
                       </Button>
@@ -338,7 +356,7 @@ export function NSImportSuiteAdmin() {
                     <Button
                       onClick={() => setConfirmStopJobId(job.id)}
                       size="sm"
-                      className="bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-300 hover:bg-rose-500/30 active:scale-95 transition-all text-xs"
+                      className="border border-rose-500/30 bg-rose-500/20 text-xs text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-300"
                     >
                       <Square className="mr-1 h-3.5 w-3.5" /> Stop
                     </Button>
@@ -353,13 +371,16 @@ export function NSImportSuiteAdmin() {
       {/* ─── Bulk Region Import & Discovery Grid ───────────────── */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Region Fetch Card */}
-        <FacetCard depth={2} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-xl shadow-xl space-y-4 text-card-foreground">
+        <FacetCard
+          depth={2}
+          className="border-border bg-card/70 text-card-foreground space-y-4 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
+        >
           <div className="flex items-center gap-2.5">
             <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/20 p-2 backdrop-blur-md">
               <MapPin className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-foreground tracking-tight text-lg font-bold">
+              <h3 className="text-foreground text-lg font-bold tracking-tight">
                 Region Card Fetch
               </h3>
               <p className="text-muted-foreground text-xs font-medium">
@@ -372,13 +393,13 @@ export function NSImportSuiteAdmin() {
               value={regionNames}
               onChange={(e) => setRegionNames(e.target.value)}
               placeholder="Region name(s) (e.g. greater_ixnay, the_pacific)"
-              className="h-24 w-full rounded-xl border border-border bg-card p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground h-24 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
             <div className="flex justify-end">
               <Button
                 onClick={() => setConfirmFetchRegions(regionNames)}
                 disabled={!regionNames.trim() || fetchRegionMutation.isPending}
-                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-200 hover:bg-emerald-500/30 active:scale-95 transition-all shadow-xs"
+                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-200"
               >
                 {fetchRegionMutation.isPending ? (
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -392,13 +413,16 @@ export function NSImportSuiteAdmin() {
         </FacetCard>
 
         {/* Discover Top Regions Card */}
-        <FacetCard depth={2} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-xl shadow-xl space-y-4 text-card-foreground">
+        <FacetCard
+          depth={2}
+          className="border-border bg-card/70 text-card-foreground space-y-4 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
+        >
           <div className="flex items-center gap-2.5">
             <div className="rounded-xl border border-purple-400/30 bg-purple-500/20 p-2 backdrop-blur-md">
               <Search className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <h3 className="text-foreground tracking-tight text-lg font-bold">
+              <h3 className="text-foreground text-lg font-bold tracking-tight">
                 Discover NS Regions
               </h3>
               <p className="text-muted-foreground text-xs font-medium">
@@ -410,21 +434,37 @@ export function NSImportSuiteAdmin() {
             <select
               value={discoveryTag}
               onChange={(e) => setDiscoveryTag(e.target.value)}
-              className="h-9 flex-1 rounded-xl border border-border bg-card px-3 text-xs font-semibold text-foreground transition-all hover:bg-accent focus:outline-none"
+              className="border-border bg-card text-foreground hover:bg-accent h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
             >
-              <option value="gargantuan" className="bg-card text-card-foreground">Largest Regions</option>
-              <option value="Role Player" className="bg-card text-card-foreground">Roleplay Communities</option>
-              <option value="Democratic" className="bg-card text-card-foreground">Democratic / Legislative</option>
-              <option value="Totalitarian" className="bg-card text-card-foreground">Totalitarian / Dictatorships</option>
-              <option value="Communist" className="bg-card text-card-foreground">Communist / Leftist</option>
-              <option value="Capitalist" className="bg-card text-card-foreground">Capitalist / Trade</option>
-              <option value="Monarchist" className="bg-card text-card-foreground">Monarchy / Feudalist</option>
-              <option value="Anarchist" className="bg-card text-card-foreground">Anarchist / Lawless</option>
+              <option value="gargantuan" className="bg-card text-card-foreground">
+                Largest Regions
+              </option>
+              <option value="Role Player" className="bg-card text-card-foreground">
+                Roleplay Communities
+              </option>
+              <option value="Democratic" className="bg-card text-card-foreground">
+                Democratic / Legislative
+              </option>
+              <option value="Totalitarian" className="bg-card text-card-foreground">
+                Totalitarian / Dictatorships
+              </option>
+              <option value="Communist" className="bg-card text-card-foreground">
+                Communist / Leftist
+              </option>
+              <option value="Capitalist" className="bg-card text-card-foreground">
+                Capitalist / Trade
+              </option>
+              <option value="Monarchist" className="bg-card text-card-foreground">
+                Monarchy / Feudalist
+              </option>
+              <option value="Anarchist" className="bg-card text-card-foreground">
+                Anarchist / Lawless
+              </option>
             </select>
             <Button
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
               disabled={discoverRegionsMutation.isPending}
-              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 dark:text-purple-200 hover:bg-purple-500/30 active:scale-95 transition-all shadow-xs"
+              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 shadow-xs transition-all hover:bg-purple-500/30 active:scale-95 dark:text-purple-200"
             >
               {discoverRegionsMutation.isPending ? (
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -436,25 +476,32 @@ export function NSImportSuiteAdmin() {
           </div>
 
           {discoveredRegions && (
-            <FacetContainer depth={1} enableRefraction={true} className="overflow-hidden rounded-xl border border-border bg-card/60 backdrop-blur-md">
-              <div className="border-b border-border px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+            <FacetContainer
+              depth={1}
+              enableRefraction={true}
+              className="border-border bg-card/60 overflow-hidden rounded-xl border backdrop-blur-md"
+            >
+              <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-[10px] font-semibold tracking-wider uppercase">
                 <span>Top {discoveredRegions.length} Regions</span>
                 <span>
-                  {discoveredRegions.reduce((sum, r) => sum + r.numnations, 0).toLocaleString()} nations
+                  {discoveredRegions.reduce((sum, r) => sum + r.numnations, 0).toLocaleString()}{" "}
+                  nations
                 </span>
               </div>
-              <div className="divide-y divide-border/60 max-h-56 overflow-y-auto">
+              <div className="divide-border/60 max-h-56 divide-y overflow-y-auto">
                 {discoveredRegions.map((region, i) => (
                   <div
                     key={region.id}
-                    className="flex items-center justify-between px-4 py-2 hover:bg-accent/40 transition-colors"
+                    className="hover:bg-accent/40 flex items-center justify-between px-4 py-2 transition-colors"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="w-5 font-mono text-[10px] text-muted-foreground text-right">
+                      <span className="text-muted-foreground w-5 text-right font-mono text-[10px]">
                         {i + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-foreground truncate text-xs font-semibold">{region.name}</p>
+                        <p className="text-foreground truncate text-xs font-semibold">
+                          {region.name}
+                        </p>
                         <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
                           <Users className="h-3 w-3" />
                           {region.numnations.toLocaleString()} nations
@@ -466,7 +513,7 @@ export function NSImportSuiteAdmin() {
                       variant="outline"
                       onClick={() => setConfirmFetchRegions(region.id)}
                       disabled={fetchRegionMutation.isPending}
-                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20 active:scale-95 transition-all"
+                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
                     >
                       <Globe className="mr-1 h-3 w-3" /> Fetch
                     </Button>
@@ -479,24 +526,28 @@ export function NSImportSuiteAdmin() {
       </div>
 
       {/* ─── Filter CTE Nations Section ────────────────────────── */}
-      <FacetCard depth={2} className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 backdrop-blur-xl space-y-4">
+      <FacetCard
+        depth={2}
+        className="space-y-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 backdrop-blur-xl"
+      >
         <div className="flex items-center gap-2.5">
           <div className="rounded-xl border border-amber-400/30 bg-amber-500/20 p-2 backdrop-blur-md">
             <RefreshCw className="h-5 w-5 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-foreground tracking-tight text-lg font-bold">
+            <h3 className="text-foreground text-lg font-bold tracking-tight">
               Filter Active vs. CTE (Defunct) Nations
             </h3>
             <p className="text-muted-foreground text-xs font-medium">
-              Tag imported cards against the official NationStates active nations dump (<code className="text-amber-500 font-mono">nations.xml.gz</code>)
+              Tag imported cards against the official NationStates active nations dump (
+              <code className="font-mono text-amber-500">nations.xml.gz</code>)
             </p>
           </div>
         </div>
         <Button
           onClick={() => filterCTENationsMutation.mutate()}
           disabled={filterCTENationsMutation.isPending}
-          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 dark:text-amber-200 hover:bg-amber-500/30 active:scale-95 transition-all shadow-xs"
+          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
         >
           {filterCTENationsMutation.isPending ? (
             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -508,14 +559,17 @@ export function NSImportSuiteAdmin() {
       </FacetCard>
 
       {/* ─── Sync Operations Log & Import Filter Explorer ──────────────── */}
-      <FacetCard depth={2} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-xl shadow-xl space-y-6">
+      <FacetCard
+        depth={2}
+        className="border-border bg-card/70 space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
+      >
         {/* Header toolbar */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border-b border-border/60 pb-4">
+        <div className="border-border/60 flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-foreground text-lg font-bold">Sync Operations & Import Runs</h2>
               {selectedSyncLog && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
                   <Filter className="h-3 w-3" /> Filtered View
                 </span>
               )}
@@ -528,7 +582,7 @@ export function NSImportSuiteAdmin() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Import run selector dropdown */}
             <div className="flex items-center gap-1.5">
-              <label className="text-muted-foreground text-[11px] font-semibold flex items-center gap-1">
+              <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
                 <Layers className="h-3 w-3 text-blue-500" /> Import:
               </label>
               <select
@@ -540,7 +594,7 @@ export function NSImportSuiteAdmin() {
                   else setActiveLogTab("logs");
                 }}
 
-                className="h-8.5 max-w-[240px] truncate rounded-xl border border-border bg-card px-2.5 text-xs font-semibold text-foreground transition-all hover:bg-accent focus:outline-none"
+                className="border-border bg-card text-foreground hover:bg-accent h-8.5 max-w-[240px] truncate rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
               >
                 <option value="ALL" className="bg-card text-card-foreground">
                   All Imports ({rawLogsData?.length ?? 0} runs)
@@ -566,17 +620,21 @@ export function NSImportSuiteAdmin() {
             <select
               value={syncTypeFilter}
               onChange={(e) => setSyncTypeFilter(e.target.value as "all" | "region")}
-              className="h-8.5 rounded-xl border border-border bg-card px-2.5 text-xs font-semibold text-foreground transition-all hover:bg-accent focus:outline-none"
+              className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
             >
-              <option value="all" className="bg-card text-card-foreground">All Types</option>
-              <option value="region" className="bg-card text-card-foreground">Region Only</option>
+              <option value="all" className="bg-card text-card-foreground">
+                All Types
+              </option>
+              <option value="region" className="bg-card text-card-foreground">
+                Region Only
+              </option>
             </select>
 
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefreshAll}
-              className="h-8.5 rounded-xl border border-border bg-card/80 text-xs text-foreground hover:bg-accent active:scale-95 transition-all shadow-xs"
+              className="border-border bg-card/80 text-foreground hover:bg-accent h-8.5 rounded-xl border text-xs shadow-xs transition-all active:scale-95"
             >
               <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
             </Button>
@@ -587,11 +645,11 @@ export function NSImportSuiteAdmin() {
         {selectedSyncLog ? (
           <FacetCard
             depth={1}
-            className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 backdrop-blur-md space-y-3"
+            className="space-y-3 rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 backdrop-blur-md"
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground text-sm font-bold flex items-center gap-1.5">
+                <span className="text-foreground flex items-center gap-1.5 text-sm font-bold">
                   <Database className="h-4 w-4 text-blue-500" />
                   {selectedSyncLog.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                 </span>
@@ -600,17 +658,17 @@ export function NSImportSuiteAdmin() {
                 >
                   {selectedSyncLog.status}
                 </span>
-                <span className="text-muted-foreground text-xs font-mono">
+                <span className="text-muted-foreground font-mono text-xs">
                   ID: {selectedSyncLog.id}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
                 {/* Mode Switcher: Logs vs Cards */}
-                <div className="flex rounded-lg border border-border bg-card/80 p-0.5">
+                <div className="border-border bg-card/80 flex rounded-lg border p-0.5">
                   <button
                     onClick={() => setActiveLogTab("logs")}
-                    className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                       activeLogTab === "logs"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -620,7 +678,7 @@ export function NSImportSuiteAdmin() {
                   </button>
                   <button
                     onClick={() => setActiveLogTab("cards")}
-                    className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                       activeLogTab === "cards"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -628,7 +686,7 @@ export function NSImportSuiteAdmin() {
                   >
                     <Sparkles className="h-3 w-3" />
                     <span>Imported Cards</span>
-                    <span className="ml-1 rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-mono">
+                    <span className="bg-primary-foreground/20 py-0.2 ml-1 rounded-full px-1.5 font-mono text-[10px]">
                       {syncLogCardsData?.total ?? selectedSyncLog.cardsProcessed}
                     </span>
                   </button>
@@ -641,7 +699,7 @@ export function NSImportSuiteAdmin() {
                     setSelectedSyncLogId(null);
                     setActiveLogTab("logs");
                   }}
-                  className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground h-8 text-xs"
                 >
                   <X className="mr-1 h-3.5 w-3.5" /> Clear Filter
                 </Button>
@@ -649,43 +707,46 @@ export function NSImportSuiteAdmin() {
             </div>
 
             {/* Metrics row */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 pt-1 text-xs">
-              <div className="rounded-lg bg-card/60 border border-border/60 p-2">
-                <span className="text-muted-foreground text-[10px] block">Processed</span>
-                <span className="font-mono font-bold text-foreground">
+            <div className="grid grid-cols-2 gap-2 pt-1 text-xs sm:grid-cols-4 lg:grid-cols-6">
+              <div className="bg-card/60 border-border/60 rounded-lg border p-2">
+                <span className="text-muted-foreground block text-[10px]">Processed</span>
+                <span className="text-foreground font-mono font-bold">
                   {selectedSyncLog.cardsProcessed} cards
                 </span>
               </div>
-              <div className="rounded-lg bg-card/60 border border-border/60 p-2">
-                <span className="text-muted-foreground text-[10px] block">Created</span>
+              <div className="bg-card/60 border-border/60 rounded-lg border p-2">
+                <span className="text-muted-foreground block text-[10px]">Created</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   +{selectedSyncLog.cardsCreated} new
                 </span>
               </div>
-              <div className="rounded-lg bg-card/60 border border-border/60 p-2">
-                <span className="text-muted-foreground text-[10px] block">Updated</span>
+              <div className="bg-card/60 border-border/60 rounded-lg border p-2">
+                <span className="text-muted-foreground block text-[10px]">Updated</span>
                 <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                   +{selectedSyncLog.cardsUpdated}
                 </span>
               </div>
-              <div className="rounded-lg bg-card/60 border border-border/60 p-2">
-                <span className="text-muted-foreground text-[10px] block">Duration</span>
-                <span className="font-mono font-bold text-foreground">
+              <div className="bg-card/60 border-border/60 rounded-lg border p-2">
+                <span className="text-muted-foreground block text-[10px]">Duration</span>
+                <span className="text-foreground font-mono font-bold">
                   {formatDuration(selectedSyncLog.duration)}
                 </span>
               </div>
-              <div className="rounded-lg bg-card/60 border border-border/60 p-2 col-span-2">
-                <span className="text-muted-foreground text-[10px] block">Started / Completed</span>
-                <span className="font-mono text-[11px] text-foreground truncate block">
-                  {new Date(selectedSyncLog.startedAt).toLocaleString([], { dateStyle: "short", timeStyle: "medium" })}
+              <div className="bg-card/60 border-border/60 col-span-2 rounded-lg border p-2">
+                <span className="text-muted-foreground block text-[10px]">Started / Completed</span>
+                <span className="text-foreground block truncate font-mono text-[11px]">
+                  {new Date(selectedSyncLog.startedAt).toLocaleString([], {
+                    dateStyle: "short",
+                    timeStyle: "medium",
+                  })}
                 </span>
               </div>
             </div>
 
             {parsedErrors && (
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 space-y-2 text-xs">
+              <div className="space-y-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-300 font-bold">
+                  <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-300">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500" />
                     <span>
                       {parsedErrors.isRateLimit
@@ -703,32 +764,32 @@ export function NSImportSuiteAdmin() {
                             selectedSyncLog.syncType.replace("NS_REGION_", "").toLowerCase()
                           )
                         }
-                        className="h-6.5 text-[11px] rounded-lg border-rose-500/40 bg-rose-500/20 text-rose-600 dark:text-rose-200 hover:bg-rose-500/30 active:scale-95 transition-all"
+                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-[11px] text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
                       >
                         <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
                       </Button>
                     )}
                     <button
                       onClick={() => setShowErrorDetails(!showErrorDetails)}
-                      className="text-[11px] text-rose-600 dark:text-rose-400 underline hover:no-underline font-medium cursor-pointer"
+                      className="cursor-pointer text-[11px] font-medium text-rose-600 underline hover:no-underline dark:text-rose-400"
                     >
                       {showErrorDetails ? "Hide Nations" : `View Nations (${parsedErrors.count})`}
                     </button>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground text-[11px] leading-relaxed">
                   {parsedErrors.isRateLimit
                     ? "The upstream NationStates API rate-limited card fetch requests for these nations. All cards that were successfully imported are safely stored in your database."
                     : parsedErrors.raw}
                 </p>
 
                 {showErrorDetails && (
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto rounded-lg bg-black/30 p-2 border border-rose-500/20">
+                  <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-rose-500/20 bg-black/30 p-2">
                     {parsedErrors.nations.map((n, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 rounded-md bg-rose-500/20 px-2 py-0.5 font-mono text-[10px] text-rose-600 dark:text-rose-300 border border-rose-500/30"
+                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/20 px-2 py-0.5 font-mono text-[10px] text-rose-600 dark:text-rose-300"
                       >
                         {n.nation}
                         {n.reason && <span className="text-[9px] opacity-70">({n.reason})</span>}
@@ -738,22 +799,29 @@ export function NSImportSuiteAdmin() {
                 )}
               </div>
             )}
-
           </FacetCard>
         ) : (
           /* Recent Import Runs Quick Filter Table */
-          rawLogsData && rawLogsData.length > 0 && (
+          rawLogsData &&
+          rawLogsData.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
+              <div className="text-muted-foreground flex items-center justify-between text-xs font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-blue-500" /> Recent Import Runs (Click to inspect cards & logs)
+                  <Clock className="h-3.5 w-3.5 text-blue-500" /> Recent Import Runs (Click to
+                  inspect cards & logs)
                 </span>
-                <span className="text-[11px] font-mono">{rawLogsData.length} records</span>
+                <span className="font-mono text-[11px]">{rawLogsData.length} records</span>
               </div>
-              <FacetContainer depth={1} enableRefraction={true} className="overflow-hidden rounded-xl border border-border bg-card/60 backdrop-blur-md">
-                <div className="max-h-56 overflow-y-auto divide-y divide-border/60">
+              <FacetContainer
+                depth={1}
+                enableRefraction={true}
+                className="border-border bg-card/60 overflow-hidden rounded-xl border backdrop-blur-md"
+              >
+                <div className="divide-border/60 max-h-56 divide-y overflow-y-auto">
                   {rawLogsData.map((log) => {
-                    const typeLabel = log.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ");
+                    const typeLabel = log.syncType
+                      .replace("NS_REGION_", "Region: ")
+                      .replace(/_/g, " ");
                     return (
                       <div
                         key={log.id}
@@ -761,9 +829,8 @@ export function NSImportSuiteAdmin() {
                           setSelectedSyncLogId(log.id);
                           setActiveLogTab("cards");
                         }}
-                        className="flex cursor-pointer items-center justify-between px-4 py-2.5 hover:bg-accent/50 transition-colors"
+                        className="hover:bg-accent/50 flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors"
                       >
-
                         <div className="flex min-w-0 items-center gap-3">
                           <span
                             className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(log.status)}`}
@@ -771,30 +838,41 @@ export function NSImportSuiteAdmin() {
                             {log.status}
                           </span>
                           <div className="min-w-0">
-                            <p className="text-foreground truncate text-xs font-semibold">{typeLabel}</p>
-                            <p className="text-muted-foreground text-[10px] flex items-center gap-2">
-                              <span>{new Date(log.startedAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</span>
+                            <p className="text-foreground truncate text-xs font-semibold">
+                              {typeLabel}
+                            </p>
+                            <p className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                              <span>
+                                {new Date(log.startedAt).toLocaleString([], {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })}
+                              </span>
                               <span>•</span>
                               <span>Duration: {formatDuration(log.duration)}</span>
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex shrink-0 items-center gap-3">
                           <div className="text-right text-xs">
-                            <span className="font-mono font-bold text-foreground">
+                            <span className="text-foreground font-mono font-bold">
                               {log.cardsProcessed} cards
                             </span>
-                            <div className="text-[10px] text-muted-foreground">
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{log.cardsCreated}</span>
+                            <div className="text-muted-foreground text-[10px]">
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                +{log.cardsCreated}
+                              </span>
                               {" / "}
-                              <span className="text-blue-600 dark:text-blue-400 font-semibold">+{log.cardsUpdated}</span>
+                              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                                +{log.cardsUpdated}
+                              </span>
                             </div>
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 px-2 text-[11px] text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                            className="h-7 px-2 text-[11px] text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
                           >
                             Filter <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
@@ -821,19 +899,19 @@ export function NSImportSuiteAdmin() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
                   <Input
                     value={cardSearchQuery}
                     onChange={(e) => setCardSearchQuery(e.target.value)}
                     placeholder="Search cards in this batch..."
-                    className="h-8.5 pl-8 text-xs bg-card"
+                    className="bg-card h-8.5 pl-8 text-xs"
                   />
                 </div>
               </div>
             </div>
 
             {loadingSyncCards ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground text-xs">
+              <div className="text-muted-foreground flex items-center justify-center py-12 text-xs">
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin text-blue-500" />
                 Loading cards from this import batch...
               </div>
@@ -841,23 +919,26 @@ export function NSImportSuiteAdmin() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {syncLogCardsData.cards.map((card) => {
                   const flag =
-                    card.artwork || (card.artworkVariants as any)?.original || "/images/cards/lore-placeholder.svg";
+                    card.artwork ||
+                    (card.artworkVariants as any)?.original ||
+                    "/images/cards/lore-placeholder.svg";
                   const region = (card.stats as any)?.region || syncLogCardsData.regionName;
                   return (
                     <FacetCard
                       key={card.id}
                       depth={1}
                       interactive="hover"
-                      className="group rounded-xl border border-border bg-card/60 p-3 backdrop-blur-md transition-all hover:border-primary/40 flex flex-col justify-between space-y-2"
+                      className="group border-border bg-card/60 hover:border-primary/40 flex flex-col justify-between space-y-2 rounded-xl border p-3 backdrop-blur-md transition-all"
                     >
                       <div className="space-y-2">
-                        <div className="relative aspect-3/2 w-full overflow-hidden rounded-lg bg-black/40 border border-border/40">
+                        <div className="border-border/40 relative aspect-3/2 w-full overflow-hidden rounded-lg border bg-black/40">
                           <img
                             src={flag}
                             alt={card.title}
                             className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = "/images/cards/lore-placeholder.svg";
+                              (e.currentTarget as HTMLImageElement).src =
+                                "/images/cards/lore-placeholder.svg";
                             }}
                           />
                           <div className="absolute top-1.5 right-1.5">
@@ -871,11 +952,14 @@ export function NSImportSuiteAdmin() {
                           )}
                         </div>
                         <div>
-                          <p className="text-foreground truncate text-xs font-bold" title={card.title}>
+                          <p
+                            className="text-foreground truncate text-xs font-bold"
+                            title={card.title}
+                          >
                             {card.title}
                           </p>
                           {region && (
-                            <p className="text-muted-foreground truncate text-[10px] flex items-center gap-1">
+                            <p className="text-muted-foreground flex items-center gap-1 truncate text-[10px]">
                               <MapPin className="h-2.5 w-2.5 text-emerald-500" />
                               {region}
                             </p>
@@ -883,7 +967,7 @@ export function NSImportSuiteAdmin() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between border-t border-border/40 pt-2 text-[10px]">
+                      <div className="border-border/40 flex items-center justify-between border-t pt-2 text-[10px]">
                         <span className="text-muted-foreground font-mono">
                           ID: {card.nsCardId ? `#${card.nsCardId}` : card.id.slice(0, 10)}
                         </span>
@@ -896,7 +980,7 @@ export function NSImportSuiteAdmin() {
                 })}
               </div>
             ) : (
-              <div className="rounded-xl border border-border/60 bg-muted/20 p-8 text-center text-xs text-muted-foreground">
+              <div className="border-border/60 bg-muted/20 text-muted-foreground rounded-xl border p-8 text-center text-xs">
                 No cards found matching this import filter.
               </div>
             )}
@@ -905,44 +989,42 @@ export function NSImportSuiteAdmin() {
           /* Standard Filtered Log Stream */
           <LogViewerFilterable
             entries={syncLogEntries}
-            title={selectedSyncLog ? `Audit Logs: ${selectedSyncLog.syncType}` : "NS Sync Audit Log"}
+            title={
+              selectedSyncLog ? `Audit Logs: ${selectedSyncLog.syncType}` : "NS Sync Audit Log"
+            }
             maxHeight={380}
-            className="border border-border/80 shadow-inner rounded-xl"
+            className="border-border/80 rounded-xl border shadow-inner"
           />
         )}
       </FacetCard>
 
-
       {/* ─── Confirm Region Fetch Modal ────────────────────────── */}
       <AlertDialog open={!!confirmFetchRegions} onOpenChange={() => setConfirmFetchRegions(null)}>
-        <AlertDialogContent className="border border-border bg-card text-card-foreground backdrop-blur-2xl shadow-2xl">
+        <AlertDialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+            <AlertDialogTitle className="text-foreground flex items-center gap-2">
               <Globe className="h-5 w-5 text-emerald-500" />
               Confirm Region Fetch
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="text-muted-foreground text-xs space-y-2">
+              <div className="text-muted-foreground space-y-2 text-xs">
                 <div>
                   Fetch cards from region:{" "}
-                  <span className="font-mono font-bold text-foreground">
-                    {confirmFetchRegions}
-                  </span>
+                  <span className="text-foreground font-mono font-bold">{confirmFetchRegions}</span>
                 </div>
                 <div className="pt-2">
-                  <label className="block text-xs font-medium text-foreground mb-1">
+                  <label className="text-foreground mb-1 block text-xs font-medium">
                     Seasons (e.g. 1-13 or 1,2,3)
                   </label>
                   <input
                     type="text"
                     value={fetchSeasons}
                     onChange={(e) => setFetchSeasons(e.target.value)}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-1.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
             </AlertDialogDescription>
-
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogClose onClick={() => setConfirmFetchRegions(null)}>Cancel</AlertDialogClose>
@@ -956,7 +1038,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={fetchRegionMutation.isPending}
-              className="bg-emerald-500 font-semibold text-black hover:bg-emerald-400 active:scale-95 transition-all"
+              className="bg-emerald-500 font-semibold text-black transition-all hover:bg-emerald-400 active:scale-95"
             >
               {fetchRegionMutation.isPending ? "Starting..." : "Start Fetch"}
             </Button>
@@ -964,12 +1046,11 @@ export function NSImportSuiteAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
-
       {/* ─── Confirm Stop Job Modal ─────────────────────────────── */}
       <AlertDialog open={!!confirmStopJobId} onOpenChange={() => setConfirmStopJobId(null)}>
-        <AlertDialogContent className="border border-border bg-card text-card-foreground backdrop-blur-2xl shadow-2xl">
+        <AlertDialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+            <AlertDialogTitle className="text-foreground flex items-center gap-2">
               <Square className="h-5 w-5 text-rose-500" />
               Stop Sync Job?
             </AlertDialogTitle>
@@ -986,7 +1067,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={stopJobMutation.isPending}
-              className="bg-rose-500 font-semibold text-white hover:bg-rose-600 active:scale-95 transition-all"
+              className="bg-rose-500 font-semibold text-white transition-all hover:bg-rose-600 active:scale-95"
             >
               {stopJobMutation.isPending ? "Stopping..." : "Stop Job"}
             </Button>

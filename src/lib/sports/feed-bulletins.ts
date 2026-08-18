@@ -48,15 +48,11 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
 }
 
 function cleanNameAndId(rawName: string): { name: string; id?: string } {
-  let clean = rawName
-    .replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "")
-    .trim();
+  let clean = rawName.replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "").trim();
 
   const linkMatch = clean.match(/\[([^\]]+)\]\(([^)]+)\)/);
   if (linkMatch) {
-    const name = linkMatch[1]!
-      .replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "")
-      .trim();
+    const name = linkMatch[1]!.replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "").trim();
     const url = linkMatch[2]!;
     const idMatch = url.match(/\/(?:myclub|myleague)\/([a-zA-Z0-9_-]+)/);
     return {
@@ -126,7 +122,10 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
   // Strip blurb header wrapper if present: [blurb:slug|Title]\n\n...
   const cleanStr = content.replace(/^\[blurb:[^\]]+\]\s*/i, "").trim();
 
-  const lines = cleanStr.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = cleanStr
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) return null;
 
   // Helper to extract optional leading emoji and clean league name
@@ -270,7 +269,10 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
 
 function parseMarkdownBulletin(
   lines: string[],
-  extractHeaderInfo: (rawLeft: string) => { sportEmoji: string; leagueInfo: { name: string; id?: string } }
+  extractHeaderInfo: (rawLeft: string) => {
+    sportEmoji: string;
+    leagueInfo: { name: string; id?: string };
+  }
 ): SportsBulletinData | null {
   let matchdayMatchIndex = -1;
   let matchDay = 0;

@@ -129,7 +129,8 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
       });
 
       // Calculate impact using CulturalImpactCalculator
-      const { CulturalImpactCalculator } = await import("~/lib/diplomacy/cultural-impact-calculator");
+      const { CulturalImpactCalculator } =
+        await import("~/lib/diplomacy/cultural-impact-calculator");
 
       const exchangeData = {
         id: exchange.id,

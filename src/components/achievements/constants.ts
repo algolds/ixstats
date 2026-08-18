@@ -259,5 +259,3 @@ export const FORUM_RIBBONS: ForumRibbon[] = [
     badgeLabel: "CANON",
   },
 ];
-
-

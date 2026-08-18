@@ -91,11 +91,17 @@ export const cardsAdminRouter = createTRPCRouter({
     .input(
       z.object({
         isRetired: z.boolean(),
-        cardTypeFilter: z.enum(["all", "NS_IMPORT", "LORE", "USER_CUSTOM", "COMMONS_IMPORT"]).optional().default("all"),
+        cardTypeFilter: z
+          .enum(["all", "NS_IMPORT", "LORE", "USER_CUSTOM", "COMMONS_IMPORT"])
+          .optional()
+          .default("all"),
         cteFilter: z.enum(["all", "active", "cte"]).optional().default("all"),
         categoryFilter: z.string().optional().default("all"),
         season: z.enum(["all", "1", "2", "3"]).optional().default("all"),
-        rarity: z.enum(["all", "COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"]).optional().default("all"),
+        rarity: z
+          .enum(["all", "COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"])
+          .optional()
+          .default("all"),
       })
     )
     .mutation(async ({ ctx, input }) => {

@@ -138,7 +138,10 @@ export const listProcedures = {
                 maxLat: boundingBox[2],
                 maxLng: boundingBox[3],
               }
-            : typeof boundingBox === "object" && boundingBox !== null && "minLng" in boundingBox && boundingBox.minLng !== undefined
+            : typeof boundingBox === "object" &&
+                boundingBox !== null &&
+                "minLng" in boundingBox &&
+                boundingBox.minLng !== undefined
               ? {
                   minLat: boundingBox.minLat,
                   minLng: boundingBox.minLng,
@@ -147,10 +150,7 @@ export const listProcedures = {
                 }
               : {};
 
-        const centroid = country.centroid as
-          | { coordinates?: number[] }
-          | null
-          | undefined;
+        const centroid = country.centroid as { coordinates?: number[] } | null | undefined;
 
         const centerCoords =
           centroid?.coordinates &&

@@ -53,7 +53,7 @@ export function PostModals({
     <>
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="max-w-md border border-white/10 bg-slate-900/95 p-6 text-white backdrop-blur-xl shadow-2xl">
+        <DialogContent className="max-w-md border border-white/10 bg-slate-900/95 p-6 text-white shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-rose-500/20 p-2 text-rose-400">
               <Trash2 className="h-5 w-5" />
@@ -93,7 +93,7 @@ export function PostModals({
           if (!open) setFlagReason("");
         }}
       >
-        <DialogContent className="max-w-md border border-white/10 bg-slate-900/95 p-6 text-white backdrop-blur-xl shadow-2xl">
+        <DialogContent className="max-w-md border border-white/10 bg-slate-900/95 p-6 text-white shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-amber-500/20 p-2 text-amber-400">
               <Flag className="h-5 w-5" />

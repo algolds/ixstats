@@ -70,8 +70,6 @@ import { WikiAndStashPopovers } from "./editor/WikiAndStashPopovers";
 // Slate plugins for Rich Text Formatting
 // ---------------------------------------------------------------------------
 
-
-
 // ---------------------------------------------------------------------------
 // Custom Slate-to-HTML Serializer
 // ---------------------------------------------------------------------------
@@ -477,8 +475,3 @@ function ToolbarButton({
     </Button>
   );
 }
-
-
-
-
-

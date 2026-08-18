@@ -47,11 +47,7 @@ export function VaultAuctionsTab() {
       minPrice: filters.minPrice ? parseInt(filters.minPrice) : undefined,
       maxPrice: filters.maxPrice ? parseInt(filters.maxPrice) : undefined,
       sortBy: (filters.sortBy || "ending_soon") as
-        | "ending_soon"
-        | "newest"
-        | "price_low"
-        | "price_high"
-        | undefined,
+        "ending_soon" | "newest" | "price_low" | "price_high" | undefined,
     }),
     [filters]
   );
@@ -198,10 +194,15 @@ export function VaultAuctionsTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-bold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
-              <p className={cn("mt-1 font-mono text-base leading-none font-black", stat.color)}>
+              <p
+                className={cn(
+                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
+                  stat.color
+                )}
+              >
                 {stat.value}
               </p>
             </div>
@@ -592,7 +593,9 @@ export function VaultAuctionsTab() {
                             {card?.title ?? "Unknown"}
                           </span>
                           <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
-                            {auction.updatedAt ? new Date(auction.updatedAt).toLocaleDateString() : new Date(auction.endTime).toLocaleDateString()}
+                            {auction.updatedAt
+                              ? new Date(auction.updatedAt).toLocaleDateString()
+                              : new Date(auction.endTime).toLocaleDateString()}
                           </p>
                         </div>
                       </div>

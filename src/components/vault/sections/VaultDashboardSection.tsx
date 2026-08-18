@@ -46,12 +46,9 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     }
   };
 
-  const { isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
-    undefined,
-    {
-      enabled: !!user,
-    }
-  );
+  const { isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(undefined, {
+    enabled: !!user,
+  });
 
   const { data: balanceData, refetch: refetchBalance } = api.vault.getBalance.useQuery(
     { userId: user?.id ?? "" },

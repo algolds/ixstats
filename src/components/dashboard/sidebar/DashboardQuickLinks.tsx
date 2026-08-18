@@ -61,11 +61,11 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           <div className="flex h-5 w-5 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/20 shadow-sm shadow-cyan-500/10 backdrop-blur-sm">
             <Compass className="h-3 w-3 text-cyan-400" />
           </div>
-          <span className="text-xs font-bold tracking-tight text-cyan-300">
+          <span className="text-xs font-semibold tracking-tight text-cyan-900 dark:text-cyan-300">
             Quick Links
           </span>
         </div>
-        <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-1.5 py-0.5 text-[8px] font-semibold tracking-wider text-cyan-400/90 uppercase">
+        <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-1.5 py-0.5 text-[9px] font-medium tracking-wider text-cyan-700 uppercase dark:text-cyan-400/90">
           Shortcuts
         </span>
       </div>
@@ -89,9 +89,14 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-xl px-2 py-1.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
+                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
-                <Icon className={cn("h-3 w-3 shrink-0 transition-transform duration-150 group-hover:scale-110", link.color)} />
+                <Icon
+                  className={cn(
+                    "h-3 w-3 shrink-0 transition-transform duration-150 group-hover:scale-110",
+                    link.color
+                  )}
+                />
                 <span>{link.label}</span>
               </Comp>
             );
@@ -99,7 +104,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <button className="group text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded-xl border-0 bg-transparent px-2 py-1.5 text-left text-[10px] font-medium tracking-tight transition-all duration-150 outline-none hover:bg-white/[0.06] active:scale-[0.97]">
+              <button className="group text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded-xl border-0 bg-transparent px-2 py-1.5 text-left text-[11px] font-normal tracking-normal transition-all duration-150 outline-none hover:bg-white/[0.06] active:scale-[0.97]">
                 <MessageSquare className="h-3 w-3 shrink-0 text-sky-400 transition-transform duration-150 group-hover:scale-110" />
                 <span>Send Feedback</span>
               </button>
@@ -112,7 +117,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
         <div className="border-border/30 space-y-1.5 border-t pt-2.5">
           <StatusIndicator status="operational" label="System Online" size="sm" />
-          <div className="text-muted-foreground/60 text-[9px] font-medium tracking-tight whitespace-nowrap tabular-nums">
+          <div className="text-muted-foreground/60 font-mono text-[9px] font-normal tracking-normal whitespace-nowrap tabular-nums">
             v{PLATFORM_VERSION} {CHANNEL} · Build {BUILD_VERSION}
           </div>
         </div>

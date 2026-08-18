@@ -279,7 +279,6 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
               className="h-full w-full"
             />
           </motion.div>
-
         </motion.div>
 
         {/* Flip indicator (subtle) */}

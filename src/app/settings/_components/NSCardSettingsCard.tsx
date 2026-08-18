@@ -84,8 +84,8 @@ export function NSCardSettingsCard() {
           ) : cards.length === 0 ? (
             <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                You don&apos;t own any NationStates-imported cards yet. Once you import your NS
-                deck from the Vault, you&apos;ll be able to opt your nation&apos;s flag out of IxCards
+                You don&apos;t own any NationStates-imported cards yet. Once you import your NS deck
+                from the Vault, you&apos;ll be able to opt your nation&apos;s flag out of IxCards
                 here.
               </p>
               <Link

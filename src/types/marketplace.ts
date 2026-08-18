@@ -2,7 +2,12 @@
 // Type definitions for IxCards marketplace and auction system
 
 import type { CardRarity, CardType } from "@prisma/client";
-import type { ArtworkVariants, CardStatsData, CardEnhancementsData, CardInstance } from "./cards-display";
+import type {
+  ArtworkVariants,
+  CardStatsData,
+  CardEnhancementsData,
+  CardInstance,
+} from "./cards-display";
 
 export type { CardInstance } from "./cards-display";
 

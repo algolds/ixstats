@@ -32,7 +32,7 @@ export function QuestTreesTab({ achievements }: QuestTreesTabProps) {
           <Button
             variant="outline"
             onClick={() => setShowAllPaths(!showAllPaths)}
-            className="border-white/10 bg-white/5 hover:bg-white/10 text-slate-200 h-10 px-5 font-bold rounded-full active:scale-95 transition-all"
+            className="h-10 rounded-full border-white/10 bg-white/5 px-5 font-bold text-slate-200 transition-all hover:bg-white/10 active:scale-95"
           >
             {showAllPaths ? "See Less" : `See All Quest Paths (${QUEST_PATHS.length})`}
           </Button>

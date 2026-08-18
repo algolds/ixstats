@@ -23,4 +23,3 @@ export const loreCardsRouter = mergeRouters(
   loreCardsWikiRouter,
   loreCardsMaintenanceRouter
 );
-

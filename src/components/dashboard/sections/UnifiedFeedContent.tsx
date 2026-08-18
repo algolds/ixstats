@@ -166,7 +166,11 @@ export function UnifiedFeedContent({
   );
   const { data: wikiRecentChanges } = api.wiki.getRecentChanges.useQuery(
     { limit: 20 },
-    { enabled: activeTab === "all" || activeTab === "community", refetchInterval: 60_000, staleTime: 30_000 }
+    {
+      enabled: activeTab === "all" || activeTab === "community",
+      refetchInterval: 60_000,
+      staleTime: 30_000,
+    }
   );
 
   const wikiAsFeed = useMemo(() => {

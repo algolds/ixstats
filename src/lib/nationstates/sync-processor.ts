@@ -125,7 +125,11 @@ async function loadRegionCardsFromDumps(
   regionNames: string[],
   seasons: number[]
 ): Promise<Array<{ id: number; season: number; card: NSCard }>> {
-  const norm = (str: string) => str.trim().toLowerCase().replace(/[\s_]+/g, " ");
+  const norm = (str: string) =>
+    str
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_]+/g, " ");
   const regionSet = new Set(regionNames.map(norm).filter(Boolean));
   const uniqueSeasons = Array.from(new Set(seasons)).sort((a, b) => a - b);
   const matches: Array<{ id: number; season: number; card: NSCard }> = [];
@@ -201,9 +205,7 @@ export async function processRegionCardsFromDump(
     const errors: string[] = [...initialCounts.errors];
 
     if (startFromIndex > 0) {
-      console.log(
-        `[NS Import] Resuming region sync from card ${startFromIndex}/${matches.length}`
-      );
+      console.log(`[NS Import] Resuming region sync from card ${startFromIndex}/${matches.length}`);
     }
 
     for (let i = startFromIndex; i < matches.length; i++) {

@@ -171,7 +171,7 @@ export function MatchTickerSim({
 
           {/* Scores & Clock */}
           <div className="w-1/3 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-3 text-5xl font-extrabold tracking-tighter tabular-nums">
+            <div className="flex items-center justify-center gap-3 text-5xl font-bold tracking-tight tabular-nums">
               <span>{homeScore}</span>
               <span className="text-foreground/20">:</span>
               <span>{awayScore}</span>

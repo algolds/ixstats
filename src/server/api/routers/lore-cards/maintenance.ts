@@ -94,9 +94,7 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message:
-            error instanceof Error
-              ? error.message
-              : "Failed to fetch duplicate cards statistics",
+            error instanceof Error ? error.message : "Failed to fetch duplicate cards statistics",
         });
       }
     }),
@@ -257,12 +255,17 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
           const info = meta.authorInfo as { creator?: string; displayAuthor?: string } | undefined;
           if (!info || !info.creator) return true;
           const str = (info.displayAuthor || info.creator).toLowerCase();
-          if (str.includes("community") || str.includes("imported>") || str.includes("import>")) return true;
+          if (str.includes("community") || str.includes("imported>") || str.includes("import>"))
+            return true;
           return false;
         });
 
         if (cardsToEnrich.length === 0) {
-          return { success: true, count: 0, message: "All eligible lore cards already have author metadata." };
+          return {
+            success: true,
+            count: 0,
+            message: "All eligible lore cards already have author metadata.",
+          };
         }
 
         // Group by wikiSource
@@ -300,16 +303,18 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
           }
         }
 
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth?.userId || "admin",
-            action: "CARD_AUTHORS_BACKFILLED",
-            entityType: "CARD",
-            target: "batch",
-            details: `Enriched ${updatedCount} lore card(s) with author attribution (requested limit: ${input.limit})`,
-            success: true,
-          },
-        }).catch(() => null);
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth?.userId || "admin",
+              action: "CARD_AUTHORS_BACKFILLED",
+              entityType: "CARD",
+              target: "batch",
+              details: `Enriched ${updatedCount} lore card(s) with author attribution (requested limit: ${input.limit})`,
+              success: true,
+            },
+          })
+          .catch(() => null);
 
         return {
           success: true,
@@ -351,11 +356,7 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
         if (!input.forceOverwrite) {
           whereClause.AND = [
             {
-              OR: [
-                { category: null },
-                { category: "NS_IMPORT" },
-                { category: "NATION" },
-              ],
+              OR: [{ category: null }, { category: "NS_IMPORT" }, { category: "NATION" }],
             },
           ];
         }
@@ -433,16 +434,18 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
           }
         }
 
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth?.userId || "admin",
-            action: "LORE_CARDS_RECLASSIFIED",
-            entityType: "CARD",
-            target: "batch",
-            details: `Re-cataloged ${cards.length} lore card(s), updated ${reclassifiedCount} with canonical categories.`,
-            success: true,
-          },
-        }).catch(() => null);
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth?.userId || "admin",
+              action: "LORE_CARDS_RECLASSIFIED",
+              entityType: "CARD",
+              target: "batch",
+              details: `Re-cataloged ${cards.length} lore card(s), updated ${reclassifiedCount} with canonical categories.`,
+              success: true,
+            },
+          })
+          .catch(() => null);
 
         return {
           success: true,

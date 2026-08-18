@@ -61,9 +61,11 @@ interface CountryFocusCardProps {
   country: CountryCardData;
   index: number;
   hovered?: number | null;
-  setHovered?: React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
+  setHovered?:
+    React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
   expanded?: number | null;
-  setExpanded?: React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
+  setExpanded?:
+    React.Dispatch<React.SetStateAction<number | null>> | ((index: number | null) => void);
   // Selective boolean state props for React.memo optimization
   isHovered?: boolean;
   isExpanded?: boolean;
@@ -93,8 +95,8 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     onCountryClick,
     viewerCountryId,
   }) => {
-    const isHovered = propIsHovered ?? (hovered === index);
-    const isExpanded = propIsExpanded ?? (expanded === index);
+    const isHovered = propIsHovered ?? hovered === index;
+    const isExpanded = propIsExpanded ?? expanded === index;
     const isOtherHovered = propIsOtherHovered ?? (hovered !== null && hovered !== index);
     const isOtherExpanded = propIsOtherExpanded ?? (expanded !== null && expanded !== index);
     const isOwnCountry = !!viewerCountryId && viewerCountryId === country.id;
@@ -146,7 +148,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
       >
         <div
           className={cn(
-            "glass-floating glass-refraction relative overflow-hidden rounded-2xl border border-white/15 bg-background/60 shadow-lg transition-all duration-300",
+            "glass-floating glass-refraction bg-background/60 relative overflow-hidden rounded-2xl border border-white/15 shadow-lg transition-all duration-300",
             isExpanded
               ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
               : isHovered
@@ -276,10 +278,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                         className="flex items-center justify-between text-sm text-white/90"
                       >
                         <div className="flex items-center gap-2">
-                          <TrendingUp
-                            size={16}
-                            className="text-emerald-400"
-                          />
+                          <TrendingUp size={16} className="text-emerald-400" />
                           <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                             Growth Rate
                           </span>

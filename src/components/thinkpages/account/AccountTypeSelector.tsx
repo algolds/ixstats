@@ -57,7 +57,7 @@ export function AccountTypeSelector({
   return (
     <div className={cn("space-y-4", className)}>
       <div className="space-y-1">
-        <h3 className="text-base font-bold text-white tracking-tight">Select Account Type</h3>
+        <h3 className="text-base font-bold tracking-tight text-white">Select Account Type</h3>
         <p className="text-xs text-slate-400">Choose the role for your new Thinkpages identity.</p>
       </div>
 
@@ -83,7 +83,8 @@ export function AccountTypeSelector({
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm",
                   type.color === "amber" && "border-amber-500/30 bg-amber-500/15 text-amber-400",
                   type.color === "blue" && "border-blue-500/30 bg-blue-500/15 text-blue-400",
-                  type.color === "green" && "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
+                  type.color === "green" &&
+                    "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -91,13 +92,13 @@ export function AccountTypeSelector({
 
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-white tracking-tight">{type.label}</span>
+                  <span className="text-sm font-bold tracking-tight text-white">{type.label}</span>
                   <span className="text-[10px] font-semibold text-slate-400">
                     Max {type.maxAccounts} accounts
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 leading-relaxed">{type.description}</p>
-                <div className="pt-1 flex flex-wrap gap-1.5">
+                <p className="text-xs leading-relaxed text-slate-400">{type.description}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {type.examples.map((ex, i) => (
                     <span
                       key={i}

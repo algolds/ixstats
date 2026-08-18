@@ -406,10 +406,10 @@ export function AtomicEconomicComponentSelector({
             </DialogHeader>
             <div className="space-y-6 pt-4">
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
-                <p className="text-[10px] font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                <p className="text-[10px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
                   Total Implementation Cost
                 </p>
-                <p className="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
+                <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-zinc-900 tabular-nums dark:text-zinc-100">
                   ${builder.metrics.totalCost.toLocaleString()}
                 </p>
               </div>
@@ -458,10 +458,10 @@ export function AtomicEconomicComponentSelector({
             </DialogHeader>
             <div className="space-y-6 pt-4">
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
-                <p className="text-[10px] font-bold tracking-wider text-amber-600 uppercase dark:text-amber-400">
+                <p className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
                   Total Annual Maintenance Cost
                 </p>
-                <p className="mt-1 text-2xl font-black text-zinc-900 dark:text-zinc-100">
+                <p className="mt-1 font-mono text-2xl font-bold tracking-tight text-zinc-900 tabular-nums dark:text-zinc-100">
                   ${builder.metrics.maintenanceCost.toLocaleString()}/yr
                 </p>
               </div>

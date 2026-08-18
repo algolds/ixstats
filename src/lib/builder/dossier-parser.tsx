@@ -235,7 +235,6 @@ export function stripWikiMarkup(markup: string): string {
   return cleanWikiMarkup(markup);
 }
 
-
 /**
  * Truncate content to a reasonable length
  *

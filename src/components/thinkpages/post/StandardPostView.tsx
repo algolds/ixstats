@@ -43,11 +43,7 @@ import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPre
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
-import {
-  ACCOUNT_TYPE_ICONS,
-  ACCOUNT_TYPE_COLORS,
-  RelativeTimestamp,
-} from "./ThinkpagesPostUtils";
+import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS, RelativeTimestamp } from "./ThinkpagesPostUtils";
 
 export interface StandardPostViewProps {
   post: any;
@@ -226,7 +222,9 @@ export function StandardPostView({
           <div className="ml-4 space-y-2 border-l-2 border-blue-500/30 pl-4">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={proxyDiscordUrl(post.parentPost.account?.profileImageUrl || "")} />
+                <AvatarImage
+                  src={proxyDiscordUrl(post.parentPost.account?.profileImageUrl || "")}
+                />
                 <AvatarFallback
                   className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account?.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
                 >

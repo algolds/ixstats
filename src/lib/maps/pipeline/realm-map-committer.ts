@@ -93,7 +93,9 @@ export async function commitRealmMapToDatabase(
             displayName: String(props.name || props._displayName || featureId),
             areaSqKm: Number(props.areaSqKm || props._areaSqKm || 0) || null,
             centroid:
-              props._centroidLng !== undefined ? ([props._centroidLng, props._centroidLat] as any) : undefined,
+              props._centroidLng !== undefined
+                ? ([props._centroidLng, props._centroidLat] as any)
+                : undefined,
             boundingBox: props.boundingBox || null,
             worldId: realmId,
             isActive: true,

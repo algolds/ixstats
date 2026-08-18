@@ -36,19 +36,19 @@ export function VaultCardHoldingsCard({
     >
       <TextureOverlay texture="dots" opacity={0.04} />
 
-      <div className="relative z-10 mb-4 flex items-center justify-between border-b border-border/40 pb-3">
+      <div className="border-border/40 relative z-10 mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 shadow-sm backdrop-blur-md">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/15 text-purple-600 shadow-sm backdrop-blur-md dark:text-purple-400">
             <Layers className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
           </div>
-          <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Card Holdings
           </span>
         </div>
         {featuredCards.length > 0 && (
           <button
             onClick={() => onNavigate?.("cards")}
-            className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 transition-transform hover:underline active:scale-95"
+            className="flex items-center gap-1 text-[11px] font-bold text-purple-600 transition-transform hover:underline active:scale-95 dark:text-purple-400"
           >
             Manage Portfolio <ArrowRight className="h-3 w-3" />
           </button>
@@ -57,22 +57,20 @@ export function VaultCardHoldingsCard({
 
       {topCardsLoading ? (
         <div className="flex justify-center py-8">
-          <Skeleton className="h-64 w-44 rounded-2xl bg-muted/40" />
+          <Skeleton className="bg-muted/40 h-64 w-44 rounded-2xl" />
         </div>
       ) : featuredCards.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Layers className="mb-3 h-10 w-10 text-muted-foreground/40" />
-          <span className="block text-xs font-bold text-foreground">
-            Portfolio Empty
-          </span>
-          <p className="mt-1 mb-3 text-[11px] text-muted-foreground">
+          <Layers className="text-muted-foreground/40 mb-3 h-10 w-10" />
+          <span className="text-foreground block text-xs font-bold">Portfolio Empty</span>
+          <p className="text-muted-foreground mt-1 mb-3 text-[11px]">
             Import cards or open packs to populate your assets.
           </p>
           <Button
             size="sm"
             variant="outline"
             onClick={() => onNavigate?.("import")}
-            className="h-8 rounded-full border-rose-500/30 bg-rose-500/10 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 active:scale-95"
+            className="h-8 rounded-full border-rose-500/30 bg-rose-500/10 text-xs font-bold text-rose-600 hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> NS Import
           </Button>
@@ -92,13 +90,13 @@ export function VaultCardHoldingsCard({
 
           {/* Other assets list */}
           {featuredCards.length > 1 && (
-            <div className="space-y-2 border-t border-border/40 pt-3">
+            <div className="border-border/40 space-y-2 border-t pt-3">
               {featuredCards.slice(1, 3).map((card) => (
                 <div
                   key={card.id}
-                  className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/30 dark:bg-white/5 px-3 py-2 text-xs backdrop-blur-md transition-all hover:bg-muted/60 dark:hover:bg-white/10 active:scale-[0.985] cursor-pointer"
+                  className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs backdrop-blur-md transition-all active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
                 >
-                  <span className="max-w-[130px] truncate font-semibold text-foreground">
+                  <span className="text-foreground max-w-[130px] truncate font-semibold">
                     {card.title}
                   </span>
                   <span className="flex items-center gap-0.5 font-mono text-[11px] font-bold text-purple-600 dark:text-purple-400">
@@ -114,4 +112,3 @@ export function VaultCardHoldingsCard({
     </FacetCard>
   );
 }
-

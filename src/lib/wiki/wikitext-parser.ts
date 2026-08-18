@@ -12,28 +12,40 @@ function stripWikitextTemplates(input: string): string {
 
   // 1. Process inline text templates that should render nicely
   // Handle {{flag|Urcea}} -> Urcea, {{flagicon|Urcea}} -> ""
-  text = text.replace(/\{\{(?:flag|flagcountry|flagicon)\s*\|\s*([^|}]+)[^}]*\}\}/gi, (_match, name: string) => {
-    return _match.toLowerCase().includes("flagicon") ? "" : name.trim();
-  });
+  text = text.replace(
+    /\{\{(?:flag|flagcountry|flagicon)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+    (_match, name: string) => {
+      return _match.toLowerCase().includes("flagicon") ? "" : name.trim();
+    }
+  );
 
   // Handle {{quote|Text|Author}} or {{blockquote|Text}}
-  text = text.replace(/\{\{(?:quote|blockquote|cite quote)\s*\|\s*([^|}]+)(?:\|([^|}]+))?[^}]*\}\}/gi, (_match, quote: string, author?: string) => {
-    const q = quote.trim();
-    const a = author ? author.trim() : "";
-    return `\n\n<blockquote class="my-2 border-l-2 border-primary/50 pl-3 italic text-muted-foreground">${q}${a ? ` &mdash; <span class="font-semibold text-foreground">${a}</span>` : ""}</blockquote>\n\n`;
-  });
+  text = text.replace(
+    /\{\{(?:quote|blockquote|cite quote)\s*\|\s*([^|}]+)(?:\|([^|}]+))?[^}]*\}\}/gi,
+    (_match, quote: string, author?: string) => {
+      const q = quote.trim();
+      const a = author ? author.trim() : "";
+      return `\n\n<blockquote class="my-2 border-l-2 border-primary/50 pl-3 italic text-muted-foreground">${q}${a ? ` &mdash; <span class="font-semibold text-foreground">${a}</span>` : ""}</blockquote>\n\n`;
+    }
+  );
 
   // Handle {{main|Article}} or {{see also|Article}} or {{further|Article}}
-  text = text.replace(/\{\{(?:main|main article|see also|further)\s*\|\s*([^|}]+)[^}]*\}\}/gi, (_match, target: string) => {
-    const t = target.trim();
-    const route = titleToWikiOSRoute(t);
-    return `\n\n<p class="text-[11px] italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
-  });
+  text = text.replace(
+    /\{\{(?:main|main article|see also|further)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+    (_match, target: string) => {
+      const t = target.trim();
+      const route = titleToWikiOSRoute(t);
+      return `\n\n<p class="text-[11px] italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
+    }
+  );
 
   // Handle {{convert|val|unit1|unit2}} -> "val unit1"
-  text = text.replace(/\{\{convert\s*\|\s*([\d.]+)\s*\|\s*([^|}]+)\s*\|\s*([^|}]+)[^}]*\}\}/gi, (_match, val: string, u1: string) => {
-    return `${val} ${u1.trim()}`;
-  });
+  text = text.replace(
+    /\{\{convert\s*\|\s*([\d.]+)\s*\|\s*([^|}]+)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
+    (_match, val: string, u1: string) => {
+      return `${val} ${u1.trim()}`;
+    }
+  );
 
   // Handle {{lang|code|text}} or {{lang-xx|text}}
   text = text.replace(/\{\{lang(?:-[a-z]+)?\s*\|(?:[a-z-]+\|)?([^|}]+)[^}]*\}\}/gi, "$1");
@@ -42,13 +54,16 @@ function stripWikitextTemplates(input: string): string {
   text = text.replace(/\{\{(?:nowrap|nobr|small|smaller|font)\s*\|\s*([^|}]+)[^}]*\}\}/gi, "$1");
 
   // 2. Strip multiline unclosed top-level templates (e.g. Infobox truncated at end of excerpt)
-  text = text.replace(/^\{\{(?:Infobox|Sidebar|Taxobox|Navigation|Notice|Short description|About|Redirect|Distinguish|Other uses)\b[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi, (match) => {
-    const openCount = (match.match(/\{\{/g) || []).length;
-    const closeCount = (match.match(/\}\}/g) || []).length;
-    // If template is unclosed at the end of the excerpt cut, drop it completely
-    if (openCount > closeCount) return "";
-    return match;
-  });
+  text = text.replace(
+    /^\{\{(?:Infobox|Sidebar|Taxobox|Navigation|Notice|Short description|About|Redirect|Distinguish|Other uses)\b[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi,
+    (match) => {
+      const openCount = (match.match(/\{\{/g) || []).length;
+      const closeCount = (match.match(/\}\}/g) || []).length;
+      // If template is unclosed at the end of the excerpt cut, drop it completely
+      if (openCount > closeCount) return "";
+      return match;
+    }
+  );
 
   // 3. Iteratively strip all remaining balanced {{...}} templates
   let depth = 0;
@@ -59,7 +74,12 @@ function stripWikitextTemplates(input: string): string {
       const parts = inner.trim().split("|");
       const templateName = parts[0]?.trim().toLowerCase();
 
-      if (templateName === "nowrap" || templateName === "nobr" || templateName === "small" || templateName === "smaller") {
+      if (
+        templateName === "nowrap" ||
+        templateName === "nobr" ||
+        templateName === "small" ||
+        templateName === "smaller"
+      ) {
         return parts.slice(1).join("|").trim();
       }
       if (templateName === "lang" && parts.length >= 3) {
@@ -91,7 +111,8 @@ function parseWikitables(input: string): string {
 
   return input.replace(/\{\|([\s\S]*?)\|\}/g, (_match, content: string) => {
     const lines = content.split("\n");
-    let html = '\n\n<div class="my-3 overflow-x-auto rounded-xl border border-border/40 bg-card/60 backdrop-blur-md shadow-xs"><table class="w-full text-xs text-left border-collapse">';
+    let html =
+      '\n\n<div class="my-3 overflow-x-auto rounded-xl border border-border/40 bg-card/60 backdrop-blur-md shadow-xs"><table class="w-full text-xs text-left border-collapse">';
     let inRow = false;
 
     for (const line of lines) {
@@ -239,7 +260,10 @@ export function parseWikitextToHtml(
       .split(/\n/)
       .map((line) => line.replace(/^\*+\s*/, "").trim())
       .filter(Boolean)
-      .map((item) => `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`)
+      .map(
+        (item) =>
+          `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
+      )
       .join("");
     return items ? `\n\n<ul class="my-2 space-y-1">${items}</ul>\n\n` : "";
   });
@@ -250,7 +274,10 @@ export function parseWikitextToHtml(
       .split(/\n/)
       .map((line) => line.replace(/^#+\s*/, "").trim())
       .filter(Boolean)
-      .map((item) => `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`)
+      .map(
+        (item) =>
+          `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
+      )
       .join("");
     return items ? `\n\n<ol class="my-2 space-y-1">${items}</ol>\n\n` : "";
   });
@@ -273,16 +300,22 @@ export function parseWikitextToHtml(
   text = text.replace(/'''''((?:(?!''''')[\s\S])+)'''''/g, "<strong><em>$1</em></strong>");
 
   // 16. Convert bold: '''text'''
-  text = text.replace(/'''((?:(?!''')[\s\S])+)'''/g, '<strong class="font-bold text-foreground">$1</strong>');
+  text = text.replace(
+    /'''((?:(?!''')[\s\S])+)'''/g,
+    '<strong class="font-bold text-foreground">$1</strong>'
+  );
 
   // 17. Convert italic: ''text''
   text = text.replace(/''((?:(?!'')[\s\S])+)''/g, '<em class="italic text-foreground/90">$1</em>');
 
   // 18. Convert strikethrough: <s>text</s>, <del>text</del>, ~~text~~
-  text = text.replace(/<s>([\s\S]*?)<\/s>|<del>([\s\S]*?)<\/del>|~~([\s\S]*?)~~/gi, (_m, g1, g2, g3) => {
-    const inner = g1 || g2 || g3 || "";
-    return `<del class="line-through opacity-75">${inner}</del>`;
-  });
+  text = text.replace(
+    /<s>([\s\S]*?)<\/s>|<del>([\s\S]*?)<\/del>|~~([\s\S]*?)~~/gi,
+    (_m, g1, g2, g3) => {
+      const inner = g1 || g2 || g3 || "";
+      return `<del class="line-through opacity-75">${inner}</del>`;
+    }
+  );
 
   // 19. Convert underline: <u>text</u>
   text = text.replace(/<u>([\s\S]*?)<\/u>/gi, '<u class="underline decoration-primary/60">$1</u>');
@@ -476,7 +509,9 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
 /**
  * Strips all wikitext markup, templates, tags, and formatting into a clean plain text excerpt (default max 300 chars).
  */
-export function cleanWikitextExcerpt(rawText: string | null | undefined, maxLength: number = 300): string {
+export function cleanWikitextExcerpt(
+  rawText: string | null | undefined,
+  maxLength: number = 300
+): string {
   return cleanWikiMarkup(rawText, maxLength);
 }
-

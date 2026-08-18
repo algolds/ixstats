@@ -20,7 +20,7 @@ export default function Page() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-8">
-      <div className="w-full max-w-md flex flex-col items-center gap-4">
+      <div className="flex w-full max-w-md flex-col items-center gap-4">
         <SignUp />
         <p className="text-center text-xs text-slate-400">
           By registering, you confirm you are at least 16 years old and agree to the{" "}
@@ -30,7 +30,8 @@ export default function Page() {
           and{" "}
           <Link href="/privacy" className="text-amber-400 underline hover:text-amber-300">
             Privacy Policy
-          </Link>.
+          </Link>
+          .
         </p>
       </div>
     </div>

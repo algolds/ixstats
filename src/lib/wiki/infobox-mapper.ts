@@ -297,7 +297,6 @@ export function parseCoordinates(
   };
 }
 
-
 /**
  * Example usage and test data
  */

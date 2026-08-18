@@ -170,7 +170,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     issue.urgency <= 70;
 
   const chosenDirective =
-    localDirective ?? options.find((o: ResponseOption) => o.id === issue.chosenOptionId)?.recommendedDirective;
+    localDirective ??
+    options.find((o: ResponseOption) => o.id === issue.chosenOptionId)?.recommendedDirective;
 
   const handleSetMeeting = () => {
     if (!issue) return;

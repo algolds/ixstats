@@ -17,7 +17,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
   children,
 }) => {
   return (
-    <div className="sticky top-0 z-40 bg-background pt-12 pb-2 mb-2">
+    <div className="bg-background sticky top-0 z-40 mb-2 pt-12 pb-2">
       {/* Solid Opaque Apple Panel */}
       <div className="bg-card text-card-foreground border-border relative overflow-hidden rounded-2xl border p-4 shadow-xl transition-all md:p-5">
         {/* Ambient background glows */}
@@ -64,7 +64,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
                   e.preventDefault();
                   onImFeelingLucky();
                 }}
-                className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-full border border-purple-500/40 bg-black/80 px-3.5 py-1.5 text-xs font-semibold text-purple-200 backdrop-blur-xl shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all hover:border-purple-400 hover:bg-black/90 hover:shadow-[0_0_22px_rgba(168,85,247,0.5)] active:scale-95"
+                className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-full border border-purple-500/40 bg-black/80 px-3.5 py-1.5 text-xs font-semibold text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-xl transition-all hover:border-purple-400 hover:bg-black/90 hover:shadow-[0_0_22px_rgba(168,85,247,0.5)] active:scale-95"
                 title="Explore a random country"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-indigo-500/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

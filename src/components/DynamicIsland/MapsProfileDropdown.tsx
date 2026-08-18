@@ -10,14 +10,17 @@ import { Crown, LogIn, Map, User } from "lucide-react";
 import type { UserProfile } from "./types";
 
 interface MapsProfileDropdownProps {
-  user: {
-    id?: string;
-    imageUrl?: string | null;
-    fullName?: string | null;
-    firstName?: string | null;
-    primaryEmailAddress?: { emailAddress?: string } | null;
-    emailAddresses?: Array<{ emailAddress?: string }> | null;
-  } | null | undefined;
+  user:
+    | {
+        id?: string;
+        imageUrl?: string | null;
+        fullName?: string | null;
+        firstName?: string | null;
+        primaryEmailAddress?: { emailAddress?: string } | null;
+        emailAddresses?: Array<{ emailAddress?: string }> | null;
+      }
+    | null
+    | undefined;
   isLoaded: boolean;
   userProfile?: UserProfile | null;
   greeting: string;
@@ -44,9 +47,7 @@ export function MapsProfileDropdown({
       <SignInButton mode="modal">
         <button className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:bg-white/10">
           <LogIn className="h-3 w-3 text-blue-400 opacity-70" />
-          <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">
-            Sign In
-          </span>
+          <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">Sign In</span>
         </button>
       </SignInButton>
     );
@@ -100,9 +101,7 @@ export function MapsProfileDropdown({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">
-              {displayName}
-            </div>
+            <div className="truncate text-sm font-semibold">{displayName}</div>
             {countryName && (
               <div className="text-muted-foreground truncate text-[11px]">{countryName}</div>
             )}

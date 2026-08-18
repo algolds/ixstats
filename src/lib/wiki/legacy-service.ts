@@ -204,10 +204,7 @@ export class IxnayWikiService {
   /**
    * Get URL for a media file
    */
-  async getFileUrl(
-    fileName: string,
-    _options?: { skipCache?: boolean }
-  ): Promise<string | null> {
+  async getFileUrl(fileName: string, _options?: { skipCache?: boolean }): Promise<string | null> {
     return resolveImageUrl(fileName, this.wikiSource) ?? null;
   }
 

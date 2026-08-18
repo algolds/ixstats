@@ -286,7 +286,6 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
             }}
           />
 
-
           {/* Layer 7: PDS Custom Foil Overlay */}
           {packArtwork && packArtwork.endsWith(".svg") && (
             <div
@@ -410,7 +409,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               {packName && size !== "sm" && (
                 <p
                   className={cn(
-                    "line-clamp-1 text-center leading-tight font-black text-white/90",
+                    "line-clamp-1 text-center leading-tight font-bold text-white/90",
                     LABEL_SIZES[size]
                   )}
                   style={{
@@ -424,7 +423,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               )}
               <p
                 className={cn(
-                  "text-center font-semibold tracking-widest text-white/40 uppercase",
+                  "text-center font-semibold tracking-wider text-white/40 uppercase",
                   size === "sm" ? "text-[7px]" : "text-[9px]"
                 )}
               >

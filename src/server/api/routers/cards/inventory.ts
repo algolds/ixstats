@@ -170,7 +170,7 @@ export const cardsInventoryRouter = createTRPCRouter({
       ]);
 
       const categoryBreakdown: Record<string, number> = {};
-      for (const g of (categoryGroups as { category: string | null; _count: { id: number } }[])) {
+      for (const g of categoryGroups as { category: string | null; _count: { id: number } }[]) {
         if (g.category) {
           categoryBreakdown[g.category] = g._count.id;
         }
@@ -243,10 +243,7 @@ export const cardsInventoryRouter = createTRPCRouter({
               },
             ];
           } else if (input.cardTypeFilter === "LORE" || input.cardTypeFilter === "LORE_BATCH") {
-            where.OR = [
-              { cardType: { in: ["LORE_BATCH", "LORE"] } },
-              { category: { not: null } },
-            ];
+            where.OR = [{ cardType: { in: ["LORE_BATCH", "LORE"] } }, { category: { not: null } }];
           } else if (input.cardTypeFilter === "NS_IMPORT") {
             where.OR = [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }];
           } else {

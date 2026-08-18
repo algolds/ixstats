@@ -250,10 +250,7 @@ export function detectLoreCategory(title: string, categories: string[]): LoreCat
 /**
  * Analyze wiki signals to compute quality score and suggest category, rarity, and artwork source
  */
-export function analyzeWikiSignals(
-  title: string,
-  signals: WikiArticleSignals
-): WikiSignalAnalysis {
+export function analyzeWikiSignals(title: string, signals: WikiArticleSignals): WikiSignalAnalysis {
   // 1. Word Count Score (weight 25%, max 25 pts)
   // 2000+ words = 25 pts
   const wordCountScore = Math.min(25, (signals.wordCount / 2000) * 25);

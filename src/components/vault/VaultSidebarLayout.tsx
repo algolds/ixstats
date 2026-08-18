@@ -79,7 +79,7 @@ export function VaultSidebarLayout({
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
             <div className="mb-4 lg:hidden">
-              <div className="glass-hierarchy-child scrollbar-none overflow-x-auto rounded-xl border border-border bg-background/60 p-1.5 backdrop-blur-md dark:bg-black/30">
+              <div className="glass-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
                 <div className="flex min-w-max gap-1.5">
                   {mobileNavItems.map((item) => {
                     const isActive =
@@ -110,8 +110,8 @@ export function VaultSidebarLayout({
                         className={cn(
                           "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all duration-200",
                           isActive
-                            ? "border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-600 dark:text-purple-400 shadow-sm"
-                            : "text-muted-foreground hover:text-foreground border-transparent hover:bg-muted/50"
+                            ? "border-purple-500/30 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-600 shadow-sm dark:text-purple-400"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
                         )}
                       >
                         {item.label}

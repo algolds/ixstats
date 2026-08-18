@@ -47,7 +47,7 @@ export function AccountDetailsForm({
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h3 className="text-base font-bold text-white tracking-tight">Account Details</h3>
+        <h3 className="text-base font-bold tracking-tight text-white">Account Details</h3>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -59,7 +59,7 @@ export function AccountDetailsForm({
             onChange={(e) => setFormData((p: any) => ({ ...p, firstName: e.target.value }))}
             placeholder="Enter first name"
             className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30",
+              "block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none",
               errors.firstName && "border-rose-500"
             )}
           />
@@ -67,13 +67,15 @@ export function AccountDetailsForm({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-300">Last Name (optional)</label>
+          <label className="mb-1.5 block text-xs font-semibold text-slate-300">
+            Last Name (optional)
+          </label>
           <input
             type="text"
             value={formData.lastName}
             onChange={(e) => setFormData((p: any) => ({ ...p, lastName: e.target.value }))}
             placeholder="Enter last name"
-            className="block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30"
+            className="block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none"
           />
         </div>
       </div>
@@ -82,14 +84,16 @@ export function AccountDetailsForm({
       <div>
         <label className="mb-1.5 block text-xs font-semibold text-slate-300">Username Handle</label>
         <div className="relative">
-          <span className="absolute inset-y-0 left-3 flex items-center text-xs text-slate-500">@</span>
+          <span className="absolute inset-y-0 left-3 flex items-center text-xs text-slate-500">
+            @
+          </span>
           <input
             type="text"
             value={formData.username}
             onChange={(e) => handleUsernameChange(e.target.value)}
             placeholder="username"
             className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pl-8 pr-10 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30",
+              "block w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pr-10 pl-8 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none",
               errors.username && "border-rose-500",
               isUsernameAvailable && "border-emerald-500"
             )}
@@ -127,18 +131,24 @@ export function AccountDetailsForm({
           onChange={(e) => setFormData((p: any) => ({ ...p, bio: e.target.value }))}
           placeholder="Describe this account..."
           maxLength={160}
-          className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500/30"
+          className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 focus:outline-none"
         />
         <div className="mt-1 text-right text-[10px] text-slate-500">{formData.bio.length}/160</div>
       </div>
 
       {/* Profile Image Picker */}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-300">Profile Image (optional)</label>
+        <label className="mb-1.5 block text-xs font-semibold text-slate-300">
+          Profile Image (optional)
+        </label>
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-white/10 bg-black/50">
             {formData.profileImageUrl ? (
-              <img src={formData.profileImageUrl} alt="Profile" className="h-full w-full object-cover" />
+              <img
+                src={formData.profileImageUrl}
+                alt="Profile"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">
                 No Image

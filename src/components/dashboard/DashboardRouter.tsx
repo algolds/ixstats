@@ -13,7 +13,9 @@ interface DashboardRouterProps {
 }
 
 export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
-  const { data: globalStats } = api.countries.getGlobalStats.useQuery(undefined, { staleTime: 300_000 });
+  const { data: globalStats } = api.countries.getGlobalStats.useQuery(undefined, {
+    staleTime: 300_000,
+  });
   const [heroCollapsed, setHeroCollapsed] = useState(false);
 
   useEffect(() => {
@@ -23,7 +25,10 @@ export function DashboardRouter({ discordBadge }: DashboardRouterProps) {
   // Collapse the hero by default for a valid-but-unmapped country. Applied once
   // when the map status resolves; never fights the user's later expand/collapse.
   const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id, staleTime: 60_000 });
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!user?.id,
+    staleTime: 60_000,
+  });
   const countryId = userProfile?.countryId || "";
   const { data: mapStatus } = api.countries.getMapLinkStatus.useQuery(
     { countryId },

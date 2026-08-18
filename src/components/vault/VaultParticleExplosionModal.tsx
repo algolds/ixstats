@@ -75,17 +75,17 @@ export function VaultParticleExplosionModal({
               <div className="mb-3 animate-bounce rounded-full border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-400">
                 {icon || <Sparkles className="h-7 w-7" />}
               </div>
-              <h3 className="text-foreground text-lg font-black tracking-wider uppercase dark:text-white">
+              <h3 className="text-foreground text-lg font-bold tracking-tight uppercase dark:text-white">
                 {title}
               </h3>
               {amount !== undefined && (
-                <p className="mt-2 flex items-center justify-center gap-1 font-mono text-3xl font-extrabold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                <p className="mt-2 flex items-center justify-center gap-1 font-mono text-3xl font-bold text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
                   +<IxCreditsSymbol className="h-7 w-7 shrink-0 text-amber-400" />
                   {amount.toLocaleString()}
                 </p>
               )}
               {subtitle && (
-                <p className="mt-2 max-w-[240px] text-xs text-slate-400 leading-relaxed">
+                <p className="mt-2 max-w-[240px] text-xs leading-relaxed text-slate-400">
                   {subtitle}
                 </p>
               )}

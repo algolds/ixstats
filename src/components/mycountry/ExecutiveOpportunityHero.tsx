@@ -308,7 +308,7 @@ function ExecutiveOpportunityHeroComponent({
             </span>
           </div>
 
-          <h2 className="text-foreground text-lg leading-snug font-black tracking-tight sm:text-xl">
+          <h2 className="text-foreground text-lg leading-snug font-bold tracking-tight sm:text-xl">
             {opportunity.title}
           </h2>
 

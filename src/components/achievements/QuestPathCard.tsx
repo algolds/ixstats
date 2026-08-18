@@ -165,7 +165,7 @@ export function QuestPathCard({
                           )}
 
                           {isUnlocked && count > 1 && (
-                            <span className="border-background absolute -top-1 -right-1 z-20 flex h-5 min-w-[20px] items-center justify-center rounded-full border bg-amber-500 px-1 text-[10px] font-black text-black shadow-md">
+                            <span className="border-background absolute -top-1 -right-1 z-20 flex h-5 min-w-[20px] items-center justify-center rounded-full border bg-amber-500 px-1 text-[10px] font-bold text-black tabular-nums shadow-md">
                               {count}
                             </span>
                           )}

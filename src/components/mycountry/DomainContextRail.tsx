@@ -76,8 +76,8 @@ function DomainKpiGrid({ items }: { items: Kpi[] }) {
           key={item.label}
           className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-center backdrop-blur-md"
         >
-          <p className="text-foreground text-sm font-black">{item.value}</p>
-          <p className="text-muted-foreground/70 mt-0.5 text-[9px] font-bold tracking-wider uppercase">
+          <p className="text-foreground text-sm font-bold tabular-nums">{item.value}</p>
+          <p className="text-muted-foreground/70 mt-0.5 text-[9px] font-medium tracking-wider uppercase">
             {item.label}
           </p>
           {item.sub && <p className="text-muted-foreground mt-0.5 text-[10px]">{item.sub}</p>}

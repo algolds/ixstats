@@ -212,7 +212,6 @@ Collinebourg Chevaliers 2 - 0 Famichez 16
       awayScore: 0,
     });
     expect(parsed!.results![3]!).toMatchObject({
-
       home: { name: "Collinebourg Chevaliers" },
       away: { name: "Famichez 16" },
       homeScore: 2,

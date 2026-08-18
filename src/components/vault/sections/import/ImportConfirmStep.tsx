@@ -44,9 +44,10 @@ export function ImportConfirmStep({
         >
           <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
         </motion.div>
-        <h2 className="text-foreground text-2xl font-black">Nation Verified</h2>
+        <h2 className="text-foreground text-2xl font-bold tracking-tight">Nation Verified</h2>
         <p className="text-muted-foreground mt-2 text-sm">
-          <span className="font-semibold text-green-600 dark:text-green-400">{nationName}</span> is confirmed as yours
+          <span className="font-semibold text-green-600 dark:text-green-400">{nationName}</span> is
+          confirmed as yours
         </p>
       </div>
 
@@ -56,7 +57,8 @@ export function ImportConfirmStep({
           <div className="text-muted-foreground text-sm">
             <p className="text-foreground mb-1 font-semibold">Ready to import</p>
             <p>
-              This will fetch your NationStates trading card deck and create IxCards versions. The process takes a few seconds depending on deck size.
+              This will fetch your NationStates trading card deck and create IxCards versions. The
+              process takes a few seconds depending on deck size.
             </p>
           </div>
         </div>
@@ -122,7 +124,7 @@ export function ImportCompleteStep({
         </div>
 
         <motion.h2
-          className="text-foreground text-3xl font-black"
+          className="text-foreground text-3xl font-bold tracking-tight"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -135,7 +137,8 @@ export function ImportCompleteStep({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Your deck from <span className="font-semibold text-green-400">{importResult.nation}</span> has been imported
+          Your deck from <span className="font-semibold text-green-400">{importResult.nation}</span>{" "}
+          has been imported
         </motion.p>
       </div>
 
@@ -148,14 +151,14 @@ export function ImportCompleteStep({
       >
         <div className="rounded-xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 to-purple-600/5 p-5 text-center">
           <Package className="mx-auto mb-2 h-6 w-6 text-purple-400" />
-          <p className="text-3xl font-black text-purple-400">
+          <p className="text-3xl font-bold tracking-tight text-purple-400 tabular-nums">
             <NumberFlow value={importResult.cardsImported} />
           </p>
           <p className="text-muted-foreground text-xs font-semibold">Cards Imported</p>
         </div>
         <div className="rounded-xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 to-amber-600/5 p-5 text-center">
           <Coins className="mx-auto mb-2 h-6 w-6 text-amber-400" />
-          <p className="text-3xl font-black text-amber-400">
+          <p className="text-3xl font-bold tracking-tight text-amber-400 tabular-nums">
             +<NumberFlow value={importResult.bonusCredits} />
           </p>
           <p className="text-muted-foreground text-xs font-semibold">Bonus IxCredits</p>
@@ -184,10 +187,8 @@ export function ImportCompleteStep({
                     "border-amber-400/40 from-amber-500/10 to-amber-600/5",
                   card.rarity === "EPIC" &&
                     "border-purple-400/40 from-purple-500/10 to-purple-600/5",
-                  card.rarity === "ULTRA_RARE" &&
-                    "border-red-400/40 from-red-500/10 to-red-600/5",
-                  card.rarity === "RARE" &&
-                    "border-blue-400/40 from-blue-500/10 to-blue-600/5",
+                  card.rarity === "ULTRA_RARE" && "border-red-400/40 from-red-500/10 to-red-600/5",
+                  card.rarity === "RARE" && "border-blue-400/40 from-blue-500/10 to-blue-600/5",
                   card.rarity === "UNCOMMON" &&
                     "border-green-400/40 from-green-500/10 to-green-600/5",
                   (!card.rarity || card.rarity === "COMMON") &&
@@ -200,17 +201,16 @@ export function ImportCompleteStep({
                     rarity={card.rarity || "COMMON"}
                     title={card.title}
                   />
-                  {card.artwork &&
-                    card.artwork !== "/images/cards/placeholder-nation.png" && (
-                      <img
-                        src={proxyCardArtwork(card.artwork)}
-                        alt={card.title}
-                        className="absolute inset-0 h-full w-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    )}
+                  {card.artwork && card.artwork !== "/images/cards/placeholder-nation.png" && (
+                    <img
+                      src={proxyCardArtwork(card.artwork)}
+                      alt={card.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  )}
                 </div>
                 <p className="truncate text-center text-[9px] leading-tight font-bold">
                   {card.title}
@@ -232,11 +232,7 @@ export function ImportCompleteStep({
         </motion.div>
       )}
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
         <Button onClick={onReset} variant="outline" className="w-full border-white/10">
           <ArrowRight className="mr-2 h-4 w-4" /> Import Another Nation
         </Button>

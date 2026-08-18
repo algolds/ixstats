@@ -214,26 +214,26 @@ export function SmartStack({ items, onResolve, className }: SmartStackProps) {
 
       {current ? (
         <div className="z-10 flex flex-grow flex-col items-center justify-center py-2">
-          <span className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-amber-500 uppercase">
+          <span className="flex items-center gap-1 text-[10px] font-semibold tracking-wider text-amber-500 uppercase">
             <current.icon className="h-3 w-3" />
             <span>{current.label}</span>
           </span>
-          <p className="text-foreground mt-1 line-clamp-2 px-4 text-center text-xs leading-snug font-black tracking-tight sm:text-sm">
+          <p className="text-foreground mt-1 line-clamp-2 px-4 text-center text-xs leading-snug font-semibold tracking-tight sm:text-sm">
             {current.text}
           </p>
-          <span className="mt-2 flex max-w-full items-center justify-center gap-1 truncate text-center text-[10px] font-bold text-amber-400/90 uppercase transition-colors group-hover:text-amber-300">
+          <span className="mt-2 flex max-w-full items-center justify-center gap-1 truncate text-center text-[10px] font-semibold tracking-wider text-amber-400/90 uppercase transition-colors group-hover:text-amber-300">
             Resolve Directive <ChevronRight className="h-3 w-3" />
           </span>
         </div>
       ) : (
         <div className="z-10 flex flex-grow flex-col items-center justify-center py-3">
-          <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
+          <span className="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">
             Sectors Operational
           </span>
-          <span className="text-foreground mt-1 flex items-center gap-1 text-2xl font-black tracking-tighter text-emerald-400">
+          <span className="text-foreground mt-1 flex items-center gap-1 text-2xl font-bold tracking-tight text-emerald-400 tabular-nums">
             <Check className="h-5 w-5" /> 0 Pending
           </span>
-          <span className="text-muted-foreground/60 mt-2 text-center text-[10px] font-semibold uppercase">
+          <span className="text-muted-foreground/60 mt-2 text-center text-[10px] font-medium tracking-wider uppercase">
             All Directive Tasks Clear
           </span>
         </div>

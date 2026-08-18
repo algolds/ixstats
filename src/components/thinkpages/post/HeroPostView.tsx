@@ -129,7 +129,7 @@ export function HeroPostView({
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 onClick={() => onAccountClick?.(post.account.id)}
-                className="text-base font-bold leading-snug text-slate-100 hover:underline"
+                className="text-base leading-snug font-bold text-slate-100 hover:underline"
               >
                 {post.account.displayName}
               </button>
@@ -169,9 +169,8 @@ export function HeroPostView({
                 )}
               >
                 {React.createElement(
-                  ACCOUNT_TYPE_ICONS[
-                    post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS
-                  ] || Users,
+                  ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] ||
+                    Users,
                   { className: "h-2.5 w-2.5" }
                 )}
                 <span>{post.account.accountType}</span>
@@ -197,10 +196,7 @@ export function HeroPostView({
               className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl"
             >
               {canEdit && (
-                <DropdownMenuItem
-                  onClick={handleEdit}
-                  className="text-slate-200 hover:bg-white/10"
-                >
+                <DropdownMenuItem onClick={handleEdit} className="text-slate-200 hover:bg-white/10">
                   <Edit className="mr-2 h-4 w-4" />
                   <span>Edit Post</span>
                 </DropdownMenuItem>
@@ -353,9 +349,7 @@ export function HeroPostView({
           isLiked={post.reactions?.some(
             (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
           )}
-          isReposted={
-            post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false
-          }
+          isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
           likeCount={post.likeCount}
           repostCount={post.repostCount}
           replyCount={post.replyCount}

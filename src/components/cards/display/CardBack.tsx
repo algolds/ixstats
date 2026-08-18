@@ -109,7 +109,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-slate-400/90",
     badgeBg: "bg-slate-900/90",
     badgeBorder: "border-slate-400/40",
-    foilGradient: "linear-gradient(135deg, #f1f5f9 0%, #ffffff 30%, #94a3b8 60%, #cbd5e1 80%, #475569 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #f1f5f9 0%, #ffffff 30%, #94a3b8 60%, #cbd5e1 80%, #475569 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(148,163,184,0.6) 0deg, rgba(226,232,240,0.7) 120deg, rgba(100,116,139,0.6) 240deg, rgba(148,163,184,0.6) 360deg)",
     textureType: "paperGrain",
@@ -127,7 +128,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-emerald-300/90",
     badgeBg: "bg-emerald-950/90",
     badgeBorder: "border-emerald-400/40",
-    foilGradient: "linear-gradient(135deg, #a7f3d0 0%, #ffffff 25%, #059669 50%, #6ee7b7 75%, #047857 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #a7f3d0 0%, #ffffff 25%, #059669 50%, #6ee7b7 75%, #047857 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(52,211,153,0.6) 0deg, rgba(56,189,248,0.6) 120deg, rgba(167,243,208,0.7) 240deg, rgba(52,211,153,0.6) 360deg)",
     textureType: "crosshatch",
@@ -145,7 +147,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-blue-300/90",
     badgeBg: "bg-blue-950/90",
     badgeBorder: "border-blue-400/40",
-    foilGradient: "linear-gradient(135deg, #bfdbfe 0%, #ffffff 25%, #2563eb 50%, #93c5fd 75%, #1d4ed8 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #bfdbfe 0%, #ffffff 25%, #2563eb 50%, #93c5fd 75%, #1d4ed8 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(96,165,250,0.6) 0deg, rgba(192,132,252,0.6) 120deg, rgba(56,189,248,0.7) 240deg, rgba(96,165,250,0.6) 360deg)",
     textureType: "waves",
@@ -163,7 +166,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-cyan-300/90",
     badgeBg: "bg-cyan-950/90",
     badgeBorder: "border-cyan-400/40",
-    foilGradient: "linear-gradient(135deg, #cffaff 0%, #ffffff 25%, #0891b2 50%, #67e8f9 75%, #0e7490 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #cffaff 0%, #ffffff 25%, #0891b2 50%, #67e8f9 75%, #0e7490 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(56,189,248,0.6) 0deg, rgba(167,243,208,0.6) 120deg, rgba(192,132,252,0.7) 240deg, rgba(56,189,248,0.6) 360deg)",
     textureType: "dots",
@@ -181,7 +185,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-purple-300/90",
     badgeBg: "bg-purple-950/90",
     badgeBorder: "border-purple-400/40",
-    foilGradient: "linear-gradient(135deg, #f3e8ff 0%, #ffffff 25%, #9333ea 50%, #d8b4fe 75%, #6b21a8 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #f3e8ff 0%, #ffffff 25%, #9333ea 50%, #d8b4fe 75%, #6b21a8 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(192,132,252,0.6) 0deg, rgba(244,63,94,0.6) 120deg, rgba(56,189,248,0.7) 240deg, rgba(192,132,252,0.6) 360deg)",
     textureType: "diamonds",
@@ -199,7 +204,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-amber-300/90",
     badgeBg: "bg-amber-950/90",
     badgeBorder: "border-amber-400/40",
-    foilGradient: "linear-gradient(135deg, #fef08a 0%, #ffffff 25%, #d97706 50%, #fef3c7 75%, #78350f 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #fef08a 0%, #ffffff 25%, #d97706 50%, #fef3c7 75%, #78350f 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(251,191,36,0.6) 0deg, rgba(56,189,248,0.6) 120deg, rgba(192,132,252,0.6) 240deg, rgba(251,191,36,0.6) 360deg)",
     textureType: "shimmer",
@@ -217,7 +223,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-rose-300/90",
     badgeBg: "bg-rose-950/90",
     badgeBorder: "border-rose-400/40",
-    foilGradient: "linear-gradient(135deg, #ffe4e6 0%, #ffffff 25%, #e11d48 50%, #fda4af 75%, #881337 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #ffe4e6 0%, #ffffff 25%, #e11d48 50%, #fda4af 75%, #881337 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(244,63,94,0.6) 0deg, rgba(251,191,36,0.6) 120deg, rgba(192,132,252,0.7) 240deg, rgba(244,63,94,0.6) 360deg)",
     textureType: "triangular",
@@ -235,7 +242,8 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textSecondary: "text-yellow-300/90",
     badgeBg: "bg-yellow-950/90",
     badgeBorder: "border-yellow-400/50",
-    foilGradient: "linear-gradient(135deg, #fef9c3 0%, #ffffff 25%, #ca8a04 50%, #fef08a 75%, #713f12 100%)",
+    foilGradient:
+      "linear-gradient(135deg, #fef9c3 0%, #ffffff 25%, #ca8a04 50%, #fef08a 75%, #713f12 100%)",
     foilDiffraction:
       "conic-gradient(from 0deg at 50% 50%, rgba(253,224,71,0.7) 0deg, rgba(255,255,255,0.8) 120deg, rgba(251,191,36,0.7) 240deg, rgba(253,224,71,0.7) 360deg)",
     textureType: "shimmer",
@@ -273,21 +281,23 @@ const IxnayEmblem = React.memo(
     const glareOpacity = pointer?.active ? 0.95 : 0;
 
     return (
-      <div className={cn("relative flex items-center justify-center select-none group", iconSizeClass)}>
+      <div
+        className={cn("group relative flex items-center justify-center select-none", iconSizeClass)}
+      >
         {/* Outer 3D Metallic Diamond Frame with Rarity Theme Border & Glow */}
         <div
           className={cn(
-            "absolute inset-0 rounded-xl border-2 rotate-45 bg-slate-950/95 transition-all duration-300",
+            "absolute inset-0 rotate-45 rounded-xl border-2 bg-slate-950/95 transition-all duration-300",
             activeTheme.medallionBorder,
             activeTheme.medallionGlow
           )}
         />
-        <div className="absolute inset-1.5 rounded-lg border border-white/40 -rotate-45" />
+        <div className="absolute inset-1.5 -rotate-45 rounded-lg border border-white/40" />
 
         {/* Holographic Logo Container — Masked Strictly to Logo Vector Paths */}
-        <div className="relative z-10 w-full h-full p-2 flex items-center justify-center">
+        <div className="relative z-10 flex h-full w-full items-center justify-center p-2">
           <div
-            className="relative w-full h-full pointer-events-none transition-transform duration-300 group-hover:scale-105"
+            className="pointer-events-none relative h-full w-full transition-transform duration-300 group-hover:scale-105"
             style={{
               WebkitMaskImage: `url('${logoUrl}')`,
               maskImage: `url('${logoUrl}')`,
@@ -331,7 +341,7 @@ const IxnayEmblem = React.memo(
 
             {/* 4. Sharp Specular Glare Beam Sweep (Pointer Position Reactive) */}
             <motion.div
-              className="absolute -inset-2 bg-gradient-to-r from-transparent via-white/95 to-transparent mix-blend-overlay pointer-events-none"
+              className="pointer-events-none absolute -inset-2 bg-gradient-to-r from-transparent via-white/95 to-transparent mix-blend-overlay"
               style={{ transform: "skewX(-35deg)", willChange: "transform" }}
               animate={{ x: glareX, opacity: glareOpacity }}
               transition={{ type: "spring", stiffness: 220, damping: 28 }}
@@ -348,7 +358,15 @@ IxnayEmblem.displayName = "IxnayEmblem";
  * Category Icon Badge Sub-Component
  */
 const CategoryIconBadge = React.memo(
-  ({ catKey, size = "md", theme }: { catKey: LoreCategory; size?: "sm" | "md"; theme?: RarityBackTheme }) => {
+  ({
+    catKey,
+    size = "md",
+    theme,
+  }: {
+    catKey: LoreCategory;
+    size?: "sm" | "md";
+    theme?: RarityBackTheme;
+  }) => {
     const iconDef = CATEGORY_ICONS[catKey];
     const catTheme = useMemo(() => getCategoryTheme(catKey), [catKey]);
 
@@ -358,7 +376,7 @@ const CategoryIconBadge = React.memo(
     return (
       <div
         className={cn(
-          "border flex items-center justify-center backdrop-blur-xs transition-all",
+          "flex items-center justify-center border backdrop-blur-xs transition-all",
           boxSize
         )}
         style={{
@@ -397,12 +415,12 @@ const CardBackHeader = React.memo(
     const activeTheme = theme ?? RARITY_THEMES.COMMON!;
 
     return (
-      <div className="flex items-center justify-between w-full text-[9px] font-mono font-bold tracking-widest uppercase">
+      <div className="flex w-full items-center justify-between font-mono text-[9px] font-semibold tracking-wider uppercase">
         {/* Top Left: Season + Rarity Badge matching Rarity Palette */}
         {showRarity ? (
           <span
             className={cn(
-              "px-2 py-0.5 rounded-full border backdrop-blur-xs font-bold tracking-wider flex items-center gap-1.5 transition-colors duration-300",
+              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-bold tracking-wider backdrop-blur-xs transition-colors duration-300",
               activeTheme.badgeBg,
               activeTheme.badgeBorder,
               activeTheme.textPrimary
@@ -413,11 +431,15 @@ const CardBackHeader = React.memo(
             <span>{rarity.replace("_", " ")}</span>
           </span>
         ) : (
-          <span className={cn("transition-colors duration-300", activeTheme.textSecondary)}>IXCARDS</span>
+          <span className={cn("transition-colors duration-300", activeTheme.textSecondary)}>
+            IXCARDS
+          </span>
         )}
 
         {/* Top Right: Edition Label */}
-        <span className={cn("font-semibold transition-colors duration-300", activeTheme.textPrimary)}>
+        <span
+          className={cn("font-semibold transition-colors duration-300", activeTheme.textPrimary)}
+        >
           {edition}
         </span>
       </div>
@@ -434,11 +456,21 @@ const CardBackFooter = React.memo(
     const activeTheme = theme ?? RARITY_THEMES.COMMON!;
 
     return (
-      <div className={cn("flex items-center justify-between w-full pt-1 border-t text-[9px] font-mono transition-colors duration-300", activeTheme.borderOuter)}>
-        <span className={cn("font-bold tracking-wider transition-colors duration-300", activeTheme.textPrimary)}>
+      <div
+        className={cn(
+          "flex w-full items-center justify-between border-t pt-1 font-mono text-[9px] transition-colors duration-300",
+          activeTheme.borderOuter
+        )}
+      >
+        <span
+          className={cn(
+            "font-bold tracking-wider transition-colors duration-300",
+            activeTheme.textPrimary
+          )}
+        >
           #{serial}
         </span>
-        <span className="text-white/60 text-[8.5px] font-sans font-bold uppercase tracking-wider truncate max-w-[140px] text-right">
+        <span className="max-w-[140px] truncate text-right font-sans text-[8.5px] font-bold tracking-wider text-white/60 uppercase">
           {cardName}
         </span>
       </div>
@@ -491,10 +523,7 @@ export const CardBack = React.memo<CardBackProps>(
       () => edition || (card ? getCardEditionLabel(card) : "1ST EDITION"),
       [edition, card]
     );
-    const resolvedCardName = useMemo(
-      () => cardName || card?.title || "IxCards",
-      [cardName, card]
-    );
+    const resolvedCardName = useMemo(() => cardName || card?.title || "IxCards", [cardName, card]);
 
     // Pointer-reactive background shimmer calculations
     const shimmerX = pointer.active ? 50 + pointer.x * 50 : 50;
@@ -508,8 +537,8 @@ export const CardBack = React.memo<CardBackProps>(
         onPointerMove={!performanceMode ? handlePointerMove : undefined}
         onPointerLeave={!performanceMode ? handlePointerLeave : undefined}
         className={cn(
-          "relative w-full h-full min-w-full min-h-full overflow-hidden rounded-3xl select-none flex flex-col justify-between p-3.5",
-          "bg-slate-950 border-2 shadow-2xl transition-all duration-300",
+          "relative flex h-full min-h-full w-full min-w-full flex-col justify-between overflow-hidden rounded-3xl p-3.5 select-none",
+          "border-2 bg-slate-950 shadow-2xl transition-all duration-300",
           rarityTheme.borderOuter,
           rarityTheme.cardGlow,
           className
@@ -521,7 +550,7 @@ export const CardBack = React.memo<CardBackProps>(
         {/* Layer 2: Rarity Dynamic Aura Glow matching Front Face */}
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-br transition-opacity duration-300 opacity-25",
+            "absolute inset-0 bg-gradient-to-br opacity-25 transition-opacity duration-300",
             rarityTheme.auraGlow
           )}
         />
@@ -530,12 +559,12 @@ export const CardBack = React.memo<CardBackProps>(
         <TextureOverlay
           texture={rarityTheme.textureType}
           opacity={rarityTheme.textureOpacity}
-          className="mix-blend-overlay pointer-events-none z-0"
+          className="pointer-events-none z-0 mix-blend-overlay"
         />
 
         {/* Layer 3: Dynamic Pointer-Centered Light Rays */}
         {!performanceMode && pointer.active && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40 z-10">
+          <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-40">
             {lightRays.slice(0, 6).map((ray, index) => (
               <div
                 key={index}
@@ -554,7 +583,7 @@ export const CardBack = React.memo<CardBackProps>(
         {/* Layer 4: Holographic Rainbow Shimmer Overlay (Pointer Position Reactive) */}
         {!performanceMode && (
           <div
-            className="absolute inset-0 mix-blend-color-dodge pointer-events-none transition-opacity duration-300 ease-out"
+            className="pointer-events-none absolute inset-0 mix-blend-color-dodge transition-opacity duration-300 ease-out"
             style={{
               backgroundImage:
                 pattern === "rainbow-shimmer"
@@ -572,7 +601,7 @@ export const CardBack = React.memo<CardBackProps>(
         {/* Layer 4b: Specular Cursor Spotlight — centered directly on cursor */}
         {!performanceMode && pointer.active && (
           <div
-            className="pointer-events-none absolute inset-0 mix-blend-overlay transition-opacity duration-200 z-10"
+            className="pointer-events-none absolute inset-0 z-10 mix-blend-overlay transition-opacity duration-200"
             style={{
               background: `radial-gradient(circle 140px at ${spotlightX} ${spotlightY}, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.15) 45%, transparent 80%)`,
             }}
@@ -580,17 +609,47 @@ export const CardBack = React.memo<CardBackProps>(
         )}
 
         {/* Layer 5: Double Outer Filigree Border Frame matching Rarity Palette */}
-        <div className={cn("absolute inset-2 rounded-2xl border pointer-events-none transition-colors duration-300", rarityTheme.borderOuter)}>
-          <div className={cn("absolute inset-1 rounded-xl border transition-colors duration-300", rarityTheme.borderInner)} />
-          <div className={cn("absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 transition-colors duration-300", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 transition-colors duration-300", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 transition-colors duration-300", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 transition-colors duration-300", rarityTheme.cornerBracket)} />
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-2 rounded-2xl border transition-colors duration-300",
+            rarityTheme.borderOuter
+          )}
+        >
+          <div
+            className={cn(
+              "absolute inset-1 rounded-xl border transition-colors duration-300",
+              rarityTheme.borderInner
+            )}
+          />
+          <div
+            className={cn(
+              "absolute top-1 left-1 h-3 w-3 border-t-2 border-l-2 transition-colors duration-300",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "absolute top-1 right-1 h-3 w-3 border-t-2 border-r-2 transition-colors duration-300",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "absolute bottom-1 left-1 h-3 w-3 border-b-2 border-l-2 transition-colors duration-300",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "absolute right-1 bottom-1 h-3 w-3 border-r-2 border-b-2 transition-colors duration-300",
+              rarityTheme.cornerBracket
+            )}
+          />
         </div>
 
         {/* ─── VARIANT 1: GUILLOCHE ICON LATTICE GRID (DEFAULT) ─── */}
         {variant === "lattice" && (
-          <div className="relative z-10 flex flex-col items-center justify-between w-full h-full p-2">
+          <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader
               season={resolvedSeason}
               rarity={safeRarity}
@@ -600,27 +659,42 @@ export const CardBack = React.memo<CardBackProps>(
             />
 
             {/* 3x4 Guilloche Pattern Grid of Colored Category Icons */}
-            <div className="absolute inset-x-3 top-8 bottom-8 grid grid-cols-3 grid-rows-4 gap-2 items-center justify-items-center opacity-85 pointer-events-none">
+            <div className="pointer-events-none absolute inset-x-3 top-8 bottom-8 grid grid-cols-3 grid-rows-4 items-center justify-items-center gap-2 opacity-85">
               {ALL_CATEGORY_KEYS.map((catKey) => (
                 <CategoryIconBadge key={catKey} catKey={catKey} size="md" theme={rarityTheme} />
               ))}
             </div>
 
             {/* Central Ixnay Badge Overlay with Main Holographic Seal */}
-            <div className={cn("relative my-auto flex flex-col items-center justify-center px-6 py-4 rounded-2xl border-2 bg-black/95 backdrop-blur-xl transition-all duration-300", rarityTheme.medallionBorder, rarityTheme.medallionGlow)}>
+            <div
+              className={cn(
+                "relative my-auto flex flex-col items-center justify-center rounded-2xl border-2 bg-black/95 px-6 py-4 backdrop-blur-xl transition-all duration-300",
+                rarityTheme.medallionBorder,
+                rarityTheme.medallionGlow
+              )}
+            >
               <IxnayEmblem size="lg" pointer={pointer} theme={rarityTheme} />
-              <div className={cn("mt-2 text-xs font-black tracking-widest uppercase transition-colors duration-300", rarityTheme.textPrimary)}>
+              <div
+                className={cn(
+                  "mt-2 text-xs font-bold tracking-widest uppercase transition-colors duration-300",
+                  rarityTheme.textPrimary
+                )}
+              >
                 IXCARDS
               </div>
             </div>
 
-            <CardBackFooter serial={resolvedSerial} cardName={resolvedCardName} theme={rarityTheme} />
+            <CardBackFooter
+              serial={resolvedSerial}
+              cardName={resolvedCardName}
+              theme={rarityTheme}
+            />
           </div>
         )}
 
         {/* ─── VARIANT 2: ZODIAC RING & SWIRL CREST ─── */}
         {variant === "zodiac" && (
-          <div className="relative z-10 flex flex-col items-center justify-between w-full h-full p-2">
+          <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader
               season={resolvedSeason}
               rarity={safeRarity}
@@ -629,14 +703,18 @@ export const CardBack = React.memo<CardBackProps>(
               showRarity={showRarityVariation}
             />
 
-            <div className="relative flex items-center justify-center my-auto w-full max-w-[220px] aspect-square">
+            <div className="relative my-auto flex aspect-square w-full max-w-[220px] items-center justify-center">
               <motion.div
-                className={cn("absolute inset-0 rounded-full border transition-colors duration-300", rarityTheme.borderInner, rarityTheme.medallionGlow)}
+                className={cn(
+                  "absolute inset-0 rounded-full border transition-colors duration-300",
+                  rarityTheme.borderInner,
+                  rarityTheme.medallionGlow
+                )}
                 animate={{ rotate: pointer.active ? pointer.x * 90 : 0 }}
                 transition={{ type: "spring", stiffness: 150, damping: 20 }}
               />
 
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 {ALL_CATEGORY_KEYS.map((catKey, idx) => {
                   const angleRad = (idx * 30 * Math.PI) / 180;
                   const x = Math.cos(angleRad) * 80;
@@ -653,21 +731,36 @@ export const CardBack = React.memo<CardBackProps>(
                 })}
               </div>
 
-              <div className={cn("relative flex flex-col items-center justify-center p-4 rounded-full border-2 bg-black/90 backdrop-blur-md transition-all duration-300", rarityTheme.medallionBorder, rarityTheme.medallionGlow)}>
+              <div
+                className={cn(
+                  "relative flex flex-col items-center justify-center rounded-full border-2 bg-black/90 p-4 backdrop-blur-md transition-all duration-300",
+                  rarityTheme.medallionBorder,
+                  rarityTheme.medallionGlow
+                )}
+              >
                 <IxnayEmblem size="md" pointer={pointer} theme={rarityTheme} />
-                <span className={cn("mt-1 text-[10px] font-black tracking-widest uppercase transition-colors duration-300", rarityTheme.textPrimary)}>
+                <span
+                  className={cn(
+                    "mt-1 text-[10px] font-bold tracking-widest uppercase transition-colors duration-300",
+                    rarityTheme.textPrimary
+                  )}
+                >
                   IXCARDS
                 </span>
               </div>
             </div>
 
-            <CardBackFooter serial={resolvedSerial} cardName={resolvedCardName} theme={rarityTheme} />
+            <CardBackFooter
+              serial={resolvedSerial}
+              cardName={resolvedCardName}
+              theme={rarityTheme}
+            />
           </div>
         )}
 
         {/* ─── VARIANT 3: TWIN CATEGORY RUNE COLUMNS ─── */}
         {variant === "runes" && (
-          <div className="relative z-10 flex flex-col items-center justify-between w-full h-full p-2">
+          <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader
               season={resolvedSeason}
               rarity={safeRarity}
@@ -676,35 +769,50 @@ export const CardBack = React.memo<CardBackProps>(
               showRarity={showRarityVariation}
             />
 
-            <div className="relative flex-1 w-full my-1 flex items-center justify-between px-1">
-              <div className="flex flex-col justify-between h-full py-2 space-y-1">
+            <div className="relative my-1 flex w-full flex-1 items-center justify-between px-1">
+              <div className="flex h-full flex-col justify-between space-y-1 py-2">
                 {ALL_CATEGORY_KEYS.slice(0, 6).map((catKey) => (
                   <CategoryIconBadge key={catKey} catKey={catKey} size="sm" theme={rarityTheme} />
                 ))}
               </div>
 
-              <div className={cn("relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-black/90 backdrop-blur-md transition-all duration-300", rarityTheme.medallionBorder, rarityTheme.medallionGlow)}>
+              <div
+                className={cn(
+                  "relative flex flex-col items-center justify-center rounded-2xl border-2 bg-black/90 p-4 backdrop-blur-md transition-all duration-300",
+                  rarityTheme.medallionBorder,
+                  rarityTheme.medallionGlow
+                )}
+              >
                 <IxnayEmblem size="lg" pointer={pointer} theme={rarityTheme} />
-                <span className={cn("mt-2 text-xs font-black tracking-widest uppercase transition-colors duration-300", rarityTheme.textPrimary)}>
+                <span
+                  className={cn(
+                    "mt-2 text-xs font-bold tracking-widest uppercase transition-colors duration-300",
+                    rarityTheme.textPrimary
+                  )}
+                >
                   IXCARDS
                 </span>
               </div>
 
-              <div className="flex flex-col justify-between h-full py-2 space-y-1">
+              <div className="flex h-full flex-col justify-between space-y-1 py-2">
                 {ALL_CATEGORY_KEYS.slice(6, 12).map((catKey) => (
                   <CategoryIconBadge key={catKey} catKey={catKey} size="sm" theme={rarityTheme} />
                 ))}
               </div>
             </div>
 
-            <CardBackFooter serial={resolvedSerial} cardName={resolvedCardName} theme={rarityTheme} />
+            <CardBackFooter
+              serial={resolvedSerial}
+              cardName={resolvedCardName}
+              theme={rarityTheme}
+            />
           </div>
         )}
 
         {/* Diagonal Light Shimmer Sweep (Pointer Position Reactive) */}
         {!performanceMode && (
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
             style={{ transform: "skewX(-20deg)", willChange: "transform" }}
             animate={{ x: glanceShift, opacity: pointer.active ? 1 : 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}

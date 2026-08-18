@@ -64,15 +64,18 @@ export function InventorySidebarContent({
   return (
     <div className="space-y-3">
       {/* Stats */}
-      <FacetCard depth={1} className="rounded-xl border-border bg-cyan-500/10 p-3 dark:bg-cyan-500/10">
+      <FacetCard
+        depth={1}
+        className="border-border rounded-xl bg-cyan-500/10 p-3 dark:bg-cyan-500/10"
+      >
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             My Cards
           </span>
           <Layers className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
         </div>
         <div className="mt-1.5 flex items-baseline gap-1">
-          <span className="text-xl font-extrabold tracking-tighter text-cyan-600 dark:text-cyan-400">
+          <span className="text-xl font-bold tracking-tight text-cyan-600 tabular-nums dark:text-cyan-400">
             {totalCards} / {150 + capacityBoost}
           </span>
           <span className="text-muted-foreground text-[10px]">cards</span>
@@ -98,7 +101,7 @@ export function InventorySidebarContent({
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           placeholder="Search cards..."
-          className="border-border/50 placeholder:text-muted-foreground/50 h-7 bg-muted/30 pr-6 pl-6.5 text-xs focus:bg-background"
+          className="border-border/50 placeholder:text-muted-foreground/50 bg-muted/30 focus:bg-background h-7 pr-6 pl-6.5 text-xs"
         />
         {filters.search && (
           <button
@@ -113,12 +116,15 @@ export function InventorySidebarContent({
       {/* Rarity */}
       <Select
         value={filters.rarity}
-        onValueChange={(val) => setFilters((prev) => ({ ...prev, rarity: val as CardRarity | "all" }))}
+        onValueChange={(val) =>
+          setFilters((prev) => ({ ...prev, rarity: val as CardRarity | "all" }))
+        }
       >
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.rarity !== "all" && "border-amber-500/30 bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold"
+            filters.rarity !== "all" &&
+              "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
           )}
         >
           <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
@@ -138,12 +144,15 @@ export function InventorySidebarContent({
       {/* Card Type */}
       <Select
         value={filters.cardType}
-        onValueChange={(val) => setFilters((prev) => ({ ...prev, cardType: val as CardType | "all" }))}
+        onValueChange={(val) =>
+          setFilters((prev) => ({ ...prev, cardType: val as CardType | "all" }))
+        }
       >
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.cardType !== "all" && "border-cyan-500/30 bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-bold"
+            filters.cardType !== "all" &&
+              "border-cyan-500/30 bg-cyan-500/20 font-bold text-cyan-600 dark:text-cyan-300"
           )}
         >
           <FileText className="mr-1.5 h-3 w-3 shrink-0" />
@@ -167,7 +176,8 @@ export function InventorySidebarContent({
         <SelectTrigger
           className={cn(
             "h-7 w-full px-2 text-xs",
-            filters.season !== "all" && "border-purple-500/30 bg-purple-500/20 text-purple-600 dark:text-purple-300 font-bold"
+            filters.season !== "all" &&
+              "border-purple-500/30 bg-purple-500/20 font-bold text-purple-600 dark:text-purple-300"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -184,7 +194,7 @@ export function InventorySidebarContent({
       <div className="border-border/40 space-y-3 border-t pt-3">
         {/* Sort */}
         <div>
-          <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+          <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
             Sort By
           </p>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -202,7 +212,7 @@ export function InventorySidebarContent({
 
         {/* View Mode */}
         <div>
-          <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-widest uppercase">
+          <p className="text-muted-foreground mb-1 text-[10px] font-semibold tracking-wider uppercase">
             View
           </p>
           <div className="flex gap-1">
@@ -234,7 +244,7 @@ export function InventorySidebarContent({
 
         {/* Multi-Select & Hide Value */}
         <div className="flex flex-col gap-1">
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
+          <label className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors">
             <Checkbox
               checked={selectMode}
               onCheckedChange={(checked) => setSelectMode(checked as boolean)}
@@ -242,7 +252,7 @@ export function InventorySidebarContent({
             />
             <span className="text-xs font-medium">Multi-Select Mode</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
+          <label className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors">
             <Checkbox
               checked={hideValue}
               onCheckedChange={(checked) => setHideValue(checked as boolean)}
@@ -260,7 +270,7 @@ export function InventorySidebarContent({
         filters.season !== "all") && (
         <button
           onClick={onResetFilters}
-          className="border-border/50 text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors hover:bg-muted/50"
+          className="border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
         >
           <X className="h-3 w-3" /> Clear Filters
         </button>
@@ -268,4 +278,3 @@ export function InventorySidebarContent({
     </div>
   );
 }
-

@@ -21,7 +21,7 @@ export function IIWikiLogo({ className, size = "sm" }: IIWikiLogoProps) {
     <img
       src={IIWIKI_LOGO_URL}
       alt="IIWiki"
-      className={cn("object-contain shrink-0 inline-block", sizeClasses[size], className)}
+      className={cn("inline-block shrink-0 object-contain", sizeClasses[size], className)}
       loading="lazy"
       onError={(e) => {
         (e.target as HTMLImageElement).style.display = "none";
@@ -42,7 +42,7 @@ export function IIWikiBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-300 backdrop-blur-md shadow-xs",
+        "inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-600 shadow-xs backdrop-blur-md dark:text-emerald-300",
         className
       )}
       title="IIWiki Card"

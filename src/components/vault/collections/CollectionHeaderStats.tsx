@@ -46,35 +46,18 @@ export function CollectionHeaderStats({
                 <Lock className="text-gold-400 h-5 w-5" />
               )}
             </div>
-            <p className="text-sm text-white/70 sm:text-base">
-              {description || "No description"}
-            </p>
+            <p className="text-sm text-white/70 sm:text-base">{description || "No description"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onLike}
-              className="glass-hierarchy-child"
-            >
+            <Button variant="outline" size="sm" onClick={onLike} className="glass-hierarchy-child">
               <Heart className="mr-2 h-4 w-4 text-pink-400" />
               Like
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onShare}
-              className="glass-hierarchy-child"
-            >
+            <Button variant="outline" size="sm" onClick={onShare} className="glass-hierarchy-child">
               <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              className="glass-hierarchy-child"
-            >
+            <Button variant="outline" size="sm" onClick={onEdit} className="glass-hierarchy-child">
               <Edit2 className="mr-2 h-4 w-4" />
               Edit
             </Button>

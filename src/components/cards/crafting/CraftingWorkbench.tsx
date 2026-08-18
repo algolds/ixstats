@@ -180,7 +180,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
       <CometCard className="space-y-6 p-6" glassDepth="child">
         {/* Recipe header */}
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-black text-white">{recipeData.name}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white">{recipeData.name}</h2>
           {recipeData.description && (
             <p className="text-sm text-white/70">{recipeData.description}</p>
           )}
@@ -248,7 +248,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <div className="mb-1 text-xs text-white/60 uppercase">Success Rate</div>
             <div
               className={cn(
-                "text-2xl font-black",
+                "text-2xl font-bold tabular-nums",
                 successRate >= 80
                   ? "text-green-400"
                   : successRate >= 50
@@ -265,7 +265,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <div className="mb-1 text-xs text-white/60 uppercase">Cost</div>
             <div
               className={cn(
-                "text-2xl font-black",
+                "text-2xl font-bold tabular-nums",
                 hasEnoughCredits ? "text-green-400" : "text-red-400"
               )}
             >
@@ -277,7 +277,9 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
           {/* XP Reward */}
           <CometCard className="p-4 text-center" glassDepth="interactive">
             <div className="mb-1 text-xs text-white/60 uppercase">XP Reward</div>
-            <div className="text-2xl font-black text-blue-400">+{recipeData.collectorXPGain}</div>
+            <div className="text-2xl font-bold text-blue-400 tabular-nums">
+              +{recipeData.collectorXPGain}
+            </div>
             <div className="text-xs text-white/40">Collector XP</div>
           </CometCard>
         </div>
@@ -285,7 +287,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         {/* Craft button */}
         <motion.button
           className={cn(
-            "w-full rounded-xl py-4 text-lg font-black",
+            "w-full rounded-xl py-4 text-lg font-bold tracking-tight",
             "transition-all duration-300",
             allSlotsFilled && hasEnoughCredits && !crafting
               ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/50 hover:from-purple-600 hover:to-blue-600"
@@ -326,7 +328,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               <CometCard className="p-6" glassDepth="modal">
-                <h3 className="mb-4 text-xl font-black text-white">Select a Card</h3>
+                <h3 className="mb-4 text-xl font-bold tracking-tight text-white">Select a Card</h3>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {availableCards.map((card) => (
                     <motion.div

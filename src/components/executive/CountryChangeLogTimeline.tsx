@@ -126,38 +126,38 @@ export function CountryChangeLogTimeline({
 
     const canonItems = Array.isArray(canonFeed.data)
       ? canonFeed.data
-      : (canonFeed.data as any)?.items ?? [];
+      : ((canonFeed.data as any)?.items ?? []);
 
     canonItems.forEach((item: any) => {
-        const key = `canon-${item.id}`;
-        if (!groups[key]) {
-          groups[key] = {
-            id: item.id,
-            sourceType:
-              item.kind === "diplomacy"
-                ? "diplomacy"
-                : item.kind === "decision"
-                  ? "decision"
-                  : "policy",
-            sourceId: item.id,
-            appliedIxTime: item.timestamp,
-            description: item.title,
-            createdAt: new Date(item.timestamp),
-            consequences: item.targetField
-              ? [
-                  {
-                    targetModel: "simulation",
-                    targetField: item.targetField,
-                    previousValue: 0,
-                    newValue: item.deltaValue ?? 0,
-                    delta: item.deltaValue ?? 0,
-                    description: `${item.targetField} adjustment`,
-                  },
-                ]
-              : [],
-          };
-        }
-      });
+      const key = `canon-${item.id}`;
+      if (!groups[key]) {
+        groups[key] = {
+          id: item.id,
+          sourceType:
+            item.kind === "diplomacy"
+              ? "diplomacy"
+              : item.kind === "decision"
+                ? "decision"
+                : "policy",
+          sourceId: item.id,
+          appliedIxTime: item.timestamp,
+          description: item.title,
+          createdAt: new Date(item.timestamp),
+          consequences: item.targetField
+            ? [
+                {
+                  targetModel: "simulation",
+                  targetField: item.targetField,
+                  previousValue: 0,
+                  newValue: item.deltaValue ?? 0,
+                  delta: item.deltaValue ?? 0,
+                  description: `${item.targetField} adjustment`,
+                },
+              ]
+            : [],
+        };
+      }
+    });
 
     const allList = Object.values(groups).sort((a, b) => b.appliedIxTime - a.appliedIxTime);
 

@@ -43,10 +43,14 @@ export function getCardDesignMetadata(card: CardInstance): ResolvedCardDesignMet
   const watermarkOpacity = typeof meta.watermarkOpacity === "number" ? meta.watermarkOpacity : 0.35;
   const watermarkScale = typeof meta.watermarkScale === "number" ? meta.watermarkScale : 1.0;
   const watermarkColor =
-    typeof meta.watermarkColor === "string" && meta.watermarkColor.trim() ? meta.watermarkColor : null;
+    typeof meta.watermarkColor === "string" && meta.watermarkColor.trim()
+      ? meta.watermarkColor
+      : null;
 
   const customSubtitle =
-    typeof meta.customSubtitle === "string" && meta.customSubtitle.trim() ? meta.customSubtitle : null;
+    typeof meta.customSubtitle === "string" && meta.customSubtitle.trim()
+      ? meta.customSubtitle
+      : null;
   const accentColorOverride =
     typeof meta.accentColorOverride === "string" && meta.accentColorOverride.trim()
       ? meta.accentColorOverride

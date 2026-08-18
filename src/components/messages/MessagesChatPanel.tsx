@@ -112,8 +112,10 @@ function SystemAlertCard({ message, onDelete }: { message: any; onDelete?: () =>
       </div>
       <div className="min-w-0 flex-1 pr-6">
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-bold tracking-wider uppercase opacity-85">{label}</span>
-          <span className="text-[10px] opacity-50">
+          <span className="text-[10px] font-semibold tracking-wider uppercase opacity-85">
+            {label}
+          </span>
+          <span className="text-[10px] font-medium tabular-nums opacity-50">
             {formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}
           </span>
         </div>
@@ -125,10 +127,10 @@ function SystemAlertCard({ message, onDelete }: { message: any; onDelete?: () =>
       {onDelete && (
         <button
           onClick={onDelete}
-          className="absolute top-3 right-3 cursor-pointer rounded-lg p-1 text-slate-500 transition-colors hover:bg-white/5 hover:text-rose-400"
-          title="Dismiss alert"
+          className="text-muted-foreground absolute top-3 right-3 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/10 hover:text-rose-400"
+          title="Delete message"
         >
-          <X className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       )}
     </div>
@@ -204,16 +206,20 @@ function NotificationCard({
       <div className="min-w-0 flex-1 pr-6">
         <div className="mb-1 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider uppercase opacity-85">
+            <span className="text-[10px] font-semibold tracking-wider uppercase opacity-85">
               {label}
             </span>
             {!notification.read && (
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
             )}
           </div>
-          <span className="text-[10px] opacity-50">{formatTimestamp(notification.createdAt)}</span>
+          <span className="text-[10px] font-medium tabular-nums opacity-50">
+            {formatTimestamp(notification.createdAt)}
+          </span>
         </div>
-        <h4 className="mb-0.5 text-xs font-bold text-slate-100">{notification.title}</h4>
+        <h4 className="mb-0.5 text-xs font-semibold tracking-tight text-slate-100">
+          {notification.title}
+        </h4>
         <div
           className="text-xs leading-relaxed text-slate-300 [&>a]:text-blue-400 [&>a]:underline [&>a]:hover:text-blue-300 [&>p]:mb-0"
           dangerouslySetInnerHTML={{

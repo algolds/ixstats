@@ -374,7 +374,7 @@ export function TeamRosterModal({
             )}
             <span
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-extrabold",
+                "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold tabular-nums",
                 overall >= 80
                   ? "bg-amber-400/15 text-amber-400"
                   : overall >= 70
@@ -516,7 +516,7 @@ export function TeamRosterModal({
 
                 <div className="flex items-center gap-3">
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-lg font-black shadow-lg"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-lg font-bold tracking-tight shadow-lg"
                     style={{ backgroundColor: `${teamColor}20`, color: teamColor }}
                   >
                     {team.logo ? (
@@ -531,7 +531,7 @@ export function TeamRosterModal({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <SheetTitle className="text-foreground truncate text-lg font-bold">
+                      <SheetTitle className="text-foreground truncate text-lg font-bold tracking-tight">
                         {team.name}
                       </SheetTitle>
                       {isOwner && (

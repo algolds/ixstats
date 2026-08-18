@@ -121,8 +121,19 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
 
   // 2. Map Head Coach development ratings for players
   const coachMap = new Map<string, number>();
-  const playersForAging: Array<{ id: string; age: number; careerStage: any; ratings: Record<string, number> }> = [];
-  const coachesForAging: Array<{ id: string; age: number; careerStage: any; ratings: { strategy: number; development: number; motivation: number; adaptability: number }; teamId: string }> = [];
+  const playersForAging: Array<{
+    id: string;
+    age: number;
+    careerStage: any;
+    ratings: Record<string, number>;
+  }> = [];
+  const coachesForAging: Array<{
+    id: string;
+    age: number;
+    careerStage: any;
+    ratings: { strategy: number; development: number; motivation: number; adaptability: number };
+    teamId: string;
+  }> = [];
 
   for (const team of season.league.teams) {
     const headCoach =
@@ -836,7 +847,11 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     select: { nationId: true },
   });
   let nationIds: string[] = Array.from(
-    new Set(teams.map((t: { nationId: string | null }) => t.nationId).filter((id: string | null): id is string => !!id))
+    new Set(
+      teams
+        .map((t: { nationId: string | null }) => t.nationId)
+        .filter((id: string | null): id is string => !!id)
+    )
   );
   if (nationIds.length === 0) {
     // Fallback: fetch countries from Country table
@@ -875,11 +890,16 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
     // Sort and select top 11
     // eslint-disable-next-line prefer-const
     let squad = [...draftPlayers]
-      .sort((a: { ratings?: Record<string, number> | null }, b: { ratings?: Record<string, number> | null }) => {
-        const ratingA = (a.ratings as Record<string, number> | undefined)?.overall ?? 50;
-        const ratingB = (b.ratings as Record<string, number> | undefined)?.overall ?? 50;
-        return ratingB - ratingA;
-      })
+      .sort(
+        (
+          a: { ratings?: Record<string, number> | null },
+          b: { ratings?: Record<string, number> | null }
+        ) => {
+          const ratingA = (a.ratings as Record<string, number> | undefined)?.overall ?? 50;
+          const ratingB = (b.ratings as Record<string, number> | undefined)?.overall ?? 50;
+          return ratingB - ratingA;
+        }
+      )
       .slice(0, 11);
 
     if (squad.length < 11) {

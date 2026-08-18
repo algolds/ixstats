@@ -3,7 +3,10 @@
 import React, { useState, useTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { generateWorld } from "~/lib/worldgen/engine";
-import { normalizeAzgaarGraph, type NormalizedMapData } from "~/lib/maps/pipeline/azgaar-normalizer";
+import {
+  normalizeAzgaarGraph,
+  type NormalizedMapData,
+} from "~/lib/maps/pipeline/azgaar-normalizer";
 import { enrichMapDataset, type EnrichedMapPackage } from "~/lib/maps/pipeline/enrichment-pipeline";
 import {
   MapPipelineControls,

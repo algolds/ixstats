@@ -133,7 +133,9 @@ function CivilServiceWidget({
               <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-cyan-500 transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(0, (item as any).progressPercent ?? (item as any).progress ?? 0))}%` }}
+                  style={{
+                    width: `${Math.min(100, Math.max(0, (item as any).progressPercent ?? (item as any).progress ?? 0))}%`,
+                  }}
                 />
               </div>
             </div>
@@ -406,10 +408,10 @@ export function V2CommandBriefingHero({
 
           {/* Body Content */}
           <div className="z-10 my-3 space-y-1">
-            <h3 className="text-foreground text-sm leading-snug font-black tracking-tight sm:text-base">
+            <h3 className="text-foreground text-sm leading-snug font-bold tracking-tight sm:text-base">
               {activeCard.title}
             </h3>
-            <p className="text-muted-foreground text-xs leading-relaxed font-medium">
+            <p className="text-muted-foreground text-xs leading-relaxed font-normal">
               {activeCard.subtitle}
             </p>
           </div>

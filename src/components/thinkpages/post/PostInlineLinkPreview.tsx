@@ -14,14 +14,14 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
 
   return (
     <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-amber-500/35 hover:bg-amber-500/[0.08]">
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
         <span className="text-base">🏆</span>
         <div className="min-w-0">
-          <div className="text-xs font-bold text-amber-300 truncate">
+          <div className="truncate text-xs font-bold text-amber-300">
             {leagueData?.name ?? "League"}
           </div>
           {leagueData && (
-            <div className="text-[10px] text-muted-foreground capitalize">
+            <div className="text-muted-foreground text-[10px] capitalize">
               {leagueData.sportPreset} · {leagueData.archetype}
             </div>
           )}
@@ -29,7 +29,7 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
       </div>
       <Link
         href={`/myleague/${leagueId}`}
-        className="text-amber-400/80 hover:text-amber-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+        className="ml-1.5 shrink-0 text-[10px] font-semibold text-amber-400/80 transition-colors hover:text-amber-300 active:scale-95"
       >
         View League →
       </Link>
@@ -38,23 +38,18 @@ export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
 }
 
 export function MyClubInlinePreview({ teamId }: { teamId: string }) {
-  const { data: teamData } = api.sports.getTeam.useQuery(
-    { id: teamId },
-    { enabled: !!teamId }
-  );
+  const { data: teamData } = api.sports.getTeam.useQuery({ id: teamId }, { enabled: !!teamId });
 
   return (
     <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-blue-500/35 hover:bg-blue-500/[0.08]">
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
         <span className="text-base" style={{ color: teamData?.color || "#3b82f6" }}>
           🛡️
         </span>
         <div className="min-w-0">
-          <div className="text-xs font-bold text-blue-300 truncate">
-            {teamData?.name ?? "Club"}
-          </div>
+          <div className="truncate text-xs font-bold text-blue-300">{teamData?.name ?? "Club"}</div>
           {teamData && (
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-muted-foreground text-[10px]">
               Stadium Cap: {teamData.stadiumCapacity}
             </div>
           )}
@@ -62,7 +57,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
       </div>
       <Link
         href={`/myclub/${teamId}`}
-        className="text-blue-400/80 hover:text-blue-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+        className="ml-1.5 shrink-0 text-[10px] font-semibold text-blue-400/80 transition-colors hover:text-blue-300 active:scale-95"
       >
         View Club →
       </Link>
@@ -79,14 +74,14 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
   return (
     <ForumLinkPreview threadId={threadId}>
       <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-indigo-500/35 hover:bg-indigo-500/[0.08]">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <MessageCircle className="h-4 w-4 text-indigo-400 shrink-0" />
+        <div className="flex min-w-0 items-center gap-2.5">
+          <MessageCircle className="h-4 w-4 shrink-0 text-indigo-400" />
           <div className="min-w-0">
-            <div className="text-xs font-bold text-indigo-300 truncate">
+            <div className="truncate text-xs font-bold text-indigo-300">
               {thread?.title ?? "Forum Thread"}
             </div>
             {thread && (
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-muted-foreground text-[10px]">
                 {thread.forumName ? `${thread.forumName} · ` : ""}
                 {thread.replyCount ?? 0} replies
               </div>
@@ -97,7 +92,7 @@ export function InlineForumThreadPreview({ threadId, url }: { threadId: number; 
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-indigo-400/80 hover:text-indigo-300 ml-1.5 shrink-0 text-[10px] font-semibold transition-colors active:scale-95"
+          className="ml-1.5 shrink-0 text-[10px] font-semibold text-indigo-400/80 transition-colors hover:text-indigo-300 active:scale-95"
         >
           View Thread →
         </a>
@@ -169,4 +164,3 @@ export function PostInlineLinkPreview({ url }: { url: string }) {
 
   return null;
 }
-

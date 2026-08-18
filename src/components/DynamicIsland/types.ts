@@ -165,4 +165,3 @@ export interface ExpandedViewProps {
   countriesData?: CountriesData;
   activePlugin?: DIPlugin | null;
 }
-

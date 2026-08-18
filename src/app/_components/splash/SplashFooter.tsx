@@ -10,18 +10,16 @@ export function SplashFooter() {
 
   return (
     <footer className="mt-16 border-t border-white/10 pt-8 pb-12 text-slate-400">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
         {/* Left branding */}
-        <div className="flex flex-col items-center md:items-start gap-1.5 text-center md:text-left">
+        <div className="flex flex-col items-center gap-1.5 text-center md:items-start md:text-left">
           <div className="flex items-center gap-2">
-            <span className="font-bold tracking-tight text-white text-base">
-              IxStates
-            </span>
-            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-amber-400">
+            <span className="text-base font-bold tracking-tight text-white">IxStates</span>
+            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-amber-400">
               {versionString}
             </span>
           </div>
-          <p className="text-xs text-slate-400 max-w-sm">
+          <p className="max-w-sm text-xs text-slate-400">
             Nations, economics, lore &amp; procedural worlds. Operated by the Ixnay Community.
           </p>
         </div>
@@ -61,7 +59,7 @@ export function SplashFooter() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-6 text-[11px] text-slate-400">
+      <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-6 text-[11px] text-slate-400 sm:flex-row">
         <p>© 2026 Ixnay Community / IxWiki. Non-commercial creative platform.</p>
         <p>Public lore licensed under CC-BY-SA 4.0. Age 16+ platform.</p>
       </div>

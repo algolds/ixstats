@@ -68,12 +68,12 @@ export function WaitlistDashboardSection({
           <div className="flex justify-center">
             <Badge
               variant="outline"
-              className="border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-widest text-amber-400 uppercase backdrop-blur-md"
+              className="border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-amber-400 uppercase backdrop-blur-md"
             >
               Waitlist Active
             </Badge>
           </div>
-          <h1 className="bg-gradient-to-r from-amber-200 via-amber-400 to-cyan-300 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent md:text-6xl">
+          <h1 className="bg-gradient-to-r from-amber-200 via-amber-400 to-cyan-300 bg-clip-text text-4xl font-bold tracking-tight text-transparent md:text-6xl">
             Onboarding Underway
           </h1>
           <p className="mx-auto max-w-xl text-sm font-medium text-zinc-400/90 md:text-base">

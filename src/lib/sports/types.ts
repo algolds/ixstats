@@ -57,8 +57,20 @@ export type MatchSimulationEvent =
   | { type: "goal"; minute: number; teamId: string; playerId: string; assistPlayerId?: string }
   | { type: "yellow_card"; minute: number; teamId: string; playerId: string }
   | { type: "red_card"; minute: number; teamId: string; playerId: string }
-  | { type: "substitution"; minute: number; teamId: string; playerInId: string; playerOutId: string }
-  | { type: "injury"; minute: number; teamId: string; playerId: string; severity: "minor" | "moderate" | "severe" };
+  | {
+      type: "substitution";
+      minute: number;
+      teamId: string;
+      playerInId: string;
+      playerOutId: string;
+    }
+  | {
+      type: "injury";
+      minute: number;
+      teamId: string;
+      playerId: string;
+      severity: "minor" | "moderate" | "severe";
+    };
 
 export interface TeamRatingVector {
   overall: number;
@@ -100,4 +112,3 @@ export interface ExtendedMatchResult extends MatchResult {
   evaluation: EvaluationVector;
   trace: EventTraceStep[];
 }
-

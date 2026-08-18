@@ -98,7 +98,7 @@ export default function MatchDetailModal({
         {!isLoading && match && (
           <div className="space-y-6">
             {/* Header / Score Board */}
-            <div className="bg-muted/30 border-border/10 grid grid-cols-3 items-center gap-2 rounded-2xl border p-4 text-center dark:bg-secondary/40">
+            <div className="bg-muted/30 border-border/10 dark:bg-secondary/40 grid grid-cols-3 items-center gap-2 rounded-2xl border p-4 text-center">
               {/* Home Team */}
               <div className="flex min-w-0 flex-col items-center gap-1.5">
                 <div className="border-border/40 bg-background flex h-14 w-14 items-center justify-center rounded-full border p-1 shadow-md">
@@ -110,14 +110,14 @@ export default function MatchDetailModal({
                     />
                   ) : (
                     <div
-                      className="flex h-full w-full items-center justify-center rounded-full text-xs font-black text-white"
+                      className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white"
                       style={{ backgroundColor: match.homeTeam.color ?? "#3b82f6" }}
                     >
                       {match.homeTeam.shortName || match.homeTeam.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                 </div>
-                <span className="text-foreground truncate text-sm font-extrabold">
+                <span className="text-foreground truncate text-sm font-semibold">
                   {match.homeTeam.name}
                 </span>
                 {match.homeTeam.wikiSlug && (
@@ -132,10 +132,10 @@ export default function MatchDetailModal({
 
               {/* Score & Info */}
               <div className="flex flex-col items-center justify-center">
-                <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
+                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                   Matchday {match.matchDay}
                 </span>
-                <div className="text-foreground my-1.5 flex items-center gap-3 font-mono text-4xl font-black tracking-tight">
+                <div className="text-foreground my-1.5 flex items-center gap-3 font-mono text-4xl font-bold tracking-tight">
                   <span>{match.homeScore ?? 0}</span>
                   <span className="opacity-30">-</span>
                   <span>{match.awayScore ?? 0}</span>
@@ -154,14 +154,14 @@ export default function MatchDetailModal({
                     />
                   ) : (
                     <div
-                      className="flex h-full w-full items-center justify-center rounded-full text-xs font-black text-white"
+                      className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white"
                       style={{ backgroundColor: match.awayTeam.color ?? "#ef4444" }}
                     >
                       {match.awayTeam.shortName || match.awayTeam.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                 </div>
-                <span className="text-foreground truncate text-sm font-extrabold">
+                <span className="text-foreground truncate text-sm font-semibold">
                   {match.awayTeam.name}
                 </span>
                 {match.awayTeam.wikiSlug && (
@@ -185,28 +185,22 @@ export default function MatchDetailModal({
               />
             )}
 
-            {/* AI Narration / Match Report Area */}
-            <div className="space-y-3">
+            {/* AI Newspaper Narrative Report Banner */}
+            <div
+              className="border-border/20 bg-muted/20 relative overflow-hidden rounded-2xl border p-4 shadow-inner"
+              style={
+                sportColors?.accentColor
+                  ? {
+                      borderColor: `hsla(${sportColors.accentColor}, 0.3)`,
+                      backgroundColor: `hsla(${sportColors.accentColor}, 0.05)`,
+                    }
+                  : undefined
+              }
+            >
               {matchReport ? (
-                <div
-                  className={cn(
-                    "relative rounded-2xl border p-4 shadow-sm",
-                    sportColors ? "" : "border-purple-500/20 bg-purple-500/10"
-                  )}
-                  style={{
-                    backgroundColor: sportColors?.accentColor
-                      ? `hsla(${sportColors.accentColor}, 0.1)`
-                      : undefined,
-                    borderColor: sportColors?.accentColor
-                      ? `hsla(${sportColors.accentColor}, 0.2)`
-                      : undefined,
-                  }}
-                >
+                <div className="space-y-2">
                   <div
-                    className={cn(
-                      "absolute top-3 right-3 flex items-center gap-1",
-                      sportColors ? "" : "text-purple-400"
-                    )}
+                    className="flex items-center gap-1.5 font-bold"
                     style={{
                       color: sportColors?.highlightColor
                         ? `hsl(${sportColors.highlightColor})`
@@ -214,7 +208,9 @@ export default function MatchDetailModal({
                     }}
                   >
                     <Sparkles className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase">AI Report</span>
+                    <span className="text-[10px] font-semibold tracking-wider uppercase">
+                      AI Report
+                    </span>
                   </div>
                   <div className="prose prose-invert text-foreground/90 max-w-none pr-6 text-xs leading-relaxed whitespace-pre-line">
                     {matchReport}
@@ -349,7 +345,7 @@ export default function MatchDetailModal({
                   {match.playerStats && (match.playerStats as any[]).length > 0 ? (
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="text-muted-foreground border-b border-white/10 text-[10px] font-black tracking-wider uppercase">
+                        <tr className="text-muted-foreground border-b border-white/10 text-[10px] font-semibold tracking-wider uppercase">
                           <th className="py-2">Player</th>
                           <th className="py-2">Position</th>
                           <th className="py-2 text-right">Goals</th>
@@ -368,13 +364,13 @@ export default function MatchDetailModal({
                               <td className="text-muted-foreground py-2.5 font-medium capitalize">
                                 {stat.player.position}
                               </td>
-                              <td className="py-2.5 text-right font-mono font-bold">
+                              <td className="py-2.5 text-right font-mono font-bold tabular-nums">
                                 {playerStatsObj.goals ?? 0}
                               </td>
-                              <td className="py-2.5 text-right font-mono font-bold">
+                              <td className="py-2.5 text-right font-mono font-bold tabular-nums">
                                 {playerStatsObj.assists ?? 0}
                               </td>
-                              <td className="text-muted-foreground py-2.5 text-right font-mono">
+                              <td className="text-muted-foreground py-2.5 text-right font-mono tabular-nums">
                                 {playerStatsObj.shots ?? 0}
                               </td>
                             </tr>
@@ -400,20 +396,20 @@ export default function MatchDetailModal({
 function BadgeCheck({ status }: { status: string }) {
   if (status === "completed") {
     return (
-      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black text-emerald-400 uppercase">
+      <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-emerald-400 uppercase">
         Full Time
       </span>
     );
   }
   if (status === "in_progress") {
     return (
-      <span className="animate-pulse rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-400 uppercase">
+      <span className="animate-pulse rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-amber-400 uppercase">
         Live
       </span>
     );
   }
   return (
-    <span className="bg-muted border-border/20 text-muted-foreground rounded-full border px-2 py-0.5 text-[9px] font-black uppercase">
+    <span className="bg-muted border-border/20 text-muted-foreground rounded-full border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase">
       Scheduled
     </span>
   );

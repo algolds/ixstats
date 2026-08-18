@@ -21,18 +21,20 @@ import {
   formatCardStats,
   getCardTypeLabel,
 } from "~/lib/cards";
-import {
-  getPremiumBorderConfig,
-  getFoilStampConfig,
-  getMetallicGradient,
-} from "~/lib/themes";
+import { getPremiumBorderConfig, getFoilStampConfig, getMetallicGradient } from "~/lib/themes";
 import { proxyNSImage } from "~/lib/cards";
 import { CardHolographicCover } from "./CardHolographicCover";
 import { RARITY_THEMES } from "./CardBack";
 import { NationStatesBadge } from "./NationStatesLogo";
 import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
-import { getCategoryTheme, getCategoryLabel, isValidLoreCategory, classifyFromWikitext, type LoreCategory } from "~/lib/cards";
+import {
+  getCategoryTheme,
+  getCategoryLabel,
+  isValidLoreCategory,
+  classifyFromWikitext,
+  type LoreCategory,
+} from "~/lib/cards";
 import { getHybridRarityMaterial } from "~/lib/cards/rarity-materials";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
@@ -148,11 +150,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
     // Check if artwork URL is custom art (Tier 3) or legacy artwork
     const customArtUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
-    const hasCustomArtwork = Boolean(
-      customArtUrl &&
-        customArtUrl.trim() !== "" &&
-        !imageError
-    );
+    const hasCustomArtwork = Boolean(customArtUrl && customArtUrl.trim() !== "" && !imageError);
 
     const cardTypeStr = (card.cardType as string) || "";
     // Is this a lore card (no numeric stats)?
@@ -178,7 +176,14 @@ export const CardDisplay = React.memo<CardDisplayProps>(
         );
       }
       return null;
-    }, [resolvedCategory, isLoreCard, card.metadata, card.description, card.wikiArticleTitle, card.title]);
+    }, [
+      resolvedCategory,
+      isLoreCard,
+      card.metadata,
+      card.description,
+      card.wikiArticleTitle,
+      card.title,
+    ]);
 
     const effectiveCategoryTheme = React.useMemo(
       () => (effectiveCategory ? getCategoryTheme(effectiveCategory) : null),
@@ -278,15 +283,40 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           }
         >
           {/* Dual-Border Frame & Corner Brackets (matching CardBack.tsx) */}
-          <div className={cn("absolute inset-1 rounded-[14px] border pointer-events-none z-30 opacity-60", rarityTheme.borderInner)} />
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-1 z-30 rounded-[14px] border opacity-60",
+              rarityTheme.borderInner
+            )}
+          />
 
-          <div className={cn("absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
-          <div className={cn("absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 pointer-events-none z-30 opacity-85", rarityTheme.cornerBracket)} />
+          <div
+            className={cn(
+              "pointer-events-none absolute top-1.5 left-1.5 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute top-1.5 right-1.5 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute bottom-1.5 left-1.5 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
+              rarityTheme.cornerBracket
+            )}
+          />
+          <div
+            className={cn(
+              "pointer-events-none absolute right-1.5 bottom-1.5 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
+              rarityTheme.cornerBracket
+            )}
+          />
           {/* Card artwork / procedural background */}
           <div
-            className="relative w-full h-full overflow-hidden"
+            className="relative h-full w-full overflow-hidden"
             style={{
               height: HEIGHT_PIXELS[size] || "269px",
             }}
@@ -340,7 +370,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             <TextureOverlay
               texture="paperGrain"
               opacity={0.06}
-              className="mix-blend-overlay pointer-events-none z-10"
+              className="pointer-events-none z-10 mix-blend-overlay"
             />
 
             {/* Gradient overlay for text readability when using artwork */}
@@ -370,7 +400,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           </div>
 
           {/* Card content overlay */}
-          <div className="absolute inset-0 flex flex-col justify-between p-3 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
             {/* Top section - Rarity badge & category seal */}
             <div className="flex items-start justify-between">
               <RarityBadge
@@ -388,7 +418,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
                 {effectiveCategory ? (
                   <span
-                    className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-950/80 p-0.5 backdrop-blur-md border border-white/20 text-white shadow-xs"
+                    className="flex h-5 w-5 items-center justify-center rounded-md border border-white/20 bg-slate-950/80 p-0.5 text-white shadow-xs backdrop-blur-md"
                     title={getCategoryLabel(effectiveCategory)}
                   >
                     <CategoryIcon
@@ -398,10 +428,11 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       color={effectiveCategoryTheme?.accentColor}
                     />
                   </span>
-                ) : !isIIWiki && (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId)) ? (
+                ) : !isIIWiki &&
+                  (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId)) ? (
                   <span
                     className={cn(
-                      "rounded-md bg-slate-950/80 px-2 py-0.5 font-bold backdrop-blur-md border border-white/20 text-white shadow-xs",
+                      "rounded-md border border-white/20 bg-slate-950/80 px-2 py-0.5 font-bold text-white shadow-xs backdrop-blur-md",
                       fonts.type
                     )}
                   >
@@ -415,7 +446,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             <div className="space-y-1">
               {/* Card title */}
               <motion.h3
-                className={cn("line-clamp-2 font-black tracking-tight text-white", fonts.title)}
+                className={cn("line-clamp-2 font-bold tracking-tight text-white", fonts.title)}
                 style={{
                   textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)",
                 }}
@@ -432,10 +463,13 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               </motion.h3>
 
               {/* Subtitle line */}
-              <p className="text-[10px] font-semibold text-white/80 tracking-wider uppercase flex items-center gap-1.5 line-clamp-1 mt-0.5">
-                <span>{card.subcategory || (effectiveCategory ? getCategoryLabel(effectiveCategory) : "Chronicles")}</span>
+              <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/80 uppercase">
+                <span>
+                  {card.subcategory ||
+                    (effectiveCategory ? getCategoryLabel(effectiveCategory) : "Chronicles")}
+                </span>
                 <span className="text-white/40">•</span>
-                <span className="text-amber-400 font-semibold tracking-wide">
+                <span className="font-semibold tracking-wide text-amber-400">
                   {designMeta.customSubtitle || card.rarity}
                 </span>
               </p>
@@ -478,15 +512,17 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
               {/* Bottom Lore Excerpt Box */}
               {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
-                <div className="rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 p-2 shadow-inner text-left pointer-events-auto mt-1 transition-all duration-300">
-                  <div className="text-[10px] text-white/90 leading-snug line-clamp-2">
+                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-all duration-300">
+                  <div className="line-clamp-2 text-[10px] leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>
-                  <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-white/10 text-[8px] text-white/50">
-                    <span className="uppercase tracking-widest font-semibold text-amber-400">
+                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-[8px] text-white/50">
+                    <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>
-                    <span className="font-mono font-medium text-white/70">{card.marketValue.toLocaleString()} IxC</span>
+                    <span className="font-mono font-bold text-white/70 tabular-nums">
+                      {card.marketValue.toLocaleString()} IxC
+                    </span>
                   </div>
                 </div>
               )}
@@ -512,7 +548,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       <div key={key} className="flex items-center justify-between px-1">
                         <span className="font-medium text-white/70">{stat.def.label}</span>
                         <span
-                          className="font-black"
+                          className="font-bold tabular-nums"
                           style={{
                             color: stat.def.color,
                             textShadow: `0 0 8px ${stat.def.color}`,
@@ -534,7 +570,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               className={cn(
                 "absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full",
                 "bg-gradient-to-br from-amber-400 to-amber-600",
-                "text-sm font-black text-black",
+                "text-sm font-bold text-black tabular-nums",
                 "border-2 border-amber-300",
                 "shadow-lg shadow-amber-500/50"
               )}

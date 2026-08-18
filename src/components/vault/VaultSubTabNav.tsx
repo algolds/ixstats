@@ -59,8 +59,8 @@ export function VaultSubTabNav<T extends string>({
         layout
         layoutId={layoutId}
         style={{
-          width: `calc(${(100 / tabs.length)}% - 0.25rem)`,
-          left: `calc(${((activeIdx / tabs.length) * 100)}% + 0.125rem)`,
+          width: `calc(${100 / tabs.length}% - 0.25rem)`,
+          left: `calc(${(activeIdx / tabs.length) * 100}% + 0.125rem)`,
         }}
         transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
       />
@@ -90,7 +90,7 @@ export function VaultSubTabNav<T extends string>({
             )}
             <span>{tab.label}</span>
             {tab.badgeCount !== undefined && tab.badgeCount > 0 && (
-              <span className="ml-1 animate-pulse rounded-full bg-blue-500/90 border border-blue-400/40 px-1.5 py-0.5 text-[9px] font-black text-white shadow-sm backdrop-blur-md">
+              <span className="ml-1 animate-pulse rounded-full border border-blue-400/40 bg-blue-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white tabular-nums shadow-sm backdrop-blur-md">
                 {tab.badgeCount}
               </span>
             )}
@@ -100,4 +100,3 @@ export function VaultSubTabNav<T extends string>({
     </FacetContainer>
   );
 }
-

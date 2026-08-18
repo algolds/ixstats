@@ -8,12 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as mysql from "mysql2/promise";
 import { db } from "~/server/db";
-import {
-  parseOOLPage,
-  OOL_YEARS,
-  parseActiveMembers,
-  parseAnnualWinners,
-} from "./ool-parser";
+import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { getWikiDbPool } from "~/lib/wiki/bridge";
 import { getBonusConfig, grantBonus } from "~/lib/vault";
 

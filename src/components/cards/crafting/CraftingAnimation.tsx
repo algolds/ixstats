@@ -158,7 +158,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               </div>
 
               <motion.div
-                className="text-2xl font-black text-white"
+                className="text-2xl font-bold tracking-tight text-white"
                 animate={{
                   opacity: [0.5, 1, 0.5],
                 }}
@@ -183,7 +183,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
             >
               <motion.div
                 className={cn(
-                  "mb-4 text-6xl font-black",
+                  "mb-4 text-6xl font-bold tracking-tight",
                   success ? "text-green-400" : "text-red-400"
                 )}
                 animate={{
@@ -258,7 +258,9 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                     >
                       <CometCard className="inline-block px-6 py-3" glassDepth="interactive">
                         <div className="text-sm text-white/60 uppercase">XP Gained</div>
-                        <div className="text-3xl font-black text-blue-400">+{xpGained}</div>
+                        <div className="text-3xl font-bold tracking-tight text-blue-400 tabular-nums">
+                          +{xpGained}
+                        </div>
                       </CometCard>
                     </motion.div>
                   )}

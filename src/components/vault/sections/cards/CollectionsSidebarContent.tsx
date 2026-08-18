@@ -18,7 +18,7 @@ export function CollectionsSidebarContent({
       <div className="rounded-lg bg-amber-500/5 p-2.5">
         <div className="flex items-center gap-1.5">
           <BookOpen className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-          <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
+          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             Tip
           </span>
         </div>

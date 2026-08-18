@@ -61,10 +61,7 @@ export interface ForumFeedItem extends BaseFeedItem {
 }
 
 export type UnifiedFeedItemType =
-  | ActivityFeedItem
-  | ThinkpagesFeedItem
-  | WikiFeedItem
-  | ForumFeedItem;
+  ActivityFeedItem | ThinkpagesFeedItem | WikiFeedItem | ForumFeedItem;
 
 export interface GroupedActivityItem extends BaseFeedItem {
   source: "activity";

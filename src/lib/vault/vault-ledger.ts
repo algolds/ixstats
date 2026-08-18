@@ -343,9 +343,7 @@ export async function getBalance(userId: string, db: PrismaClient) {
       });
     }
 
-    const lastLoginDate = updatedVault.lastLoginDate
-      ? new Date(updatedVault.lastLoginDate)
-      : null;
+    const lastLoginDate = updatedVault.lastLoginDate ? new Date(updatedVault.lastLoginDate) : null;
     const now = new Date();
     const canClaimDailyBonus =
       !lastLoginDate ||

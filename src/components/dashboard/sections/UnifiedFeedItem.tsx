@@ -123,7 +123,11 @@ export function getActivityLabel(activity: any): {
   return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
 }
 
-export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { activity: ProcessedFeedItem | any }) {
+export const UnifiedFeedItem = memo(function UnifiedFeedItem({
+  activity,
+}: {
+  activity: ProcessedFeedItem | any;
+}) {
   const source = activity.source ?? "activity";
   const isWiki = source === "wiki";
   const isGrouped = !!activity._grouped;
@@ -169,10 +173,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
     .filter((x): x is string => typeof x === "string" && x.length > 0)
     .join("\n");
 
-  const sportsBulletin = useMemo(
-    () => parseSportsBulletin(rawContentText),
-    [rawContentText]
-  );
+  const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
   return (
     <div className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-sm transition-all duration-200 hover:border-white/15 hover:bg-white/[0.06]">
@@ -185,7 +186,11 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
           )}
         >
           {isWiki ? (
-            <img src="https://cdn.simpleicons.org/wikipedia/teal" alt="Wiki" className="h-4.5 w-4.5" />
+            <img
+              src="https://cdn.simpleicons.org/wikipedia/teal"
+              alt="Wiki"
+              className="h-4.5 w-4.5"
+            />
           ) : (
             <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
           )}
@@ -207,11 +212,12 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
           />
 
           {/* Subtitle / Author Row */}
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-tight text-muted-foreground">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs font-medium tracking-tight">
             {isGrouped ? (
               isWiki ? (
                 <span>
-                  <span className="font-semibold text-foreground">{activity._editCount}</span> edits by{" "}
+                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits
+                  by{" "}
                   {activity._editors.map((editor: string, idx: number) => (
                     <span key={editor}>
                       {idx > 0 && ", "}
@@ -221,20 +227,24 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
                 </span>
               ) : (
                 <span>
-                  <span className="font-semibold text-foreground">{activity._editCount}</span> updates by{" "}
-                  <span className="font-semibold text-foreground">{activity._editors?.[0] ?? "unknown"}</span>
+                  <span className="text-foreground font-semibold">{activity._editCount}</span>{" "}
+                  updates by{" "}
+                  <span className="text-foreground font-semibold">
+                    {activity._editors?.[0] ?? "unknown"}
+                  </span>
                 </span>
               )
             ) : (
-              activity.user?.name && (
-                isWiki ? (
-                  <span className="flex items-center gap-1">
-                    <span>by</span> <WikiAuthorPopover username={activity.user.name} />
-                  </span>
-                ) : activity.poll && activity.user.name === "User" ? null : (
-                  <span>by <span className="font-semibold text-foreground/90">{activity.user.name}</span></span>
-                )
-              )
+              activity.user?.name &&
+              (isWiki ? (
+                <span className="flex items-center gap-1">
+                  <span>by</span> <WikiAuthorPopover username={activity.user.name} />
+                </span>
+              ) : activity.poll && activity.user.name === "User" ? null : (
+                <span>
+                  by <span className="text-foreground/90 font-semibold">{activity.user.name}</span>
+                </span>
+              ))
             )}
           </div>
 
@@ -244,18 +254,18 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
           )}
 
           {/* Body Content / Poll / Sports Card / Description (non-wiki items) */}
-          {!isWiki && !isGrouped && (
-            activity.poll ? (
+          {!isWiki &&
+            !isGrouped &&
+            (activity.poll ? (
               <FeedPollWidget poll={activity.poll} />
             ) : sportsBulletin ? (
               <SportsBulletinCard data={sportsBulletin} />
             ) : descHtml ? (
               <WikiHtmlContent
                 html={descHtml}
-                className="pt-0.5 text-xs leading-relaxed tracking-tight text-muted-foreground/90 whitespace-pre-wrap break-words"
+                className="text-muted-foreground/90 pt-0.5 text-xs leading-relaxed tracking-tight break-words whitespace-pre-wrap"
               />
-            ) : null
-          )}
+            ) : null)}
 
           {/* Grouped sub-items expandable drawer */}
           {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
@@ -264,7 +274,6 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({ activity }: { act
     </div>
   );
 });
-
 
 export function FeedExternalLink({ url }: { url: string; title?: string }) {
   const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);

@@ -82,11 +82,11 @@ function _Complication({
         onClick && "cursor-pointer active:scale-95"
       )}
     >
-      <div className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-extrabold tracking-wider uppercase">
+      <div className="text-muted-foreground mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
         {icon}
         <span>{label}</span>
       </div>
-      <div className="text-foreground text-xs font-black tracking-tight tabular-nums">{value}</div>
+      <div className="text-foreground text-xs font-bold tracking-tight tabular-nums">{value}</div>
     </motion.div>
   );
 
@@ -498,10 +498,10 @@ function ExecutiveAgendaComponent({
               </div>
               <div className="flex flex-col gap-0.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-foreground text-base font-black tracking-tight sm:text-lg">
+                  <h3 className="text-foreground text-base font-bold tracking-tight sm:text-lg">
                     Issues & Events
                   </h3>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-wider text-cyan-800 uppercase shadow-xs dark:text-cyan-300">
                     <span>{currentSeason.emoji}</span>
                     <span>{currentSeason.name}</span>
                   </span>
@@ -553,7 +553,7 @@ function ExecutiveAgendaComponent({
                 )}
                 <span
                   className={cn(
-                    "relative z-10 text-[9px] font-extrabold tracking-wider uppercase opacity-90",
+                    "relative z-10 text-[9px] font-semibold tracking-wider uppercase opacity-90",
                     isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-muted-foreground"
                   )}
                 >
@@ -561,7 +561,7 @@ function ExecutiveAgendaComponent({
                 </span>
                 <span
                   className={cn(
-                    "relative z-10 text-xs font-black tracking-tight",
+                    "relative z-10 text-xs font-bold tracking-tight tabular-nums",
                     isSelected ? "text-cyan-950 dark:text-cyan-200" : "text-foreground"
                   )}
                 >
@@ -577,7 +577,7 @@ function ExecutiveAgendaComponent({
 
         {/* ── Category Filter Chips (Sliding Pill Selection) ─────────────────── */}
         <div className="border-border/60 flex flex-wrap items-center gap-1.5 border-t pt-2.5 dark:border-white/5">
-          <div className="text-muted-foreground mr-1 flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase select-none">
+          <div className="text-muted-foreground mr-1 flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase select-none">
             <Filter className="h-3 w-3" />
             <span>Filter:</span>
           </div>
@@ -720,7 +720,7 @@ function ExecutiveAgendaComponent({
                   {selectedEvent.timeLabel}
                 </span>
               </div>
-              <DialogTitle className="text-foreground text-base font-black tracking-tight">
+              <DialogTitle className="text-foreground text-base font-semibold tracking-tight">
                 {selectedEvent.title}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs leading-relaxed">

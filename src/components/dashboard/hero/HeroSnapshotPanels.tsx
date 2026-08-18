@@ -131,7 +131,9 @@ export interface HeroSnapshotData {
   embassies?: Array<{ status: string }>;
   relations?: Array<{ id: string; targetCountryName: string; strength?: number }>;
   defenseOverview?: { overallScore?: number };
-  intelligenceOverview?: { alerts?: { critical?: number; items?: Array<{ id: string; severity: string; title: string }> } };
+  intelligenceOverview?: {
+    alerts?: { critical?: number; items?: Array<{ id: string; severity: string; title: string }> };
+  };
   securityData?: { overallSecurityScore?: number; activeThreatCount?: number };
   militaryBranches?: Array<{ id: string; name: string; readinessLevel?: number }>;
   civilServiceStatus?: {
@@ -191,12 +193,18 @@ function HeroSnapshotPanelsComponent({
   );
 
   const approvalPct = useMemo(() => {
-    const raw = (dashboardData?.data as any)?.currentPublicApproval ?? (dashboardData?.data as any)?.approvalRating ?? 0.65;
+    const raw =
+      (dashboardData?.data as any)?.currentPublicApproval ??
+      (dashboardData?.data as any)?.approvalRating ??
+      0.65;
     return Math.round(raw > 1 ? raw : raw * 100);
   }, [dashboardData?.data]);
 
   const stabilityPct = useMemo(() => {
-    const raw = (dashboardData?.data as any)?.currentStability ?? (dashboardData?.data as any)?.stability ?? 0.4;
+    const raw =
+      (dashboardData?.data as any)?.currentStability ??
+      (dashboardData?.data as any)?.stability ??
+      0.4;
     return Math.round(raw > 1 ? raw : raw * 100);
   }, [dashboardData?.data]);
 
@@ -239,48 +247,60 @@ function HeroSnapshotPanelsComponent({
     : [];
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] backdrop-blur-md shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] shadow-sm backdrop-blur-md">
       {/* Section 1: Prominent Telemetry Header Bar */}
       <div className="grid grid-cols-3 gap-1.5 bg-white/[0.04] p-2.5">
         <div
           onClick={() => onOpenModal("population")}
-          className="flex items-center gap-2 min-w-0 cursor-pointer group/pop"
+          className="group/pop flex min-w-0 cursor-pointer items-center gap-2"
           title="Click for Population Breakdown"
         >
-          <Users className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 transition-transform group-hover/pop:scale-110" />
+          <Users className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover/pop:scale-110 dark:text-blue-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/80 text-[8px] font-extrabold tracking-wider uppercase">Pop</p>
-            <p className="text-foreground truncate text-xs sm:text-sm font-black tracking-tight group-hover/pop:underline">{pop}</p>
+            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+              Pop
+            </p>
+            <p className="text-foreground truncate text-xs font-bold tracking-tight tabular-nums group-hover/pop:underline sm:text-sm">
+              {pop}
+            </p>
           </div>
         </div>
 
         <div
           onClick={() => onOpenModal("gdp")}
-          className="flex items-center gap-2 border-l border-white/10 pl-2 min-w-0 cursor-pointer group/gdp"
+          className="group/gdp flex min-w-0 cursor-pointer items-center gap-2 border-l border-white/10 pl-2"
           title="Click for GDP Breakdown"
         >
-          <Coins className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 transition-transform group-hover/gdp:scale-110" />
+          <Coins className="h-4 w-4 shrink-0 text-emerald-600 transition-transform group-hover/gdp:scale-110 dark:text-emerald-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/80 text-[8px] font-extrabold tracking-wider uppercase">GDP</p>
-            <p className="text-emerald-600 dark:text-emerald-400 truncate text-xs sm:text-sm font-black tracking-tight group-hover/gdp:underline">{gdp}</p>
+            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+              GDP
+            </p>
+            <p className="truncate text-xs font-bold tracking-tight text-emerald-600 tabular-nums group-hover/gdp:underline sm:text-sm dark:text-emerald-400">
+              {gdp}
+            </p>
           </div>
         </div>
 
         <div
           onClick={() => onOpenModal("vitality")}
-          className="flex items-center gap-2 border-l border-white/10 pl-2 min-w-0 cursor-pointer group/standing"
+          className="group/standing flex min-w-0 cursor-pointer items-center gap-2 border-l border-white/10 pl-2"
           title="Click for full Vitality Breakdown"
         >
-          <Activity className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 transition-transform group-hover/standing:scale-110" />
+          <Activity className="h-4 w-4 shrink-0 text-amber-600 transition-transform group-hover/standing:scale-110 dark:text-amber-400" />
           <div className="min-w-0">
-            <p className="text-muted-foreground/80 text-[8px] font-extrabold tracking-wider uppercase">Standing</p>
-            <p className="text-amber-700 dark:text-amber-300 truncate text-xs sm:text-sm font-black tracking-tight group-hover/standing:underline">Optimal</p>
+            <p className="text-muted-foreground/70 text-[8px] font-semibold tracking-wider uppercase">
+              Standing
+            </p>
+            <p className="truncate text-xs font-bold tracking-tight text-amber-700 group-hover/standing:underline sm:text-sm dark:text-amber-300">
+              Optimal
+            </p>
           </div>
         </div>
       </div>
 
       {/* Section 2: 4 Vitality Rings Grid */}
-      <div className="flex-1 flex flex-col justify-center border-t border-white/10 bg-white/[0.02] p-2.5">
+      <div className="flex flex-1 flex-col justify-center border-t border-white/10 bg-white/[0.02] p-2.5">
         <div className="grid grid-cols-2 gap-2">
           {rings.map((ring) => {
             const rating = getQualitativeRating(ring.value);
@@ -293,10 +313,10 @@ function HeroSnapshotPanelsComponent({
               >
                 <HealthRing value={ring.value} size={32} color={ring.color} label={ring.label} />
                 <div className="min-w-0 flex-1">
-                  <span className="text-muted-foreground/70 group-hover:text-foreground block truncate text-[8px] font-bold tracking-wider uppercase transition-colors">
+                  <span className="text-muted-foreground/70 group-hover:text-foreground block truncate text-[8px] font-medium tracking-wider uppercase transition-colors">
                     {ring.label}
                   </span>
-                  <span className={cn("text-xs font-bold tracking-tight", rating.color)}>
+                  <span className={cn("text-xs font-semibold tracking-tight", rating.color)}>
                     {rating.label}
                   </span>
                 </div>
@@ -308,22 +328,34 @@ function HeroSnapshotPanelsComponent({
 
       {/* Section 3: Integrated Executive Telemetry Micro-Bar */}
       <div className="grid grid-cols-3 gap-1 border-t border-white/10 bg-white/[0.02] p-1.5">
-        <div className="flex items-center justify-center gap-1 min-w-0">
-          <Heart className="h-3 w-3 text-red-400 shrink-0" />
-          <span className="text-muted-foreground/70 text-[8px] font-bold uppercase tracking-wider">Approval:</span>
-          <span className="text-foreground font-bold text-[10px] truncate">{approvalPct}%</span>
+        <div className="flex min-w-0 items-center justify-center gap-1">
+          <Heart className="h-3 w-3 shrink-0 text-red-400" />
+          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+            Approval:
+          </span>
+          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+            {approvalPct}%
+          </span>
         </div>
 
-        <div className="flex items-center justify-center gap-1 min-w-0 border-l border-white/10 pl-1">
-          <Scale className="h-3 w-3 text-violet-400 shrink-0" />
-          <span className="text-muted-foreground/70 text-[8px] font-bold uppercase tracking-wider">Stability:</span>
-          <span className="text-foreground font-bold text-[10px] truncate">{stabilityPct}%</span>
+        <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
+          <Scale className="h-3 w-3 shrink-0 text-violet-400" />
+          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+            Stability:
+          </span>
+          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+            {stabilityPct}%
+          </span>
         </div>
 
-        <div className="flex items-center justify-center gap-1 min-w-0 border-l border-white/10 pl-1">
-          <Zap className="h-3 w-3 text-amber-400 shrink-0" />
-          <span className="text-muted-foreground/70 text-[8px] font-bold uppercase tracking-wider">Capacity:</span>
-          <span className="text-foreground font-bold text-[10px] truncate">{capacityPct}%</span>
+        <div className="flex min-w-0 items-center justify-center gap-1 border-l border-white/10 pl-1">
+          <Zap className="h-3 w-3 shrink-0 text-amber-400" />
+          <span className="text-muted-foreground/70 text-[8px] font-medium tracking-wider uppercase">
+            Capacity:
+          </span>
+          <span className="text-foreground truncate text-[10px] font-semibold tabular-nums">
+            {capacityPct}%
+          </span>
         </div>
       </div>
     </div>

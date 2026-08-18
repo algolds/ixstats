@@ -20,7 +20,16 @@ export const CATEGORY_SUBCATEGORIES: Record<LoreCategory, SubcategoryDefinition[
       id: "sports",
       label: "Sports",
       iconPath: "/icons/game-icons/icons/ffffff/transparent/1x1/lorc/trophy.svg",
-      keywords: ["sports", "football", "league", "cup", "stadium", "derby", "tournament", "championship"],
+      keywords: [
+        "sports",
+        "football",
+        "league",
+        "cup",
+        "stadium",
+        "derby",
+        "tournament",
+        "championship",
+      ],
     },
     {
       id: "athletics",
@@ -459,7 +468,9 @@ export const CATEGORY_SUBCATEGORIES: Record<LoreCategory, SubcategoryDefinition[
 /**
  * Get subcategory definitions for a given Lore category
  */
-export function getCategorySubcategories(category?: LoreCategory | string | null): SubcategoryDefinition[] {
+export function getCategorySubcategories(
+  category?: LoreCategory | string | null
+): SubcategoryDefinition[] {
   if (!category) return [];
   const safeCat = category.toUpperCase() as LoreCategory;
   return CATEGORY_SUBCATEGORIES[safeCat] ?? [];
@@ -468,7 +479,10 @@ export function getCategorySubcategories(category?: LoreCategory | string | null
 /**
  * Smart auto-matcher: match title or text excerpt to closest subcategory definition
  */
-export function autoMatchSubcategory(category?: LoreCategory | string | null, text?: string | null): string {
+export function autoMatchSubcategory(
+  category?: LoreCategory | string | null,
+  text?: string | null
+): string {
   if (!category || !text) return "";
   const list = getCategorySubcategories(category);
   if (list.length === 0) return "";
