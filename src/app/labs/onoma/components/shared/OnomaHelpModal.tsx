@@ -1,21 +1,17 @@
 "use client";
 
 // src/app/labs/onoma/components/shared/OnomaHelpModal.tsx
-// Onoma Lab — Interactive Welcome Walkthrough & Help Modal (Facet Design)
+// ⟨ONOMA⟩ Linguistic Engine — Brand Walkthrough & System Guide (Apple / Facet Design)
+// Uses Game-Icons from Cards library (Icons by Lorc, Delapouite & contributors, CC BY 3.0)
+// Reference: docs/systems/onoma-brand-guide.md
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  Wand2,
-  Compass,
-  Wrench,
-  Bookmark,
-  ChevronRight,
-  ChevronLeft,
-  HelpCircle,
-} from "lucide-react";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { CategoryIcon } from "~/components/cards/icons";
+import type { LoreCategory } from "~/lib/cards/category-enums";
+import { OnomaBrandLogo } from "./OnomaBrandLogo";
 import { cn } from "~/lib/utils";
 
 interface OnomaHelpModalProps {
@@ -23,50 +19,71 @@ interface OnomaHelpModalProps {
   onClose: () => void;
 }
 
-const STEPS = [
+interface StepItem {
+  category: LoreCategory;
+  badge: string;
+  title: string;
+  subtitle: string;
+  quote?: string;
+  progression?: string;
+  description: string;
+  features: string[];
+}
+
+const STEPS: StepItem[] = [
   {
-    icon: Wand2,
-    title: "Quick Generator",
+    category: "SCIENCE",
+    badge: "",
+    title: "Language is a system.",
+    subtitle: "From rules to language",
+    quote:
+      "Good linguistic creation does not begin with words. It begins with the system that makes those words possible.",
     description:
-      "Train a local Markov chain dynamically on any of the 19 public dictionaries (e.g. Norse Deities, Dwarven, Eldritch, Sengoku Japanese) to generate names in real-time.",
+      "A name is never simply a string of letters. It emerges naturally from a structured linguistic chain:",
+    progression: "sound → structure → pattern → vocabulary → culture → history",
     features: [
-      "No setup required — select dictionary & click Assemble",
-      "Dynamic batch sizes from 10 to 500 candidates",
-      "Immediate click-to-copy or save options",
+      "Onoma is not a name generator — it is the linguistic engine",
+      "Engineered with mathematical rules and formal linguistic models",
+      "Define the phonotactic rules and let authentic vocabulary emerge",
     ],
   },
   {
-    icon: Compass,
-    title: "Linguistic Sections",
+    category: "GEOGRAPHY",
+    badge: "02 · CREATE",
+    title: "Make language useful.",
+    subtitle: "Build the language behind your world",
     description:
-      "Dive into dedicated naming spaces designed to synthesize specific types of campaign and world building assets.",
+      "Synthesize culturally coherent names and entities across dedicated worldbuilding environments:",
     features: [
-      "Places: Nations, states, cities, and geographical features",
-      "People: Individual characters, rulers, and historic dynasties",
-      "Military: Ships, military divisions, and tactical operations",
-      "Organizations: Secret orders, merchant guilds, and local taverns",
+      "Places: Nations, provinces, settlements, mountain ranges, and rivers",
+      "People: First names, surnames, noble dynasties, and cultural ethnonyms",
+      "Organizations & Culture: Guilds, chivalric orders, deities, and sacred traditions",
     ],
   },
   {
-    icon: Wrench,
-    title: "Studio",
+    category: "HISTORY",
+    badge: "03 · STUDIO",
+    title: "Build the system.",
+    subtitle: "Computational linguistics environment",
     description:
-      "Assemble custom linguistic profiles. Paste your own training seed words, adjust look-back orders, and constrain outputs to craft custom generators.",
+      "A complete laboratory to define sound systems, train models, and simulate centuries of language change:",
     features: [
-      "Paste any seed list separated by commas or newlines",
-      "Tweak Markov Order (Depth) from 1 to 4 characters",
-      "Set filters: length bounds, starts/ends with, contains, excludes",
+      "Workshop & Phonology: Multi-order Markov models, syllable templates (CVC, CCVCC), and sonority rules",
+      "Acoustics: Real-time 2D IPA Vowel Quadrilateral (F₁ vs F₂) and resonant formant spectrum",
+      "Sound Shifts: Historical sound change interpreter (X → Y / ENV) across epochs (Grimm's Law, Romance Lenition)",
     ],
   },
   {
-    icon: Bookmark,
-    title: "Personal Stash",
+    category: "CULTURE",
+    badge: "04 · EXPLORE & STASH",
+    title: "Understand the language.",
+    subtitle: "The permanent world lexicon",
     description:
-      "Keep your name discoveries organized. Save candidate name lists in your Onoma Stash, or export them to your system-level LoreStash collections.",
+      "Inspect underlying mechanics, audit linguistic health, audition natural speech, and stash vocabulary:",
     features: [
-      "Save names and dictionaries into your personal collection",
-      "Export names and custom word seeds to LoreStash folders",
-      "Share dictionaries with the community as public templates",
+      "Linguistic Enrichments: 5-case noun declensions, grammatical gender, and script transcriptions",
+      "Dual Speech Engine: Instant browser BCP-47 accents and Kokoro neural phoneme voiceover",
+      "Stash: Organize discovered names and export directly into your worldbuilding collections",
     ],
   },
 ];
@@ -78,6 +95,22 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Keyboard navigation (Escape to close, Left/Right arrows to step)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") {
+        setActiveStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+      }
+      if (e.key === "ArrowLeft") {
+        setActiveStep((prev) => Math.max(prev - 1, 0));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleNext = () => {
     if (activeStep < STEPS.length - 1) {
@@ -96,7 +129,6 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
   if (!mounted || !isOpen) return null;
 
   const currentStep = STEPS[activeStep];
-  const StepIcon = currentStep.icon;
 
   return createPortal(
     <AnimatePresence>
@@ -108,79 +140,109 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="bg-background/40 absolute inset-0 backdrop-blur-[6px]"
+            className="bg-background/60 absolute inset-0 backdrop-blur-md"
           />
 
           {/* Modal Container (Facet Volumetric Card) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: "spring", duration: 0.4 }}
-            className="border-border/40 bg-card relative z-10 flex w-full max-w-lg flex-col justify-between overflow-hidden rounded-xl border p-6 shadow-2xl shadow-black/40"
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            className="border-border/50 bg-card/95 relative z-10 flex w-full max-w-lg flex-col justify-between overflow-hidden rounded-2xl border p-6 sm:p-7 shadow-2xl shadow-black/50 backdrop-blur-xl"
           >
-            {/* Header */}
-            <div className="border-border/30 mb-5 flex items-center justify-between border-b pb-3.5">
-              <div className="flex items-center gap-1.5">
-                <HelpCircle className="h-4 w-4 text-[#0091ff]" />
-                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                  Onoma Lab Guide
-                </span>
+            {/* Header: Logo, Tagline & Close Trigger */}
+            <div className="border-border/30 mb-5 flex items-start justify-between border-b pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <OnomaBrandLogo variant="lockup" className="h-6 w-auto text-foreground" />
+                </div>
+                <p className="text-[12px] font-medium text-foreground tracking-tight">
+                  Language, engineered.{" "}
+                  <span className="text-muted-foreground font-normal">
+                    Build the language behind your world.
+                  </span>
+                </p>
               </div>
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:bg-secondary/40 hover:text-foreground rounded-lg p-1 transition-all"
+                className="text-muted-foreground hover:bg-secondary/40 hover:text-foreground rounded-lg p-1.5 transition-all -mr-1 -mt-1 active:scale-95 cursor-pointer"
+                title="Close Guide"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Content Display (with slide animations) */}
-            <div className="flex min-h-[260px] flex-col items-center space-y-4 text-center">
-              <div className="animate-pulse rounded-full bg-[#0091ff]/10 p-4 text-[#0091ff]">
-                <StepIcon className="h-7 w-7" />
+            {/* Content Display */}
+            <div className="flex min-h-[280px] flex-col items-center space-y-3.5 text-center">
+              {/* Category Badge & Game-Icon Silhouette from Cards */}
+              <div className="relative">
+                <div className="rounded-2xl border border-[#0091ff]/20 bg-[#0091ff]/10 p-3 text-[#0091ff] shadow-[0_0_20px_rgba(0,145,255,0.15)] flex items-center justify-center">
+                  <CategoryIcon
+                    category={currentStep.category}
+                    treatment="emblem"
+                    className="h-6 w-6 text-[#0091ff]"
+                  />
+                </div>
+                {currentStep.badge ? (
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#0091ff]/30 bg-background px-2 py-0.5 text-[9px] font-bold tracking-widest text-[#0091ff] uppercase">
+                    {currentStep.badge}
+                  </span>
+                ) : null}
               </div>
 
-              <div className="space-y-1.5">
-                <h3 className="text-foreground text-lg font-bold tracking-tight">
-                  {activeStep + 1}. {currentStep.title}
+              <div className="space-y-1 pt-1">
+                <h3 className="text-foreground text-base sm:text-lg font-semibold tracking-tight">
+                  {currentStep.title}
                 </h3>
-                <p className="text-muted-foreground mx-auto max-w-sm text-xs leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto font-normal">
                   {currentStep.description}
                 </p>
               </div>
 
-              {/* Bullet Features */}
-              <div className="w-full space-y-2 rounded-xl border border-[#0091ff]/10 bg-[#0091ff]/5 p-4 text-left">
+              {/* Special Quote / Progression Chain for Step 1 */}
+              {currentStep.quote && (
+                <div className="w-full space-y-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-3 py-2 text-center">
+                  <p className="text-[11px] font-medium text-foreground italic">
+                    “{currentStep.quote}”
+                  </p>
+                  <p className="font-mono text-[10px] text-[#0091ff] font-semibold tracking-tight">
+                    {currentStep.progression}
+                  </p>
+                </div>
+              )}
+
+              {/* Feature Bullet Points */}
+              <div className="w-full space-y-1.5 rounded-xl border border-border/40 bg-secondary/[0.04] p-3 text-left">
                 {currentStep.features.map((feat, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-xs">
-                    <span className="mt-0.5 shrink-0 font-bold text-[#0091ff]">•</span>
-                    <span className="text-foreground leading-relaxed font-medium">{feat}</span>
+                    <span className="mt-0.5 shrink-0 text-[#0091ff] font-bold">›</span>
+                    <span className="text-foreground/90 leading-relaxed font-medium">{feat}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Footer Navigation Controls */}
-            <div className="border-border/30 mt-6 flex items-center justify-between border-t pt-4">
+            {/* Footer Navigation Controls & North Star Mantra */}
+            <div className="border-border/30 mt-5 flex items-center justify-between border-t pt-4">
               {/* Skip Guide */}
               <button
                 onClick={onClose}
-                className="text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors"
+                className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
               >
                 Skip Guide
               </button>
 
-              {/* Dots Progress */}
+              {/* Segmented Dots Progress */}
               <div className="flex items-center gap-1.5">
                 {STEPS.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveStep(idx)}
                     className={cn(
-                      "h-1.5 rounded-full transition-all duration-300",
+                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
                       idx === activeStep
-                        ? "w-4 bg-[#0091ff]"
+                        ? "w-5 bg-[#0091ff]"
                         : "bg-border/80 hover:bg-muted-foreground w-1.5"
                     )}
                   />
@@ -188,11 +250,11 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
               </div>
 
               {/* Back / Next Buttons */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {activeStep > 0 && (
                   <button
                     onClick={handleBack}
-                    className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all"
+                    className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     <span>Back</span>
@@ -201,9 +263,9 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
 
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] active:scale-[0.98]"
+                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-[#0091ff]/20 transition-all hover:bg-[#33a7ff] active:scale-95 cursor-pointer"
                 >
-                  <span>{activeStep === STEPS.length - 1 ? "Finish" : "Next"}</span>
+                  <span>{activeStep === STEPS.length - 1 ? "Enter Lab" : "Next"}</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>

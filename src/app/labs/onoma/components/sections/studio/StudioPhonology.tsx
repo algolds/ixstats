@@ -364,8 +364,8 @@ export function StudioPhonology() {
                     </button>
 
                     {isActive && (
-                      <div className="bg-popover/95 animate-in fade-in slide-in-from-top-2 absolute left-0 z-30 mt-2.5 w-72 rounded-2xl border border-white/10 p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl duration-200 dark:border-white/5">
-                        <div className="mb-2.5 flex items-center justify-between border-b border-white/10 pb-2">
+                      <div className="bg-popover/95 animate-in fade-in slide-in-from-top-2 border-border/60 absolute left-0 z-30 mt-2.5 w-72 rounded-2xl border p-3.5 shadow-2xl shadow-black/40 backdrop-blur-xl duration-200">
+                        <div className="border-border/40 mb-2.5 flex items-center justify-between border-b pb-2">
                           <span className="text-foreground text-[10px] font-bold uppercase">
                             Map segment:{" "}
                             <span className="font-mono font-bold text-[#8b5cf6]">
@@ -440,7 +440,7 @@ export function StudioPhonology() {
 
                         {/* Popover Footer (Preview & Confirm) */}
                         {selectedSound && (
-                          <div className="animate-in fade-in mt-3.5 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5 duration-200">
+                          <div className="animate-in fade-in border-border/40 mt-3.5 flex items-center justify-between gap-2 border-t pt-2.5 duration-200">
                             <button
                               onClick={() => playPhoneme(selectedSound)}
                               title="Listen to selected sound again"

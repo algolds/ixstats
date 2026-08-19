@@ -216,7 +216,7 @@ export function SavedDictionaryCard({
               {showStashPopover && (
                 <div
                   ref={popoverRef}
-                  className="bg-popover/85 animate-in fade-in absolute left-0 z-30 mt-1.5 w-52 rounded-xl border border-white/10 p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100 dark:border-white/5"
+                  className="bg-popover/95 animate-in fade-in border-border/60 absolute left-0 z-30 mt-1.5 w-52 rounded-xl border p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100"
                 >
                   <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2 py-1.5 text-[10px] font-bold uppercase">
                     <span>Stash Folders</span>
@@ -287,7 +287,7 @@ export function SavedDictionaryCard({
                 <Download className="h-3.5 w-3.5" />
               </button>
               {showExportPopover && (
-                <div className="bg-popover/95 absolute right-0 z-30 mt-1.5 w-28 rounded-lg border border-white/10 p-1 shadow-xl backdrop-blur-lg dark:border-white/5">
+                <div className="bg-popover/95 border-border/60 absolute right-0 z-30 mt-1.5 w-28 rounded-lg border p-1 shadow-xl backdrop-blur-lg">
                   {(["txt", "csv", "json"] as const).map((fmt) => (
                     <button
                       key={fmt}

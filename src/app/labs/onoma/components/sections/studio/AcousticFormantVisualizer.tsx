@@ -156,12 +156,27 @@ export function AcousticFormantVisualizer({
       }
 
       phase += 0.04;
-      animFrameRef.current = requestAnimationFrame(render);
+      if (document.visibilityState === "visible") {
+        animFrameRef.current = requestAnimationFrame(render);
+      }
     };
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        if (!animFrameRef.current) {
+          animFrameRef.current = requestAnimationFrame(render);
+        }
+      } else if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     render();
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
       }
@@ -359,7 +374,11 @@ export function AcousticFormantVisualizer({
                     fill="none"
                     stroke={accentColor}
                     strokeWidth="1.5"
-                    className="animate-ping opacity-60"
+                    className="opacity-70 animate-pulse"
+                    style={{
+                      transformBox: "fill-box",
+                      transformOrigin: "center",
+                    }}
                   />
                   <circle
                     cx={pt.x}

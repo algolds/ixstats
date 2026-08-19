@@ -10,7 +10,30 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
-### WikiOS Multi-Tier Storage Architecture, Standalone Core Engine & Instant UI Acceleration (`apps.wikios` v2, `@wikios/core`)
+### ⟨ONOMA⟩ Linguistic Engine Refactoring, Architecture Compliance & Ponytail Condensation (`apps.onoma` v4, `design.facet` v2)
+
+- **Comprehensive Single-Page Router & Navigation Modularization (`src/app/labs/onoma/`)**:
+  - Modularized `OnomaRouter.tsx` from an 819-line monolith into a lean 82-line coordinator delegating to `useOnomaRouter.ts`, `OnomaHeader.tsx`, `OnomaSectionRenderer.tsx`, and `onoma-tabs.tsx`.
+  - Replaced bespoke raw icon wrappers with standardized vector Game-Icons (`CategoryIcon` from `src/components/cards/icons`) across all top-level domain tabs and studio tools.
+  - Implemented Apple-inspired `/ˈɒnəmə/` Greek pronunciation button with first-visit ping animation attractor, tooltip hints, and fallback browser speech synthesis.
+
+- **Unified Declarative Domain Section & Boilerplate Elimination**:
+  - Eliminated 5 duplicate domain wrapper components (`PlacesSection.tsx`, `PeopleSection.tsx`, `OrganizationsSection.tsx`, `CultureSection.tsx`, `MilitarySection.tsx`) in favor of a single declarative [`CategoryDomainSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CategoryDomainSection.tsx) powered by [`domain-taxonomies.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/domain-taxonomies.ts).
+  - Deleted 803-line dead experimental branding sandbox (`src/app/labs/onoma/branding/page.tsx`) and 618-line dead component `OnomaDoubleHelixIcon.tsx`.
+
+- **Settings, Batch & Syntax Subsystem Decompositions**:
+  - Decomposed 1,204-line `SettingsSection.tsx` into focused subpanels: `VoicePreferencesPanel.tsx` (Kokoro voice map & species presets), `VoiceSandboxPanel.tsx` (interactive synthesizer & G2P phoneme suggestions), and `ConlangDataManagerPanel.tsx` (local backup/restore).
+  - Modularized `BatchSection.tsx` (747 lines → 399 lines) with `batch-constants.ts` and `BatchResultsTable.tsx`.
+  - Modularized `SyntaxSection.tsx` (729 lines → 329 lines) with `SyntaxSentenceBuilder.tsx` and `SyntaxDictionaryEditor.tsx`.
+
+- **Server tRPC Architecture Guard Compliance (`src/server/api/routers/onoma/`)**:
+  - Resolved `audit:arch` god-file violation by splitting 1,032-line `core.ts` into [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) (594 lines) and [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) (446 lines), recombined seamlessly via `mergeRouters` in `index.ts`. All 9 domain routers now strictly satisfy the ≤700 architecture ceiling.
+
+- **Shared Pattern Engine & Massive Dataset Compaction**:
+  - Introduced [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicating template tag regex parsing across `group-generator.ts` and `tavern-generator.ts`.
+  - Compacted multi-line arrays across `fantasy-names-data.ts` (9,271 lines → 787 lines), `cultural-profiles.ts` (2,291 lines → 363 lines), `species-data.ts` (2,469 lines → 316 lines), `default-dictionaries.ts` (1,474 lines → 238 lines), and `group-data.ts` (568 lines → 126 lines), saving over **15,480 net lines** and ~104KB of memory/bundle overhead.
+  - Added `visibilitychange` listener in `AcousticFormantVisualizer.tsx` to automatically halt 60fps canvas waveform render loops when the browser tab is hidden.
+
 
 - **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
   - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/config.ts), [types.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/types.ts), [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/bridge.ts), [image-url.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/image-url.ts), [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/infobox-parser.ts)).

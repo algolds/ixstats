@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { trainLM, naturalnessScore, type NgramLM } from "~/lib/onoma/perplexity";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
-import { generatePresetName } from "~/lib/onoma/name-generator";
+import { generateFantasySyllableName, generatePresetName } from "~/lib/onoma/name-generator";
 import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/lib/onoma/types";
 
 /**

@@ -2,12 +2,8 @@
 // Onoma Lab — Tavern & Establishment Name Generator
 
 import { TAVERN_DATA } from "./data/tavern-data";
-import { MarkovChain } from "./markov-chain";
+import { pickRandom, resolvePatternTemplate } from "./template-resolver";
 import type { GenerateOptions } from "./types";
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 
 /**
  * Generates a tavern or establishment name using template-patterns with filters.
@@ -24,40 +20,16 @@ export function generateTavernName(options: GenerateOptions = {}): string | null
   let name = "";
   let attempts = 0;
 
-  const patterns = TAVERN_DATA.patterns;
+  const dataMap = {
+    noun: TAVERN_DATA.nouns,
+    adjective: TAVERN_DATA.adjectives,
+    title: TAVERN_DATA.titles,
+  };
 
   while (name.length === 0 && attempts < maxAttempts) {
     attempts++;
-
-    // Copy options to slice if needed (we can slice to prevent duplicates in "<noun> & <noun>")
-    const nouns = [...TAVERN_DATA.nouns];
-    const adjectives = [...TAVERN_DATA.adjectives];
-    const titles = [...TAVERN_DATA.titles];
-
-    const pickAndRemove = (list: string[]) => {
-      const idx = Math.floor(Math.random() * list.length);
-      const val = list[idx];
-      list.splice(idx, 1);
-      return val;
-    };
-
-    const resolveTag = (tag: string): string => {
-      if (tag === "noun" && nouns.length > 0) return pickAndRemove(nouns);
-      if (tag === "adjective" && adjectives.length > 0) return pickAndRemove(adjectives);
-      if (tag === "title" && titles.length > 0) return pickAndRemove(titles);
-      return "";
-    };
-
-    const pattern = pickRandom(patterns);
-    let generated = pattern.replace(/<([\w\W]*?)>/g, (match) => {
-      const tag = match.replace(/<|>/g, "");
-      const resolved = resolveTag(tag);
-      return resolved ? MarkovChain.capitalize(resolved) : "";
-    });
-
-    // Clean up double spaces if any
-    generated = generated.replace(/\s+/g, " ").trim();
-
+    const pattern = pickRandom(TAVERN_DATA.patterns);
+    const generated = resolvePatternTemplate(pattern, dataMap, { consumeElements: true });
     const genLower = generated.toLowerCase();
 
     // Check filters

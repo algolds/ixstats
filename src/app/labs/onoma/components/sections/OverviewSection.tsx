@@ -9,66 +9,11 @@ import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { generateFantasySyllableName } from "~/lib/onoma/name-generator";
 import { UseNameDialog } from "../shared/UseNameDialog";
 import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
-import { api } from "~/trpc/react";
-import { OverviewBanner } from "./OverviewBanner";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { CandidateResultsPanel } from "./CandidateResultsPanel";
-import { speakName } from "~/lib/onoma/browser-speech";
 
 export function OverviewSection() {
   const bank = useNameBank();
-
-  // Load public speech config (including branding settings)
-  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
-    staleTime: 600000,
-  });
-
-  // Smart SpeechSynthesis handler for "Onoma" pronunciation
-  const playPronunciation = async () => {
-    const kokoroEnabled = Boolean(speechConfig?.kokoro?.enabled);
-    if (kokoroEnabled) {
-      try {
-        await speakName({
-          name: "Onoma",
-          ipa: "ˈɒnəmə",
-          culture: "constructed",
-          kokoroEnabled: true,
-          defaultVoice: speechConfig?.kokoro?.voice,
-        });
-        return;
-      } catch (err) {
-        console.error("Kokoro TTS failed for hero, falling back to browser speech:", err);
-      }
-    }
-
-    // Custom browser fallback
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance();
-    const voices = window.speechSynthesis.getVoices();
-
-    const greekVoice = voices.find((v) => v.lang.startsWith("el-") || v.lang.includes("Greek"));
-
-    if (greekVoice) {
-      utterance.voice = greekVoice;
-      utterance.text = "Όνομα";
-      utterance.lang = "el-GR";
-    } else {
-      utterance.text = "OH-nuh-muh";
-      utterance.lang = "en-US";
-      const englishVoice = voices.find(
-        (v) => v.lang.startsWith("en-") || v.lang.includes("English")
-      );
-      if (englishVoice) {
-        utterance.voice = englishVoice;
-      }
-    }
-
-    utterance.rate = 0.82;
-    utterance.pitch = 1.0;
-    window.speechSynthesis.speak(utterance);
-  };
 
   // Public dictionaries
   const publicDicts = useMemo(() => bank.publicDictionaries || [], [bank.publicDictionaries]);
@@ -102,9 +47,6 @@ export function OverviewSection() {
 
   // Deploying name modal
   const [useName, setUseName] = useState<string | null>(null);
-
-  // Hover state for hero branding animation
-  const [isHeroHovered, setIsHeroHovered] = useState<boolean>(false);
 
   const hasGeneratedOnLoad = useRef(false);
   const timeoutRef = useRef<any>(null);
@@ -239,14 +181,6 @@ export function OverviewSection() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <OverviewBanner
-        speechConfig={speechConfig}
-        playPronunciation={playPronunciation}
-        isHeroHovered={isHeroHovered}
-        setIsHeroHovered={setIsHeroHovered}
-      />
-
       {/* Quick Generator Workspace */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Configuration Panel */}

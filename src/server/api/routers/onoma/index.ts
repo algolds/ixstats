@@ -5,11 +5,19 @@
  * `api.onoma.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - core:    name bank CRUD, speech config, Kokoro admin, brand config
- *  - history: generation event logging, timeline, favorites, stats
+ *  - namebank:    name bank CRUD, Stash item sync, public dictionary catalog, training data
+ *  - speech:      speech config, Kokoro natural voice admin & health, branding config
+ *  - history:     generation event logging, timeline, favorites, stats
+ *  - batch:       batch generation jobs & matrix permutations
+ *  - marketplace: language pack discovery, rating, and forking
+ *  - etymology:   etymological graph links & root trees
+ *  - syntax:      sentence structure, POS, and grammar trees
+ *  - writing:     grapheme-to-glyph systems and script converters
+ *  - loanwords:   cross-cultural loanword adaptation
  */
 import { mergeRouters } from "~/server/api/trpc";
-import { onomaCoreRouter } from "./core";
+import { onomaNameBankRouter } from "./namebank";
+import { onomaSpeechRouter } from "./speech";
 import { onomaHistoryRouter } from "./history";
 import { onomaBatchRouter } from "./batch";
 import { onomaMarketplaceRouter } from "./marketplace";
@@ -19,7 +27,8 @@ import { onomaWritingRouter } from "./writing";
 import { onomaLoanwordsRouter } from "./loanwords";
 
 export const onomaRouter = mergeRouters(
-  onomaCoreRouter,
+  onomaNameBankRouter,
+  onomaSpeechRouter,
   onomaHistoryRouter,
   onomaBatchRouter,
   onomaMarketplaceRouter,

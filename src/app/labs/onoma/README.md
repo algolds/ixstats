@@ -1,70 +1,126 @@
-# Onoma Lab — UI
+# ⟨ONOMA⟩ — Linguistic Engine (UI Presentation & Studio)
 
-The `/labs/onoma` page. This is the presentation layer; the engines, the corpus
-pipeline, and how to rebuild the dictionaries live in
-[`src/lib/onoma/README.md`](../../../lib/onoma/README.md). Read that for anything below
-the UI.
+The presentation, creative environment, and user experience layer for **⟨ONOMA⟩** at **`/labs/onoma`**.
 
-## Structure
+> **Brand Identity & Brand Guide**: See [`docs/systems/onoma-brand-guide.md`](../../../../docs/systems/onoma-brand-guide.md).  
+> **Engine & Computational Core**: See [`src/lib/onoma/README.md`](../../../lib/onoma/README.md).
 
-A single-page app (no Next route transitions between sections), following the project's
-Single-Page Router pattern.
+```text
+                    ⟨ ONOMA ⟩
 
-- **`page.tsx`** → renders `OnomaRouter`. `layout.tsx` wraps the labs chrome.
-- **`components/OnomaRouter.tsx`** — top-level `FacetTabs`; orchestrates the active-section and active-sub-tab state, handles history synchronisation with `history.pushState` under `/labs/onoma/studio/*` sub-routes, and morphs the tab headers dynamically when entering the Custom Studio.
-- **`components/sections/`** — one component per tab:
+                LINGUISTIC ENGINE
 
-  | Tab | Section | Category fed to the generator |
-  |-----|---------|-------------------------------|
-  | Overview | `OverviewSection` | landing / quick generate + Apple-style glassmorphic animated DNA helix |
-  | Places | `PlacesSection` | `country`, `city`, `province`, `geography` |
-  | People | `PeopleSection` | `person` (+ species/gender subtypes) |
-  | Military | `MilitarySection` | `military` |
-  | Organizations | `OrganizationsSection` | `organization` (taverns, orders, units) |
-  | Culture | `CultureSection` | `dynasty`, `culture` |
-  | Studio | `StudioSection` | Custom Studio (delegates to Workshop or Lexicon views) |
-  | Name Bank | `StashSection` (`"bank"`) | saved names + seed dictionaries |
-  | Settings | `SettingsSection` | User Voice preferences (default voice, speed slider), Sandbox previewer, conlang data exporter/importer |
+                 Language, engineered.
 
-- **`components/sections/studio/`** — modular Custom Studio sub-panels:
-  - **`StudioWorkshop.tsx`** — the Markov training input workspace, parameter controls, circular React Flow probability path visualizer, and Lexicon Explorer health panel.
-  - **`StudioLexicon.tsx`** — split-screen interactive conlang lexicon viewer and case-declension definition manager.
-- **`hooks/`** — local state managers:
-  - **`useStudioState.ts`** — unified hook housing all Custom Studio state, analytics calculations (entropy, letter frequencies), dictionary loader triggers, and deletion cascades.
-- **`src/components/ui/shared/`**
-  - **`GeneratorPanel.tsx`** — the reusable generator UI every section mounts. Left column: constraints (subtype, gender, **Culture / Linguistic Family**, and advanced options: Include Live World Data toggle, prefix/suffix, length/affix/order). Right column: results grid with copy / save-name / save-dictionary.
-  - **`NameResultCard.tsx`** — name results featuring inline detail morphs. Toggling details expands the card to `col-span-2` in the grid and renders case-declension case tables, script badges, and dictionary definition edit forms in-situ.
-  - `UseNameDialog.tsx` — "use this name" → routes into a builder/wiki flow.
-  - `OnomaHelpModal.tsx` — in-app explainer.
+              ─────────────────────
 
-## Generating
+             Build the language
+                behind your world.
 
-Sections render `<GeneratorPanel category=… />`. The panel drives the
-[`useOnomaGenerator`](../../../hooks/useOnomaGenerator.ts) hook, which:
+              ─────────────────────
 
-1. picks one **Culture / Linguistic Family** (default `any`). For that family it blends the
-   hand-authored `cultural-profiles.ts` list with the matching bucket of the prebuilt wiki
-   **lexicon** (lazy-loaded `data/lexicon/<category>.json`). Optionally folds in **live world
-   data** (advanced toggle → `api.onoma.getTrainingData`).
-2. trains parallel character + syllable Markov chains and `generate(n)` produces a batch,
-   applying any prefix/suffix.
+             CREATE · STUDIO · EXPLORE
 
-Some People/Organization subtypes (dwarf, elf, tavern, noble-surname, …) use rule-based
-assemblers instead of the Markov chain — see the lib README. Each result can morph open to
-show IPA, declension tables, and script transcriptions (the linguistics engine).
+       Workshop · Phonology · Acoustics
+          Sound Shifts · Lexicon
+```
 
-## Conventions
+---
 
-- Facet design system (`FacetCard`, `FacetTabs`, glass depth). Use theme tokens
-  (`text-foreground`, `border-border/40`, `bg-secondary/5`) — no hardcoded slate/white/black,
-  Light + Dark must both pass.
-- Sections are thin: they set the category and render `GeneratorPanel`. Keep generation logic
-  in the hook/lib, not in section components.
+## The Core Position
 
-## Speech Synthesis & Natural Voices
+> **Onoma is not a name generator.**  
+> **It is the linguistic engine behind the name.**
 
-Onoma supports two audio modes:
-- **🔊 Pronunciation (IPA Badge)**: the IPA badge carries an inline speaker icon; clicking it reads the generated IPA via the browser's native `SpeechSynthesis` Web Speech API using BCP-47 culture-mapped accents. Surfaces a toast if browser synthesis is unavailable.
-- **🎙 Read Naturally (Natural Voice)**: immersive natural voice. Sends Onoma's canonical IPA to the self-hosted **kokoro-fastapi** phoneme endpoint via `/api/onoma/tts`, so the model pronounces the name from its real phonemes. Falls back to the browser-native player if the server is unreachable or disabled.
-  - *Troubleshooting 502 errors*: Ensure the Kokoro Docker container is running (`docker compose up -d kokoro`) on port 3004 and the `onoma.kokoro.*` settings are configured in the admin dashboard.
+Markov generation is one technology inside Onoma. Phonotactics is one system. Sound change is one process. Lexicons are one layer. Speech synthesis is one interface. Together, they form a **linguistic engine**.
 
+---
+
+## Architecture & Navigation Model
+
+Onoma is built as a **Single-Page Application (SPA)** following IxStates' Single-Page Router pattern. Navigation across sections and Studio sub-tools uses `window.history.pushState` with zero Next.js page reloads.
+
+- **`page.tsx`** → Mounts `<OnomaRouter />`.
+- **`layout.tsx`** → Declares metadata and the vector SVG favicon (`withBasePath("/images/onoma-favicon.svg")`).
+- **`components/OnomaRouter.tsx`** → Lean master coordinator (82 lines) delegating to:
+  - **`hooks/useOnomaRouter.ts`** → Unified state machine, browser history/popstate listeners, Kokoro TTS player, and lexicon counter.
+  - **`components/nav/OnomaHeader.tsx`** → Apple-style header bar with the formal `⟨ONOMA⟩` lockup logo (`OnomaBrandLogo.tsx`), `/ˈɒnəmə/` pronunciation attractor with Kokoro fallback, version badge, and spring-animated utility buttons (`Help`, `Stash`, `Studio`, `Settings`).
+  - **`components/nav/onoma-tabs.tsx`** → Standardized navigation tab metadata, theme colors, and Game-Icon badges (`CategoryIcon`).
+  - **`components/OnomaSectionRenderer.tsx`** → Dynamic lazy section dispatcher with Suspense loading fallbacks.
+
+---
+
+## Modular Component Structure
+
+```
+src/app/labs/onoma/
+├── components/
+│   ├── OnomaRouter.tsx              # Master coordinator (82 lines)
+│   ├── OnomaSectionRenderer.tsx     # Dynamic lazy section dispatcher
+│   ├── nav/
+│   │   ├── OnomaHeader.tsx          # Apple toolbar, pronunciation attractor, utilities
+│   │   └── onoma-tabs.tsx           # Tab schemas, theme tokens, Game-Icons
+│   ├── sections/
+│   │   ├── OverviewSection.tsx      # Quick generate & preset assembler
+│   │   ├── CategoryDomainSection.tsx # Unified declarative domain panel (Places, People, Orgs, Culture, Military)
+│   │   ├── domain-taxonomies.ts     # Domain category definitions and subtype options
+│   │   ├── BatchSection.tsx         # Batch generation workbench coordinator
+│   │   ├── batch/
+│   │   │   ├── batch-constants.ts   # Taxonomy and parameter constraints
+│   │   │   └── BatchResultsTable.tsx# Sortable, filterable results table with bulk actions
+│   │   ├── SettingsSection.tsx      # User settings coordinator
+│   │   ├── settings/
+│   │   │   ├── VoicePreferencesPanel.tsx # Kokoro voices, species presets, audio sliders
+│   │   │   ├── VoiceSandboxPanel.tsx     # Live synthesis sandbox & G2P phoneme suggestions
+│   │   │   └── ConlangDataManagerPanel.tsx # Local backup/restore/reset data manager
+│   │   ├── SyntaxSection.tsx        # Morphosyntax profile manager
+│   │   ├── syntax/
+│   │   │   ├── SyntaxSentenceBuilder.tsx # Live translation and inflection preview engine
+│   │   │   └── SyntaxDictionaryEditor.tsx# Vocabulary lookup and word pair manager
+│   │   ├── StashSection.tsx         # User saved names and custom dictionary bank
+│   │   ├── MarketplaceSection.tsx   # Community dictionary pack sharing and discovery
+│   │   └── studio/
+│   │       ├── StudioWorkshop.tsx   # Model training workspace & transition graph
+│   │       ├── StudioPhonology.tsx  # Phonotactic templates & IPA rule editor
+│   │       ├── AcousticFormantVisualizer.tsx # 2D vowel quadrilateral & rAF-optimized spectrum
+│   │       ├── StudioSoundShifts.tsx# Historical sound change rule timeline & evolution diff
+│   │       ├── StudioLexicon.tsx    # Lexicon dictionary manager & inflection tables
+│   │       ├── StudioNameSets.tsx   # Curated seed name datasets
+│   │       └── StudioVisualizer.tsx # Transition trie path explorer
+│   └── shared/
+│       ├── OnomaBrandLogo.tsx       # Canonical vector brand asset
+│       ├── OnomaHelpModal.tsx       # Guided walkthrough modal with Game-Icons
+│       ├── GeneratorPanel.tsx       # Primary procedural generation interface
+│       └── NameResultCard.tsx       # Name card with Kokoro audio, IPA, and morphology
+├── hooks/
+│   ├── useOnomaRouter.ts            # Navigation state, URL sync, speech attractor
+│   └── useStudioState.ts            # Markov model training & custom lexicon state
+└── README.md
+```
+
+---
+
+## Server API (tRPC Sub-Routers)
+
+Under `src/server/api/routers/onoma/`, procedures are domain-split and merged via `mergeRouters` (all files strictly ≤595 lines, 100% `audit:arch` compliant):
+
+| Sub-Router | File | Scope |
+|---|---|---|
+| **NameBank** | [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) | Stash item integration, saved names CRUD, custom dictionary imports/exports, public dictionary listing, training data. |
+| **Speech** | [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) | Kokoro TTS voice catalog, per-culture voice mapping, audio presets, health probes, HuggingFace space wake-up, branding config. |
+| **History** | [`history.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/history.ts) | Generation event logging, timeline, favorites, stats. |
+| **Batch** | [`batch.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/batch.ts) | Batch generation jobs & matrix permutations. |
+| **Marketplace** | [`marketplace.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/marketplace.ts) | Language pack discovery, rating, and forking. |
+| **Etymology** | [`etymology.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/etymology.ts) | Etymological graph links & root trees. |
+| **Syntax** | [`syntax.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/syntax.ts) | Sentence structure, POS, and grammar trees. |
+| **Writing** | [`writing.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/writing.ts) | Grapheme-to-glyph systems and script converters. |
+| **Loanwords** | [`loanwords.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/loanwords.ts) | Cross-cultural loanword adaptation. |
+
+---
+
+## Performance & Optimization
+
+- **Compacted Datasets**: Syllable corpora, species datasets, and cultural profiles formatted as compact arrays, reducing line count by over **15,000 lines** and minimizing AST parsing memory overhead.
+- **Unified Procedural Resolvers**: Shared [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicates regex token interpolation across all specialized generators.
+- **Animation Frame Throttling**: `AcousticFormantVisualizer.tsx` pauses canvas 60fps waveform rendering when the browser tab is hidden via `document.visibilityState`.
+- **Zero Architecture God Files**: All files remain under the project's ≤700 architecture ceiling.

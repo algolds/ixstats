@@ -5,18 +5,7 @@ import { COVERT_ORG_DATA, MILITARY_UNIT_DATA, MYSTIC_ORDER_DATA } from "./data/g
 import { MarkovChain } from "./markov-chain";
 import { generateFantasySyllableName } from "./name-generator";
 import { type GenerateOptions } from "./types";
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function pickAndRemove<T>(arr: T[]): T | undefined {
-  if (arr.length === 0) return undefined;
-  const idx = Math.floor(Math.random() * arr.length);
-  const val = arr[idx];
-  arr.splice(idx, 1);
-  return val;
-}
+import { pickRandom, pickAndRemove, resolvePatternTemplate } from "./template-resolver";
 
 /**
  * Generates a name for a mystic or academic/religious order.
@@ -48,12 +37,7 @@ export function generateMysticOrderName(chain?: MarkovChain, options?: GenerateO
     description: descOptions,
   };
 
-  return pattern.replace(/<([\w\W]*?)>/g, (match) => {
-    const key = match.replace(/<|>/g, "");
-    const values = mapOptions[key];
-    if (!values) return match;
-    return MarkovChain.capitalize(pickRandom(values));
-  });
+  return resolvePatternTemplate(pattern, mapOptions, { capitalize: true });
 }
 
 /**
@@ -87,19 +71,11 @@ export function generateMilitaryUnitName(chain?: MarkovChain, options?: Generate
   const mapOptions: Record<string, string[]> = {
     commander: [commanderName],
     group: groupList,
-    description: [...descList],
-    place: [...placeList],
+    description: descList,
+    place: placeList,
   };
 
-  return pattern.replace(/<([\w\W]*?)>/g, (match) => {
-    const key = match.replace(/<|>/g, "");
-    const list = mapOptions[key];
-    if (!list || list.length === 0) return match;
-
-    // Use pickAndRemove to prevent duplicates (e.g. "Red Red Blade" -> "Red Blood Blade")
-    const val = pickAndRemove(list);
-    return val ? MarkovChain.capitalize(val) : match;
-  });
+  return resolvePatternTemplate(pattern, mapOptions, { consumeElements: true, capitalize: true });
 }
 
 /**
@@ -107,7 +83,6 @@ export function generateMilitaryUnitName(chain?: MarkovChain, options?: Generate
  */
 export function generateCovertOrgName(chain?: MarkovChain, options?: GenerateOptions): string {
   const d30 = Math.floor(Math.random() * 30) + 1;
-
   const data = COVERT_ORG_DATA;
 
   if (d30 < 6) {
@@ -316,8 +291,6 @@ export function generateMercenaryBandName(chain?: MarkovChain, options?: Generat
 }
 
 // --- Civic / modern organizations (geopolitical worldbuilding) ---
-// ponytail: inline word banks, same pattern as the generators above. Word lists
-// stay local until a second caller needs them, then promote to group-data.ts.
 
 /** Political party, front, or movement. */
 export function generatePoliticalPartyName(chain?: MarkovChain, options?: GenerateOptions): string {

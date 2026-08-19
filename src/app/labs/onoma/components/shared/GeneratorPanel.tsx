@@ -376,7 +376,7 @@ export function GeneratorPanel({
                 {gen.isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Wand2 className="h-4 w-4 fill-slate-950" />
+                  <Wand2 className="h-4 w-4" />
                 )}
                 <span>Assemble Names</span>
               </button>

@@ -3,12 +3,9 @@
 // src/app/labs/onoma/components/sections/BatchSection.tsx
 // Onoma Lab — Batch Name Generator & Workbench
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Wand2,
-  FileDown,
-  Volume2,
-  Bookmark,
   RefreshCw,
   Sliders,
   ChevronDown,
@@ -21,44 +18,13 @@ import { useNotify } from "~/hooks/useNotify";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { exportToCSV, exportToJSON } from "~/lib/onoma/name-generator";
 import type { NameCategory } from "~/lib/onoma/types";
-
-interface BatchNameResult {
-  name: string;
-  ipa: string;
-  syllables: number;
-  perplexity: number;
-  length: number;
-}
-
-const CATEGORIES = [
-  { value: "country", label: "Nations & Realms" },
-  { value: "city", label: "Cities & Towns" },
-  { value: "province", label: "Provinces & States" },
-  { value: "geography", label: "Landmarks & Features" },
-  { value: "person", label: "Characters & Rulers" },
-  { value: "dynasty", label: "Dynasties & Families" },
-  { value: "military", label: "Military & Formations" },
-  { value: "organization", label: "Guilds & Orders" },
-  { value: "culture", label: "Ethnic Groups & Tribes" },
-  { value: "ship", label: "Vessel & Ship Names" },
-];
-
-const PROFILES = [
-  { value: "any", label: "Any / Combined Profile" },
-  { value: "latin", label: "Latin / Roman" },
-  { value: "germanic", label: "Germanic / Norse" },
-  { value: "celtic", label: "Celtic / Gaelic" },
-  { value: "slavic", label: "Slavic / Eastern European" },
-  { value: "arabic", label: "Arabic / Near Eastern" },
-  { value: "east-asian", label: "East Asian" },
-  { value: "austronesian", label: "Austronesian" },
-  { value: "persian", label: "Persian" },
-  { value: "turkic", label: "Turkic" },
-  { value: "african", label: "African" },
-  { value: "indic", label: "Indic" },
-  { value: "uralic", label: "Uralic" },
-  { value: "constructed", label: "Constructed Conlang" },
-];
+import {
+  BATCH_CATEGORIES,
+  BATCH_PROFILES,
+  getBatchSubTypes,
+  type BatchNameResult,
+} from "./batch/batch-constants";
+import { BatchResultsTable } from "./batch/BatchResultsTable";
 
 export default function BatchSection() {
   const notify = useNotify();
@@ -103,7 +69,6 @@ export default function BatchSection() {
     column: "perplexity",
     direction: "desc",
   });
-  const [copiedName, setCopiedName] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -124,74 +89,7 @@ export default function BatchSection() {
     },
   });
 
-  const getSubTypes = () => {
-    if (category === "city") {
-      return [
-        { value: "generic", label: "City Name (Default)" },
-        { value: "settlement-colony", label: "Settlement / Colony" },
-      ];
-    }
-    if (category === "geography") {
-      return [
-        { value: "generic", label: "Landmark Name (Default)" },
-        { value: "natural-landmark", label: "Natural Landmark" },
-        { value: "architecture", label: "Architecture & Buildings" },
-      ];
-    }
-    if (category === "person") {
-      return [
-        { value: "generic", label: "Person Name (Default)" },
-        { value: "goblin", label: "Goblin" },
-        { value: "orc", label: "Orc" },
-        { value: "ogre", label: "Ogre" },
-        { value: "primitive", label: "Primitive Tribal" },
-        { value: "dwarf", label: "Dwarf" },
-        { value: "halfling", label: "Halfling" },
-        { value: "gnome", label: "Gnome" },
-        { value: "elf", label: "Elf" },
-        { value: "elf-alt", label: "Elf Alternate" },
-        { value: "faery", label: "Faery" },
-        { value: "faery-alt", label: "Faery Alternate" },
-        { value: "dark-elf", label: "Dark Elf" },
-        { value: "dark-elf-alt", label: "Dark Elf Alternate" },
-        { value: "half-demon", label: "Half-Demon" },
-        { value: "dragon", label: "Dragon" },
-        { value: "demon", label: "Demon" },
-        { value: "angel", label: "Angel" },
-      ];
-    }
-    if (category === "organization") {
-      return [
-        { value: "generic", label: "Organization (Default)" },
-        { value: "mystic-order", label: "Mystic Order" },
-        { value: "military-unit", label: "Military Formation" },
-        { value: "covert-org", label: "Covert Organization" },
-        { value: "tavern", label: "Tavern & Inn" },
-        { value: "business-company", label: "Guild / Company" },
-        { value: "academic-institution", label: "Academy" },
-        { value: "political-party", label: "Faction / Caucus" },
-        { value: "government-agency", label: "Directorate / Ministry" },
-        { value: "media-outlet", label: "Gazette / Broadcaster" },
-        { value: "ngo-foundation", label: "Charitable Foundation" },
-        { value: "religious-order", label: "Priesthood" },
-      ];
-    }
-    if (category === "military") {
-      return [
-        { value: "generic", label: "Military (Default)" },
-        { value: "military-unit", label: "Army Regiment" },
-        { value: "mercenary-band", label: "Mercenary Company" },
-      ];
-    }
-    if (category === "dynasty") {
-      return [
-        { value: "generic", label: "Dynasty (Default)" },
-        { value: "fantasy-syllable", label: "Fantasy Syllable Name" },
-        { value: "noble-surname", label: "Noble Surname" },
-      ];
-    }
-    return [];
-  };
+  const subTypes = useMemo(() => getBatchSubTypes(category), [category]);
 
   const handleGenerate = () => {
     batchMutation.mutate({
@@ -286,7 +184,6 @@ export default function BatchSection() {
   };
 
   const handleExportCSV = () => {
-    const meta = { count, category, profile, trainingMode };
     exportToCSV(filteredResults, `onoma-batch-${category}-${profile}.csv`);
   };
 
@@ -295,452 +192,208 @@ export default function BatchSection() {
     exportToJSON(filteredResults, meta, `onoma-batch-${category}-${profile}.json`);
   };
 
-  // Filter & Sort results pipeline
+  // Filter & Sort pipeline
   const filteredResults = useMemo(() => {
     let list = [...results];
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((r) => r.name.toLowerCase().includes(q));
+      list = list.filter((r) => r.name.toLowerCase().includes(q) || r.ipa.toLowerCase().includes(q));
     }
-
     if (perplexityFilter > 0) {
-      list = list.filter((r) => r.perplexity >= perplexityFilter);
+      list = list.filter((r) => r.perplexity <= perplexityFilter);
     }
-
     list.sort((a, b) => {
-      const aVal = a[sorting.column];
-      const bVal = b[sorting.column];
-      if (typeof aVal === "string" && typeof bVal === "string") {
-        return sorting.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      const valA = a[sorting.column];
+      const valB = b[sorting.column];
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sorting.direction === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
-      if (typeof aVal === "number" && typeof bVal === "number") {
-        return sorting.direction === "asc" ? aVal - bVal : bVal - aVal;
-      }
-      return 0;
+      return sorting.direction === "asc" ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
     });
-
     return list;
   }, [results, searchQuery, perplexityFilter, sorting]);
 
-  const avgPerplexity = useMemo(() => {
-    if (results.length === 0) return 0;
-    return Math.round(results.reduce((acc, r) => acc + r.perplexity, 0) / results.length);
-  }, [results]);
-
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      {/* Parameters Panel */}
-      <div className="space-y-4 lg:col-span-4">
-        <div className="border-border/40 flex items-center justify-between border-b pb-2">
-          <h3 className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
-            Batch Setup
-          </h3>
-        </div>
+    <div className="space-y-6">
+      {/* Workbench Header */}
+      <div className="border-b border-border/40 pb-3 text-left">
+        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <Wand2 className="h-4 w-4 text-[#10b981]" /> Batch Generation Workbench
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Synthesize large corpora of procedurally generated names, filter by phonetic naturalness,
+          and bulk-export to CSV or JSON.
+        </p>
+      </div>
 
-        <div className="space-y-3">
+      {/* Primary Configuration Grid */}
+      <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-left">
           {/* Category */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-xs font-semibold">Name Category</label>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase">Category</label>
             <select
               value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setSubType("generic");
-              }}
-              className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
             >
-              {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
+              {BATCH_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Subtype (Conditional) */}
-          {getSubTypes().length > 0 && (
+          {/* Cultural Profile */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase">Phonetic Profile</label>
+            <select
+              value={profile}
+              onChange={(e) => setProfile(e.target.value)}
+              className="w-full rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
+            >
+              {BATCH_PROFILES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* SubType (if available) */}
+          {subTypes.length > 0 && (
             <div className="space-y-1">
-              <label className="text-muted-foreground text-xs font-semibold">
-                Template / Sub-type
-              </label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Subtype Taxonomy</label>
               <select
                 value={subType}
                 onChange={(e) => setSubType(e.target.value)}
-                className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border/60 bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none"
               >
-                {getSubTypes().map((sub) => (
-                  <option key={sub.value} value={sub.value}>
-                    {sub.label}
+                {subTypes.map((st) => (
+                  <option key={st.value} value={st.value}>
+                    {st.label}
                   </option>
                 ))}
               </select>
             </div>
           )}
 
-          {/* Cultural Profile */}
+          {/* Batch Size */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-xs font-semibold">Linguistic Family</label>
-            <select
-              value={profile}
-              onChange={(e) => setProfile(e.target.value)}
-              className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
-            >
-              {PROFILES.map((prof) => (
-                <option key={prof.value} value={prof.value}>
-                  {prof.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Training Mode */}
-          <div className="space-y-1">
-            <label className="text-muted-foreground text-xs font-semibold">
-              Markov Training Mode
-            </label>
-            <div className="bg-background/30 border-border/40 grid grid-cols-3 gap-1 rounded-lg border p-1">
-              {(["preset", "lexicon", "ixworld"] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setTrainingMode(mode)}
-                  className={`cursor-pointer rounded py-1 text-[11px] font-bold capitalize transition-all ${
-                    trainingMode === mode
-                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/20"
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Count Slider */}
-          <div className="space-y-1">
-            <div className="text-muted-foreground flex justify-between text-xs font-semibold">
-              <span>Names Count</span>
-              <span className="font-mono font-bold text-amber-500">{count}</span>
+            <div className="flex justify-between">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase">Batch Size</label>
+              <span className="font-mono text-xs font-semibold text-[#10b981]">{count} names</span>
             </div>
             <input
               type="range"
               min={10}
-              max={1000}
+              max={500}
               step={10}
               value={count}
               onChange={(e) => setCount(Number(e.target.value))}
-              className="w-full cursor-pointer accent-amber-500"
+              className="w-full cursor-pointer accent-[#10b981]"
             />
           </div>
+        </div>
 
-          {/* Expandable Advanced Options */}
+        {/* Collapsible Advanced Constraints */}
+        <div className="border-t border-border/20 pt-3">
           <button
+            type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 text-xs font-bold transition-colors"
+            className="flex items-center justify-between w-full text-xs font-bold text-foreground hover:text-[#10b981] transition-colors cursor-pointer"
           >
-            <Sliders className="h-3 w-3" />
-            <span>{showAdvanced ? "Hide" : "Show"} Advanced Options</span>
-            {showAdvanced ? (
-              <ChevronUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
+            <span className="flex items-center gap-1.5">
+              <Sliders className="h-3.5 w-3.5 text-[#10b981]" /> Phonotactic & Length Constraints
+            </span>
+            {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
 
           {showAdvanced && (
-            <div className="bg-secondary/10 border-border/30 space-y-3 rounded-lg border p-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">Min Length</label>
-                  <input
-                    type="number"
-                    value={minLength}
-                    onChange={(e) => setMinLength(Number(e.target.value))}
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">Max Length</label>
-                  <input
-                    type="number"
-                    value={maxLength}
-                    onChange={(e) => setMaxLength(Number(e.target.value))}
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-left text-xs">
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Min Length: {minLength}</label>
+                <input
+                  type="range"
+                  min={2}
+                  max={10}
+                  value={minLength}
+                  onChange={(e) => setMinLength(Number(e.target.value))}
+                  className="w-full accent-[#10b981]"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">Starts With</label>
-                  <input
-                    type="text"
-                    value={startsWith}
-                    onChange={(e) => setStartsWith(e.target.value)}
-                    placeholder="e.g. Ka"
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">Ends With</label>
-                  <input
-                    type="text"
-                    value={endsWith}
-                    onChange={(e) => setEndsWith(e.target.value)}
-                    placeholder="e.g. an"
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Max Length: {maxLength}</label>
+                <input
+                  type="range"
+                  min={6}
+                  max={24}
+                  value={maxLength}
+                  onChange={(e) => setMaxLength(Number(e.target.value))}
+                  className="w-full accent-[#10b981]"
+                />
               </div>
-
-              <div className="space-y-1.5">
-                <label className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-bold">
-                  <input
-                    type="checkbox"
-                    checked={allowDoubleLetters}
-                    onChange={(e) => setAllowDoubleLetters(e.target.checked)}
-                    className="rounded accent-amber-500"
-                  />
-                  Allow Double Letters (aa, ll, ss)
-                </label>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Starts With</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Al"
+                  value={startsWith}
+                  onChange={(e) => setStartsWith(e.target.value)}
+                  className="w-full rounded border border-border/60 bg-background px-2 py-1 text-xs focus:outline-none"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">
-                    Max Consonant Cluster
-                  </label>
-                  <input
-                    type="number"
-                    value={maxConsonantCluster}
-                    onChange={(e) => setMaxConsonantCluster(Number(e.target.value))}
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-muted-foreground text-[10px] font-bold">
-                    Max Vowel Cluster
-                  </label>
-                  <input
-                    type="number"
-                    value={maxVowelCluster}
-                    onChange={(e) => setMaxVowelCluster(Number(e.target.value))}
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1 text-xs"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Ends With</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ia"
+                  value={endsWith}
+                  onChange={(e) => setEndsWith(e.target.value)}
+                  className="w-full rounded border border-border/60 bg-background px-2 py-1 text-xs focus:outline-none"
+                />
               </div>
-            </div>
-          )}
-
-          {/* Action Trigger */}
-          <button
-            onClick={handleGenerate}
-            disabled={batchMutation.isPending}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-amber-600 active:scale-95 disabled:scale-100 disabled:opacity-50"
-          >
-            {batchMutation.isPending ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Wand2 className="h-4 w-4" />
-            )}
-            {batchMutation.isPending ? "Assembling Batch..." : "Assemble Batch"}
-          </button>
-        </div>
-      </div>
-
-      {/* Generation Results Panel */}
-      <div className="space-y-4 lg:col-span-8">
-        <div className="border-border/40 flex flex-col gap-3 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
-            Workbench & Output
-          </h3>
-
-          {/* Bulk Exports / Actions */}
-          {results.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleBulkSave}
-                disabled={selectedNames.size === 0}
-                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-30"
-              >
-                <Bookmark className="h-3.5 w-3.5" />
-                <span>Save Selected ({selectedNames.size})</span>
-              </button>
-              <button
-                onClick={handleExportCSV}
-                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
-              >
-                <FileDown className="h-3.5 w-3.5" />
-                <span>CSV</span>
-              </button>
-              <button
-                onClick={handleExportJSON}
-                className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
-              >
-                <FileDown className="h-3.5 w-3.5" />
-                <span>JSON</span>
-              </button>
             </div>
           )}
         </div>
 
-        {results.length === 0 ? (
-          <FacetMaterial material="satin" className="border-border/20 border p-12 text-center">
-            <Wand2 className="text-muted-foreground mx-auto mb-4 h-12 w-12 animate-pulse opacity-30" />
-            <p className="text-muted-foreground text-sm">
-              Select your parameters on the left and click "Assemble Batch" to fill this workbench.
-            </p>
-          </FacetMaterial>
-        ) : (
-          <div className="space-y-4">
-            {/* Summary statistics bar */}
-            <div className="border-border/20 bg-secondary/5 grid grid-cols-3 gap-2 rounded-lg border p-3 text-center text-xs">
-              <div>
-                <span className="text-muted-foreground block">Total Count</span>
-                <span className="text-foreground font-bold">{results.length}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block">Unique Yield</span>
-                <span className="font-bold text-amber-500">{filteredResults.length}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block">Avg Naturalness</span>
-                <span className="text-foreground font-bold">{avgPerplexity}%</span>
-              </div>
-            </div>
+        {/* Generate Trigger */}
+        <button
+          onClick={handleGenerate}
+          disabled={batchMutation.isPending}
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#10b981] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#059669] active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+        >
+          {batchMutation.isPending ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Wand2 className="h-4 w-4" />
+          )}
+          <span>{batchMutation.isPending ? "Assembling Corpus..." : `Synthesize ${count} Names`}</span>
+        </button>
+      </FacetMaterial>
 
-            {/* Filter Search inputs */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search generated name..."
-                className="bg-background/50 border-border/40 text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs focus:border-amber-500/50 focus:outline-none"
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-[10px] font-bold whitespace-nowrap">
-                  Min Naturalness:
-                </span>
-                <select
-                  value={perplexityFilter}
-                  onChange={(e) => setPerplexityFilter(Number(e.target.value))}
-                  className="bg-background/50 border-border/40 text-foreground rounded-lg border px-2 py-1.5 text-xs"
-                >
-                  <option value={0}>Any Score</option>
-                  <option value={30}>&gt;= 30%</option>
-                  <option value={50}>&gt;= 50% (Natural)</option>
-                  <option value={70}>&gt;= 70% (Flowing)</option>
-                  <option value={90}>&gt;= 90% (Perfect)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Output table */}
-            <div className="border-border/20 bg-background/30 overflow-hidden rounded-lg border shadow-inner">
-              <div className="max-h-[500px] scrollbar-thin overflow-y-auto">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead className="bg-secondary/40 text-muted-foreground border-border/20 sticky top-0 border-b font-semibold select-none">
-                    <tr>
-                      <th className="w-10 p-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedNames.size === filteredResults.length &&
-                            filteredResults.length > 0
-                          }
-                          onChange={handleSelectAll}
-                          className="cursor-pointer rounded accent-amber-500"
-                        />
-                      </th>
-                      <th
-                        className="hover:text-foreground cursor-pointer p-3 transition-colors"
-                        onClick={() => handleSort("name")}
-                      >
-                        Name{" "}
-                        {sorting.column === "name" && (sorting.direction === "asc" ? "▲" : "▼")}
-                      </th>
-                      <th
-                        className="hover:text-foreground cursor-pointer p-3 transition-colors"
-                        onClick={() => handleSort("ipa")}
-                      >
-                        IPA Pronunciation{" "}
-                        {sorting.column === "ipa" && (sorting.direction === "asc" ? "▲" : "▼")}
-                      </th>
-                      <th
-                        className="hover:text-foreground cursor-pointer p-3 text-center transition-colors"
-                        onClick={() => handleSort("syllables")}
-                      >
-                        Syllables{" "}
-                        {sorting.column === "syllables" &&
-                          (sorting.direction === "asc" ? "▲" : "▼")}
-                      </th>
-                      <th
-                        className="hover:text-foreground cursor-pointer p-3 text-center transition-colors"
-                        onClick={() => handleSort("perplexity")}
-                      >
-                        Naturalness{" "}
-                        {sorting.column === "perplexity" &&
-                          (sorting.direction === "asc" ? "▲" : "▼")}
-                      </th>
-                      <th className="w-16 p-3 text-center">Play</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-border/10 divide-y">
-                    {filteredResults.map((item) => {
-                      const isChecked = selectedNames.has(item.name);
-                      return (
-                        <tr
-                          key={item.name}
-                          className="hover:bg-secondary/10 cursor-pointer transition-colors"
-                          onClick={() => handleSelectName(item.name)}
-                        >
-                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleSelectName(item.name)}
-                              className="cursor-pointer rounded accent-amber-500"
-                            />
-                          </td>
-                          <td className="text-foreground p-3 font-semibold">{item.name}</td>
-                          <td className="text-muted-foreground p-3 font-mono">{item.ipa}</td>
-                          <td className="text-muted-foreground p-3 text-center">
-                            {item.syllables}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                                item.perplexity >= 70
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                  : item.perplexity >= 45
-                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                    : "bg-red-500/10 text-red-600 dark:text-red-400"
-                              }`}
-                            >
-                              {item.perplexity}%
-                            </span>
-                          </td>
-                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => playName(item.name, item.ipa)}
-                              className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500 active:scale-90"
-                              title="Pronounce Name"
-                            >
-                              <Volume2 className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Results View */}
+      {results.length > 0 && (
+        <BatchResultsTable
+          results={filteredResults}
+          category={category}
+          profile={profile}
+          selectedNames={selectedNames}
+          sorting={sorting}
+          searchQuery={searchQuery}
+          perplexityFilter={perplexityFilter}
+          onSearchChange={setSearchQuery}
+          onPerplexityChange={setPerplexityFilter}
+          onSort={handleSort}
+          onSelectName={handleSelectName}
+          onSelectAll={handleSelectAll}
+          onBulkSave={handleBulkSave}
+          onPlayName={playName}
+          onExportCSV={handleExportCSV}
+          onExportJSON={handleExportJSON}
+        />
+      )}
     </div>
   );
 }

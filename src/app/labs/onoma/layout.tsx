@@ -1,10 +1,20 @@
-"use client";
-
-// src/app/labs/onoma/layout.tsx
-// Onoma Lab — Layout Wrapper
-
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
+import { withBasePath } from "~/lib/base-path";
+
+// src/app/labs/onoma/layout.tsx
+// Onoma Lab — Layout Wrapper & Favicon Metadata
+
+export const metadata: Metadata = {
+  title: "⟨ONOMA⟩ Linguistic Engine — Language, engineered.",
+  description:
+    "A linguistic engine for creating, modeling, and evolving language. Build the language behind your world.",
+  icons: [
+    { rel: "icon", url: withBasePath("/images/onoma-favicon.svg"), type: "image/svg+xml" },
+    { rel: "apple-touch-icon", url: withBasePath("/images/onoma-favicon.svg") },
+  ],
+};
 
 export default function OnomaLayout({ children }: { children: ReactNode }) {
   return (
