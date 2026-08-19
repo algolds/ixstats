@@ -9,7 +9,7 @@
 import {
   ComponentType,
   ATOMIC_COMPONENTS,
-} from "~/components/government/atoms/AtomicGovernmentComponents";
+} from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { GovernmentType } from "~/types/government";
 import type { EconomicInputs } from "../lib/economy-data-service";

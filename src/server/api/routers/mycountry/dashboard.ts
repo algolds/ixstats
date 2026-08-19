@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, cachedPublicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 import {
   calculateVitalityScores,
   calculateAchievements,
@@ -351,33 +351,41 @@ export const myCountryDashboardRouter = createTRPCRouter({
       }
 
       const [issueCount, missionCount, intelAlertCount, threatCount] = await Promise.all([
-        db.nationalIssue.count({
-          where: {
-            countryId: input.countryId,
-            status: { in: ["pending", "viewed"] },
-          },
-        }).catch(() => 0),
-        db.embassyMission.count({
-          where: {
-            embassy: {
-              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
+        db.nationalIssue
+          .count({
+            where: {
+              countryId: input.countryId,
+              status: { in: ["pending", "viewed"] },
             },
-            status: { in: ["active", "pending", "in_progress"] },
-          },
-        }).catch(() => 0),
-        db.intelligenceAlert.count({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-            isResolved: false,
-          },
-        }).catch(() => 0),
-        db.securityThreat.count({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-          },
-        }).catch(() => 0),
+          })
+          .catch(() => 0),
+        db.embassyMission
+          .count({
+            where: {
+              embassy: {
+                OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
+              },
+              status: { in: ["active", "pending", "in_progress"] },
+            },
+          })
+          .catch(() => 0),
+        db.intelligenceAlert
+          .count({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+              isResolved: false,
+            },
+          })
+          .catch(() => 0),
+        db.securityThreat
+          .count({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+            },
+          })
+          .catch(() => 0),
       ]);
 
       return {

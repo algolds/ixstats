@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import { mapCountryToEconomyData } from "~/lib/economy-data-mapper";
+import { mapCountryToEconomyData } from "~/lib/economy/data-mapper";
 
 /**
  * Hook that fetches country data via tRPC and maps it to the structured

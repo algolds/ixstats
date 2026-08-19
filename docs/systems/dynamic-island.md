@@ -1,6 +1,6 @@
 # Halo Plugin System
 
-> **Naming:** **Halo** is the UI/Feature System formerly called "Dynamic Island". The code identifiers keep the `DI` / `DynamicIsland` prefix (directory `src/components/DynamicIsland/`, hooks `useDIPlugin`, types `DIPlugin`/`DIAction`/`DIBadge`) pending a separate mechanical rename.
+> **Naming:** **Halo** is the UI/Feature System formerly called "Dynamic Island". The code identifiers keep the `DI` / `DynamicIsland` prefix (directory `src/components/halo/`, hooks `useDIPlugin`, types `DIPlugin`/`DIAction`/`DIBadge`) pending a separate mechanical rename.
 
 **Hierarchy:** Halo is a Core System within IxStates (IxStats) — a global UI overlay with plugin architecture (independently versioned: `HALO_VERSION` in the Version Registry).
 
@@ -35,7 +35,7 @@ graph TD
 
 ## Core Interfaces
 
-The core interfaces are defined in [types.ts](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/types.ts).
+The core interfaces are defined in [types.ts](file:///ixwiki/public/projects/ixstats/src/components/halo/types.ts).
 
 ### `DIPlugin`
 
@@ -83,7 +83,7 @@ export interface DIBadge {
 
 ## State Management and Lifecycle
 
-The DI plugin state is managed in [plugin-context.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/plugin-context.tsx) using an external store pattern (`useSyncExternalStore`) to guarantee thread safety and reactivity across React 19's concurrent rendering paths.
+The DI plugin state is managed in [plugin-context.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugin-context.tsx) using an external store pattern (`useSyncExternalStore`) to guarantee thread safety and reactivity across React 19's concurrent rendering paths.
 
 ### 1. Registration
 
@@ -125,7 +125,7 @@ When designing a plugin's `center` component, be mindful of HTML validation rule
 
 ### 1. WikiDIPlugin
 
-Located in [WikiDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/plugins/WikiDIPlugin.tsx). The Wiki plugin adapts dynamically to whether the user is viewing a specific article:
+Located in [WikiDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugins/WikiDIPlugin.tsx). The Wiki plugin adapts dynamically to whether the user is viewing a specific article:
 
 - **Article view**: Displays the article breadcrumbs and enables click-to-expand to open the custom `WikiView` expanded modal.
 - **Root/Special view**: Displays a custom `WikiProfileButton` which pops open the wiki user profile stats and recent article history, and disables the expanded modal.
@@ -153,7 +153,7 @@ export function WikiDIPlugin() {
 
 ### 2. ForumDIPlugin
 
-Located in [ForumDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/DynamicIsland/plugins/ForumDIPlugin.tsx). The Forum plugin displays the thread or forum room breadcrumbs and activates a pulsing orange badge whenever there are unread forum alerts.
+Located in [ForumDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugins/ForumDIPlugin.tsx). The Forum plugin displays the thread or forum room breadcrumbs and activates a pulsing orange badge whenever there are unread forum alerts.
 
 ```typescript
 export function ForumDIPlugin() {

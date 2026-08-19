@@ -89,7 +89,32 @@ the live working set stays here.
 |------|-------|--------|
 | [ixstates-community-feedback-analysis.md](ixstates-community-feedback-analysis.md) | Discord community feedback analysis (roadmap input) | REFERENCE |
 
+### IxCards & MyVault System Overhaul — Type Safety, Concurrency & UTC Calendar Fixes
+| Plan | Scope | Status |
+|------|-------|--------|
+| [121-vault-card-type-safety-domain-branding.md](121-vault-card-type-safety-domain-branding.md) | Branded types, strict card schemas, and removal of Prisma `(db as any)` casts | DONE |
+| [122-atomic-credit-ledger-concurrency-locks.md](122-atomic-credit-ledger-concurrency-locks.md) | Atomic conditional updates (`credits >= amount`) preventing negative balance race conditions | DONE |
+| [123-daily-streak-utc-boundary-store-perks.md](123-daily-streak-utc-boundary-store-perks.md) | UTC calendar day streak calculations and O(1) store perk cache lookup | DONE |
+
+### Dashboard & Core Hub — Performance, React & TypeScript Architecture Overhaul
+| Plan | Scope | Status |
+|------|-------|--------|
+| [124-dashboard-performance-and-type-system-overhaul.md](124-dashboard-performance-and-type-system-overhaul.md) | `@ts-nocheck` elimination, 1,034-line god component decomposition, query staleTime tuning & feed item memoization | DONE |
+
+### Onoma Linguistics & Procedural Engine — Optimizations, Performance & Roadmap
+| Plan | Scope | Status |
+|------|-------|--------|
+| [125-onoma-production-basepath-and-server-batch-fixes.md](125-onoma-production-basepath-and-server-batch-fixes.md) | Fix production TTS basePath routing, batch dynamic require, and eliminate leading "uh/eh" vocalization | DONE |
+| [126-onoma-centralize-generation-presets-and-ponytail-trim.md](126-onoma-centralize-generation-presets-and-ponytail-trim.md) | Centralize preset generation in `name-generator.ts`, trim dead `export.ts`, unify speech synthesis | DONE |
+| [127-onoma-performance-code-splitting-and-lazy-lm.md](127-onoma-performance-code-splitting-and-lazy-lm.md) | Dynamic route code-splitting for `@xyflow/react` and lazy LM calibration to prevent slider jank | DONE |
+| [128-onoma-typescript-strict-schemas-and-domain-branding.md](128-onoma-typescript-strict-schemas-and-domain-branding.md) | Strict Zod schemas for conlang versioning, safe Stash note metadata parsing, branded `IPAString` | DONE |
+| [129-onoma-apple-motion-and-facets-refinement.md](129-onoma-apple-motion-and-facets-refinement.md) | Spring-damped layout expansion for NameResultCard, instant press compression, optical tracking | DONE |
+| [130-onoma-sound-change-evolution-engine.md](130-onoma-sound-change-evolution-engine.md) | Feature: Historical sound shift rule interpreter and Proto-to-Daughter language evolution in Studio | DONE |
+| [131-onoma-realtime-formant-spectrogram-visualizer.md](131-onoma-realtime-formant-spectrogram-visualizer.md) | Feature: Real-time Web Audio API FFT spectrum visualizer & 2D IPA Vowel Quadrilateral ($F_1/F_2$) | DONE |
+| [132-onoma-customized-template-and-dictionary-phonetics.md](132-onoma-customized-template-and-dictionary-phonetics.md) | Feature: Customized IRL Culture & Template/Dictionary Phonetics with "Hello World" Benchmark | DONE |
+
 ---
+
 
 ## Future Ideas (proposed, not started)
 

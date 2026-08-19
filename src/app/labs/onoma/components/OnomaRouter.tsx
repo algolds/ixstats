@@ -4,13 +4,13 @@
 // Onoma Lab — Unified Workspace & Router (Facet Rebuild)
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { OnomaSection, StudioSubTab } from "~/lib/onoma/types";
 import { getSectionFromPathname, getStudioSubTabFromPathname } from "~/lib/onoma/types";
-import { FacetTabs } from "~/components/facet-ui";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetTabs } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useNameBank } from "~/hooks/useNameBank";
 import {
   Compass,
@@ -26,12 +26,14 @@ import {
   BookOpen,
   AudioLines,
   Network,
+  GitFork,
   FileDown,
   ShoppingBag,
   Languages,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
+import { useUser } from "~/context/auth-context";
 
 // Import sections
 import OverviewSection from "./sections/OverviewSection";
@@ -40,11 +42,32 @@ import PeopleSection from "./sections/PeopleSection";
 import MilitarySection from "./sections/MilitarySection";
 import OrganizationsSection from "./sections/OrganizationsSection";
 import CultureSection from "./sections/CultureSection";
-import StudioSection from "./sections/StudioSection";
-import StashSection from "./sections/StashSection";
-import SettingsSection from "./sections/SettingsSection";
-import MarketplaceSection from "./sections/MarketplaceSection";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
+
+const SectionLoadingFallback = () => (
+  <div className="flex h-64 w-full items-center justify-center">
+    <Loader2 className="h-6 w-6 animate-spin text-[#0091ff]" />
+  </div>
+);
+
+const StudioSection = dynamic(() => import("./sections/StudioSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const MarketplaceSection = dynamic(() => import("./sections/MarketplaceSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const StashSection = dynamic(() => import("./sections/StashSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const SettingsSection = dynamic(() => import("./sections/SettingsSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
 
 const SECTION_TITLES: Record<OnomaSection, string> = {
   overview: "Overview",
@@ -159,17 +182,6 @@ const ONOMA_TABS = [
     activeIconClassName: "text-cyan-500 dark:text-cyan-400",
   },
   {
-    id: "linguistics",
-    label: "Linguistics",
-    icon: Languages,
-    themeColor: "#8b5cf6",
-    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
-    activeIndicatorClassName:
-      "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
-    activeTextClassName: "text-violet-600 dark:text-violet-400",
-    activeIconClassName: "text-violet-500 dark:text-violet-400",
-  },
-  {
     id: "marketplace",
     label: "Marketplace",
     icon: ShoppingBag,
@@ -184,6 +196,7 @@ const ONOMA_TABS = [
 
 export function OnomaRouter() {
   const pathname = usePathname();
+  const { isSignedIn, isLoaded } = useUser();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
 
   const fontLink = useMemo(() => {
@@ -191,9 +204,14 @@ export function OnomaRouter() {
   }, [speechConfig?.brand?.fontFamily]);
 
   // Active section state
-  const [activeSection, setActiveSection] = useState<OnomaSection>(() =>
-    getSectionFromPathname(pathname)
-  );
+  const [activeSection, setActiveSection] = useState<OnomaSection>(() => {
+    const initial = getSectionFromPathname(pathname);
+    const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
+    if (isSignedIn && !rawSegment) {
+      return "studio";
+    }
+    return initial;
+  });
 
   // Active sub-tab state for Markov Studio
   const [activeSubTab, setActiveSubTab] = useState<StudioSubTab>(() =>
@@ -207,6 +225,17 @@ export function OnomaRouter() {
       ? "overview"
       : initial;
   });
+
+  // When auth state loads, if user is signed in and at the root onoma page, default to Studio
+  const hasAppliedAuthDefault = useRef(false);
+  useEffect(() => {
+    if (!isLoaded || hasAppliedAuthDefault.current) return;
+    hasAppliedAuthDefault.current = true;
+    const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
+    if (isSignedIn && !rawSegment) {
+      setActiveSection("studio");
+    }
+  }, [isLoaded, isSignedIn, pathname]);
 
   const bank = useNameBank();
 
@@ -319,6 +348,17 @@ export function OnomaRouter() {
         activeIconClassName: "text-violet-500 dark:text-violet-400",
       },
       {
+        id: "shifts",
+        label: "Sound Shifts",
+        icon: GitFork,
+        themeColor: "#ec4899",
+        glowClassName: "bg-pink-500/20 dark:bg-pink-500/10",
+        activeIndicatorClassName:
+          "bg-pink-500/5 border-pink-500/20 text-pink-600 dark:text-pink-400 shadow-[inset_0_1px_0_rgba(236,72,153,0.15)]",
+        activeTextClassName: "text-pink-600 dark:text-pink-400",
+        activeIconClassName: "text-pink-500 dark:text-pink-400",
+      },
+      {
         id: "batch",
         label: "Batch Generator",
         icon: FileDown,
@@ -345,6 +385,7 @@ export function OnomaRouter() {
   );
 
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   // Auto-open guide for first-time visitors
   useEffect(() => {
@@ -525,8 +566,14 @@ export function OnomaRouter() {
               <HelpCircle className="h-4 w-4" />
             </button>
             <motion.button
-              animate={shouldAnimateStash ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              animate={
+                shouldAnimateStash
+                  ? shouldReduceMotion
+                    ? { opacity: [1, 0.6, 1] }
+                    : { scale: [1, 1.15, 0.95, 1.05, 1] }
+                  : { scale: 1, opacity: 1 }
+              }
+              transition={{ duration: 0.4, ease: "easeInOut" }}
               onClick={() => handleNavigate("bank")}
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "bank"
@@ -535,7 +582,11 @@ export function OnomaRouter() {
               }`}
             >
               <motion.span
-                animate={shouldAnimateStash ? { rotate: [0, -18, 15, -10, 8, 0] } : { rotate: 0 }}
+                animate={
+                  shouldAnimateStash && !shouldReduceMotion
+                    ? { rotate: [0, -18, 15, -10, 8, 0] }
+                    : { rotate: 0 }
+                }
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="inline-flex"
               >

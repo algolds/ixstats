@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 // Import the wiki search service
-import { validateNoXSS } from "~/lib/sanitize-html";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { validateNoXSS } from "~/lib/utils";
+import { globalCache } from "~/lib/cache";
 
 const invalidateFeeds = async () => {
   try {

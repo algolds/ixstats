@@ -27,7 +27,7 @@ import {
   categorizeNotification,
   optimizeDeliveryMethod,
   createSmartBatches,
-} from "~/lib/notification-optimization";
+} from "~/lib/notifications/optimization";
 
 interface NotificationState {
   // Core data
@@ -94,23 +94,20 @@ const defaultUserPreferences: UserNotificationPreferences = {
   batchingEnabled: true,
   maxNotificationsPerHour: 30,
   categories: {
-    economic: { enabled: true, minPriority: "medium", deliveryMethods: ["dynamic-island"] },
-    diplomatic: { enabled: true, minPriority: "medium", deliveryMethods: ["dynamic-island"] },
-    governance: { enabled: true, minPriority: "high", deliveryMethods: ["dynamic-island"] },
-    social: { enabled: true, minPriority: "low", deliveryMethods: ["toast"] },
-    security: { enabled: true, minPriority: "high", deliveryMethods: ["dynamic-island"] },
-    system: { enabled: true, minPriority: "medium", deliveryMethods: ["toast"] },
-    achievement: { enabled: true, minPriority: "low", deliveryMethods: ["toast"] },
-    crisis: { enabled: true, minPriority: "critical", deliveryMethods: ["dynamic-island"] },
-    opportunity: { enabled: true, minPriority: "medium", deliveryMethods: ["dynamic-island"] },
-    policy: { enabled: true, minPriority: "medium", deliveryMethods: ["toast"] },
-    intelligence: { enabled: true, minPriority: "high", deliveryMethods: ["dynamic-island"] },
-    global: { enabled: true, minPriority: "medium", deliveryMethods: ["toast"] },
-    military: { enabled: true, minPriority: "high", deliveryMethods: ["dynamic-island"] },
-  } as Record<
-    NotificationCategory,
-    { enabled: boolean; minPriority: NotificationPriority; deliveryMethods: DeliveryMethod[] }
-  >,
+    economic: { enabled: true, minPriority: "medium", preferredMethods: ["dynamic-island"] },
+    diplomatic: { enabled: true, minPriority: "medium", preferredMethods: ["dynamic-island"] },
+    governance: { enabled: true, minPriority: "high", preferredMethods: ["dynamic-island"] },
+    social: { enabled: true, minPriority: "low", preferredMethods: ["toast"] },
+    security: { enabled: true, minPriority: "high", preferredMethods: ["dynamic-island"] },
+    system: { enabled: true, minPriority: "medium", preferredMethods: ["toast"] },
+    achievement: { enabled: true, minPriority: "low", preferredMethods: ["toast"] },
+    crisis: { enabled: true, minPriority: "critical", preferredMethods: ["dynamic-island"] },
+    opportunity: { enabled: true, minPriority: "medium", preferredMethods: ["dynamic-island"] },
+    policy: { enabled: true, minPriority: "medium", preferredMethods: ["toast"] },
+    intelligence: { enabled: true, minPriority: "high", preferredMethods: ["dynamic-island"] },
+    global: { enabled: true, minPriority: "medium", preferredMethods: ["toast"] },
+    military: { enabled: true, minPriority: "high", preferredMethods: ["dynamic-island"] },
+  },
   executiveModeFilters: ["economic", "governance", "security", "crisis"],
   publicModeFilters: ["achievement", "opportunity", "system"],
   allowMLPersonalization: true,

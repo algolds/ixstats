@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { SlidersHorizontal, Trash2, Cpu, FileText, ArrowRight } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 

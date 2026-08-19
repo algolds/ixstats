@@ -7,37 +7,7 @@ import { MarkovChain, tokenizeIntoSyllables } from "~/lib/onoma/markov-chain";
 import { trainLM, naturalnessScore } from "~/lib/onoma/perplexity";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
 import { translateToIPA } from "~/lib/onoma/phonology";
-import { generateFantasySyllableName, generateNobleSurname } from "~/lib/onoma/name-generator";
-import {
-  generateGoblinName,
-  generateOrcName,
-  generateOgreName,
-  generatePrimitiveName,
-  generateDwarfName,
-  generateHalflingName,
-  generateGnomeName,
-  generateElfName,
-  generateFaeryName,
-  generateDarkElfName,
-  generateHalfDemonName,
-  generateDragonName,
-  generateDemonName,
-  generateAngelName,
-} from "~/lib/onoma/species-generator";
-import {
-  generateMysticOrderName,
-  generateMilitaryUnitName,
-  generateCovertOrgName,
-  generateBusinessCompanyName,
-  generateAcademicInstitutionName,
-  generateMercenaryBandName,
-  generatePoliticalPartyName,
-  generateGovernmentAgencyName,
-  generateMediaOutletName,
-  generateNgoName,
-  generateReligiousOrderName,
-} from "~/lib/onoma/group-generator";
-import { generateTavernName } from "~/lib/onoma/tavern-generator";
+import { generateFantasySyllableName, generatePresetName } from "~/lib/onoma/name-generator";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 
 const FAMILY_PHONOTACTICS: Record<string, any> = {
@@ -74,6 +44,18 @@ function mapCategoryForLexicon(cat: NameCategory, subType?: string): string {
   if (cat === "organization" || cat === "military") return "organization";
   return "country";
 }
+
+const LEXICON_LOADERS: Record<string, () => Promise<{ default: Record<string, string[]> }>> = {
+  country: () => import("~/lib/onoma/data/lexicon/country.json"),
+  city: () => import("~/lib/onoma/data/lexicon/city.json"),
+  province: () => import("~/lib/onoma/data/lexicon/province.json"),
+  person: () => import("~/lib/onoma/data/lexicon/person.json"),
+  organization: () => import("~/lib/onoma/data/lexicon/organization.json"),
+  culture_generic: () => import("~/lib/onoma/data/lexicon/culture_generic.json"),
+  culture_sports: () => import("~/lib/onoma/data/lexicon/culture_sports.json"),
+  culture_cuisine: () => import("~/lib/onoma/data/lexicon/culture_cuisine.json"),
+  culture_architecture: () => import("~/lib/onoma/data/lexicon/culture_architecture.json"),
+};
 
 export const onomaBatchRouter = createTRPCRouter({
   /**
@@ -136,21 +118,21 @@ export const onomaBatchRouter = createTRPCRouter({
 
       const lexiconSeeds: string[] = [];
       if (trainingMode === "lexicon") {
-        let lexiconDict: Record<string, string[]> | null = null;
         const lexiconCat = mapCategoryForLexicon(category, input.subType);
-        try {
-          // Dynamic import
-          const lexiconModule = require(`~/lib/onoma/data/lexicon/${lexiconCat}.json`);
-          lexiconDict = lexiconModule.default || lexiconModule;
-        } catch (err) {
-          console.error("Failed to load lexicon file on server:", err);
-        }
-
-        if (lexiconDict) {
-          if (culture === "any") {
-            lexiconSeeds.push(...Object.values(lexiconDict).flat());
-          } else if (culture !== "constructed" && lexiconDict[culture]) {
-            lexiconSeeds.push(...(lexiconDict[culture] || []));
+        const loader = LEXICON_LOADERS[lexiconCat];
+        if (loader) {
+          try {
+            const lexiconModule = await loader();
+            const lexiconDict = lexiconModule.default || lexiconModule;
+            if (lexiconDict) {
+              if (culture === "any") {
+                lexiconSeeds.push(...Object.values(lexiconDict).flat());
+              } else if (culture !== "constructed" && lexiconDict[culture]) {
+                lexiconSeeds.push(...(lexiconDict[culture] || []));
+              }
+            }
+          } catch (err) {
+            console.error("Failed to load lexicon file on server:", err);
           }
         }
       }
@@ -217,86 +199,15 @@ export const onomaBatchRouter = createTRPCRouter({
         let name: string | null = null;
 
         // Custom presets logic
-        if (category === "person" && input.subType && input.subType !== "generic") {
-          if (input.subType === "goblin") name = generateGoblinName();
-          else if (input.subType === "orc") name = generateOrcName();
-          else if (input.subType === "ogre") name = generateOgreName();
-          else if (input.subType === "primitive") name = generatePrimitiveName(input.gender);
-          else if (input.subType === "dwarf") name = generateDwarfName(input.gender);
-          else if (input.subType === "halfling") name = generateHalflingName(input.gender);
-          else if (input.subType === "gnome") name = generateGnomeName(input.gender);
-          else if (input.subType === "elf") name = generateElfName(input.gender);
-          else if (input.subType === "elf-alt") name = generateElfName(input.gender, true);
-          else if (input.subType === "faery") name = generateFaeryName(input.gender);
-          else if (input.subType === "faery-alt") name = generateFaeryName(input.gender, true);
-          else if (input.subType === "dark-elf") name = generateDarkElfName(input.gender);
-          else if (input.subType === "dark-elf-alt") name = generateDarkElfName(input.gender, true);
-          else if (input.subType === "half-demon") name = generateHalfDemonName(input.gender);
-          else if (input.subType === "dragon") name = generateDragonName(input.gender);
-          else if (input.subType === "demon") name = generateDemonName();
-          else if (input.subType === "angel") name = generateAngelName(input.gender);
-        } else if (category === "organization" && input.subType && input.subType !== "generic") {
-          if (input.subType === "mystic-order")
-            name = generateMysticOrderName(characterChain, genOptions);
-          else if (input.subType === "military-unit")
-            name = generateMilitaryUnitName(characterChain, genOptions);
-          else if (input.subType === "covert-org")
-            name = generateCovertOrgName(characterChain, genOptions);
-          else if (input.subType === "tavern") name = generateTavernName(genOptions);
-          else if (input.subType === "business-company")
-            name = generateBusinessCompanyName(characterChain, genOptions);
-          else if (input.subType === "academic-institution")
-            name = generateAcademicInstitutionName(characterChain, genOptions);
-          else if (input.subType === "political-party")
-            name = generatePoliticalPartyName(characterChain, genOptions);
-          else if (input.subType === "government-agency")
-            name = generateGovernmentAgencyName(characterChain, genOptions);
-          else if (input.subType === "media-outlet")
-            name = generateMediaOutletName(characterChain, genOptions);
-          else if (input.subType === "ngo-foundation")
-            name = generateNgoName(characterChain, genOptions);
-          else if (input.subType === "religious-order")
-            name = generateReligiousOrderName(characterChain, genOptions);
-        } else if (category === "military" && input.subType && input.subType !== "generic") {
-          if (input.subType === "military-unit")
-            name = generateMilitaryUnitName(characterChain, genOptions);
-          else if (input.subType === "mercenary-band")
-            name = generateMercenaryBandName(characterChain, genOptions);
-        } else if (category === "dynasty" && input.subType && input.subType !== "generic") {
-          if (input.subType === "fantasy-syllable") name = generateFantasySyllableName();
-          else if (input.subType === "noble-surname")
-            name = generateNobleSurname(culture, characterChain, genOptions);
-        } else if (category === "city" && input.subType === "settlement-colony") {
-          const base =
-            characterChain.generate(genOptions) ||
-            syllableChain.generate(genOptions) ||
-            generateFantasySyllableName();
-          const d3 = Math.floor(Math.random() * 3);
-          const capitalized = MarkovChain.capitalize(base);
-          if (d3 === 0) name = `New ${capitalized}`;
-          else if (d3 === 1) name = `Port ${capitalized}`;
-          else name = `${capitalized} Colony`;
-        } else if (category === "geography" && input.subType === "natural-landmark") {
-          const base =
-            characterChain.generate(genOptions) ||
-            syllableChain.generate(genOptions) ||
-            generateFantasySyllableName();
-          const suffixes = [
-            "River",
-            "Valley",
-            "Mount",
-            "Bay",
-            "Lake",
-            "Ridge",
-            "Coast",
-            "Canyon",
-            "Forest",
-            "Peak",
-            "Hills",
-          ];
-          const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-          name = `${MarkovChain.capitalize(base)} ${suffix}`;
-        }
+        name = generatePresetName({
+          category,
+          subType: input.subType,
+          gender: input.gender,
+          culture,
+          characterChain,
+          syllableChain,
+          options: genOptions,
+        });
 
         if (!name) name = characterChain.generate(genOptions);
         if (!name) name = syllableChain.generate(genOptions);

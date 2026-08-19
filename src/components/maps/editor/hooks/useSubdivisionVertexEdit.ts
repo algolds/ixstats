@@ -16,11 +16,14 @@ import {
   snapPointToGeometries,
   snapToNeighborBorders,
   sanitizeRegionShape,
-} from "~/lib/border-editor";
-import type { VertexRef } from "~/lib/border-editor";
-import { findNearestBorderRing, snapGeometryToBorder } from "~/lib/province-importer/alignment";
-import { clipGeometryToBorder } from "~/lib/province-importer/topology";
-import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/topology-engine";
+} from "~/lib/maps/border-editor";
+import type { VertexRef } from "~/lib/maps/border-editor";
+import {
+  findNearestBorderRing,
+  snapGeometryToBorder,
+} from "~/lib/maps/province-importer/alignment";
+import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
+import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
 import {
   getGeoJSONSource,
   updateSnapGuide,
@@ -31,7 +34,7 @@ import {
   snapGeometryToBackgroundLayers,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
+import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;

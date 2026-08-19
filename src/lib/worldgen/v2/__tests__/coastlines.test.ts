@@ -13,9 +13,24 @@ const TEST_CELLS = 3000;
 
 describe("v2/coastlines", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
-  generateTerrain(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, oceanPercentage: 0.65 });
-  refineCoastlines(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, coastlineComplexity: 0.8 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
+  generateTerrain(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    oceanPercentage: 0.65,
+  });
+  refineCoastlines(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    coastlineComplexity: 0.8,
+  });
 
   it("populates graph.features array", () => {
     expect(graph.features.length).toBeGreaterThan(0);

@@ -20,7 +20,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 
 // Zod schemas for crisis events
 const CrisisEventSchema = z.object({

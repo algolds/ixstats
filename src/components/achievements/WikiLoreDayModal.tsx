@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Calendar, Sliders, List } from "lucide-react";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -53,7 +53,7 @@ export function WikiLoreDayModal({
 
         {/* Modal Header */}
         <DialogHeader className="border-border/20 mb-4 border-b pb-4 text-left sm:text-left">
-          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-black">
+          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold tracking-tight">
             <Calendar className="h-5 w-5 text-amber-500" />
             Edit Candidates — {dateStr}
           </DialogTitle>
@@ -75,11 +75,11 @@ export function WikiLoreDayModal({
                 {/* Winner */}
                 <div className="flex h-32 flex-col justify-between rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-black tracking-wider text-black uppercase">
+                    <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-black uppercase">
                       Winner
                     </span>
                     {entry.winnerScore !== null && entry.winnerScore !== undefined && (
-                      <span className="font-mono text-xs font-bold text-amber-500">
+                      <span className="font-mono text-xs font-bold text-amber-500 tabular-nums">
                         {entry.winnerScore} pts
                       </span>
                     )}
@@ -92,7 +92,9 @@ export function WikiLoreDayModal({
                           size="xs"
                           showTooltip={false}
                         />
-                        <h5 className="text-foreground text-sm font-bold">{entry.winnerUser}</h5>
+                        <h5 className="text-foreground text-sm font-semibold">
+                          {entry.winnerUser}
+                        </h5>
                       </div>
                       {entry.winnerPage && (
                         <Link
@@ -103,7 +105,7 @@ export function WikiLoreDayModal({
                         </Link>
                       )}
                       {entry.winnerBytes !== null && entry.winnerBytes !== undefined && (
-                        <span className="text-muted-foreground block font-mono text-[10px]">
+                        <span className="text-muted-foreground block font-mono text-[10px] tabular-nums">
                           +{entry.winnerBytes.toLocaleString()} bytes
                         </span>
                       )}
@@ -116,11 +118,11 @@ export function WikiLoreDayModal({
                 {/* Runner-up */}
                 <div className="border-border/40 bg-card/45 flex h-32 flex-col justify-between rounded-xl border p-4">
                   <div className="flex items-center justify-between">
-                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider uppercase">
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase">
                       Runner-up
                     </span>
                     {entry.runnerUpScore !== null && entry.runnerUpScore !== undefined && (
-                      <span className="text-foreground/80 font-mono text-xs font-bold">
+                      <span className="text-foreground/80 font-mono text-xs font-bold tabular-nums">
                         {entry.runnerUpScore} pts
                       </span>
                     )}
@@ -133,7 +135,7 @@ export function WikiLoreDayModal({
                           size="xs"
                           showTooltip={false}
                         />
-                        <h5 className="text-foreground text-foreground/90 text-sm font-bold">
+                        <h5 className="text-sm font-semibold text-foreground">
                           {entry.runnerUpUser}
                         </h5>
                       </div>
@@ -146,7 +148,7 @@ export function WikiLoreDayModal({
                         </Link>
                       )}
                       {entry.runnerUpBytes !== null && entry.runnerUpBytes !== undefined && (
-                        <span className="text-muted-foreground block font-mono text-[10px]">
+                        <span className="text-muted-foreground block font-mono text-[10px] tabular-nums">
                           +{entry.runnerUpBytes.toLocaleString()} bytes
                         </span>
                       )}
@@ -161,13 +163,13 @@ export function WikiLoreDayModal({
 
               {/* Candidates list table */}
               <div className="space-y-2">
-                <h5 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                <h5 className="text-foreground flex items-center gap-2 text-sm font-semibold tracking-tight">
                   <List className="h-4 w-4 text-amber-500" />
                   Scanned Candidates
                 </h5>
                 <div className="border-border/30 bg-muted/20 overflow-hidden rounded-xl border backdrop-blur-xs dark:bg-black/15">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/40 text-muted-foreground border-border/20 border-b text-[10px] font-black tracking-wider uppercase dark:bg-black/30">
+                    <thead className="bg-muted/40 text-muted-foreground border-border/20 border-b text-[10px] font-semibold tracking-wider uppercase dark:bg-black/30">
                       <tr>
                         <th className="text-muted-foreground p-3 font-semibold">User</th>
                         <th className="text-muted-foreground p-3 font-semibold">Page / Edit</th>

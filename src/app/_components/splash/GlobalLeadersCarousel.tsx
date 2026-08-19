@@ -39,7 +39,7 @@ export function GlobalLeadersCarousel({ countries }: { countries: Record<string,
   useEffect(() => {
     if (countries.length > 0) {
       const topCountryNames = countries.slice(0, 20).map((c) => String(c.name ?? ""));
-      import("~/lib/unified-flag-service").then(({ unifiedFlagService }) => {
+      import("~/lib/flags/unified-flag-service").then(({ unifiedFlagService }) => {
         unifiedFlagService.prefetchFlags(topCountryNames);
       });
     }

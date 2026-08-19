@@ -13,9 +13,13 @@ import { mergeRouters } from "~/server/api/trpc";
 import { loreCardsUserRouter } from "./user";
 import { loreCardsAdminRouter } from "./admin";
 import { loreCardsGalleryRouter } from "./gallery";
+import { loreCardsWikiRouter } from "./wiki";
+import { loreCardsMaintenanceRouter } from "./maintenance";
 
 export const loreCardsRouter = mergeRouters(
   loreCardsUserRouter,
   loreCardsAdminRouter,
-  loreCardsGalleryRouter
+  loreCardsGalleryRouter,
+  loreCardsWikiRouter,
+  loreCardsMaintenanceRouter
 );

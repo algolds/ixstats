@@ -1,9 +1,5 @@
-"use client";
+import { MyCountryRouter } from "~/components/mycountry";
 
-import { MyCountryRouter } from "~/components/mycountry/MyCountryRouter";
-
-export const dynamic = "force-dynamic";
-
-export default function MapEditorPage() {
+export default function MyCountryMapEditorPage() {
   return <MyCountryRouter />;
 }

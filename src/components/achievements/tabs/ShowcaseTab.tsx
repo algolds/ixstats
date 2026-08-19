@@ -1,31 +1,63 @@
 "use client";
 
-import React from "react";
-
-import { TextureCard, TextureCardContent } from "~/components/ui/texture-card";
-import { CutoutCard, cutoutCardSurfaceClassName } from "~/components/ui/cutout-card";
+import React, { useState } from "react";
+import { motion } from "motion/react";
+import { Trophy, Sparkles } from "lucide-react";
+import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
-import { Trophy } from "lucide-react";
-import { cn } from "~/lib/utils";
-import { getRarityColor, getRarityBg } from "../constants";
-import { createUrl } from "~/lib/url-utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { getRarityColor, getRarityBg, getAchievementGameIconPath, getCategoryTheme } from "../constants";
+import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
 
 interface ShowcaseTabProps {
   achievements: any[] | undefined;
 }
 
 export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
-  const rarestShowcase = achievements
+  const [showAll, setShowAll] = useState(false);
+
+  const rarestAll = achievements
     ?.filter((a) => a.isUnlocked)
-    .sort((a, b) => (a.globalUnlockPercent || 100) - (b.globalUnlockPercent || 100))
-    .slice(0, 12);
+    .sort((a, b) => (a.globalUnlockPercent || 100) - (b.globalUnlockPercent || 100));
+
+  const rarestShowcase = rarestAll?.slice(0, showAll ? 9 : 3);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Shelf Title */}
+      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)] dark:text-amber-400" />
+          <h3 className="text-xs font-extrabold tracking-wider text-foreground uppercase">
+            Rare Achievements Showcase
+          </h3>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] font-bold text-muted-foreground">
+            {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)} Displayed
+          </span>
+
+          {(rarestAll?.length || 0) > 3 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="rounded-full border border-border/60 bg-muted/50 px-3 py-1 font-mono text-[10px] font-bold text-foreground/80 backdrop-blur-md transition-all hover:bg-muted/80 hover:text-foreground active:scale-95"
+            >
+              {showAll ? "Show Top 3 Only" : "See All Top 9"}
+            </button>
+          )}
+        </div>
+      </div>
+
       {rarestShowcase && rarestShowcase.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {rarestShowcase.map((achievement) => {
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:grid-cols-3">
+          {rarestShowcase.map((achievement, idx) => {
             const isUnlocked = achievement.isUnlocked;
+            const categoryTheme = getCategoryTheme(achievement.category);
+            const CategoryIcon = categoryTheme.icon;
+            const rawIconPath = getAchievementGameIconPath(achievement.key, achievement.category);
+            const iconPath = createUrl(rawIconPath);
+            const isLegendaryOrEpic = achievement.rarity === "Legendary" || achievement.rarity === "Epic";
 
             let count = 0;
             if (achievement.metadata) {
@@ -35,111 +67,125 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     ? JSON.parse(achievement.metadata)
                     : achievement.metadata;
                 count = parsed.count || 0;
-              } catch (e) {
+              } catch {
                 // ignore
               }
             }
 
             return (
-              <CutoutCard
+              <motion.div
                 key={achievement.key}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.25,
+                  delay: Math.min(idx * 0.02, 0.2),
+                  ease: [0.23, 1, 0.32, 1],
+                }}
+                whileHover={{ y: -3, scale: 1.015 }}
+                whileTap={{ scale: 0.98 }}
                 className={cn(
-                  cutoutCardSurfaceClassName,
-                  "border-border/50 bg-card/65 relative overflow-hidden rounded-2xl p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1.5 hover:border-amber-500/40 hover:shadow-2xl"
+                  "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/60 border-t-white/15 bg-card/75 p-4 shadow-xl backdrop-blur-2xl transition-all hover:shadow-2xl dark:border-border/40 dark:border-t-white/10 dark:bg-card/60",
+                  categoryTheme.cardBorderHover
                 )}
-                texture="horizontalLines"
-                textureOpacity={0.03}
-                trackPointerHover={false}
               >
-                {/* Shimmer overlay based on Rarity */}
-                {achievement.rarity === "Legendary" && (
-                  <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 opacity-10 blur-xl transition duration-500 group-hover:opacity-20" />
-                )}
-                {achievement.rarity === "Epic" && (
-                  <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 opacity-10 blur-xl transition duration-500 group-hover:opacity-20" />
-                )}
+                {/* Unified Aurora & Watermark Backdrop */}
+                <AchievementCardBackdrop
+                  iconPath={iconPath}
+                  categoryTheme={categoryTheme}
+                  isUnlocked={!!isUnlocked}
+                  isLegendaryOrEpic={isLegendaryOrEpic}
+                />
 
-                <div className="relative z-10 mb-4 flex items-center justify-between">
-                  <Badge
-                    className={cn(
-                      "px-2 py-0.5 text-[8px] font-bold tracking-wider uppercase",
-                      getRarityColor(achievement.rarity),
-                      getRarityBg(achievement.rarity, isUnlocked)
-                    )}
-                  >
-                    {achievement.rarity}
-                  </Badge>
-                  <div className="text-[10px] font-bold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-                    {achievement.globalUnlockPercent !== undefined
-                      ? `${achievement.globalUnlockPercent}% Unlocked`
-                      : "Rare unlock"}
-                  </div>
-                </div>
-
-                <div className="relative z-10 mb-4 flex flex-col items-center space-y-3 text-center">
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-3xl shadow-inner transition duration-300 select-none group-hover:scale-110">
-                    {achievement.iconUrl?.startsWith("http") ||
-                    achievement.iconUrl?.startsWith("/") ? (
-                      <img
-                        src={
-                          achievement.iconUrl?.startsWith("/")
-                            ? createUrl(achievement.iconUrl)
-                            : achievement.iconUrl
-                        }
-                        alt={achievement.title}
-                        className="h-10 w-10 object-contain"
-                      />
-                    ) : (
-                      achievement.iconUrl
-                    )}
-                    {isUnlocked && count > 1 && (
-                      <span className="border-background absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border bg-amber-500 px-1.5 text-[10px] font-black text-black shadow-md">
-                        {count}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-foreground text-base leading-tight font-bold transition-colors duration-300 group-hover:text-amber-500">
-                      {achievement.title}
-                    </h3>
-                    <span className="text-muted-foreground mt-1 block text-[9px] font-bold tracking-widest uppercase">
-                      {achievement.category}
+                <div className="relative z-10">
+                  <div className="mb-2 flex items-center justify-between">
+                    <Badge
+                      className={cn(
+                        "rounded-full border px-2 py-0.5 text-[8px] font-extrabold tracking-wider uppercase backdrop-blur-md",
+                        getRarityColor(achievement.rarity),
+                        getRarityBg(achievement.rarity, isUnlocked)
+                      )}
+                    >
+                      {achievement.rarity}
+                    </Badge>
+                    <span className="font-mono text-[9px] font-bold text-amber-600 drop-shadow-sm dark:text-amber-400">
+                      {achievement.globalUnlockPercent !== undefined
+                        ? `${achievement.globalUnlockPercent}% Unlocked`
+                        : "Rare unlock"}
                     </span>
                   </div>
+
+                  <div className="mb-2 flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-inner backdrop-blur-md transition-transform duration-300 select-none group-hover:scale-105",
+                        categoryTheme.pedestal
+                      )}
+                    >
+                      <JewelAchievementIcon
+                        iconPath={iconPath}
+                        categoryTheme={categoryTheme}
+                        isUnlocked={!!isUnlocked}
+                        className="h-6.5 w-6.5"
+                      />
+                      {isUnlocked && count > 1 && (
+                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-amber-500/40 bg-amber-400 px-1 text-[9px] font-bold text-slate-950 tabular-nums shadow-md">
+                          {count}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-xs font-extrabold tracking-tight text-foreground">
+                        {achievement.title}
+                      </h3>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.2 text-[8px] font-bold uppercase backdrop-blur-md",
+                          categoryTheme.badge
+                        )}
+                      >
+                        <CategoryIcon className="h-2 w-2" />
+                        <span>{achievement.category}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="line-clamp-2 text-[11px] leading-snug font-medium text-muted-foreground">
+                    {achievement.description}
+                  </p>
                 </div>
 
-                <p className="text-muted-foreground relative z-10 mb-4 min-h-[44px] text-center text-xs leading-relaxed">
-                  {achievement.description}
-                </p>
-
-                <div className="border-border/40 text-muted-foreground relative z-10 mt-auto flex items-center justify-between border-t pt-3 text-[10px] dark:border-white/5">
-                  <div className="flex items-center gap-1 rounded-md border border-green-500/20 bg-green-500/10 px-2 py-0.5 font-bold text-green-600 dark:text-green-400">
-                    <span>+{achievement.points}</span>
+                <div className="relative z-10 mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[10px]">
+                  <div className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-400">
+                    <span>{achievement.points}</span>
                     <span>pts</span>
                   </div>
                   {achievement.unlockedAt && (
-                    <span>Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}</span>
+                    <span className="font-mono text-[9px] text-muted-foreground">
+                      {new Date(achievement.unlockedAt).toLocaleDateString()}
+                    </span>
                   )}
                 </div>
-              </CutoutCard>
+              </motion.div>
             );
           })}
         </div>
       ) : (
-        <TextureCard className="border-border/50 bg-black/5 dark:bg-black/25">
-          <TextureCardContent className="py-12">
-            <div className="space-y-4 text-center">
-              <Trophy className="text-muted-foreground/20 mx-auto h-16 w-16" />
-              <div>
-                <h3 className="text-foreground mb-2 text-lg font-bold">Showcase Cabinet Empty</h3>
-                <p className="text-muted-foreground text-sm">
-                  Unlock rarest achievement badges to populate this showcase shelf!
-                </p>
-              </div>
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 border-t-white/15 bg-card/75 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-border/40 dark:bg-card/60">
+          <TextureOverlay texture="dots" opacity={0.03} />
+          <div className="relative z-10 mx-auto max-w-sm space-y-2">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 shadow-md backdrop-blur-md dark:text-amber-400">
+              <Trophy className="h-5 w-5 text-amber-500 dark:text-amber-400" />
             </div>
-          </TextureCardContent>
-        </TextureCard>
+            <h3 className="text-xs font-bold text-foreground">Showcase Cabinet Empty</h3>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Unlock rarest achievement badges to populate your showcase shelf!
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
 }
+

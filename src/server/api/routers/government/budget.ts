@@ -4,8 +4,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { GovernmentBuilderStateSchema } from "~/types/validation/government";
-import { notificationAPI } from "~/lib/notification-api";
+import { GovernmentBuilderStateSchema } from "~/types/government";
+import { notificationAPI } from "~/lib/notifications/api";
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({

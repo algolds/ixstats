@@ -8,10 +8,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
-import { extractSvgMetadata } from "~/lib/svg-parser";
+import { extractSvgMetadata } from "~/lib/flags/svg-parser";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB (smaller than world map's 50MB)
 const VALID_EXTENSIONS = [".svg", ".png"];

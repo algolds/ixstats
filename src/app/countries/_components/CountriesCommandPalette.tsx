@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { RainbowButton } from "~/components/magicui/rainbow-button";
+import { RainbowButton } from "~/components/ui/magicui/rainbow-button";
 import { RiSearchLine, RiCommandLine, RiShuffleLine } from "react-icons/ri";
 import { cn } from "~/lib/utils";
 

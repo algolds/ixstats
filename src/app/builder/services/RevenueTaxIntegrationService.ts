@@ -234,10 +234,7 @@ export class RevenueTaxIntegrationService {
           description: revenue.description || `${revenue.name} tax collection`,
           baseRate: revenue.rate || mapping.defaultRate,
           calculationMethod: (collectionMethod?.calculationMethod || mapping.calculationMethod) as
-            | "fixed"
-            | "percentage"
-            | "progressive"
-            | "tiered",
+            "fixed" | "percentage" | "progressive" | "tiered",
           minimumAmount: 0,
           maximumAmount: undefined,
           exemptionAmount: 0,
@@ -372,10 +369,7 @@ export class RevenueTaxIntegrationService {
           description: rs.description || `${rs.name} tax collection`,
           baseRate: rs.rate || mapping.defaultRate,
           calculationMethod: (collectionMethod?.calculationMethod || mapping.calculationMethod) as
-            | "fixed"
-            | "percentage"
-            | "progressive"
-            | "tiered",
+            "fixed" | "percentage" | "progressive" | "tiered",
           minimumAmount: 0,
           maximumAmount: undefined,
           exemptionAmount: 0,

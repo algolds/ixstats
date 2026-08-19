@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 
 // ============================================================================
@@ -649,7 +649,7 @@ export const quickActionsPoliciesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // Import the policy recommender
       const { getPolicyRecommendations, getPolicyRecommendationsByType } =
-        await import("~/lib/policy-recommender");
+        await import("~/lib/policies");
 
       // Get country data
       const country = await ctx.db.country.findUnique({

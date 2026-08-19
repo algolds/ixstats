@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { IxWorldMapRef } from "../IxWorldMap";
-import { distanceKm as haversineKm } from "~/lib/geo-math";
+import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
 import {
   sphericalMidpoint,
   segmentCount,

@@ -1,8 +1,16 @@
-export { MyCountryTabSystem } from "./MyCountryTabSystem";
-export { EnhancedIntelligenceContent } from "./EnhancedIntelligenceContent";
-export { MyCountrySidebarNav } from "./MyCountrySidebarNav";
-export { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
-export { MyCountryRouter } from "./MyCountryRouter";
-// Only re-export symbols actually imported through this barrel
-// (full primitives available via direct import from "./primitives")
-export { useCountryData, CountryDataProvider } from "./primitives";
+/**
+ * MyCountry Executive Command Suite - Central Barrel Export
+ */
+
+export * from "./shell/MyCountryRouter";
+export * from "./shell/MyCountrySidebarNav";
+export * from "./shell/CommandSurface";
+export * from "./shell/CommandNavToggle";
+export * from "./shell/ExecutiveHome";
+export * from "./shell/ExecutiveConsole";
+export * from "./shell/DomainSurface";
+export * from "./shell/DrillSheets";
+
+export * from "./shared/primitives";
+export * from "./shared/cards";
+export * from "./shared/tabs";

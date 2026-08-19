@@ -123,13 +123,13 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
       {/* Main timeline trace or generation CTA */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[9px] font-black tracking-widest text-white/40 uppercase select-none">
+          <p className="text-[9px] font-semibold tracking-wider text-white/40 uppercase select-none">
             Live Match Feed
           </p>
           {hasCommentary && !isGenerating && (
             <button
               onClick={(e) => handleGenerate(e, true)}
-              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold text-white/60 transition-colors hover:border-cyan-500/30 hover:text-cyan-300"
+              className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-semibold text-white/60 transition-colors hover:border-cyan-500/30 hover:text-cyan-300"
             >
               <Sparkles className="h-2.5 w-2.5" />
               Regenerate
@@ -155,13 +155,13 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
               <div className="group relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black/10 p-4 py-8 text-center">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 <Sparkles className="mb-2.5 h-7 w-7 text-cyan-400 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12" />
-                <h4 className="text-xs font-extrabold text-white">No AI Commentary Generated</h4>
+                <h4 className="text-xs font-bold text-white">No AI Commentary Generated</h4>
                 <p className="mt-1 mb-4 max-w-[280px] text-[10px] text-white/50">
                   Experience this match through the eyes of our premium AI sports broadcast team.
                 </p>
                 <Button
                   onClick={handleGenerate}
-                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-[10px] font-bold text-white shadow-md transition-all group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
+                  className="relative h-auto overflow-hidden rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-[10px] font-semibold text-white shadow-md transition-all group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10 hover:bg-white/20"
                 >
                   <span className="relative z-10 flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3 text-cyan-300" />
@@ -189,7 +189,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
                     key={idx}
                     className="flex items-start gap-3 rounded-xl border border-transparent p-2 transition-colors duration-200 hover:border-white/5 hover:bg-white/5"
                   >
-                    <span className="min-w-[24px] shrink-0 pt-0.5 text-right font-mono text-xs font-black text-white/40 select-none">
+                    <span className="min-w-[24px] shrink-0 pt-0.5 text-right font-mono text-xs font-bold text-white/40 tabular-nums select-none">
                       {step.t}'
                     </span>
                     <div

@@ -20,7 +20,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/map-config";
+import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 // Derive the UI type list from the single source of truth in map-config.
 // Each entry carries value, label, and color for the filter chips and type pickers.

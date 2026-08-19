@@ -9,8 +9,11 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/parsoid-client";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { getPageHistory, getRevisionWikitext as getRevisionWikitextMySQL } from "~/lib/wiki-bridge";
 import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
+import {
+  getRevisionWikitextShadow,
+  getArticleHistoryShadow,
+} from "~/lib/wiki-os/article-store";
 
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import {
@@ -163,7 +166,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const oldRev = await getRevisionWikitext(input.revid);
+      const oldRev = await getRevisionWikitextShadow(input.revid, "ixwiki");
       if (!oldRev) throw new Error("Target revision not found");
 
       const summary = input.summary ?? `Reverted to revision ${input.revid}`;
@@ -177,8 +180,8 @@ export const wikiosEditingRouter = createTRPCRouter({
   rollback: protectedProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .mutation(async ({ input, ctx }) => {
-      // Direct MySQL — uses wiki-bridge getPageHistory instead of API
-      const history = await getPageHistory(input.title, 50);
+      // Read-through: serve from shadow history with MySQL fallback
+      const history = await getArticleHistoryShadow(input.title, 50, "ixwiki");
       const revisions = history.revisions;
       if (revisions.length < 2) throw new Error("Not enough revisions to rollback");
 
@@ -186,7 +189,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       const targetRev = revisions.find((r) => r.user !== lastEditor);
       if (!targetRev) throw new Error("All revisions are by the same user");
 
-      const oldContent = await getRevisionWikitext(targetRev.revid);
+      const oldContent = await getRevisionWikitextShadow(targetRev.revid, "ixwiki");
       if (!oldContent) throw new Error("Could not fetch target revision content");
 
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
@@ -227,7 +230,14 @@ export const wikiosEditingRouter = createTRPCRouter({
       const { wikiUsername } = getWikiAuth(ctx);
 
       let attempt = 0;
-      let uploadData: any;
+      let uploadData: {
+        upload?: {
+          result: string;
+          filename?: string;
+          imageinfo?: { url?: string; descriptionurl?: string };
+        };
+        error?: { code: string; info: string };
+      } | null = null;
 
       while (attempt < 2) {
         // Build multipart form data
@@ -279,15 +289,15 @@ export const wikiosEditingRouter = createTRPCRouter({
         throw new Error(`Upload failed: ${uploadData.error.info}`);
       }
 
-      if (uploadData.upload?.result === "Success" && wikiUsername) {
+      if (uploadData?.upload?.result === "Success" && wikiUsername) {
         await updateFileUploadActor(uploadData.upload.filename ?? input.filename, wikiUsername);
       }
 
       return {
-        success: uploadData.upload?.result === "Success",
-        filename: uploadData.upload?.filename ?? input.filename,
-        url: uploadData.upload?.imageinfo?.url ?? null,
-        descriptionUrl: uploadData.upload?.imageinfo?.descriptionurl ?? null,
+        success: uploadData?.upload?.result === "Success",
+        filename: uploadData?.upload?.filename ?? input.filename,
+        url: uploadData?.upload?.imageinfo?.url ?? null,
+        descriptionUrl: uploadData?.upload?.imageinfo?.descriptionurl ?? null,
       };
     }),
 
@@ -308,9 +318,3 @@ export const wikiosEditingRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
 });
 
-/**
- * Get the wikitext content of a specific revision by ID via direct MySQL.
- */
-async function getRevisionWikitext(revid: number) {
-  return getRevisionWikitextMySQL(revid);
-}

@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from "react";
 import { GitCompare, Volume2, Sparkles, AlertCircle } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { compareProfiles, getAllProfileSeeds, type ComparisonResult } from "~/lib/onoma/comparator";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { translateToIPA } from "~/lib/onoma/phonology";

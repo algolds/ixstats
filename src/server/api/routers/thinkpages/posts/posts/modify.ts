@@ -2,8 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
-import { validateNoXSS } from "~/lib/sanitize-html";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { validateNoXSS } from "~/lib/utils";
+import { globalCache } from "~/lib/cache";
 
 const invalidateFeeds = async () => {
   try {
@@ -382,7 +382,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
       const match = post.content.match(/\[DiscordMsg:(\d+)\]/);
       if (match && match[1]) {
         try {
-          const { editDiscordMessage } = await import("~/lib/discord-ixtwitter-sync");
+          const { editDiscordMessage } = await import("~/lib/discord/ixtwitter-sync");
           const mediaUrls = updatedPost.mediaAttachments?.map((m) => m.url) || [];
           editDiscordMessage(
             match[1],
@@ -394,7 +394,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
             updatedPost.account,
             mediaUrls
           )
-            .then(async (success) => {
+            .then(async (success: boolean) => {
               if (success) {
                 await db.thinkpagesPost.update({
                   where: { id: updatedPost.id },
@@ -404,7 +404,9 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
                 });
               }
             })
-            .catch((err) => console.error("[ThinkPages] Edit Discord msg promise error:", err));
+            .catch((err: unknown) =>
+              console.error("[ThinkPages] Edit Discord msg promise error:", err)
+            );
         } catch (error) {
           console.error("[ThinkPages] Failed to trigger Discord edit:", error);
         }
@@ -519,8 +521,8 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
       // Delete Discord message if it exists
       if (match && match[1]) {
         try {
-          const { deleteDiscordMessage } = await import("~/lib/discord-ixtwitter-sync");
-          deleteDiscordMessage(match[1]).catch((err) =>
+          const { deleteDiscordMessage } = await import("~/lib/discord/ixtwitter-sync");
+          deleteDiscordMessage(match[1]).catch((err: unknown) =>
             console.error("[ThinkPages] Delete Discord msg promise error:", err)
           );
         } catch (error) {

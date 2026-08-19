@@ -1,5 +1,5 @@
-import { getTerrainAtPoint } from "~/lib/base-layer-query";
-import { geometryAreaSqKm } from "~/lib/geo-math";
+import { getTerrainAtPoint } from "./base-layer-query";
+import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import {
   findSubdivisionAtPoint,
   updateCitySpatialProfile,
@@ -30,14 +30,14 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     }
   }
   const isNew = !data.id;
-  const { validatePointContainment } = await import("~/lib/geo-validation");
+  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
     let lng = Array.isArray(coords) ? coords[0] : coords.lng;
     let lat = Array.isArray(coords) ? coords[1] : coords.lat;
 
-    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
     const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
     lng = snapped[0];
     lat = snapped[1];
@@ -212,7 +212,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
  */
 export async function upsertSubdivision(db: any, countryId: string, data: any): Promise<any> {
   const isNew = !data.id;
-  const { clipAndValidatePolygon } = await import("~/lib/geo-validation");
+  const { clipAndValidatePolygon } = await import("~/lib/maps/geo-validation");
   let geometry = data.geometry;
 
   if (
@@ -343,14 +343,14 @@ export async function upsertSubdivision(db: any, countryId: string, data: any): 
  * Upsert a Point of Interest (POI)
  */
 export async function upsertPoi(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/geo-validation");
+  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
     let lng = Array.isArray(coords) ? coords[0] : coords.lng;
     let lat = Array.isArray(coords) ? coords[1] : coords.lat;
 
-    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
     const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
     lng = snapped[0];
     lat = snapped[1];
@@ -438,14 +438,14 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
  * Upsert a Story Pin
  */
 export async function upsertStoryPin(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/geo-validation");
+  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
     let lng = Array.isArray(coords) ? coords[0] : coords.lng;
     let lat = Array.isArray(coords) ? coords[1] : coords.lat;
 
-    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
     const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
     lng = snapped[0];
     lat = snapped[1];
@@ -513,14 +513,14 @@ export async function upsertStoryPin(db: any, countryId: string, data: any): Pro
  * Upsert a Map Label
  */
 export async function upsertMapLabel(db: any, countryId: string, data: any): Promise<any> {
-  const { validatePointContainment } = await import("~/lib/geo-validation");
+  const { validatePointContainment } = await import("~/lib/maps/geo-validation");
 
   if (data.coordinates) {
     const coords = data.coordinates as any;
     let lng = Array.isArray(coords) ? coords[0] : coords.lng;
     let lat = Array.isArray(coords) ? coords[1] : coords.lat;
 
-    const { snapPointToCountryBorder } = await import("~/lib/geo-validation");
+    const { snapPointToCountryBorder } = await import("~/lib/maps/geo-validation");
     const snapped = await snapPointToCountryBorder(db, countryId, Number(lng), Number(lat));
     lng = snapped[0];
     lat = snapped[1];

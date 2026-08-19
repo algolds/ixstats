@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
-import type { RingConfig } from "~/components/mycountry/primitives/VitalityRings";
+import type { RingConfig } from "~/components/mycountry/shared/primitives/VitalityRings";
 import {
   Building,
   Users,
@@ -24,11 +24,13 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
-import { createUrl } from "~/lib/url-utils";
+import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
+import { createUrl } from "~/lib/utils";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
-import { useCountryData } from "~/components/mycountry/primitives";
-import { useFactbookMetrics } from "~/components/mycountry/FactbookMetricsProvider";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
+import { getAppleVitalityColor } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
+import type { VitalityData } from "../_types";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -38,38 +40,34 @@ const CountryMapEmbed = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-56 animate-pulse rounded-b-xl" /> }
 );
 
-/**
- * FactbookSidebar — the persistent right-column public briefing shown across all
- * factbook sections: flag-tinted vitality rings, geography map embed, and the
- * recent-activity feed. Metric-ring clicks open the shared metric-details modals
- * via `useFactbookMetrics`.
- */
-export function FactbookSidebar({
-  vitalityData,
-  countrySlug,
-}: {
-  vitalityData: {
-    economicVitality: number;
-    populationWellbeing: number;
-    diplomaticStanding: number;
-    governmentalEfficiency: number;
-  } | null;
+interface FactbookSidebarProps {
+  vitalityData: VitalityData | null;
   countrySlug: string;
-}) {
+}
+
+/**
+ * FactbookSidebar — persistent right-column public briefing shown across all
+ * factbook sections: telemetry vitality rings, geography map embed, and the
+ * recent-activity feed.
+ *
+ * Implements Apple Design physical hover/active micro-interactions and depth blur.
+ */
+export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarProps) {
   const { country } = useCountryData();
   const { openMetricModal } = useFactbookMetrics();
   const router = useRouter();
 
   const { hasGeometry, isLoading: mapLoading } = useCountryMapEmbed(country?.id ?? null);
 
-  const { data: activityData, isLoading: activityLoading } = api.activities.getCountryActivity.useQuery(
-    {
-      countryId: country?.id ?? "",
-      limit: 10,
-      timeRange: "90d",
-    },
-    { enabled: !!country?.id }
-  );
+  const { data: activityData, isLoading: activityLoading } =
+    api.activities.getCountryActivity.useQuery(
+      {
+        countryId: country?.id ?? "",
+        limit: 10,
+        timeRange: "90d",
+      },
+      { enabled: !!country?.id }
+    );
 
   const flagColors = React.useMemo(() => getFlagColors(country?.name || ""), [country?.name]);
   const flagThemeCSS = React.useMemo(() => generateFlagThemeCSS(flagColors), [flagColors]);
@@ -98,7 +96,7 @@ export function FactbookSidebar({
         key: "economicVitality",
         label: "Economic Health",
         subtitle: "GDP & Growth",
-        color: flagColors.primary,
+        color: getAppleVitalityColor(vitalityData?.economicVitality ?? 0),
         icon: DollarSign,
         value: vitalityData?.economicVitality ?? 0,
       },
@@ -106,7 +104,7 @@ export function FactbookSidebar({
         key: "populationWellbeing",
         label: "Population Wellbeing",
         subtitle: "Demographics",
-        color: flagColors.secondary,
+        color: getAppleVitalityColor(vitalityData?.populationWellbeing ?? 0),
         icon: Users,
         value: vitalityData?.populationWellbeing ?? 0,
       },
@@ -114,7 +112,7 @@ export function FactbookSidebar({
         key: "diplomaticStanding",
         label: "Diplomatic Standing",
         subtitle: "International",
-        color: flagColors.accent,
+        color: getAppleVitalityColor(vitalityData?.diplomaticStanding ?? 0),
         icon: Shield,
         value: vitalityData?.diplomaticStanding ?? 0,
       },
@@ -122,12 +120,12 @@ export function FactbookSidebar({
         key: "governmentalEfficiency",
         label: "Government Efficiency",
         subtitle: "Administration",
-        color: "#f97316",
+        color: getAppleVitalityColor(vitalityData?.governmentalEfficiency ?? 0),
         icon: Building,
         value: vitalityData?.governmentalEfficiency ?? 0,
       },
     ],
-    [flagColors, vitalityData]
+    [vitalityData]
   );
 
   if (!country) return null;
@@ -138,7 +136,7 @@ export function FactbookSidebar({
       <FacetCard
         depth={1}
         interactive="none"
-        className="group relative overflow-hidden rounded-xl border border-white/10 bg-card/30 p-4 backdrop-blur-md shadow-sm"
+        className="group bg-card/30 relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-sm saturate-180 backdrop-blur-xl"
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-[var(--flag-glow-primary)] opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35" />
@@ -154,7 +152,7 @@ export function FactbookSidebar({
             <div
               key={ring.key}
               onClick={() => handleRingClick(ring.key)}
-              className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+              className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-md transition-all duration-150 ease-out hover:scale-[1.02] hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.98]"
             >
               <HealthRing
                 value={ring.value}
@@ -165,10 +163,10 @@ export function FactbookSidebar({
                 className="shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground/80">
+                <div className="text-muted-foreground/80 truncate text-[9px] font-extrabold tracking-wider uppercase">
                   {ring.label}
                 </div>
-                <div className="text-xs font-bold leading-tight" style={{ color: ring.color }}>
+                <div className="text-xs leading-tight font-extrabold" style={{ color: ring.color }}>
                   {Math.round(ring.value)}%
                 </div>
               </div>
@@ -182,14 +180,8 @@ export function FactbookSidebar({
         <FacetCard
           depth={1}
           interactive="none"
-          className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+          className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
         >
-          <CardHeader className="px-4 py-3 pb-2">
-            <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
-              <Globe className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
-              Geography
-            </CardTitle>
-          </CardHeader>
           <CardContent className="p-0">
             <CountryMapEmbed
               countryId={country.id}
@@ -200,7 +192,7 @@ export function FactbookSidebar({
             />
           </CardContent>
           <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-muted-foreground text-[11px] font-medium">
               {country.currentPopulation
                 ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                 : ""}
@@ -219,11 +211,11 @@ export function FactbookSidebar({
       <FacetCard
         depth={1}
         interactive="none"
-        className="overflow-hidden rounded-xl border border-white/10 bg-card/30 backdrop-blur-md shadow-sm"
+        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
       >
         <CardHeader className="px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-foreground/90">
+            <CardTitle className="text-foreground/90 flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
               <Activity className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
               Recent Activity
             </CardTitle>
@@ -232,7 +224,7 @@ export function FactbookSidebar({
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push(createUrl(`/countries/${countrySlug}/activity`))}
-                className="h-7 px-2 text-xs"
+                className="h-7 px-2 text-xs font-semibold transition-transform duration-100 active:scale-95"
               >
                 View All
                 <ArrowRight className="ml-1 h-3 w-3" />
@@ -289,8 +281,10 @@ export function FactbookSidebar({
                 return (
                   <div
                     key={activity.id}
-                    className={`flex items-start gap-2.5 ${
-                      idx < activityData.activities.length - 1 ? "border-border/50 border-b pb-3" : ""
+                    className={`flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-150 hover:bg-white/[0.02] ${
+                      idx < activityData.activities.length - 1
+                        ? "border-border/40 border-b pb-3"
+                        : ""
                     }`}
                   >
                     <div
@@ -299,10 +293,10 @@ export function FactbookSidebar({
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-1.5">
                         {getActivityIcon()}
-                        <p className="truncate text-xs font-medium">{activity.title}</p>
+                        <p className="truncate text-xs font-semibold">{activity.title}</p>
                       </div>
                       {activity.source === "thinkpages" && (
-                        <Badge variant="outline" className="mt-1 h-4 text-[10px]">
+                        <Badge variant="outline" className="mt-1 h-4 text-[10px] font-bold">
                           ThinkPages
                         </Badge>
                       )}
@@ -338,12 +332,12 @@ export function FactbookSidebar({
           ) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <Activity className="text-muted-foreground/40 mb-2 h-6 w-6" />
-              <p className="text-muted-foreground text-xs">No recent public activity</p>
+              <p className="text-muted-foreground text-xs font-medium">No recent public activity</p>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push(createUrl(`/countries/${countrySlug}/activity`))}
-                className="mt-2 h-7 px-2 text-xs"
+                className="mt-2 h-7 px-2 text-xs font-semibold transition-transform duration-100 active:scale-95"
               >
                 View Activity Tab
                 <ArrowRight className="ml-1 h-3 w-3" />

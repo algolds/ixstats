@@ -6,6 +6,7 @@
 "use client";
 
 import { type ReactNode, useState, useEffect } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -14,7 +15,7 @@ import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { StatusIndicator } from "~/components/status-indicator";
+import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
   Popover,
   PopoverTrigger,
@@ -45,6 +46,7 @@ export function WikiOSLayout({
   children: ReactNode;
 }) {
   useWikiOSShortcuts();
+  useWikiPrefetch();
   const { articleTitle, setActiveModal } = useWikiContext();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -204,19 +206,21 @@ export function WikiOSLayout({
                 About WikiOS
               </PopoverTitle>
               <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
-                WikiOS is the next-generation wiki platform. It features a beautiful design,
-                improved performance, modern editing tools, and more.
+                WikiOS is a next-generation wiki platform built for worldbuilding communities. 
               </PopoverDescription>
             </PopoverContent>
           </Popover>
           <span>v{WIKIOS_VERSION}</span>
         </div>
-        <StatusIndicator
-          status="operational"
-          label="WikiOS Online"
-          size="sm"
-          className="border-white/5 bg-transparent"
-        />
+        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
+          <Link href="/terms" className="transition-colors hover:text-amber-400">
+            Terms of Service
+          </Link>
+          <span>•</span>
+          <Link href="/privacy" className="transition-colors hover:text-amber-400">
+            Privacy Policy
+          </Link>
+        </div>
       </footer>
 
       {/* Search Modal */}

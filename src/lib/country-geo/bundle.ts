@@ -1,5 +1,5 @@
-import { getCountryColor } from "~/lib/map-config";
-import { featureIdToDisplayName } from "~/lib/map-utils";
+import { getCountryColor } from "~/lib/maps/map-config";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 
 /**
  * Builds a unified geographic data bundle for a country, reducing client round-trips

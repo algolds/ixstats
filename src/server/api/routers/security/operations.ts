@@ -5,8 +5,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { notificationAPI } from "~/lib/notification-api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { notificationAPI } from "~/lib/notifications/api";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // ===========================
 // Input Validation Schemas

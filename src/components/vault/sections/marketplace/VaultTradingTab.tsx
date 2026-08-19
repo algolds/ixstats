@@ -37,12 +37,14 @@ export function VaultTradingTab() {
   } = api.trading.getActiveTrades.useQuery();
   const { data: history } = api.trading.getTradeHistory.useQuery({ limit: 10 });
 
-  const incomingTrades =
-    activeTrades?.filter((t: any) => t.recipient?.clerkUserId === userId) || [];
-  const outgoingTrades =
-    activeTrades?.filter((t: any) => t.initiator?.clerkUserId === userId) || [];
+  type ActiveTradeItem = NonNullable<typeof activeTrades>[number];
 
-  const completedTrades = history?.trades.filter((t: any) => t.status === "ACCEPTED").length || 0;
+  const incomingTrades =
+    activeTrades?.filter((t: ActiveTradeItem) => t.recipient?.clerkUserId === userId) || [];
+  const outgoingTrades =
+    activeTrades?.filter((t: ActiveTradeItem) => t.initiator?.clerkUserId === userId) || [];
+
+  const completedTrades = history?.trades.filter((t) => t.status === "ACCEPTED").length || 0;
   const totalTrades = (history?.total || 0) + (activeTrades?.length || 0);
   const successRate = totalTrades > 0 ? ((completedTrades / totalTrades) * 100).toFixed(0) : "0";
 
@@ -94,10 +96,15 @@ export function VaultTradingTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-bold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
-              <p className={cn("mt-1 font-mono text-base leading-none font-black", stat.color)}>
+              <p
+                className={cn(
+                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
+                  stat.color
+                )}
+              >
                 {stat.value}
               </p>
             </div>
@@ -156,7 +163,7 @@ export function VaultTradingTab() {
                 <Skeleton className="h-20 w-full animate-pulse rounded-lg bg-white/5" />
               </div>
             ) : activeTrades && activeTrades.length > 0 ? (
-              activeTrades.map((trade: any) => (
+              activeTrades.map((trade: ActiveTradeItem) => (
                 <TradeNegotiation
                   key={trade.id}
                   tradeId={trade.id}
@@ -184,7 +191,7 @@ export function VaultTradingTab() {
 
           <TabsContent value="incoming" className="space-y-3 outline-none">
             {incomingTrades.length > 0 ? (
-              incomingTrades.map((trade: any) => (
+              incomingTrades.map((trade: ActiveTradeItem) => (
                 <TradeNegotiation
                   key={trade.id}
                   tradeId={trade.id}
@@ -205,7 +212,7 @@ export function VaultTradingTab() {
 
           <TabsContent value="outgoing" className="space-y-3 outline-none">
             {outgoingTrades.length > 0 ? (
-              outgoingTrades.map((trade: any) => (
+              outgoingTrades.map((trade: ActiveTradeItem) => (
                 <TradeNegotiation
                   key={trade.id}
                   tradeId={trade.id}

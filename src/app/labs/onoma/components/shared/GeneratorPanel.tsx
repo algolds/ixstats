@@ -453,19 +453,28 @@ export function GeneratorPanel({
 
               {/* Results Grid */}
               <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
-                {gen.generatedNames.map((name, idx) => (
-                  <NameResultCard
-                    key={`${name}-${idx}`}
-                    name={name}
-                    isSaved={bank.nameBank?.some(
-                      (entry) => entry.type === "saved-name" && entry.title === name
-                    )}
-                    onSave={handleSaveName}
-                    onUse={(n) => setUseName(n)}
-                    culture={gen.culture}
-                    naturalness={gen.scoreNaturalness(name)}
-                  />
-                ))}
+                {gen.generatedNames.map((name, idx) => {
+                  const effectiveCulture =
+                    gen.culture && gen.culture !== "any"
+                      ? gen.culture
+                      : gen.subType && gen.subType !== "generic"
+                        ? `${gen.category}:${gen.subType}`
+                        : gen.culture;
+
+                  return (
+                    <NameResultCard
+                      key={`${name}-${idx}`}
+                      name={name}
+                      isSaved={bank.nameBank?.some(
+                        (entry) => entry.type === "saved-name" && entry.title === name
+                      )}
+                      onSave={handleSaveName}
+                      onUse={(n) => setUseName(n)}
+                      culture={effectiveCulture}
+                      naturalness={gen.scoreNaturalness(name)}
+                    />
+                  );
+                })}
               </div>
             </FacetCard>
           ) : (

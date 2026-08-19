@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { IssueCard } from "~/components/national-issues";
+import { IssueCard } from "~/components/executive/issues";
 
 interface LegislativeIssuesProps {
   countryId: string;
@@ -22,6 +22,16 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
         const dom = (issue.domain ?? "").toLowerCase();
         const cat = (issue.category ?? "").toLowerCase();
         return dom === "political" || cat === "governance";
+      })
+      .slice()
+      .sort((a, b) => {
+        const aSev = String(a.severity ?? "").toLowerCase();
+        const bSev = String(b.severity ?? "").toLowerCase();
+        const sevRank = (s: string) =>
+          s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
+        const scoreA = sevRank(aSev) * 100 + (a.urgency ?? 0);
+        const scoreB = sevRank(bSev) * 100 + (b.urgency ?? 0);
+        return scoreB - scoreA;
       })
       .slice(0, 5);
   }, [issueData]);

@@ -6,7 +6,7 @@
  * integration (IxWiki, IIWiki, custom wikis) with intelligent content processing.
  */
 
-import { type CountryInfobox } from "~/lib/mediawiki-service";
+import { type CountryInfobox } from "~/lib/wiki/legacy-service";
 
 /**
  * Represents a single intelligence section extracted from wiki sources.

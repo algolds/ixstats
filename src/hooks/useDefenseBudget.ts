@@ -45,11 +45,7 @@ export const BUDGET_CATEGORIES = [
 ] as const;
 
 export type BudgetCategoryKey =
-  | "personnelCosts"
-  | "operationsMaintenance"
-  | "procurement"
-  | "rdteCosts"
-  | "militaryConstruction";
+  "personnelCosts" | "operationsMaintenance" | "procurement" | "rdteCosts" | "militaryConstruction";
 
 export interface BudgetData {
   totalBudget: number;

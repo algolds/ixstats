@@ -6,7 +6,7 @@ This reference summarises realtime channels, notification payloads, and schedule
 
 ## WebSocket Channels
 - **Endpoint**: `/ws/intelligence`
-- **Server**: `src/lib/websocket-server.ts` (Socket.IO-compatible WebSocket server spun up by `server.mjs`)
+- **Server**: `src/server/websocket-server.ts` (Socket.IO-compatible WebSocket server spun up by `server.mjs`)
 - **Subscriptions**: Clients auto-subscribe to `all` plus type-specific channels (`economic`, `diplomatic`, `government`, `crisis`, `achievement`)
 - **Payload Format**:
   ```json

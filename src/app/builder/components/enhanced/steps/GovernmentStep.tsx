@@ -27,18 +27,18 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { Label } from "~/components/ui/label";
-import { GovernmentStructureForm } from "~/components/government/atoms/GovernmentStructureForm";
-import { RevenueSourceForm } from "~/components/government/atoms/RevenueSourceForm";
-import { DepartmentList } from "~/components/builder/government/DepartmentList";
-import { BudgetAllocationList } from "~/components/builder/government/BudgetAllocationList";
+import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";
+import { RevenueSourceForm } from "~/components/mycountry/domains/government/atoms/RevenueSourceForm";
+import { DepartmentList } from "~/components/mycountry/domains/government/builder/DepartmentList";
+import { BudgetAllocationList } from "~/components/mycountry/domains/government/builder/BudgetAllocationList";
 import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { ComponentType } from "@prisma/client";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
-import { AtomicGovernmentComponents } from "~/components/government/atoms/AtomicGovernmentComponents";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
-import { AtomicWelcomeModal } from "~/components/government/atomic";
+import { AtomicGovernmentComponents } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { AtomicWelcomeModal } from "~/components/mycountry/domains/government/atomic";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 
@@ -149,8 +149,13 @@ export function GovernmentStep({
 
   // Auto-allocate standard departments if empty in standard mode
   useEffect(() => {
-    if (viewMode === "standard" && (!governmentStructure.departments || governmentStructure.departments.length === 0)) {
-      const totalBudget = governmentStructure.structure?.totalBudget || (economicInputs?.coreIndicators?.nominalGDP || 1000000000) * 0.35;
+    if (
+      viewMode === "standard" &&
+      (!governmentStructure.departments || governmentStructure.departments.length === 0)
+    ) {
+      const totalBudget =
+        governmentStructure.structure?.totalBudget ||
+        (economicInputs?.coreIndicators?.nominalGDP || 1000000000) * 0.35;
       const defaultDepts = [
         {
           name: "Department of Finance",
@@ -237,9 +242,9 @@ export function GovernmentStep({
       const defaultAllocations = [
         { departmentId: "0", allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
         { departmentId: "1", allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
-        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
-        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
-        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.20 },
+        { departmentId: "2", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "3", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
+        { departmentId: "4", allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
       ];
 
       onGovernmentStructureChange({

@@ -3,9 +3,9 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-bridge";
+import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 
 // Input schemas
 const activityFilterSchema = z.object({

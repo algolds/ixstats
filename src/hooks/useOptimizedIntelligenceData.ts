@@ -8,8 +8,7 @@ import { api } from "~/trpc/react";
 import type { Country, IntelligenceItem, VitalityIntelligence } from "~/types/intelligence-unified";
 import type { DeliveryMethod } from "~/types/unified-notifications";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 interface OptimizedIntelligenceData {
   country: Country | null;
@@ -82,8 +81,6 @@ export function useOptimizedIntelligenceData({
   });
 
   // Memoize the result to prevent unnecessary re-renders
-  // Get notification system for live wire integration
-  const { createNotification } = useUnifiedNotifications();
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Wire intelligence data changes to global notifications
@@ -92,25 +89,20 @@ export function useOptimizedIntelligenceData({
 
     if (intelligenceQuery.data && Array.isArray(intelligenceQuery.data)) {
       // Check for new high-priority intelligence items
-      const highPriorityItems = intelligenceQuery.data.filter((item: IntelligenceItem) =>
-        ["high", "critical"].includes(
-          (item as IntelligenceItem & { priority?: string }).priority || "medium"
-        )
+      const items = intelligenceQuery.data as any[];
+      const highPriorityItems = items.filter((item) =>
+        ["high", "critical"].includes(item.priority || "medium")
       );
 
       // Create notifications for critical intelligence updates
-      highPriorityItems.forEach(async (item: IntelligenceItem) => {
+      highPriorityItems.forEach(async (item) => {
         const notificationData = {
           source: "intelligence" as const,
           title: `Intelligence Alert: ${item.title}`,
           message: item.content || "New intelligence information available",
           category: "security" as const,
           type: "alert" as const,
-          priority: ((item as IntelligenceItem & { priority?: string }).priority || "medium") as
-            | "low"
-            | "medium"
-            | "high"
-            | "critical",
+          priority: (item.priority || "medium") as "low" | "medium" | "high" | "critical",
           severity: "important" as const,
           deliveryMethod: "dynamic-island" as const,
           actionable: true,
@@ -187,11 +179,11 @@ export function useOptimizedIntelligenceData({
 
     return {
       country: (countryQuery.data as unknown as Country) || null,
-      intelligence: intelligenceQuery.data || null,
-      vitality: vitalityQuery.data || null,
+      intelligence: (intelligenceQuery.data as unknown as IntelligenceItem[]) || null,
+      vitality: (vitalityQuery.data as unknown as VitalityIntelligence) || null,
       isLoading: queries.some((q) => q.isLoading),
       isError: queries.some((q) => q.isError),
-      error: queries.find((q) => q.error)?.error || null,
+      error: (queries.find((q) => q.error)?.error as Error) || null,
       refetchAll: () => {
         queries.forEach((query) => {
           if (query?.refetch) {

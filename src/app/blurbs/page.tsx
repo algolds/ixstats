@@ -2,8 +2,8 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { BlurbPromptList } from "~/components/blurbs/BlurbPromptList";
-import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
+import { BlurbPromptList } from "~/components/thinkpages/blurbs/BlurbPromptList";
+import { BlurbsNav } from "~/components/thinkpages/blurbs/BlurbsNav";
 
 export default function BlurbsPage() {
   usePageTitle({ title: "Blurbs" });

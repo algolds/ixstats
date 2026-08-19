@@ -13,8 +13,8 @@
  */
 
 import { IxTime } from "~/lib/ixtime";
-import { NationalIssuesEngine } from "~/lib/national-issues-engine";
-import { getNationalIssuesConfig } from "~/lib/national-issues-config";
+import { NationalIssuesEngine } from "~/lib/national-issues";
+import { getNationalIssuesConfig } from "~/lib/national-issues";
 import type { Category } from "~/lib/intent/assemble";
 
 const IX_TIME_DAY_MS = 24 * 60 * 60 * 1000;

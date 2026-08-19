@@ -5,9 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Eye, BookOpen, Activity } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
+import type { ProfileTabType } from "../_types";
 
-export type TabType = "overview" | "lore" | "activity";
+export type TabType = ProfileTabType;
 
 interface CountryTabsProps {
   activeTab: TabType;
@@ -15,20 +16,26 @@ interface CountryTabsProps {
   countrySlug?: string;
 }
 
+interface NavItem {
+  id: TabType;
+  icon: typeof Eye;
+  label: string;
+  href: string;
+}
+
 /**
- * CountryTabs — the prominent page-level top bar for the public country
- * profile. Tier 1 navigation: Factbook / Dossier / Activity.
+ * CountryTabs — prominent page-level top bar for the public country profile.
+ * Tier 1 navigation: Factbook / Dossier / Activity.
  *
- * Renders real `<Link>`s to nested routes so tab state is shareable and
- * back/forward works. The active tab is derived from the URL pathname (via the
- * `countrySlug` base path) and the top bar reads the flag palette for theming.
+ * Employs Apple Design physical motion (active scale press, fluid indicator,
+ * depth refraction) and strict type inference for tab items.
  */
 export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabsProps) {
   const pathname = usePathname();
 
   const base = countrySlug ? `/countries/${countrySlug}` : "";
 
-  const items: { id: TabType; icon: typeof Eye; label: string; href: string }[] = [
+  const items: NavItem[] = [
     { id: "overview", icon: Eye, label: "Factbook", href: `${base}/factbook` },
     { id: "lore", icon: BookOpen, label: "Dossier", href: `${base}/dossier` },
     { id: "activity", icon: Activity, label: "Activity", href: `${base}/activity` },
@@ -47,9 +54,9 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
   return (
     <nav
       aria-label="Country profile sections"
-      className="facet-surface facet-refraction w-full rounded-xl border border-white/5 p-1 shadow-sm"
+      className="facet-surface facet-refraction w-full rounded-2xl border border-white/10 p-1.5 shadow-sm saturate-180 backdrop-blur-xl"
     >
-      <div className="grid w-full grid-cols-3 gap-1">
+      <div className="grid w-full grid-cols-3 gap-1.5">
         {items.map((item) => {
           const isActive = resolvedActive === item.id;
           const Icon = item.icon;
@@ -60,10 +67,10 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               onClick={() => onTabChange(item.id)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "group relative flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-all duration-200 active:scale-[0.98]",
+                "group relative flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-150 ease-out active:scale-[0.97] sm:text-sm",
                 isActive
-                  ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/25"
-                  : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground"
+                  ? "bg-[var(--flag-primary)]/12 text-[var(--flag-primary)] shadow-sm ring-1 ring-[var(--flag-primary)]/30 backdrop-blur-md"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
               )}
               style={
                 isActive
@@ -74,11 +81,10 @@ export function CountryTabs({ activeTab, onTabChange, countrySlug }: CountryTabs
               }
             >
               <Icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" />
-              <span className="hidden sm:inline">{item.label}</span>
-              <span className="sm:hidden">{item.label}</span>
+              <span>{item.label}</span>
               {isActive && (
                 <span
-                  className="absolute inset-x-3 -bottom-[5px] h-0.5 rounded-full bg-[var(--flag-primary)] opacity-70"
+                  className="absolute inset-x-4 -bottom-[6px] h-0.5 rounded-full bg-[var(--flag-primary)] opacity-85 shadow-[0_0_8px_var(--flag-primary)] transition-all duration-300"
                   aria-hidden="true"
                 />
               )}

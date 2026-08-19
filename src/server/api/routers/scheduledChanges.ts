@@ -3,7 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { StorytellerEffectType } from "~/types/ixstats";
 import { IxTime } from "~/lib/ixtime";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 /**
  * Scheduled Changes Router

@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
+import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
 import { ExecutiveItemCard } from "./ExecutiveItemCard";
 import { useNotify } from "~/hooks/useNotify";

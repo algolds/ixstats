@@ -12,10 +12,10 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault-service";
-import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
+import { vaultService } from "~/lib/vault";
+import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { type VaultTransactionType } from "@prisma/client";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 
 /**
  * Vault transaction type enum for validation
@@ -288,14 +288,20 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cached = await globalCache.get<any>(cacheKey);
       if (cached) return cached;
 
-      // Count owned card instances live
+      // Count owned card instances live (excluding retired cards)
       const totalCards = await ctx.db.cardOwnership.count({
-        where: { ownerId: ctx.user.id },
+        where: {
+          ownerId: ctx.user.id,
+          cards: { isRetired: false },
+        },
       });
 
-      // Sum of market values for all owned card instances live
+      // Sum of market values for all owned card instances live (excluding retired cards)
       const ownerships = await ctx.db.cardOwnership.findMany({
-        where: { ownerId: ctx.user.id },
+        where: {
+          ownerId: ctx.user.id,
+          cards: { isRetired: false },
+        },
         include: {
           cards: {
             select: {

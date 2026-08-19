@@ -25,7 +25,15 @@ describe("v2/export & generateWorld", () => {
   });
 
   it("contains all 7 required GeoJSON layers", () => {
-    const requiredLayers = ["background", "altitudes", "climate", "political", "rivers", "lakes", "icecaps"];
+    const requiredLayers = [
+      "background",
+      "altitudes",
+      "climate",
+      "political",
+      "rivers",
+      "lakes",
+      "icecaps",
+    ];
     for (const layerKey of requiredLayers) {
       expect(world.layers[layerKey]).toBeDefined();
       expect(world.layers[layerKey]!.type).toBe("FeatureCollection");
@@ -81,12 +89,9 @@ describe("v2/export & generateWorld", () => {
 
   it("progress callback is invoked in correct stage order", () => {
     const stagesSeen: string[] = [];
-    generateWorld(
-      { ...DEFAULT_PARAMS, seed: TEST_SEED + 1, cellCount: TEST_CELLS },
-      (stage) => {
-        if (!stagesSeen.includes(stage)) stagesSeen.push(stage);
-      }
-    );
+    generateWorld({ ...DEFAULT_PARAMS, seed: TEST_SEED + 1, cellCount: TEST_CELLS }, (stage) => {
+      if (!stagesSeen.includes(stage)) stagesSeen.push(stage);
+    });
 
     expect(stagesSeen).toEqual([
       "mesh",

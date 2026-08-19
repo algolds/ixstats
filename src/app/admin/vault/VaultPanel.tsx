@@ -5,7 +5,16 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, ArrowLeft, Users, ShoppingBag, History, Settings, Coins } from "lucide-react";
+import {
+  Shield,
+  ArrowLeft,
+  Users,
+  ShoppingBag,
+  History,
+  Settings,
+  Coins,
+  Gift,
+} from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -16,10 +25,11 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 // Sub-components
 import { VaultUserDirectory } from "./VaultUserDirectory";
 import { VaultStoreControl } from "./VaultStoreControl";
+import { VaultBonusAdmin } from "./VaultBonusAdmin";
 import { VaultPurchaseLogs } from "./VaultPurchaseLogs";
 import { VaultSystemConfig } from "./VaultSystemConfig";
 
-type VaultTab = "users" | "store" | "logs" | "config";
+type VaultTab = "users" | "store" | "bonuses" | "logs" | "config";
 
 export default function AdminVaultPage() {
   usePageTitle({ title: "Admin - Vault Store & Economy" });
@@ -93,6 +103,7 @@ export default function AdminVaultPage() {
         {[
           { id: "users" as VaultTab, label: "Users & Balances", icon: Users },
           { id: "store" as VaultTab, label: "Store Inventory", icon: ShoppingBag },
+          { id: "bonuses" as VaultTab, label: "Metagame Bonuses", icon: Gift },
           { id: "logs" as VaultTab, label: "Purchase Audit Logs", icon: History },
           { id: "config" as VaultTab, label: "System", icon: Settings },
         ].map((tab) => {
@@ -119,6 +130,7 @@ export default function AdminVaultPage() {
       <div className="mt-4">
         {activeTab === "users" && <VaultUserDirectory />}
         {activeTab === "store" && <VaultStoreControl />}
+        {activeTab === "bonuses" && <VaultBonusAdmin />}
         {activeTab === "logs" && <VaultPurchaseLogs />}
         {activeTab === "config" && <VaultSystemConfig />}
       </div>

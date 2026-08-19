@@ -44,9 +44,10 @@ export async function generateIntentSummationDraft(params: {
   }
 
   const tierTitle = intent.tier ? intent.tier.toUpperCase() : "EXECUTIVE";
-  const changesSummary = parsedChanges.length > 0
-    ? parsedChanges.map((c) => c.label).join(", ")
-    : intent.summary || intent.goal;
+  const changesSummary =
+    parsedChanges.length > 0
+      ? parsedChanges.map((c) => c.label).join(", ")
+      : intent.summary || intent.goal;
 
   const proseNarrative =
     `🏛️ **EXECUTIVE SUMMATION: ${intent.goal}**\n\n` +
@@ -68,9 +69,10 @@ export async function generateIntentSummationDraft(params: {
 
   if (!account) {
     // Look up any account linked to this country's user/owner
-    account = await db.thinkpagesAccount.findFirst({
-      where: { verifiedBadge: true },
-    }) || await db.thinkpagesAccount.findFirst();
+    account =
+      (await db.thinkpagesAccount.findFirst({
+        where: { verifiedBadge: true },
+      })) || (await db.thinkpagesAccount.findFirst());
   }
 
   if (!account) {

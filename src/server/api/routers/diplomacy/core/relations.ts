@@ -3,8 +3,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
-import { groupIncidentsByCountry } from "~/lib/diplomatic-incidents";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { groupIncidentsByCountry } from "~/lib/diplomacy/incidents";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCoreRelationsRouter = createTRPCRouter({

@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { LeagueCreator } from "~/components/myleague/LeagueCreator";
+import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";

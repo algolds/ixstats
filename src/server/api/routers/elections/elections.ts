@@ -2,8 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { notificationAPI } from "~/lib/notification-api";
-import { parseChambers, simulateElectionCore } from "~/lib/election-simulation";
+import { notificationAPI } from "~/lib/notifications/api";
+import { parseChambers, simulateElectionCore } from "~/lib/government/election-simulation";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System

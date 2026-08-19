@@ -1,4 +1,4 @@
-import { defineAbilityFor } from "~/lib/ability";
+import { defineAbilityFor } from "~/lib/auth";
 
 describe("defineAbilityFor", () => {
   it("should grant full access to owner", () => {

@@ -14,7 +14,7 @@ import {
   Info,
 } from "lucide-react";
 import type { GovernmentValidationResult } from "../utils/governmentValidation";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 interface GovernmentBuilderErrorProps {
   validation: GovernmentValidationResult;

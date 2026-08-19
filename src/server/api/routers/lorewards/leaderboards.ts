@@ -8,8 +8,8 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki-bridge";
-import { syncCurrentWinners } from "~/lib/lorewards-sync";
+import { getWikiDbPool } from "~/lib/wiki/bridge";
+import { syncCurrentWinners } from "~/lib/lorewards";
 
 export const lorewardsLeaderboardsRouter = createTRPCRouter({
   /** Leaderboard by period. */

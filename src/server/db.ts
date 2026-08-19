@@ -4,8 +4,8 @@ import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 // Import from standalone query-monitor to avoid circular dependency with database-optimizations
-import { queryMonitor } from "~/lib/query-monitor";
-import { isDevMode } from "~/lib/dev-memory-config";
+import { queryMonitor } from "~/lib/system";
+import { isDevMode } from "~/lib/system";
 import { prismaErrorToAppError } from "~/lib/prisma-error";
 
 // Check if we're in read-only mode (development with production data)
@@ -394,13 +394,13 @@ export const isDatabaseReadOnly = isReadOnlyMode;
 
 if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
   // Asynchronously synchronize baseline achievements in background on server start
-  import("~/lib/achievement-sync")
+  import("~/lib/achievements/sync")
     .then(({ syncAchievements }) => {
-      syncAchievements(db).catch((err) =>
+      syncAchievements(db).catch((err: unknown) =>
         console.error("[DATABASE] Baseline achievements sync failed:", err)
       );
     })
-    .catch((err) => console.error("[DATABASE] Failed to load achievement-sync:", err));
+    .catch((err: unknown) => console.error("[DATABASE] Failed to load achievement-sync:", err));
 }
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = db as unknown as PrismaClient;

@@ -5,8 +5,8 @@ import { TRPCError } from "@trpc/server";
 import {
   NPCCulturalParticipation,
   type NPCParticipationContext,
-} from "~/lib/npc-cultural-participation";
-import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomatic-npc-personality";
+} from "~/lib/diplomacy/npc-cultural-participation";
+import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
@@ -94,8 +94,9 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
       }
 
       // Generate NPC personality based on observables
-      const { NPCPersonalitySystem } = await import("~/lib/diplomatic-npc-personality");
-      const { NPCCulturalParticipation } = await import("~/lib/npc-cultural-participation");
+      const { NPCPersonalitySystem } = await import("~/lib/diplomacy/npc-personality");
+      const { NPCCulturalParticipation } =
+        await import("~/lib/diplomacy/npc-cultural-participation");
 
       const observableData = {
         relationships: relationship
@@ -114,7 +115,7 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
         historicalActions: [],
       };
 
-      const { createObservableDataFromDatabase } = await import("~/lib/diplomatic-npc-personality");
+      const { createObservableDataFromDatabase } = await import("~/lib/diplomacy/npc-personality");
 
       const personality = NPCPersonalitySystem.calculatePersonality(
         input.npcCountryId,

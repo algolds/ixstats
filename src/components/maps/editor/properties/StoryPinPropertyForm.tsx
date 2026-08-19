@@ -72,8 +72,8 @@ function WikiSectionImporter({
   const [showSections, setShowSections] = useState(false);
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
 
-  const { data: sections, isLoading: loadingSections } = api.wiki.getSections.useQuery(
-    { title: wikiTitle, wiki: "ixwiki" },
+  const { data: sections, isLoading: loadingSections } = api.wikios.getSections.useQuery(
+    { title: wikiTitle },
     { enabled: showSections, staleTime: 5 * 60_000 }
   );
 
@@ -82,7 +82,7 @@ function WikiSectionImporter({
   const handleSelectSection = async (sectionTitle: string) => {
     setLoadingSection(sectionTitle);
     try {
-      const result = await utils.wiki.getSectionContent.fetch({
+      const result = await utils.wikios.getSectionContent.fetch({
         title: wikiTitle,
         section: sectionTitle,
         source: "ixwiki",
@@ -157,7 +157,7 @@ function WikiSearchInput({
   const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: results } = api.wiki.searchPages.useQuery(
+  const { data: results } = api.wikios.searchPages.useQuery(
     { query, limit: 6 },
     { enabled: query.length >= 3 && showDropdown, staleTime: 60_000 }
   );

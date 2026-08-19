@@ -5,7 +5,7 @@
 import { z } from "zod";
 import { assertCountryAccess } from "./_ownership";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 const economicsProfileRouter = createTRPCRouter({
   // ==================== ECONOMIC PROFILE ====================

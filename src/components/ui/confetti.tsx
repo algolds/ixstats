@@ -10,125 +10,136 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import type {
-  GlobalOptions as ConfettiGlobalOptions,
-  CreateTypes as ConfettiInstance,
-  Options as ConfettiOptions,
-} from "canvas-confetti";
-import confetti from "canvas-confetti";
-
 import { Button } from "~/components/ui/button";
 
-type Api = {
-  fire: (options?: ConfettiOptions) => void;
-};
+export interface ConfettiOptions {
+  particleCount?: number;
+  spread?: number;
+  origin?: { x?: number; y?: number };
+  colors?: string[];
+}
 
-type Props = React.ComponentPropsWithRef<"canvas"> & {
+export type ConfettiRef = {
+  fire: (options?: ConfettiOptions) => void;
+} | null;
+
+interface Props extends React.ComponentPropsWithRef<"canvas"> {
   options?: ConfettiOptions;
-  globalOptions?: ConfettiGlobalOptions;
   manualstart?: boolean;
   children?: ReactNode;
-};
+}
 
-export type ConfettiRef = Api | null;
+const DEFAULT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
-const ConfettiContext = createContext<Api>({} as Api);
+function runParticleBurst(canvas: HTMLCanvasElement, opts: ConfettiOptions = {}) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-// Define component first
-const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
-  const {
-    options,
-    globalOptions = { resize: true, useWorker: true },
-    manualstart = false,
-    children,
-    ...rest
-  } = props;
-  const instanceRef = useRef<ConfettiInstance | null>(null);
+  const count = opts.particleCount ?? 50;
+  const colors = opts.colors ?? DEFAULT_COLORS;
+  const originX = (opts.origin?.x ?? 0.5) * canvas.width;
+  const originY = (opts.origin?.y ?? 0.5) * canvas.height;
 
-  const canvasRef = useCallback(
-    (node: HTMLCanvasElement) => {
-      if (node !== null) {
-        if (instanceRef.current) return;
-        instanceRef.current = confetti.create(node, {
-          ...globalOptions,
-          resize: true,
-        });
-      } else {
-        if (instanceRef.current) {
-          instanceRef.current.reset();
-          instanceRef.current = null;
-        }
-      }
-    },
-    [globalOptions]
-  );
+  interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+    color: string;
+    alpha: number;
+    rotation: number;
+    vRot: number;
+  }
+
+  const particles: Particle[] = Array.from({ length: count }, () => {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 6;
+    return {
+      x: originX,
+      y: originY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 3,
+      size: 4 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)] ?? "#3b82f6",
+      alpha: 1,
+      rotation: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 10,
+    };
+  });
+
+  let animId: number;
+  const render = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let activeCount = 0;
+
+    for (const p of particles) {
+      if (p.alpha <= 0) continue;
+      activeCount++;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15; // gravity
+      p.alpha -= 0.015;
+      p.rotation += p.vRot;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    }
+
+    if (activeCount > 0) {
+      animId = requestAnimationFrame(render);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  animId = requestAnimationFrame(render);
+}
+
+export const Confetti = forwardRef<ConfettiRef, Props>((props, ref) => {
+  const { options, manualstart = false, children, ...rest } = props;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const fire = useCallback(
-    async (opts = {}) => {
-      try {
-        await instanceRef.current?.({ ...options, ...opts });
-      } catch (error) {
-        console.error("Confetti error:", error);
+    (opts: ConfettiOptions = {}) => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        runParticleBurst(canvas, { ...options, ...opts });
       }
     },
     [options]
   );
 
-  const api = useMemo(
-    () => ({
-      fire,
-    }),
-    [fire]
-  );
-
-  useImperativeHandle(ref, () => api, [api]);
+  useImperativeHandle(ref, () => ({ fire }), [fire]);
 
   useEffect(() => {
     if (!manualstart) {
-      (async () => {
-        try {
-          await fire();
-        } catch (error) {
-          console.error("Confetti effect error:", error);
-        }
-      })();
+      fire();
     }
   }, [manualstart, fire]);
 
   return (
-    <ConfettiContext.Provider value={api}>
+    <>
       <canvas ref={canvasRef} {...rest} />
       {children}
-    </ConfettiContext.Provider>
+    </>
   );
 });
 
-// Set display name immediately
-ConfettiComponent.displayName = "Confetti";
-
-// Export as Confetti
-export const Confetti = ConfettiComponent;
+Confetti.displayName = "Confetti";
 
 interface ConfettiButtonProps extends React.ComponentProps<"button"> {
-  options?: ConfettiOptions & ConfettiGlobalOptions & { canvas?: HTMLCanvasElement };
+  options?: ConfettiOptions;
 }
 
-const ConfettiButtonComponent = ({ options, children, ...props }: ConfettiButtonProps) => {
-  const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    try {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      await confetti({
-        ...options,
-        origin: {
-          x: x / window.innerWidth,
-          y: y / window.innerHeight,
-        },
-      });
-    } catch (error) {
-      console.error("Confetti button error:", error);
-    }
+export const ConfettiButton = ({ options, children, ...props }: ConfettiButtonProps) => {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    props.onClick?.(event);
   };
 
   return (
@@ -138,6 +149,4 @@ const ConfettiButtonComponent = ({ options, children, ...props }: ConfettiButton
   );
 };
 
-ConfettiButtonComponent.displayName = "ConfettiButton";
-
-export const ConfettiButton = ConfettiButtonComponent;
+ConfettiButton.displayName = "ConfettiButton";

@@ -1,0 +1,432 @@
+// src/lib/onoma/template-phonetics.ts
+// Dedicated Linguistic Profiles for Fantasy Species, Organizations, and Noble Conventions
+
+import type { LinguisticProfile } from "./types";
+
+export const TEMPLATE_PHONETIC_PROFILES: Record<string, LinguisticProfile> = {
+  // --------------------------------------------------------------------------
+  // Fantasy Species
+  // --------------------------------------------------------------------------
+  "species:elf": {
+    id: "species:elf",
+    name: "Elven (Sindarin / Eldarin)",
+    category: "template",
+    description: "Flowing Tolkien-inspired phonology with dental fricatives (dh, th) and voiceless liquids (lh, rh)",
+    rules: [
+      ["dh", "ð"],
+      ["th", "θ"],
+      ["ch", "x"],
+      ["lh", "ɬ"],
+      ["rh", "r̥"],
+      ["ph", "f"],
+      ["ë", "ɛ"],
+      ["y", "y"],
+      ["oe", "ɔɪ"],
+      ["ae", "aɪ"],
+      ["ui", "uɪ"],
+      ["au", "aʊ"],
+      ["c", "k"],
+      ["g", "ɡ"],
+      ["r", "r"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "cy-GB",
+    kokoroVoicePersona: "bf_emma",
+  },
+  "species:dwarf": {
+    id: "species:dwarf",
+    name: "Dwarven (Khuzdul / Nordic)",
+    category: "template",
+    description: "Deep guttural consonants (kh, gh), glottalized stops, and resonant back vowels",
+    rules: [
+      ["kh", "x"],
+      ["gh", "ɣ"],
+      ["th", "tʰ"],
+      ["ph", "pʰ"],
+      ["sh", "ʃ"],
+      ["zz", "tsː"],
+      ["z", "z"],
+      ["u", "ʊ"],
+      ["oo", "uː"],
+      ["r", "r"],
+      ["k", "k"],
+      ["g", "ɡ"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "is-IS",
+    kokoroVoicePersona: "am_fenrir",
+  },
+  "species:orc": {
+    id: "species:orc",
+    name: "Orcish (Black Speech / Harsh)",
+    category: "template",
+    description: "Guttural velars, voiced sibilant clusters, and heavy consonant friction",
+    rules: [
+      ["gh", "ɣ"],
+      ["zg", "zɡ"],
+      ["ur", "ʊr"],
+      ["sh", "ʃ"],
+      ["th", "θ"],
+      ["kh", "x"],
+      ["k", "kʼ"],
+      ["g", "ɡ"],
+      ["u", "u"],
+      ["a", "ɑ"],
+      ["o", "ɔ"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "de-DE",
+    kokoroVoicePersona: "am_adam",
+  },
+  "species:goblin": {
+    id: "species:goblin",
+    name: "Goblin (Troglodyte / Click Plosive)",
+    category: "template",
+    description: "Sharp affricates, high vowel fronting, and click-like terminal stops",
+    rules: [
+      ["x", "ks"],
+      ["q", "q"],
+      ["zz", "ts"],
+      ["ik", "ɪk"],
+      ["ak", "æk"],
+      ["sh", "ʃ"],
+      ["ch", "tʃ"],
+      ["c", "k"],
+      ["z", "z"],
+    ],
+    stressRule: "ultimate",
+    bcp47VoiceTag: "nl-NL",
+    kokoroVoicePersona: "bm_george",
+  },
+  "species:dragon": {
+    id: "species:dragon",
+    name: "Draconic (Ancient Wyrm)",
+    category: "template",
+    description: "Prolonged sibilants, low vowel resonance, and aspirated velars",
+    rules: [
+      ["ss", "sː"],
+      ["zz", "zː"],
+      ["th", "θ"],
+      ["ch", "x"],
+      ["yr", "yːr"],
+      ["aa", "ɑː"],
+      ["uu", "uː"],
+      ["sh", "ʃ"],
+      ["r", "r"],
+    ],
+    stressRule: "ultimate",
+    bcp47VoiceTag: "is-IS",
+    kokoroVoicePersona: "am_fenrir",
+  },
+  "species:faery": {
+    id: "species:faery",
+    name: "Faery / Sylvan",
+    category: "template",
+    description: "Breathy voiced liquids, palatal glides, and open diphthongs",
+    rules: [
+      ["ll", "ɬ"],
+      ["ae", "aɪ"],
+      ["oe", "ɔɪ"],
+      ["th", "θ"],
+      ["sh", "ʃ"],
+      ["w", "w"],
+      ["y", "i"],
+      ["i", "iː"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "ga-IE",
+    kokoroVoicePersona: "bf_isabella",
+  },
+  "species:demon": {
+    id: "species:demon",
+    name: "Demon / Infernal",
+    category: "template",
+    description: "Harsh uvular fricatives, elongated back vowels, and sharp sibilants",
+    rules: [
+      ["x", "χ"],
+      ["th", "θ"],
+      ["ph", "f"],
+      ["sh", "ʃ"],
+      ["aa", "aː"],
+      ["oo", "uː"],
+      ["z", "z"],
+      ["r", "ʁ"],
+    ],
+    stressRule: "ultimate",
+    bcp47VoiceTag: "ar-SA",
+    kokoroVoicePersona: "am_fenrir",
+  },
+  "species:angel": {
+    id: "species:angel",
+    name: "Angel / Celestial",
+    category: "template",
+    description: "Resonant sonorant onsets, high open vowels, and soft labiodentals",
+    rules: [
+      ["el", "ɛl"],
+      ["il", "ɪl"],
+      ["ph", "f"],
+      ["th", "θ"],
+      ["ae", "eɪ"],
+      ["ia", "i.ɑ"],
+      ["iel", "i.ɛl"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "it-IT",
+    kokoroVoicePersona: "af_nicole",
+  },
+
+  // --------------------------------------------------------------------------
+  // Organizations, Taverns & Civic Templates
+  // --------------------------------------------------------------------------
+  "organization:tavern": {
+    id: "organization:tavern",
+    name: "Tavern & Inn Phrasing",
+    category: "template",
+    description: "Traditional Anglo-Saxon compound phrasing and natural rhythmic stress",
+    rules: [
+      ["the", "ðə"],
+      ["and", "ænd"],
+      ["sh", "ʃ"],
+      ["ch", "tʃ"],
+      ["th", "θ"],
+      ["ph", "f"],
+      ["oo", "uː"],
+      ["ee", "iː"],
+      ["ea", "iː"],
+      ["ow", "aʊ"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "en-GB",
+    kokoroVoicePersona: "bm_george",
+  },
+  "organization:mystic-order": {
+    id: "organization:mystic-order",
+    name: "Mystic Order & Brotherhood",
+    category: "template",
+    description: "Hieratic Latinate ceremonial phrasing with formal vowel weights",
+    rules: [
+      ["order of", "ˈɔː.də əv"],
+      ["brotherhood of", "ˈbrʌ.ðə.hʊd əv"],
+      ["ph", "f"],
+      ["th", "θ"],
+      ["ch", "k"],
+      ["ae", "aɪ"],
+      ["oe", "ɔɪ"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "en-GB",
+    kokoroVoicePersona: "bm_fable",
+  },
+  "organization:military-unit": {
+    id: "organization:military-unit",
+    name: "Military Regiments & Legions",
+    category: "template",
+    description: "Crisp militaristic cadence with assertive plosives and ordinal phrasing",
+    rules: [
+      ["regiment", "ˈrɛ.dʒɪ.mənt"],
+      ["legion", "ˈliː.dʒən"],
+      ["corps", "kɔːr"],
+      ["battalion", "bəˈtæl.jən"],
+      ["guard", "ɡɑːd"],
+      ["th", "θ"],
+      ["sh", "ʃ"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "en-GB",
+    kokoroVoicePersona: "am_adam",
+  },
+
+  // --------------------------------------------------------------------------
+  // Noble Dynastic & Lineage Conventions
+  // --------------------------------------------------------------------------
+  "noble:norman": {
+    id: "noble:norman",
+    name: "Noble Norman / Anglo-French",
+    category: "template",
+    description: "Anglo-Norman aristocratic prefixes (Fitz-, de la, le, d')",
+    rules: [
+      ["fitz", "fɪts"],
+      ["de la", "də lɑ"],
+      ["de", "də"],
+      ["du", "dy"],
+      ["le", "lə"],
+      ["d'", "d"],
+      ["ch", "ʃ"],
+      ["eau", "oʊ"],
+      ["ou", "uː"],
+      ["gn", "ɲ"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "fr-FR",
+    kokoroVoicePersona: "bf_emma",
+  },
+  "noble:norse": {
+    id: "noble:norse",
+    name: "Noble Norse / Scandinavian",
+    category: "template",
+    description: "Patronymic and matronymic suffixes (-son, -dottir, af)",
+    rules: [
+      ["dottir", "dɔh.tɪr"],
+      ["dóttir", "dɔh.tɪr"],
+      ["son", "sɔn"],
+      ["sen", "sən"],
+      ["af", "aːv"],
+      ["th", "θ"],
+      ["dh", "ð"],
+      ["ö", "ø"],
+      ["æ", "aɪ"],
+      ["aa", "ɔː"],
+      ["j", "j"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "is-IS",
+    kokoroVoicePersona: "bm_george",
+  },
+  "noble:celtic": {
+    id: "noble:celtic",
+    name: "Noble Celtic (Gaelic / Welsh)",
+    category: "template",
+    description: "Clannic lineage markers (Mac, Mc, O', ap, ab, Nic)",
+    rules: [
+      ["mac", "mək"],
+      ["mc", "mək"],
+      ["o'", "oː"],
+      ["ap", "ap"],
+      ["ab", "ab"],
+      ["nic", "nʲɪk"],
+      ["ll", "ɬ"],
+      ["dd", "ð"],
+      ["bh", "v"],
+      ["mh", "v"],
+      ["ch", "x"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "ga-IE",
+    kokoroVoicePersona: "bf_isabella",
+  },
+  "noble:germanic": {
+    id: "noble:germanic",
+    name: "Noble Germanic (Adel)",
+    category: "template",
+    description: "High German nobility titles and territorial locatives (von, zu, auf, vom)",
+    rules: [
+      ["von", "fɔn"],
+      ["zu", "tsuː"],
+      ["auf", "aʊf"],
+      ["vom", "fɔm"],
+      ["und", "ʊnt"],
+      ["sch", "ʃ"],
+      ["ch", "x"],
+      ["ei", "aɪ"],
+      ["ie", "iː"],
+      ["v", "f"],
+      ["w", "v"],
+      ["z", "ts"],
+    ],
+    stressRule: "initial",
+    bcp47VoiceTag: "de-DE",
+    kokoroVoicePersona: "bm_george",
+  },
+  "noble:arabic": {
+    id: "noble:arabic",
+    name: "Noble Arabic (Nasab)",
+    category: "template",
+    description: "Genealogical lineage particles (ibn, bin, bint, al-)",
+    rules: [
+      ["ibn", "ʔɪbn"],
+      ["bin", "bɪn"],
+      ["bint", "bɪnt"],
+      ["al", "æl."],
+      ["abu", "ʔa.buː"],
+      ["kh", "x"],
+      ["gh", "ɣ"],
+      ["dh", "ð"],
+      ["th", "θ"],
+      ["sh", "ʃ"],
+      ["q", "q"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "ar-SA",
+    kokoroVoicePersona: "af_nicole",
+  },
+  "noble:slavic": {
+    id: "noble:slavic",
+    name: "Noble Slavic (Boyar / Szlachta)",
+    category: "template",
+    description: "Patronymic and aristocratic toponymic suffixes (-ski, -cki, -ov, -ev)",
+    rules: [
+      ["ski", "ski"],
+      ["cki", "tski"],
+      ["sky", "skɪ"],
+      ["ov", "ɔf"],
+      ["ev", "ɛf"],
+      ["ova", "ɔ.va"],
+      ["cz", "tʃ"],
+      ["sz", "ʃ"],
+      ["rz", "ʐ"],
+      ["ch", "x"],
+      ["kh", "x"],
+      ["v", "v"],
+      ["w", "v"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "pl-PL",
+    kokoroVoicePersona: "bm_george",
+  },
+  "noble:iberian": {
+    id: "noble:iberian",
+    name: "Noble Iberian (Hidalgo)",
+    category: "template",
+    description: "Spanish and Portuguese patronymics and heraldic conjunctions (de, del, da, y)",
+    rules: [
+      ["de la", "de lɑ"],
+      ["del", "del"],
+      ["de", "de"],
+      ["da", "dɐ"],
+      ["dos", "duʃ"],
+      ["y", "i"],
+      ["ll", "ʎ"],
+      ["ñ", "ɲ"],
+      ["nh", "ɲ"],
+      ["lh", "ʎ"],
+      ["qu", "k"],
+      ["gu", "ɡ"],
+      ["rr", "r"],
+    ],
+    stressRule: "penultimate",
+    bcp47VoiceTag: "es-ES",
+    kokoroVoicePersona: "bf_emma",
+  },
+};
+
+/**
+ * Retrieve a matching template profile by category and subType.
+ */
+export function getTemplateLinguisticProfile(
+  category: string,
+  subType?: string
+): LinguisticProfile | null {
+  if (!subType || subType === "generic") return null;
+
+  // Direct template key (e.g. "species:elf" or "noble:norman")
+  const key = `${category}:${subType}`;
+  if (TEMPLATE_PHONETIC_PROFILES[key]) {
+    return TEMPLATE_PHONETIC_PROFILES[key];
+  }
+
+  // Check prefix match
+  for (const [profKey, prof] of Object.entries(TEMPLATE_PHONETIC_PROFILES)) {
+    if (profKey.endsWith(`:${subType}`)) {
+      return prof;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Returns all registered template linguistic profiles.
+ */
+export function getAllTemplateLinguisticProfiles(): LinguisticProfile[] {
+  return Object.values(TEMPLATE_PHONETIC_PROFILES);
+}

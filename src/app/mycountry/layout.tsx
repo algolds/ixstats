@@ -6,7 +6,7 @@ import { DevCountryViewProvider } from "~/context/DevCountryViewContext";
 import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { AlertTriangle } from "lucide-react";
-import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
+import { MyCountryDIPlugin } from "~/components/halo/plugins/MyCountryDIPlugin";
 
 interface MyCountryLayoutProps {
   children: ReactNode;

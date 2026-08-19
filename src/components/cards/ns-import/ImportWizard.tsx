@@ -15,7 +15,7 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import type { NSCard } from "~/lib/ns-api-client";
+import type { NSCard } from "~/lib/nationstates/api-client";
 
 interface ImportWizardProps {
   onComplete: (results: ImportResults) => void;
@@ -44,6 +44,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
     deckValue: number;
   } | null>(null);
   const [duplicateOption, setDuplicateOption] = useState<"skip" | "merge">("skip");
+  const [hasGrantedConsent, setHasGrantedConsent] = useState(false);
   const [importResults, setImportResults] = useState<ImportResults | null>(null);
 
   const utils = api.useUtils();
@@ -108,6 +109,11 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
   const handleStartImport = async () => {
     if (!verificationId) {
       alert("Verification required");
+      return;
+    }
+
+    if (!hasGrantedConsent) {
+      alert("Please confirm your first-party content permission to proceed with the import.");
       return;
     }
 
@@ -342,6 +348,25 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </label>
           </div>
 
+          <div className="glass-child rounded-lg border border-amber-400/30 bg-amber-500/10 p-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={hasGrantedConsent}
+                onChange={(e) => setHasGrantedConsent(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-white/30 text-amber-400 focus:ring-amber-400"
+              />
+              <div className="text-sm text-white/90">
+                <span className="font-semibold text-white">
+                  First-Party Content Permission & Grant:
+                </span>{" "}
+                I verify that I am the owner or authorized operator of{" "}
+                <strong>{nationName || "this nation"}</strong> on NationStates, and I grant
+                permission to display my nation's flag and card representation on IxCards.
+              </div>
+            </label>
+          </div>
+
           <div className="flex gap-4">
             <button
               onClick={() => setCurrentStep("preview")}
@@ -351,9 +376,10 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </button>
             <button
               onClick={handleStartImport}
-              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
+              disabled={!hasGrantedConsent || importDeckMutation.isPending}
+              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Start Import
+              {importDeckMutation.isPending ? "Importing..." : "Start Import"}
             </button>
           </div>
         </div>

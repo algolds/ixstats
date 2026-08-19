@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Globe, MapPin, Hexagon, Landmark } from "lucide-react";
-import { flagService } from "~/lib/flag-service";
+import { flagService } from "~/lib/flags/flag-service";
 
 export const getGreeting = (ixTime: number): string => {
   const date = new Date(ixTime);

@@ -11,18 +11,18 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { NationalIssuesEngine } from "~/lib/national-issues-engine";
-import type { ResponseOptionTemplate } from "~/lib/national-issues-engine";
-import { NationalIssuesConsequences } from "~/lib/national-issues-consequences";
-import { notificationAPI } from "~/lib/notification-api";
+import { NationalIssuesEngine } from "~/lib/national-issues";
+import type { ResponseOptionTemplate } from "~/lib/national-issues";
+import { NationalIssuesConsequences } from "~/lib/national-issues";
+import { notificationAPI } from "~/lib/notifications/api";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
-import { revealConsequences } from "~/lib/statecraft-recon";
+import { revealConsequences } from "~/lib/statecraft/recon";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "~/lib/atomic-government-utils";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+} from "~/lib/government/atomic-utils";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const SPLASH_SHOWCASE_TAG = "Splash showcase seed";
 
@@ -628,10 +628,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
 
       if (issue.intentId) {
         try {
-          await NationalIssuesConsequences.recomputeIntentProgress(
-            issue.intentId,
-            ctx.db as any
-          );
+          await NationalIssuesConsequences.recomputeIntentProgress(issue.intentId, ctx.db as any);
         } catch (e) {
           console.warn(`[NationalIssues] failed to recompute intent progress on dismiss:`, e);
         }

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
-import { ParadoxFlavorCard } from "~/components/narrator/ParadoxFlavorCard";
+import { ParadoxFlavorCard } from "~/components/executive/narrator/ParadoxFlavorCard";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -83,12 +83,9 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
         await recordDecisionMutation.mutateAsync({
           meetingId: meeting!.id,
           title: `Committed Intent: ${intent!.goal} (${res.intent.tier})`,
-          description: res.summary,
+          description: res.summary || `Committed to ${res.intent.tier} course`,
           decisionType: "strategic",
-          targetModel: "Intent",
-          targetField: "status",
-          operation: "set",
-          value: 1,
+          outcome: "approved",
         });
         await completeMutation.mutateAsync({
           meetingId: meeting!.id,
@@ -126,7 +123,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
     },
   });
 
-  const recordDecisionMutation = api.quickActions.createDecision.useMutation({
+  const recordDecisionMutation = api.meetings.recordDecision.useMutation({
     onSuccess: () => {
       notify.success("Decision recorded successfully!");
       setNewDecisionTitle("");
@@ -135,8 +132,8 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
       void utils.meetings.getMeeting.invalidate({ id: meetingId! });
       void utils.meetings.getMeetings.invalidate();
     },
-    onError: (err) => {
-      notify.error(`Failed to record decision: ${err.message}`);
+    onError: (err: any) => {
+      notify.error(`Failed to record decision: ${err?.message ?? "Unknown error"}`);
     },
   });
 
@@ -241,12 +238,14 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
               <div className="space-y-4 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4 dark:bg-amber-500/10">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-500">
+                  <h3 className="text-xs font-bold tracking-wider text-amber-500 uppercase">
                     Cabinet Deliberation: {intent.goal}
                   </h3>
                 </div>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  Your cabinet ministries have prepared three policy execution packages. Select one course of action to commit resources, set the national policy active, and conclude this session.
+                  Your cabinet ministries have prepared three policy execution packages. Select one
+                  course of action to commit resources, set the national policy active, and conclude
+                  this session.
                 </p>
 
                 {suggestionsLoading ? (
@@ -258,18 +257,20 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                 ) : suggestion?.packages ? (
                   <div className="flex flex-col gap-3">
                     {suggestion.packages.map((pkg) => {
-                      const isPending = commitIntentMutation.isPending && commitIntentMutation.variables?.tier === pkg.tier;
+                      const isPending =
+                        commitIntentMutation.isPending &&
+                        commitIntentMutation.variables?.tier === pkg.tier;
                       return (
                         <div
                           key={pkg.tier}
-                          className="flex flex-col items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3 text-left transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/20 hover:bg-amber-500/[0.04] active:scale-[0.98] shadow-sm relative overflow-hidden"
+                          className="relative flex flex-col items-start gap-3 overflow-hidden rounded-lg border border-white/5 bg-white/[0.02] p-3 text-left shadow-sm transition-[border-color,background-color,transform] duration-150 ease-out hover:border-amber-500/20 hover:bg-amber-500/[0.04] active:scale-[0.98]"
                         >
                           <div className="flex w-full items-center justify-between">
                             <div>
-                              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                              <span className="text-xs font-bold tracking-wider text-amber-400 uppercase">
                                 {pkg.tier} course
                               </span>
-                              <span className="ml-2 text-[10px] text-muted-foreground font-semibold">
+                              <span className="text-muted-foreground ml-2 text-[10px] font-semibold">
                                 Accept: {pkg.acceptance}%
                               </span>
                             </div>
@@ -284,7 +285,7 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                                   intentId: intent.id,
                                 });
                               }}
-                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] h-6 px-3.5 cursor-pointer rounded"
+                              className="h-6 cursor-pointer rounded bg-amber-600 px-3.5 text-[10px] font-bold text-white hover:bg-amber-700"
                             >
                               {isPending ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -293,10 +294,13 @@ export function MeetingDetailModal({ meetingId, onClose }: MeetingDetailModalPro
                               )}
                             </Button>
                           </div>
-                          
-                          <div className="space-y-1 w-full">
+
+                          <div className="w-full space-y-1">
                             {pkg.changes.map((change: any, i: number) => (
-                              <div key={i} className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
+                              <div
+                                key={i}
+                                className="text-muted-foreground flex items-center gap-1.5 text-[11px] leading-snug"
+                              >
                                 <span className="text-amber-500">✦</span>
                                 <span>{change.label}</span>
                               </div>

@@ -17,7 +17,7 @@
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import type { CrisisEvent } from "~/types/sdi";
 
 // ===== SCHEMAS =====
@@ -55,23 +55,21 @@ export const intelAlertsCrisesRouter = createTRPCRouter({
         orderBy: { timestamp: "desc" },
       });
 
-      return crises.map(
-        (crisis): CrisisEvent => ({
-          id: crisis.id,
-          type: crisis.type as CrisisEvent["type"],
-          title: crisis.title,
-          severity: crisis.severity as CrisisEvent["severity"],
-          affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
-          casualties: crisis.casualties || 0,
-          economicImpact: crisis.economicImpact || 0,
-          status: (crisis.responseStatus as CrisisEvent["status"]) || "monitoring",
-          responseStatus: (crisis.responseStatus as CrisisEvent["responseStatus"]) || "monitoring",
-          timestamp: crisis.timestamp,
-          description: crisis.description || "",
-          location: crisis.location || undefined,
-          coordinates: undefined,
-        })
-      );
+      return crises.map((crisis): CrisisEvent => ({
+        id: crisis.id,
+        type: crisis.type as CrisisEvent["type"],
+        title: crisis.title,
+        severity: crisis.severity as CrisisEvent["severity"],
+        affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
+        casualties: crisis.casualties || 0,
+        economicImpact: crisis.economicImpact || 0,
+        status: (crisis.responseStatus as CrisisEvent["status"]) || "monitoring",
+        responseStatus: (crisis.responseStatus as CrisisEvent["responseStatus"]) || "monitoring",
+        timestamp: crisis.timestamp,
+        description: crisis.description || "",
+        location: crisis.location || undefined,
+        coordinates: undefined,
+      }));
     } catch (error) {
       console.error("[Unified Intelligence] Error fetching active crises:", error);
       throw new TRPCError({
@@ -92,23 +90,21 @@ export const intelAlertsCrisesRouter = createTRPCRouter({
         take: 50,
       });
 
-      return crises.map(
-        (crisis): CrisisEvent => ({
-          id: crisis.id,
-          type: crisis.type as CrisisEvent["type"],
-          title: crisis.title,
-          severity: crisis.severity as CrisisEvent["severity"],
-          affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
-          casualties: crisis.casualties || 0,
-          economicImpact: crisis.economicImpact || 0,
-          status: (crisis.responseStatus as CrisisEvent["status"]) || "monitoring",
-          responseStatus: (crisis.responseStatus as CrisisEvent["responseStatus"]) || "monitoring",
-          timestamp: crisis.timestamp,
-          description: crisis.description || "",
-          location: crisis.location || undefined,
-          coordinates: undefined,
-        })
-      );
+      return crises.map((crisis): CrisisEvent => ({
+        id: crisis.id,
+        type: crisis.type as CrisisEvent["type"],
+        title: crisis.title,
+        severity: crisis.severity as CrisisEvent["severity"],
+        affectedCountries: crisis.affectedCountries ? JSON.parse(crisis.affectedCountries) : [],
+        casualties: crisis.casualties || 0,
+        economicImpact: crisis.economicImpact || 0,
+        status: (crisis.responseStatus as CrisisEvent["status"]) || "monitoring",
+        responseStatus: (crisis.responseStatus as CrisisEvent["responseStatus"]) || "monitoring",
+        timestamp: crisis.timestamp,
+        description: crisis.description || "",
+        location: crisis.location || undefined,
+        coordinates: undefined,
+      }));
     } catch (error) {
       console.error("[Unified Intelligence] Error fetching crisis events:", error);
       throw new TRPCError({

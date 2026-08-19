@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, Mic, Loader2, Play, Languages } from "lucide-react";
+import { Save, Mic, Loader2, Play, Languages, RefreshCw, Zap, Activity } from "lucide-react";
 import { api } from "~/trpc/react";
 import { AdminHeader } from "./AdminHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -11,6 +11,7 @@ import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { withBasePath } from "~/lib/base-path";
 
 const CULTURES = [
   "latin",
@@ -129,6 +130,38 @@ export function OnomaAdminPanel() {
   );
   const [kokoroFastApiUrl, setKokoroFastApiUrl] = useState("");
   const [isTestingKokoro, setIsTestingKokoro] = useState(false);
+  const [isWaking, setIsWaking] = useState(false);
+  const [wakeStatusMessage, setWakeStatusMessage] = useState<string | null>(null);
+
+  const wakeMutation = api.onoma.wakeKokoroServer.useMutation({
+    onSuccess: async (res) => {
+      await refetchHealth();
+      await utils.onoma.getKokoroVoices.invalidate();
+      if (res.status === "awake") {
+        setWakeStatusMessage(`Awake (${res.latencyMs}ms)`);
+        notify.success(res.message);
+      } else if (res.status === "waking") {
+        setWakeStatusMessage("Booting...");
+        notify.info(res.message);
+      } else {
+        setWakeStatusMessage(res.message);
+        notify.error(res.message);
+      }
+    },
+    onError: (err) => {
+      notify.error(`Wake ping failed: ${err.message}`);
+    },
+  });
+
+  const handleWakeServer = async () => {
+    setIsWaking(true);
+    setWakeStatusMessage("Pinging server / waking Space...");
+    try {
+      await wakeMutation.mutateAsync();
+    } finally {
+      setIsWaking(false);
+    }
+  };
 
   useEffect(() => {
     if (kokoroData) {
@@ -151,7 +184,7 @@ export function OnomaAdminPanel() {
     }
     setIsTestingKokoro(true);
     try {
-      const res = await fetch("/api/onoma/tts", {
+      const res = await fetch(withBasePath("/api/onoma/tts"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -225,47 +258,70 @@ export function OnomaAdminPanel() {
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">Engine</Label>
-                {healthData && (
-                  <span className="flex items-center gap-1 text-[9px] font-semibold">
-                    {kokoroEngine === "kokoro-fastapi" ? (
-                      <span
-                        className={
-                          healthData.fastapi === "up"
-                            ? "text-emerald-500"
+                <Label className="text-xs">Engine & Status</Label>
+                <div className="flex items-center gap-2">
+                  {healthData && (
+                    <span className="flex items-center gap-1 text-[9px] font-semibold">
+                      {kokoroEngine === "kokoro-fastapi" ? (
+                        <span
+                          className={
+                            healthData.fastapi === "up"
+                              ? "text-emerald-500"
+                              : healthData.fastapi === "down"
+                                ? "text-rose-500"
+                                : "text-muted-foreground"
+                          }
+                        >
+                          {healthData.fastapi === "up"
+                            ? "● Reachable"
                             : healthData.fastapi === "down"
-                              ? "text-rose-500"
-                              : "text-muted-foreground"
-                        }
-                      >
-                        {healthData.fastapi === "up"
-                          ? "● Reachable"
-                          : healthData.fastapi === "down"
-                            ? "○ Unreachable"
-                            : "Not configured"}
-                      </span>
-                    ) : (
-                      <span
-                        className={
-                          healthData.web === "up"
-                            ? "text-emerald-500"
+                              ? "○ Unreachable"
+                              : "Not configured"}
+                        </span>
+                      ) : (
+                        <span
+                          className={
+                            healthData.web === "up"
+                              ? "text-emerald-500"
+                              : healthData.web === "down"
+                                ? "text-rose-500"
+                                : "text-muted-foreground"
+                          }
+                        >
+                          {healthData.web === "up"
+                            ? "● Reachable"
                             : healthData.web === "down"
-                              ? "text-rose-500"
-                              : "text-muted-foreground"
-                        }
-                      >
-                        {healthData.web === "up"
-                          ? "● Reachable"
-                          : healthData.web === "down"
-                            ? "○ Unreachable"
-                            : "Not configured"}
-                      </span>
+                              ? "○ Unreachable"
+                              : "Not configured"}
+                        </span>
+                      )}
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleWakeServer}
+                    disabled={isWaking}
+                    title="Send a wake-up ping to the Hugging Face / Kokoro server (up to 45s timeout for cold starts)"
+                    className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isWaking ? (
+                      <Loader2 className="h-2.5 w-2.5 animate-spin text-[#0091ff]" />
+                    ) : (
+                      <Zap className="h-2.5 w-2.5 text-[#0091ff]" />
                     )}
-                  </span>
-                )}
+                    <span>{isWaking ? "Waking..." : "Ping / Wake Server"}</span>
+                  </button>
+                </div>
               </div>
+              {wakeStatusMessage && (
+                <p className="text-muted-foreground flex items-center gap-1 font-mono text-[9px]">
+                  <Activity className="h-2.5 w-2.5 text-[#0091ff]" />
+                  <span>{wakeStatusMessage}</span>
+                </p>
+              )}
               <select
                 value={kokoroEngine}
                 onChange={(e) => setKokoroEngine(e.target.value as "kokoro-fastapi" | "kokoro-web")}

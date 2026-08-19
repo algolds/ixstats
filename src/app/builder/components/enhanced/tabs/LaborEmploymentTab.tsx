@@ -10,8 +10,8 @@ import { Badge } from "~/components/ui/badge";
 import { Users, TrendingUp, TrendingDown, DollarSign, Shield, Briefcase, Zap } from "lucide-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type { EconomyBuilderState, LaborConfiguration } from "~/types/economy-builder";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   calculateDerivedLabor,
   getEmploymentTypeColor,

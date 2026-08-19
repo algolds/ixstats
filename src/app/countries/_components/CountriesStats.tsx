@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
-import { type CountryCardData } from "~/components/countries/CountryFocusCard";
+import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import {
   RiGlobalLine,
   RiGroupLine,
@@ -34,13 +34,21 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
   onContinentFilter,
   onCountryClick,
 }) => {
-  const totalCountries = countries.length;
-  const totalPopulation = countries.reduce((sum, c) => sum + c.currentPopulation, 0);
-  const totalGDP = countries.reduce((sum, c) => sum + c.currentTotalGdp, 0);
-  const avgGDPPerCapita =
-    totalCountries > 0
-      ? countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / totalCountries
-      : 0;
+  const { totalCountries, totalPopulation, totalGDP, avgGDPPerCapita } = useMemo(() => {
+    const totalCount = countries.length;
+    const pop = countries.reduce((sum, c) => sum + c.currentPopulation, 0);
+    const gdp = countries.reduce((sum, c) => sum + c.currentTotalGdp, 0);
+    const avgCapita =
+      totalCount > 0
+        ? countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / totalCount
+        : 0;
+    return {
+      totalCountries: totalCount,
+      totalPopulation: pop,
+      totalGDP: gdp,
+      avgGDPPerCapita: avgCapita,
+    };
+  }, [countries]);
 
   // Continent counts from the full (unfiltered) list
   const continentCounts = useMemo(() => {
@@ -85,7 +93,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
   };
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Countries — continent filter */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

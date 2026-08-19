@@ -9,15 +9,15 @@ import { useRouter } from "next/navigation";
 import { Lock, Unlock as UnlockIcon, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { MyCountryDIPlugin } from "~/components/DynamicIsland/plugins/MyCountryDIPlugin";
-import { BuilderDIPlugin } from "~/components/DynamicIsland/plugins/BuilderDIPlugin";
+import { MyCountryDIPlugin } from "~/components/halo/plugins/MyCountryDIPlugin";
+import { BuilderDIPlugin } from "~/components/halo/plugins/BuilderDIPlugin";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 // eslint-disable-next-line unused-imports/no-unused-imports

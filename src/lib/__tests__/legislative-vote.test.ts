@@ -1,4 +1,4 @@
-import { tallyVote, type VotingBloc } from "../legislative-vote";
+import { tallyVote, type VotingBloc } from "../statecraft/legislative-vote";
 
 const blocs: VotingBloc[] = [
   { partyId: "lab", partyName: "Labour", ideology: "center_left", seats: 180 },

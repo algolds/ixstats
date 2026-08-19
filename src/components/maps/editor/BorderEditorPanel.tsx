@@ -3,7 +3,7 @@
 import React from "react";
 import { MapPin, Layers, AlertTriangle, Users, Crosshair } from "lucide-react";
 import type { Polygon, MultiPolygon } from "geojson";
-import { getVertices } from "~/lib/border-editor";
+import { getVertices } from "~/lib/maps/border-editor";
 
 interface BorderEditorPanelProps {
   featureId: string | null;

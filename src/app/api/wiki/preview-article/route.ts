@@ -2,8 +2,8 @@
 // API endpoint to preview article quality and estimated rarity
 
 import { NextResponse } from "next/server";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import type { WikiSource } from "~/lib/wiki/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +45,9 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("[Preview Article API] Error:", error);
-    return NextResponse.json({ error: "Failed to preview article" }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to preview article" },
+      { status: 500 }
+    );
   }
 }

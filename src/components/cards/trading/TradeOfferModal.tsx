@@ -20,9 +20,9 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
-import { vaultNotify } from "~/lib/vault-notifications";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
+import { vaultNotify } from "~/lib/vault";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { proxyCardArtwork } from "~/lib/cards";
 
 export interface TradeOfferModalProps {
   open: boolean;

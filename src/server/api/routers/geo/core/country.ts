@@ -3,8 +3,8 @@ import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
-import { featureIdToDisplayName } from "~/lib/map-utils";
-import { truncateGeometry } from "~/lib/geojson-compress";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { truncateGeometry } from "~/lib/maps/geojson-compress";
 
 export const countryProcedures = {
   getCountryGeometry: cachedPublicProcedure
@@ -76,9 +76,7 @@ export const countryProcedures = {
       }
 
       const rawC = mapLayer.centroid as
-        | [number, number]
-        | { coordinates?: [number, number] }
-        | null;
+        [number, number] | { coordinates?: [number, number] } | null;
       let parsedCentroid: { lng: number; lat: number } | null = null;
       if (Array.isArray(rawC) && rawC.length >= 2) {
         parsedCentroid = { lng: rawC[0], lat: rawC[1] };

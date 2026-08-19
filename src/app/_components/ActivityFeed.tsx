@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Activity, TrendingUp, Star, Users, DollarSign, Clock, ArrowUp } from "lucide-react";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface Country {
   id: string;

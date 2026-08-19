@@ -16,9 +16,9 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import { validatePointContainment, checkNameUniqueness } from "~/lib/geo-validation";
+import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z
@@ -269,7 +269,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
 
       // Auto-generate ThinkPages news for major/legendary story pins
       if (input.importance >= 1) {
-        import("~/lib/diplomatic-news-generator")
+        import("~/lib/diplomacy/news-generator")
           .then(({ generateStoryPinNews }) => {
             generateStoryPinNews(
               ctx.db,
@@ -446,7 +446,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       let wikiEnrichment = null;
       if (pin.wikiPageTitle) {
         try {
-          const { enrichFromWiki } = await import("~/lib/story-pin-enrichment");
+          const { enrichFromWiki } = await import("~/lib/maps/story-pin-enrichment");
           wikiEnrichment = await enrichFromWiki(pin.wikiPageTitle);
         } catch {
           // Wiki enrichment is best-effort

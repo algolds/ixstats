@@ -1,5 +1,5 @@
 import { ComponentType } from "~/lib/enums";
-import { SYNERGY_RULES, CONFLICT_RULES } from "~/lib/atomic-builder-state";
+import { SYNERGY_RULES, CONFLICT_RULES } from "~/lib/builder";
 import type { WikiGovernmentAttributes } from "./wiki-government-parser";
 import type { WikiEconomyAttributes } from "./wiki-economy-parser";
 

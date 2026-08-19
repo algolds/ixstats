@@ -6,7 +6,7 @@
  */
 
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { ProjectionMode } from "../../../../lib/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 
 export interface ProjectionSpec {
   type: string | unknown[];
@@ -33,10 +33,7 @@ export function getInterpolatedProjectionSpec(mode: ProjectionMode): ProjectionS
 /**
  * Smoothly applies a projection change to a MapLibre instance.
  */
-export function applySmoothProjection(
-  map: MapLibreMap,
-  mode: ProjectionMode
-): void {
+export function applySmoothProjection(map: MapLibreMap, mode: ProjectionMode): void {
   if (!map) return;
 
   try {

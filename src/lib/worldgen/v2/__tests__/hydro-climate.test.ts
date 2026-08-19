@@ -14,15 +14,32 @@ const TEST_CELLS = 3000;
 
 describe("v2/hydro-climate", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
-  generateTerrain(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, oceanPercentage: 0.65 });
-  refineCoastlines(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, coastlineComplexity: 0.8 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
+  generateTerrain(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    oceanPercentage: 0.65,
+  });
+  refineCoastlines(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    coastlineComplexity: 0.8,
+  });
   computeHydroClimate(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
 
   describe("Temperature Sub-pass", () => {
     it("equatorial cells are warmer on average than polar cells", () => {
-      let eqSum = 0, eqCount = 0;
-      let polarSum = 0, polarCount = 0;
+      let eqSum = 0,
+        eqCount = 0;
+      let polarSum = 0,
+        polarCount = 0;
 
       for (let i = 0; i < graph.cells.n; i++) {
         const lat = Math.abs(graph.cells.p[i * 2 + 1]!);
@@ -100,7 +117,8 @@ describe("v2/hydro-climate", () => {
         for (let j = 0; j < river.cells.length - 1; j++) {
           const currH = graph.cells.h[river.cells[j]!]!;
           const nextH = graph.cells.h[river.cells[j + 1]!]!;
-          if (nextH > currH + 10) { // allow tiny depression fill tolerance
+          if (nextH > currH + 10) {
+            // allow tiny depression fill tolerance
             downhillViolations++;
           }
         }

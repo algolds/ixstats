@@ -2,16 +2,21 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, MessageSquare, Bookmark, Users } from "lucide-react";
+import { BookOpen, MessageSquare, Bookmark, Users, Compass } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { StatusIndicator } from "~/components/status-indicator";
-import { BUILD_VERSION, PLATFORM_VERSION, CHANNEL } from "~/lib/buildVersion";
+import { StatusIndicator } from "~/components/ui/status-indicator";
+import {
+  BUILD_VERSION,
+  PLATFORM_VERSION,
+  CHANNEL,
+  getChannelStatus,
+  CHANNEL_CONFIG,
+} from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
-import { FeedbackModal } from "~/components/modals/FeedbackModal";
+import { FeedbackModal } from "~/components/ui/modals/FeedbackModal";
 import {
   CutoutCard,
   CutoutCardContent,
-  CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { useUser } from "~/context/auth-context";
@@ -45,38 +50,33 @@ interface DashboardQuickLinksProps {
 export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { isSignedIn } = useUser();
+  const channelTheme = CHANNEL_CONFIG[CHANNEL];
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+      className={cn(
+        cutoutCardSurfaceClassName,
+        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-all duration-200"
+      )}
       trackPointerHover={false}
       texture="dots"
-      textureOpacity={0.06}
+      textureOpacity={0.05}
     >
-      {/* Cutout tab header */}
-      <div className="relative bg-cyan-500/10 px-3 pt-2.5 pb-4">
-        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
-          <svg
-            className="h-3.5 w-3.5 text-cyan-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-            />
-          </svg>
-          Quick Links
+      {/* Sleek Apple-style header bar */}
+      <div className="relative flex items-center justify-between border-b border-cyan-500/15 bg-gradient-to-r from-cyan-500/15 via-cyan-500/10 to-cyan-500/5 px-3 py-2.5 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <div className="flex h-5 w-5 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/20 shadow-sm shadow-cyan-500/10 backdrop-blur-sm">
+            <Compass className="h-3 w-3 text-cyan-400" />
+          </div>
+          <span className="text-xs font-semibold tracking-tight text-cyan-900 dark:text-cyan-300">
+            Quick Links
+          </span>
         </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+     
       </div>
-      <CutoutCardContent className="space-y-2.5 p-3 pt-1">
+      <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         {/* Links */}
-        <div className="space-y-1">
+        <div className="space-y-1 pt-0.5">
           {/* Discord badge — server-rendered, passed through props */}
           {discordBadge}
 
@@ -94,9 +94,14 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-1.5 py-1 text-[10px] transition-colors hover:bg-white/5"
+                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
-                <Icon className={cn("h-3 w-3 shrink-0", link.color)} />
+                <Icon
+                  className={cn(
+                    "h-3 w-3 shrink-0 transition-transform duration-150 group-hover:scale-110",
+                    link.color
+                  )}
+                />
                 <span>{link.label}</span>
               </Comp>
             );
@@ -104,8 +109,8 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <button className="group text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-1.5 py-1 text-left text-[10px] transition-colors outline-none hover:bg-white/5">
-                <MessageSquare className="h-3 w-3 shrink-0 text-sky-500" />
+              <button className="group text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded-xl border-0 bg-transparent px-2 py-1.5 text-left text-[11px] font-normal tracking-normal transition-all duration-150 outline-none hover:bg-white/[0.06] active:scale-[0.97]">
+                <MessageSquare className="h-3 w-3 shrink-0 text-sky-400 transition-transform duration-150 group-hover:scale-110" />
                 <span>Send Feedback</span>
               </button>
             </DialogTrigger>
@@ -115,10 +120,37 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </Dialog>
         </div>
 
-        <div className="border-border/40 space-y-1.5 border-t pt-2">
-          <StatusIndicator status="operational" label="System Online" size="sm" />
-          <div className="text-muted-foreground/60 text-[9px] whitespace-nowrap tabular-nums">
-            v{PLATFORM_VERSION} {CHANNEL} · Build {BUILD_VERSION}
+        <div className="border-border/30 space-y-2 border-t pt-2">
+          <StatusIndicator
+            status={getChannelStatus(CHANNEL)}
+            label={`v${PLATFORM_VERSION} ${CHANNEL} · Build ${BUILD_VERSION}`}
+            size="sm"
+            className={cn(
+              "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-colors",
+              channelTheme.borderColor,
+              channelTheme.bgColor
+            )}
+          />
+
+          <div className="space-y-1 text-center">
+            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-[9.5px]">
+              <Link
+                href="/privacy"
+                className="hover:text-foreground transition-colors hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              <span className="opacity-40">·</span>
+              <Link
+                href="/terms"
+                className="hover:text-foreground transition-colors hover:underline"
+              >
+                Terms
+              </Link>
+            </div>
+            <p className="text-muted-foreground/50 text-[8.5px] tracking-tight">
+              &copy; {new Date().getFullYear()} IxStates 
+            </p>
           </div>
         </div>
       </CutoutCardContent>

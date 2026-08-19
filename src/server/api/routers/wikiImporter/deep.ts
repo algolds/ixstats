@@ -7,8 +7,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki-infobox-mapper";
-import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-bridge";
+import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki/infobox-mapper";
+import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki/bridge";
 
 /**
  * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)
@@ -145,9 +145,9 @@ export const wikiImporterDeepRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       // Dynamic imports to keep the module lightweight when not used
-      const { extractWikiContent } = await import("~/lib/wiki-content-extractor");
-      const { analyzeWikiContent } = await import("~/lib/wiki-content-analyzer");
-      const { matchToIxWorld } = await import("~/lib/wiki-ixworld-mapper");
+      const { extractWikiContent } = await import("~/lib/wiki/content-extractor");
+      const { analyzeWikiContent } = await import("~/lib/wiki/content-analyzer");
+      const { matchToIxWorld } = await import("~/lib/wiki/ixworld-mapper");
 
       // 1. Fetch full wikitext via WikiBridge
       const bridgeSource = input.site as BridgeWikiSource;

@@ -8,11 +8,11 @@ import {
   syncTaxData,
   type ConflictWarning,
 } from "~/server/services/builderIntegrationService";
-import { TaxBuilderStateSchema } from "~/types/validation/tax";
+import { TaxBuilderStateSchema } from "~/types/tax-system";
 
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 const PRIVILEGED_ROLES = ["admin", "owner", "staff", "system-owner"];
 

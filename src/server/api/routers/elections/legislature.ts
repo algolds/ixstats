@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -12,12 +12,7 @@ import { notificationAPI } from "~/lib/notification-api";
 // ex-officio). Stored as the 4th positional field of the serialized chamberType blob.
 // See plans/mycountry-lore-alignment*.md.
 export type SelectionMethod =
-  | "elected"
-  | "appointed"
-  | "sortition"
-  | "hereditary"
-  | "ex-officio"
-  | "corporatist";
+  "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
 export interface ChamberConfig {
   name: string;

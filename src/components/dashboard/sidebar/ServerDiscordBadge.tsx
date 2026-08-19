@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { DiscordBadge } from "~/components/discord-badge";
+import { DiscordBadge } from "~/components/ui/discord-badge";
 
 /**
  * Server-side wrapper for DiscordBadge.

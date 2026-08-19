@@ -6,11 +6,11 @@
  * components and providing economic impact feedback for government policy changes.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   ComponentType,
   ATOMIC_COMPONENTS,
-} from "~/components/government/atoms/AtomicGovernmentComponents";
+} from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentBuilderState } from "~/types/government";
 

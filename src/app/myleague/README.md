@@ -71,7 +71,7 @@ Simulation controls are live in the workspace for any authenticated user (not de
 
 ## Architecture
 
-Page components are thin; all UI lives in `src/components/myleague/`:
+Page components are thin; all UI lives in `src/components/sports/league/`:
 
 | Component | Role |
 |-----------|------|

@@ -11,7 +11,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { PieChart as PieChartIcon, FileSpreadsheet, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import type { PolicyDistribution } from "~/lib/analytics-data-transformers";
+import type { PolicyDistribution } from "~/lib/utils";
 
 interface PolicyDistributionChartProps {
   data: PolicyDistribution[];

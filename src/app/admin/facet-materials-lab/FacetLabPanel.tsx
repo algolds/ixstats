@@ -8,7 +8,7 @@ import { LabControlPanel } from "./_components/LabControlPanel";
 import { LabSandbox } from "./_components/LabSandbox";
 import { SnippetExporter } from "./_components/SnippetExporter";
 import { type LabConfig } from "./_components/types";
-import { ColorPicker } from "~/components/ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 import { useAdminNavigation } from "../_components/AdminNavigationContext";
 
 const DEFAULT_CONFIG: LabConfig = {
@@ -118,8 +118,8 @@ export default function FacetMaterialsLabPage() {
           description="Live design utility for simulating Glass refraction, tactile textures, elevation depths, and physical pointer highlight vectors."
         />
         <div className="flex items-center gap-2 pt-2">
-          <ColorPicker
-            color={config.customAccent}
+          <ColorPickerInput
+            value={config.customAccent}
             onChange={(color) => handleConfigChange({ customAccent: color })}
           />
           <button

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import type { MyCountrySection } from "~/components/mycountry/MyCountrySidebarNav";
+import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useVisibleRefetch } from "./useVisibleRefetch";
 
 export type SectionNotifications = Partial<Record<MyCountrySection, number>>;

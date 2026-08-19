@@ -20,7 +20,7 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { vaultNotify } from "~/lib/vault-notifications";
+import { vaultNotify } from "~/lib/vault";
 import { formatDistanceToNow } from "date-fns";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 

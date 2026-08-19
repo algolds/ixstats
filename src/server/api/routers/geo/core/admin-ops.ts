@@ -3,7 +3,7 @@ import { adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { Geometry } from "geojson";
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import {
   buildGeoProfile,
   computeEconomicGeoModifiers,
@@ -12,7 +12,7 @@ import {
   ELEVATION_ZONES,
   type ClimateZoneEntry,
   type ElevationZoneEntry,
-} from "~/lib/geo-analytics";
+} from "~/lib/maps/geo-analytics";
 import { estimateBboxOverlap } from "./geometry";
 
 export const adminOpsProcedures = {

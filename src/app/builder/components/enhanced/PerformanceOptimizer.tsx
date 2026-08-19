@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useMemo, useCallback, useRef, useEffect } from "react";
-import debounce from "lodash/debounce";
+import { debounce } from "~/lib/utils";
 
 // Performance monitoring hook
 export function usePerformanceMonitor(componentName: string) {

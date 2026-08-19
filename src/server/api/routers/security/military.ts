@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { generateIntelligenceFromBranchUpdate } from "~/lib/defense-integration";
+import { generateIntelligenceFromBranchUpdate } from "~/lib/military/defense-integration";
 
 // ===========================
 // Input Validation Schemas

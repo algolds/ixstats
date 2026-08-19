@@ -11,7 +11,7 @@ import {
   hashToFactbookRoute,
   isFactbookSection,
   sectionFromPathname,
-} from "../factbook-routes";
+} from "~/lib/wiki";
 
 describe("factbook-routes", () => {
   describe("FACTBOOK_SECTIONS", () => {
@@ -59,12 +59,8 @@ describe("factbook-routes", () => {
       expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme/factbook");
       expect(factbookSectionHref("economy", "acme")).toBe("/countries/acme/factbook/economy");
       expect(factbookSectionHref("labor", "acme")).toBe("/countries/acme/factbook/labor");
-      expect(factbookSectionHref("government", "acme")).toBe(
-        "/countries/acme/factbook/government"
-      );
-      expect(factbookSectionHref("geography", "acme")).toBe(
-        "/countries/acme/factbook/geography"
-      );
+      expect(factbookSectionHref("government", "acme")).toBe("/countries/acme/factbook/government");
+      expect(factbookSectionHref("geography", "acme")).toBe("/countries/acme/factbook/geography");
     });
   });
 

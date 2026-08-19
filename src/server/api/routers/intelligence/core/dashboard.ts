@@ -16,10 +16,15 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, cachedProtectedProcedure, premiumProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  cachedProtectedProcedure,
+  premiumProcedure,
+} from "~/server/api/trpc";
 import { evaluateThresholds } from "../alerts";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { cabinetMeetingSchema } from "../../../schemas/intelligence";
 
 // ===== SCHEMAS =====

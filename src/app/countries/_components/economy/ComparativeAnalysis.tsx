@@ -62,7 +62,7 @@ import {
   Radar,
   Cell,
 } from "recharts";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 
 interface CountryComparison {
   id: string;

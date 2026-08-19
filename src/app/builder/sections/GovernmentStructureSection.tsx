@@ -6,11 +6,11 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Building2, Crown, Users, DollarSign, Info } from "lucide-react";
-import { GovernmentBuilder } from "~/components/government";
+import { GovernmentBuilder } from "~/components/mycountry/domains/government/GovernmentBuilder";
 import type { SectionContentProps } from "../types/builder";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { GovernmentBuilderState } from "~/types/government";
-import { formatExactCurrency } from "~/lib/format-utils";
+import { formatExactCurrency } from "~/lib/utils";
 
 interface GovernmentStructureSectionProps extends SectionContentProps {
   inputs: EconomicInputs;

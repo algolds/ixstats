@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  generateImageKeywords,
-  type CountryImageData,
-  type ImageContext,
-} from "~/lib/country-image-engine";
-import { unsplashService, type UnsplashImageData } from "~/lib/unsplash-service";
+import { generateImageKeywords, type CountryImageData, type ImageContext } from "~/lib/media";
+import { unsplashService, type UnsplashImageData } from "~/lib/media";
 
 // ── Types ────────────────────────────────────────────────────────────────
 

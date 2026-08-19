@@ -171,7 +171,7 @@ export function useScroll() {
 
 **File Organization**:
 ```
-src/components/diplomatic/embassy-network/
+src/components/mycountry/domains/diplomacy/embassy-network/
 ├── index.ts                    # Barrel export
 ├── EmbassyCard.tsx            # Single embassy display
 ├── EmbassyGrid.tsx            # Grid layout of embassies
@@ -182,7 +182,7 @@ src/components/diplomatic/embassy-network/
 
 **Examples**:
 ```typescript
-// src/components/diplomatic/embassy-network/EmbassyCard.tsx
+// src/components/mycountry/domains/diplomacy/embassy-network/EmbassyCard.tsx
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import type { Embassy } from '@/types/diplomatic-network';
@@ -209,7 +209,7 @@ EmbassyCard.displayName = 'EmbassyCard';
 
 **Barrel Export Pattern**:
 ```typescript
-// src/components/diplomatic/embassy-network/index.ts
+// src/components/mycountry/domains/diplomacy/embassy-network/index.ts
 export { EmbassyCard } from './EmbassyCard';
 export { EmbassyGrid } from './EmbassyGrid';
 export { EmbassyFilters } from './EmbassyFilters';
@@ -623,7 +623,7 @@ describe('useIntelligenceMetrics', () => {
 Use `@testing-library/react` for component tests:
 
 ```typescript
-// src/components/diplomatic/embassy-network/__tests__/EmbassyCard.test.tsx
+// src/components/mycountry/domains/diplomacy/embassy-network/__tests__/EmbassyCard.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EmbassyCard } from '../EmbassyCard';
 

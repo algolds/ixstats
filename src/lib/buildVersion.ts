@@ -27,8 +27,8 @@ export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 2,
-    patch: 7,
+    minor: 3,
+    patch: 0,
     release: "Ogma",
     channel: "Beta" as ReleaseChannel,
   },
@@ -37,7 +37,7 @@ export const VERSIONS = {
   apps: {
     ixworld: 1.2,
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
-    ixvault: 1,
+    ixvault: 2, // v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
 
   // Engines — internal-only simulation cores (surfaced in the Dev panel).
@@ -49,19 +49,19 @@ export const VERSIONS = {
 
   // UI / feature systems — independent, user-facing.
   systems: {
-    mycountry: 4, // public-facing executive command UI; v4: v2 Issue Brief surface + intent progress in agenda/drill sheets
-    builder: 2,
-    thinkpages: 1,
+    mycountry: 5, // public-facing executive command UI; v5: 4-tier modular architecture (shell, shared primitives, 6 simulation domains, dossier)
+    builder: 3, // v3: unified statecraft & tax builder subsystems
+    thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 3, // global contextual overlay (was "Dynamic Island"); +Live Activities; v3: onboarding tour guided walkthrough and dynamic styling
+    halo: 4, // global contextual overlay (was "Dynamic Island"); v4: canonical Halo brand & architecture transition
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
   // Design system.
   design: {
-    facet: 1, // glass/refraction/depth design language (was "Glass Physics")
+    facet: 2, // glass/refraction/depth design language; v2: core UI design system convergence & tactile feedback physics
   },
 
   // WikiOS sub-systems (nested, not top-level).
@@ -84,8 +84,72 @@ export const APP_VERSION = `${p.major}.${p.minor} ${p.release}`;
 export const PLATFORM_VERSION = `${p.major}.${p.minor}.${p.patch}`;
 /** Permanent epoch release name, e.g. "Ogma". */
 export const RELEASE_NAME = p.release;
-/** Current release channel, e.g. "Alpha". */
+/** Current release channel, e.g. "Alpha" | "Beta". */
 export const CHANNEL: ReleaseChannel = p.channel;
+
+export type ChannelStatus = "developer" | "alpha" | "beta" | "rc" | "stable";
+
+export interface ChannelTheme {
+  name: ReleaseChannel;
+  status: ChannelStatus;
+  dotColor: string;
+  textColor: string;
+  borderColor: string;
+  bgColor: string;
+  badgeClass: string;
+}
+
+export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
+  Developer: {
+    name: "Developer",
+    status: "developer",
+    dotColor: "bg-purple-500",
+    textColor: "text-purple-700 dark:text-purple-400",
+    borderColor: "border-purple-500/25",
+    bgColor: "bg-purple-500/10",
+    badgeClass: "border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  },
+  Alpha: {
+    name: "Alpha",
+    status: "alpha",
+    dotColor: "bg-amber-500",
+    textColor: "text-amber-700 dark:text-amber-400",
+    borderColor: "border-amber-500/25",
+    bgColor: "bg-amber-500/10",
+    badgeClass: "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  },
+  Beta: {
+    name: "Beta",
+    status: "beta",
+    dotColor: "bg-sky-500",
+    textColor: "text-sky-700 dark:text-sky-400",
+    borderColor: "border-sky-500/25",
+    bgColor: "bg-sky-500/10",
+    badgeClass: "border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  },
+  "Release Candidate": {
+    name: "Release Candidate",
+    status: "rc",
+    dotColor: "bg-teal-500",
+    textColor: "text-teal-700 dark:text-teal-400",
+    borderColor: "border-teal-500/25",
+    bgColor: "bg-teal-500/10",
+    badgeClass: "border-teal-500/30 bg-teal-500/15 text-teal-700 dark:text-teal-300",
+  },
+  Stable: {
+    name: "Stable",
+    status: "stable",
+    dotColor: "bg-emerald-500",
+    textColor: "text-emerald-700 dark:text-emerald-400",
+    borderColor: "border-emerald-500/25",
+    bgColor: "bg-emerald-500/10",
+    badgeClass: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  },
+};
+
+export function getChannelStatus(channel: ReleaseChannel): ChannelStatus {
+  return CHANNEL_CONFIG[channel]?.status ?? "beta";
+}
 
 // Apps (single integer, rendered as "v{n}").
 export const IXWORLD_VERSION = String(VERSIONS.apps.ixworld);

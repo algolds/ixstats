@@ -12,7 +12,6 @@ import { ForumRarityBar } from "./ForumRarityBar";
 import { styles } from "./widget-styles";
 import { withBasePath } from "~/lib/base-path";
 
-
 export default async function ForumCardsPage({
   params,
 }: {

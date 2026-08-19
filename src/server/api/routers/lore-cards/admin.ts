@@ -16,14 +16,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
-import type { WikiSource } from "~/lib/mediawiki-config";
+import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
+import type { WikiSource } from "~/lib/wiki/config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 
-/**
- * Lore Cards Router
- */
 export const loreCardsAdminRouter = createTRPCRouter({
   /**
    * Get pending lore card request queue (admin only)
@@ -53,8 +51,62 @@ export const loreCardsAdminRouter = createTRPCRouter({
           where,
         });
 
+        // Resolve requester display names
+        const userIds = Array.from(new Set(requests.map((r) => r.userId)));
+
+        const [users, verifications] = await Promise.all([
+          ctx.db.user.findMany({
+            where: {
+              OR: [{ clerkUserId: { in: userIds } }, { id: { in: userIds } }],
+            },
+            select: { id: true, clerkUserId: true, countryId: true },
+          }),
+          ctx.db.nSVerification.findMany({
+            where: {
+              userId: { in: userIds },
+              verified: true,
+            },
+            select: { userId: true, nationName: true },
+          }),
+        ]);
+
+        const countryIds = users.map((u) => u.countryId).filter((id): id is string => Boolean(id));
+        const countries =
+          countryIds.length > 0
+            ? await ctx.db.country.findMany({
+                where: { id: { in: countryIds } },
+                select: { id: true, name: true },
+              })
+            : [];
+
+        const countryMap = new Map(countries.map((c) => [c.id, c.name]));
+        const verificationMap = new Map(verifications.map((v) => [v.userId, v.nationName]));
+
+        const userMap = new Map<string, string>();
+        for (const u of users) {
+          const nationName =
+            (u.countryId ? countryMap.get(u.countryId) : null) ||
+            verificationMap.get(u.id) ||
+            verificationMap.get(u.clerkUserId);
+          if (nationName) {
+            userMap.set(u.clerkUserId, nationName);
+            userMap.set(u.id, nationName);
+          }
+        }
+
+        const enrichedRequests = requests.map((r) => {
+          const resolvedName = userMap.get(r.userId) || verificationMap.get(r.userId);
+          const shortId = r.userId.startsWith("user_")
+            ? r.userId.slice(5, 12)
+            : r.userId.slice(0, 8);
+          return {
+            ...r,
+            requesterName: resolvedName ? resolvedName : `User (${shortId})`,
+          };
+        });
+
         return {
-          requests,
+          requests: enrichedRequests,
           total,
         };
       } catch (error) {
@@ -141,7 +193,7 @@ export const loreCardsAdminRouter = createTRPCRouter({
     .input(
       z.object({
         requestId: z.string().cuid(),
-        reason: z.string().min(1).max(500),
+        reason: z.string().min(1).max(500).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -348,4 +400,58 @@ export const loreCardsAdminRouter = createTRPCRouter({
       });
     }
   }),
+
+  /**
+   * Suggest category, rarity, and artwork source for a wiki article (admin preview)
+   */
+  suggestWikiSignals: adminProcedure
+    .input(
+      z.object({
+        articleTitle: z.string().min(1),
+        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const metadata = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
+          [input.articleTitle],
+          input.wikiSource as any
+        );
+
+        const first = metadata[0];
+        if (!first) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Article "${input.articleTitle}" not found on ${input.wikiSource}`,
+          });
+        }
+
+        const signals = {
+          wordCount: Math.round(first.length / 5),
+          inboundLinks: 10,
+          outboundLinks: 10,
+          editCount: 5,
+          categoryNames: [],
+          hasImages: first.hasImage,
+        };
+
+        const analysis = analyzeWikiSignals(input.articleTitle, signals);
+
+        return {
+          articleTitle: input.articleTitle,
+          wikiSource: input.wikiSource,
+          hasImage: first.hasImage,
+          imageUrl: first.imageUrl,
+          excerpt: first.extract,
+          analysis,
+        };
+      } catch (error) {
+        console.error("[Lore Cards] Error in suggestWikiSignals:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to analyze wiki article signals",
+        });
+      }
+    }),
 });

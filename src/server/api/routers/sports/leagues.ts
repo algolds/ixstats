@@ -24,8 +24,8 @@ import {
   teamIndexHash,
   type SportPresetKey,
 } from "~/lib/sports";
-import { exchangeService } from "~/lib/exchange-service";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { exchangeService } from "~/lib/vault";
+import { isSystemOwner } from "~/lib/auth";
 import { IxTime } from "~/lib/ixtime";
 import { generateMatchReport, generateMatchPreview } from "~/lib/sports/commentary/narrator";
 
@@ -813,8 +813,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
             archetype: season.league.archetype as any,
             teamCount: teamIds.length,
             raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
-              | number
-              | undefined,
+              number | undefined,
           });
           const races = Array.isArray(schedule) ? schedule : [];
           for (const race of races) {
@@ -1070,7 +1069,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
         // Invalidate sports tRPC query caches
         try {
-          const { invalidateCache } = await import("~/lib/trpc-cache");
+          const { invalidateCache } = await import("~/lib/cache");
           await invalidateCache(["sports."]);
         } catch (cacheErr) {
           console.warn("Failed to invalidate sports cache:", cacheErr);
@@ -1366,7 +1365,7 @@ export const sportsLeaguesRouter = createTRPCRouter({
 
   clearSportsCache: adminProcedure.mutation(async () => {
     try {
-      const { invalidateCache } = await import("~/lib/trpc-cache");
+      const { invalidateCache } = await import("~/lib/cache");
       await invalidateCache(["sports."]);
       return { success: true };
     } catch (error) {

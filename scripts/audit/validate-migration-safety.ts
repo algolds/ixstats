@@ -17,11 +17,7 @@ import { join } from "path";
 
 interface MigrationIssue {
   type:
-    | "pending_migration"
-    | "schema_drift"
-    | "missing_table"
-    | "migration_order"
-    | "breaking_change";
+    "pending_migration" | "schema_drift" | "missing_table" | "migration_order" | "breaking_change";
   severity: "critical" | "warning" | "info";
   message: string;
   details?: string;

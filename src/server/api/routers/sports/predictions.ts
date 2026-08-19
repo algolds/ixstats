@@ -8,7 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { exchangeService } from "~/lib/exchange-service";
+import { exchangeService } from "~/lib/vault";
 import { IxTime } from "~/lib/ixtime";
 
 const OUTCOME = z.enum(["home", "away", "draw"]);

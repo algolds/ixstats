@@ -33,15 +33,15 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Economy Builder Components
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
-import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
-import { EconomicWelcomeModal } from "~/components/economy/atomic";
+import { AtomicEconomicComponentSelector } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { EconomicWelcomeModal } from "~/components/mycountry/domains/economy/atomic";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { Checkbox } from "~/components/ui/checkbox";
 
@@ -828,19 +828,13 @@ export function EconomyBuilderPage({
             existingConfiguration.structure?.economicTier as any
           )
             ? (existingConfiguration.structure.economicTier as
-                | "Developing"
-                | "Emerging"
-                | "Developed"
-                | "Advanced")
+                "Developing" | "Emerging" | "Developed" | "Advanced")
             : "Developing",
           growthStrategy: (
             ["Export-Led", "Import-Substitution", "Balanced", "Innovation-Driven"] as const
           ).includes(existingConfiguration.structure?.growthStrategy as any)
             ? (existingConfiguration.structure.growthStrategy as
-                | "Export-Led"
-                | "Import-Substitution"
-                | "Balanced"
-                | "Innovation-Driven")
+                "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven")
             : "Balanced",
         },
         sectors: {

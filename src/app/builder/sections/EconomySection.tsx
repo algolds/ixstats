@@ -55,7 +55,7 @@ import {
 // Economy Builder Integration
 // eslint-disable-next-line unused-imports/no-unused-imports
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 

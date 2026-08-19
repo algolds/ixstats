@@ -10,7 +10,7 @@ import {
   getCurrencyInfo,
   isValidCurrency,
   registerCustomCurrency,
-} from "../format-utils";
+} from "~/lib/utils";
 
 describe("Currency Formatting", () => {
   describe("ISO Currency Support", () => {

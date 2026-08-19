@@ -2,9 +2,9 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 // Import the wiki search service
-import { notificationAPI } from "~/lib/notification-api";
-import { validateNoXSS } from "~/lib/sanitize-html";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { notificationAPI } from "~/lib/notifications/api";
+import { validateNoXSS } from "~/lib/utils";
+import { globalCache } from "~/lib/cache";
 
 const invalidateFeeds = async () => {
   try {

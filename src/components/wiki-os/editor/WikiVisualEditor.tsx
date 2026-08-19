@@ -67,7 +67,7 @@ import {
   BusinessStatsModal,
   MapCoordsModal,
 } from "~/components/wiki-os/editor/WikiTemplateModals";
-import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { AppleSwitch } from "~/components/ui/apple-switch";
 import { useNotify } from "~/hooks/useNotify";
 import { fixEditorImageUrls } from "~/lib/wiki-os/fix-editor-images";
 

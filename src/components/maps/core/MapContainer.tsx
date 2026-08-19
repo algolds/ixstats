@@ -28,7 +28,7 @@ import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
 import type { FeatureCollection } from "geojson";
-import type { MapLayerType } from "~/lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef } from "./IxWorldMap";
 
 // MapLibre CSS - imported here so it's in the main bundle
@@ -544,13 +544,16 @@ export function MapContainer({
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-amber-500">Maps Private Beta</h4>
                 <p className="text-[10px] leading-relaxed text-zinc-300">
-                  External country integration and interactive plotting are under active development. You can freely explore the world map, topography, and other nations, but adding your own borders or claiming territory is not yet open to external players.
+                  External country integration and interactive plotting are under active
+                  development. You can freely explore the world map, topography, and other nations,
+                  but adding your own borders or claiming territory is not yet open to external
+                  players.
                 </p>
               </div>
             </div>
             <button
               onClick={() => setShowGatekeepingWarning(false)}
-              className="text-zinc-400 hover:text-white transition-colors text-[10px] font-bold p-0.5"
+              className="p-0.5 text-[10px] font-bold text-zinc-400 transition-colors hover:text-white"
               title="Dismiss warning"
               type="button"
             >

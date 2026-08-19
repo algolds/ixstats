@@ -18,12 +18,12 @@ import type {
   ReferencePoint,
   AffineMatrix,
   ManualTransform,
-} from "~/lib/province-importer/types";
+} from "~/lib/maps/province-importer/types";
 import {
   computeAffineFromReferencePoints,
   manualTransformToMatrix,
-} from "~/lib/province-importer/alignment";
-import { calculateCentroid } from "~/lib/border-editor";
+} from "~/lib/maps/province-importer/alignment";
+import { calculateCentroid } from "~/lib/maps/border-editor";
 import { applyCityAffine } from "~/lib/city-importer/align-cities";
 import type { SvgLayerInfo, SvgCityPoint, SvgProvinceRef } from "~/lib/city-importer/svg-points";
 

@@ -28,7 +28,10 @@ export default function ExecutiveArticle() {
                 The Intent Engine
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                State your plain-language goals using the Intent Composer. You can authorize a package directly to run it immediately, or click <strong>Propose as Cabinet Goal</strong> to schedule a deliberation session with your ministers, bypassing active weekly cooldowns.
+                State your plain-language goals using the Intent Composer. You can authorize a
+                package directly to run it immediately, or click{" "}
+                <strong>Propose as Cabinet Goal</strong> to schedule a deliberation session with
+                your ministers, bypassing active weekly cooldowns.
               </p>
             </div>
 
@@ -38,7 +41,10 @@ export default function ExecutiveArticle() {
                 Cabinet Meetings &amp; Deliberation
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Convene scheduled cabinet meetings to address proposed intents. Opening a session lets you select between three ministry courses (Measured, Moderate, or Extreme) to commit resources, adjust department budgets, activate policies, and complete the meeting in one click.
+                Convene scheduled cabinet meetings to address proposed intents. Opening a session
+                lets you select between three ministry courses (Measured, Moderate, or Extreme) to
+                commit resources, adjust department budgets, activate policies, and complete the
+                meeting in one click.
               </p>
             </div>
 
@@ -48,7 +54,10 @@ export default function ExecutiveArticle() {
                 National Issues &amp; Resistance
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Active intents generate thematic national issues with 2.0x probability, representing resistance or support from your nation's groups. Diplomatic and foreign issues dynamically pull actual neighbor leaders, regions, and GDP stats directly from the database.
+                Active intents generate thematic national issues with 2.0x probability, representing
+                resistance or support from your nation's groups. Diplomatic and foreign issues
+                dynamically pull actual neighbor leaders, regions, and GDP stats directly from the
+                database.
               </p>
             </div>
 
@@ -58,7 +67,9 @@ export default function ExecutiveArticle() {
                 Policies &amp; Strategy
               </h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Track active policies and draft custom strategies across every ministry. Custom strategies automatically scale their capacity cost and volatility risk based on selected priorities.
+                Track active policies and draft custom strategies across every ministry. Custom
+                strategies automatically scale their capacity cost and volatility risk based on
+                selected priorities.
               </p>
             </div>
           </div>

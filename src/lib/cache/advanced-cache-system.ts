@@ -1,0 +1,491 @@
+/**
+ * Advanced Caching System for Production
+ * Multi-layer caching with Redis, in-memory, and intelligent invalidation
+ */
+
+import { Redis } from "ioredis";
+// Note: Using globalThis.performance (available in Node.js 16+ and browsers)
+
+import { memoryConfig } from "~/lib/system";
+
+// In-memory cache for fallback
+class InMemoryCache {
+  private cache = new Map<string, { value: any; expires: number; hits: number }>();
+  private readonly maxSize = memoryConfig.cache.maxEntries;
+  private readonly defaultTTL = memoryConfig.cache.defaultTTL;
+
+  set(key: string, value: any, ttl: number = this.defaultTTL): void {
+    // Remove oldest entries if cache is full
+    if (this.cache.size >= this.maxSize) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+
+    this.cache.set(key, {
+      value,
+      expires: Date.now() + ttl,
+      hits: 0,
+    });
+  }
+
+  get(key: string): any | null {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    if (Date.now() > item.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    item.hits++;
+    return item.value;
+  }
+
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  deleteByPattern(pattern: string): void {
+    const isWildcard = pattern.includes("*");
+    if (isWildcard) {
+      const regexStr = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+        ch === "*" ? ".*" : "\\" + ch
+      );
+      const regex = new RegExp(`^${regexStr}$`);
+      for (const key of this.cache.keys()) {
+        if (regex.test(key)) {
+          this.cache.delete(key);
+        }
+      }
+    } else {
+      this.cache.delete(pattern);
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  getStats(): { size: number; hits: number; hitRate: number } {
+    const items = Array.from(this.cache.values());
+    const totalHits = items.reduce((sum, item) => sum + item.hits, 0);
+    const totalRequests = items.length + totalHits;
+
+    return {
+      size: this.cache.size,
+      hits: totalHits,
+      hitRate: totalRequests > 0 ? totalHits / totalRequests : 0,
+    };
+  }
+}
+
+// Redis cache interface
+class RedisCache {
+  private redis: Redis | null = null;
+  private enabled = false;
+
+  constructor() {
+    this.initializeRedis();
+  }
+
+  private async initializeRedis(): Promise<void> {
+    try {
+      const redisUrl = process.env.REDIS_URL;
+      const redisEnabled = process.env.REDIS_ENABLED === "true";
+
+      if (redisUrl && redisEnabled) {
+        this.redis = new Redis(redisUrl, {
+          maxRetriesPerRequest: 3,
+          lazyConnect: true,
+        });
+
+        this.redis.on("error", (err) => {
+          console.warn("[RedisCache] Redis connection error:", err.message);
+        });
+
+        this.redis.on("connect", () => {
+          console.log("[RedisCache] Connected to Redis");
+        });
+
+        this.enabled = true;
+      } else {
+        console.warn("[RedisCache] Redis not configured or not enabled, using in-memory fallback");
+      }
+    } catch (error) {
+      console.error("[RedisCache] Failed to initialize:", error);
+    }
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  isConnected(): boolean {
+    return this.redis?.status === "ready";
+  }
+
+  async set(key: string, value: any, ttlSeconds = 300): Promise<void> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
+
+    try {
+      await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+    } catch (error) {
+      console.error("[RedisCache] Set failed:", error);
+    }
+  }
+
+  async get(key: string): Promise<any | null> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return null;
+
+    try {
+      const value = await this.redis.get(key);
+      return value ? JSON.parse(value as string) : null;
+    } catch (error) {
+      console.error("[RedisCache] Get failed:", error);
+      return null;
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
+
+    try {
+      await this.redis.del(key);
+    } catch (error) {
+      console.error("[RedisCache] Delete failed:", error);
+    }
+  }
+
+  async deleteByPattern(pattern: string): Promise<void> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
+
+    try {
+      const keys = await this.redis.keys(pattern);
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } catch (error) {
+      console.error("[RedisCache] Delete by pattern failed:", error);
+    }
+  }
+
+  async clear(): Promise<void> {
+    if (!this.enabled || !this.redis || !this.isConnected()) return;
+
+    try {
+      await this.redis.flushdb();
+    } catch (error) {
+      console.error("[RedisCache] Clear failed:", error);
+    }
+  }
+}
+
+export interface AdvancedCacheOptions {
+  ttl?: number; // Time to live in seconds
+  tier?: "critical" | "standard" | "background"; // Cache tier
+  tags?: string[]; // For invalidation
+  skipRedis?: boolean; // Skip Redis for this item
+}
+
+export interface AdvancedCacheStats {
+  memory: {
+    size: number;
+    hits: number;
+    hitRate: number;
+  };
+  redis: {
+    enabled: boolean;
+    connected: boolean;
+  };
+  performance: {
+    averageGetTime: number;
+    averageSetTime: number;
+    totalOperations: number;
+  };
+}
+
+/**
+ * Advanced multi-tier caching system
+ */
+export class AdvancedCacheSystem {
+  // Exposed for synchronous access by intelligence-cache facade
+  readonly memoryCache = new InMemoryCache();
+  private redisCache = new RedisCache();
+  // Use running averages instead of storing arrays of individual timings
+  private performanceMetrics = {
+    getTimeSum: 0,
+    getTimeCount: 0,
+    setTimeSum: 0,
+    setTimeCount: 0,
+    totalOperations: 0,
+  };
+
+  /**
+   * Set value in cache with intelligent tiering
+   */
+  async set(key: string, value: any, options: AdvancedCacheOptions = {}): Promise<void> {
+    const startTime = performance.now();
+
+    try {
+      const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
+
+      // Always set in memory cache
+      this.memoryCache.set(key, value, (ttl * 1000) as number);
+
+      // Set in Redis for critical and standard tiers (unless skipped)
+      if (!skipRedis && (tier === "critical" || tier === "standard")) {
+        await this.redisCache.set(key, value, ttl);
+      }
+
+      // Record performance
+      const duration = performance.now() - startTime;
+      this.recordSetTime(duration);
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Set error:", error);
+    }
+  }
+
+  /**
+   * Get value from cache with fallback strategy
+   */
+  async get<T = any>(key: string): Promise<T | null> {
+    const startTime = performance.now();
+
+    try {
+      // Try memory cache first (fastest)
+      let value = this.memoryCache.get(key);
+      if (value !== null) {
+        this.recordGetTime(performance.now() - startTime);
+        return value;
+      }
+
+      // Try Redis cache (slower but persistent)
+      value = await this.redisCache.get(key);
+      if (value !== null) {
+        // Store back in memory for faster access
+        this.memoryCache.set(key, value, 300000); // 5 minutes
+        this.recordGetTime(performance.now() - startTime);
+        return value;
+      }
+
+      this.recordGetTime(performance.now() - startTime);
+      return null;
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Get error:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete from all cache tiers
+   */
+  async delete(key: string): Promise<void> {
+    try {
+      this.memoryCache.delete(key);
+      await this.redisCache.delete(key);
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Delete error:", error);
+    }
+  }
+
+  async deleteByPattern(pattern: string): Promise<void> {
+    try {
+      this.memoryCache.deleteByPattern(pattern);
+      await this.redisCache.deleteByPattern(pattern);
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Delete by pattern error:", error);
+    }
+  }
+
+  /**
+   * Clear all caches
+   */
+  async clear(): Promise<void> {
+    try {
+      this.memoryCache.clear();
+      await this.redisCache.clear();
+    } catch (error) {
+      console.error("[AdvancedCacheSystem] Clear error:", error);
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): AdvancedCacheStats {
+    const memoryStats = this.memoryCache.getStats();
+    const avgGetTime =
+      this.performanceMetrics.getTimeCount > 0
+        ? this.performanceMetrics.getTimeSum / this.performanceMetrics.getTimeCount
+        : 0;
+    const avgSetTime =
+      this.performanceMetrics.setTimeCount > 0
+        ? this.performanceMetrics.setTimeSum / this.performanceMetrics.setTimeCount
+        : 0;
+
+    return {
+      memory: memoryStats,
+      redis: {
+        enabled: this.redisCache.isEnabled(),
+        connected: this.redisCache.isConnected(),
+      },
+      performance: {
+        averageGetTime: avgGetTime,
+        averageSetTime: avgSetTime,
+        totalOperations: this.performanceMetrics.totalOperations,
+      },
+    };
+  }
+
+  private recordGetTime(duration: number): void {
+    this.performanceMetrics.getTimeSum += duration;
+    this.performanceMetrics.getTimeCount++;
+    this.performanceMetrics.totalOperations++;
+  }
+
+  private recordSetTime(duration: number): void {
+    this.performanceMetrics.setTimeSum += duration;
+    this.performanceMetrics.setTimeCount++;
+  }
+}
+
+// Global cache instance
+export const globalCache = new AdvancedCacheSystem();
+
+/**
+ * Cache utilities for common patterns
+ */
+export class CacheUtils {
+  /**
+   * Generate cache key with consistent formatting
+   */
+  static generateKey(prefix: string, ...parts: (string | number)[]): string {
+    return `${prefix}:${parts.join(":")}`;
+  }
+
+  /**
+   * Cache with automatic key generation
+   */
+  static async cache<T>(
+    keyGenerator: () => string,
+    dataFetcher: () => Promise<T>,
+    options: AdvancedCacheOptions = {}
+  ): Promise<T> {
+    const key = keyGenerator();
+
+    // Try to get from cache first
+    const cached = await globalCache.get<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Fetch fresh data
+    const data = await dataFetcher();
+
+    // Cache the result
+    await globalCache.set(key, data, options);
+
+    return data;
+  }
+
+  /**
+   * Batch cache operations
+   */
+  static async batchCache<T>(
+    keys: string[],
+    dataFetcher: (keys: string[]) => Promise<Record<string, T>>,
+    options: AdvancedCacheOptions = {}
+  ): Promise<Record<string, T>> {
+    const results: Record<string, T> = {};
+    const missingKeys: string[] = [];
+
+    // Check cache for all keys
+    for (const key of keys) {
+      const cached = await globalCache.get<T>(key);
+      if (cached !== null) {
+        results[key] = cached;
+      } else {
+        missingKeys.push(key);
+      }
+    }
+
+    // Fetch missing data
+    if (missingKeys.length > 0) {
+      const freshData = await dataFetcher(missingKeys);
+
+      // Cache fresh data
+      for (const [key, value] of Object.entries(freshData)) {
+        results[key] = value;
+        await globalCache.set(key, value, options);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Invalidate cache by pattern
+   */
+  static async invalidatePattern(pattern: string): Promise<void> {
+    await globalCache.deleteByPattern(pattern);
+  }
+}
+
+/**
+ * Specialized cache decorators for different data types
+ */
+export class CacheDecorators {
+  /**
+   * Cache country data
+   */
+  static async cacheCountryData<T>(
+    countryId: string,
+    dataType: string,
+    fetcher: () => Promise<T>,
+    ttl = 600 // 10 minutes
+  ): Promise<T> {
+    const key = CacheUtils.generateKey("country", countryId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "standard" });
+  }
+
+  /**
+   * Cache user data
+   */
+  static async cacheUserData<T>(
+    userId: string,
+    dataType: string,
+    fetcher: () => Promise<T>,
+    ttl = 300 // 5 minutes
+  ): Promise<T> {
+    const key = CacheUtils.generateKey("user", userId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
+  }
+
+  /**
+   * Cache intelligence data
+   */
+  static async cacheIntelligenceData<T>(
+    countryId: string,
+    dataType: string,
+    fetcher: () => Promise<T>,
+    ttl = 180 // 3 minutes
+  ): Promise<T> {
+    const key = CacheUtils.generateKey("intelligence", countryId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
+  }
+
+  /**
+   * Cache ThinkPages data
+   */
+  static async cacheThinkPagesData<T>(
+    dataType: string,
+    params: Record<string, any>,
+    fetcher: () => Promise<T>,
+    ttl = 120 // 2 minutes
+  ): Promise<T> {
+    const key = CacheUtils.generateKey("thinkpages", dataType, JSON.stringify(params));
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "background" });
+  }
+}

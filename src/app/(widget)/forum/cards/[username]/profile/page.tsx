@@ -12,7 +12,6 @@ import { ForumRarityBar } from "../ForumRarityBar";
 import { styles } from "../widget-styles";
 import { withBasePath } from "~/lib/base-path";
 
-
 const PROFILE_CARD_LIMIT = 6;
 
 export default async function ForumProfileWidget({

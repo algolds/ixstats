@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 
 // Input schemas
 const activityFilterSchema = z.object({

@@ -85,7 +85,7 @@ export async function postMatchDayBulletin(
         if (notify.discordMirror) {
           try {
             const { mirrorThinkPagesPostToDiscordFeed } =
-              await import("~/lib/thinkpages-discord-feed");
+              await import("~/lib/discord/thinkpages-feed");
             await mirrorThinkPagesPostToDiscordFeed(prisma as never, post.id);
           } catch (mirrorErr) {
             console.error("[postMatchDayBulletin] Discord mirror failed:", mirrorErr);

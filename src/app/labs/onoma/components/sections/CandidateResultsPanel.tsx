@@ -20,7 +20,7 @@ interface CandidateResultsPanelProps {
   handleSaveBatchAsDictionary: (e: React.FormEvent) => void;
   isSavingDict: boolean;
   nameBank?: any[];
-  handleSaveName: (name: string, stashId?: string) => void;
+  handleSaveName: (name: string, stashId?: string) => Promise<any> | void;
   onUseName: (name: string) => void;
 }
 
@@ -152,7 +152,9 @@ export function CandidateResultsPanel({
                     isSaved={nameBank.some(
                       (entry) => entry.type === "saved-name" && entry.title === name
                     )}
-                    onSave={handleSaveName}
+                    onSave={async (name, stashId) => {
+                      await handleSaveName(name, stashId);
+                    }}
                     onUse={onUseName}
                   />
                 ))}

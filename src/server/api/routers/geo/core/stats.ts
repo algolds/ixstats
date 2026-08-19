@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { detectConflicts, type FeatureData } from "~/lib/map-conflict-detector";
+import { detectConflicts, type FeatureData } from "~/lib/maps/map-conflict-detector";
 
 export const statsProcedures = {
   getMapStats: cachedPublicProcedure.query(async ({ ctx }) => {
@@ -113,8 +113,7 @@ export const statsProcedures = {
           name: c.name,
           type: "city" as const,
           coordinates: (Array.isArray(c.coordinates) ? c.coordinates : null) as
-            | [number, number]
-            | null,
+            [number, number] | null,
           wikiPageTitle: c.wikiPageTitle,
           population: c.population,
         })),
@@ -123,8 +122,7 @@ export const statsProcedures = {
           name: p.name,
           type: "poi" as const,
           coordinates: (Array.isArray(p.coordinates) ? p.coordinates : null) as
-            | [number, number]
-            | null,
+            [number, number] | null,
           wikiPageTitle: p.wikiPageTitle,
         })),
         ...subdivisions.map((s) => ({

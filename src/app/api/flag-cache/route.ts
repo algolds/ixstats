@@ -1,8 +1,8 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
-import { wikiCacheService } from "~/lib/services/wiki-cache-service";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
+import { wikiCacheService } from "~/lib/wiki";
 
 // Register persistent L1/L2 server cache for flag resolution
 unifiedFlagService.registerPersistentCache(
@@ -10,7 +10,7 @@ unifiedFlagService.registerPersistentCache(
   (country, url) => wikiCacheService.cacheFlagUrl(country, url)
 );
 import { api } from "~/trpc/server";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 
 // Helper to check admin access
 async function requireAdminAccess(): Promise<{ authorized: boolean; error?: NextResponse }> {

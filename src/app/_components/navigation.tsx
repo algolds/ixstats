@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
-import { CommandPalette } from "~/components/DynamicIsland";
+import { CommandPalette } from "~/components/halo";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useHasRoleLevel, useHasPermission } from "~/hooks/usePermissions";
@@ -12,11 +12,10 @@ import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { isStandaloneClient } from "~/lib/standalone-detection";
+import { isStandaloneClient } from "~/lib/system";
 
 import { contextualMenus, getContextKey } from "~/lib/navigation-config";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { useHeadlessNav } from "~/hooks/useHeadlessNav";
 import { useResponsiveNav } from "~/hooks/useResponsiveNav";
 import { useNavigationItems } from "~/hooks/useNavigationItems";
 import { NavigationBar } from "~/components/navigation/NavigationBar";
@@ -27,30 +26,12 @@ export function Navigation() {
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
     normalizedPathname.startsWith("/wiki/") ||
-    normalizedPathname.startsWith("/wiki/") ||
     normalizedPathname.startsWith("/blurbs");
 
-  const isCriticalPage = useMemo(() => {
-    const criticalPrefixes = [
-      "/dashboard",
-      "/vault",
-      "/mycountry",
-      "/admin",
-      "/messages",
-      "/forum",
-      "/sign-in",
-      "/sign-up",
-      "/setup",
-    ];
-    if (normalizedPathname === "/" || normalizedPathname === "") return true;
-    return criticalPrefixes.some((prefix) => normalizedPathname.startsWith(prefix));
-  }, [normalizedPathname]);
-
-  const { showNav } = useHeadlessNav(!isCriticalPage);
+  const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const { scrollY, isSticky } = useNavigationScroll();
-  const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -137,20 +118,22 @@ export function Navigation() {
   return (
     <>
       <nav
-        data-headless-nav={!isCriticalPage ? true : undefined}
-        data-show-nav={!isCriticalPage ? showNav : undefined}
-        className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
+        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
             : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
         style={{
-          opacity: 1 - morphProgress * 0.6,
+          opacity: Math.max(0, 1 - morphProgress),
+          pointerEvents: morphProgress > 0.8 ? "none" : "auto",
           transition: "opacity 0.05s linear",
         }}
       >
         {!isWikiPage && (
-          <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
+          <div
+            className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent"
+            style={{ opacity: Math.max(0, 1 - morphProgress) }}
+          />
         )}
 
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
@@ -238,7 +221,7 @@ export function Navigation() {
         <motion.div
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
-            y: activeIsSticky ? 8 : Math.max(-100, 10 - activeScrollY),
+            y: activeIsSticky ? 8 : 10,
           }}
           transition={{
             type: "spring",
@@ -251,11 +234,11 @@ export function Navigation() {
             maxWidth: "100%",
           }}
         >
-          {/* Large blur-3xl glow that moves and morphs with the DI */}
+          {/* Ambient glow around DI when navbar is visible, fading cleanly to 0 on scroll */}
           <div
             className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
             style={{
-              opacity: 0.6 * Math.max(0.2, 1 - morphProgress),
+              opacity: 0.6 * Math.max(0, 1 - morphProgress),
             }}
           />
           <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />

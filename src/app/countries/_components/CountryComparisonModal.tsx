@@ -15,7 +15,7 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { IxTime } from "~/lib/ixtime";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 

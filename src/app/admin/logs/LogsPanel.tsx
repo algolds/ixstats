@@ -4,7 +4,7 @@ import { useState, useEffect, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -140,7 +140,9 @@ export default function DedicatedLogsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Search Input */}
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Message / Content Search</Label>
+              <Label className="text-muted-foreground text-xs font-semibold">
+                Message / Content Search
+              </Label>
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
@@ -212,8 +214,15 @@ export default function DedicatedLogsPage() {
             <div className="flex flex-wrap items-center gap-6">
               {/* Next.js Errors Toggle */}
               <div className="flex items-center space-x-2">
-                <Switch id="nextjs-errors" checked={nextJsErrors} onCheckedChange={setNextJsErrors} />
-                <Label htmlFor="nextjs-errors" className="text-foreground flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
+                <Switch
+                  id="nextjs-errors"
+                  checked={nextJsErrors}
+                  onCheckedChange={setNextJsErrors}
+                />
+                <Label
+                  htmlFor="nextjs-errors"
+                  className="text-foreground flex cursor-pointer items-center gap-1.5 text-xs font-semibold"
+                >
                   <AlertOctagon className="h-4 w-4 text-rose-500" />
                   NextJS & Server Errors Only
                 </Label>
@@ -222,7 +231,10 @@ export default function DedicatedLogsPage() {
               {/* Auto Refresh Toggle */}
               <div className="flex items-center space-x-2">
                 <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                <Label htmlFor="auto-refresh" className="text-muted-foreground text-xs font-semibold cursor-pointer">
+                <Label
+                  htmlFor="auto-refresh"
+                  className="text-muted-foreground cursor-pointer text-xs font-semibold"
+                >
                   Auto-refresh (8s)
                 </Label>
               </div>
@@ -234,7 +246,7 @@ export default function DedicatedLogsPage() {
                 size="sm"
                 onClick={() => void refetch()}
                 disabled={isLoading || isFetching}
-                className="h-8 gap-1.5 border-border/60 text-xs font-semibold"
+                className="border-border/60 h-8 gap-1.5 text-xs font-semibold"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
                 Reload
@@ -259,9 +271,11 @@ export default function DedicatedLogsPage() {
         <CardContent className="p-4">
           {isLoading ? (
             <div className="flex h-96 items-center justify-center">
-              <div className="text-center space-y-2">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500" />
-                <p className="text-muted-foreground text-xs">Querying database systemLog entries...</p>
+              <div className="space-y-2 text-center">
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-indigo-500" />
+                <p className="text-muted-foreground text-xs">
+                  Querying database systemLog entries...
+                </p>
               </div>
             </div>
           ) : (
@@ -269,7 +283,7 @@ export default function DedicatedLogsPage() {
               entries={entries}
               title={`System Event Stream (${entries.length} fetched)`}
               maxHeight={600}
-              className="border-border/30 bg-black/10 dark:bg-black/40 text-foreground"
+              className="border-border/30 text-foreground bg-black/10 dark:bg-black/40"
             />
           )}
         </CardContent>

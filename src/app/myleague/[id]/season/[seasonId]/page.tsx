@@ -10,10 +10,10 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import Standings from "~/components/sports/standings/Standings1";
-import { ScheduleView } from "~/components/myleague/ScheduleView";
-import { BracketView } from "~/components/myleague/BracketView";
-import { RaceResults } from "~/components/myleague/RaceResults";
-import MatchDetailModal from "~/components/myleague/MatchDetailModal";
+import { ScheduleView } from "~/components/sports/league/ScheduleView";
+import { BracketView } from "~/components/sports/league/BracketView";
+import { RaceResults } from "~/components/sports/league/RaceResults";
+import MatchDetailModal from "~/components/sports/league/MatchDetailModal";
 import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
 
 export default function SeasonDetailPage() {

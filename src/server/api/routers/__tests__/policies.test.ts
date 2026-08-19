@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/lib/notification-api", () => ({
+jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
 }));
 
 import { createCallerFactory } from "../../trpc";
 import { policiesRouter } from "../policies";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 type MockFn = jest.Mock<any, any>;
 

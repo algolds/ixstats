@@ -1,13 +1,15 @@
 "use client";
 
 // src/app/labs/onoma/components/sections/OverviewBanner.tsx
-// Onoma Lab — Welcome & Branding Banner subcomponent
+// Onoma Lab — Welcome & Branding Banner subcomponent (Apple Design Attractor)
 
+import { useState, useEffect } from "react";
 import { Compass, Volume2, Info } from "lucide-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { OnomaDoubleHelixIcon } from "../shared/OnomaDoubleHelixIcon";
 import { applyFlanking } from "~/lib/onoma/branding-utils";
+import { cn } from "~/lib/utils";
 
 interface OverviewBannerProps {
   speechConfig?: any;
@@ -22,6 +24,30 @@ export function OverviewBanner({
   isHeroHovered,
   setIsHeroHovered,
 }: OverviewBannerProps) {
+  const [hasInteracted, setHasInteracted] = useState<boolean>(true); // default true for SSR safety
+
+  useEffect(() => {
+    const tried = localStorage.getItem("onoma-pronunciation-tried");
+    if (!tried) {
+      setHasInteracted(false);
+    }
+  }, []);
+
+  const handlePlay = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      localStorage.setItem("onoma-pronunciation-tried", "true");
+    }
+    playPronunciation();
+  };
+
+  const markInteracted = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      localStorage.setItem("onoma-pronunciation-tried", "true");
+    }
+  };
+
   return (
     <div
       onMouseEnter={() => setIsHeroHovered(true)}
@@ -37,14 +63,41 @@ export function OverviewBanner({
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0091ff]/10 px-3 py-1 text-xs font-semibold text-[#0091ff]">
           <Compass className="h-3 w-3" />
           Onoma (
-          <button
-            onClick={playPronunciation}
-            className="inline-flex cursor-pointer items-center gap-0.5 font-mono underline decoration-[#0091ff]/40 decoration-dotted transition-all select-none hover:text-[#0091ff] hover:decoration-[#0091ff] focus:outline-none"
-            title="Listen to pronunciation"
-          >
-            /ˈɒnəmə/
-            <Volume2 className="h-3.5 w-3.5 shrink-0 opacity-70 transition-all duration-200 hover:scale-110 hover:opacity-100" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="relative inline-flex items-center">
+                {!hasInteracted && (
+                  <span className="pointer-events-none absolute -inset-1 animate-ping rounded-md bg-[#0091ff]/30 opacity-75 duration-1000" />
+                )}
+                <button
+                  type="button"
+                  onClick={handlePlay}
+                  onMouseEnter={markInteracted}
+                  className={cn(
+                    "relative inline-flex cursor-pointer items-center gap-1 font-mono transition-all duration-200 select-none active:scale-[0.94] focus:outline-none",
+                    !hasInteracted
+                      ? "rounded-md bg-[#0091ff]/20 px-1.5 py-0.5 font-bold text-[#0091ff] shadow-[0_0_14px_rgba(0,145,255,0.45)] ring-1 ring-[#0091ff]/60 animate-pulse hover:scale-105"
+                      : "underline decoration-[#0091ff]/40 decoration-dotted hover:scale-105 hover:text-[#0091ff] hover:decoration-[#0091ff]"
+                  )}
+                >
+                  <span>/ˈɒnəmə/</span>
+                  <Volume2
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-all duration-300",
+                      !hasInteracted
+                        ? "animate-bounce text-[#0091ff]"
+                        : "opacity-70 hover:scale-110 hover:opacity-100"
+                    )}
+                  />
+                </button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="center" className="text-xs font-semibold shadow-lg">
+              {!hasInteracted
+                ? "🔊 Click to hear authentic Greek pronunciation!"
+                : "Click to listen to pronunciation"}
+            </TooltipContent>
+          </Tooltip>
           • Greek for “name,” root of onomastics)
         </span>
         <h1
@@ -61,12 +114,15 @@ export function OverviewBanner({
           A{" "}
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="cursor-help underline decoration-[#0091ff]/60 decoration-dotted underline-offset-4 transition-colors hover:text-[#0091ff]">
+              <button
+                type="button"
+                className="inline cursor-help items-baseline font-medium text-foreground underline decoration-[#0091ff]/60 decoration-dotted underline-offset-4 transition-colors hover:text-[#0091ff] focus:outline-none"
+              >
                 Markov-based
-              </span>
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
-              A Markov chain is a procedural algorithm used to make coherent chains of values.
+            <TooltipContent side="top" align="center" className="max-w-xs text-xs font-normal leading-normal">
+              A Markov chain is a mathematical procedural algorithm that calculates statistical letter and syllable transitions to generate coherent, natural names.
             </TooltipContent>
           </Tooltip>{" "}
           name generator for worldbuilding. Instantly create names from public name banks, or create
@@ -97,5 +153,3 @@ export function OverviewBanner({
     </div>
   );
 }
-
-export default OverviewBanner;

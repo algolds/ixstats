@@ -25,11 +25,13 @@ bun run test:watch             # Jest watch mode
 ```
 
 ### Single test
+
 ```bash
 bun run test -- <path-or-pattern>   # e.g. bun run test -- src/lib/foo.test.ts
 ```
 
 ### Typecheck commands
+
 ```bash
 bun run typecheck                       # sequentially checks ui, server, trpc, and db sub-projects
 bun run typecheck:ui                    # frontend client-side pages, hooks, components (6144MB heap)
@@ -41,6 +43,7 @@ bun run typecheck:diag                  # run diagnostics on global tsconfig (61
 ```
 
 ### TypeScript Performance & Profiling
+
 ```bash
 bun run ts:check:lib      # full typecheck of lib sub-project (1,737 files, ~7s)
 bun run ts:diagnostics    # extended diagnostics for lib sub-project
@@ -52,6 +55,7 @@ bun run ts:build          # build with project references (lib + server)
 ```
 
 **Performance config applied:**
+
 - `types: []` — prevents automatic inclusion of all @types/* packages (saved 70% file count)
 - `isolatedModules: true` — ensures safe isolated compilation
 - `importHelpers: true` + `tslib` — generates shared helper imports (smaller bundle)
@@ -61,20 +65,21 @@ bun run ts:build          # build with project references (lib + server)
 
 ## Architecture
 
-| Layer | Location | Notes |
-|-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 210+ routes |
-| Components | `src/components/` | 750+ UI components, Facet design system (was "Glass Physics") |
-| API (tRPC) | `src/server/api/routers/` | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**. Register new routers in `src/server/api/root.ts` |
-| Database | `prisma/schema/` | 296 models split across 15 `.prisma` files |
-| Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers (NOT `middleware.ts`) |
-| Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 90+ custom React hooks |
-| Lib | `src/lib/` | Utilities, rate limiter, WebSocket server, memory config |
-| Shared server primitives | `src/server/shared/` | Cross-router shared utilities (e.g. `layer-cache.ts`) — keeps routers decoupled |
-| Architecture guard | `scripts/audit/audit-arch.ts` | Enforces ≤700-line file ceiling, ratchet baseline, blocks cross-router imports |
+| Layer                    | Location                      | Notes                                                                                                                                               |
+| ------------------------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pages                    | `src/app/`                    | Next.js 16.2 App Router, 210+ routes                                                                                                                |
+| Components               | `src/components/`             | 750+ UI components, Facet design system (was "Glass Physics")                                                                                       |
+| API (tRPC)               | `src/server/api/routers/`     | **90 routers** (domain-split into subdirs via `mergeRouters` + flat files), **1,450+ procedures**. Register new routers in `src/server/api/root.ts` |
+| Database                 | `prisma/schema/`              | 296 models split across 15 `.prisma` files                                                                                                          |
+| Middleware               | `src/proxy.ts`                | Clerk auth + CSP + security headers (NOT `middleware.ts`)                                                                                           |
+| Custom server            | `server.mjs`                  | WebSocket (Socket.IO) + cron jobs (production only)                                                                                                 |
+| Hooks                    | `src/hooks/`                  | 90+ custom React hooks                                                                                                                              |
+| Lib                      | `src/lib/`                    | Utilities, rate limiter, WebSocket server, memory config                                                                                            |
+| Shared server primitives | `src/server/shared/`          | Cross-router shared utilities (e.g. `layer-cache.ts`) — keeps routers decoupled                                                                     |
+| Architecture guard       | `scripts/audit/audit-arch.ts` | Enforces ≤700-line file ceiling, ratchet baseline, blocks cross-router imports                                                                      |
 
 ### Key pages
+
 - `/mycountry` — Executive command suite (single-page router pattern)
 - `/dashboard` — Signed-in dashboard
 - `/vault` — IxVault (cards, credits, marketplace)
@@ -83,12 +88,14 @@ bun run ts:build          # build with project references (lib + server)
 - `/admin` — 50+ admin CMS interfaces (system-owner or admin role required)
 
 ### Path aliases
+
 - `~/*` → `./src/*`
 - `@/*` → `./src/*`
 - `~/components/*` → `./src/components/*`
 - `~/hooks/*` → `./src/hooks/*`
 
 ### Product Model — IxWorld vs Realms
+
 - **IxWorld** is the internal/closed "default" realm for the Ixnay community. It is NOT open to external players.
 - **Realms** are the external-facing product. External users create their own realms with their own maps, nations, and simulation instances.
 - IxWorld is architecturally just `realm="default"` — same code paths, same models, same engine. But from a product perspective, it's a private instance.
@@ -96,6 +103,7 @@ bun run ts:build          # build with project references (lib + server)
 - Never propose "opening IxWorld to external players" as a strategy. The strategy is always "build Realms as the platform, IxWorld is one tenant."
 
 ### Procedural Realm Map Architecture (UPG v2)
+
 - **Engine Location**: `src/lib/worldgen/v2/`
 - **Spatial Mesh Foundation**: 100,000-cell Voronoi mesh (`WorldGraph`), 5 Lloyd iterations. Fixed resolution (no UI sliders).
 - **Coastal Hypsometry**: Damped coastal land elevation (`coastDist <= 3`) keeps shorelines in lowlands (`zone_0`/`zone_1`) and prevents glacial peaks (`zone_8`) on water edges.
@@ -105,38 +113,46 @@ bun run ts:build          # build with project references (lib + server)
 ## Environment & Infrastructure
 
 ### Database
+
 - PostgreSQL with PostGIS, Docker container `ixstats-postgres` on port **5433**
 - Connection: `postgresql://postgres:postgres@localhost:5433/ixstats`
 - Schema files: `prisma/schema/{core,economy,government,diplomacy,cards,military,maps,intelligence,social,wiki,enums,base}.prisma`
 
 ### Env loading order (dev)
+
 1. `.env.local.dev` (preferred) → `.env.local` → `.env`
 2. Custom server (`server.mjs`) also loads these manually for WebSocket/cron
 
 ### Env loading order (prod)
+
 1. `.env.production` (template) → `.env.production.local` (secrets)
 2. Deployed at basePath `/projects/ixstates` on port 3550
 
 ### Required env vars (minimum dev)
+
 ```
 DATABASE_URL="postgresql://..."
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
 ```
+
 Clerk keys are optional in dev (demo mode works without). Required in production.
 
 ### Special modes
+
 - **DATABASE_READONLY=true**: Blocks all writes, disables user creation and audit logging
 - **SKIP_ENV_VALIDATION=true**: Skip env schema check (Docker builds)
 - **NEXT_PUBLIC_IXWORLD_STANDALONE=true**: Maps-only mode (maps.ixwiki.com), empty basePath
 
 ### Redis
+
 Used for rate limiting and caching. Start with `bun run redis:start`. Falls back to in-memory if unavailable.
 
 ### Server Monitoring & Alerts
+
 - **`FATAL: the database system is in recovery mode`** (Prisma errors + cascading tRPC failures) almost always means the **root disk `/dev/vda2` is full**, not an app bug. The dockerized `ixstats-postgres` can't write WAL with 0 bytes free; clear space (`df -h /`) and it auto-recovers. **Never `apt purge docker` / `docker system prune -a --volumes`** — Docker hosts the prod DB + Redis.
 - **Disk/log guardrails:** journald cap (`/etc/systemd/journald.conf.d/99-ixwiki-size.conf`), logrotate (`/etc/logrotate.d/ixwiki-custom`), disk monitor (`/usr/local/bin/ixwiki-disk-alert.sh` via `/etc/cron.d/ixwiki-disk-alert`, WARN 85% / CRIT 92%); MariaDB slow-log capped (`log_queries_not_using_indexes=0`, `long_query_time=5` in `/etc/mysql/conf.d/ixwiki.cnf`, rotation daily/200M); IDE-server prune (`/usr/local/bin/ide-server-prune.sh` via `/etc/cron.d/ide-server-prune`, weekly — keeps 2 newest Cursor/VSCode versions).
 - **Discord DM alerts:** `/usr/local/bin/ixwiki-notify.sh "msg"` DMs the admin via `DISCORD_BOT_TOKEN` (read at runtime from `.env.production.local`). Hooked into the disk monitor, `php-fpm-watchdog`, `ixwiki-bot-defense`, and a weekly `pg_stat_statements` slow-query digest (`ixwiki-pg-slow-report.sh`, Mon 09:00). To add a new alert, call `ixwiki-notify.sh` (background it with `timeout` from daemons).
-- Full reference: server-level **`/ixwiki/CLAUDE.md`** → *Disk Space Monitoring & Server Alerts*.
+- Full reference: server-level **`/ixwiki/CLAUDE.md`** → _Disk Space Monitoring & Server Alerts_.
 
 ## Production Deployment
 
@@ -148,18 +164,18 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 ## Framework Versions
 
-| Package | Version |
-|---------|---------|
-| Next.js | 16.3.0 |
-| React | 19.2.8 |
-| TypeScript | 5.9.3 |
-| Prisma | 6.19.3 |
-| tRPC | 11.18.0 |
-| Zod | 4.4.3 (NOT v3) |
-| Tailwind CSS | 4.3.3 (NOT v3) |
-| ESLint | 10.8.0 (flat config) |
-| Jest | 30.4.2 |
-| Express | 5.2.1 |
+| Package      | Version              |
+| ------------ | -------------------- |
+| Next.js      | 16.3.0               |
+| React        | 19.2.8               |
+| TypeScript   | 5.9.3                |
+| Prisma       | 6.19.3               |
+| tRPC         | 11.18.0              |
+| Zod          | 4.4.3 (NOT v3)       |
+| Tailwind CSS | 4.3.3 (NOT v3)       |
+| ESLint       | 10.8.0 (flat config) |
+| Jest         | 30.4.2               |
+| Express      | 5.2.1                |
 
 ## Versioning & Release Architecture
 
@@ -168,10 +184,11 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.1.1 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
 - **Apps / Engines / Systems / Design** each carry a **single capability integer** (not SemVer), all defined in the registry:
   - **Apps**: `IXWORLD_VERSION`, `WIKIOS_VERSION` (Canvas sub-version: `CANVAS_VERSION`), `IXVAULT_VERSION`
-  - **Engines** (internal, Dev-panel only): `MYCOUNTRY_ENGINE_VERSION`, `CONCORD_ENGINE_VERSION`, `ATLAS_ENGINE_VERSION`
-  - **Systems**: `MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION`, `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`
+  - **Engines** (internal, Dev-panel only): `MYCOUNTRY_ENGINE_VERSION`, `CONCORD_ENGINE_VERSION`, `ATLAS_ENGINE_VERSION`, `STATECRAFT_ENGINE_VERSION`
+  - **Systems**: `MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION`, `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`, `DIRECTIVES_VERSION`
   - **Design**: `FACET_VERSION`
 - **Inherit the platform version** (not independent): `IXFORUM_VERSION` (pinned), IxTime/IxnayID, Labs, Nav Hubs. IxWiki retired as a component name (it's the WikiOS-rendered content).
+- **Directives (UI) vs Statecraft (Engine)**: **Directives** is the universal user-facing brand across all UI components, dialogs, and triggers (`"Declare Directive"`, `"Tune Custom Directive"`). **Statecraft** is the backend simulation engine powering goal classification, CivCap throughput, power brokers, and recon.
 - **Renames**: Glass Physics → **Facet**, Dynamic Island → **Halo**, LoreStash → **Stash** (Prisma model names unchanged).
 - **Build id**: `BUILD_VERSION` (git short SHA) generated into `buildVersion.generated.ts` by `scripts/write-build-version.js` (`prebuild` hook).
 
@@ -180,7 +197,6 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 > **Minor 1.0.6 → 1.1.0 (June 2026):** Executive/diplomacy canon track (Plans 032–037), map overlays + Canon Density heatmap (Plans 038–039), Defense conflicts → canon (Plan 040), Stability resolution → canon (Plan 041), Defense border-threat panel (Plan 042), Politics cabinet panel (Plan 043), and production adjacency graph rebuild (Plan 026). Bumped: platform minor, IxWorld app, MyCountry/Concord/Atlas engines, MyCountry system. See CHANGELOG.md.
 
 > **Standing instruction:** after any major session/change, reference **revision.md** and **ask the user whether any version should bump** (platform `Major.Minor.Patch`, a component's capability integer, the channel, or release name) and whether the registry / `CHANGELOG.md` / docs need updating.
-
 
 ## Gotchas
 
@@ -195,6 +211,9 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **NS image proxy**: NationStates images go through `/api/proxy-ns-image` (hotlinking restrictions).
 - **Zod v4 migration**: Schema syntax differs from v3. Check existing routers for patterns.
 - **Tailwind v4**: Uses `@theme` directives, not `tailwind.config.js`. Config is CSS-based.
+- **Multi-branch Component Rendering**: Large monolith UI components (e.g. `ThinkpagesPost.tsx`, `UnifiedFeedItem.tsx`) have multiple conditional render branches (hero view, standard feed list item view, repost view, detail modal view). When adding custom embeds or card formatters, ensure ALL render paths are updated.
+- **JS Regex Unicode Range Flag**: In JavaScript non-unicode regexes (`/[\u1F300-\u1F9FF]/g` without `/u`), range bounds match Latin ASCII letters (`A-Z`, `a-z`) and erase standard text! Always use the `/u` flag (`/[\u{1F300}-\u{1F9FF}]/gu`) or explicit character sets when matching emojis.
+- **Blurb Tag Stripping**: Thinkpages social posts contain leading `[blurb:slug|Title]` header tags. Content parsers (e.g., `parseSportsBulletin`) must strip `^\[blurb:[^\]]+\]\s*` before inspecting line-0 headers.
 
 ## Code Conventions
 
@@ -203,6 +222,10 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **React**: Use `React.memo`, `useMemo`, `useCallback` for performance. Facet (glass/refraction/depth) design patterns.
 - **tRPC**: All API access goes through tRPC routers. Do not query Prisma directly from components.
 - **Modular architecture**: For components >500 lines, extract business logic to `src/lib/`, state to `src/hooks/`, UI to focused components under `src/components/domain/feature/`.
+- **MediaWiki & Wiki Integration**:
+  - **User-Agent**: All MediaWiki / wiki API requests MUST strictly use the `IxStats-Builder` User-Agent string as defined in `src/lib/wiki/config.ts` (`DEFAULT_USER_AGENT`). Never override, spoof, or change this User-Agent.
+  - **Centralized Primitives**: ALL wiki network calls, search queries, metadata resolution, and article parsing MUST go through the central MediaWiki primitives (`src/lib/wiki/config.ts`, `src/lib/wiki/bridge.ts`, `src/lib/wiki/lore-card-generator.ts`, and `src/server/api/routers/lore-cards/wiki.ts`).
+  - **No Ad-Hoc Calls**: NEVER write manual `fetch()` requests or hardcode inline MediaWiki API URLs / User-Agents in frontend UI components, hooks, or non-wiki router files.
 
 ### tRPC Router Splitting
 
@@ -223,4 +246,4 @@ Process: scout that the router is live + a single flat `createTRPCRouter` (dead/
 - `docs/reference/api-complete.md` — Full tRPC API catalog (1,450+ procedures across 90 routers)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)
--  `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines
+- `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines

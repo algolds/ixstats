@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import { getMapGlyphsUrl } from "~/lib/base-path";

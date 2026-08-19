@@ -4,8 +4,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/system-owner-constants";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { isSystemOwner } from "~/lib/auth";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 export const adminCountriesGodModeRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -576,4 +576,4 @@ export const adminCountriesGodModeRouter = createTRPCRouter({
   // ─── Wiki Link Management ──────────────────────────────────────────
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki-bridge"
+// getWikiDbPool is now imported from "~/lib/wiki/bridge"

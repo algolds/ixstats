@@ -1,28 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, Award, ExternalLink } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { cn } from "~/lib/utils";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import NumberFlow from "~/components/ui/number-flow";
+import { useSimpleFlag } from "~/hooks/useSimpleFlag";
 
-// Tab Subcomponents
-import { QuestTreesTab } from "~/components/achievements/tabs/QuestTreesTab";
+// Subcomponents
 import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
-import { WikiLoreTab } from "~/components/achievements/tabs/WikiLoreTab";
 import { ShowcaseTab } from "~/components/achievements/tabs/ShowcaseTab";
-import { LeaderboardTab } from "~/components/achievements/tabs/LeaderboardTab";
 
 export default function AchievementsPage() {
   useEffect(() => {
@@ -30,15 +22,18 @@ export default function AchievementsPage() {
   }, []);
 
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState<string>("quest-trees");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showCabinet, setShowCabinet] = useState<boolean>(() => {
+  const [isMounted, setIsMounted] = useState(false);
+  const [showCabinet, setShowCabinet] = useState<boolean>(true);
+
+  useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("ixstats-show-achievements-cabinet");
-      return stored !== "false";
+      if (stored === "false") {
+        setShowCabinet(false);
+      }
     }
-    return true;
-  });
+  }, []);
 
   const toggleCabinet = (checked: boolean) => {
     setShowCabinet(checked);
@@ -47,36 +42,8 @@ export default function AchievementsPage() {
     }
   };
 
-  // Dynamic Winners Calendar States (Default: June 2026)
-  const [calendarYear, setCalendarYear] = useState<number>(2026);
-  const [calendarMonth, setCalendarMonth] = useState<number>(6);
-
-  // Read tab query parameter on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get("tab");
-      if (
-        tabParam &&
-        ["quest-trees", "all-achievements", "wiki-lore", "leaderboard"].includes(tabParam)
-      ) {
-        setActiveTab(tabParam);
-      }
-    }
-  }, []);
-
   // Get user profile
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
-  const isAdmin =
-    userProfile?.role?.name === "owner" ||
-    userProfile?.role?.name === "admin" ||
-    userProfile?.role?.name === "staff";
-
-  // Get OOL stats
-  const { data: lorewardStats } = api.lorewards.getUserStats.useQuery(
-    { username: userProfile?.wikiUsername || "" },
-    { enabled: !!userProfile?.wikiUsername }
-  );
 
   // Get all master achievements with status for current user's country
   const { data: achievements, isLoading } = api.achievements.getAllWithStatus.useQuery(
@@ -91,7 +58,6 @@ export default function AchievementsPage() {
     },
   });
 
-  // Automatically trigger sync on mount if country context is ready
   useEffect(() => {
     if (userProfile?.countryId) {
       syncAchievements();
@@ -101,180 +67,151 @@ export default function AchievementsPage() {
   // Get global leaderboard
   const { data: leaderboard } = api.achievements.getLeaderboard.useQuery({
     limit: 20,
-    category: selectedCategory !== "all" ? selectedCategory : undefined,
   });
 
-  // UFC-Style Leaderboard
-  const {
-    data: ufcLeaderboard,
-    isLoading: isUfcLoading,
-    refetch: refetchUfc,
-  } = api.lorewards.getUfcLeaderboard.useQuery(undefined, { enabled: activeTab === "wiki-lore" });
-
-  // Winners Calendar Query
-  const { data: winnersCalendar } = api.lorewards.getWinnersCalendar.useQuery(
-    { year: calendarYear, month: calendarMonth },
-    { enabled: activeTab === "wiki-lore" }
-  );
-
   const unlockedAchievements = achievements?.filter((a) => a.isUnlocked) || [];
-  const totalPoints = unlockedAchievements.reduce((sum, a) => sum + (a.points || 10), 0);
   const totalUnlocked = unlockedAchievements.length;
+  const totalAvailable = achievements?.length || 1;
+  const completionPercent = Math.round((totalUnlocked / totalAvailable) * 100);
 
   const unlockedStandard = unlockedAchievements.filter(
     (a) => a.triggerType !== "OOL_MEDAL" && a.triggerType !== "WIKI_AWARD"
   );
   const gameplayPoints = unlockedStandard.reduce((sum, a) => sum + (a.points || 10), 0);
-  const loreScore = lorewardStats?.stats?.totalScore || 0;
+
+  const rankIndex = leaderboard?.findIndex(
+    (l: { countryId: string }) => l.countryId === userProfile?.countryId
+  );
+  const globalRank = rankIndex !== undefined && rankIndex !== -1 ? rankIndex + 1 : 0;
+
+  const { flagUrl: simpleFlagUrl } = useSimpleFlag(userProfile?.country?.name);
+  const countryFlagUrl =
+    (userProfile?.country as any)?.flagUrl || (userProfile?.country as any)?.flag || simpleFlagUrl;
 
   return (
     <VaultSidebarLayout activeSection="achievements">
       <div className="space-y-6">
-        {/* User Stats Card */}
-        {userProfile && (
-          <CutoutCard
-            className={cn(
-              cutoutCardSurfaceClassName,
-              "border-border/50 bg-card/65 relative overflow-hidden rounded-2xl shadow-lg backdrop-blur-md"
-            )}
-            texture="chevron"
-            textureOpacity={0.04}
-            trackPointerHover={false}
-          >
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:32px_32px] opacity-20 dark:bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] dark:opacity-25" />
-            <CutoutCardContent className="relative z-10 p-6">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-foreground text-lg font-bold">Your Achievement Profile</h2>
-                  <p className="text-muted-foreground text-xs">{userProfile.country?.name}</p>
+        {/* Country Profile Header Card */}
+        {isMounted && userProfile && (
+          <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/20 bg-card/75 p-6 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-border/40 dark:border-t-white/10 dark:bg-card/60">
+            <TextureOverlay texture="dots" opacity={0.03} />
+
+            {/* Country Flag Background Wash & Watermark */}
+            {countryFlagUrl && (
+              <>
+                <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10 select-none dark:opacity-15">
+                  <img
+                    src={countryFlagUrl}
+                    alt=""
+                    className="h-full w-full object-cover object-center blur-2xl saturate-[0.4]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-card via-card/85 to-card" />
                 </div>
+                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-10 transition-all duration-700 select-none dark:opacity-20">
+                  <img
+                    src={countryFlagUrl}
+                    alt=""
+                    className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-l from-transparent via-card/60 to-card" />
+                </div>
+              </>
+            )}
+
+            <div className="relative z-10 space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
+                  <h1 className="flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight text-foreground">
+                    <span>Achievements</span>
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-600 backdrop-blur-md dark:text-amber-400">
+                      {completionPercent}% Mastered
+                    </span>
+                  </h1>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* Global Leaderboards Badge Link */}
+                  <Link
+                    href="/leaderboards"
+                    className="flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-3.5 py-1.5 text-xs font-bold text-foreground/80 backdrop-blur-md transition-all hover:bg-muted/80 hover:text-foreground active:scale-95"
+                  >
+                    <Award className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                    <span>Global Leaderboards</span>
+                    <ExternalLink className="h-3 w-3 opacity-60" />
+                  </Link>
+
+                  {/* Showcase Cabinet Toggle */}
+                  <div className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3.5 py-1.5 backdrop-blur-md">
                     <Label
                       htmlFor="cabinet-toggle"
-                      className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+                      className="cursor-pointer text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase select-none hover:text-foreground"
                     >
-                      Showcase Cabinet
+                      Showcase Shelf
                     </Label>
                     <Switch
                       id="cabinet-toggle"
                       checked={showCabinet}
                       onCheckedChange={toggleCabinet}
-                      className="data-[state=checked]:bg-purple-600"
+                      className="data-[state=checked]:bg-amber-500"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="border-border/50 grid grid-cols-2 gap-4 border-t pt-4 md:grid-cols-4 dark:border-white/5">
+              {/* Metrics Summary Row */}
+              <div className="grid grid-cols-1 gap-4 border-t border-border/50 pt-5 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <div className="text-3xl font-black text-blue-600 dark:text-blue-400">
-                    {totalUnlocked}
+                  <div className="text-3xl font-black tracking-tight text-foreground">
+                    <NumberFlow value={totalUnlocked} />
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Total Unlocked
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
+                    Achievements Unlocked
                   </div>
                 </div>
+
                 <div className="space-y-1">
-                  <div className="text-3xl font-black text-green-600 dark:text-green-400">
-                    {gameplayPoints} pts
+                  <div className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                    <span className="flex items-baseline gap-1">
+                      <NumberFlow value={gameplayPoints} />
+                      <span className="text-sm font-bold text-emerald-600/80 dark:text-emerald-400/80">pts</span>
+                    </span>
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
                     Achievement Points
                   </div>
                 </div>
+
                 <div className="space-y-1">
-                  <div className="text-3xl font-black text-amber-600 dark:text-amber-400">
-                    {loreScore} pts
+                  <div className="text-3xl font-black tracking-tight text-purple-600 dark:text-purple-400">
+                    {globalRank > 0 ? (
+                      <span className="flex items-baseline">
+                        #<NumberFlow value={globalRank} />
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </div>
-                  <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Lore Score
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-purple-650 text-3xl font-black dark:text-purple-400">
-                    #
-                    {leaderboard?.findIndex(
-                      (l: { countryId: string }) => l.countryId === userProfile.countryId
-                    )! + 1 || "—"}
-                  </div>
-                  <div className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                  <div className="text-[10px] font-extrabold tracking-wider text-muted-foreground uppercase">
                     Global Rank
                   </div>
                 </div>
               </div>
-            </CutoutCardContent>
-          </CutoutCard>
+            </div>
+          </div>
         )}
 
-        {/* Showcase Cabinet (Toggleable) */}
+        {/* Showcase Cabinet */}
         {!isLoading && showCabinet && <ShowcaseTab achievements={achievements} />}
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
-            <TabsTrigger
-              value="quest-trees"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              Quest Paths
-            </TabsTrigger>
-            <TabsTrigger
-              value="all-achievements"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              Achievements
-            </TabsTrigger>
-            <TabsTrigger
-              value="wiki-lore"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              Lorewards
-            </TabsTrigger>
-            <TabsTrigger
-              value="leaderboard"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              Global Leaderboards
-            </TabsTrigger>
-          </TabsList>
+        {/* Loader */}
+        {isLoading && (
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-amber-500 dark:text-amber-400" />
+          </div>
+        )}
 
-          {/* Loader */}
-          {isLoading && (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="text-amber-555 h-8 w-8 animate-spin" />
-            </div>
-          )}
-
-          {!isLoading && (
-            <>
-              {/* Quest Trees Tab */}
-              <QuestTreesTab achievements={achievements} />
-
-              {/* All Achievements Tab */}
-              <AllAchievementsTab
-                achievements={achievements}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-              />
-
-              {/* Wiki & Lore Tab */}
-              <WikiLoreTab
-                ufcLeaderboard={ufcLeaderboard}
-                isUfcLoading={isUfcLoading}
-                winnersCalendar={winnersCalendar}
-                calendarYear={calendarYear}
-                setCalendarYear={setCalendarYear}
-                calendarMonth={calendarMonth}
-                setCalendarMonth={setCalendarMonth}
-                isAdmin={isAdmin}
-              />
-
-              {/* Leaderboard Tab */}
-              <LeaderboardTab leaderboard={leaderboard} />
-            </>
-          )}
-        </Tabs>
+        {/* Achievement Catalog */}
+        {!isLoading && <AllAchievementsTab achievements={achievements} />}
       </div>
     </VaultSidebarLayout>
   );

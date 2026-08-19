@@ -6,7 +6,7 @@ import { Minus, Plus, RotateCcw, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils";
-import { parseNumberInput } from "~/lib/format-utils";
+import { parseNumberInput } from "~/lib/utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
 

@@ -12,7 +12,7 @@
  * - Type-safe state management
  */
 
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 
 /**
  * Configuration options for notification behavior

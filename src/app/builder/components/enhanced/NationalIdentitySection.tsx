@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 import { Globe, Landmark, Heart } from "lucide-react";
@@ -216,7 +216,7 @@ export function NationalIdentitySection({
               <div className="bg-card/10 rounded-xl border border-white/10 p-5 backdrop-blur-md">
                 <EconomicArchetypeDisplay
                   era="all"
-                  currentState={builderState}
+                  currentState={builderState.economyBuilderState || (builderState as any)}
                   onArchetypeApplied={(_fallbackState, archetypeId, archetype) => {
                     if (archetypeId && archetype) {
                       updateArchetypeId(archetypeId);

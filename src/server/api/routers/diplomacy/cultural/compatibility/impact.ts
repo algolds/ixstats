@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
+import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 
@@ -129,7 +129,8 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
       });
 
       // Calculate impact using CulturalImpactCalculator
-      const { CulturalImpactCalculator } = await import("~/lib/cultural-impact-calculator");
+      const { CulturalImpactCalculator } =
+        await import("~/lib/diplomacy/cultural-impact-calculator");
 
       const exchangeData = {
         id: exchange.id,

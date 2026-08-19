@@ -33,7 +33,6 @@ import {
   Pipette,
   Wand2,
 } from "lucide-react";
-import { MousePointerIcon, MapPinIcon, LandmarkIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
 
@@ -69,15 +68,6 @@ const TOOLS: ToolDef[] = [
   { mode: "ruler", icon: Ruler, label: "Ruler (Measure)", shortcut: "U", group: 4 },
   { mode: "paint-fill", icon: PaintBucket, label: "Paint Fill", shortcut: "G", group: 4 },
 ];
-
-/** Animated icon overrides for toolbar tools (only where a good visual match exists) */
-const ANIMATED_TOOL_ICONS: Partial<
-  Record<EditorMode, React.ComponentType<{ size?: number; className?: string }>>
-> = {
-  view: MousePointerIcon,
-  "add-city": MapPinIcon,
-  "add-poi": LandmarkIcon,
-};
 
 interface GroupConfig {
   id: string;
@@ -233,7 +223,6 @@ export function MapEditorToolbar({
 
         if (item.type === "group") {
           const activeTool = item.activeTool;
-          const AnimatedIcon = ANIMATED_TOOL_ICONS[activeTool.mode as EditorMode];
           const FallbackIcon = activeTool.icon;
           const isActive = item.modes.includes(activeMode);
           const isToolDisabled = disabled || disabledTools.includes(activeTool.mode);
@@ -273,11 +262,7 @@ export function MapEditorToolbar({
                     } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
                     title={titleText}
                   >
-                    {AnimatedIcon ? (
-                      <AnimatedIcon size={16} />
-                    ) : (
-                      <FallbackIcon className="h-4 w-4" />
-                    )}
+                    <FallbackIcon className="h-4 w-4" />
 
                     <div
                       className={`pointer-events-none absolute right-0.5 bottom-0.5 h-0 w-0 border-[3px] border-transparent border-r-current border-b-current opacity-60`}
@@ -345,7 +330,6 @@ export function MapEditorToolbar({
           );
         } else {
           const tool = item.tool;
-          const AnimatedIcon = ANIMATED_TOOL_ICONS[tool.mode as EditorMode];
           const FallbackIcon = tool.icon;
           const isActive = activeMode === tool.mode;
           const isToolDisabled = disabled || disabledTools.includes(tool.mode);
@@ -373,7 +357,7 @@ export function MapEditorToolbar({
                 } ${isToolDisabled ? "pointer-events-none opacity-30" : ""}`}
                 title={titleText}
               >
-                {AnimatedIcon ? <AnimatedIcon size={16} /> : <FallbackIcon className="h-4 w-4" />}
+                <FallbackIcon className="h-4 w-4" />
 
                 {!isToolDisabled && (
                   <div

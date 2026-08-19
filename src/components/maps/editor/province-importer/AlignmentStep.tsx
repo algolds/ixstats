@@ -14,7 +14,7 @@ import {
   Magnet,
 } from "lucide-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
-import type { AlignmentMode } from "~/lib/province-importer/types";
+import type { AlignmentMode } from "~/lib/maps/province-importer/types";
 
 interface AlignmentStepProps {
   importer: ReturnType<typeof useProvinceImporter>;

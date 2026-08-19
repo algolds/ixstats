@@ -12,8 +12,18 @@ const TEST_CELLS = 3000;
 
 describe("v2/terrain", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
-  generateTerrain(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, oceanPercentage: 0.65 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
+  generateTerrain(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    oceanPercentage: 0.65,
+  });
 
   it("populates elevation array h in meters", () => {
     for (let i = 0; i < graph.cells.n; i++) {
@@ -42,8 +52,8 @@ describe("v2/terrain", () => {
     const landPct = landCount / graph.cells.n;
     const expectedLandPct = 1 - 0.65; // 0.35
     // Should be within ±10% tolerance
-    expect(landPct).toBeGreaterThan(expectedLandPct - 0.10);
-    expect(landPct).toBeLessThan(expectedLandPct + 0.10);
+    expect(landPct).toBeGreaterThan(expectedLandPct - 0.1);
+    expect(landPct).toBeLessThan(expectedLandPct + 0.1);
   });
 
   it("assigns elevation zones 0-8 for land cells", () => {

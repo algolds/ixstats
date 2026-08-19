@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { SignInButton, useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -52,8 +52,8 @@ import {
 import Link from "next/link";
 
 // Import component types
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 
 type ArchetypeEra = "modern" | "historical";
 

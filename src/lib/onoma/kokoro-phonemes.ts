@@ -169,6 +169,7 @@ export function anglicizeForSpeech(ipa: string): string {
   if (!ipa) return "";
   let out = "";
   let stressNext = false; // a stress mark was seen; the next vowel is the stressed nucleus
+  let isWordInitial = true;
   let i = 0;
   while (i < ipa.length) {
     const ch = ipa[i]!;
@@ -179,8 +180,11 @@ export function anglicizeForSpeech(ipa: string): string {
       i++;
       continue;
     }
-    if (ch === " " || ch === ".") {
+    if (ch === " " || ch === "." || ch === "/" || ch === "[" || ch === "]") {
       stressNext = false; // syllable/word boundary resets stress tracking
+      if (ch === " " || ch === ".") {
+        isWordInitial = true;
+      }
       out += ch;
       i++;
       continue;
@@ -193,6 +197,7 @@ export function anglicizeForSpeech(ipa: string): string {
         out += v;
         i += v.length;
         stressNext = false;
+        isWordInitial = false;
         skipped = true;
         break;
       }
@@ -202,16 +207,23 @@ export function anglicizeForSpeech(ipa: string): string {
     if (ch === "e" || ch === "a" || ch === "o") {
       if (stressNext) {
         out += ch === "e" ? "ɛ" : ch === "o" ? "oʊ" : "a";
+      } else if (isWordInitial) {
+        // Word-initial cardinal vowel: preserve clear vowel onset rather than reducing to hesitation schwa
+        out += ch === "e" ? "ɛ" : ch === "o" ? "oʊ" : "ɑ";
       } else {
         out += "ə";
       }
       stressNext = false;
+      isWordInitial = false;
       i++;
       continue;
     }
 
     if (ANGLICIZE_OTHER_VOWELS.has(ch)) {
       stressNext = false; // also a nucleus
+      isWordInitial = false;
+    } else if (/[a-zøɛɔœɨŋʃtʃθðɬʁvjɾ]/i.test(ch)) {
+      isWordInitial = false;
     }
     out += ch;
     i++;

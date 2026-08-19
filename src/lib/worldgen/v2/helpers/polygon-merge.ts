@@ -12,10 +12,7 @@ import type { Position, Polygon, MultiPolygon } from "geojson";
  * Find spatially contiguous groups within a set of cell IDs.
  * Returns an array of connected components.
  */
-export function findContiguousGroups(
-  graph: WorldGraph,
-  cellIds: number[]
-): number[][] {
+export function findContiguousGroups(graph: WorldGraph, cellIds: number[]): number[][] {
   if (cellIds.length === 0) return [];
 
   const cellSet = new Set(cellIds);
@@ -55,10 +52,7 @@ export function findContiguousGroups(
  * Remaining edges form the exterior boundary.
  * Chain edges into a closed ring.
  */
-export function mergeCellsToPolygon(
-  graph: WorldGraph,
-  cellIds: number[]
-): Position[][] | null {
+export function mergeCellsToPolygon(graph: WorldGraph, cellIds: number[]): Position[][] | null {
   if (cellIds.length === 0) return null;
 
   if (cellIds.length === 1) {

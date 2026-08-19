@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath } from "~/lib/base-path";
-import type { ProjectionMode, MapLayerType } from "~/lib/map-config";
+import type { ProjectionMode, MapLayerType } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -247,29 +247,25 @@ export function MapDynamicIsland({
         layout
         transition={SPRING}
         animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+        data-expanded={searchOpen ? "true" : undefined}
         className={cn(
-          "relative overflow-hidden rounded-full border shadow-2xl shadow-black/40 transition-colors duration-500",
-          isFlashing ? "border-red-500/50" : "border-white/20 dark:border-white/10"
+          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-500",
+          isFlashing && "!border-red-500/50 !bg-red-500/20"
         )}
         style={{
           willChange: "width, height",
-          background: isFlashing
-            ? "linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(239,68,68,0.1) 100%)"
-            : "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
         }}
       >
         {/* Inner refraction edges */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
           {/* Inner shimmer */}
           <div
             className={cn(
-              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent will-change-transform",
+              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent will-change-transform dark:via-white/10",
               isFlashing && "bg-red-500/10"
             )}
             style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}

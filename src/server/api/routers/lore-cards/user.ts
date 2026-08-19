@@ -16,7 +16,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault-service";
+import { vaultService } from "~/lib/vault";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 

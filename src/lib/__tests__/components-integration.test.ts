@@ -16,9 +16,9 @@ import {
   calculateComponentEconomicModifiers,
   parseTimeToImplement,
   calculateImplementationDate,
-} from "~/lib/atomic-government-utils";
-import { ATOMIC_COMPONENTS } from "~/lib/atomic-government-data";
-import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues-engine";
+} from "~/lib/government/atomic-utils";
+import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
+import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues";
 import { IxTime } from "~/lib/ixtime";
 
 // Two real government component keys that carry metadata, resolved from the catalog

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { Lock, Unlock as UnlockIcon, Shield, AlertTriangle, Info, CheckCircle } 
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import type { RealCountryData } from "../../lib/economy-data-service";
 import { parseEconomyData, createDefaultEconomicInputs } from "../../lib/economy-data-service";
 import type {
@@ -20,7 +20,7 @@ import type {
 import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
-import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system";
 import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { useNotify } from "~/hooks/useNotify";
 import { Checkbox } from "~/components/ui/checkbox";

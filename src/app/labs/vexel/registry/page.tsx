@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import RegistryBrowser from "~/components/vexel/registry/RegistryBrowser";
+import RegistryBrowser from "~/components/maps/vexel/registry/RegistryBrowser";
 
 export default function VexelRegistryPage() {
   return (

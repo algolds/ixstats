@@ -112,7 +112,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 ### Realtime Infrastructure
 
 - `server.mjs` boots Next.js and attaches Socket.IO in production
-- WebSocket logic: `src/lib/websocket-server.ts`
+- WebSocket logic: `src/server/websocket-server.ts`
 - Client integration: intelligence dashboards, diplomatic feeds, and live notifications
 
 Keep this map aligned with real files. When adding new directories or routers, update the tables above so downstream docs and automation stay accurate.

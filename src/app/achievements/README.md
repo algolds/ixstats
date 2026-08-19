@@ -1,6 +1,6 @@
 # Achievements & Leaderboards
 
-**Last updated:** June 2026
+**Last updated:** August 2026
 
 This directory holds the React view for `/achievements` — a single tabbed page combining
 gameplay achievements, quest paths, wiki Lorewards, a showcase cabinet, and global leaderboards.
@@ -10,15 +10,14 @@ It is a Core System within IxStats; see `docs/systems/achievements.md` for the f
 
 | Path | Purpose |
 | --- | --- |
-| `/achievements` | Tabbed hub: Quest Paths, Achievements, Lorewards, Global Leaderboards |
-| `/achievements?tab=<id>` | Deep-links a tab; valid ids: `quest-trees`, `all-achievements`, `wiki-lore`, `leaderboard` |
-| `/leaderboards` | Thin redirect to `/achievements?tab=leaderboard` (consolidated; no standalone page) |
+| `/achievements` | Tabbed hub: Quest Paths, Master Achievements, Showcase Cabinet, Lorewards, Global Leaderboards |
+| `/achievements?tab=<id>` | Deep-links a tab; valid ids: `quest-trees`, `all-achievements`, `showcase`, `wiki-lore`, `leaderboard` |
+| `/leaderboards` | Full standalone leaderboards surface wrapped in VaultSidebarLayout with category filters and podium cards |
 
 ## Key features
 
-- **Profile summary** — top card shows Total Unlocked, Achievement Points (gameplay only,
-  excluding `OOL_MEDAL`/`WIKI_AWARD` trigger types), Lore Score, and Global Rank for the
-  signed-in user's country.
+- **Streamlined Header Summary** — focused top hero card displaying Total Unlocked, Achievement Points (gameplay only,
+  excluding `OOL_MEDAL`/`WIKI_AWARD` trigger types), and Global Rank for the signed-in user's country (Lore Score summary display and legendary badges grid removed for clean visual hierarchy).
 - **Quest Paths** (`quest-trees`) — 8 curated progression tracks defined in
   `components/achievements/constants.ts` (`QUEST_PATHS`): Merchant, Prosperity, Warlord,
   Diplomat, Sovereign, Thinker, Vidmaster, and Lore & Meme. Each lists ordered achievement

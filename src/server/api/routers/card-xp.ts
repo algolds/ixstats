@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { grantCardXp } from "~/lib/card-xp-utils";
+import { grantCardXp } from "~/lib/cards";
 
 /**
  * Grant experience to a card ownership instance.

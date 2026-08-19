@@ -9,7 +9,7 @@ import type {
   LaborConfiguration,
   SectorConfiguration,
 } from "~/types/economy-builder";
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
 
 /**
  * Mock Demographics Configuration

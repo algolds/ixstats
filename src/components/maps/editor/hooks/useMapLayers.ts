@@ -5,7 +5,12 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import { OCEAN_COLOR, LAYER_CONFIGS, MAP_SYMBOL_FONTS, MAP_LAYER_TYPES } from "~/lib/map-config";
+import {
+  OCEAN_COLOR,
+  LAYER_CONFIGS,
+  MAP_SYMBOL_FONTS,
+  MAP_LAYER_TYPES,
+} from "~/lib/maps/map-config";
 import { getGeoJSONSource, EMPTY_FC, haversineDistance } from "../utils/map-helpers";
 import { geoJSONPatcher } from "../utils/geoJsonPatcher";
 import type { MapTheme } from "~/lib/map-styles/registry";

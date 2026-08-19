@@ -12,13 +12,13 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import type { FeatureCollection } from "geojson";
-import { featureIdToDisplayName } from "~/lib/map-utils";
-import { getZoneByColor } from "~/lib/elevation-config";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { clearLayerCache, extractAllPositions } from "../core";
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 // ──────────────────────────────────────────────
 // Router
@@ -114,7 +114,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
 
       // Layer 2: Auto-match only NEW features (not in existing DB)
       if (upload.layerType === "political") {
-        const { matchFeaturesToCountries } = await import("~/lib/svg-parser");
+        const { matchFeaturesToCountries } = await import("~/lib/flags/svg-parser");
         const countries = await ctx.db.country.findMany({
           select: { id: true, name: true, slug: true },
         });

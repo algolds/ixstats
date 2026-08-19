@@ -2,21 +2,23 @@
 // Onoma — Conlang Marketplace sub-router
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { Prisma } from "@prisma/client";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { PhonologyRulesSchema, MorphologyRulesSchema } from "~/lib/onoma/types";
 
 export const onomaMarketplaceRouter = createTRPCRouter({
   /**
-   * List language packs matching filters.
+   * List public language packs with pagination and filter by tags/family.
    */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z
         .object({
-          cursor: z.string().optional(),
-          limit: z.number().min(1).max(50).default(20),
+          search: z.string().optional(),
           culturalFamily: z.string().optional(),
           tag: z.string().optional(),
-          searchQuery: z.string().optional(),
+          limit: z.number().min(1).max(50).default(20),
+          cursor: z.string().optional(),
         })
         .optional()
     )
@@ -24,11 +26,18 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       const limit = input?.limit ?? 20;
       const cursor = input?.cursor;
 
-      const where: Record<string, any> = {
+      const where: any = {
         visibility: "public",
       };
 
-      if (input?.culturalFamily && input.culturalFamily !== "any") {
+      if (input?.search) {
+        where.OR = [
+          { name: { contains: input.search, mode: "insensitive" } },
+          { description: { contains: input.search, mode: "insensitive" } },
+        ];
+      }
+
+      if (input?.culturalFamily && input.culturalFamily !== "all") {
         where.culturalFamily = input.culturalFamily;
       }
 
@@ -36,37 +45,29 @@ export const onomaMarketplaceRouter = createTRPCRouter({
         where.tags = { has: input.tag };
       }
 
-      if (input?.searchQuery) {
-        where.OR = [
-          { name: { contains: input.searchQuery, mode: "insensitive" } },
-          { description: { contains: input.searchQuery, mode: "insensitive" } },
-        ];
-      }
-
       const packs = await ctx.db.languagePack.findMany({
         where,
         take: limit + 1,
         cursor: cursor ? { id: cursor } : undefined,
-        orderBy: { ratingAvg: "desc" },
+        orderBy: { createdAt: "desc" },
         include: {
-          user: {
-            select: {
-              id: true,
-              forumUsername: true,
-              clerkUserId: true,
-            },
-          },
           versions: {
             orderBy: { version: "desc" },
             take: 1,
           },
+          reviews: {
+            select: { rating: true },
+          },
+          _count: {
+            select: { forks: true, reviews: true },
+          },
         },
       });
 
-      let nextCursor: string | undefined;
+      let nextCursor: typeof cursor | undefined = undefined;
       if (packs.length > limit) {
         const nextItem = packs.pop();
-        nextCursor = nextItem?.id;
+        nextCursor = nextItem!.id;
       }
 
       return { packs, nextCursor };
@@ -82,12 +83,20 @@ export const onomaMarketplaceRouter = createTRPCRouter({
         description: z.string().optional(),
         culturalFamily: z.string().optional(),
         tags: z.array(z.string()).default([]),
-        phonologyRules: z.any().optional(),
-        morphologyRules: z.any().optional(),
-        orthographyRules: z.any().optional(),
-        namingConventions: z.any().optional(),
-        dictionaries: z.any().optional(),
-        sampleOutputs: z.any().optional(),
+        phonologyRules: PhonologyRulesSchema.optional(),
+        morphologyRules: MorphologyRulesSchema.optional(),
+        orthographyRules: z.record(z.string(), z.string()).optional(),
+        namingConventions: z.record(z.string(), z.unknown()).optional(),
+        dictionaries: z
+          .array(
+            z.object({
+              name: z.string(),
+              category: z.string(),
+              values: z.array(z.string()),
+            })
+          )
+          .optional(),
+        sampleOutputs: z.array(z.string()).optional(),
         changelog: z.string().optional(),
       })
     )
@@ -118,12 +127,12 @@ export const onomaMarketplaceRouter = createTRPCRouter({
         data: {
           packId: pack.id,
           version: 1,
-          phonologyRules: input.phonologyRules || {},
-          morphologyRules: input.morphologyRules || {},
-          orthographyRules: input.orthographyRules || {},
-          namingConventions: input.namingConventions || {},
-          dictionaries: input.dictionaries || [],
-          sampleOutputs: input.sampleOutputs || [],
+          phonologyRules: (input.phonologyRules ?? {}) as Prisma.InputJsonValue,
+          morphologyRules: (input.morphologyRules ?? {}) as Prisma.InputJsonValue,
+          orthographyRules: (input.orthographyRules ?? {}) as Prisma.InputJsonValue,
+          namingConventions: (input.namingConventions ?? {}) as Prisma.InputJsonValue,
+          dictionaries: (input.dictionaries ?? []) as unknown as Prisma.InputJsonValue,
+          sampleOutputs: (input.sampleOutputs ?? []) as unknown as Prisma.InputJsonValue,
           changelog: input.changelog || "Initial Release",
         },
       });

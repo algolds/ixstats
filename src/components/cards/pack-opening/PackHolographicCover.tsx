@@ -27,7 +27,7 @@ import {
   getHolofoilTextureGradient,
   getFoilStampConfig,
   getEmbossedTextShadow,
-} from "~/lib/holographic-effects";
+} from "~/lib/themes";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -273,7 +273,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
           <div
             className="pack-holo-drift pointer-events-none absolute inset-0"
             style={{
-              background: holoGradient,
+              backgroundImage: holoGradient,
               backgroundSize: "400% 400%",
               mixBlendMode: "color-dodge",
               opacity: isInteractive ? "calc(var(--opacity) * 0.7 + 0.1)" : holoOpacity,
@@ -409,7 +409,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               {packName && size !== "sm" && (
                 <p
                   className={cn(
-                    "line-clamp-1 text-center leading-tight font-black text-white/90",
+                    "line-clamp-1 text-center leading-tight font-bold text-white/90",
                     LABEL_SIZES[size]
                   )}
                   style={{
@@ -423,7 +423,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               )}
               <p
                 className={cn(
-                  "text-center font-semibold tracking-widest text-white/40 uppercase",
+                  "text-center font-semibold tracking-wider text-white/40 uppercase",
                   size === "sm" ? "text-[7px]" : "text-[9px]"
                 )}
               >

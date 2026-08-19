@@ -1,4 +1,4 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @source "../**/*.{ts,tsx,js,jsx}";
 @import "@c15t/nextjs/styles.css";
 
@@ -62,15 +62,13 @@
 @import "./performance.css";
 @import "./compact-mode.css";
 @import "./themes.css";
-@import "./aurora-backgrounds.css";
 @import "./typography.css";
 @import "./components.css";
 @import "./charts.css";
 @import "./light-mode-overrides.css";
 @import "./country-theming.css";
 @import "./mycountry-theming.css";
-@import "./glass-refraction.css";
-@import "./diplomatic-intelligence.css";
+@import "./facet.css";
 @import "./vault/vault.css";
 @import "./dashboard/dashboard.css";
 @import "./integrations/maps.css";
@@ -79,7 +77,7 @@
 @import "./layout/z-index.css";
 @import "./layout/scrollbars.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* Glow text effects for popover numbers and percentages */
 .glow-text {
@@ -162,10 +160,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
     @apply bg-background text-foreground;
   }
-
 }
 
 @layer utilities {

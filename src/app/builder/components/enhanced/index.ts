@@ -22,12 +22,6 @@ export const EconomicArchetypeDisplay = lazy<ComponentType<any>>(() =>
   }))
 );
 
-export const IntegrationTestingDisplay = lazy<ComponentType<any>>(() =>
-  import("./IntegrationTestingDisplay").then((module) => ({
-    default: module.IntegrationTestingDisplay,
-  }))
-);
-
 export const InteractivePreview = lazy<ComponentType<any>>(() =>
   import("./InteractivePreview").then((module) => ({ default: module.InteractivePreview }))
 );

@@ -10,11 +10,16 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { generateWorld } from "~/lib/worldgen/engine";
-import { normalizeAzgaarGraph } from "~/lib/map-pipeline/azgaar-normalizer";
-import { enrichMapDataset } from "~/lib/map-pipeline/enrichment-pipeline";
-import { commitRealmMapToDatabase } from "~/lib/map-pipeline/realm-map-committer";
+import { normalizeAzgaarGraph } from "~/lib/maps/pipeline/azgaar-normalizer";
+import { enrichMapDataset } from "~/lib/maps/pipeline/enrichment-pipeline";
+import { commitRealmMapToDatabase } from "~/lib/maps/pipeline/realm-map-committer";
 
 export const realmsPipelineRouter = createTRPCRouter({
   /**
@@ -39,21 +44,29 @@ export const realmsPipelineRouter = createTRPCRouter({
       if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
 
       if (realm.ownerId !== ctx.auth.userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Only the realm owner can generate map data" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only the realm owner can generate map data",
+        });
       }
 
       // 1. Run Azgaar procedural engine
       const world = generateWorld({
         seed: input.seed,
         cellCount: input.cellCount,
-        countryCount: input.countryCount,
+        countryCountRange: [input.countryCount, input.countryCount],
+        useV2Engine: false,
       });
 
       // 2. Normalize graph into GeoJSON & nation/city/river structures
-      const normalized = normalizeAzgaarGraph(world.graph, input.seed);
+      const normalized = normalizeAzgaarGraph(world.graph!, input.seed);
 
       // 3. Run enrichment pipeline
-      const enrichedPackage = enrichMapDataset(normalized.layers, normalized.countries, input.realmId);
+      const enrichedPackage = enrichMapDataset(
+        normalized.layers,
+        normalized.countries,
+        input.realmId
+      );
 
       // 4. Commit to database if requested
       let commitResult = null;
@@ -103,7 +116,7 @@ export const realmsPipelineRouter = createTRPCRouter({
         governmentType: z.string().optional(),
         capitalName: z.string().optional(),
         flagUrl: z.string().optional(),
-        details: z.record(z.unknown()).optional(),
+        details: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -122,7 +135,10 @@ export const realmsPipelineRouter = createTRPCRouter({
 
       // Check if territory is already claimed by an approved country
       if (feature.countryId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "This territory is already claimed by an active country" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This territory is already claimed by an active country",
+        });
       }
 
       // Check if user already has a pending claim in this realm
@@ -135,7 +151,10 @@ export const realmsPipelineRouter = createTRPCRouter({
       });
 
       if (existingUserClaim) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "You already have a pending territory claim in this realm" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You already have a pending territory claim in this realm",
+        });
       }
 
       // Create territory claim
@@ -181,7 +200,10 @@ export const realmsPipelineRouter = createTRPCRouter({
 
       // Verify permission: realm owner or system owner
       if (claim.realm.ownerId !== ctx.auth.userId) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Only the realm owner can review territory claims" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only the realm owner can review territory claims",
+        });
       }
 
       if (input.action === "reject") {
@@ -198,14 +220,28 @@ export const realmsPipelineRouter = createTRPCRouter({
       }
 
       // APPROVAL FLOW: Create Country and link user
-      const slug = claim.nationName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const slug = claim.nationName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
       const country = await ctx.db.country.create({
         data: {
           name: claim.nationName,
           slug,
-          realmId: claim.realmId,
-          color: "#3b82f6",
+          baselinePopulation: 1000000,
+          baselineGdpPerCapita: 10000,
+          maxGdpGrowthRate: 0.05,
+          adjustedGdpGrowth: 0.03,
+          populationGrowthRate: 0.01,
+          currentPopulation: 1000000,
+          currentGdpPerCapita: 10000,
+          currentTotalGdp: 10000000000,
+          economicTier: "developing",
+          populationTier: "medium",
+          isDemo: false,
+          governmentType: claim.governmentType || "Democracy",
+          flag: claim.flagUrl || null,
         },
       });
 

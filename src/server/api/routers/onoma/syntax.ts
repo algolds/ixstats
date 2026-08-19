@@ -1,7 +1,5 @@
-// src/server/api/routers/onoma/syntax.ts
-// Onoma — Syntax & Sentence Builder sub-router
-
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaSyntaxRouter = createTRPCRouter({
@@ -37,10 +35,10 @@ export const onomaSyntaxRouter = createTRPCRouter({
         languagePackId: z.string().optional(),
         name: z.string().min(1),
         wordOrder: z.string().default("SVO"),
-        caseSystem: z.any().default({}),
-        verbConjugation: z.any().default({}),
-        articles: z.any().default({}),
-        numberSystem: z.any().default({}),
+        caseSystem: z.record(z.string(), z.unknown()).default({}),
+        verbConjugation: z.record(z.string(), z.unknown()).default({}),
+        articles: z.record(z.string(), z.unknown()).default({}),
+        numberSystem: z.record(z.string(), z.unknown()).default({}),
         adjectiveOrder: z.string().default("before"),
       })
     )
@@ -52,10 +50,10 @@ export const onomaSyntaxRouter = createTRPCRouter({
         languagePackId: input.languagePackId || null,
         name: input.name,
         wordOrder: input.wordOrder,
-        caseSystem: input.caseSystem || {},
-        verbConjugation: input.verbConjugation || {},
-        articles: input.articles || {},
-        numberSystem: input.numberSystem || {},
+        caseSystem: (input.caseSystem ?? {}) as Prisma.InputJsonValue,
+        verbConjugation: (input.verbConjugation ?? {}) as Prisma.InputJsonValue,
+        articles: (input.articles ?? {}) as Prisma.InputJsonValue,
+        numberSystem: (input.numberSystem ?? {}) as Prisma.InputJsonValue,
         adjectiveOrder: input.adjectiveOrder,
       };
 

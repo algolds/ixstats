@@ -10,6 +10,13 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { getNameOverride, setNameOverride } from "~/lib/onoma/ipa-overrides";
 import { useNotify } from "~/hooks/useNotify";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { LexiconAnalysis } from "./LexiconAnalysis";
 import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
 
@@ -64,8 +71,8 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   );
 
   const originLabel = stashedEntry
-    ? (stashedEntry as any).setName
-      ? `Dictionary: ${(stashedEntry as any).setName}`
+    ? stashedEntry.setName
+      ? `Dictionary: ${stashedEntry.setName}`
       : stashedEntry.category
         ? `Category: ${stashedEntry.category}`
         : "Saved name"

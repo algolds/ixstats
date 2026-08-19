@@ -24,10 +24,10 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import { SOVEREIGNTY_TYPES } from "~/lib/map-config";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { clearLayerCache } from "./core";
 
 // ──────────────────────────────────────────────

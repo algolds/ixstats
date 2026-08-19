@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 
 // Country data for comparison
 interface ComparisonCountry {

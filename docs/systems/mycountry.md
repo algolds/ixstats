@@ -11,16 +11,19 @@ The MyCountry experience gives nation owners a unified command environment. All 
 All 5 `page.tsx` files render `<MyCountryRouter />` identically. The router manages section state via `useState<MyCountrySection>` with URL sync via `window.history.pushState()`.
 
 **Key Files:**
+
 - `src/components/mycountry/MyCountryRouter.tsx` – Central hub; provider chain: MobileOptimized > AuthenticationGuard > CountryDataProvider > AtomicStateProvider
 - `src/components/mycountry/MyCountrySidebarNav.tsx` – Dual-mode nav (controlled + uncontrolled)
 - `src/components/mycountry/MyCountrySidebarLayout.tsx` – Grid: `lg:grid-cols-4` (1 sidebar + 3 content)
 
 **Sidebar Widgets:**
+
 - `sidebar-widgets/ExecutiveSidebarWidget` – Meetings/policies (amber theme)
 - `sidebar-widgets/DiplomacySidebarWidget` – Embassies/relations (cyan theme)
 - `sidebar-widgets/DefenseSidebarWidget` – Security/military (red theme)
 
 **Metric Detail Modals:**
+
 - `BaseMetricDetailsModal` with 4-tab system (Overview, Trends, Comparison, Details)
 - Available: GDP, Population, Labor, GovernmentSpending, Debt, DemographicsHealth
 - Managed by `useMetricDetailsModal` hook in `src/hooks/useMetricDetailsModal.ts`
@@ -28,6 +31,7 @@ All 5 `page.tsx` files render `<MyCountryRouter />` identically. The router mana
 ## Architecture Overview
 
 MyCountry follows a **clear separation of concerns** principle:
+
 - **Monitoring** (Overview) - Real-time snapshot
 - **Decision-Making** (Executive) - Command & control
 - **Social Interaction** (Diplomacy) - Player-to-player relations
@@ -38,31 +42,35 @@ MyCountry follows a **clear separation of concerns** principle:
 
 MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 
-| Group | Subsystems | Pages/Routes |
-|-------|-----------|-------------|
-| **Military & Security** | Defense, Security, Small Arms & Manufacturers | `/mycountry/defense` |
-| **Governance & Politics** | Government, Elections, Policies | `/mycountry/executive`, `/mycountry/politics` |
-| **Economy & Resources** | Economy, Tax System, Resources & Transport | (planned: `/mycountry/economy`) |
-| **Intelligence & Diplomacy** | Intelligence, Diplomacy, Diplomatic WebSocket | `/mycountry/intelligence`, `/mycountry/diplomacy` |
-| **National Management** | National Issues, Crisis Events, National Identity, Meetings | Executive command suite |
+| Group                        | Subsystems                                                  | Pages/Routes                                      |
+| ---------------------------- | ----------------------------------------------------------- | ------------------------------------------------- |
+| **Military & Security**      | Defense, Security, Small Arms & Manufacturers               | `/mycountry/defense`                              |
+| **Governance & Politics**    | Government, Elections, Policies                             | `/mycountry/executive`, `/mycountry/politics`     |
+| **Economy & Resources**      | Economy, Tax System, Resources & Transport                  | (planned: `/mycountry/economy`)                   |
+| **Intelligence & Diplomacy** | Intelligence, Diplomacy, Diplomatic WebSocket               | `/mycountry/intelligence`, `/mycountry/diplomacy` |
+| **National Management**      | National Issues, Crisis Events, National Identity, Meetings | Executive command suite                           |
 
 ## Key Pages & Their Purposes
 
 ### 1. National Overview (`/mycountry`)
+
 **Purpose:** Real-time dashboard with current state snapshot
 
 **Components:**
+
 - `src/app/mycountry/page.tsx` – Renders `<MyCountryRouter />`
 - `EnhancedMyCountryContent.tsx` – Main dashboard
 - `MyCountryTabSystem.tsx` – Tab navigation
 
 **Data Sources:**
+
 - `api.countries.getByIdWithEconomicData` – Current economic data
 - `api.countries.getActivityRingsData` – Vitality rings
 - `api.government.getComponents` – Atomic government status
 - `api.security.getDefenseOverview` – Defense metrics
 
 **UI Elements:**
+
 - Current economic vitals (GDP, population, growth)
 - Real-time atomic government component status
 - Quick metrics dashboard
@@ -71,29 +79,50 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 - NO analytics or historical data
 
 ### 2. Executive Command (`/mycountry/executive`)
-**Purpose:** Executive decision-making and leadership functions
 
-**Components:**
-- `src/app/mycountry/executive/page.tsx`
-- `EnhancedExecutiveContent.tsx`
-- Executive panels (Decisions, Meetings, Policies, Plans)
+**Purpose:** Executive decision-making, directive drafting, and national leadership functions
 
-**Features:**
-- Executive decisions queue
-- Policy approval/rejection
-- Meeting scheduling
-- Strategic planning
-- Crisis response
+**Architecture & Nomenclature Standards:**
+
+- **Frontend (UI)**: **Directives** is the universal user-facing brand across all UI components, buttons, and dialogs (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directives Agenda"`).
+- **Backend (Engine)**: **Statecraft Engine** (`src/lib/statecraft-*.ts`, `assemble.ts`, `intent.ts` router) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
+
+**Key Components & Surface Architecture:**
+
+- `src/app/mycountry/executive/page.tsx` – Executive entry page
+- `src/components/mycountry/v2/V2MyAgenda.tsx` – Primary agenda & StandBy Hero (renders 7-day horizon strip, Directives Capacity Pill, and Priority Issues sorted at the very top of the feed)
+- `src/components/mycountry/v2/StandingBands.tsx` – Right-rail executive telemetry strip (Approval, Stability, Capacity) with Vitality rings and composite score breakdown modal
+- `src/components/mycountry/v2/V2Home.tsx` – Streamlined V2 Executive Home layout housing `<StandingBands />` and `<TerritoryMapWidget />` (interactive MapLibre GL map with hover-activated glass badges) in the right sidebar
+- `src/components/mycountry/primitives/IntentComposer.tsx` – Directive drafting widget (64 presets across 8 domain categories + telemetry-reactive "Surprise Me" targeting live deficits)
+- `src/components/mycountry/v2/V2IssueDetail.tsx` – Unified 4-branch resolution lifecycle (`1a` Delegate, `1b` Resolve Brief, `1c` Set Cabinet Meeting (+7 days), `1d` Make Directive)
+- `src/components/mycountry/v2/V2OpportunityHero.tsx` – Executive Command Spotlight hero prioritizing critical crisis issues
+
+**Performance & Optimization Architecture:**
+
+- All V2 core surfaces (`StandingBands`, `V2MyAgenda`, `V2OpportunityHero`, `DomainActionTiles`, `TerritoryMapWidget`) are wrapped in `React.memo` to prevent unnecessary re-render cascades.
+- Internal telemetry calculations, population/GDP formatting, rating labels, and action tile arrays are memoized via `useMemo`.
+- Pure helpers (`getRatingLabel`, `getSeverityRank`, `formatCompact`) are extracted outside component scopes with strict return types and explicit prop interface typing.
+
+**Core Features:**
+
+- Priority Issues top-of-list sorting (`statusLabel === "PRIORITY ISSUE"`)
+- Translucent Apple-style Civil Capacity (`CivCap`) material capsule bar with `tabular-nums`
+- Power Broker & Government Component unlocked package tiers (`broker_unlocked`, `structural_unlocked`)
+- Cabinet Meeting scheduling (+7 IxTime days) to bypass weekly slot cooldowns
+- Strategic planning and cross-pillar policy tuning
 
 ### 3. Diplomacy (`/mycountry/diplomacy`)
+
 **Purpose:** Social interaction hub - all player-to-player relations
 
 **Components:**
+
 - `src/app/mycountry/diplomacy/page.tsx`
 - `EnhancedDiplomacyContent.tsx`
 - `DiplomacyTabSystem.tsx`
 
 **Tabs:**
+
 1. **Network** - DiplomaticOperationsHub
    - Establish & manage embassies
    - View embassy cards
@@ -114,6 +143,7 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 5. **NPC Intel** - (Placeholder for personality viewer)
 
 **Data Sources:**
+
 - `api.diplomatic.getEmbassies`
 - `api.diplomatic.getRelationships`
 - `api.diplomatic.getActiveMissions`
@@ -123,14 +153,17 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 **Key Feature:** 100% social interaction, ZERO analytics
 
 ### 4. Intelligence Analytics (`/mycountry/intelligence`)
+
 **Purpose:** Comprehensive data analysis and strategic insights
 
 **Components:**
+
 - `src/app/mycountry/intelligence/page.tsx`
 - `EnhancedIntelligenceContent.tsx`
 - Intelligence tab system
 
 **Tabs:**
+
 1. **Dashboard** - IntelligenceOverview
    - Key insights and executive summary
 2. **Economic** - AnalyticsDashboard
@@ -153,6 +186,7 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
    - Notification configuration
 
 **Data Sources:**
+
 - `api.analytics.*` - Analytics queries
 - `api.diplomatic.getRelationships` - For diplomatic analytics
 - `api.diplomatic.getRecentChanges` - Timeline data
@@ -162,13 +196,16 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 **Key Feature:** 100% analytics and data visualization, ZERO social interaction
 
 ### 5. Defense Readiness (`/mycountry/defense`)
+
 **Purpose:** Military and security operations
 
 **Components:**
+
 - `src/app/mycountry/defense/page.tsx`
 - Defense system components
 
 **Features:**
+
 - Military readiness dashboard
 - Defense budget allocation
 - Equipment management
@@ -179,16 +216,19 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 ### Tectonic Shift (November 2025)
 
 **BEFORE the shift:**
+
 - Intelligence page contained diplomatic operations (mixing analytics with actions)
 - Diplomacy embedded analytics charts (DiplomaticIntelligenceHub)
 - Confusing overlap between pages
 
 **AFTER the shift:**
+
 - **Intelligence** = 100% analytics and data visualization
 - **Diplomacy** = 100% social interaction and relationship management
 - Perfect separation of concerns achieved
 
 **Files Modified:**
+
 - Removed `DiplomaticIntelligenceHub` from `DiplomaticOperationsHub.tsx`
 - Created `DiplomaticAnalytics.tsx` component (570 lines)
 - Created `DiplomaticEventsHub.tsx` component (680 lines)
@@ -212,19 +252,20 @@ MyCountry subsystems are organized into 5 groups per the IxStates hierarchy:
 
 The Executive Command panel exposes **9 actions** with real economic effects, cooldowns, and costs:
 
-| Action | Category | Cooldown | Cost | Effect |
-|--------|----------|----------|------|--------|
-| Economic Stimulus Package | economic | 48h | $5,000 budget | GDP +2-4% (2 IxTime years) |
-| Population Growth Incentives | social | 72h | $3,000 budget | Population +1-2% (4 IxTime years) |
-| Tax Policy Reform | economic | 96h | $2,000 budget | GDP growth +1-3% (4 IxTime years) |
-| Diplomatic Mission | diplomatic | 48h | $4,000 budget | Improves global influence (2 IxTime years) |
-| Emergency Response Protocol | emergency | 24h | $10,000 budget | Stabilizes crisis, pop & economy |
-| Budget Reallocation | economic | 72h | $1,000 budget | GDP growth +0.5-1.5% (4 IxTime years) |
-| Infrastructure Project | economic | 120h | $15,000 budget | GDP growth +1-2% (4 IxTime years) |
-| Education Reform | social | 168h | $8,000 budget | GDP growth +0.5-1% (8 IxTime years) |
-| Healthcare Investment | social | 96h | $10,000 budget | Population +0.5-1% (4 IxTime years) |
+| Action                       | Category   | Cooldown | Cost           | Effect                                     |
+| ---------------------------- | ---------- | -------- | -------------- | ------------------------------------------ |
+| Economic Stimulus Package    | economic   | 48h      | $5,000 budget  | GDP +2-4% (2 IxTime years)                 |
+| Population Growth Incentives | social     | 72h      | $3,000 budget  | Population +1-2% (4 IxTime years)          |
+| Tax Policy Reform            | economic   | 96h      | $2,000 budget  | GDP growth +1-3% (4 IxTime years)          |
+| Diplomatic Mission           | diplomatic | 48h      | $4,000 budget  | Improves global influence (2 IxTime years) |
+| Emergency Response Protocol  | emergency  | 24h      | $10,000 budget | Stabilizes crisis, pop & economy           |
+| Budget Reallocation          | economic   | 72h      | $1,000 budget  | GDP growth +0.5-1.5% (4 IxTime years)      |
+| Infrastructure Project       | economic   | 120h     | $15,000 budget | GDP growth +1-2% (4 IxTime years)          |
+| Education Reform             | social     | 168h     | $8,000 budget  | GDP growth +0.5-1% (8 IxTime years)        |
+| Healthcare Investment        | social     | 96h      | $10,000 budget | Population +0.5-1% (4 IxTime years)        |
 
 Each action:
+
 - Creates a `StorytellerEffect` record with a computed value (±35% variance on base) that the IxStatsCalculator applies on the next tick.
 - Enforces cooldowns tracked via execution history in storytellerEffect records.
 - Posts narrative output to ThinkPages via `generateDiplomaticNews` (template varies by category).
@@ -260,6 +301,7 @@ Called by `applyGovernmentComponentEffects(db, countryId)` which returns `{ effe
 **`src/server/shared/mycountry-helpers.ts`** (496 lines) was extracted from `dashboard.ts`, `intelligence.ts`, and `actions.ts` on 2026-06-14, eliminating ~900 lines of duplicated code. Lives in `src/server/shared/` following the `layer-cache.ts` pattern so routers can import without cross-router dependencies.
 
 Shared exports:
+
 - `getMyCountryCache<T>(key)` / `setMyCountryCache(key, data, ttl)` — cache helpers wrapping `globalCache`
 - `calculateVitalityScores(country)` — computes Economic Vitality, Population Wellbeing, Diplomatic Standing, Governmental Efficiency, and overall score from country data
 - `generateIntelligenceFeed(countryId)` — aggregates economic/population intel + db `IntelligenceItem` records (2-min cache)
@@ -308,29 +350,32 @@ The Cabinet Meetings & Decisions subsystem coordinates executive-level deliberat
 
 ### Overview
 
-| Feature | Description |
-|---|---|
-| Meeting Scheduling | Players schedule or request cabinet meetings with specific agendas and categories. |
-| Meeting Completion | Scheduled meetings are finalized by adding notes, moving them from upcoming schedules to past records. |
-| Agenda & Calendar Sync | Finalizing a meeting automatically marks the related `ActivitySchedule` as `"completed"`, clearing it from the user's upcoming daily agenda. |
-| Decision Recording | Completed meetings allow recording specific decisions (Strategic, Budget, Policy, Personnel) with estimated metric effects. |
-| Decision Implementation | Pending decisions are executed, applying their modifier rules directly to the nation's stats. |
-| Audited Consequence Logging | Implementation applies changes via the unified `CountryEventSpine` to log transactions to the ledger timeline and post news. |
+| Feature                     | Description                                                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Meeting Scheduling          | Players schedule or request cabinet meetings with specific agendas and categories.                                                           |
+| Meeting Completion          | Scheduled meetings are finalized by adding notes, moving them from upcoming schedules to past records.                                       |
+| Agenda & Calendar Sync      | Finalizing a meeting automatically marks the related `ActivitySchedule` as `"completed"`, clearing it from the user's upcoming daily agenda. |
+| Decision Recording          | Completed meetings allow recording specific decisions (Strategic, Budget, Policy, Personnel) with estimated metric effects.                  |
+| Decision Implementation     | Pending decisions are executed, applying their modifier rules directly to the nation's stats.                                                |
+| Audited Consequence Logging | Implementation applies changes via the unified `CountryEventSpine` to log transactions to the ledger timeline and post news.                 |
 
 ### Key Files
 
 **Routers & Engines:**
+
 - `src/server/api/routers/quickactions/meetings.ts` — Core quickactions sub-router managing meeting lifecycles (`completeMeeting`, `createDecision`, `implementDecision`).
 - `src/server/api/routers/meetings/proceedings.ts` — Proceedings sub-router managing recorded decisions and outcomes.
 - `src/lib/country-event-spine.ts` — Bounded dispatcher applying stats changes, logging to the ledger, and posting news.
 
 **Components:**
+
 - `src/components/executive/MeetingsAndDecisionsPanel.tsx` — Command panel display of scheduled, pending, and past meetings.
 - `src/components/executive/MeetingDetailModal.tsx` — Dialog displaying agendas, attendees, and decisions; hosts meeting finalization, custom decision recording forms with metric selectors, and implementation triggers.
 
 ### Policy Upkeep, Recalculation, & Reactive Advantages
 
 Active policies consume Civil Service Capacity (CivCap) and accrue ongoing maintenance costs:
+
 - **Dynamic Attribute Derivation**: Custom policies dynamically derive their attributes from their selected **Priority**:
   - Low Priority: Stable risk, consumes `5` CivCap.
   - Medium Priority: Stable risk, consumes `10` CivCap.
@@ -348,6 +393,7 @@ Active policies consume Civil Service Capacity (CivCap) and accrue ongoing maint
 The National Issues system generates dynamic decisions and events for country owners. Issues appear in a player's inbox based on their country's conditions.
 
 ### Key Integration Mechanics
+
 - **Issue Delegation (Don't Intervene)**: Players can delegate non-urgent issues to the civil service. This consumes **15 CivCap** as a temporary reservation cost for **5 game days** (`respondedIxTime` tracking; `DELEGATION_WINDOW_MS` in `player.ts`). Urgent/Crisis/High-severity issues cannot be delegated.
 - **Risky Response Gambles**: Response options marked as "Red/Risky" carry a **40% failure chance**. Failing the gamble triggers severe Stability and Public Approval penalties, logged directly in the outcome summary.
 - **Party Platform Alignment**: Selecting choices aligned with a political party's ideology increments their polling support by **+3.0%**.
@@ -355,23 +401,24 @@ The National Issues system generates dynamic decisions and events for country ow
   - `"deterministic"` — linked issue spawns immediately at commit (deduped, respecting cooldown/maxActive).
   - `"probability"` (default) — no direct spawn; the maintenance cron's risk roll boosts mapped-category templates (`INTENT_CATEGORY_TO_TEMPLATE` fixes the category vocabulary so `economy`/`fiscal`/`defense` intents actually match templates).
   - `"off"` — intents never spawn issues.
-  Resolving or dismissing linked issues recomputes cached `Intent.progress` (`recomputeIntentProgress`), and a directive cannot be marked `completed` while open linked issues exist.
+    Resolving or dismissing linked issues recomputes cached `Intent.progress` (`recomputeIntentProgress`), and a directive cannot be marked `completed` while open linked issues exist.
 - **Grounded Issue Generator (focused-first)**: `buildCountrySnapshot` now includes real-data geo (`CountryGeoProfile`), names (capital/largest city, languages, religion, top party, ministers), fiscal/labor, economic profile, diplomatic partners/embassies/events, and live PostGIS `ST_Touches` neighbors (gated by `ISSUES_NEIGHBORS`, 60s memo cache). Template variables resolve to real names (`{{neighborName}}`, `{{allyName}}`, `{{ministerName}}`, `{{capitalCity}}`, `{{dominantClimate}}`, `{{activeIntentGoal}}`, …), and the evaluator adds `count`/`any` ops to the safe JSON tree. Grounded templates (landlocked-port, border incident, ally-trade, legislative gridlock, union strike, drought) use the existing `triggerConditions` JSON — no new template column.
 
 ### Overview
 
-| Feature | Description |
-|---|---|
-| Template-driven issues | Admin-authored templates with trigger conditions and response options |
-| Lazy evaluation | Issues are generated on-demand when a player queries their inbox |
-| Consequence engine | Responses modify country metrics (GDP, stability, approval) via typed effects |
-| Follow-up chains | Issues can trigger follow-up issues based on player choices |
-| Variable substitution | Template text dynamically inserts country-specific data |
-| Severity & urgency | Issues prioritised by severity (critical/high/medium/low) and urgency score |
+| Feature                | Description                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Template-driven issues | Admin-authored templates with trigger conditions and response options         |
+| Lazy evaluation        | Issues are generated on-demand when a player queries their inbox              |
+| Consequence engine     | Responses modify country metrics (GDP, stability, approval) via typed effects |
+| Follow-up chains       | Issues can trigger follow-up issues based on player choices                   |
+| Variable substitution  | Template text dynamically inserts country-specific data                       |
+| Severity & urgency     | Issues prioritised by severity (critical/high/medium/low) and urgency score   |
 
 ### Key Files
 
 **Engine:**
+
 - `src/lib/national-issues-engine.ts` — Core engine: evaluation, condition matching, country snapshots, variable substitution, force generation
 - `src/lib/national-issues-consequences.ts` — Consequence resolver: applies effects to country models
 - `src/lib/national-issues/snapshot.ts` — Grounded `buildCountrySnapshot` (geo/names/fiscal/econ/diplomacy data)
@@ -380,9 +427,11 @@ The National Issues system generates dynamic decisions and events for country ow
 - `src/lib/intent/resistance.ts` — `spawnIntentResistance` deterministic spawn engine
 
 **Router:**
+
 - `src/server/api/routers/national-issues/` — Split router (`index.ts` merges `engine.ts` + `player.ts` + `templates.ts`; 17+ procedures)
 
 **Components:**
+
 - `src/components/national-issues/IssuesInbox.tsx` — Player inbox for pending issues (legacy surfaces)
 - `src/components/national-issues/IssueCard.tsx` — Individual issue card
 - `src/components/national-issues/IssueDetailModal.tsx` — Detailed view with response options (legacy surfaces)
@@ -421,6 +470,7 @@ Template → Evaluation → [pending] → [viewed] → [responded] → Consequen
 **Severity Levels:** `critical`, `high`, `medium`, `low`
 
 **Consequence Definition:**
+
 ```typescript
 {
   targetModel: string;     // e.g. "country"
@@ -433,6 +483,7 @@ Template → Evaluation → [pending] → [viewed] → [responded] → Consequen
 ```
 
 **Response Option:**
+
 ```typescript
 {
   id: string;
@@ -452,13 +503,38 @@ Template → Evaluation → [pending] → [viewed] → [responded] → Consequen
 
 ### Database Models
 
-| Model | Purpose |
-|---|---|
-| `NationalIssueTemplate` | Admin-authored templates with trigger conditions and response options |
-| `NationalIssue` | Generated issue instances linked to countries |
-| `NationalIssueConsequence` | Applied consequences with before/after values |
-| `IssueGenerationLog` | Evaluation logs with execution time and issue counts |
+| Model                      | Purpose                                                               |
+| -------------------------- | --------------------------------------------------------------------- |
+| `NationalIssueTemplate`    | Admin-authored templates with trigger conditions and response options |
+| `NationalIssue`            | Generated issue instances linked to countries                         |
+| `NationalIssueConsequence` | Applied consequences with before/after values                         |
+| `IssueGenerationLog`       | Evaluation logs with execution time and issue counts                  |
 
 ### Splash Showcase
 
 `getRecentWorldIssues` seeds up to 18 showcase issues across different nations for the guest splash page. Runs idempotently — once seeded, the same showcase issues persist.
+
+---
+
+## Single Production Command Surface & V1 Cleanup (August 2026)
+
+MyCountry has fully transitioned to the single production **Command Surface** (`CommandSurface.tsx`), consolidating all sections into an action-first executive hub.
+
+### File & Symbol Structure (`src/components/mycountry/`)
+
+- `CommandSurface.tsx` — Main single-page command shell & viewport wrapper (`CommandSurface`).
+- `ExecutiveHome.tsx` — Executive Command Home dashboard (`ExecutiveHome`).
+- `ExecutiveAgenda.tsx` — Realtime IxTime horizon calendar & agenda feed (`ExecutiveAgenda`).
+- `ExecutiveOpportunityHero.tsx` — Crisis priority briefing hero spotlight (`ExecutiveOpportunityHero`).
+- `DomainSurface.tsx` — Full-page domain view for Diplomacy, Defense, Politics, Economy (`DomainSurface`).
+- `DomainContextRail.tsx` — Contextual KPI & activity log sidebar rail (`DomainContextRail`).
+- `DrillSheets.tsx` — Slide-over drill sheets for deep domain inspection (`DrillSheets`).
+- `IssueDetailBrief.tsx` — 4-branch issue resolution brief modal/panel (`IssueDetailBrief`).
+- `CommandNavToggle.tsx` — Top mirrored header navigation bar (`CommandNavToggle`, `CommandRightPillNav`).
+- `ExecutiveConsole.tsx` — Directive package composer & diff preview console (`ExecutiveConsole`).
+- `CommitmentsAgendaRail.tsx` — Active directive rollout tree rail (`CommitmentsAgendaRail`).
+- `RealtimePulseWidget.tsx` — Realtime statecraft pulse telemetry widget (`RealtimePulseWidget`).
+
+### Legacy V1 Deprecation
+
+All 14 obsolete V1 components (`Enhanced*Content.tsx`, `OverviewHero.tsx`, `PillarCards.tsx`, `MyCountryTabSystem.tsx`, `MyCountrySidebarLayout.tsx`, `SectionShell.tsx`) and temporary lab routes (`/mycountry/v2`, `/labs/mycountry-v2`) have been removed from the repository.

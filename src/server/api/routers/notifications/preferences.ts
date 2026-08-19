@@ -168,10 +168,7 @@ export const notificationsPreferencesRouter = createTRPCRouter({
           diplomaticAlerts: preferences.diplomaticAlerts,
           systemAlerts: preferences.systemAlerts,
           notificationLevel: preferences.notificationLevel as
-            | "low"
-            | "medium"
-            | "high"
-            | "critical",
+            "low" | "medium" | "high" | "critical",
         },
       };
     }),

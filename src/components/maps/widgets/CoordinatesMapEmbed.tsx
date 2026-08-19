@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
-import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/map-config";
+import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
 import { MapPin, Loader2 } from "lucide-react";
 

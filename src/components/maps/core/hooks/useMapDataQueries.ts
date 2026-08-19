@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useMapDataBatched } from "~/hooks/useMapDataBatched";
-import type { MapLayerType } from "~/lib/map-config";
+import type { MapLayerType } from "~/lib/maps/map-config";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UseMapDataQueriesProps {

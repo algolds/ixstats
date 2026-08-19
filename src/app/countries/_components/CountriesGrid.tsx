@@ -5,7 +5,7 @@ import { Pagination } from "~/components/ui/pagination";
 import { CountryListCard } from "./CountryListCard";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { useMemo } from "react";
 // Define the type locally to avoid circular imports
 export interface PageCountryData {
@@ -45,7 +45,7 @@ export function CountriesGrid({
 }: CountriesGridProps) {
   // Use bulk flag cache for all countries
   const countryNames = useMemo(() => countries.map((c) => c.name), [countries]);
-  const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
+  const { flagUrls, isLoading: flagsLoading } = useBulkFlags(countryNames);
 
   if (isLoading) {
     return (

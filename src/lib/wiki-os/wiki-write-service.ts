@@ -1,12 +1,20 @@
-import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { getWikiDbPool } from "~/lib/wiki-bridge";
+import { getWikiAuth, type WikiAuthContext } from "~/lib/wiki-os/auth";
+import { getWikiDbPool } from "./bridge";
 import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import { invalidateCache } from "~/lib/wiki-os/parsoid-client";
 import { invalidateArticleShadow, recordArticleRevision } from "~/lib/wiki-os/article-store";
 import { db } from "~/server/db";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { resolveWikiPlaceholdersInternal } from "~/server/api/routers/wiki";
+import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import type { Pool, RowDataPacket, ResultSetHeader } from "mysql2/promise";
+import type { Prisma } from "@prisma/client";
+
+export interface WikiWriteContext extends WikiAuthContext {
+  user: { wikiUsername?: string | null } | null;
+  auth: { userId: string | null };
+  headers: Headers;
+  db?: Prisma.TransactionClient | typeof db;
+}
 
 export async function getOrCreateWikiActorId(
   pool: Pool,
@@ -36,7 +44,7 @@ export async function getOrCreateWikiActorId(
       [userId, wikiUsername]
     );
     return insertResult.insertId;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const [retryRows] = await pool.execute<RowDataPacket[]>(
       "SELECT actor_id FROM actor WHERE actor_name = ? LIMIT 1",
       [wikiUsername]
@@ -44,7 +52,10 @@ export async function getOrCreateWikiActorId(
     if (retryRows && retryRows.length > 0) {
       return retryRows[0]!.actor_id as number;
     }
-    console.error("[WikiWriteService] Failed to create actor row:", err);
+    console.error(
+      "[WikiWriteService] Failed to create actor row:",
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
@@ -193,7 +204,10 @@ export async function notifyStashOwners(
   });
 }
 
-export async function syncCustomTemplates(wikitext: string, ctx: any): Promise<void> {
+export async function syncCustomTemplates(
+  wikitext: string,
+  ctx: WikiWriteContext
+): Promise<void> {
   const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi;
   const placeholders = new Set<string>();
   let match: RegExpExecArray | null;
@@ -207,7 +221,11 @@ export async function syncCustomTemplates(wikitext: string, ctx: any): Promise<v
 
   const keys = Array.from(placeholders);
   const activeCountryId = (await resolveActiveCountryId(ctx)) ?? undefined;
-  const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, activeCountryId);
+  const resolved = await resolveWikiPlaceholdersInternal(
+    keys,
+    { db: ctx.db ?? db, ...ctx },
+    activeCountryId
+  );
 
   for (const key of keys) {
     const data = resolved[key];
@@ -243,8 +261,11 @@ export async function syncCustomTemplates(wikitext: string, ctx: any): Promise<v
           true
         );
       }
-    } catch (err: any) {
-      console.error(`[WikiWriteService] Failed to sync template ${templateTitle}:`, err.message);
+    } catch (err: unknown) {
+      console.error(
+        `[WikiWriteService] Failed to sync template ${templateTitle}:`,
+        err instanceof Error ? err.message : err
+      );
     }
   }
 }
@@ -254,7 +275,7 @@ export async function saveToMediaWiki(
   wikitext: string,
   summary: string,
   minor: boolean,
-  ctx: any,
+  ctx: WikiWriteContext,
   basetimestamp?: string,
   isTemplateSync = false
 ): Promise<{ success: boolean; revisionId: number | null; editConflict?: boolean }> {
@@ -263,7 +284,12 @@ export async function saveToMediaWiki(
   const { wikiUsername } = getWikiAuth(ctx);
 
   let attempt = 0;
-  let editData: any;
+  let editData:
+    | {
+        edit?: { result: string; newrevid?: number };
+        error?: { code: string; info: string };
+      }
+    | undefined;
 
   while (attempt < 2) {
     const editParams = new URLSearchParams({
@@ -313,8 +339,8 @@ export async function saveToMediaWiki(
     break;
   }
 
-  if (editData?.error) {
-    throw new Error(`MediaWiki edit failed: ${editData.error.info}`);
+  if (!editData || editData.error) {
+    throw new Error(`MediaWiki edit failed: ${editData?.error?.info ?? "No response received"}`);
   }
 
   const revId = editData?.edit?.newrevid ?? null;

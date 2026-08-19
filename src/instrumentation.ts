@@ -24,8 +24,7 @@ export async function register() {
     console.log("[Instrumentation] Initializing production optimizations...");
 
     try {
-      // Dynamically import to avoid bundling issues
-      const { ProductionStartup } = await import("./lib/production-optimizations");
+      const { ProductionStartup } = await import("~/lib/system");
 
       // Initialize production optimizations (memory monitoring, slow query analysis)
       await ProductionStartup.initialize();
@@ -48,9 +47,8 @@ export async function register() {
         console.warn("[Instrumentation] Geo cache warm-up failed (non-fatal):", geoError);
       }
 
-      // Register process-level error handlers from a Node-only module.
       const { registerNodeProcessErrorHandlers } =
-        await import("./lib/node-process-error-handlers");
+        await import("~/lib/system/node-process-error-handlers");
       registerNodeProcessErrorHandlers();
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
@@ -69,7 +67,7 @@ export async function register() {
     console.log("[Instrumentation] Development mode - initializing memory monitoring...");
 
     try {
-      const { ProductionStartup } = await import("./lib/production-optimizations");
+      const { ProductionStartup } = await import("~/lib/system");
 
       // Initialize memory monitoring (cache clearing, GC triggers) in dev mode
       // This enables proactive cache clearing at 65% threshold before Next.js restarts at 80%

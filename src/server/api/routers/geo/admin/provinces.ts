@@ -17,10 +17,10 @@ import {
   cachedPublicProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { buildProvinceMergePlan } from "~/lib/province-importer/merge-plan";
-import { geometryAreaSqKm } from "~/lib/geo-math";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
+import { geometryAreaSqKm } from "~/lib/maps/geo-math";
+import { invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 // ──────────────────────────────────────────────
@@ -143,7 +143,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       if (isPng && pngBase64) {
         // PNG path: extract provinces directly via boundary-line detection
         const pngBuffer = Buffer.from(pngBase64, "base64");
-        const { extractProvincesFromPng } = await import("~/lib/png-to-svg");
+        const { extractProvincesFromPng } = await import("~/lib/flags/png-to-svg");
 
         const result = await extractProvincesFromPng(pngBuffer);
 
@@ -164,11 +164,11 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       }
 
       // Preprocess SVG (strip non-visual elements, remove fragments, normalize)
-      const { preprocessSvg } = await import("~/lib/province-importer/svg-preprocessor");
+      const { preprocessSvg } = await import("~/lib/maps/province-importer/svg-preprocessor");
       const preprocessed = preprocessSvg(svgContent);
 
       // Parse provinces from cleaned SVG
-      const { parseProvinceSvg } = await import("~/lib/province-importer/parse-provinces");
+      const { parseProvinceSvg } = await import("~/lib/maps/province-importer/parse-provinces");
       const result = parseProvinceSvg(preprocessed.svgContent);
 
       // Prepend preprocessing log
@@ -325,7 +325,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       // Server-side validation: check coordinate bounds on all province geometries
       for (const province of input.provinces) {
         if ("coordinates" in province.geometry) {
-          const { validateGeometryBounds } = await import("~/lib/geo-validation");
+          const { validateGeometryBounds } = await import("~/lib/maps/geo-validation");
           validateGeometryBounds(province.geometry as unknown as import("geojson").Geometry);
         }
       }
@@ -361,7 +361,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
           });
         }
 
-        const { repairGeometryGeoJSON } = await import("~/lib/geo-validation");
+        const { repairGeometryGeoJSON } = await import("~/lib/maps/geo-validation");
 
         const created: Array<{ id: string; name: string }> = [];
         let createdCount = 0;
@@ -446,7 +446,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         // Batch create/upsert cities
         let citiesCreated = 0;
         if (input.cities && input.cities.length > 0) {
-          const { upsertCity } = await import("~/lib/country-geo-service");
+          const { upsertCity } = await import("~/lib/country-geo");
           for (const city of input.cities) {
             try {
               await upsertCity(tx, input.countryId, {

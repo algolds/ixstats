@@ -6,7 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { CountryMapEmbed, type CountryMapFeature } from "~/components/maps/widgets/CountryMapEmbed";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { api } from "~/trpc/react";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
 interface DashboardMapWidgetProps {

@@ -1,15 +1,15 @@
 "use client";
 
 import React from "react";
-import { useFactbookMetrics } from "~/components/mycountry/FactbookMetricsProvider";
+import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import {
   OverviewTab,
   EconomyTab,
   LaborTab,
   GovernmentTab,
   GeographyTab,
-} from "~/components/mycountry/tabs";
-import type { FactbookSection } from "~/lib/factbook-routes";
+} from "~/components/mycountry/shared/tabs";
+import type { FactbookSection } from "~/lib/wiki";
 
 /**
  * FactbookSectionContent — renders the tab content for a single factbook

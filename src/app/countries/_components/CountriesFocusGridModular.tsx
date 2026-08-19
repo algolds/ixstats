@@ -2,9 +2,10 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CountryFocusCard, type CountryCardData } from "~/components/countries/CountryFocusCard";
-import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
+import { CountryFocusCard, type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
+import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { RiGlobalLine } from "react-icons/ri";
+import { cn } from "~/lib/utils";
 
 interface CountriesFocusGridModularProps {
   countries: CountryCardData[];
@@ -41,39 +42,69 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 }) => {
   const visibleCountries = countries.slice(0, visibleCount);
 
-  const loadMore = () => {
+  const loadMore = React.useCallback(() => {
     if (onLoadMore) {
       onLoadMore();
     }
-  };
+  }, [onLoadMore]);
+
+  const handleHoverToggle = React.useCallback(
+    (index: number | null) => {
+      setHovered(index);
+    },
+    [setHovered]
+  );
+
+  const handleExpandToggle = React.useCallback(
+    (index: number | null) => {
+      setExpanded(index);
+    },
+    [setExpanded]
+  );
+
+  const isAnyHovered = hovered !== null;
+  const isAnyExpanded = expanded !== null;
 
   return (
     <div className="space-y-12">
       {/* Countries Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {visibleCountries.map((country, index) => (
-          <motion.div
-            key={country.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: index * 0.05,
-              ease: "easeOut",
-            }}
-          >
-            <CountryFocusCard
-              country={country}
-              index={index}
-              hovered={hovered}
-              setHovered={setHovered}
-              expanded={expanded}
-              setExpanded={setExpanded}
-              onCountryClick={onCountryClick}
-              viewerCountryId={viewerCountryId}
-            />
-          </motion.div>
-        ))}
+        {visibleCountries.map((country, index) => {
+          const isHovered = hovered === index;
+          const isExpanded = expanded === index;
+          const isOtherHovered = isAnyHovered && !isHovered;
+          const isOtherExpanded = isAnyExpanded && !isExpanded;
+
+          return (
+            <motion.div
+              key={country.id}
+              className={cn(
+                "relative transition-all duration-300",
+                isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
+              )}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.35,
+                delay: Math.min(index * 0.03, 0.3),
+                ease: "easeOut",
+              }}
+            >
+              <CountryFocusCard
+                country={country}
+                index={index}
+                isHovered={isHovered}
+                isExpanded={isExpanded}
+                isOtherHovered={isOtherHovered}
+                isOtherExpanded={isOtherExpanded}
+                onHoverToggle={handleHoverToggle}
+                onExpandToggle={handleExpandToggle}
+                onCountryClick={onCountryClick}
+                viewerCountryId={viewerCountryId}
+              />
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Loading State with Progressive Blur */}

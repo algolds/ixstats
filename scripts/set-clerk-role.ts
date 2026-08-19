@@ -12,7 +12,11 @@ function loadEnvFile(filename: string) {
         const parts = trimmed.split("=");
         if (parts.length >= 2) {
           const key = parts[0].trim();
-          const val = parts.slice(1).join("=").trim().replace(/^['"]|['"]$/g, "");
+          const val = parts
+            .slice(1)
+            .join("=")
+            .trim()
+            .replace(/^['"]|['"]$/g, "");
           process.env[key] = val;
         }
       }
@@ -27,7 +31,6 @@ loadEnvFile(".env.local.dev");
 
 import { clerkClient } from "@clerk/nextjs/server";
 
-
 async function main() {
   const clerkUserId = process.argv[2];
   const role = process.argv[3] || "owner";
@@ -40,7 +43,7 @@ async function main() {
   try {
     const client = await clerkClient();
     console.log(`Setting Clerk user metadata role to "${role}" for user "${clerkUserId}"...`);
-    
+
     await client.users.updateUserMetadata(clerkUserId, {
       publicMetadata: {
         role,

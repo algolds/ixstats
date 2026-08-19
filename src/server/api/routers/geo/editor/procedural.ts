@@ -25,19 +25,19 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { clearLayerCache } from "../core";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { ActivityGenerator } from "~/lib/activity";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { featureIdToDisplayName } from "~/lib/map-utils";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo-service";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
 // ──────────────────────────────────────────────
 // Router
@@ -319,14 +319,13 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const { runMapPipeline, validatePipelineResult } = await import("~/lib/map-pipeline");
+      const { runMapPipeline, validatePipelineResult } = await import("~/lib/maps/map-pipeline");
 
       const result = await runMapPipeline({
         source: input.source,
         svgContent: input.svgContent,
         worldGenParams: input.worldGenParams as
-          | import("~/lib/worldgen/types").WorldGenParams
-          | undefined,
+          import("~/lib/worldgen/types").WorldGenParams | undefined,
         targetLayers: input.targetLayers,
       });
 
@@ -398,7 +397,7 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       // Build shared vertex index for political features
       if (layers.political) {
         try {
-          const { buildSharedVertexIndex } = await import("~/lib/shared-vertex-builder");
+          const { buildSharedVertexIndex } = await import("~/lib/maps/shared-vertex-builder");
           const politicalFeatures = layers.political.features
             .filter((f) => f.geometry?.type === "Polygon" || f.geometry?.type === "MultiPolygon")
             .map((f) => ({

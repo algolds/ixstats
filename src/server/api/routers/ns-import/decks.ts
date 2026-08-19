@@ -6,11 +6,12 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { nsApiClient } from "~/lib/ns-api-client";
+import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
-import { getVaultConfig, vaultService } from "~/lib/vault-service";
-import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
-import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault-bonus";
+import { getVaultConfig, vaultService } from "~/lib/vault";
+import { computeCardValue, getValuationConfig } from "~/lib/cards";
+import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault";
+import { generateNSImportDescription } from "~/lib/nationstates/import-service";
 
 export const nsImportDecksRouter = createTRPCRouter({
   /**
@@ -274,15 +275,12 @@ export const nsImportDecksRouter = createTRPCRouter({
           }
 
           if (!card) {
-            // Create new card definition
-            const description =
-              nsCard.description ||
-              nsCard.slogan ||
-              nsCard.motto ||
-              `${nsCard.category || "Unknown"} from ${nsCard.region || "Unknown"}`;
+            // Create new card definition with an original description
+            // (never copy NationStates-authored card text verbatim)
+            const description = generateNSImportDescription(nsCard);
 
             // Use NS flag as artwork, fallback to placeholder
-            const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
+            const artwork = nsCard.flag || "/images/cards/lore-placeholder.svg";
 
             card = await ctx.db.card.create({
               data: {

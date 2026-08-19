@@ -1,16 +1,18 @@
 # NationStates Integration
 
-**Last updated:** May 2026 (Phase 1)
-**Status:** Development - Phase 1 Implementation
+**Last updated:** August 2026
+**Status:** Production Ready — Phase 2 Implementation
 
-The NationStates (NS) integration allows IxStats users to import their existing NationStates card collections and synchronize NS cards into the IxStats card ecosystem. This creates a bridge between the two platforms while respecting NS's API rate limiting and data policies.
+The NationStates (NS) integration allows IxStats users to import their existing NationStates card collections and synchronize NS cards into the IxStats card ecosystem. This creates a bridge between the two platforms while respecting NS's API rate limiting, image hotlinking guidelines, and data policies.
 
 ## Overview
 
 NS Integration provides:
-- **Daily Card Sync** - Automated sync of NS card dump data
-- **Collection Import** - Import user's NS deck with verification
-- **Rate Limit Compliance** - Respectful API usage within NS guidelines
+- **Daily Card Sync & Sync Status Processor** - Automated sync of NS card dump data with async status tracking (`ns-sync-processor.ts`, `ns-import/sync`)
+- **Collection & Deck Import** - Import user's NS deck with checksum verification (`/vault/ns-deck/[nation]`, `/vault/collections/[slug]`)
+- **Image Proxying** - Secure image proxy endpoint (`/api/proxy-ns-image`) to prevent hotlinking issues
+- **Settings & Attribution** - User settings toggle (`NSCardSettingsCard.tsx`) and card attribution component (`NationStatesAttribution.tsx`)
+- **Rate Limit Compliance** - Respectful API usage within NS guidelines (50 requests per 30 seconds)
 - **Dual Platform Support** - Cards work in both NS and IxStats ecosystems
 - **Market Watch** - Track NS auction data for arbitrage opportunities
 
@@ -37,9 +39,13 @@ https://www.nationstates.net/pages/cardlist_S{season}.xml.gz
 https://www.nationstates.net/cgi-bin/api.cgi?nationname={nation}&q=cards+deck
 ```
 
-**Verification API:**
+**Verification API (with site-specific token):**
 ```
-https://www.nationstates.net/cgi-bin/api.cgi?a=verify&nation={nation}&checksum={checksum}
+https://www.nationstates.net/cgi-bin/api.cgi?a=verify&nation={nation}&checksum={checksum}&token={siteToken}
+```
+The `token` parameter binds the checksum to IxStats only, preventing cross-site checksum reuse per NS API best practices. The token is an HMAC-MD5 of `{nationName}-{NS_VERIFICATION_SECRET}` (env var). The corresponding verify login URL passed to the user includes the same token:
+```
+https://www.nationstates.net/page=verify_login?token={siteToken}
 ```
 
 **Rate Limiting:**
@@ -758,6 +764,78 @@ To prevent invalid queries to the NationStates World API (`q=regionsbytag`), cat
 2. **Handle Empty Lists**: Returns empty list gracefully instead of raising internal errors if the query yields no regions.
 3. **Resolve Size Candidates**: Queries first 30 region candidates alphabetically/identifiably using `cgi-bin/api.cgi?region={regionName}&q=name+numnations` with an 800ms rate-limiting throttle to fetch nation counts.
 4. **Sort and Slice**: Sorts by nation count descending and returns the top regions matching the user's limit request.
+
+## NationStates Compliance
+
+This section documents the compliance stance of the IxStats ↔ NationStates integration. It exists so the stance survives person-to-person handoffs and can be referenced in any future ToS or takedown discussion.
+
+### Copyright position
+
+- **Nation flags**: Submissions on NationStates remain the property of their authors. Users grant NationStates a license, not a transfer — so users are free to use their own flags elsewhere, and IxStats mirrors them with attribution.
+- **Card frame / card text**: The NS card frame and NS-authored card descriptions are © Max Barry. We do **not** copy NS card descriptions verbatim; we generate original card copy from the underlying facts (slogan, motto, government, region, category).
+- **Card values / metadata / ranks**: Raw facts are not copyrightable and are used freely.
+
+### API / ToS rules we follow
+
+- **Daily Dumps over live API calls**: Region card sync sources from the official daily card dumps (`cardlist_S{season}.xml.gz`) instead of per-nation `deck` API calls, per NS guidance to "use Daily Dumps rather than dozens/hundreds/thousands of real-time API requests."
+- **User-Agent identification**: All requests identify us as `IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)` ("Be Transparent" rule).
+- **Rate limiting**: 800ms+ spacing between real-time requests, exponential backoff on rate-limit errors. Full terms are bundled in `src/components/cards/display/nationstates-api.md`.
+- **No Referer spoofing**: The image proxy no longer fakes a NationStates Referer to defeat hotlink protection. On an NS non-OK response it redirects to the local placeholder artwork.
+
+### Attribution Footer
+
+`NationStatesAttribution` is a pinned footer bar rendered inside `CardDetailsModal` for all `NS_IMPORT` cards. It contains two zones separated by a vertical divider:
+
+- **Left** — Attribution copy: *"Trading card data provided via the official [NationStates API](https://www.nationstates.net/pages/api.html#cards). Independent fan site; not affiliated with or endorsed by NationStates or Max Barry. All artwork and flags remain the property of their respective owners."*
+- **Right** — `ShieldAlert` button: **"Verify & Request Takedown"**, which opens `CardTakedownVerificationModal`.
+
+The footer is `shrink-0` and lives outside the scrollable tab area, so it is always visible.
+
+### Self-Service Flag Artwork Takedown
+
+Flag owners can remove their artwork without involving an admin via a self-service ownership verification flow backed by the NationStates API.
+
+**User flow:**
+1. User opens the **Content Removal Request** dialog from the card footer.
+2. User enters their **Nation Name** — the modal immediately fetches a nation-specific verify login URL (via `nsImport.getVerificationUrl`) that includes a site-specific HMAC-MD5 token.
+3. User visits their personalised `verify_login?token=…` URL on NationStates and copies the one-time checksum.
+4. User pastes the checksum, selects a **Basis for Removal** (dropdown: rights holder, created by me / used without consent, privacy concern, or custom), and submits.
+5. The `nsImport.requestSelfServiceTakedown` mutation:
+   - Calls `nsApiClient.verifyOwnership(nationName, checksum)` — which sends the site token to the NS API, ensuring the checksum is IxStats-bound.
+   - Validates that the verified nation matches the card's title.
+   - Sets `card.isRetired = true`, `card.artwork = null`, `card.artworkVariants = DbNull`.
+   - Records audit metadata in `card.metadata.nsTakedown`:
+     ```json
+     {
+       "selfService": true,
+       "verifiedNation": "...",
+       "hiddenAt": "ISO timestamp",
+       "reason": "..."
+     }
+     ```
+6. Modal shows success state; card re-renders without artwork on next data refresh.
+
+**Key files:**
+
+| File | Purpose |
+|---|---|
+| `src/components/cards/display/NationStatesAttribution.tsx` | Attribution footer bar + takedown trigger |
+| `src/components/cards/display/CardTakedownVerificationModal.tsx` | Self-service ownership verification dialog |
+| `src/components/cards/display/CardDetailsModal.tsx` | Hosts both; blurs card modal when takedown dialog is open |
+| `src/server/api/routers/ns-import/cards.ts` | `requestSelfServiceTakedown` mutation + `getVerificationUrl` query |
+| `src/lib/ns-api-client.ts` | `verifyOwnership()`, `getVerificationUrl()`, `generateVerificationToken()` |
+
+**Environment variable required:**
+```
+NS_VERIFICATION_SECRET=<secret string>
+```
+This is the private key used to generate site-specific HMAC-MD5 tokens. Must be set in production.
+
+**Admin takedown** (unchanged): Admins can still retire any NS card via the Cards admin panel or `nsImport.hideNSCard`; retired cards are excluded from future syncs.
+
+### No real-money angle
+
+IxStats has no real-money features. IxCredits are in-game only; there is no purchase, payout, or sale of NS content.
 
 ## API Reference
 

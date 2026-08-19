@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/AdvancedConlangSettings.tsx
 // Onoma Custom Studio Workshop — Advanced Generator Settings Component
 
-import { AppleSwitch } from "~/components/unlumen-ui/apple-switch";
+import { AppleSwitch } from "~/components/ui/apple-switch";
 import {
   Select,
   SelectContent,

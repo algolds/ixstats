@@ -6,7 +6,7 @@
  */
 
 import type { Polygon, Position } from "geojson";
-import { buildSharedVertexIndex, moveSharedVertex } from "../shared-vertex-builder";
+import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
 
 /** Build a closed square ring (lng, lat) → [lng, lat] ring with closing duplicate. */
 function square(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {

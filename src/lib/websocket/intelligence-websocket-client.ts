@@ -5,6 +5,7 @@ import type {
   WebSocketClientState,
   WebSocketIntelligenceEvent,
   IntelligenceWebSocketHookOptions,
+  IntelligenceUpdate,
 } from "./types";
 import { BASE_PATH } from "~/lib/base-path";
 
@@ -188,24 +189,33 @@ export class IntelligenceWebSocketClient {
     this.socket.off("server:shutdown");
 
     // Intelligence updates
-    this.socket.on("intelligence:update", (event: WebSocketIntelligenceEvent) => {
-      this.options.onUpdate(event.data);
-    });
+    this.socket.on(
+      "intelligence:update",
+      (event: WebSocketIntelligenceEvent<IntelligenceUpdate>) => {
+        this.options.onUpdate(event.data);
+      }
+    );
 
     // Intelligence alerts
-    this.socket.on("intelligence:alert", (event: WebSocketIntelligenceEvent) => {
-      console.log("Received intelligence alert:", event.data);
-      this.options.onAlert(event.data);
-    });
+    this.socket.on(
+      "intelligence:alert",
+      (event: WebSocketIntelligenceEvent<IntelligenceUpdate>) => {
+        console.log("Received intelligence alert:", event.data);
+        this.options.onAlert(event.data);
+      }
+    );
 
     // Initial intelligence state
-    this.socket.on("intelligence:initial", (event: WebSocketIntelligenceEvent) => {
-      console.log("Received initial intelligence:", event.type, event.data);
-      this.options.onUpdate(event.data);
-    });
+    this.socket.on(
+      "intelligence:initial",
+      (event: WebSocketIntelligenceEvent<IntelligenceUpdate>) => {
+        console.log("Received initial intelligence:", event.type, event.data);
+        this.options.onUpdate(event.data);
+      }
+    );
 
     // Vitality updates
-    this.socket.on("vitality:update", (event: WebSocketIntelligenceEvent) => {
+    this.socket.on("vitality:update", (event: WebSocketIntelligenceEvent<IntelligenceUpdate>) => {
       console.log("Received vitality update:", event.data);
       this.options.onUpdate({
         ...event.data,

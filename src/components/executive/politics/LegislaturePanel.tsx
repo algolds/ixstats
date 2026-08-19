@@ -177,9 +177,6 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
   return (
     <div className="space-y-4">
-
-
-
       {/* ─── Legislature Setup (default: expanded) ─── */}
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">

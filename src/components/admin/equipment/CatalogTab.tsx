@@ -17,7 +17,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Plus, Search, Check, X, Filter, Rocket } from "lucide-react";
-import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/equipment-catalog-utils";
+import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { EquipmentCard } from "./EquipmentCard";
 
 interface CatalogTabProps {

@@ -30,14 +30,7 @@ const PANEL_DEFAULT_W = 320;
 const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 
 export type TabId =
-  | "properties"
-  | "layers"
-  | "features"
-  | "wiki"
-  | "linkages"
-  | "sovereignty"
-  | "history"
-  | "queue";
+  "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
 
 const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
   layers: { label: "Layers", Icon: Layers },

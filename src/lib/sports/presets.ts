@@ -1,12 +1,6 @@
 export type ArchetypeType = "league" | "division_conference" | "bracket" | "circuit";
 export type SportPresetKey =
-  | "soccer"
-  | "football"
-  | "hockey"
-  | "basketball"
-  | "baseball"
-  | "f1"
-  | "boxing";
+  "soccer" | "football" | "hockey" | "basketball" | "baseball" | "f1" | "boxing";
 
 export interface SportPreset {
   key: SportPresetKey;
@@ -272,11 +266,7 @@ export interface ArchetypeConfig {
   pointsForWin: number;
   pointsForDraw: number;
   postseasonType:
-    | "none"
-    | "optional_playoff"
-    | "seeded_bracket"
-    | "elimination_bracket"
-    | "points_championship";
+    "none" | "optional_playoff" | "seeded_bracket" | "elimination_bracket" | "points_championship";
 }
 
 export const ARCHETYPE_CONFIGS: ArchetypeConfig[] = [

@@ -37,7 +37,7 @@ import {
   type Manufacturer,
   type ManufacturerWithCount,
   type SortField,
-} from "~/lib/manufacturer-utils";
+} from "~/lib/military/manufacturer-utils";
 
 interface ManufacturersTabProps {
   manufacturerSearchQuery: string;

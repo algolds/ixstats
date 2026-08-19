@@ -5,14 +5,14 @@ import {
   splitCollectionAtAntimeridian,
   preparePoliticalFeatures,
   featureIdToDisplayName,
-} from "~/lib/map-utils";
-import { compressFeatureCollection } from "~/lib/geojson-compress";
+} from "~/lib/maps/map-utils";
+import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
 import {
   DEFAULT_COUNTRY_COLORS,
   SOVEREIGNTY_TYPE_MAP,
   getSovereigntyColor,
   DEMOTED_COUNTRY_NAMES,
-} from "~/lib/map-config";
+} from "~/lib/maps/map-config";
 import { getCached, setCache, getCompressionForLayer, type ZoomBucket } from "./cache";
 import { computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 
@@ -308,9 +308,7 @@ export async function loadLayerFromDB(
     ) => {
       // Centroid stored as [lng, lat] array or { coordinates: [lng, lat] } GeoJSON Point
       const rawCentroid = layer.centroid as
-        | [number, number]
-        | { coordinates?: [number, number] }
-        | null;
+        [number, number] | { coordinates?: [number, number] } | null;
       let centroidLng = 0;
       let centroidLat = 0;
       if (Array.isArray(rawCentroid) && rawCentroid.length >= 2) {

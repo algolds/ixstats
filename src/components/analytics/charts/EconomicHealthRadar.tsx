@@ -19,8 +19,8 @@ import {
 import { Target, FileSpreadsheet, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
-import type { EconomicHealthIndicator } from "~/lib/analytics-data-transformers";
+import { DEFAULT_CHART_COLORS } from "~/lib/themes";
+import type { EconomicHealthIndicator } from "~/lib/utils";
 
 interface EconomicHealthRadarProps {
   data: EconomicHealthIndicator[];

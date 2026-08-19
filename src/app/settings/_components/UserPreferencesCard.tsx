@@ -11,7 +11,7 @@ import {
   Minimize2,
   Download,
 } from "lucide-react";
-import { AnimatedThemeToggler } from "~/components/magicui/animated-theme-toggler";
+import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 /**
  * Legacy import page — redirects to the unified builder with import section active.

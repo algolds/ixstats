@@ -134,7 +134,7 @@ export function MessagesFolderNav({
               key={folder.id}
               onClick={() => onNavigate(folder.id)}
               className={cn(
-                "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-bold transition-all duration-200 select-none",
+                "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-200 select-none",
                 isActive
                   ? "border-white/10 bg-white/10 text-white shadow-sm"
                   : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
@@ -144,7 +144,7 @@ export function MessagesFolderNav({
               <Icon className="h-3.5 w-3.5" />
               <span className="hidden truncate sm:inline">{folder.title}</span>
               {count > 0 && (
-                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] leading-none font-bold text-white">
+                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] leading-none font-bold text-white tabular-nums">
                   {count > 99 ? "99+" : count}
                 </span>
               )}
@@ -167,7 +167,7 @@ export function MessagesFolderNav({
           className="w-64 border-white/10 bg-slate-900 text-white backdrop-blur-xl"
         >
           <PopoverHeader>
-            <PopoverTitle className="text-sm font-bold text-slate-200">
+            <PopoverTitle className="text-sm font-semibold tracking-tight text-slate-200">
               Message Settings
             </PopoverTitle>
             <PopoverDescription className="mt-1 text-xs text-slate-400">

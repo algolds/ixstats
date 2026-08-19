@@ -19,7 +19,7 @@ import {
   type ValidationResult,
   type BudgetSummary,
   type GovernmentSummary,
-} from "~/lib/government-builder-validation";
+} from "~/lib/government/builder-validation";
 import { useGovernmentBuilderAutoSync } from "./useBuilderAutoSync";
 import type {
   GovernmentBuilderState,
@@ -304,8 +304,8 @@ export function useGovernmentBuilder(
         }
       });
 
-      const orderedAllocations = prev.departments.map(
-        (dept, index) => allocationMap.get(index.toString())!
+      const orderedAllocations = prev.departments.map((dept, index) =>
+        allocationMap.get(index.toString())!
       );
 
       const currentTotalPercent = orderedAllocations.reduce(

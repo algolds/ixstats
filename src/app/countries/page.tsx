@@ -4,9 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "./_components/CountriesPageModular";
-import type { CountryCardData } from "~/components/countries/CountryFocusCard";
-import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
-import { unifiedFlagService } from "~/lib/unified-flag-service";
+import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
+import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
+import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
 export default function CountriesPage() {
@@ -45,8 +45,8 @@ export default function CountriesPage() {
       // First, cache any database flags we have
       if (countriesResult?.countries) {
         countriesResult.countries.forEach((country) => {
-          if ((country as any).flag) {
-            unifiedFlagService.cacheDatabaseFlag(country.name, (country as any).flag);
+          if (country.flag) {
+            unifiedFlagService.cacheDatabaseFlag(country.name, country.flag);
           }
         });
       }
@@ -63,40 +63,38 @@ export default function CountriesPage() {
   const processedCountries: CountryCardData[] = useMemo(() => {
     if (!countriesResult?.countries) return [];
 
-    return countriesResult.countries.map(
-      (country): CountryCardData => ({
-        id: country.id,
-        name: country.name,
-        slug: (country as any).slug || country.name.replace(/\s+/g, "_"),
-        currentPopulation: country.currentPopulation || 0,
-        currentGdpPerCapita: country.currentGdpPerCapita || 0,
-        currentTotalGdp: country.currentTotalGdp || 0,
-        economicTier: country.economicTier || "Unknown",
-        populationTier: country.populationTier || "Unknown",
-        landArea: country.landArea || undefined,
-        populationDensity: country.populationDensity || undefined,
-        gdpDensity: country.gdpDensity || undefined,
-        adjustedGdpGrowth: country.adjustedGdpGrowth || undefined,
-        populationGrowthRate: country.populationGrowthRate || undefined,
-        // Use cached flag first, then database flag, then undefined
-        flagUrl: flagUrls[country.name] || (country as any).flag || undefined,
-        // Identity & Governance
-        continent: (country as any).continent || undefined,
-        region: (country as any).region || undefined,
-        governmentType: (country as any).governmentType || undefined,
-        leader: (country as any).leader || undefined,
-        religion: (country as any).religion || undefined,
-        // Social Indicators
-        lifeExpectancy: (country as any).lifeExpectancy || undefined,
-        literacyRate: (country as any).literacyRate || undefined,
-        unemploymentRate: (country as any).unemploymentRate || undefined,
-        inflationRate: (country as any).inflationRate || undefined,
-        povertyRate: (country as any).povertyRate || undefined,
-        // Fiscal
-        totalDebtGDPRatio: (country as any).totalDebtGDPRatio || undefined,
-        realGDPGrowthRate: (country as any).realGDPGrowthRate || undefined,
-      })
-    );
+    return countriesResult.countries.map((country): CountryCardData => ({
+      id: country.id,
+      name: country.name,
+      slug: country.slug ?? country.name.replace(/\s+/g, "_"),
+      currentPopulation: country.currentPopulation || 0,
+      currentGdpPerCapita: country.currentGdpPerCapita || 0,
+      currentTotalGdp: country.currentTotalGdp || 0,
+      economicTier: country.economicTier || "Unknown",
+      populationTier: country.populationTier || "Unknown",
+      landArea: country.landArea ?? undefined,
+      populationDensity: country.populationDensity ?? undefined,
+      gdpDensity: country.gdpDensity ?? undefined,
+      adjustedGdpGrowth: country.adjustedGdpGrowth ?? undefined,
+      populationGrowthRate: country.populationGrowthRate ?? undefined,
+      // Use cached flag first, then database flag, then undefined
+      flagUrl: flagUrls[country.name] || country.flag || undefined,
+      // Identity & Governance
+      continent: country.continent ?? undefined,
+      region: country.region ?? undefined,
+      governmentType: country.governmentType ?? undefined,
+      leader: country.leader ?? undefined,
+      religion: country.religion ?? undefined,
+      // Social Indicators
+      lifeExpectancy: country.lifeExpectancy ?? undefined,
+      literacyRate: country.literacyRate ?? undefined,
+      unemploymentRate: country.unemploymentRate ?? undefined,
+      inflationRate: country.inflationRate ?? undefined,
+      povertyRate: country.povertyRate ?? undefined,
+      // Fiscal
+      totalDebtGDPRatio: country.totalDebtGDPRatio ?? undefined,
+      realGDPGrowthRate: country.realGDPGrowthRate ?? undefined,
+    }));
   }, [countriesResult, flagUrls]);
 
   if (error) {

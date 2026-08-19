@@ -60,7 +60,9 @@ export function filterByArea(data: FeatureCollection, minArea: number): FeatureC
           (f.properties?.areaKm2 as number) ??
           (f.properties?._areaSqKm as number) ??
           (f.properties?.areaSqKm as number) ??
-          ((f.properties?.lengthKm as number) ? (f.properties?.lengthKm as number) * 50 : undefined) ??
+          ((f.properties?.lengthKm as number)
+            ? (f.properties?.lengthKm as number) * 50
+            : undefined) ??
           ((f.properties?.flux as number) ? (f.properties?.flux as number) * 10 : undefined) ??
           99999;
         return area >= minArea;

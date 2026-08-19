@@ -1,7 +1,7 @@
 // WebSocket Intelligence System Types
 // Type definitions for real-time intelligence updates
 
-export interface IntelligenceUpdate {
+export interface IntelligenceUpdate<T = Record<string, unknown>> {
   id: string;
   type:
     | "new_intelligence"
@@ -16,7 +16,7 @@ export interface IntelligenceUpdate {
   category: "economic" | "population" | "diplomatic" | "governance" | "security" | "system";
   priority: "low" | "medium" | "high" | "urgent" | "critical";
   severity: "info" | "warning" | "critical";
-  data: any;
+  data: T;
   isGlobal: boolean;
   timestamp: number;
   expiresAt?: number;
@@ -35,9 +35,9 @@ export interface GlobalIntelligenceChannel {
   totalUpdates: number;
 }
 
-export interface WebSocketIntelligenceEvent {
+export interface WebSocketIntelligenceEvent<T = IntelligenceUpdate> {
   type: "intelligence:update" | "intelligence:alert" | "intelligence:initial" | "vitality:update";
-  data: any;
+  data: T;
   timestamp: number;
   channel: string;
   countryId?: string;

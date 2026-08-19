@@ -149,23 +149,23 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
               <span className="text-xl font-bold tracking-tight opacity-90">
                 {player.firstName}
               </span>
-              <span className="text-4xl leading-none font-extrabold tracking-tight uppercase md:text-5xl lg:text-6xl">
+              <span className="text-4xl leading-none font-bold tracking-tight uppercase md:text-5xl lg:text-6xl">
                 {player.lastName}
               </span>
             </div>
 
             <div className="mb-4 flex items-center justify-center gap-2 md:justify-start">
               <PositionTooltip position={player.position}>
-                <span className="inline-flex cursor-help rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold tracking-wider uppercase transition-colors hover:bg-white/30">
+                <span className="inline-flex cursor-help rounded-full bg-white/20 px-3 py-0.5 text-xs font-semibold tracking-wider uppercase transition-colors hover:bg-white/30">
                   {player.position}
                 </span>
               </PositionTooltip>
-              <span className="inline-flex items-center gap-x-1 rounded-full bg-black/40 px-3 py-0.5 text-xs font-bold tracking-wider uppercase">
+              <span className="inline-flex items-center gap-x-1 rounded-full bg-black/40 px-3 py-0.5 text-xs font-semibold tracking-wider uppercase">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
                 {player.careerStage}
               </span>
               {player.number && (
-                <span className="inline-flex rounded-full bg-black/40 px-2 py-0.5 text-xs font-black">
+                <span className="inline-flex rounded-full bg-black/40 px-2 py-0.5 text-xs font-bold tabular-nums">
                   #{player.number}
                 </span>
               )}
@@ -200,17 +200,17 @@ export default function PlayerStats1({ player, team, className }: PlayerStats1Pr
         </div>
 
         {/* Detailed Stats Grid */}
-        <div className="bg-muted/30 border-border/20 mt-1 rounded-2xl border-t py-6 dark:bg-slate-950/20">
+        <div className="bg-muted/30 border-border/20 dark:bg-secondary/40 mt-1 rounded-2xl border-t py-6">
           <div className="divide-border/20 grid grid-cols-2 gap-4 divide-y px-6 md:grid-cols-4 md:divide-x md:divide-y-0 lg:grid-cols-6">
             {statistics.map((statistic) => (
               <div
                 key={statistic.label}
                 className="flex flex-col items-center justify-center p-2 text-center uppercase first:pt-2 md:first:pt-2"
               >
-                <div className="text-foreground text-2xl font-black tabular-nums">
+                <div className="text-foreground text-2xl font-bold tabular-nums">
                   {statistic.value}
                 </div>
-                <div className="text-muted-foreground mt-1 text-[10px] font-bold">
+                <div className="text-muted-foreground mt-1 text-[10px] font-semibold tracking-wider uppercase">
                   {statistic.label}
                 </div>
               </div>

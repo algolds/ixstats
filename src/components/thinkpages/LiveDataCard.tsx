@@ -19,7 +19,7 @@ import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/charts";
+import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/ui/charts";
 
 interface LiveDataCardProps {
   type:

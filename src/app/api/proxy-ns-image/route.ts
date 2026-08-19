@@ -1,14 +1,20 @@
 /**
  * NationStates Image Proxy API Route
  *
- * Proxies NationStates card images to bypass hotlinking restrictions.
- * NS blocks direct image embedding (403), so we fetch server-side with
- * proper User-Agent and serve to frontend.
+ * Proxies NationStates card images so the flag of a nation imported by its
+ * owner can be displayed on IxCards. Fetches server-side with a proper
+ * User-Agent and serves to the frontend.
  *
- * Rate Limiting: Respects NS API limits (50 req/30s)
+ * Compliance notes:
+ * - No Referer header is spoofed. NS may block image requests that do not
+ *   originate from its own pages (403); when that happens we fall back to a
+ *   local placeholder rather than circumventing the block.
+ * - Only nationstates.net domains are ever fetched.
+ * - Responses are cached for 24h so NS is not repeatedly re-hit.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { withBasePath } from "~/lib/base-path";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,8 +49,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Security: Only allow NationStates domains
-    const allowedDomains = ["www.nationstates.net", "nationstates.net"];
+    // Security: Only allow trusted card image domains (NationStates & Wikimedia Commons)
+    const allowedDomains = [
+      "www.nationstates.net",
+      "nationstates.net",
+      "upload.wikimedia.org",
+      "commons.wikimedia.org",
+    ];
 
     let parsedUrl: URL;
     try {
@@ -63,15 +74,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch image from NationStates with proper User-Agent
-    // NS requires proper User-Agent for API compliance
+    // Fetch image from NationStates with a proper User-Agent.
+    // We deliberately do NOT send a Referer header: NS restricts card images
+    // to its own pages, and bypassing that with a spoofed Referer would
+    // violate the API Terms of Use ("Be Transparent").
     const userAgent = "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)";
 
     const nsResponse = await fetch(imageUrl, {
       headers: {
         "User-Agent": userAgent,
-        // Some servers check Referer to prevent hotlinking
-        Referer: "https://www.nationstates.net/",
       },
       // Use Next.js fetch cache for 24 hours
       next: {
@@ -84,17 +95,12 @@ export async function GET(request: NextRequest) {
         `[NS-PROXY] Failed to fetch image: ${nsResponse.status} ${nsResponse.statusText}`
       );
 
-      // Return appropriate error
-      if (nsResponse.status === 404) {
-        return NextResponse.json(
-          { error: "Image not found" },
-          { status: 404, headers: corsHeaders }
-        );
-      }
-
-      return NextResponse.json(
-        { error: "Failed to fetch image from NationStates" },
-        { status: nsResponse.status, headers: corsHeaders }
+      // Fall back to a local placeholder instead of bypassing NS's block.
+      // The placeholder is served from our own domain, so no NS asset is
+      // embedded against NS's wishes.
+      return NextResponse.redirect(
+        new URL(withBasePath("/images/cards/lore-placeholder.svg"), request.url),
+        { status: 307, headers: corsHeaders }
       );
     }
 

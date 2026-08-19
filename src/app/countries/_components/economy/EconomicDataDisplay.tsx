@@ -26,14 +26,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
+import { createDefaultGovernmentSpendingData } from "~/lib/government/spending-defaults";
 import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
 import { LaborEmployment } from "./LaborEmployment";
 import { FiscalSystemComponent } from "./FiscalSystemComponent";
 import { IncomeWealthDistribution } from "./IncomeWealthDistribution";
 import { GovernmentSpending } from "./GovernmentSpending";
 import { Demographics } from "./Demographics";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { TRPCClientError } from "@trpc/client";
 import type {

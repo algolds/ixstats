@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

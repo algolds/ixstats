@@ -18,7 +18,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
 // ===== SCHEMAS =====
 // ===== UNIFIED INTELLIGENCE ROUTER =====

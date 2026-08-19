@@ -10,22 +10,21 @@ import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
 import { Navigation, NavigationTransitionHandler, RackFocusBlurWrapper } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
-import { WebGLErrorHandler } from "~/components/webgl-error-handler";
-import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ChunkLoadErrorBoundary";
+import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
+import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ui/ChunkLoadErrorBoundary";
 import { ToastProvider } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
 import { headers } from "next/headers";
-import { isStandaloneRequest } from "~/lib/standalone-detection";
+import { isStandaloneRequest } from "~/lib/system";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
-import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
+import { GlobalLinkTooltipProvider } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
 import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 
-
 import { AbilityProvider } from "~/components/providers/AbilityProvider";
-import { IxTimeProvider } from "~/contexts/IxTimeContext";
-import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
+import { IxTimeProvider } from "~/context/IxTimeContext";
+import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 
@@ -112,7 +111,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className={`${geist.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`dark ${geist.variable} ${playfair.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen transition-colors duration-200">
         <ConsentManager>
           <ChunkLoadErrorHandler />

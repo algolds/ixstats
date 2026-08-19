@@ -17,14 +17,14 @@ import {
 import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import {
   CutoutCard,
   CutoutCardContent,
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
-import { formatCompactNumber, formatCompactCurrency } from "~/lib/format-utils";
+import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 import { CountryPreview } from "../primitives/CountryPreview";
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
 import { useBuilderActions } from "../hooks/useBuilderActions";
@@ -32,12 +32,12 @@ import { useBuilderActions } from "../hooks/useBuilderActions";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import {
   detectSynergies as detectGovSynergies,
   detectConflicts as detectGovConflicts,
   calculateGovernmentEffectiveness,
-} from "~/lib/atomic-government-utils";
+} from "~/lib/government/atomic-utils";
 import { ComponentType as GovComponentType } from "@prisma/client";
 
 interface BuilderPreviewWidgetProps {

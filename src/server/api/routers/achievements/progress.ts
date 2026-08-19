@@ -4,8 +4,8 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
-import { getWikiDbPool } from "~/lib/wiki-bridge";
-import { achievementService } from "~/lib/achievement-service";
+import { getWikiDbPool } from "~/lib/wiki/bridge";
+import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsProgressRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -60,9 +60,9 @@ export const achievementsProgressRouter = createTRPCRouter({
         });
 
         // Auto-sync if database achievements count doesn't match definitions registry
-        const { ACHIEVEMENT_DEFINITIONS } = await import("~/lib/achievement-definitions");
+        const { ACHIEVEMENT_DEFINITIONS } = await import("~/lib/achievements/definitions");
         if (masterAchievements.length < ACHIEVEMENT_DEFINITIONS.length) {
-          const { syncAchievements } = await import("~/lib/achievement-sync");
+          const { syncAchievements } = await import("~/lib/achievements/sync");
           await syncAchievements(ctx.db);
           // Re-fetch master achievements after sync
           masterAchievements = await ctx.db.achievement.findMany({

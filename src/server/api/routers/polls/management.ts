@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 import { postPollToDiscord } from "./post-to-discord";
 
 const pollTypeSchema = z.enum(["choice", "feature-poll", "feature-voting"]);

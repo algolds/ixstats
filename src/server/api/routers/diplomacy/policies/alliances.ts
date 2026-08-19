@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
+import { notificationAPI } from "~/lib/notifications/api";
 
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({

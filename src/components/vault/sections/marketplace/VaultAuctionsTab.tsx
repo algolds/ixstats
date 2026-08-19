@@ -4,433 +4,21 @@ import { useState, useMemo, useCallback } from "react";
 import { cn } from "~/lib/utils";
 import { ShoppingCart, Plus, Clock, Store, Gavel, TrendingUp, History, Filter } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
-import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
-import { proxyCardArtwork } from "~/lib/ns-image-proxy";
 import type { CardInstance } from "~/types/cards-display";
-import { vaultNotify } from "~/lib/vault-notifications";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "~/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { vaultNotify } from "~/lib/vault";
+import { AuctionCardItem } from "./auctions/AuctionCardItem";
+import { CreateAuctionModal } from "./auctions/CreateAuctionModal";
+import type { MarketAuctionItem } from "./auctions/types";
 
-// ─── Auction Card (compact) ──────────────────────────────────────
-function AuctionCard({
-  auction,
-  onBid,
-  onBuyout,
-  onShowDetails,
-  isBidding,
-  isBuyingOut,
-}: {
-  auction: any;
-  onBid: (auctionId: string, amount: number) => void;
-  onBuyout: (auctionId: string) => void;
-  onShowDetails: (auction: any) => void;
-  isBidding: boolean;
-  isBuyingOut: boolean;
-}) {
-  const card = auction.CardOwnership?.cards;
-  const title = card?.title ?? "Unknown Card";
-  const rarity = card?.rarity ?? "COMMON";
-  const artwork = card?.artwork;
-  const currentBid = auction.currentBid ?? auction.startingPrice;
-  const bidCount = auction.bidCount ?? auction.AuctionBid?.length ?? 0;
-  // Auctions run in real time — measure remaining time against the wall clock.
-  const endTime = new Date(auction.endTime);
-  const msLeft = endTime.getTime() - Date.now();
-  const minsLeft = Math.max(0, Math.floor(msLeft / 60000));
-  const isUrgent = minsLeft < 10;
-  const minNextBid = Math.ceil(currentBid * 1.05);
-  const [customAmount, setCustomAmount] = useState(minNextBid);
-
-  const rarityColor: Record<string, string> = {
-    LEGENDARY: "text-amber-600 dark:text-amber-400 border-amber-500/30",
-    EPIC: "text-purple-650 dark:text-purple-400 border-purple-450/30 dark:border-purple-500/30",
-    RARE: "text-blue-600 dark:text-blue-400 border-blue-500/30",
-    UNCOMMON: "text-green-600 dark:text-green-400 border-green-500/30",
-    COMMON: "text-slate-500 dark:text-slate-400 border-slate-500/20",
-  };
-  const colorClass = rarityColor[rarity] ?? "text-cyan-600 dark:text-cyan-400 border-cyan-500/30";
-
-  return (
-    <div
-      className={cn(
-        "glass-surface relative flex gap-3 overflow-hidden rounded-lg border bg-black/5 p-3 dark:bg-black/20",
-        colorClass.split(" ")[1]
-      )}
-    >
-      <TextureOverlay texture="dots" opacity={0.015} />
-
-      {/* Artwork thumbnail — click to view details */}
-      <button onClick={() => onShowDetails(auction)} className="shrink-0">
-        <div className="bg-muted border-border/50 relative h-14 w-14 overflow-hidden rounded-md border dark:border-white/5">
-          <CardHolographicCover
-            cardType={card?.cardType || "NATION"}
-            rarity={rarity}
-            title={title}
-          />
-          {artwork && (
-            <img
-              src={artwork}
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          )}
-        </div>
-      </button>
-
-      {/* Info — click to view details */}
-      <button
-        onClick={() => onShowDetails(auction)}
-        className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-bold text-slate-900 dark:text-white/95">
-            {title}
-          </span>
-          <Badge
-            variant="outline"
-            className={cn(
-              "shrink-0 px-1 py-0 text-[8px] font-bold uppercase",
-              colorClass.split(" ")[0]
-            )}
-          >
-            {rarity}
-          </Badge>
-        </div>
-        <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
-          <span>
-            {bidCount} bid{bidCount !== 1 ? "s" : ""}
-          </span>
-          <span
-            className={cn(
-              "flex items-center gap-0.5 font-medium",
-              isUrgent ? "text-red-500 dark:text-red-400" : "text-muted-foreground"
-            )}
-          >
-            <Clock className="h-3 w-3" />
-            {minsLeft > 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : `${minsLeft}m`}
-          </span>
-        </div>
-      </button>
-
-      {/* Bidding Actions */}
-      <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
-        <div className="text-right">
-          <span className="text-muted-foreground block text-[9px] leading-none">Current Bid</span>
-          <span className="mt-0.5 flex items-center justify-end gap-0.5 text-sm leading-none font-black text-amber-600 dark:text-amber-400">
-            <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-            {currentBid.toLocaleString()}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {/* Custom bid input */}
-          <div className="flex items-center gap-1">
-            <Input
-              type="number"
-              min={minNextBid}
-              value={customAmount}
-              onChange={(e) => setCustomAmount(parseInt(e.target.value) || minNextBid)}
-              className="h-6 w-16 border px-1 font-mono text-[10px] text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white"
-            />
-            <Button
-              size="sm"
-              onClick={() => onBid(auction.id, customAmount)}
-              disabled={isBidding || customAmount < minNextBid}
-              className="bg-secondary border-border/50 hover:bg-secondary/80 h-6 border px-2 text-[10px] text-slate-800 dark:border-slate-700/60 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
-            >
-              {isBidding ? "..." : "Bid"}
-            </Button>
-          </div>
-          {auction.buyoutPrice && (
-            <Button
-              size="sm"
-              onClick={() => onBuyout(auction.id)}
-              disabled={isBuyingOut}
-              className="h-6 border-none bg-gradient-to-r from-amber-600 to-yellow-600 px-2 text-[10px] font-bold text-white hover:from-amber-500 hover:to-yellow-500"
-            >
-              Buy {auction.buyoutPrice.toLocaleString()}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Create Auction Modal ────────────────────────────────────────
-interface CreateAuctionModalProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [startingPrice, setStartingPrice] = useState("");
-  const [buyoutPrice, setBuyoutPrice] = useState("");
-  const [duration, setDuration] = useState<"30" | "60">("60");
-
-  const utils = api.useUtils();
-
-  const { data: inventoryData, isLoading: inventoryLoading } = api.cards.getMyCards.useQuery(
-    { sortBy: "value" },
-    { enabled: open }
-  );
-
-  const cards: CardInstance[] = useMemo(
-    () =>
-      (inventoryData
-        ?.filter((ownership: any) => !ownership.isLocked)
-        .map((ownership: any) => ({
-          id: ownership.cards?.id ?? ownership.id,
-          ownershipId: ownership.id,
-          title: ownership.cards?.title ?? "Unknown",
-          rarity: ownership.cards?.rarity ?? "COMMON",
-          artwork: ownership.cards?.artwork || "/images/cards/placeholder-nation.png",
-          marketValue: ownership.cards?.marketValue || 0,
-          cardType: ownership.cards?.cardType ?? "NS_IMPORT",
-        })) as unknown as CardInstance[]) || [],
-    [inventoryData]
-  );
-
-  const createAuction = api.cardMarket.createAuction.useMutation({
-    onSuccess: (data) => {
-      vaultNotify.success(data.message ?? "Auction created!");
-      void utils.cardMarket.getActiveAuctions.invalidate();
-      void utils.cardMarket.getMyActiveAuctions.invalidate();
-      handleClose();
-    },
-    onError: (error) => {
-      vaultNotify.error(error.message);
-    },
-  });
-
-  const handleClose = () => {
-    setSelectedCardId(null);
-    setStartingPrice("");
-    setBuyoutPrice("");
-    setDuration("60");
-    onClose();
-  };
-
-  const handleSubmit = () => {
-    if (!selectedCardId || !startingPrice) return;
-    const selectedCard = cards.find((c: any) => c.id === selectedCardId) as any;
-    if (!selectedCard) return;
-
-    const sp = parseInt(startingPrice);
-    const bp = buyoutPrice ? parseInt(buyoutPrice) : undefined;
-    if (isNaN(sp) || sp < 1) return;
-    if (bp !== undefined && (isNaN(bp) || bp <= sp)) {
-      vaultNotify.error("Buyout price must be greater than starting price");
-      return;
-    }
-    createAuction.mutate({
-      cardId: selectedCard.ownershipId,
-      startingPrice: sp,
-      buyoutPrice: bp,
-      duration,
-    });
-  };
-
-  const rarityColor: Record<string, string> = {
-    LEGENDARY: "text-amber-600 dark:text-amber-400",
-    EPIC: "text-purple-600 dark:text-purple-400",
-    RARE: "text-blue-600 dark:text-blue-400",
-    UNCOMMON: "text-green-600 dark:text-green-400",
-    COMMON: "text-slate-500 dark:text-slate-400",
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md backdrop-blur-md dark:bg-slate-900/98">
-        <DialogHeader>
-          <DialogTitle className="text-sm font-black tracking-wider text-amber-600 uppercase dark:text-amber-500">
-            Create Auction Listing
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Step 1: Select Card */}
-          <div>
-            <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">
-              Select Card to Sell
-            </label>
-            {inventoryLoading ? (
-              <div className="space-y-1.5">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-10 rounded-lg bg-white/5" />
-                ))}
-              </div>
-            ) : cards.length === 0 ? (
-              <p className="text-muted-foreground py-3 text-center text-xs">
-                No cards in inventory
-              </p>
-            ) : (
-              <div className="border-border/50 max-h-48 space-y-1 overflow-y-auto rounded-lg border bg-black/5 p-1.5 dark:border-white/10 dark:bg-black/40">
-                {cards.length > 0 ? (
-                  cards.map((card: any) => (
-                    <button
-                      key={card.id}
-                      onClick={() => setSelectedCardId(card.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-all",
-                        selectedCardId === card.id
-                          ? "bg-amber-500/10 ring-1 ring-amber-500/35 dark:bg-amber-500/20 dark:ring-amber-400/50"
-                          : "hover:bg-black/5 dark:hover:bg-white/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="bg-muted border-border/50 relative h-8 w-8 shrink-0 overflow-hidden rounded border dark:border-white/5">
-                          <CardHolographicCover
-                            cardType={card.cardType}
-                            rarity={card.rarity}
-                            title={card.title}
-                          />
-                          {card.artwork && (
-                            <img
-                              src={proxyCardArtwork(card.artwork)}
-                              alt={card.title}
-                              className="absolute inset-0 h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                              }}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs font-semibold text-slate-900 dark:text-white/90">
-                            {card.title}
-                          </span>
-                          <span
-                            className={cn(
-                              "ml-2 text-[8px] font-bold uppercase",
-                              rarityColor[card.rarity] || "text-slate-400"
-                            )}
-                          >
-                            {card.rarity}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="flex items-center gap-0.5 font-mono text-xs text-amber-600 dark:text-amber-400">
-                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                        {(card.marketValue || 0).toLocaleString()}
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="py-6 text-center text-[10px] text-slate-400">
-                    No available cards — all your cards are either already listed or locked in
-                    trades
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Step 2: Pricing */}
-          {selectedCardId && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                    Starting Bid (IxC)
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={startingPrice}
-                    onChange={(e) => setStartingPrice(e.target.value)}
-                    placeholder="100"
-                    className="border-input text-foreground h-8 bg-black/5 font-mono text-xs dark:bg-black/20"
-                  />
-                </div>
-                <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                    Buyout Price (optional)
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={buyoutPrice}
-                    onChange={(e) => setBuyoutPrice(e.target.value)}
-                    placeholder="None"
-                    className="border-input text-foreground h-8 bg-black/5 font-mono text-xs dark:bg-black/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                  Listing Duration
-                </label>
-                <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
-                  <SelectTrigger className="border-input text-foreground h-8 w-full bg-black/5 text-xs dark:bg-black/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border text-foreground">
-                    <SelectItem value="30">30 minutes (Express)</SelectItem>
-                    <SelectItem value="60">60 minutes (Standard)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-muted-foreground text-[10px] leading-tight">
-                Listing fee: 5 IxCredits • Market fee: 10% on sales over 100 IxCredits
-              </p>
-            </>
-          )}
-        </div>
-
-        <DialogFooter className="mt-4 flex gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClose}
-            className="border-input text-foreground hover:bg-accent bg-transparent text-xs"
-          >
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={!selectedCardId || !startingPrice || createAuction.isPending}
-            className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white"
-          >
-            {createAuction.isPending ? "Creating..." : "Create Listing"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Filter Types ────────────────────────────────────────────────
 interface AuctionFilters {
   rarity: string;
   cardType: string;
@@ -439,13 +27,11 @@ interface AuctionFilters {
   sortBy: string;
 }
 
-// ─── Main Auctions Tab Component ─────────────────────────────────
 export function VaultAuctionsTab() {
   const [selectedTab, setSelectedTab] = useState("browse");
   const [createAuctionOpen, setCreateAuctionOpen] = useState(false);
   const [offset, setOffset] = useState(0);
   const [historyOffset, setHistoryOffset] = useState(0);
-  const [selectedAuction, setSelectedAuction] = useState<any>(null);
   const [filters, setFilters] = useState<AuctionFilters>({
     rarity: "",
     cardType: "",
@@ -461,11 +47,7 @@ export function VaultAuctionsTab() {
       minPrice: filters.minPrice ? parseInt(filters.minPrice) : undefined,
       maxPrice: filters.maxPrice ? parseInt(filters.maxPrice) : undefined,
       sortBy: (filters.sortBy || "ending_soon") as
-        | "ending_soon"
-        | "newest"
-        | "price_low"
-        | "price_high"
-        | undefined,
+        "ending_soon" | "newest" | "price_low" | "price_high" | undefined,
     }),
     [filters]
   );
@@ -489,7 +71,7 @@ export function VaultAuctionsTab() {
   const utils = api.useUtils();
   const cancelAuction = api.cardMarket.cancelAuction.useMutation({
     onSuccess: (data) => {
-      vaultNotify.success((data as any)?.message ?? "Auction cancelled");
+      vaultNotify.success(data?.message ?? "Auction cancelled");
       void utils.cardMarket.getMyActiveAuctions.invalidate();
       void utils.cardMarket.getActiveAuctions.invalidate();
     },
@@ -497,14 +79,15 @@ export function VaultAuctionsTab() {
   });
 
   useAuctionWebSocket({ enabled: selectedTab === "browse" || selectedTab === "ending" });
+  const activeAuctions = (activeData?.auctions ?? []) as any[];
+  const endingSoon = (endingSoonData?.auctions ?? []) as any[];
+  const myListings = (myListingsData?.auctions ?? []) as any[];
+  const myBids = (myBidsData?.auctions ?? []) as any[];
+  const myHistory = (historyData?.auctions ?? []) as any[];
 
-  const activeAuctions = activeData?.auctions ?? [];
-  const endingSoon = endingSoonData?.auctions ?? [];
-  const myListings = myListingsData?.auctions ?? [];
-  const myBids = myBidsData?.auctions ?? [];
-  const myHistory = historyData?.auctions ?? [];
+  const [selectedAuction, setSelectedAuction] = useState<MarketAuctionItem | null>(null);
 
-  const handleShowDetails = useCallback((auction: any) => {
+  const handleShowDetails = useCallback((auction: MarketAuctionItem) => {
     setSelectedAuction(auction);
   }, []);
 
@@ -523,7 +106,6 @@ export function VaultAuctionsTab() {
     }
   }, []);
 
-  // Build card instance from auction for CardDetailsModal
   const detailCard = useMemo(() => {
     if (!selectedAuction) return null;
     const c = selectedAuction.CardOwnership?.cards;
@@ -533,26 +115,26 @@ export function VaultAuctionsTab() {
       title: c.title ?? "Unknown",
       description: c.description ?? "",
       artwork: c.artwork ?? "/images/cards/placeholder-nation.png",
-      artworkVariants: c.artworkVariants ?? null,
-      cardType: c.cardType,
-      rarity: c.rarity,
+      artworkVariants: null,
+      cardType: c.cardType as any,
+      rarity: c.rarity as any,
       season: c.season ?? 1,
-      nsCardId: c.nsCardId ?? null,
-      nsSeason: c.nsSeason ?? null,
-      nsData: c.nsData ?? null,
+      nsCardId: null,
+      nsSeason: null,
+      nsData: null,
       wikiSource: c.wikiSource ?? null,
-      wikiArticleTitle: c.wikiArticleTitle ?? null,
-      wikiUrl: c.wikiUrl ?? null,
-      countryId: c.countryId ?? null,
-      stats: c.stats ?? {},
+      wikiArticleTitle: null,
+      wikiUrl: null,
+      countryId: c.country?.id ?? null,
+      stats: {},
       marketValue: c.marketValue ?? 0,
       totalSupply: c.totalSupply ?? 0,
       level: 1,
-      evolutionStage: c.evolutionStage ?? 0,
-      enhancements: c.enhancements ?? null,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      lastTrade: c.lastTrade ?? null,
+      evolutionStage: 0,
+      enhancements: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastTrade: null,
       country: c.country ?? null,
       owners: [],
     } as CardInstance;
@@ -612,10 +194,15 @@ export function VaultAuctionsTab() {
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-bold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
-              <p className={cn("mt-1 font-mono text-base leading-none font-black", stat.color)}>
+              <p
+                className={cn(
+                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
+                  stat.color
+                )}
+              >
                 {stat.value}
               </p>
             </div>
@@ -771,8 +358,8 @@ export function VaultAuctionsTab() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {activeAuctions.map((auction: any) => (
-                  <AuctionCard
+                {activeAuctions.map((auction: MarketAuctionItem) => (
+                  <AuctionCardItem
                     key={auction.id}
                     auction={auction}
                     onBid={placeBid}
@@ -784,7 +371,6 @@ export function VaultAuctionsTab() {
                 ))}
               </div>
             )}
-            {/* Load More */}
             {activeData?.hasMore && !activeLoading && (
               <div className="flex justify-center pt-2">
                 <Button
@@ -815,8 +401,8 @@ export function VaultAuctionsTab() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {endingSoon.map((auction: any) => (
-                  <AuctionCard
+                {endingSoon.map((auction: MarketAuctionItem) => (
+                  <AuctionCardItem
                     key={auction.id}
                     auction={auction}
                     onBid={placeBid}
@@ -856,7 +442,7 @@ export function VaultAuctionsTab() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {myListings.map((auction: any) => {
+                {myListings.map((auction: MarketAuctionItem) => {
                   const card = auction.CardOwnership?.cards;
                   const currentBid = auction.currentBid ?? auction.startingPrice;
                   const bidCount = auction.AuctionBid?.length ?? 0;
@@ -921,7 +507,7 @@ export function VaultAuctionsTab() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {myBids.map((auction: any) => {
+                {myBids.map((auction: MarketAuctionItem) => {
                   const card = auction.CardOwnership?.cards;
                   const currentBid = auction.currentBid ?? auction.startingPrice;
                   const endTime = new Date(auction.endTime);
@@ -978,7 +564,7 @@ export function VaultAuctionsTab() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {myHistory.map((auction: any) => {
+                {myHistory.map((auction: MarketAuctionItem) => {
                   const card = auction.CardOwnership?.cards;
                   const role = auction.participation as string;
                   const badgeLabel =
@@ -1007,7 +593,9 @@ export function VaultAuctionsTab() {
                             {card?.title ?? "Unknown"}
                           </span>
                           <p className="text-muted-foreground flex items-center gap-1 text-[9px]">
-                            {new Date(auction.updatedAt).toLocaleDateString()}
+                            {auction.updatedAt
+                              ? new Date(auction.updatedAt).toLocaleDateString()
+                              : new Date(auction.endTime).toLocaleDateString()}
                           </p>
                         </div>
                       </div>

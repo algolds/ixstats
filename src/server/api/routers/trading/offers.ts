@@ -14,10 +14,10 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
 import { syncUserToForum } from "~/server/modules/forum";
-import { notificationAPI } from "~/lib/notification-api";
-import { getVaultConfig } from "~/lib/vault-service";
-import { grantCardXp } from "~/lib/card-xp-utils";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { notificationAPI } from "~/lib/notifications/api";
+import { getVaultConfig } from "~/lib/vault";
+import { grantCardXp } from "~/lib/cards";
+import { globalCache } from "~/lib/cache";
 
 /**
  * Trade offer creation schema

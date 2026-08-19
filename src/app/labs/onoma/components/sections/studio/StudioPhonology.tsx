@@ -13,6 +13,7 @@ import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/p
 import { speakName } from "~/lib/onoma/browser-speech";
 import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
 import { cn } from "~/lib/utils";
+import { AcousticFormantVisualizer } from "./AcousticFormantVisualizer";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import {
   OVERRIDES_UPDATED_EVENT,
   type NameOverride,
 } from "~/lib/onoma/ipa-overrides";
+import { getAllTemplateLinguisticProfiles } from "~/lib/onoma/template-phonetics";
 
 const CULTURES = [
   "latin",
@@ -270,7 +272,10 @@ export function StudioPhonology() {
             <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
               <SelectValue placeholder="Select culture" />
             </SelectTrigger>
-            <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+            <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
+              <div className="text-muted-foreground px-2 py-1 text-[10px] font-bold uppercase tracking-wider">
+                Natural Languages (13)
+              </div>
               {CULTURES.map((c) => (
                 <SelectItem
                   key={c}
@@ -278,6 +283,18 @@ export function StudioPhonology() {
                   className="focus:text-foreground text-xs capitalize focus:bg-[#0091ff]/10"
                 >
                   {c}
+                </SelectItem>
+              ))}
+              <div className="text-muted-foreground mt-1 border-t border-border/40 px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider">
+                Fantasy & Lineage Templates (18)
+              </div>
+              {getAllTemplateLinguisticProfiles().map((t) => (
+                <SelectItem
+                  key={t.id}
+                  value={t.id}
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                >
+                  {t.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -448,6 +465,13 @@ export function StudioPhonology() {
           </div>
         )}
       </div>
+
+      {/* Acoustic Formant & Spectrogram Visualizer */}
+      <AcousticFormantVisualizer
+        currentIpa={previewIpa}
+        currentName={previewText}
+        accentColor={ACCENT}
+      />
 
       {/* Rule editor */}
       <div className="border-border/40 space-y-3 rounded-xl border p-4">

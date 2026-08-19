@@ -13,7 +13,7 @@
 import { PrismaClient } from "@prisma/client";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { parseSvgToGeoJson, normalizeForMatching, type ParsedFeature } from "../src/lib/svg-parser";
+import { parseSvgToGeoJson, normalizeForMatching, type ParsedFeature } from "~/lib/flags/svg-parser;
 import type { FeatureCollection } from "geojson";
 
 const prisma = new PrismaClient();

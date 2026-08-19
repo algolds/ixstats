@@ -23,24 +23,24 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
-import { MyLeagueSidebarLayout } from "~/components/myleague/MyLeagueSidebarLayout";
-import { type MyLeagueSection } from "~/components/myleague/MyLeagueSidebarNav";
-import { TeamSettingsModal } from "~/components/myleague/TeamSettingsModal";
+import { MyLeagueSidebarLayout } from "~/components/sports/league/MyLeagueSidebarLayout";
+import { type MyLeagueSection } from "~/components/sports/league/MyLeagueSidebarNav";
+import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { Settings } from "lucide-react";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { GlareCard } from "~/components/ui/glare-card";
 import SportyPlayerCard from "~/components/sports/player-cards/PlayerCard1";
 import Scoreboard from "~/components/sports/scoreboards/Scoreboard1";
 import PlayerMatchup1 from "~/components/sports/player-matchups/PlayerMatchup1";
-import { SponsorWalletDeck } from "~/components/myclub/SponsorWalletDeck";
-import { MatchTickerSim } from "~/components/myleague/MatchTickerSim";
-import { ClubResultsCard } from "~/components/myclub/ClubResultsCard";
+import { SponsorWalletDeck } from "~/components/sports/club/SponsorWalletDeck";
+import { MatchTickerSim } from "~/components/sports/league/MatchTickerSim";
+import { ClubResultsCard } from "~/components/sports/club/ClubResultsCard";
 import { Switch } from "~/components/ui/switch";
-import { PlayerTrainingButton } from "~/components/myclub/PlayerTrainingButton";
-import { LineupBuilder } from "~/components/myclub/LineupBuilder";
+import { PlayerTrainingButton } from "~/components/sports/club/PlayerTrainingButton";
+import { LineupBuilder } from "~/components/sports/club/LineupBuilder";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
-import { RevenueCollector } from "~/components/myclub/RevenueCollector";
-import { TeamTrainingButton } from "~/components/myclub/TeamTrainingButton";
+import { RevenueCollector } from "~/components/sports/club/RevenueCollector";
+import { TeamTrainingButton } from "~/components/sports/club/TeamTrainingButton";
 import {
   ArrowLeft,
   Trophy,

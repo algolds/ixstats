@@ -12,9 +12,9 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { vaultService, getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault-service";
-import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/ixcard-season";
-import { notificationAPI } from "~/lib/notification-api";
+import { vaultService, getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault";
+import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards";
+import { notificationAPI } from "~/lib/notifications/api";
 import { type VaultTransactionType } from "@prisma/client";
 
 /**

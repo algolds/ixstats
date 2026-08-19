@@ -1,5 +1,9 @@
 import type { Polygon } from "geojson";
-import { insertVertexIfOnSegment, alignSharedVertices, getAllRings } from "../border-editor";
+import {
+  insertVertexIfOnSegment,
+  alignSharedVertices,
+  getAllRings,
+} from "~/lib/maps/border-editor";
 
 function square(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {
   return {

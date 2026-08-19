@@ -7,7 +7,7 @@ import React from "react";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import type { GovernmentBuilderState } from "~/types/government";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { GovernmentBuilderError } from "../components/GovernmentBuilderError";
 
 // Modular components
@@ -15,7 +15,7 @@ import { PolicySelector } from "../components/spending/PolicySelector";
 
 // Custom hook for state management
 import { useGovernmentSpending } from "../hooks/useGovernmentSpending";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { createAbsoluteUrl } from "~/lib/utils";
 
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
 

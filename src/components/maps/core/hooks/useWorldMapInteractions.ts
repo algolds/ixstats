@@ -4,7 +4,7 @@ import { useEffect, useCallback, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/map-config";
+import { DEMOTED_COUNTRY_NAMES, INTERACTION_COLORS } from "~/lib/maps/map-config";
 import { escHtml, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 import { transientMapStore } from "../../editor/utils/transientStore";
 
@@ -288,12 +288,18 @@ export function useWorldMapInteractions({
         if (nextFeatureId !== null) {
           if (map.getSource("source-political")) {
             try {
-              map.setFeatureState({ source: "source-political", id: nextFeatureId }, { hover: true });
+              map.setFeatureState(
+                { source: "source-political", id: nextFeatureId },
+                { hover: true }
+              );
             } catch (_) {}
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
-          const hoveredId = (nextFeature.properties?._countryId as string) || (nextFeature.properties?._id as string) || String(nextFeatureId);
+          const hoveredId =
+            (nextFeature.properties?._countryId as string) ||
+            (nextFeature.properties?._id as string) ||
+            String(nextFeatureId);
           transientMapStore.setHoveredFeatureId(hoveredId);
           if (e.lngLat) {
             transientMapStore.setCursorCoords([e.lngLat.lng, e.lngLat.lat]);

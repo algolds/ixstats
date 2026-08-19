@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, jest } from "@jest/globals";
-import { SuggestionsPanel } from "~/components/builders/SuggestionsPanel";
+import { SuggestionsPanel } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
 
 describe("SuggestionsPanel", () => {
   it("renders suggestions and triggers apply", () => {

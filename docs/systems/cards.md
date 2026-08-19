@@ -247,6 +247,14 @@ async function importNSCollection(userId: string, nsNation: string) {
 }
 ```
 
+**Copyright & Asset Storage Compliance:**
+- **URL-Only Storage:** IxCards stores URL strings (`artwork: "https://www.nationstates.net/images/cards/s..."`) rather than persistent image bytes. No flag binary files are written to S3, PostgreSQL, or local disk storage.
+- **Streaming Proxy:** The `/api/proxy-ns-image` endpoint acts as an in-memory streaming proxy with standard browser caching headers (`max-age=86400`). It does not persist file bytes to storage.
+- **First-Party Grant:** Verified imports require explicit confirmation from the nation owner: *"I am the owner or authorized operator of this nation on NationStates, and I grant permission to display my nation's flag and card representation on IxCards."*
+- **Attribution Footer:** All NS_IMPORT cards display a pinned `NationStatesAttribution` footer bar in `CardDetailsModal` with legally-sound attribution copy and a **"Verify & Request Takedown"** trigger. See [NationStates Integration → Attribution Footer](./ns-integration.md#attribution-footer).
+- **Self-Service Flag-Owner Takedown:** Nation owners can request removal directly via the **Content Removal Request** dialog (no admin required). They verify ownership using a NationStates one-time checksum token bound to IxStats via a site-specific HMAC-MD5 token (`NS_VERIFICATION_SECRET`). On success, the card is retired and all artwork cleared. See [NationStates Integration → Self-Service Flag Artwork Takedown](./ns-integration.md#self-service-flag-artwork-takedown) for the full flow.
+- **Admin Takedown** (unchanged): Admins can still retire any NS card via the Cards admin panel or `nsImport.hideNSCard`; retired cards are excluded from future syncs.
+
 ### SPECIAL Cards (Event/Limited Editions)
 
 **Event Cards:**

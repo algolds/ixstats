@@ -17,10 +17,7 @@
  * @param iterations Number of subdivision passes (2-4 recommended)
  * @returns Smoothed closed ring
  */
-export function chaikinSmooth(
-  ring: [number, number][],
-  iterations: number
-): [number, number][] {
+export function chaikinSmooth(ring: [number, number][], iterations: number): [number, number][] {
   if (ring.length < 4 || iterations <= 0) return ring;
 
   let current = ring;
@@ -91,10 +88,7 @@ export function chaikinSmoothLine(
  * Smooth a closed polygon ring using Catmull-Rom spline interpolation (tau = 0.5).
  * Replaces sharp polygon corners with continuous spline curves.
  */
-export function catmullRomSmooth(
-  ring: [number, number][],
-  passes: number = 3
-): [number, number][] {
+export function catmullRomSmooth(ring: [number, number][], passes: number = 3): [number, number][] {
   if (ring.length < 4 || passes <= 0) return ring;
 
   let current = ring;
@@ -267,8 +261,7 @@ export function simplifyRing(
   if (ring.length <= 4 || tolerance <= 0) return ring;
 
   const isClosed =
-    ring[0]![0] === ring[ring.length - 1]![0] &&
-    ring[0]![1] === ring[ring.length - 1]![1];
+    ring[0]![0] === ring[ring.length - 1]![0] && ring[0]![1] === ring[ring.length - 1]![1];
 
   const points = isClosed ? ring.slice(0, -1) : ring;
   const n = points.length;
@@ -350,7 +343,10 @@ export function perturbRing(
   for (let i = 0; i < len; i++) {
     const [lng, lat] = ring[i]!;
     const n1 = Math.sin(lng * frequency + seed) * Math.cos(lat * frequency + seed * 0.5);
-    const n2 = Math.sin(lng * frequency * 2.5 - seed * 1.3) * Math.cos(lat * frequency * 2.5 + seed * 2.1) * 0.5;
+    const n2 =
+      Math.sin(lng * frequency * 2.5 - seed * 1.3) *
+      Math.cos(lat * frequency * 2.5 + seed * 2.1) *
+      0.5;
 
     const dx = (n1 + n2) * amplitude;
     const dy = (n2 - n1) * amplitude * 0.8;
@@ -358,10 +354,7 @@ export function perturbRing(
     const newLng = Math.max(-180, Math.min(180, lng + dx));
     const newLat = Math.max(-85, Math.min(85, lat + dy));
 
-    perturbed.push([
-      Math.round(newLng * 10000) / 10000,
-      Math.round(newLat * 10000) / 10000,
-    ]);
+    perturbed.push([Math.round(newLng * 10000) / 10000, Math.round(newLat * 10000) / 10000]);
   }
 
   return perturbed;

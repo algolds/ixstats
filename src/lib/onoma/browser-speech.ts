@@ -2,6 +2,7 @@
 // Onoma Lab — Browser Native Web Speech API wrapper
 
 import { ipaToSpeechSpelling } from "./branding-utils";
+import { withBasePath } from "~/lib/base-path";
 
 // Map Onoma naming cultures to BCP-47 language codes
 export const CULTURE_LANG: Record<string, string> = {
@@ -182,7 +183,7 @@ export async function speakName(opts: {
       if (personalStripStress === "true") params.set("stripStress", "true");
       if (personalProsody && personalProsody !== "neutral") params.set("prosody", personalProsody);
 
-      const res = await fetch(`/api/onoma/tts?${params.toString()}`);
+      const res = await fetch(withBasePath(`/api/onoma/tts?${params.toString()}`));
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.details || `HTTP ${res.status}`);

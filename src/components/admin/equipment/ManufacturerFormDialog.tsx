@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { MultiSelect } from "~/components/ui/multi-select";
-import { SPECIALTIES, type ManufacturerFormData } from "~/lib/manufacturer-utils";
+import { SPECIALTIES, type ManufacturerFormData } from "~/lib/military/manufacturer-utils";
 
 interface ManufacturerFormDialogProps {
   isOpen: boolean;

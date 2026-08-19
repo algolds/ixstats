@@ -1,10 +1,10 @@
 // src/app/api/onoma/tts/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { rateLimiter } from "~/lib/rate-limiter";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { rateLimiter } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import crypto from "crypto";
 import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
 import { ipaToKokoroPhonemes, anglicizeForSpeech } from "~/lib/onoma/kokoro-phonemes";

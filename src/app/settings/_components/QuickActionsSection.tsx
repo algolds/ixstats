@@ -1,6 +1,6 @@
 import { BarChart3, Crown, Globe, Building } from "lucide-react";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 interface QuickActionsSectionProps {
   setupStatus: "loading" | "unauthenticated" | "needs-setup" | "complete";

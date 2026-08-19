@@ -14,9 +14,9 @@ import {
   countryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { generateResourcesForCountry } from "~/lib/resource-generator";
-import { buildGeoProfile } from "~/lib/geo-analytics";
-import type { ClimateZoneEntry, ElevationZoneEntry } from "~/lib/geo-analytics";
+import { generateResourcesForCountry } from "~/lib/economy/resource-generator";
+import { buildGeoProfile } from "~/lib/maps/geo-analytics";
+import type { ClimateZoneEntry, ElevationZoneEntry } from "~/lib/maps/geo-analytics";
 
 export const resourcesRouter = createTRPCRouter({
   /** Get all resources for a country */

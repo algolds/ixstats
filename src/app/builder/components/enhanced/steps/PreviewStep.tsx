@@ -2,7 +2,7 @@
 
 import React from "react";
 import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import type {
   EconomicInputs,
   EconomyBuilderState,

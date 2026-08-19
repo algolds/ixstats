@@ -1,4 +1,4 @@
-import { distanceKm as haversineKm } from "~/lib/geo-math";
+import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
 
 const DEG2RAD = Math.PI / 180;
 

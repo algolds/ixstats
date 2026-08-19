@@ -23,7 +23,7 @@ import {
 import { Plus, Users, Trash2, Pencil } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
-import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 
 const IDEOLOGY_OPTIONS = [
   { value: "far_left", label: "Far Left", color: "#dc2626" },

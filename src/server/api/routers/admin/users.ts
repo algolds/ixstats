@@ -3,11 +3,11 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
 
-import { invalidateCache } from "~/lib/trpc-cache";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { invalidateCache } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 
 export const adminUsersRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -313,4 +313,4 @@ export const adminUsersRouter = createTRPCRouter({
     }),
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki-bridge"
+// getWikiDbPool is now imported from "~/lib/wiki/bridge"

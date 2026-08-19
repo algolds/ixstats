@@ -2,44 +2,14 @@
 // Type definitions for IxCards marketplace and auction system
 
 import type { CardRarity, CardType } from "@prisma/client";
+import type {
+  ArtworkVariants,
+  CardStatsData,
+  CardEnhancementsData,
+  CardInstance,
+} from "./cards-display";
 
-/**
- * Card instance with full details
- * Matches Prisma Card model with ownership info
- */
-export interface CardInstance {
-  id: string;
-  title: string;
-  description: string | null;
-  artwork: string;
-  artworkVariants: any;
-  cardType: CardType;
-  rarity: CardRarity;
-  season: number;
-  nsCardId: number | null;
-  nsSeason: number | null;
-  nsData: any;
-  wikiSource: string | null;
-  wikiArticleTitle: string | null;
-  wikiUrl: string | null;
-  countryId: string | null;
-  stats: any;
-  totalSupply: number;
-  marketValue: number;
-  level: number;
-  evolutionStage: number;
-  enhancements: any;
-  createdAt: Date;
-  updatedAt: Date;
-  lastTrade: Date | null;
-  country?: {
-    id: string;
-    name: string;
-    continent: string | null;
-    region: string | null;
-    flag: string | null;
-  };
-}
+export type { CardInstance } from "./cards-display";
 
 /**
  * Auction listing with current state

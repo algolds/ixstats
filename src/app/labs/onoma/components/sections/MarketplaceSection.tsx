@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from "react";
 import { ShoppingBag, Search, Star, GitFork, RefreshCw } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 

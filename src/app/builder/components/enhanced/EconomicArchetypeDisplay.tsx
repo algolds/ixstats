@@ -290,7 +290,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   const renderArchetypeCard = (archetype: EconomicArchetype, showSelectButton: boolean = false) => {
     const IconComponent = getArchetypeIcon(archetype.id);
     const colors = getArchetypeColors(archetype.id);
-    const isSelected = currentState?.selectedArchetypeId === archetype.id;
+    const isSelected = (currentState as any)?.selectedArchetypeId === archetype.id;
 
     return (
       <div key={archetype.id} className="group relative">
@@ -357,12 +357,17 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 className={cn(
                   "h-8 flex-1 cursor-pointer text-xs font-semibold transition-all",
                   isSelected
-                    ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30 cursor-default hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
+                    ? "cursor-default border border-emerald-500/30 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
                     : "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                 )}
                 size="sm"
               >
-                <CheckCircle className={cn("mr-1.5 h-3.5 w-3.5", isSelected ? "text-emerald-400" : "text-white")} />
+                <CheckCircle
+                  className={cn(
+                    "mr-1.5 h-3.5 w-3.5",
+                    isSelected ? "text-emerald-400" : "text-white"
+                  )}
+                />
                 {isSelected ? "Selected" : "Select"}
               </Button>
             )}
@@ -386,7 +391,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   const renderArchetypeDetails = () => {
     if (!selectedArchetype) return null;
-    const isGloballySelected = currentState?.selectedArchetypeId === selectedArchetype.id;
+    const isGloballySelected = (currentState as any)?.selectedArchetypeId === selectedArchetype.id;
 
     return (
       <div className="text-foreground space-y-6">
@@ -409,7 +414,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             className={cn(
               "flex h-11 w-full shrink-0 cursor-pointer items-center gap-2 self-center px-6 font-semibold shadow-lg transition-all lg:w-auto",
               isGloballySelected
-                ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30 cursor-default hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
+                ? "cursor-default border border-emerald-500/30 bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/15 dark:bg-emerald-500/15 dark:text-emerald-400"
                 : "bg-emerald-600 text-white shadow-emerald-500/10 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
             )}
           >

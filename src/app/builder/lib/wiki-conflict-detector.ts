@@ -1,5 +1,5 @@
 import { ComponentType } from "~/lib/enums";
-import { CONFLICT_RULES } from "~/lib/atomic-builder-state";
+import { CONFLICT_RULES } from "~/lib/builder";
 import type { MatchResult } from "./wiki-attribute-matcher";
 
 export interface ConflictReport {

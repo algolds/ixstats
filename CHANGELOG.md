@@ -5,17 +5,372 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.2 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
+**IxStates 1.3 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+### WikiOS Multi-Tier Storage Architecture, Standalone Core Engine & Instant UI Acceleration (`apps.wikios` v2, `@wikios/core`)
+
+- **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
+  - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/config.ts), [types.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/types.ts), [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/bridge.ts), [image-url.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/image-url.ts), [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/infobox-parser.ts)).
+  - Enforced strict graduation boundary: zero game couplings (`Country`, `Card`, `PointOfInterest`) in the core engine, preparing `@wikios/core` for independent packaging and distribution.
+  - Isolated host application template extensions to [ixstats-template-provider.ts](file:///home/jxsig/projects/ixstats/src/server/shared/ixstats-template-provider.ts) and [wiki-placeholders.ts](file:///home/jxsig/projects/ixstats/src/server/shared/wiki-placeholders.ts).
+  - Relocated Lore Card Generator from `src/lib/wiki/` to its canonical domain location in [src/lib/cards/lore-card-generator.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/lore-card-generator.ts) with unit test coverage ([lore-card-generator.test.ts](file:///home/jxsig/projects/ixstats/src/lib/cards/__tests__/lore-card-generator.test.ts)).
+  - Formalized architectural documentation and dependency rules across [src/app/(wiki-os)/README.md](file:///home/jxsig/projects/ixstats/src/app/(wiki-os)/README.md), [src/lib/wiki-os/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/README.md), and [src/lib/wiki/README.md](file:///home/jxsig/projects/ixstats/src/lib/wiki/README.md).
+
+- **Pluggable Multi-Driver Storage Architecture (`src/lib/wiki-os/storage-driver.ts` & `drivers/`)**:
+  - Introduced pluggable `WikiStorageDriver` interface supporting arbitrary persistence engines.
+  - Implemented `PostgresStorageDriver` (Prisma-backed), `SqliteStorageDriver` (zero-dependency standalone SQLite), and `MemoryStorageDriver` (sandboxes and testing).
+  - Added unit test suites for storage drivers, multi-tier cache, and search service in `src/lib/wiki-os/__tests__/`.
+
+- **4-Tier Resilient Storage Waterfall & Multi-Tier Caching (`src/lib/wiki-os/article-store.ts`, `wikios-cache.ts`)**:
+  - Implemented high-availability 4-tier read waterfall: Tier 1 PostgreSQL shadow (<5ms) → Tier 2 Direct MariaDB/MySQL (~38ms) → Tier 3 MediaWiki Action API HTTP (~400ms) → Tier 4 Stale Shadow Fallback (100% uptime guarantee).
+  - Multi-tier caching with in-memory LRU, TTL management, and client IndexedDB persistence.
+  - Implemented background client sync queue ([sync-queue.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/sync-queue.ts)) & draft store ([draft-store.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki-os/draft-store.ts)) for optimistic zero-lag saves and offline resilience.
+
+- **Shadow Full-Text & Trigram Fuzzy Search Engine (`src/lib/wiki-os/search-service.ts`)**:
+  - Implemented sub-3ms title prefix, trigram fuzzy matching, and body text search with ranked relevance.
+
+- **Instant UI, Speculative Prefetching & DOM Acceleration**:
+  - Added speculative hover/touch prefetching hook [useWikiPrefetch.ts](file:///home/jxsig/projects/ixstats/src/hooks/useWikiPrefetch.ts) for instantaneous link transitions.
+  - Built zero-navigation in-place editing bridge [WikiEditBridge.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/editor/WikiEditBridge.tsx) for instantaneous modal/drawer editing directly on `/wiki/[slug]`.
+  - Accelerated reader DOM rendering with CSS `content-visibility: auto` and section containment in [src/styles/wiki-os/layout.css](file:///home/jxsig/projects/ixstats/src/styles/wiki-os/layout.css).
+  - Modularized reader components from monolith `ArticleRenderer.tsx` into focused modules: [ArticleHeader.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleHeader.tsx), [ArticleFooter.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleFooter.tsx), [ArticleCategories.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleCategories.tsx), [ArticleModals.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleModals.tsx), and [ArticlePlaceholders.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticlePlaceholders.tsx).
+
+- **Router Consolidation & Deprecation Cleanup**:
+  - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
+  - Removed legacy `wiki` router registration from [src/server/api/root.ts](file:///home/jxsig/projects/ixstats/src/server/api/root.ts).
+  - Added Nginx lockdown configs and audit tools ([stage3-nginx-cutover.conf](file:///home/jxsig/projects/ixstats/scripts/ops/stage3-nginx-cutover.conf), [verify-stage3-cutover.ts](file:///home/jxsig/projects/ixstats/scripts/ops/verify-stage3-cutover.ts), [wikios-mw-surface.sh](file:///home/jxsig/projects/ixstats/scripts/audit/wikios-mw-surface.sh)).
+
+
+
+### Component Architecture Consolidation & MyCountry 4-Tier Subsystem Modularization (`systems.mycountry` v5, `design.facet` v2, `systems.halo` v4, `systems.builder` v3)
+
+- **Comprehensive Component Topology Consolidation**:
+  - Restructured `src/components/` from 54 legacy directories into a streamlined, high-cohesion domain topology.
+  - Eliminated 16 obsolete shim/empty directories (`defense`, `diplomacy`, `economy`, `government`, `intelligence`, `DynamicIsland`, `countries`, `atomic`, `facet-ui`, `charts`, `shared`, `magicui`, `notifications`, `profile`, `legal`, `modals`).
+  - Consolidated 12 loose root component files into canonical UI, Navigation, and WikiOS modules.
+
+- **MyCountry 4-Tier Modular Architecture (`systems.mycountry` v5)**:
+  - **`shell/`**: Co-located executive command center surfaces (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta`).
+  - **`shared/`**: Universal reusable component foundation (`cards/`, `banners/`, `headers/`, `context/`, `metrics/`, `modals/`, `primitives/`, `tabs/`).
+  - **`domains/`**: 6 integrated simulation pillars (`defense/`, `diplomacy/`, `economy/`, `government/`, `intelligence/`, `geography/`).
+  - **`dossier/`**: Country dossiers, public factbooks, and Wiki infobox views.
+
+- **Facet Core UI Design System Convergence (`design.facet` v2)**:
+  - Unified all atomic tokens, glass containers, charts, interactive controls, and shared feedback states in `src/components/ui/`.
+  - Added tactile press feedback physics (`:active:scale-[0.98]`), spring transition bounds, and cursor pointer states across primary button and control primitives.
+
+- **Brand & System Renames (`systems.halo` v4, `systems.builder` v3)**:
+  - Completed platform-wide brand transition from Dynamic Island to canonical Halo pill architecture (`src/components/halo/`).
+  - Consolidated statecraft and tax builders under `src/components/mycountry/domains/government/builder` and `tax/`.
+
+- **Verification**:
+  - 100% typecheck clean across all 4 sub-projects (`typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db`).
+  - 0 broken component imports across 2,900+ source files.
+  - Jest component unit tests passing green.
+
+### Global Codebase Typographic Harmonization & Optical Scale Standardization (Phases 1–4)
+
+- **Master Specification & Design Foundations ([2026-08-18-codebase-typography-design.md](file:///home/jxsig/projects/ixstats/docs/superpowers/specs/2026-08-18-codebase-typography-design.md))**:
+  - Established a 4-tier semantic type scale, optical tracking laws, discrete subpixel scale, badge styling rules, and domain-phased rollout plan.
+  - Standardized WWDC Apple Optical Typography laws across all platform surfaces: positive tracking (`tracking-wider`, $+0.05\text{em}$, `uppercase`, `rounded-full`) on microcopy/eyebrows $\le 11\text{px}$, and negative tracking (`tracking-tight`, $-0.015\text{em}$ to $-0.025\text{em}$) on display titles $\ge 14\text{px}$.
+  - Restrained font weight hierarchy to `font-normal` (400) body copy, `font-semibold` (600) titles/subheaders, and `font-bold` (700) hero numerals and display titles, eliminating all 45+ instances of `font-black` (900) across product UI components.
+  - Enforced `tabular-nums` (with `font-mono` where appropriate) on 100% of telemetry numbers, treasury balances, GDP statistics, match scores, countdown timers, and leaderboard standings to eliminate column jitter.
+
+- **Phase 1: MyCountry Executive Suite, Economy & Government (23 Components)**:
+  - **Executive Suite**: Aligned [ExecutiveAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/ExecutiveAgenda.tsx), [CommitmentsAgendaRail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommitmentsAgendaRail.tsx), [CommandBriefingHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandBriefingHero.tsx), [IssueDetailBrief.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/IssueDetailBrief.tsx), [DomainContextRail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DomainContextRail.tsx), [DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DrillSheets.tsx), and [SmartStack.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/SmartStack.tsx).
+  - **Economy & Fiscal Policy Consoles**: Aligned [FiscalPolicyConsole.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/FiscalPolicyConsole.tsx), [TaxBreakdownConsole.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/TaxBreakdownConsole.tsx), [ModernMacroeconomicsDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/ModernMacroeconomicsDashboard.tsx), [LaborMarketDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/LaborMarketDashboard.tsx), [FiscalHealthDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/FiscalHealthDashboard.tsx), and [MacroeconomicStabilityDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/economy/MacroeconomicStabilityDashboard.tsx).
+  - **Government & Politics Hubs**: Aligned [GovernmentDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/government/GovernmentDashboard.tsx), [GovernmentSpendingDashboard.tsx](file:///home/jxsig/projects/ixstats/src/components/government/GovernmentSpendingDashboard.tsx), [PoliticsDrillDown.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/PoliticsDrillDown.tsx), and [GovernmentSidebarWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/sidebar-widgets/GovernmentSidebarWidget.tsx).
+  - **Metric Modals**: Aligned [GdpMetricDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/GdpMetricDetailsModal.tsx), [DebtMetricDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/DebtMetricDetailsModal.tsx), and [DemographicsHealthModal.tsx](file:///home/jxsig/projects/ixstats/src/components/modals/metric-details/DemographicsHealthModal.tsx).
+
+- **Phase 2: IxVault & Cards System (28 Components)**:
+  - **IxVault Marketplace & Store**: Aligned [VaultAuctionsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultAuctionsTab.tsx), [VaultTradingTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultTradingTab.tsx), [VaultStoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [AuctionCardItem.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/AuctionCardItem.tsx), [CreateAuctionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), and [StorePurchaseDialog.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx).
+  - **Vault Dashboard & Inventory**: Aligned [VaultNetWorthCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/dashboard/VaultNetWorthCard.tsx), [VaultYieldProjectionsCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), [InventorySidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/InventorySidebarContent.tsx), [CollectionsSidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/CollectionsSidebarContent.tsx), [GallerySidebarContent.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/cards/GallerySidebarContent.tsx), [ImportVerifyStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportConfirmStep.tsx).
+  - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/pack-opening/PackHolographicCover.tsx), [CraftingWorkbench.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/crafting/CraftingWorkbench.tsx), and [CraftingAnimation.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/crafting/CraftingAnimation.tsx).
+
+- **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
+  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/AccountCreationModal.tsx).
+  - **Sports Subsystem**: Aligned [Scoreboard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/scoreboards/Scoreboard1.tsx), [PlayerMatchup1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-matchups/PlayerMatchup1.tsx), [PlayerStats1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-stats/PlayerStats1.tsx), [MatchCommentary.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/MatchCommentary.tsx), [TeamLineup1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/team-lineups/TeamLineup1.tsx), [MatchSchedule1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/match-schedules/MatchSchedule1.tsx), [PlayerCard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-cards/PlayerCard1.tsx), [Standings1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/standings/Standings1.tsx), and [LatestResults1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/latest-results/LatestResults1.tsx).
+  - **MyLeague**: Aligned [MatchDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchDetailModal.tsx), [TeamRosterModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/TeamRosterModal.tsx), and [MatchTickerSim.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchTickerSim.tsx).
+  - **Unified Messaging**: Aligned [MessagesChatPanel.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesChatPanel.tsx), [MessagesConversationCard.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesConversationCard.tsx), and [MessagesFolderNav.tsx](file:///home/jxsig/projects/ixstats/src/components/messages/MessagesFolderNav.tsx).
+
+- **Phase 4: Wiki-OS, Achievements, Diplomatic Network & Subsystems (12 Components)**:
+  - **Wiki-OS & MediaWiki**: Aligned [ArticleRenderer.tsx](file:///home/jxsig/projects/ixstats/src/components/wiki-os/reader/ArticleRenderer.tsx) and [RepositoryWelcomeModal.tsx](file:///home/jxsig/projects/ixstats/src/components/mediawiki/commons/RepositoryWelcomeModal.tsx).
+  - **Diplomatic Network**: Aligned [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
+  - **Achievements & WikiLore**: Aligned [WikiLoreDayModal.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/WikiLoreDayModal.tsx), [WikiLoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/WikiLoreTab.tsx), [AllAchievementsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx), [ShowcaseTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/ShowcaseTab.tsx), [QuestPathCard.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/QuestPathCard.tsx), and [ForumRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/ForumRibbonRack.tsx).
+  - **Defense & MyClub**: Aligned [ReadinessOverviewCard.tsx](file:///home/jxsig/projects/ixstats/src/components/defense/command/ReadinessOverviewCard.tsx) and [ClubResultsCard.tsx](file:///home/jxsig/projects/ixstats/src/components/myclub/ClubResultsCard.tsx).
+
+- **Verification**:
+  - **0 ESLint errors** and clean Prettier formatting across all 80+ modified components.
+  - **0 product occurrences** of `font-black` remaining repository-wide.
+
+### Dark & Light Mode Color System Harmonization & Dynamic Island Apple Glass Physics
+
+- **Dark Mode Elevation & Color System Harmonization (Approach A)**:
+  - Standardized the 4-tier dark elevation hierarchy across `src/styles/themes.css` and `src/styles/facet/` (`#090a0f` obsidian canvas, `#12141a` base cards, `#1a1d26` controls, `#222634` floating surface).
+  - High-luminance domain accents tuned for dark mode readability (amber-400, blue-400, indigo-400, emerald-400, red-400, purple-400, sky-400, orange-400).
+  - Modernized high-traffic components to semantic design tokens:
+    - [src/components/ui/select.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
+    - [src/components/profile/WikiPreferencesCard.tsx](file:///home/jxsig/projects/ixstats/src/components/profile/WikiPreferencesCard.tsx): Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
+    - Vault modals & marketplace: [DailyBonusWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/DailyBonusWidget.tsx), [ImportNationStep.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/VaultParticleExplosionModal.tsx).
+    - ThinkPages composer & social cards: [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), [MentionMenuPortal.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/MentionMenuPortal.tsx), [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx).
+    - Maps & navigation HUDs: [TourHUD.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/components/TourHUD.tsx), [NotificationsView.tsx](file:///home/jxsig/projects/ixstats/src/components/DynamicIsland/NotificationsView.tsx), [MatchDetailModal.tsx](file:///home/jxsig/projects/ixstats/src/components/myleague/MatchDetailModal.tsx), [DevCountryViewToolbar.tsx](file:///home/jxsig/projects/ixstats/src/components/dev/DevCountryViewToolbar.tsx).
+    - Sports widgets: [PlayerCard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-cards/PlayerCard1.tsx), [Scoreboard1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/scoreboards/Scoreboard1.tsx), [Standings1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/standings/Standings1.tsx), [LatestResults1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/latest-results/LatestResults1.tsx), [PlayerStats1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/player-stats/PlayerStats1.tsx), [MatchSchedule1.tsx](file:///home/jxsig/projects/ixstats/src/components/sports/match-schedules/MatchSchedule1.tsx).
+- **Light Mode & Base Theme Harmonization (Apple Design Standards)**:
+  - Fixed inverted light mode text contrast scale in [src/styles/themes.css](file:///home/jxsig/projects/ixstats/src/styles/themes.css): Primary text `#09090b` (zinc-950, **19.2:1 contrast**), secondary text `#52525b` (zinc-600, **6.8:1**), muted text `#71717a` (zinc-500, **4.6:1 WCAG AA**).
+  - Standardized 4-tier light elevation: `#f8fafc` porcelain canvas, `#ffffff` card surfaces (`rgba(255, 255, 255, 0.85)` frosted glass with `rgba(0, 0, 0, 0.08)` border and `inset 0 1px 0 rgba(255, 255, 255, 1)` specular light), `#f1f5f9` recessed controls, `rgba(255, 255, 255, 0.95)` popover surfaces.
+  - Saturated light domain accents in [src/styles/facet/tokens.css](file:///home/jxsig/projects/ixstats/src/styles/facet/tokens.css) ($\ge 5:1$ contrast on light surfaces).
+  - Updated `.facet-material-satin`, `.facet-hierarchy-parent`, and `.facet-hierarchy-child` in `src/styles/facet/` with specular top highlights and visible boundaries.
+  - Sanitized [src/styles/light-mode-overrides.css](file:///home/jxsig/projects/ixstats/src/styles/light-mode-overrides.css): Purged all dark-mode polluting rules (`.dark [class*="bg-card/95"]`, `.dark .command-palette-dropdown` injecting `#1f2937`) and fragile `!important` monkey patches.
+  - Added tactile button press physics (`active:scale-[0.98]`) to `.btn-primary` and `.btn-secondary` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css).
+- **Dynamic Island / Halo Apple Acrylic Shell & Interactive Material Physics**:
+  - Replaced fragile inline gradient styles with `.dynamic-island-shell` in [src/styles/components.css](file:///home/jxsig/projects/ixstats/src/styles/components.css), eliminating Framer Motion layout morph interpolation bugs.
+  - Implemented Apple HIG dual-state translucency & interactive material physics:
+    - **Resting state**: Translucent acrylic (`65%/48%` light, `58%/48%` dark) with `blur(20px) saturate(180%)`, allowing background textures, auroras, and maps to blur through.
+    - **Interactive state** (`:hover`, `:focus-within`, `:active`, `[data-expanded="true"]`): Solid frosted acrylic (`94%/88%` light, `92%/95%` dark) with sharpened specular rim lights, `blur(28px) saturate(200%)`, and elevated shadows.
+    - Fluid Apple cubic-bezier timing curve (`cubic-bezier(0.16, 1, 0.3, 1)` over `350ms`).
+  - Updated [src/components/ui/dynamic-island.tsx](file:///home/jxsig/projects/ixstats/src/components/ui/dynamic-island.tsx) and [src/components/maps/core/MapDynamicIsland.tsx](file:///home/jxsig/projects/ixstats/src/components/maps/core/MapDynamicIsland.tsx) to attach `.dynamic-island-shell` and sync `data-expanded`.
+- **Verification**:
+  - Ran Jest unit test suite: **38 / 38 test suites passed (331 tests)**.
+
+- **Subproject Typechecks Verification (`typecheck:db`, `typecheck:trpc`, `typecheck:server`, `typecheck:ui`)**:
+  - Resolved all compiler errors across the split subproject typecheck suites, bringing `bun run typecheck` to a clean exit code `0` with 0 errors across the entire codebase.
+- **MyCountry & Executive Architecture**:
+  - Aligned tRPC procedure references to canonical domain routers (`api.mycountry.getCanonFeed`, `api.meetings.recordDecision`, `api.countryGeo.populateFromWiki`).
+  - Standardized mutation payloads in `FiscalPolicyConsole.tsx`, `TradeCommerceConsole.tsx`, and `MeetingDetailModal.tsx`.
+  - Added type-safety guards for drill-down goals, intents, and optional economy configuration/labor metrics in `EconomyDrillDown.tsx`, `CommandBriefingHero.tsx`, `ExecutiveAgenda.tsx`, and `ExecutiveOpportunityHero.tsx`.
+- **Builder & Maps Subsystems**:
+  - Implemented `CrossBuilderSynergyService.ts` to provide typed integration between `EconomyBuilder` and `GovernmentBuilder` states.
+  - Aligned MapLibre layer event callback parameter signatures in `useCountryMapEmbedLayers.ts`.
+  - Fixed `totalGdp` access in `CountryInfoContent.tsx` and normalized projection helper imports in `projectionTransition.ts`.
+- **Admin, Notifications & Labs**:
+  - Aligned `TestSuitePanel.tsx` with canonical `useNotificationStore` and `NotificationPriority`/`NotificationSeverity` type definitions.
+  - Fixed `useBulkFlagCache` imports across admin panels and country exploration views.
+  - Enhanced Onoma Labs type definitions for dictionary save promises, glyph arrays, and lexicon UI components.
+- **WikiOS & Shared UI Primitives**:
+  - Aligned `NativeLoreCanvasModal.tsx` with canonical `WikiVisualEditor` component props.
+  - Added `xs` size variant to `Button` component in `src/components/ui/button.tsx`.
+  - Added canonical hook re-export in `src/hooks/useIxMedia.ts`.
+
+### Repository Optimization & Codebase Pruning (/ponytail)
+
+- **Native Web API Replacements & Dependency Pruning**:
+  - Replaced `react-intersection-observer` with native `IntersectionObserver` in `WikiSearch.tsx`.
+  - Replaced `react-use-measure` with native `ResizeObserver` in `SwipeableRow.tsx`.
+  - Replaced `react-dropzone` with native HTML5 drag-and-drop & `<input type="file">` in `UploadStep.tsx`.
+  - Replaced `react-wavify` with native SVG wave markup and gradient styling in `CountriesPageHeader.tsx`.
+  - Replaced `canvas-confetti` and `@types/canvas-confetti` with a native 2D canvas particle runner in `confetti.tsx`.
+  - Pruned all 6 packages from `package.json` and synchronized `bun.lock`.
+  - Deleted `src/components/ui/icons/` (38 files, ~3,500 lines) in favor of standard `lucide-react` icons.
+- **Context Architecture Consolidation**:
+  - Merged bifurcated `src/contexts/` into canonical `src/context/` (`ExecutiveNotificationContext`, `IxTimeContext`) and deleted `src/contexts/`.
+- **Multi-Engine Notification Deconstruction**:
+  - Pruned 10 speculative files (~4,800 lines) of multi-engine notification wrappers, store duplicates, and telemetry pollers in `src/services/` and `src/hooks/` (`GlobalNotificationBridge`, `GlobalNotificationStore`, `NotificationOrchestrator`, `ContextIntelligenceEngine`, `DeliveryHandlers`, `DiplomaticNotificationService`, `useUnifiedNotifications`, `GlobalNotificationSystem`, `LiveDataIntegration`).
+  - Anchored notification production architecture to `useNotificationStore` + `useToastQueueStore` + `useNotify`.
+- **Stylesheets Modernization (`src/styles/`)**:
+  - Deleted dead CIA-style intelligence presentation stylesheet `src/styles/diplomatic-intelligence.css` (371 lines).
+  - Deleted mislabeled dead stylesheet `src/styles/aurora-backgrounds.css` (46 lines).
+  - Renamed legacy design entrypoint `glass-refraction.css` → `facet.css` and updated `@import "./facet.css"` in `globals.css`.
+  - Streamlined `compact-mode.css` by removing hazardous global Tailwind utility overrides (`.p-4`, `.gap-4`, `.text-sm`).
+  - Fixed syntax parser issues on Line 1 of `globals.css`.
+- **Types Consolidation (`src/types/`)**:
+  - Merged `src/types/validation/government.ts` directly into `src/types/government.ts`.
+  - Merged `src/types/validation/tax.ts` directly into `src/types/tax-system.ts`.
+  - Deleted `src/types/validation/` directory and updated all router and test call sites.
+  - Streamlined `src/types/unified-notifications.ts` from 441 lines to active canonical types, removing ~380 lines of unused ML personalization, suppression rules, and battery telemetry.
+- **Server Architecture Optimization (`src/server/`)**:
+  - Domain-split flat `intelligence.ts` router monolith (631 lines) into modular sub-routers (`feed.ts`, `templates.ts`, `briefings.ts`) recombined with `mergeRouters` in `src/server/api/routers/intelligence/index.ts`, deleting the flat monolith.
+  - Migrated `EconomicModel`, `EconomicYearData`, and `PolicyEffect` to canonical `src/types/economics.ts`; deleted `src/server/db/schema.ts` and directory `src/server/db/`.
+  - Pruned dead 50-line Next.js Pages API route handler from `src/server/websocket-server.ts`.
+  - Corrected `websocket:dev` and `websocket:server` scripts in `package.json`.
+- **Net Cumulative Impact**:
+  - **~10,200+ net lines of dead code and structural bloat eliminated**.
+  - **6 NPM packages removed**.
+  - **714 / 714 unit tests passing** across the platform.
+
+### Refactored & Consolidated (`src/lib/` Phase 8 Caching, System & Utils Package Partitioning)
+
+- **Pure Root Architecture & System Isolation (/ponytail)**:
+  - **Caching & Rate Limiting Subsystem (`src/lib/cache/`)**: Consolidated universal Redis/memory cache client, token-bucket rate limiter, multi-tier advanced cache with stampede protection, outbound HTTP cache, and tRPC query response middleware into `src/lib/cache/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/cache/index.ts)).
+  - **System, Performance & Telemetry Guards (`src/lib/system/`)**: Consolidated structured JSON logger, slow query instrumentation monitor, system boot validation checks, database connection pool optimization, production compression/headers, V8 memory configurations, process error handlers, exponential retry wrappers, standalone subdomain detectors, browser localStorage concurrency mutexes, and consent telemetry helpers into `src/lib/system/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/system/index.ts)).
+  - **Universal Formatting & Data Utilities (`src/lib/utils/`)**: Consolidated compact number/currency formatters, locale date utilities, Recharts canvas utilities, time-series chart data transformers, CSV/PDF report exporter with dynamic imports, HTML/DOMPurify sanitizers, markdown text formatters, and URL/slug generators into `src/lib/utils/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/utils/index.ts)).
+  - **Minimalist `src/lib/` Root (14 Files Only)**:
+    - **Core Architecture**: `app-error.ts`, `prisma-error.ts`, `buildVersion.ts`, `buildVersion.generated.ts`, `base-path.ts`, `enums.ts`.
+    - **Type Normalization**: `type-guards.ts`, `interface-standardizer.ts`.
+    - **Platform Config**: `config-service.ts`, `navigation-config.ts`, `event-bus.ts`, `gameplay-flags.ts`, `gameplay-flags.test.ts`, `README.md`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (603/603 full-platform tests passing across 53 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 7 IxCards & Pack Engine Isolation)
+
+- **IxCards System & Pack Architecture Isolation (/ponytail)**:
+  - **Cards Core Subsystem (`src/lib/cards/`)**: Consolidated 12 card subsystem files into `src/lib/cards/`:
+    - `display-utils.ts`: Card visual rendering, rarity formatting, badge generators, and frame shaders.
+    - `enums.ts`: Card types, rarities, foil types, trade statuses, and card condition constants.
+    - `general-settings.ts`: Global cards system configuration, pack generation limits, and season settings.
+    - `image-presets.ts`: Card aspect ratios, frame templates, and backdrop blur filters.
+    - `pack-service.ts`: Pack purchase workflow, card rolling, pity system mechanics, and drop tables.
+    - `card-service.ts`: Card minting, instance generation, inventory queries, and upgrade mutations.
+    - `stat-config.ts`: Card combat and economic stat configurations.
+    - `valuation.ts`: Card market pricing algorithm, rarity floors, and NS import valuation models.
+    - `xp-utils.ts`: Card XP progression, level curves, and battle experience calculators.
+    - `season.ts`: Active card season cycle detector and seasonal reset configuration.
+    - `pack-opening-service.ts`: Pack explosion animations, card reveal particle patterns, and sound triggers.
+    - `ns-image-proxy.ts`: NationStates card artwork and flag proxy URL signing.
+    - Master barrel export updated in [`src/lib/cards/index.ts`](file:///home/jxsig/projects/ixstats/src/lib/cards/index.ts).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 50+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/lib/`, `src/types/`, and `scripts/` to import from `~/lib/cards`, completely deleting all 12 legacy root files from `src/lib/`.
+  - **Zero Card Files in Root Lib**: All card-related logic is completely encapsulated within `src/lib/cards/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (563/563 full-platform tests passing across 50 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 6 Wiki, Country-Geo, Auth & AI Isolation)
+
+- **Domain Isolation & Root Library Completion (/ponytail)**:
+  - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
+  - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/country-geo/index.ts)).
+  - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/auth/index.ts)).
+  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ai/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 60+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `src/tests/`, and `proxy.ts` to import directly from `~/lib/wiki`, `~/lib/country-geo`, `~/lib/auth`, and `~/lib/ai`, completely deleting 11 legacy root files from `src/lib/`.
+  - **Root `src/lib/` Purity**: Successfully consolidated and partitioned all domain-specific code into dedicated packages; only global core primitives (`utils.ts`, `logger.ts`, `cache.ts`, `rate-limiter.ts`, `event-bus.ts`, `app-error.ts`, `prisma-error.ts`, `base-path.ts`, formatting, math, and system configurations) remain in the root of `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (558/558 full-platform tests passing across 49 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 5 Media, WebSockets, Themes, Vault & Activity Isolation)
+
+- **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:
+  - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/media/index.ts)).
+  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/websocket/index.ts)).
+  - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/themes/index.ts)).
+  - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/vault/index.ts)).
+  - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/activity/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 80+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/media`, `~/lib/websocket`, `~/lib/themes`, `~/lib/vault`, and `~/lib/activity`, completely deleting 26 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (520/520 full-platform tests passing across 43 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 4 Builder, Policies, Issues, Lorewards, Logging & IxTime Isolation)
+
+- **Systems, Builders & Simulation Engine Isolation (/ponytail)**:
+  - **Builder & Atomic State Package (`src/lib/builder/`)**: Consolidated atomic builder state manager, client calculations, builder theme utilities, unified atomic state coordinator, and MediaWiki dossier parser into `src/lib/builder/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/builder/index.ts)).
+  - **Policies & Reform Engine Package (`src/lib/policies/`)**: Consolidated policy registry, policy recommender, maintenance cron worker, and policy effects synchronizer into `src/lib/policies/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/policies/index.ts)).
+  - **National Issues Simulation Engine Package (`src/lib/national-issues/`)**: Consolidated national issues configuration store, core evaluation/generation engine, choice consequence applicators, generation cron scheduler, geographical neighbor discovery, and grounded context snapshot builders into `src/lib/national-issues/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/national-issues/index.ts)).
+  - **Lorewards & Card Analytics Package (`src/lib/lorewards/`)**: Consolidated Order of Lore wikitext parser, scoring calculator, synchronization worker, constants, card generation cron, and card market value updater into `src/lib/lorewards/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/lorewards/index.ts)).
+  - **Logging & Audit Streams Package (`src/lib/logging/`)**: Consolidated user activity logger, error logger, user action logging middleware, activity analytics aggregators, and browser console capture into `src/lib/logging/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/logging/index.ts)).
+  - **IxTime Chronometry Package (`src/lib/ixtime/`)**: Consolidated IxTime epoch converter, time synchronization service, and sub-millisecond accuracy verifier into `src/lib/ixtime/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/ixtime/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated ~60 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/builder`, `~/lib/policies`, `~/lib/national-issues`, `~/lib/lorewards`, `~/lib/logging`, and `~/lib/ixtime`, completely deleting 26 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (504/504 full-platform tests passing across 39 test suites).
+
+### Refactored & Consolidated (`src/lib/` Phase 3 Economy, Government, Flags & Maps Isolation)
+
+- **Domain & Geospatial Package Isolation (/ponytail)**:
+  - **Flags & SVG Processing Package (`src/lib/flags/`)**: Consolidated country flag resolution, palette extraction, flag cache, unified flag service, Commons flag importer, PNG-to-SVG converter, SVG coordinate configuration, and SVG parser into `src/lib/flags/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/flags/index.ts)).
+  - **Government & Politics Package (`src/lib/government/`)**: Consolidated atomic government component data, evaluation utilities, builder validation, component effects, spending defaults, component synergy, election simulation, election cron, politics drift cron, and approval ratings into `src/lib/government/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/government/index.ts)).
+  - **Economy & Tax Simulation Package (`src/lib/economy/`)**: Consolidated atomic economic data, client/server integration engines, atomic tax evaluation, unified tax integration, calculation groups, modeling engine, data mapper, factory presets, fiscal calculations, historical transformers, tax builder validation, tax calculator, suggestions engine, budget vault calculator, trade expiry cron, passive income distribution cron, auction completion cron, auction service, transport generators, and resource generators into `src/lib/economy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/economy/index.ts)).
+  - **Maps & Geospatial Intelligence Package (`src/lib/maps/`)**: Consolidated map configurations, conflict detector, IndexedDB caching, conversion pipeline, point-in-polygon queries, real-time update bus, geo utilities, geospatial analytics, geodesic mathematics, PostGIS geometry validation, GeoJSON compression, border editor, border history as-of queries, border tracing, shared vertex topology, topology engine, territory brush, procedural province generation, great-circle route geometry, route network graphs, story pin enrichment, story pin icons, overlay metrics, overlay registry, overlay types, and elevation zone configs into `src/lib/maps/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/maps/index.ts)).
+  - **Clean Codebase-Wide Call Site Migration**: Migrated 200+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `server.mjs`, and `scripts/` to import directly from `~/lib/flags`, `~/lib/government`, `~/lib/economy`, and `~/lib/maps`, completely deleting 47 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all unit test suites (90/90 Phase 3 tests and 113/113 full-platform tests passing).
+
+### Refactored & Consolidated (`src/lib/` Phase 2 Simulation & Core Engine Isolation)
+
+- **Simulation & Core Engine Package Isolation (/ponytail)**:
+  - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/statecraft/index.ts)).
+  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/military/index.ts)).
+  - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/intelligence/index.ts)).
+  - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/index.ts)).
+  - **Clean Call Site Migration**: Migrated all ~65 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, and `src/tests/` to import directly from `~/lib/statecraft`, `~/lib/military`, `~/lib/intelligence`, and `~/lib/diplomacy`, completely deleting 32 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all simulation and engine test suites (42/42 tests passing).
+
+### Refactored & Consolidated (`src/lib/` Phase 1 Domain Package Isolation)
+
+- **Domain Package Isolation & Clean Library Architecture (/ponytail)**:
+  - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/achievements/index.ts)).
+  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/discord/index.ts)).
+  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/nationstates/index.ts)).
+  - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/notifications/index.ts)).
+  - **Clean Full-Codebase Call Site Migration**: Migrated all ~80 import call sites across components, pages, tRPC routers, server cron jobs, and scripts to import directly from domain packages (`~/lib/achievements`, `~/lib/discord`, `~/lib/nationstates`, `~/lib/notifications`), completely removing 22 legacy root files from `src/lib/`.
+  - **Verification**: Verified 100% test pass rate across all migrated domain suites (stability guardrails, discord format, poll payload, achievements scaling, and wiki pipeline).
+
+### Refactored & Consolidated (Wiki Parser Unification & Package Isolation — `src/lib/wiki/`)
+
+- **Wiki Parser Architecture Consolidation & `src/lib/wiki/` Package Migration**:
+  - **Dedicated Domain Package (`src/lib/wiki/`)**: Consolidated all 19 MediaWiki and wiki parsers, bridges, and domain mappers from the flat `src/lib/` root into a structured `src/lib/wiki/` package with clean internal relative imports and a master barrel export ([index.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/index.ts)).
+  - **Legacy Monolith Elimination**: Replaced the 2,556-line monolithic legacy `mediawiki-service.ts` with a lightweight, ~200-line compatibility adapter in [legacy-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/legacy-service.ts) delegating directly to [bridge.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/bridge.ts) and [unified-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/unified-parser.ts).
+  - **Search Service Streamlining**: Reduced `wiki-search-service.ts` from 1,808 lines down to ~170 lines in [search-service.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/search-service.ts), eliminating dead duplicate scraping and infobox parsing routines.
+  - **Deleted Redundant Client Copy**: Removed `src/lib/wiki-search-service.client.ts` and migrated [country-flag-service.ts](file:///home/jxsig/projects/ixstats/src/lib/country-flag-service.ts) to the core search service.
+  - **Canonical Plaintext Cleaning**: Centralized all plaintext wikitext stripping into `cleanWikiMarkup` / `cleanWikitextExcerpt` in [wikitext-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/wikitext-parser.ts), eliminating 6 ad-hoc duplicate regex stripping routines across `content-extractor.ts`, `dossier-parser.tsx`, and `services/wiki-cache-service.ts`.
+  - **Brace-Depth Infobox & Coordinate Normalization**: Upgraded [infobox-mapper.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-mapper.ts) to delegate directly to [infobox-parser.ts](file:///home/jxsig/projects/ixstats/src/lib/wiki/infobox-parser.ts) for robust template nesting and coordinate extraction.
+  - **Full-Codebase Import Migration**: Migrated ~120 import call sites across `src/` (components, pages, tRPC routers, hooks, tests) and `scripts/` to import directly from `~/lib/wiki/...` or `~/lib/wiki`, completely removing the 19 legacy root files from `src/lib/`.
+  - **Unit Test Migration & Parity**: Moved infobox mapper tests to [src/lib/**tests**/wiki-infobox-mapper.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/wiki-infobox-mapper.test.ts); verified 100% test pass rate across all wiki test suites (61/61 tests passing).
+
+### Refactored & Added (Country Profile & Countries Directory Apple Design Redesign)
+
+- **Country Profile & Directory HIG Redesign (/apple-design)**:
+  - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
+  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers ([countryDataTransformers.ts](file:///home/jxsig/projects/ixstats/src/app/countries/[slug]/_utils/countryDataTransformers.ts)).
+  - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](file:///home/jxsig/projects/ixstats/src/app/countries/_components/CountriesFocusGridModular.tsx), and [CountryFocusCard.tsx](file:///home/jxsig/projects/ixstats/src/components/countries/CountryFocusCard.tsx) with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
+  - **Design Specs**: Documented full architecture spec in [2026-08-10-countries-apple-design-redesign.md](file:///home/jxsig/projects/ixstats/docs/specs/2026-08-10-countries-apple-design-redesign.md).
+
+### Refactored & Modularized (IxCards & IxVault Architecture Decomposition)
+
+- **Monolithic Vault Component Decomposition**:
+  - **Cards Section Modularization**: Decomposed [VaultCardsSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultCardsSection.tsx) into dedicated sub-components under `src/components/vault/sections/cards/` (`CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle`).
+  - **Dashboard Section Modularization**: Decomposed [VaultDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/VaultDashboardSection.tsx) into focused modules under `src/components/vault/sections/dashboard/`.
+  - **Marketplace & Auctions Decomposition**: Decomposed [VaultStoreTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultStoreTab.tsx) and [VaultAuctionsTab.tsx](file:///home/jxsig/projects/ixstats/src/components/vault/sections/marketplace/VaultAuctionsTab.tsx) into modular sub-components under `sections/marketplace/store/` and `sections/marketplace/auctions/`.
+  - **Card Modal Decomposition**: Modularized [CardDetailsModal.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/CardDetailsModal.tsx) into `src/components/cards/display/modal/` (`CardHeader`, `CardImageStage`, `CardStatsPanel`, `CardActions`).
+  - **Vault Service Modularization**: Split [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) into domain services under `src/lib/vault/` (`vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts`).
+  - **NationStates Integration**: Added [NSCardSettingsCard.tsx](file:///home/jxsig/projects/ixstats/src/app/settings/_components/NSCardSettingsCard.tsx) settings control, [NationStatesAttribution.tsx](file:///home/jxsig/projects/ixstats/src/components/cards/display/NationStatesAttribution.tsx) attribution widget, image proxy route ([proxy-ns-image/route.ts](file:///home/jxsig/projects/ixstats/src/app/api/proxy-ns-image/route.ts)), and updated [ns-integration.md](file:///home/jxsig/projects/ixstats/docs/systems/ns-integration.md).
+
+### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
+
+- **Achievements Header Streamlining (`/achievements`)**:
+  - **Visual Hierarchy Refinement**: Simplified [page.tsx](file:///home/jxsig/projects/ixstats/src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/FloatingRibbonRack.tsx) and [ForumRibbonRack.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/ForumRibbonRack.tsx) for displaying achievement ribbons across user profiles and forum embeds.
+  - **Documentation**: Updated [src/app/achievements/README.md](file:///home/jxsig/projects/ixstats/src/app/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
+
+### Refactored (Thinkpages Social Knowledge Suite — Component Modularization & Architecture Audit)
+
+- **Thinkpages Monolith Decomposition & Architecture Audit**:
+  - **Decomposed Monolith Components**: Modularized large thinkpages components down into focused, high-performance domain sub-components under `src/components/thinkpages/post/`, `src/components/thinkpages/composer/`, `src/components/thinkpages/editor/`, and `src/components/thinkpages/account/`.
+    - `ThinkpagesPost.tsx`: Reduced from **2,247 lines → 227 lines** by extracting `<HeroPostView>` (383 lines), `<StandardPostView>` (594 lines), and `useThinkpagesPost` (457 lines).
+    - `GlassCanvasComposer.tsx`: Reduced from **1,438 lines → 422 lines** while preserving 100% of original UX, layout, CSS classes, spring animations, avatar account switcher dropdown, and portal modals by extracting `useGlassCanvasComposer` (545 lines), `ComposerAccountSwitcher` (132 lines), `ComposerLiveDataDrawer` (199 lines), `ComposerActionBar` (230 lines), and `ComposerPollModal` (262 lines).
+  - **Apple HIG Design Polish & Theme Compliance (/apple-design)**:
+    - **Icon-Only Theme-Compliant Wiki Button**: Converted the composer's Wiki popover trigger in [WikiAndStashPopovers.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/editor/WikiAndStashPopovers.tsx) to an icon-only button (`w-7 h-7 rounded-xl`) featuring the official Wikipedia `FaWikipediaW` icon, styled with the official IxWiki brand hex `#1d4e89` (from `public/images/ix-logo.svg`), and fixed input background/placeholder theme contrast for 100% legibility in light and dark modes.
+    - **Theme-Compliant Sports Embed Card**: Upgraded [SportsBulletinCard.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/SportsBulletinCard.tsx) with theme-adaptive glass surfaces (`bg-white/70 dark:bg-slate-900/60 backdrop-blur-2xl border-black/10 dark:border-white/10 shadow-xl`), clean right-aligned `Open League →` footer button, UFC-style rankings layout (`#<rank>` left badges + `▲`/`▼` delta pills + `Rank #<rank>` right markers per `/apple-design`), active press scale (`active:scale-[0.98]`), and optical typography (`tracking-tight font-bold`).
+    - `GlassPlateEditor.tsx`: Reduced from **1,767 lines → 484 lines** by extracting `useGlassPlateEditor` (554 lines), `EditorPlugins` (133 lines), `EditorToolbar` (154 lines), `WikiAndStashPopovers` (314 lines), `MentionMenuPortal` (94 lines), and `SlateSerializer` (242 lines).
+    - `AccountCreationModal.tsx`: Reduced from **894 lines → 584 lines** by extracting `AccountTypeSelector` (126 lines) and `AccountDetailsForm` (170 lines).
+    - `StandardPostView.tsx`: Further decomposed from 785 lines → 594 lines by extracting `RepostCard` (92 lines), `ReactionPills` (67 lines), and `ThreadReplies` (99 lines).
+  - **Domain Primitives Consolidation**: Built [ThinkpagesPostUtils.tsx](file:///home/jxsig/projects/ixstats/src/components/thinkpages/post/ThinkpagesPostUtils.tsx) (103 lines) to centralize shared domain constants (`ACCOUNT_TYPE_ICONS`, `ACCOUNT_TYPE_COLORS`, `REACTION_ICONS`, `DISCORD_EMOJI_REACTIONS`), helper functions (`getDiscordEmojiUrl`, `proxyDiscordUrl`), and the `<RelativeTimestamp>` component across 7 calling components, eliminating code duplication while preserving 100% type safety.
+  - **Zero Files > 700 Lines**: Guaranteed every single component across the entire Thinkpages social knowledge sharing suite strictly satisfies line count ceiling constraints (largest component is `PostActions.tsx` at 700 lines).
+  - **Documentation & Taxonomy**: Created complete file taxonomy map in [src/components/thinkpages/README.md](file:///home/jxsig/projects/ixstats/src/components/thinkpages/README.md).
+
+### Added & Refactored (Dashboard Hero, Trending Topics & Blurb Widget — /apple-design)
+
+- **Dashboard Hero Flag Background & Profile Link**:
+  - **Country Flag Background**: Added country flag image background to [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) with dark/light glass scrim overlays (`bg-cover bg-center`).
+  - **Country Profile Link**: Fixed country title link in hero card to cleanly navigate to `/countries/[slug]`.
+  - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
+
+- **Trending Topics & Intelligent Sports News Bulletin Parser**:
+  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
+  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
+  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
+  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
+  - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/activities/trending.ts)).
+
+- **Standalone 'Blurb of the Day' Apple Glass Widget**:
+  - **Widget Separation**: Unembedded `<BlurbSection />` from `TrendingSectionWidget.tsx` and placed it as a standalone Apple Glass Widget directly below `Trending Topics` in [UnifiedDashboardSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/UnifiedDashboardSection.tsx).
+  - **Apple Editorial Quote Vignette**: Redesigned daily prompt box in [BlurbSection.tsx](file:///home/jxsig/projects/ixstats/src/components/dashboard/sections/BlurbSection.tsx) into an Editorial Quote Vignette with a 3px glowing purple left accent border (`border-l-3 border-purple-500`), subtle `Quote` watermark, `MessageSquareQuote` header icon, and Apple CTA button (`Write Response →`).
+
+### Added & Refactored (IxCards & MyVault Systems)
+
+- **IxCards & MyVault System Overhaul (Plans 121–123)** (Bumped `IXVAULT_VERSION` from `1` → `2`):
+  - **Plan 121 — Domain Type Safety & Prisma Cast Removal**: Added nominal branded types (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) in [cards-display.ts](file:///home/jxsig/projects/ixstats/src/types/cards-display.ts), defined structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`), replaced loose `any` types on `CardInstance` and `CardCreationData`, and eliminated unsafe `(db as any)` Prisma casts across [vault-service.ts](file:///home/jxsig/projects/ixstats/src/lib/vault-service.ts) and [auction-service.ts](file:///home/jxsig/projects/ixstats/src/lib/auction-service.ts).
+  - **Plan 122 — Atomic Credit Ledger & Concurrency Locks**: Replaced read-then-update logic in `spendCredits` with atomic conditional queries (`credits: { gte: amount }`) inside database transactions, preventing double-spending and negative IxCredits balances under concurrent requests. Verified via a 10-parallel request concurrency stress test suite ([vault-concurrency.test.ts](file:///home/jxsig/projects/ixstats/src/lib/__tests__/vault-concurrency.test.ts)).
+  - **Plan 123 — Daily Streak UTC Boundary & Store Perk Caching**: Standardized daily login streak calculations onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), resolving streak loss/extension bugs across midnight boundaries. Added `userPerksCache` with a 5-minute TTL and 100-item query cap for `getPurchasedItemsEffects` performance.
 
 ### Added & Refactored (Global Leaderboards & MyCountry v2 Surface)
 
 - **Global Leaderboards Standalone Page & Metric Live-Wiring**:
   - **Standalone `/leaderboards` Page**: Replaced the redirect stub with a full standalone route ([page.tsx](file:///home/jxsig/projects/ixstats/src/app/leaderboards/page.tsx)) wrapped in `VaultSidebarLayout activeSection="leaderboards"`, featuring a global stats header banner and domain filter integration.
   - **Prisma Query Repair & Resilient Fallback Engine**: Updated `getCountryLeaderboard` in [country.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/achievements/country.ts) to eliminate silent Prisma validation crashes on non-nullable scalar fields (`currentPopulation`, `currentTotalGdp`, `economicVitality`, etc.). Added dynamic calculations and fallback logic for optional demographic and economic metrics (`totalWorkforce`, `populationDensity`, `literacyRate`, `lifeExpectancy`, `govRevenue`, `govSpending`, `urbanization`) so all 20 metric categories reliably return populated rankings across all 145 member nations.
-  - **Interactive Controls & Top-3 Podium Highlights**: Enhanced [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx) with search filtering by nation name, Domain Category tabs (*All*, *Economy & Wealth*, *Demographics & Labor*, *Quality & Governance*), row limit controls (10, 25, 50, 100), and top-3 Gold, Silver, and Bronze podium showcase cards.
+  - **Interactive Controls & Top-3 Podium Highlights**: Enhanced [LeaderboardTab.tsx](file:///home/jxsig/projects/ixstats/src/components/achievements/tabs/LeaderboardTab.tsx) with search filtering by nation name, Domain Category tabs (_All_, _Economy & Wealth_, _Demographics & Labor_, _Quality & Governance_), row limit controls (10, 25, 50, 100), and top-3 Gold, Silver, and Bronze podium showcase cards.
 
 - **MyCountry v2 Command Surface Architecture**:
   - **Single-Page Command Shell**: Built [V2CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandSurface.tsx), replacing legacy multi-tab WarRooms with a unified single-page command surface. Set as default surface in [MyCountryRouter.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx).
@@ -43,15 +398,33 @@ capability integer. Each release entry below lists which components advanced and
   - **Merged Recent Activity & Governance Ledger**: Embedded [CountryChangeLogTimeline.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/CountryChangeLogTimeline.tsx) as the integrated **Recent Activity & Governance Ledger** on `/countries/[slug]`, merging direct DB change logs with storyteller effects, diplomatic events, and responded national issues. Added interactive category filter selectors (`All Activity`, `Directives & Policies`, `Diplomacy`, `Elections & Cabinet`).
   - **Drill Sheet Navigation Bridge**: Added a **"Full Profile Depth →"** button on drill sheets linking directly to `/countries/[slug]#<kind>`.
 - **Phase 5 — Qualitative Relations & Player-Fiat Politics**:
-  - **Bands-Only Relations**: Created [relation-bands.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relation-bands.ts) mapping raw 0–100 scores to 5 qualitative standing badges (*Aligned*, *Cooperative*, *Neutral*, *Tense*, *Hostile*), refactoring [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx) to hide raw percentage math.
+  - **Bands-Only Relations**: Created [relation-bands.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relation-bands.ts) mapping raw 0–100 scores to 5 qualitative standing badges (_Aligned_, _Cooperative_, _Neutral_, _Tense_, _Hostile_), refactoring [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx) to hide raw percentage math.
   - **Executive Fiat Mode**: Updated [PoliticsDrillDown.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/PoliticsDrillDown.tsx) with an Executive Fiat banner confirming 100% authorial player control over cabinet, parties, legislature, and elections.
 - **Phase 6 — ThinkPages Narrative Summation Draft**:
   - **Auto-Generated Summation Drafts**: Created [intent-summation.ts](file:///home/jxsig/projects/ixstats/src/lib/intent/intent-summation.ts) to generate narrative prose posts upon directive completion.
   - **1-Click Share Confirmation Modal**: Built [ThinkPagesShareModal.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/ThinkPagesShareModal.tsx) for text editing and 1-click publishing or saving as draft. Added `getDraftPosts` tRPC procedure in [queries.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/thinkpages/posts/posts/queries.ts).
 - **Final v2 Bible Enhancements**:
-  - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (*Superpower Influence*, *Capital Imbalance*, *Resource Synergist*), mounting badges on [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
+  - **Relative-Development Asymmetry in Diplomacy**: Built [relative-development.ts](file:///home/jxsig/projects/ixstats/src/lib/diplomacy/relative-development.ts) to calculate economic tier ratios and asymmetric trade/tariff multipliers (_Superpower Influence_, _Capital Imbalance_, _Resource Synergist_), mounting badges on [EmbassyCard.tsx](file:///home/jxsig/projects/ixstats/src/components/diplomatic/embassy-network/EmbassyCard.tsx).
   - **Intent Branching Tree Visualizer**: Added `getTree` query procedure in [intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts) and built `<IntentBranchingTree />` inside `IntentDetail` in [V2DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2DrillSheets.tsx) rendering parent-child decision tree lineages.
   - **Opt-In Crisis Deliberation Flow**: Added a **"Convene Crisis Cabinet"** button to reactive briefing cards in [V2CommandBriefingHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2CommandBriefingHero.tsx), allowing leaders to launch emergency cabinet deliberation flows on urgent national events.
+- **Executive Home & Directives-Policy Unification (Plans 032–044 & V2 Refinements)**:
+  - **Directives (Frontend) / Statecraft (Backend) Architecture Alignment**: Standardized **Directives** as the universal player-facing brand across all UI components, dialogs, and navigation chips (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directive Guide"`), while reserving **Statecraft** for internal engine & simulation backend logic (`Statecraft Engine`, `statecraft-recon`, `deriveBrokers`, `assemble.ts`).
+  - **Executive Governance Telemetry Migration**: Built a translucent Apple-style **Executive Governance Telemetry Strip** directly into [StandingBands.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/StandingBands.tsx) displaying live Approval rating (`68% Approval`), Stability index (`78% Stability`), and Civil Capacity remaining (`85% Capacity`). Streamlined the agenda header in [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx) by removing redundant bar complications.
+  - **Interactive Territory & Cartography Widget**: Brought MapLibre GL vector map embed into V2 as `<TerritoryMapWidget />` inside the right sidebar of [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx) with a full-bleed edge-to-edge canvas (`height="h-60"`) and hover-activated floating glass badges (`Open Maps` on top-left, `Map Editor` on top-right).
+  - **Priority Issues Top-of-List Sorting**: Priority Issues (`statusLabel === "PRIORITY ISSUE"`, critical/high severity or urgency > 70) now dynamically sort to the top of the horizon event feed in [V2MyAgenda.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2MyAgenda.tsx), [useNationalIssues.ts](file:///home/jxsig/projects/ixstats/src/hooks/useNationalIssues.ts), [V2OpportunityHero.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2OpportunityHero.tsx), and [LegislativeIssues.tsx](file:///home/jxsig/projects/ixstats/src/components/executive/politics/LegislatureIssues.tsx).
+  - **Directives & Policy Unification**: Replaced standalone "Custom Policy" prompt with `"Tune Custom Directive"` in [IntentComposer.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/IntentComposer.tsx), integrating custom policy parameters (Name, Description, Intensity, Spending Allocation, Department) into the Directive tuning workflow. Expanded directive presets to 64 items across 8 categories with a telemetry-reactive "Surprise Me" prompt engine.
+  - **Unified Issue Resolution & Cabinet Meetings**: Added a 4-branch resolution strip in [V2IssueDetail.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2IssueDetail.tsx) (_Delegate_, _Resolve Brief_, _Set Cabinet Meeting_, _Make Directive_). Scheduling a Cabinet Meeting creates an agenda calendar event set for +7 IxTime days, unlocking deep analytical briefings.
+  - **Broker & Structural Response Tiers**: Added `broker_unlocked` and `structural_unlocked` tier types into [assemble.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent/assemble.ts) and [intent.ts](file:///home/jxsig/projects/ixstats/src/server/api/routers/intent.ts), enabling Power Broker alignment and specialized Government Components to unlock co-investment deals and structural framework protocols.
+  - **Apple Design Polish**: Enlarged `"Issues & Events"` header typography (`text-base sm:text-lg font-black tracking-tight`), added category color accents (`politics`, `diplomacy`, `defense`, `economy`, `directive`, `issue`), macOS translucent keycap badges (`⏎`), instant physical touch scale feedback (`active:scale-95`), and refined slide-over quick action external links from `"Full Profile Depth"` to clean, direct `"Open Page"` typography with `ArrowUpRight` trailing glyph in [DrillSheets.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/DrillSheets.tsx).
+  - **TypeScript Expert & Advanced Types Performance Pass**: Wrapped `StandingBands`, `ExecutiveAgenda`, `ExecutiveOpportunityHero`, `DomainActionTiles`, `TerritoryMapWidget`, `DomainSurface`, `DomainContextRail`, `PoliticsDrillDown`, `EconomyDrillDown`, and `DrillSheets` in `React.memo`. Memoized telemetry calculations, `tiles`, `tabs`, and `metrics` arrays with `useMemo` hooks. Extracted pure helpers (`getRatingLabel`, `getSeverityRank`, `formatCompact`) outside render scopes with explicit return types and strict interface definitions (`StandingBandsProps`, `ExecutiveAgendaProps`, `ExecutiveOpportunityHeroProps`, `DomainSurfaceProps`, `DomainContextRailProps`, `PoliticsDrillDownProps`, `EconomyDrillDownProps`, `DrillSheetsProps`).
+- **MyCountry V2 Promotion & V1 Cleanup**:
+  - **Single Production Surface (`MyCountryRouter.tsx`)**: Promoted `CommandSurface` as the sole production command shell across all 7 route entry points (`overview`, `executive`, `diplomacy`, `defense`, `politics`, `economy`, `map-editor`).
+  - **Production Component Promotion & File Renaming**: Relocated all components from `src/components/mycountry/v2/` directly to `src/components/mycountry/` and promoted symbols (`CommandSurface`, `ExecutiveHome`, `ExecutiveAgenda`, `ExecutiveOpportunityHero`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `IssueDetailBrief`, `CommandNavToggle`, `ExecutiveConsole`, `CommitmentsAgendaRail`, `RealtimePulseWidget`). Removed empty `v2` directory.
+  - **V1 Legacy Deprecation**: Safely deleted all 18 obsolete V1 components and unused primitives (`Enhanced*Content.tsx`, `OverviewHero.tsx`, `PillarCards.tsx`, `MyCountryTabSystem.tsx`, `MyCountrySidebarLayout.tsx`, `SectionShell.tsx`, `SectionHero.tsx`, `CompactSectionHero.tsx`, `SectionHeaderBackground.tsx`, `primitives/hero/`) and temporary lab routes (`/mycountry/v2`, `/labs/mycountry-v2`).
+  - **IntentComposer Monolith Splitting**: Modularized `IntentComposer.tsx` (1,236 lines down to 211 lines) into focused sub-components under `src/components/mycountry/primitives/composer/` ([DirectivePresetsCatalog.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectivePresetsCatalog.tsx), [DirectiveTuningControls.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectiveTuningControls.tsx), [DirectiveDiffPreview.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/primitives/composer/DirectiveDiffPreview.tsx)), bringing all composer files under 250 lines.
+  - **Dynamic Island / Halo Compact Mode Integration**: Wired global `compactMode` from [theme-context.tsx](file:///home/jxsig/projects/ixstats/src/context/theme-context.tsx) into [CommandSurface.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandSurface.tsx) and [CommandNavToggle.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/CommandNavToggle.tsx), supporting seamless toggle between standard (`max-w-[1600px]`) and compact (`max-w-6xl`) viewports.
+  - **Runtime & Module Bug Fixes**: Fixed relative imports across all relocated components, resolved `Set.prototype.has` method call in `CommandSurface.tsx` (`DOMAIN_SECTIONS.has`), and fixed component JSX references in `ExecutiveHome.tsx`.
+
 - **Dashboard Feed & UX Refinements**:
   - Shortened initial Recent Activity (`RecordFeed`) item count to 5 items in [V2Home.tsx](file:///home/jxsig/projects/ixstats/src/components/mycountry/v2/V2Home.tsx).
   - Streamlined button typography and cleaned up icon hierarchy for distraction-free executive interface.
@@ -3195,12 +3568,13 @@ The following changes were accumulated before the v2.0.0 release:
 - **Responsive Padding**: Reduced padding on mobile (p-4 → p-6)
 
 **Breakpoint Reference:**
-| Breakpoint | Width | Usage |
-|------------|-------|-------|
-| `sm` | 640px | 2-column grids, text visibility |
-| `md` | 768px | 3-4 column grids, button labels |
-| `lg` | 1024px | Sidebar visibility, 3-column grids |
-| `xl` | 1280px | 4-5 column grids, max layouts |
+
+| Breakpoint | Width  | Usage                              |
+| ---------- | ------ | ---------------------------------- |
+| `sm`       | 640px  | 2-column grids, text visibility    |
+| `md`       | 768px  | 3-4 column grids, button labels    |
+| `lg`       | 1024px | Sidebar visibility, 3-column grids |
+| `xl`       | 1280px | 4-5 column grids, max layouts      |
 
 **Files Modified:**
 

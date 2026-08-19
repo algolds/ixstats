@@ -9,25 +9,55 @@
  *   "20260328202033" -> "2026-03-28T20:20:33Z"
  *   "20251114023500" -> "2025-11-14T02:35:00Z"
  */
-export function parseMWTimestamp(ts: string | number | null | undefined): string | null {
+export function parseMWTimestamp(ts: string | number | Date | null | undefined): string | null {
   if (!ts) return null;
+  if (ts instanceof Date) {
+    return isNaN(ts.getTime()) ? null : ts.toISOString();
+  }
 
-  const s = String(ts);
+  const s = String(ts).trim();
+  if (!s) return null;
 
-  // Already ISO format (contains T or -)
-  if (s.includes("T") || s.includes("-")) return s;
+  // Already ISO format or standard date format (contains T or - or :)
+  if (s.includes("T") || s.includes("-")) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
 
-  // Must be exactly 14 digits
-  if (!/^\d{14}$/.test(s)) return null;
+  // 14 digits MediaWiki format: YYYYMMDDHHmmss
+  if (/^\d{14}$/.test(s)) {
+    const year = s.slice(0, 4);
+    const month = s.slice(4, 6);
+    const day = s.slice(6, 8);
+    const hour = s.slice(8, 10);
+    const min = s.slice(10, 12);
+    const sec = s.slice(12, 14);
 
-  const year = s.slice(0, 4);
-  const month = s.slice(4, 6);
-  const day = s.slice(6, 8);
-  const hour = s.slice(8, 10);
-  const min = s.slice(10, 12);
-  const sec = s.slice(12, 14);
+    return `${year}-${month}-${day}T${hour}:${min}:${sec}Z`;
+  }
 
-  return `${year}-${month}-${day}T${hour}:${min}:${sec}Z`;
+  // Epoch number
+  if (/^\d+$/.test(s)) {
+    const num = Number(s);
+    if (!isNaN(num)) {
+      const d = new Date(num > 1e11 ? num : num * 1000);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Parse a MediaWiki timestamp or ISO string directly to a Date object.
+ */
+export function parseMWDateObject(ts: string | number | Date | null | undefined): Date | null {
+  if (!ts) return null;
+  if (ts instanceof Date) return isNaN(ts.getTime()) ? null : ts;
+  const iso = parseMWTimestamp(ts);
+  if (!iso) return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 /**

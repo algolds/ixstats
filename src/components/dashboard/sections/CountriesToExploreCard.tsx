@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,11 +11,11 @@ import {
 } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
@@ -26,7 +24,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
   }, []);
 
   const { data: randomCountries } = api.countries.getRandomCountries.useQuery(
-    { limit: 3, _seed: seed },
+    { limit: 3 },
     { enabled: seed > 0, staleTime: 0 }
   );
   const followerCountryId = currentUserCountryId;
@@ -54,8 +52,8 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
     >
       {/* Cutout tab header */}
       <div className="relative bg-blue-500/10 px-4 pt-3 pb-5">
-        <div className="text-card-foreground flex items-center gap-2 text-sm font-bold">
-          <Users className="h-4.5 w-4.5 text-blue-400" />
+        <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
+          <Users className="h-4 w-4 text-blue-400" />
           Countries to Explore
         </div>
         <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
@@ -90,14 +88,14 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   <div className="min-w-0">
                     <Link
                       href={createUrl(`/countries/${c.slug}`)}
-                      className="truncate text-[11px] font-medium hover:underline"
+                      className="text-foreground truncate text-[11px] font-medium hover:underline"
                     >
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1">
                       <Badge
                         variant="outline"
-                        className="text-muted-foreground border-border/40 px-1 py-0 text-[8px]"
+                        className="text-muted-foreground border-border/40 px-1 py-0 text-[8px] font-medium tracking-wide uppercase"
                       >
                         Tier {c.economicTier}
                       </Badge>
@@ -108,7 +106,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   <Button
                     size="sm"
                     variant={isFollowed ? "secondary" : "outline"}
-                    className="h-6 shrink-0 px-2 text-[9px]"
+                    className="h-6 shrink-0 px-2 text-[9px] font-medium"
                     disabled={!followerCountryId || followMutation.isPending}
                     onClick={() => {
                       if (isFollowed) return;
@@ -128,7 +126,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
         </div>
         <Link
           href={"/countries"}
-          className="text-muted-foreground hover:text-foreground mt-2 flex items-center justify-center gap-1 text-[10px] transition-colors"
+          className="text-muted-foreground hover:text-foreground mt-2 flex items-center justify-center gap-1 text-[10px] font-medium transition-colors"
         >
           <Globe className="h-3 w-3" />
           Explore all countries →

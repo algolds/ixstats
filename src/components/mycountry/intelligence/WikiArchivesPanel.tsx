@@ -103,10 +103,11 @@ function SectionCard({
   const { label, icon: Icon, color } = classifySection(title);
 
   // Lazy-load section content only when expanded
-  const { data: sectionContent, isLoading: contentLoading } = api.wiki.getSectionContent.useQuery(
-    { title: countryName, section: title, source: "ixwiki" },
-    { enabled: expanded && !contentLoaded, staleTime: 10 * 60_000 }
-  );
+  const { data: sectionContent, isLoading: contentLoading } =
+    api.wikios.getSectionContent.useQuery(
+      { title: countryName, section: title, source: "ixwiki" },
+      { enabled: expanded && !contentLoaded, staleTime: 10 * 60_000 }
+    );
 
   // Mark content as loaded once fetched
   if (sectionContent && !contentLoaded) {

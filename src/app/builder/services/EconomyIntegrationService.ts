@@ -9,8 +9,8 @@
  */
 
 import { BaseBuilderService } from "./base";
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
+import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomicInputs } from "../lib/economy-data-service";
@@ -838,7 +838,7 @@ export class EconomyIntegrationService extends BaseBuilderService<
 
       // Convert to legacy format for backward compatibility
       this.state.crossBuilderSynergies = this.state.crossBuilderAnalysis.synergies.map(
-        (synergy) => ({
+        (synergy: any) => ({
           id: synergy.id,
           type: synergy.type,
           components: synergy.components,
@@ -854,7 +854,7 @@ export class EconomyIntegrationService extends BaseBuilderService<
       );
 
       this.state.crossBuilderConflicts = this.state.crossBuilderAnalysis.conflicts.map(
-        (conflict) => ({
+        (conflict: any) => ({
           id: conflict.id,
           type: conflict.type,
           components: conflict.components,

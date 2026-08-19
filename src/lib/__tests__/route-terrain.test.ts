@@ -8,7 +8,7 @@
  * Structure mirrors src/lib/__tests__/transport-costs.test.ts.
  */
 
-import { normalizeTerrainDifficulty, samplePolylinePoints } from "../geo-math";
+import { normalizeTerrainDifficulty, samplePolylinePoints } from "~/lib/maps/geo-math";
 
 // ── normalizeTerrainDifficulty ────────────────────────────────────────────────
 

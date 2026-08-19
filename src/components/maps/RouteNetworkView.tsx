@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { ReactFlow, Background, Controls, useNodesState, useEdgesState } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { api } from "~/trpc/react";
-import { buildRouteNetworkGraph } from "~/lib/route-network-graph";
+import { buildRouteNetworkGraph } from "~/lib/maps/route-network-graph";
 
 export function RouteNetworkView({ countryId }: { countryId: string }) {
   const { data: routeData } = api.transport.getCountryRoutes.useQuery(

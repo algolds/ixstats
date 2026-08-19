@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from "react";
-import debounce from "lodash/debounce";
+import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 interface ArticleSearchProps {

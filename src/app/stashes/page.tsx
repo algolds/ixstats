@@ -38,7 +38,7 @@ import {
 import { cn } from "~/lib/utils";
 import "~/styles/wiki-os.css";
 import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
-import { sanitizeUserContent } from "~/lib/sanitize-html";
+import { sanitizeUserContent } from "~/lib/utils";
 
 const PRESET_COLORS = [
   "#3b82f6",

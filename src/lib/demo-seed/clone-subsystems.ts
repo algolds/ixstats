@@ -685,7 +685,7 @@ export async function cloneGeography(
     where: { countryId: sourceCountryId },
   });
   const subdivIdMap = new Map<string, string>();
-  const { updateSubdivisionSpatialProfile } = await import("../country-geo-service");
+  const { updateSubdivisionSpatialProfile } = await import("~/lib/country-geo");
   for (const sub of sourceSubdivisions) {
     const data = stripRecord(sub, demoCountryId, { extraStrip: geoStrip });
     const newSub = await prisma.subdivision.create({ data: data as any });
@@ -716,7 +716,7 @@ export async function cloneGeography(
   const sourceCities = await prisma.city.findMany({
     where: { countryId: sourceCountryId },
   });
-  const { updateCitySpatialProfile } = await import("../country-geo-service");
+  const { updateCitySpatialProfile } = await import("~/lib/country-geo");
   for (const city of sourceCities) {
     const newSubId = city.subdivisionId ? (subdivIdMap.get(city.subdivisionId) ?? null) : null;
     const data = stripRecord(city, demoCountryId, {

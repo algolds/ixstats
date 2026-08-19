@@ -4,8 +4,8 @@ import React, { useRef, useState, useCallback } from "react";
 import { CountryFocusCardBuilder, type CountryCardData } from "./CountryFocusCardBuilder";
 import { RiGlobalLine } from "react-icons/ri";
 import { motion, useAnimation } from "motion/react";
-import { BlurFade } from "~/components/magicui/blur-fade";
-import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
+import { BlurFade } from "~/components/ui/magicui/blur-fade";
+import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { cn } from "~/lib/utils";
 
 interface CountriesFocusGridModularProps {

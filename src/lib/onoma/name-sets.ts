@@ -5,14 +5,7 @@
 // full names (e.g. "{given:male} {surname}").
 
 export type NameRole =
-  | "given"
-  | "surname"
-  | "particle"
-  | "patronymic"
-  | "matronymic"
-  | "nomen"
-  | "agnomen"
-  | "other";
+  "given" | "surname" | "particle" | "patronymic" | "matronymic" | "nomen" | "agnomen" | "other";
 export type NameGender = "any" | "male" | "female";
 
 export const NAME_ROLES: { value: NameRole; label: string }[] = [

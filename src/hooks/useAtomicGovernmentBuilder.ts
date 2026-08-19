@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { ComponentType } from "@prisma/client";
-import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
+import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
 import {
   calculateGovernmentEffectiveness,
   detectSynergies,
@@ -20,8 +20,8 @@ import {
   calculateMaintenanceCost,
   calculateRequiredCapacity,
   validateSelection,
-} from "~/lib/atomic-government-utils";
-import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
+} from "~/lib/government/atomic-utils";
+import type { EffectivenessMetrics } from "~/components/ui/atomic/shared/types";
 
 export interface UseAtomicGovernmentBuilderProps {
   /** Initially selected components */

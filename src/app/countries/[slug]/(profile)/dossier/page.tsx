@@ -1,7 +1,7 @@
 "use client";
 
 import { useCountryData } from "~/components/mycountry/primitives";
-import { DossierTab } from "~/components/countries/DossierTab";
+import { DossierTab } from "~/components/mycountry/dossier/DossierTab";
 
 /**
  * DossierPage — `/countries/[slug]/dossier`. Renders the wiki-synced dossier +

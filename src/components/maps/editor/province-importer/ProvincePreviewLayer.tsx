@@ -3,7 +3,7 @@
 import { memo, useEffect, useMemo, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Feature, Polygon, MultiPolygon, Position } from "geojson";
-import type { ProvinceFeature } from "~/lib/province-importer/types";
+import type { ProvinceFeature } from "~/lib/maps/province-importer/types";
 
 interface ProvincePreviewLayerProps {
   map: MapLibreMap | null;
@@ -176,14 +176,12 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
       console.log("[ProvincePreview] Passthrough mode (coords already geographic)");
       return {
         type: "FeatureCollection",
-        features: included.map(
-          (p, i): Feature => ({
-            type: "Feature",
-            id: i,
-            geometry: normalizeGeometry(p.geometry),
-            properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
-          })
-        ),
+        features: included.map((p, i): Feature => ({
+          type: "Feature",
+          id: i,
+          geometry: normalizeGeometry(p.geometry),
+          properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
+        })),
       };
     }
 
@@ -248,18 +246,16 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
 
     return {
       type: "FeatureCollection",
-      features: included.map(
-        (p, i): Feature => ({
-          type: "Feature",
-          id: i,
-          geometry: normalizeGeometry(transformGeom(p.geometry)),
-          properties: {
-            name: p.name,
-            color: p.color || "#6366f1",
-            sourceId: p.sourceId,
-          },
-        })
-      ),
+      features: included.map((p, i): Feature => ({
+        type: "Feature",
+        id: i,
+        geometry: normalizeGeometry(transformGeom(p.geometry)),
+        properties: {
+          name: p.name,
+          color: p.color || "#6366f1",
+          sourceId: p.sourceId,
+        },
+      })),
     };
   }, [provinces, countryBorder]);
 

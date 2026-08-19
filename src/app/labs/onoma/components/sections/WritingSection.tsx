@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Feather, Trash2, RotateCcw, Save, Type, Eye } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -78,7 +78,7 @@ export default function WritingSection() {
         setDirection(s.direction);
         setGlyphSize(s.glyphSize);
         setBaselineOffset(s.baselineOffset);
-        setGlyphs((s.glyphs as Glyph[]) || []);
+        setGlyphs((s.glyphs as unknown as Glyph[]) || []);
       }
     } else {
       setSystemName("New Writing System");

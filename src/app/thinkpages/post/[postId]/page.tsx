@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { extractHashtags, extractMentions } from "~/lib/text-formatter";
+import { extractHashtags, extractMentions } from "~/lib/utils";
 
 interface PostPageProps {
   params: Promise<{

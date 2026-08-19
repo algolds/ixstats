@@ -13,9 +13,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { vaultService, getVaultConfig } from "~/lib/vault-service";
-import { grantCardXp } from "~/lib/card-xp-utils";
-import { getCurrentIxCardSeason } from "~/lib/ixcard-season";
+import { vaultService, getVaultConfig } from "~/lib/vault";
+import { grantCardXp } from "~/lib/cards";
+import { getCurrentIxCardSeason } from "~/lib/cards";
 import { type CardType } from "@prisma/client";
 
 /**

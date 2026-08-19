@@ -42,13 +42,16 @@ The sidebar (`VaultSidebarNav`) exposes 5 sections: **dashboard, cards, marketpl
 |-------|----------|
 | Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + `VaultSidebarLayout`) |
 | Sidebar nav | `src/components/vault/VaultSidebarNav.tsx` (`VaultSection`, `VAULT_NAV_ITEMS`, `getSectionFromPathname`) |
-| Sections | `src/components/vault/sections/` — `VaultDashboardSection`, `VaultCardsSection`, `VaultMarketplaceSection`, `VaultImportSection` |
-| Marketplace tabs | `src/components/vault/sections/marketplace/` — `VaultStoreTab`, `VaultAuctionsTab`, `VaultTradingTab`, `StoreItemCard` |
-| Shared widgets | `src/components/vault/` — `DailyBonusWidget`, `IxCreditsSymbol` |
+| Cards Section | `src/components/vault/sections/cards/` — `CardGrid`, `CardFilterBar`, `DeckStatsHeader`, `CardSortControl`, `DeckViewToggle` |
+| Dashboard Section | `src/components/vault/sections/dashboard/` — Modular balance hero, earnings breakdown, and quick stats widgets |
+| Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |
+| Import Section | `src/components/vault/sections/import/` — NationStates deck import wizard steps and verification status |
+| Shared widgets & theme | `src/components/vault/` — `DailyBonusWidget`, `VaultParticleExplosionModal`, `VaultSubTabNav`, `vault-theme.ts` |
+| Vault Services | `src/lib/vault/` — `vault-crud.ts`, `vault-market.ts`, `vault-pricing.ts`, `vault-type-guards.ts` |
 | Hooks | `src/hooks/vault/` — `useVaultBalance`, `useVaultStats`, `useCollections`, `useRecentActivity` |
-| Reused card UI | `src/components/cards/` — `CardDisplay`, `CardDetailsModal`, `CraftingWorkbench`, `lore/LoreCardGenerator` |
+| Reused card UI | `src/components/cards/` — `CardDisplay`, `CardDetailsModal` (`cards/display/modal/`), `CraftingWorkbench`, `lore/LoreCardGenerator` |
 
-`VaultCardsSection` is a single component reused by the cards/inventory/collections/lore-gallery/ns-library routes, switching between **Inventory / Collections / Gallery** sub-tabs (gallery sources: `all` / `ns` / `lore`).
+`VaultCardsSection` dispatches between modular sub-components in `src/components/vault/sections/cards/`, supporting **Inventory / Collections / Gallery** sub-tabs. Monolithic services in `vault-service.ts` are decoupled into single-responsibility domain modules under `src/lib/vault/`.
 
 ## Data Sources (verified `api.*`)
 
@@ -69,9 +72,14 @@ All registered in `src/server/api/root.ts`.
 
 ## Connections
 
-- **IxCredits economy** — `src/lib/vault-service.ts` is the single earning/spending entry point; passive dividend via cron. Full spec: `docs/systems/ixcredits.md`, `docs/systems/myvault.md`.
-- **NationStates** — deck import + public deck browsing bridge NS cards into the IxStats card pool. Spec: `docs/systems/ns-integration.md`.
 - **Achievements / ThinkPages / Diplomacy** — feed `EARN_ACTIVE` / `EARN_SOCIAL` credits through `vault-service`; nation performance drives passive income and NATION card stats.
+
+## Architecture & Security Hardening (Plans 121–123)
+
+- **Atomic Credit Ledger**: `spendCredits` executes atomic conditional updates (`credits: { gte: amount }`) inside DB transactions, preventing race conditions or negative balances under high concurrency.
+- **UTC Calendar Day Streak Math**: Daily login streak calculations (`updateLoginStreak`) normalize dates onto UTC calendar day serial numbers (`Date.UTC(y, m, d) / 86,400,000`), ensuring exact midnight boundary rollover behavior.
+- **Type-Safe Domain Modeling**: Branded domain primitives (`UserId`, `CardId`, `AuctionId`, `OwnershipId`) and structured schema interfaces (`ArtworkVariants`, `CardStatsData`, `CardEnhancementsData`) replace loose `any` types and Prisma `(db as any)` casts across `vault-service.ts`, `card-service.ts`, and `auction-service.ts`.
+- **Perk Performance Cache**: Store item perks lookup (`getPurchasedItemsEffects`) utilizes an in-memory `userPerksCache` (5-minute TTL) with bounded transaction queries (`take: 100`).
 
 ---
 

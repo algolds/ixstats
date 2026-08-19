@@ -232,4 +232,4 @@ To fix user display names in a component:
 - **Database Schema**: `/prisma/schema.prisma` (User, Country models)
 - **Usage Examples**:
   - `/src/components/thinkpages/ThinktankGroups.tsx`
-  - `/src/components/diplomatic/EmbassyNetworkVisualization.tsx`
+  - `/src/components/mycountry/domains/diplomacy/EmbassyNetworkVisualization.tsx`

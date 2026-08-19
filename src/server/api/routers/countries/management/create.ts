@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
-import { checkComponentSynergy } from "~/lib/government-synergy";
+import { checkComponentSynergy } from "~/lib/government/synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { invalidateCache } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
+import { getBonusConfig, grantBonus } from "~/lib/vault";
 
 export const managementCreateProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives

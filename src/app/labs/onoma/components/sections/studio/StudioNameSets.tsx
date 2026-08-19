@@ -48,7 +48,7 @@ export function StudioNameSets() {
   const sets = useMemo(() => {
     const map = new Map<string, TaggedDict[]>();
     for (const e of bank.nameBank ?? []) {
-      const setName = (e as any).setName as string | null;
+      const setName = e.setName;
       if (e.type !== "dictionary" || !setName) continue;
 
       const cleanValues = (e.values || [])
@@ -58,8 +58,8 @@ export function StudioNameSets() {
 
       const dict: TaggedDict = {
         values: cleanValues,
-        role: ((e as any).role as NameRole) || "given",
-        gender: ((e as any).gender as NameGender) || "any",
+        role: (e.role as NameRole) || "given",
+        gender: (e.gender as NameGender) || "any",
       };
       const list = map.get(setName) ?? [];
       list.push(dict);
@@ -452,7 +452,9 @@ export function StudioNameSets() {
                           </span>
                           <Select
                             value={slot.suffixRule || "none"}
-                            onValueChange={(val) => updateSlot(idx, { suffixRule: val as any })}
+                            onValueChange={(
+                              val: "none" | "hendalarsk-matronymic" | "yonderian-patronymic" | "caphirian-lineage"
+                            ) => updateSlot(idx, { suffixRule: val })}
                           >
                             <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-md border px-2 py-0.5 text-xs transition-colors focus:outline-none">
                               <SelectValue placeholder="None / Static" />

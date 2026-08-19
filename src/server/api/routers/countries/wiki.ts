@@ -9,15 +9,15 @@ import {
 import {
   getArticleIntro,
   getPageSections,
-  getArticleWikitext,
   getPageImages as wikiBridgePageImages,
   getInfobox as wikiBridgeInfobox,
-} from "~/lib/wiki-bridge";
-import { searchWiki as searchWikiService } from "~/lib/wiki-search-service";
-import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-infobox-parser";
-import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/unified-wiki-parser";
-import { getEligibleCountries } from "~/lib/eligible-country-service";
-import { wikiCacheService } from "~/lib/services/wiki-cache-service";
+} from "~/lib/wiki/bridge";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/article-store";
+import { searchWiki as searchWikiService } from "~/lib/wiki/search-service";
+import { parseInfobox as parseInfoboxParser } from "~/lib/wiki/infobox-parser";
+import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki/unified-parser";
+import { wikiCacheService } from "~/lib/wiki";
+import { getEligibleCountries } from "~/lib/wiki/eligible-country-service";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [
@@ -172,14 +172,14 @@ async function fetchWikiRichIntro(
 ): Promise<{ paragraphs: string[]; wikiUrl: string } | null> {
   for (const wiki of ["ixwiki", "iiwiki"] as const) {
     try {
-      const article = await getArticleWikitext(name, wiki);
+      const article = await getArticleWikitextShadow(name, wiki);
       if (!article) continue;
 
       const wikitext = article.wikitext;
       const wikiUrl =
         wiki === "ixwiki"
-          ? `/wiki/${encodeURIComponent(article.title)}`
-          : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
+          ? `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
+          : `https://iiwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
       // Strip infobox template (match balanced braces)
       let contentAfterInfobox = wikitext;
@@ -300,7 +300,8 @@ async function fetchWikiSectionPreviews(name: string): Promise<Array<{
 
   try {
     const article =
-      (await getArticleWikitext(name, "ixwiki")) ?? (await getArticleWikitext(name, "iiwiki"));
+      (await getArticleWikitextShadow(name, "ixwiki")) ??
+      (await getArticleWikitextShadow(name, "iiwiki"));
     if (!article) return sections.map((s) => ({ ...s, preview: undefined }));
 
     const wikitext = article.wikitext;
@@ -528,7 +529,7 @@ export const wikiProcedures = {
           return cached;
         }
 
-        const article = await getArticleWikitext(pageName, site);
+        const article = await getArticleWikitextShadow(pageName, site);
         if (!article) {
           throw new TRPCError({
             code: "NOT_FOUND",

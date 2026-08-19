@@ -60,8 +60,8 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     timerRef.current = setTimeout(() => setDebouncedQuery(val), 400);
   }, []);
 
-  const ixwikiQuery = api.wiki.searchFiles.useQuery(
-    { query: debouncedQuery, per_page: 48 },
+  const ixwikiQuery = api.wikios.searchFiles.useQuery(
+    { query: debouncedQuery, limit: 48 },
     { enabled: tab === "ixwiki" && debouncedQuery.length >= 2, staleTime: 60000 }
   );
 

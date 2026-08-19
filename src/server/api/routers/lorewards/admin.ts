@@ -12,8 +12,8 @@ import {
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import * as fs from "fs";
-import { fullSync } from "~/lib/lorewards-sync";
-import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
+import { fullSync } from "~/lib/lorewards";
+import { scoreDailyWikiOS } from "~/lib/lorewards";
 
 export const lorewardsAdminRouter = createTRPCRouter({
   /** Admin: trigger full sync from state file + OOL page. */

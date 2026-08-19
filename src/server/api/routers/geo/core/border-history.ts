@@ -14,7 +14,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedPublicProcedure } from "~/server/api/trpc";
-import { mergeBordersAsOf } from "~/lib/border-history-asof";
+import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
 import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";
 import { getZoomBucket } from "./cache";
 import { IxTime } from "~/lib/ixtime";

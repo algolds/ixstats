@@ -29,6 +29,8 @@ model WikiArticle {
   wikitext     String
   revisionId   Int?                          // MW rev_id this content was synced from
   revTimestamp String?                       // MW rev_timestamp of revisionId
+  htmlContent  String?                       // pre-rendered transformed HTML cache (Phase 8)
+  htmlSyncedAt DateTime?                     // timestamp when HTML was last rendered
   syncedAt     DateTime @default(now())      // last pull from MediaWiki
   updatedAt    DateTime @updatedAt
 

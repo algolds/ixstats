@@ -3,11 +3,12 @@
 import { useMemo, useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { useCountryData, type CardImageType } from "~/components/mycountry/primitives";
-import { extractCountryImageData } from "~/lib/country-image-engine";
+import { useCountryData } from "~/components/mycountry/primitives";
+import type { CardImageType } from "~/lib/cards";
+import { extractCountryImageData } from "~/lib/media";
 import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
-import { getWikiCache, setWikiCache } from "~/lib/wiki-local-cache";
-import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import { getWikiCache, setWikiCache } from "~/lib/wiki/local-cache";
+import { resolveImageUrl } from "~/lib/wiki/unified-parser";
 
 /**
  * Aggregates all data, query, and local UI state for the MyCountry tab system:
@@ -67,9 +68,7 @@ export function useMyCountryMetrics(activeTab: string) {
       gcTime: 48 * 60 * 60_000,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
-      placeholderData: profileCacheKey
-        ? (getWikiCache(profileCacheKey) ?? undefined)
-        : undefined,
+      placeholderData: profileCacheKey ? (getWikiCache(profileCacheKey) ?? undefined) : undefined,
     }
   );
 

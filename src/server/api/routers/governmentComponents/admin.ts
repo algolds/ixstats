@@ -12,7 +12,7 @@ import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { ComponentType } from "@prisma/client";
-import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
+import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
 
 // ============================================================================
 // Type Definitions

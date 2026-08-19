@@ -1,5 +1,5 @@
-import { discordWebhook } from "~/lib/discord-webhook";
-import { buildDiscordPollObject, type PollForDiscord } from "~/lib/discord-poll";
+import { discordWebhook } from "~/lib/discord/webhook";
+import { buildDiscordPollObject, type PollForDiscord } from "~/lib/discord/poll";
 
 const TARGET_CHANNEL_ID = "557016199427522561";
 

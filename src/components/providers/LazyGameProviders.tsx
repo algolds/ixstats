@@ -4,13 +4,10 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "~/context/auth-context";
 
-const GameProviders = dynamic(
-  () => import("./GameProviders").then((mod) => mod.GameProviders),
-  {
-    ssr: false,
-    loading: () => null,
-  }
-);
+const GameProviders = dynamic(() => import("./GameProviders").then((mod) => mod.GameProviders), {
+  ssr: false,
+  loading: () => null,
+});
 
 /**
  * Deferred provider wrapper.
@@ -18,9 +15,9 @@ const GameProviders = dynamic(
  * Unauthenticated users (landing, sign-in, public wiki/countries) avoid mounting 11+ providers.
  */
 export function LazyGameProviders({ children }: { children: React.ReactNode }) {
-  const { userId, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
 
-  if (!isLoaded || !userId) {
+  if (!isLoaded || !isSignedIn) {
     return <>{children}</>;
   }
 

@@ -52,7 +52,7 @@ import {
   ColorPickerEyeDropper,
   ColorPickerOutput,
   ColorPickerFormat,
-} from "~/components/kibo-ui/color-picker";
+} from "~/components/ui/color-picker";
 
 function CityScatterPopover({
   onScatter,
@@ -1096,7 +1096,8 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={LassoSelect} label="Lasso Select" />
           <span className="text-muted-foreground text-[11px]">
-            Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt = subtract.
+            Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
+            subtract.
           </span>
           <div className="border-border/50 bg-background/80 flex items-center gap-0.5 rounded border p-0.5">
             {(["freehand", "rect"] as const).map((tool) => (

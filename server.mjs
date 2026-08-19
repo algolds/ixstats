@@ -122,7 +122,7 @@ app
     // WebSocket: Market (always enabled)
     // ──────────────────────────────────────────────
     try {
-      const { initializeMarketWebSocket } = await import("./src/lib/market-websocket-server.js");
+      const { initializeMarketWebSocket } = await import("~/lib/websocket");
       marketWsInstance = initializeMarketWebSocket(httpServer, "/api/market-ws");
       subsystems.marketWS = { status: "ok", detail: "/api/market-ws" };
       console.log("[Server] ✓ Market WebSocket initialized at /api/market-ws");
@@ -223,7 +223,7 @@ app
       // 3. Card value tracking (every 6 hours default)
       scheduleCron("Card value tracking", cronSchedule_cardValue, async () => {
         try {
-          const { updateCardValues } = await import("./src/lib/nation-card-value-update-cron.js");
+          const { updateCardValues } = await import("~/lib/lorewards");
           await updateCardValues();
         } catch (error) {
           console.error("[Cron] Card value update failed:", error);
@@ -233,7 +233,7 @@ app
       // 4. Lore card generation (daily at 02:00 UTC)
       scheduleCron("Lore card generation", "0 2 * * *", async () => {
         try {
-          const { generateDailyLoreCards } = await import("./src/lib/lore-card-generation-cron.js");
+          const { generateDailyLoreCards } = await import("~/lib/lorewards");
           await generateDailyLoreCards();
         } catch (error) {
           console.error("[Cron] Lore card generation failed:", error);
@@ -243,81 +243,71 @@ app
       // 5. IxTwitter Discord sync (every hour)
       scheduleCron("IxTwitter Discord sync", "0 * * * *", async () => {
         try {
-          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord-ixtwitter-sync.js");
+          const { syncIxTwitterToThinkPages } = await import("./src/lib/discord/ixtwitter-sync.js");
           const result = await syncIxTwitterToThinkPages();
           if (result.posted > 0) {
             console.log(
               `[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`
+          console.error("[Cron] ✗ Lore card generation cron error:", error.message);
+        }
+      });
+
+      // 5. IxTwitter -> ThinkPages real-time polling (every 60s).
+      // Production only: polls discord for new #announcements and posts them as ThinkPages system announcements.
+      if (process.env.DISCORD_BOT_TOKEN) {
+        scheduleCron("IxTwitter sync", "* * * * *", async () => {
+          try {
+            const { syncIxTwitterToThinkPages } = await import(
+              "./src/lib/discord/ixtwitter-sync.js"
             );
+            await syncIxTwitterToThinkPages();
+          } catch (error) {
+            console.error("[Cron] ✗ IxTwitter sync error:", error.message);
           }
-        } catch (error) {
-          console.error("[Cron] IxTwitter sync failed:", error);
-        }
-      });
+        });
+      }
 
-      // 6. Lorewards full sync (daily at 06:00 UTC default)
-      let loreSyncRunning = false;
+      // 6. Lorewards full sync
       scheduleCron("Lorewards fullSync", cronSchedule_lorewardsScoring, async () => {
-        if (loreSyncRunning) {
-          console.log("[Cron] Lorewards fullSync already running, skipping this run");
-          return;
-        }
-        loreSyncRunning = true;
         try {
-          const { fullSync } = await import("./src/lib/lorewards-sync.js");
-          await fullSync();
-          console.log("[Cron] Lorewards fullSync completed successfully");
+          const { runLorewardsFullSync } = await import("~/lib/lorewards");
+          await runLorewardsFullSync();
         } catch (error) {
-          console.error("[Cron] Lorewards fullSync failed:", error);
-        } finally {
-          loreSyncRunning = false;
+          console.error("[Cron] ✗ Lorewards fullSync cron error:", error.message);
         }
       });
 
-      // 7. Trade expiry (every 5 minutes)
-      scheduleCron("Trade expiry (every 5 minutes)", "*/5 * * * *", async () => {
+      // 7. Trade auto-expiry: cancels pending trades older than 48 hours (runs every 5 minutes)
+      scheduleCron("Trade auto-expiry", "*/5 * * * *", async () => {
         try {
-          const { processExpiredTrades } = await import("./src/lib/trade-expiry-cron.js");
+          const { processExpiredTrades } = await import("./src/lib/economy/trade-expiry-cron.js");
           await processExpiredTrades();
         } catch (error) {
-          console.error("[Cron] Trade expiry failed:", error);
+          console.error("[Cron] ✗ Trade auto-expiry error:", error.message);
         }
       });
 
-      // 8. Sports season auto-advance (every 15 min; self-gates on scheduledIxTime).
-      // ponytail: single-process reentrancy guard. If both this and the standalone
-      // cron-runner run, only run sports advance in one (cron-runner owns it).
-      let sportsAdvanceRunning = false;
-      scheduleCron("Sports Season Auto-Advance", "*/15 * * * *", async () => {
-        if (sportsAdvanceRunning) return;
-        sportsAdvanceRunning = true;
-        try {
-          const { PrismaClient } = await import("@prisma/client");
-          const db = new PrismaClient();
-          const advanced = await advanceSportsSeasons(db);
-          if (advanced > 0) {
-            console.log(`[Cron] Sports: Advanced ${advanced} seasons`);
+      // 8. Sports season advance: 1 tick = 1 round (all leagues concurrently)
+      if (process.env.IXSTATS_CRON_RUNNER === "1") {
+        scheduleCron("Sports season tick", "0 */12 * * *", async () => {
+          try {
+            const { advanceSportsSeasons } = await import("./src/lib/sports/sports-cron.js");
+            const result = await advanceSportsSeasons();
+            console.log(
+              `[Cron] ⚽ Sports advanced: ${result.matchesSimulated} matches across ${result.activeLeagues} active leagues (${result.completedLeagues} completed)`
+            );
+          } catch (error) {
+            console.error("[Cron] ✗ Sports season tick error:", error.message);
           }
-          await db.$disconnect();
-        } catch (error) {
-          console.error("[Cron] Sports season advance failed:", error.message);
-        } finally {
-          sportsAdvanceRunning = false;
-        }
-      });
+        });
+      }
 
-      // 9. National Issues background generation (every 15 minutes; per-country debounced)
-      scheduleCron("National Issues generation", "*/15 * * * *", async () => {
+      // 9. National Issues auto-generation: checks for countries needing new issues (runs every 30 minutes)
+      scheduleCron("National Issues generation", "*/30 * * * *", async () => {
         try {
-          const { generateNationalIssues } = await import(
+          const { generateIssuesForAllCountries } = await import(
             "./src/lib/national-issues-generation-cron.js"
           );
-          const r = await generateNationalIssues();
-          if (r.issuesGenerated > 0) {
-            console.log(
-              `[Cron] Issues: generated ${r.issuesGenerated} across ${r.countriesEvaluated} countries`
-            );
-          }
         } catch (error) {
           console.error("[Cron] National Issues generation failed:", error.message);
         }

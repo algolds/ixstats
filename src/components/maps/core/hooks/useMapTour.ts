@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { ProjectionMode } from "~/lib/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 
 export interface TourStep {
   name: string;

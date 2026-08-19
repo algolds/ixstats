@@ -12,14 +12,14 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import { ActivityGenerator } from "~/lib/activity-generator";
+import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { ActivityGenerator } from "~/lib/activity";
 import {
   validatePointContainment,
   checkPointCollision,
   checkNameUniqueness,
-} from "~/lib/geo-validation";
+} from "~/lib/maps/geo-validation";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z

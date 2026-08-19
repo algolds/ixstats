@@ -8,12 +8,12 @@ const mockConfig = {
   maxIssuesPerSession: 3,
   maxIssuesPerWeek: 5,
 };
-jest.mock("~/lib/national-issues-config", () => ({
+jest.mock("~/lib/national-issues/config", () => ({
   getNationalIssuesConfig: () => mockConfig,
 }));
 
-import { NationalIssuesEngine } from "../national-issues-engine";
-import { IxTime } from "../ixtime";
+import { NationalIssuesEngine } from "~/lib/national-issues";
+import { IxTime } from "~/lib/ixtime";
 
 const mockDb: any = {
   nationalIssue: {

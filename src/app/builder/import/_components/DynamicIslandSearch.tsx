@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { sanitizeWikiContent } from "~/lib/sanitize-html";
-import { IconSwap, IconSwapItem } from "~/components/icon-swap";
-import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+import { sanitizeWikiContent } from "~/lib/utils";
+import { IconSwap, IconSwapItem } from "~/components/ui/icon-swap";
+import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
 
 // ─── Types ───
 

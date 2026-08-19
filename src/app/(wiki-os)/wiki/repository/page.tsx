@@ -5,15 +5,15 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { CommonsCategoryBrowser } from "~/components/mediawiki/commons/CommonsCategoryBrowser";
-import { CommonsResultsGrid } from "~/components/mediawiki/commons/CommonsResultsGrid";
-import { CommonsDetailPanel } from "~/components/mediawiki/commons/CommonsDetailPanel";
+import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
+import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
+import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Search, X, Globe, Database, HelpCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { RepositoryWelcomeModal } from "~/components/mediawiki/commons/RepositoryWelcomeModal";
+import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 
 interface CommonsImage {
   pageid: number;
@@ -129,7 +129,7 @@ export default function RepositoryPage() {
     (tab === "ixwiki" || tab === "iiwiki") && !debouncedQuery && !!browsingCategory;
 
   // Search local or external wiki files query
-  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wiki.searchFiles.useQuery(
+  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wikios.searchFiles.useQuery(
     {
       query: debouncedQuery || undefined,
       category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,

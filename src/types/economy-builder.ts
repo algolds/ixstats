@@ -8,7 +8,7 @@
  * @module economy-builder
  */
 
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 
 // ============================================
 // ECONOMY BUILDER STATE

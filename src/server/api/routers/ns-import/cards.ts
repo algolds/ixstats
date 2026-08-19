@@ -5,14 +5,112 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { nsApiClient } from "~/lib/ns-api-client";
-import { nsImportService } from "~/lib/ns-import-service";
-import { computeCardValue, getValuationConfig } from "~/lib/card-valuation";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+  publicProcedure,
+} from "~/server/api/trpc";
+import { nsApiClient } from "~/lib/nationstates/api-client";
+import { nsImportService } from "~/lib/nationstates/import-service";
+import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
+import { computeCardValue, getValuationConfig } from "~/lib/cards";
+import { Prisma } from "@prisma/client";
 
 // ─── Background Processing Functions ──────────────────────────────
 
 export const nsImportCardsRouter = createTRPCRouter({
+  /**
+   * Public: Get site-specific NS verification URL for a given nation name.
+   * The URL includes a site token (HMAC-MD5) so the checksum is bound to IxStats only.
+   */
+  getVerificationUrl: publicProcedure
+    .input(z.object({ nationName: z.string().min(1) }))
+    .query(({ input }) => {
+      const url = nsApiClient.getVerificationUrl(input.nationName.trim().toLowerCase());
+      return { url };
+    }),
+
+  /**
+   * Public/Protected: Self-service NationStates card takedown by verifying nation ownership via NS API.
+   */
+  requestSelfServiceTakedown: publicProcedure
+    .input(
+      z.object({
+        cardId: z.string(),
+        nationName: z.string().min(1),
+        checksum: z.string().min(1),
+        reason: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const card = await ctx.db.card.findUnique({
+        where: { id: input.cardId },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Card not found",
+        });
+      }
+
+      // 1. Verify nation ownership on NationStates
+      const isVerified = await nsApiClient.verifyOwnership(
+        input.nationName.trim(),
+        input.checksum.trim()
+      );
+
+      if (!isVerified) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "NationStates verification failed. Please check your nation name and checksum code.",
+        });
+      }
+
+      // 2. Validate nation match against card title / metadata
+      const cleanNation = input.nationName.toLowerCase().replace(/_/g, " ").trim();
+      const cleanTitle = card.title.toLowerCase().replace(/_/g, " ").trim();
+
+      const isMatch = cleanTitle.includes(cleanNation) || cleanNation.includes(cleanTitle);
+
+      if (!isMatch) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `Verified nation "${input.nationName}" does not match card target "${card.title}". Takedowns require ownership of the card's flag nation.`,
+        });
+      }
+
+      // 3. Retire card and purge artwork
+      const prevMetadata = (card.metadata as Record<string, any>) || {};
+      await ctx.db.card.update({
+        where: { id: card.id },
+        data: {
+          isRetired: true,
+          retiredAt: new Date(),
+          artwork: null,
+          artworkVariants: Prisma.DbNull,
+          metadata: {
+            ...prevMetadata,
+            nsTakedown: {
+              selfService: true,
+              verifiedNation: input.nationName.trim(),
+              hiddenAt: new Date().toISOString(),
+              reason: input.reason || "Self-service flag owner takedown request",
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        cardId: card.id,
+        title: card.title,
+        message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
+      };
+    }),
   /**
    * Get user's import history
    */
@@ -95,6 +193,319 @@ export const nsImportCardsRouter = createTRPCRouter({
       lastImport,
     };
   }),
+
+  /**
+   * Admin: Hide a NationStates-import card (flag-owner takedown / opt-out).
+   *
+   * Sets the card as retired and clears its artwork so the nation flag stops
+   * being served, per a flag owner's objection. The card definition is kept
+   * (ownership/history intact) but renders with the placeholder artwork.
+   */
+  hideNSCard: adminProcedure
+    .input(
+      z.object({
+        nsCardId: z.number().int().positive(),
+        nsSeason: z.number().int().positive(),
+        reason: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const card = await ctx.db.card.findFirst({
+        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
+        });
+      }
+
+      const prevMetadata = (card.metadata as Record<string, any>) || {};
+      await ctx.db.card.update({
+        where: { id: card.id },
+        data: {
+          isRetired: true,
+          retiredAt: new Date(),
+          artwork: null,
+          artworkVariants: Prisma.DbNull,
+          metadata: {
+            ...prevMetadata,
+            nsTakedown: {
+              hiddenAt: new Date().toISOString(),
+              hiddenBy: ctx.user.id,
+              reason: input.reason || null,
+            },
+          },
+        },
+      });
+
+      console.log(
+        `[NS Import] Takedown: hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title}) by ${ctx.user.id}`
+      );
+
+      return {
+        success: true,
+        cardId: card.id,
+        title: card.title,
+        message: `Hidden "${card.title}" (${input.nsCardId} S${input.nsSeason}). Artwork removed; the flag will no longer be served.`,
+      };
+    }),
+
+  /**
+   * Admin: Restore a previously hidden NS-import card (undo takedown).
+   */
+  restoreNSCard: adminProcedure
+    .input(
+      z.object({
+        nsCardId: z.number().int().positive(),
+        nsSeason: z.number().int().positive(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const card = await ctx.db.card.findFirst({
+        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
+        });
+      }
+
+      const prevMetadata = (card.metadata as Record<string, any>) || {};
+      await ctx.db.card.update({
+        where: { id: card.id },
+        data: {
+          isRetired: false,
+          retiredAt: null,
+          metadata: {
+            ...prevMetadata,
+            nsTakedown: null,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        cardId: card.id,
+        title: card.title,
+        message: `Restored "${card.title}". A re-sync will re-add the flag artwork.`,
+      };
+    }),
+
+  /**
+   * Admin: List NS cards currently hidden by takedown.
+   */
+  listHiddenNSCards: adminProcedure.query(async ({ ctx }) => {
+    const cards = await ctx.db.card.findMany({
+      where: { isRetired: true, nsCardId: { not: null } },
+      select: {
+        id: true,
+        title: true,
+        nsCardId: true,
+        nsSeason: true,
+        retiredAt: true,
+        metadata: true,
+      },
+      orderBy: { retiredAt: "desc" },
+      take: 100,
+    });
+
+    return cards.map((card) => {
+      const meta = (card.metadata as Record<string, any>) || {};
+      return {
+        cardId: card.id,
+        title: card.title,
+        nsCardId: card.nsCardId,
+        nsSeason: card.nsSeason,
+        retiredAt: card.retiredAt,
+        hiddenBy: meta.nsTakedown?.hiddenBy ?? null,
+        reason: meta.nsTakedown?.reason ?? null,
+        selfService: meta.nsTakedown?.selfService ?? false,
+      };
+    });
+  }),
+
+  /**
+   * Admin: Filter imported NS cards against the daily active nations dump (nations.xml.gz).
+   * Tags all NS_IMPORT cards with metadata.isCTE (true if nation has Ceased To Exist).
+   */
+  filterCTECards: adminProcedure.mutation(async ({ ctx }) => {
+    const result = await processCTENationFilter(ctx.db);
+    return {
+      success: true,
+      ...result,
+      message: `CTE filter complete: ${result.totalProcessed} cards processed (${result.activeCount} active, ${result.cteCount} CTE'd).`,
+    };
+  }),
+
+  // ─── Self-serve flag-owner opt-out (user settings) ────────────────
+
+  /**
+   * User: List the NationStates-imported cards this user owns, grouped for
+   * the self-serve takedown UI. Also returns the nations the user has
+   * NS-verified (proof of flag ownership) so the UI can gate the opt-out.
+   */
+  getMyNSCards: protectedProcedure.query(async ({ ctx }) => {
+    const [ownerships, verified] = await Promise.all([
+      ctx.db.cardOwnership.findMany({
+        where: {
+          ownerId: ctx.user.id,
+          cards: { cardType: "NS_IMPORT", nsCardId: { not: null } },
+        },
+        select: {
+          cardId: true,
+          acquiredAt: true,
+          cards: {
+            select: {
+              id: true,
+              title: true,
+              nsCardId: true,
+              nsSeason: true,
+              isRetired: true,
+              retiredAt: true,
+              metadata: true,
+            },
+          },
+        },
+        orderBy: { acquiredAt: "desc" },
+      }),
+      ctx.db.nSVerification.findMany({
+        where: { userId: ctx.user.id, verified: true },
+        select: { nationName: true },
+      }),
+    ]);
+
+    // Dedupe by (nsCardId, nsSeason) — a user may own multiple copies.
+    const seen = new Set<string>();
+    const cards = ownerships
+      .filter((o) => {
+        const key = `${o.cards.nsCardId}-${o.cards.nsSeason}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((o) => {
+        const meta = (o.cards.metadata as Record<string, any>) || {};
+        const nation = (meta.nsData?.name as string) || o.cards.title;
+        const takedown = meta.nsTakedown as Record<string, any> | null | undefined;
+        return {
+          cardId: o.cards.id,
+          title: o.cards.title,
+          nsCardId: o.cards.nsCardId,
+          nsSeason: o.cards.nsSeason,
+          nation,
+          isHidden: o.cards.isRetired,
+          hiddenAt: takedown?.hiddenAt ?? o.cards.retiredAt ?? null,
+          reason: takedown?.reason ?? null,
+        };
+      });
+
+    return {
+      verifiedNations: verified.map((v) => v.nationName),
+      cards,
+    };
+  }),
+
+  /**
+   * User: Self-serve takedown of a NationStates-imported card (flag-owner
+   * opt-out). Requires the user to (a) own the card and (b) have a verified
+   * NSVerification for the card's nation — proving they hold the flag rights.
+   */
+  hideMyCard: protectedProcedure
+    .input(
+      z.object({
+        nsCardId: z.number().int().positive(),
+        nsSeason: z.number().int().positive(),
+        reason: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const card = await ctx.db.card.findFirst({
+        where: {
+          nsCardId: input.nsCardId,
+          nsSeason: input.nsSeason,
+          cardType: "NS_IMPORT",
+        },
+      });
+
+      if (!card) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `No NationStates card found for ${input.nsCardId} S${input.nsSeason}`,
+        });
+      }
+
+      // (a) The user must own this card.
+      const owned = await ctx.db.cardOwnership.findFirst({
+        where: { ownerId: ctx.user.id, cardId: card.id },
+      });
+      if (!owned) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You must own this card to request a takedown of its flag.",
+        });
+      }
+
+      // (b) The user must be NS-verified for the card's nation.
+      const meta = (card.metadata as Record<string, any>) || {};
+      const nation = (meta.nsData?.name as string) || card.title;
+      const verified = await ctx.db.nSVerification.findFirst({
+        where: {
+          userId: ctx.user.id,
+          verified: true,
+          nationName: { equals: nation, mode: "insensitive" },
+        },
+      });
+
+      if (!verified) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `You must verify ownership of "${nation}" on NationStates to remove its flag.`,
+        });
+      }
+
+      if (card.isRetired) {
+        return {
+          success: true,
+          cardId: card.id,
+          title: card.title,
+          message: `"${card.title}" is already hidden.`,
+        };
+      }
+
+      await ctx.db.card.update({
+        where: { id: card.id },
+        data: {
+          isRetired: true,
+          retiredAt: new Date(),
+          artwork: null,
+          artworkVariants: Prisma.DbNull,
+          metadata: {
+            ...meta,
+            nsTakedown: {
+              hiddenAt: new Date().toISOString(),
+              hiddenBy: ctx.user.id,
+              reason: input.reason || null,
+              selfService: true,
+            },
+          },
+        },
+      });
+
+      console.log(
+        `[NS Import] Self-serve takedown: user ${ctx.user.id} hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title})`
+      );
+
+      return {
+        success: true,
+        cardId: card.id,
+        title: card.title,
+        message: `Hidden "${card.title}". Your flag will no longer be served on this card.`,
+      };
+    }),
 
   // ─── Bulk Import Endpoints ────────────────────────────────────────
 

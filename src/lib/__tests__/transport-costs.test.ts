@@ -4,7 +4,7 @@
  * change has to update both this file and the table intentionally.
  */
 
-import { calculateRouteCosts } from "../transport-costs";
+import { calculateRouteCosts } from "~/lib/economy/transport-costs";
 
 describe("calculateRouteCosts", () => {
   it("applies the rail cost factor (0.04) at zero terrain difficulty", () => {

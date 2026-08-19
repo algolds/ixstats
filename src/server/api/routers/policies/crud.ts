@@ -3,19 +3,19 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { ActivityHooks } from "~/lib/activity-hooks";
-import { notificationAPI } from "~/lib/notification-api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
-import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policy-effects-sync";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { ActivityHooks } from "~/lib/activity";
+import { notificationAPI } from "~/lib/notifications/api";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { applyPolicyEffect, clearPolicyEffect } from "~/lib/policies";
+import { CountryEventSpine } from "~/lib/activity";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import { IxTime } from "~/lib/ixtime";
 import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
-} from "~/lib/atomic-government-utils";
-import { deriveBrokers } from "~/lib/statecraft-power-brokers";
+} from "~/lib/government/atomic-utils";
+import { deriveBrokers } from "~/lib/statecraft/power-brokers";
 
 const RECON_CAPACITY_COST = 20;
 
@@ -179,9 +179,7 @@ export const policiesCrudRouter = createTRPCRouter({
       const customAttrs = getCustomPolicyAttributes(baseInput.priority);
       let policyRiskRating = customAttrs.riskRating as "stable" | "volatile" | "high-risk";
       let policyOrigin = (origin || customAttrs.origin) as
-        | "personal"
-        | "crisis_response"
-        | "broker_request";
+        "personal" | "crisis_response" | "broker_request";
       let policyCivCapCost = customAttrs.civCapCost;
 
       if (!decretalKey) {
@@ -218,13 +216,9 @@ export const policiesCrudRouter = createTRPCRouter({
           taxRevenueEffect = results.taxRevenueEffect;
 
           policyRiskRating = (decretal.riskRating ?? "stable") as
-            | "stable"
-            | "volatile"
-            | "high-risk";
+            "stable" | "volatile" | "high-risk";
           policyOrigin = (origin ?? decretal.origin ?? "personal") as
-            | "personal"
-            | "crisis_response"
-            | "broker_request";
+            "personal" | "crisis_response" | "broker_request";
           policyCivCapCost = decretal.civCapCost ?? 0;
 
           calculatedEffectsJson = JSON.stringify({

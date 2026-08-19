@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import VexelEditor from "~/components/vexel/VexelEditor";
+import VexelEditor from "~/components/maps/vexel/VexelEditor";
 
 interface VexelEditPageProps {
   params: Promise<{ id: string }>;

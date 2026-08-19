@@ -8,7 +8,7 @@
  * Extracted from EconomicArchetypeService.ts lines 1117-2056
  */
 
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import type { EconomicArchetype } from "../archetype-types";
 

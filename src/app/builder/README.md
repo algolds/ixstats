@@ -1,6 +1,6 @@
-# Builder Overview
+# Builder Overview (v3)
 
-**Last updated:** June 2026
+**Last updated:** August 2026
 
 The MyCountry Builder (`/builder`) is a standalone core system that lets a signed-in user create a new nation — or edit an existing one — by configuring its foundation, identity, government, and economics before committing to the live MyCountry simulation. The builder is a single-page router: all sections render in place via `useState` + `window.history.pushState()` (no Next.js route transitions), with a `popstate` listener for back/forward and deep links via the `?section=` query param.
 

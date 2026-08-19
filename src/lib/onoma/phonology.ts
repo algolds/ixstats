@@ -1,6 +1,13 @@
 // src/lib/onoma/phonology.ts
 // Onoma Lab — Phonology & Grapheme-to-IPA Translation Engine
 
+import {
+  TEMPLATE_PHONETIC_PROFILES,
+  getTemplateLinguisticProfile,
+} from "./template-phonetics";
+import { getNameOverride } from "./ipa-overrides";
+import type { IPAString, LinguisticProfile, ResolvedNamePhonetics } from "./types";
+
 // Standard English-like phonetic rules for fallback
 const DEFAULT_RULES: [string, string][] = [
   ["sch", "ʃ"],
@@ -22,23 +29,28 @@ const DEFAULT_RULES: [string, string][] = [
   ["j", "dʒ"],
 ];
 
-const CULTURE_RULES: Record<string, [string, string][]> = {
+export const CULTURE_RULES: Record<string, [string, string][]> = {
   latin: [
     ["ph", "f"],
     ["th", "t"],
     ["ch", "k"],
+    ["gn", "ɲ"],
+    ["gl", "ʎ"],
+    ["sc", "ʃ"],
     ["ce", "tse"],
     ["ci", "tsi"],
     ["cy", "tsy"],
     ["cæ", "tsaɪ"],
     ["cœ", "tsɔɪ"],
     ["ae", "aɪ"],
-    ["œ", "ɔɪ"],
+    ["oe", "ɔɪ"],
     ["c", "k"],
     ["ge", "dʒe"],
     ["gi", "dʒi"],
     ["gy", "dʒy"],
-    ["g", "g"],
+    ["gu", "ɡw"],
+    ["qu", "kw"],
+    ["g", "ɡ"],
     ["v", "w"],
     ["x", "ks"],
     ["j", "j"],
@@ -47,10 +59,15 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
   germanic: [
     ["sch", "ʃ"],
     ["ch", "x"],
+    ["sp", "ʃp"],
+    ["st", "ʃt"],
     ["ei", "aɪ"],
     ["ie", "iː"],
+    ["eu", "ɔʏ"],
+    ["äu", "ɔʏ"],
     ["tz", "ts"],
     ["ph", "f"],
+    ["th", "t"],
     ["v", "f"],
     ["w", "v"],
     ["z", "ts"],
@@ -61,23 +78,44 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["r", "ʁ"],
   ],
   celtic: [
+    ["ll", "ɬ"],
+    ["dd", "ð"],
+    ["rh", "r̥"],
     ["bh", "v"],
+    ["mh", "v"],
     ["ch", "x"],
     ["dh", "ð"],
     ["gh", "ɣ"],
-    ["fh", ""], // silent
-    ["mh", "v"],
+    ["fh", ""], // silent lenition
     ["sh", "h"],
     ["th", "θ"],
-    ["ll", "ɬ"],
+    ["ph", "f"],
+    ["w", "ʊ"],
+    ["y", "ə"],
     ["r", "ɾ"],
   ],
   slavic: [
     ["sz", "ʃ"],
     ["cz", "tʃ"],
     ["rz", "ʒ"],
+    ["ż", "ʒ"],
+    ["ź", "ʑ"],
+    ["ś", "ɕ"],
+    ["ć", "tɕ"],
+    ["ń", "ɲ"],
+    ["ł", "w"],
     ["ch", "x"],
+    ["kh", "x"],
+    ["ts", "ts"],
+    ["zh", "ʒ"],
+    ["sh", "ʃ"],
+    ["ya", "ja"],
+    ["yu", "ju"],
+    ["ye", "jɛ"],
     ["c", "ts"],
+    ["h", "x"],
+    ["w", "v"],
+    ["v", "v"],
     ["j", "j"],
     ["y", "i"],
     ["r", "r"],
@@ -85,26 +123,60 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
   arabic: [
     ["kh", "x"],
     ["gh", "ɣ"],
-    ["sh", "ʃ"],
-    ["th", "θ"],
     ["dh", "ð"],
+    ["th", "θ"],
+    ["sh", "ʃ"],
+    ["zh", "ʒ"],
+    ["ch", "tʃ"],
     ["aa", "aː"],
     ["ee", "iː"],
     ["uu", "uː"],
+    ["ii", "iː"],
+    ["oo", "uː"],
+    ["ay", "eɪ"],
+    ["aw", "aʊ"],
     ["q", "q"],
+    ["h", "ħ"],
+    ["ḥ", "ħ"],
+    ["'", "ʔ"],
+    ["‘", "ʕ"],
+    ["’", "ʔ"],
+    ["ṣ", "sˤ"],
+    ["ḍ", "dˤ"],
+    ["ṭ", "tˤ"],
+    ["ẓ", "ðˤ"],
+    ["w", "w"],
+    ["y", "j"],
     ["r", "ɾ"],
   ],
   "east-asian": [
+    ["zh", "ʈʂ"],
+    ["ch", "ʈʂʰ"],
+    ["sh", "ʂ"],
+    ["tsu", "tsɯ"],
+    ["shi", "ɕi"],
+    ["chi", "tɕi"],
+    ["fu", "ɸɯ"],
+    ["ts", "ts"],
     ["sy", "ʃ"],
     ["ty", "tʃ"],
-    ["ch", "tʃ"],
-    ["sh", "ʃ"],
-    ["ts", "ts"],
+    ["ng", "ŋ"],
+    ["ou", "oʊ"],
+    ["ao", "aʊ"],
+    ["yu", "y"],
     ["r", "ɾ"],
   ],
   austronesian: [
     ["ng", "ŋ"],
+    ["ny", "ɲ"],
     ["wh", "f"],
+    ["c", "tʃ"],
+    ["j", "dʒ"],
+    ["'", "ʔ"],
+    ["ʻ", "ʔ"],
+    ["aa", "aː"],
+    ["ii", "iː"],
+    ["uu", "uː"],
     ["r", "ɾ"],
   ],
   persian: [
@@ -116,7 +188,11 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["aa", "ɒː"],
     ["ee", "iː"],
     ["oo", "uː"],
+    ["ow", "oʊ"],
+    ["ey", "eɪ"],
     ["q", "ɣ"],
+    ["v", "v"],
+    ["w", "v"],
     ["r", "ɾ"],
   ],
   turkic: [
@@ -124,21 +200,28 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["kh", "x"],
     ["ç", "tʃ"],
     ["ş", "ʃ"],
-    ["ğ", ""], // soft g lengthens the preceding vowel
+    ["ğ", ""], // soft g lengthens preceding vowel
     ["c", "dʒ"],
     ["ı", "ɯ"],
     ["ö", "ø"],
     ["ü", "y"],
     ["q", "q"],
+    ["w", "v"],
     ["r", "ɾ"],
   ],
   african: [
+    ["ng'", "ŋ"],
     ["ng", "ŋ"],
     ["ny", "ɲ"],
     ["dl", "ɮ"],
     ["gb", "ɡb"],
     ["kp", "kp"],
     ["dh", "ð"],
+    ["th", "θ"],
+    ["gh", "ɣ"],
+    ["mb", "ᵐb"],
+    ["nd", "ⁿd"],
+    ["nj", "ᶮdʒ"],
     ["r", "ɾ"],
   ],
   indic: [
@@ -148,9 +231,21 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["kh", "kʰ"],
     ["th", "t̪ʰ"],
     ["ph", "pʰ"],
-    ["sh", "ʃ"],
+    ["jh", "dʒʱ"],
+    ["ch", "tʃʰ"],
+    ["sh", "ʂ"],
+    ["ś", "ɕ"],
+    ["ṣ", "ʂ"],
+    ["ṭ", "ʈ"],
+    ["ḍ", "ɖ"],
+    ["ṇ", "ɳ"],
     ["aa", "aː"],
     ["ee", "iː"],
+    ["oo", "uː"],
+    ["ai", "aːɪ"],
+    ["au", "aːʊ"],
+    ["v", "ʋ"],
+    ["w", "ʋ"],
     ["r", "ɾ"],
   ],
   uralic: [
@@ -160,10 +255,17 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["gy", "ɟ"],
     ["ny", "ɲ"],
     ["ty", "c"],
+    ["ly", "j"],
+    ["s", "ʃ"],
     ["ä", "æ"],
     ["ö", "ø"],
     ["ü", "y"],
+    ["kk", "kː"],
+    ["tt", "tː"],
+    ["pp", "pː"],
     ["j", "j"],
+    ["w", "v"],
+    ["v", "v"],
     ["r", "r"],
   ],
   constructed: [
@@ -172,36 +274,190 @@ const CULTURE_RULES: Record<string, [string, string][]> = {
     ["ch", "x"],
     ["ph", "f"],
     ["lh", "ɬ"],
+    ["rh", "r̥"],
+    ["ë", "ɛ"],
     ["c", "k"],
     ["r", "ɾ"],
   ],
 };
 
-const IPA_VOWELS = /[aeiouyøɛɔœɨææǽǣ]/i;
+const IPA_VOWELS = /[aeiouyøɛɔœɨææǽǣûʊɪɑɒʌɯəäöü]/i;
 
-/** Built-in grapheme→IPA rules for a culture, exposed so the IPA Studio can show/extend them. */
-export function getCultureRules(culture: string | null): [string, string][] {
-  const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
+/**
+ * Built-in grapheme→IPA rules for a culture or template key.
+ */
+export function getCultureRules(cultureOrTemplate: string | null): [string, string][] {
+  if (!cultureOrTemplate) return DEFAULT_RULES;
+
+  // Check template profiles first (e.g. "species:elf")
+  if (TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]) {
+    return TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]!.rules;
+  }
+
+  const primaryCulture = cultureOrTemplate.split("+")[0].toLowerCase().trim();
   return CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+}
+
+export interface ResolvePhoneticsOptions {
+  culture?: string | null;
+  category?: string | null;
+  subType?: string | null;
+  customRules?: [string, string][];
+  explicitIpa?: string | null;
+  bcp47VoiceTag?: string;
+  kokoroVoicePersona?: string;
+}
+
+/**
+ * Hierarchical 5-tier phonetic resolver.
+ * Computes exact IPA, BCP-47 voice tag, and Kokoro persona for any given name.
+ */
+export function resolveNamePhonetics(
+  name: string,
+  options: ResolvePhoneticsOptions = {}
+): ResolvedNamePhonetics {
+  if (!name || !name.trim()) {
+    return {
+      ipa: "" as IPAString,
+      bcp47VoiceTag: "en-US",
+      source: "default",
+    };
+  }
+
+  // Tier 1: Explicit item IPA (passed directly or in localStorage)
+  if (options.explicitIpa && options.explicitIpa.trim()) {
+    const raw = options.explicitIpa.trim().replace(/^[/[]+|[/\\]+$/g, "");
+    return {
+      ipa: `/${raw}/` as IPAString,
+      bcp47VoiceTag: options.bcp47VoiceTag || "en-US",
+      kokoroVoicePersona: options.kokoroVoicePersona,
+      source: "override",
+    };
+  }
+
+  const localOverride = getNameOverride(name.trim());
+  if (localOverride?.ipa) {
+    const raw = localOverride.ipa.trim().replace(/^[/[]+|[/\\]+$/g, "");
+    return {
+      ipa: `/${raw}/` as IPAString,
+      bcp47VoiceTag: options.bcp47VoiceTag || "en-US",
+      kokoroVoicePersona: options.kokoroVoicePersona,
+      source: "override",
+    };
+  }
+
+  // Tier 2: Template-specific linguistic profile
+  if (options.category && options.subType) {
+    const templateProfile = getTemplateLinguisticProfile(options.category, options.subType);
+    if (templateProfile) {
+      const ipa = translateToIPA(name, templateProfile.id, options.customRules);
+      return {
+        ipa: ipa as IPAString,
+        bcp47VoiceTag: templateProfile.bcp47VoiceTag,
+        kokoroVoicePersona: templateProfile.kokoroVoicePersona,
+        source: "template",
+      };
+    }
+  }
+
+  // Tier 3: Direct template ID passed as culture (e.g. "species:elf" or "noble:norman")
+  if (options.culture && TEMPLATE_PHONETIC_PROFILES[options.culture]) {
+    const prof = TEMPLATE_PHONETIC_PROFILES[options.culture]!;
+    const ipa = translateToIPA(name, prof.id, options.customRules);
+    return {
+      ipa: ipa as IPAString,
+      bcp47VoiceTag: prof.bcp47VoiceTag,
+      kokoroVoicePersona: prof.kokoroVoicePersona,
+      source: "template",
+    };
+  }
+
+  // Tier 4: IRL culture family rules
+  const primaryCulture = options.culture ? options.culture.split("+")[0].toLowerCase().trim() : "any";
+  if (CULTURE_RULES[primaryCulture]) {
+    const ipa = translateToIPA(name, primaryCulture, options.customRules);
+    return {
+      ipa: ipa as IPAString,
+      bcp47VoiceTag: getCultureDefaultVoiceTag(primaryCulture),
+      kokoroVoicePersona: getCultureDefaultKokoroVoice(primaryCulture),
+      source: "culture",
+    };
+  }
+
+  // Tier 5: Universal default
+  const defaultIpa = translateToIPA(name, "any", options.customRules);
+  return {
+    ipa: defaultIpa as IPAString,
+    bcp47VoiceTag: "en-US",
+    source: "default",
+  };
+}
+
+/**
+ * Returns the default BCP-47 voice tag for a culture family.
+ */
+export function getCultureDefaultVoiceTag(culture: string): string {
+  switch (culture) {
+    case "latin": return "it-IT";
+    case "germanic": return "de-DE";
+    case "celtic": return "ga-IE";
+    case "slavic": return "pl-PL";
+    case "arabic": return "ar-SA";
+    case "persian": return "fa-IR";
+    case "turkic": return "tr-TR";
+    case "indic": return "hi-IN";
+    case "east-asian": return "ja-JP";
+    case "austronesian": return "id-ID";
+    case "african": return "sw-KE";
+    case "uralic": return "fi-FI";
+    case "constructed": return "is-IS";
+    default: return "en-US";
+  }
+}
+
+/**
+ * Returns the default Kokoro neural voice persona for a culture family.
+ */
+export function getCultureDefaultKokoroVoice(culture: string): string {
+  switch (culture) {
+    case "latin": return "bf_emma";
+    case "germanic": return "bm_george";
+    case "celtic": return "bf_isabella";
+    case "slavic": return "bm_george";
+    case "arabic": return "af_nicole";
+    case "persian": return "af_nicole";
+    case "turkic": return "am_fenrir";
+    case "indic": return "af_nicole";
+    case "east-asian": return "af_nicole";
+    case "austronesian": return "bf_emma";
+    case "african": return "am_fenrir";
+    case "uralic": return "bm_george";
+    case "constructed": return "bm_fable";
+    default: return "bf_emma";
+  }
 }
 
 /**
  * Translates a given name string into its International Phonetic Alphabet (IPA) representation
- * based on the specified culture family.
- *
- * `overrideRules` are user-supplied grapheme→IPA pairs (from the IPA Studio) that take priority
- * over the built-in culture rules. Multi-character precedence is preserved by the scanner.
+ * based on the specified culture family or template.
  */
 export function translateToIPA(
   name: string,
-  culture: string | null,
+  cultureOrTemplate: string | null,
   overrideRules?: [string, string][]
 ): string {
   if (!name || !name.trim()) return "";
 
-  // Parse culture compounds (e.g. "germanic+slavic" -> "germanic")
-  const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
-  const baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+  let baseRules = DEFAULT_RULES;
+  if (cultureOrTemplate) {
+    if (TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]) {
+      baseRules = TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]!.rules;
+    } else {
+      const primaryCulture = cultureOrTemplate.split("+")[0].toLowerCase().trim();
+      baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+    }
+  }
+
   const rules =
     overrideRules && overrideRules.length > 0 ? [...overrideRules, ...baseRules] : baseRules;
 
@@ -219,7 +475,7 @@ export function translateToIPA(
     while (i < lowerWord.length) {
       let matched = false;
 
-      // Try multi-character rules first (sorted by length descending is implicit by our arrays)
+      // Try multi-character rules first (sorted by length descending)
       for (const [grapheme, ipa] of rules) {
         if (grapheme.length > 1 && lowerWord.startsWith(grapheme, i)) {
           ipaWord += ipa;
@@ -249,8 +505,6 @@ export function translateToIPA(
     }
 
     // Apply Syllable-Aware Stress Heuristic:
-    // Identify the first syllable and place the stress marker 'ˈ' right before
-    // the consonant cluster preceding its vowel group.
     return applyStress(ipaWord);
   });
 
@@ -269,18 +523,16 @@ function applyStress(word: string): string {
 
   const firstVowelIndex = match.index;
 
-  // Find the starting point of the consonant cluster preceding the first vowel
+  // Onset starts before the consonant cluster preceding the first vowel
   let onsetIndex = firstVowelIndex;
   while (onsetIndex > 0) {
     const prevChar = word[onsetIndex - 1];
-    // Stop if we hit a non-alphabetic character (e.g. space, apostrophe)
-    if (!/[a-zøɛɔœɨŋʃtʃθðɬʁvj]/.test(prevChar) || IPA_VOWELS.test(prevChar)) {
+    if (IPA_VOWELS.test(prevChar) || /[\s\-'.]/.test(prevChar)) {
       break;
     }
     onsetIndex--;
   }
 
-  // Insert stress mark
   return word.slice(0, onsetIndex) + "ˈ" + word.slice(onsetIndex);
 }
 
@@ -289,13 +541,21 @@ function applyStress(word: string): string {
  */
 export function segmentGraphemes(
   name: string,
-  culture: string | null,
+  cultureOrTemplate: string | null,
   overrideRules?: [string, string][]
 ): { grapheme: string; ipa: string }[] {
   if (!name || !name.trim()) return [];
 
-  const primaryCulture = culture ? culture.split("+")[0].toLowerCase().trim() : "any";
-  const baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+  let baseRules = DEFAULT_RULES;
+  if (cultureOrTemplate) {
+    if (TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]) {
+      baseRules = TEMPLATE_PHONETIC_PROFILES[cultureOrTemplate]!.rules;
+    } else {
+      const primaryCulture = cultureOrTemplate.split("+")[0].toLowerCase().trim();
+      baseRules = CULTURE_RULES[primaryCulture] || DEFAULT_RULES;
+    }
+  }
+
   const rules =
     overrideRules && overrideRules.length > 0 ? [...overrideRules, ...baseRules] : baseRules;
 
@@ -306,7 +566,6 @@ export function segmentGraphemes(
   while (i < lowerWord.length) {
     let matched = false;
 
-    // Try multi-character rules first
     for (const [grapheme, ipa] of rules) {
       if (grapheme.length > 1 && lowerWord.startsWith(grapheme, i)) {
         segments.push({ grapheme, ipa });
@@ -318,7 +577,6 @@ export function segmentGraphemes(
 
     if (matched) continue;
 
-    // Try single-character rules
     for (const [grapheme, ipa] of rules) {
       if (grapheme.length === 1 && lowerWord[i] === grapheme) {
         segments.push({ grapheme, ipa });
@@ -330,7 +588,6 @@ export function segmentGraphemes(
 
     if (matched) continue;
 
-    // Fallback: append character as is
     segments.push({ grapheme: lowerWord[i], ipa: lowerWord[i] });
     i++;
   }

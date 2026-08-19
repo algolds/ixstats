@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { invalidateCache } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 
 export const managementStorytellerProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { globalCache } from "~/lib/advanced-cache-system";
-import { getArticleIntro } from "~/lib/wiki-bridge";
+import { globalCache } from "~/lib/cache";
+import { getArticleIntro } from "~/lib/wiki/bridge";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData } from "~/types/ixstats";
 
@@ -240,7 +240,7 @@ export async function fetchWikiIntro(
         wikiUrl:
           wiki === "ixwiki"
             ? `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
-            : `https://iiwiki.us/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
+            : `https://iiwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`,
       };
     }
   }

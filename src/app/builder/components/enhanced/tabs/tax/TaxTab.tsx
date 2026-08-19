@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useMemo, useCallback } from "react";
-import { TaxBuilder } from "~/components/tax-system/TaxBuilder";
+import { TaxBuilder } from "~/components/mycountry/domains/government/tax/TaxBuilder";
 import { getTaxOptimization } from "../utils/sectorCalculations";
-import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import type { EconomicInputs } from "../../../../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";

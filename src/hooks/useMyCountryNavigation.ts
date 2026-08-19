@@ -53,7 +53,7 @@ export function useMyCountryNavigation(v2 = false): UseMyCountryNavigationResult
     setActiveTab(newTab);
     // Update URL hash. replaceState does NOT emit a hashchange event, so other
     // instances of this hook (each holds its own local state) would never learn
-    // the tab changed — e.g. the EnhancedMyCountryContent hero that swaps to the
+    // the tab changed — e.g. executive command heroes that swap to the
     // geography wireframe. Dispatch hashchange manually to keep all consumers in sync.
     window.history.replaceState(null, "", "#" + newTab);
     window.dispatchEvent(new HashChangeEvent("hashchange"));

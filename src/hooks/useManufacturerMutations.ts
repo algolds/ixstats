@@ -5,7 +5,7 @@
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import type { Manufacturer, ManufacturerFormData } from "~/lib/manufacturer-utils";
+import type { Manufacturer, ManufacturerFormData } from "~/lib/military/manufacturer-utils";
 
 interface UseManufacturerMutationsArgs {
   manufacturerFormData: ManufacturerFormData;

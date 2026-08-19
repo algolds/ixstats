@@ -96,8 +96,16 @@ export function useNationalIssues(countryId: string | undefined, domain?: string
   }, []);
 
   return {
-    // Data
-    activeIssues: activeData?.issues ?? [],
+    // Data (sorted with priority issues at top)
+    activeIssues: (activeData?.issues ?? []).slice().sort((a: any, b: any) => {
+      const aSev = String(a.severity ?? "").toLowerCase();
+      const bSev = String(b.severity ?? "").toLowerCase();
+      const sevRank = (s: string) =>
+        s === "critical" ? 4 : s === "high" ? 3 : s === "medium" ? 2 : 1;
+      const scoreA = sevRank(aSev) * 100 + (a.urgency ?? 0);
+      const scoreB = sevRank(bSev) * 100 + (b.urgency ?? 0);
+      return scoreB - scoreA;
+    }),
     // getHistory isn't domain-aware; filter client-side when a domain is requested.
     historyIssues: domain
       ? (historyData?.issues ?? []).filter((i: { domain?: string }) => i.domain === domain)

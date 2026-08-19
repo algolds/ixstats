@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
-import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/facet-ui/swipeable";
+import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/ui/facet/swipeable";
 import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [

@@ -1,18 +1,18 @@
 // Server-only: imports @xmldom/xmldom via the province-importer SVG pipeline. Never import into a client component or hook.
 
 import { DOMParser } from "@xmldom/xmldom";
-import { elementToRings, SHAPE_TAGS } from "../province-importer/svg-element-converter";
+import { elementToRings, SHAPE_TAGS } from "~/lib/maps/province-importer/svg-element-converter";
 import {
   getAccumulatedTransform,
   applyMatrixToPoint,
   applyMatrixToRings,
-} from "../province-importer/svg-transform";
+} from "~/lib/maps/province-importer/svg-transform";
 import {
   detectProvinceLayer,
   collectShapeElements,
   filterProvinceShapes,
-} from "../province-importer/svg-layer-detector";
-import { extractAllTextLabels } from "../province-importer/svg-text-matcher";
+} from "~/lib/maps/province-importer/svg-layer-detector";
+import { extractAllTextLabels } from "~/lib/maps/province-importer/svg-text-matcher";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";

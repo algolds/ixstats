@@ -5,7 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { api } from "~/trpc/react";
-import { applyBrushStroke } from "~/lib/territory-brush";
+import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import {
   type UndoStack,
   type VertexRef,
@@ -38,26 +38,20 @@ import {
   smoothGeometry,
   naturalizeGeometry,
   simplifyGeometry,
-} from "~/lib/border-editor";
-import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/shared-vertex-builder";
-import type { SharedVertexData } from "~/lib/shared-vertex-builder";
+} from "~/lib/maps/border-editor";
+import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
+import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import type { FeatureVertexRef } from "~/lib/shared-vertex-builder";
-import { traceAlongLayer } from "~/lib/border-trace";
-import type { TraceFeature } from "~/lib/border-trace";
+import type { FeatureVertexRef } from "~/lib/maps/shared-vertex-builder";
+import { traceAlongLayer } from "~/lib/maps/border-trace";
+import type { TraceFeature } from "~/lib/maps/border-trace";
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
 
 export type BorderEditMode =
-  | "select"
-  | "vertex_edit"
-  | "freehand"
-  | "split"
-  | "merge"
-  | "trace"
-  | "brush";
+  "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace" | "brush";
 
 export interface BorderEditorState {
   mode: BorderEditMode;

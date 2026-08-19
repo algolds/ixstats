@@ -17,11 +17,11 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Marquee } from "~/components/magicui/marquee";
+import { Marquee } from "~/components/ui/magicui/marquee";
 import {
   ATOMIC_COMPONENTS,
   ComponentType,
-} from "~/components/government/atoms/AtomicGovernmentComponents";
+} from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { SplashThinkPagesPeek } from "./SplashThinkPagesPeek";
 

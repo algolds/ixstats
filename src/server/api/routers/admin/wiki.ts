@@ -6,12 +6,12 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 
-import { generateSlug } from "~/lib/slug-utils";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { scoreDailyWikiOS } from "~/lib/lorewards-scoring";
-import type { ScoringWeights } from "~/lib/lorewards-scoring";
+import { generateSlug } from "~/lib/utils";
+import { invalidateCache } from "~/lib/cache";
+import { scoreDailyWikiOS } from "~/lib/lorewards";
+import type { ScoringWeights } from "~/lib/lorewards";
 import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki-bridge";
+import { getWikiDbPool } from "~/lib/wiki/bridge";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/template-registry";
 
 export const adminWikiRouter = createTRPCRouter({
@@ -770,4 +770,4 @@ export const adminWikiRouter = createTRPCRouter({
     }),
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki-bridge"
+// getWikiDbPool is now imported from "~/lib/wiki/bridge"

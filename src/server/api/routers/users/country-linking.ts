@@ -10,13 +10,13 @@ import {
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
-import { IxStatsCalculator } from "~/lib/calculations";
-import { generateSlug } from "~/lib/slug-utils";
-import { notificationHooks } from "~/lib/notification-hooks";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { IxStatsCalculator } from "~/lib/economy/calculations";
+import { generateSlug } from "~/lib/utils";
+import { notificationHooks } from "~/lib/notifications/hooks";
+import { isSystemOwner } from "~/lib/auth";
 import type { BaseCountryData } from "~/types/ixstats";
-import { globalCache } from "~/lib/advanced-cache-system";
-import { getBonusConfig, grantBonus } from "~/lib/vault-bonus";
+import { globalCache } from "~/lib/cache";
+import { getBonusConfig, grantBonus } from "~/lib/vault";
 
 // Temporary storage for user-country mappings until we fix the User model
 

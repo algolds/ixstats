@@ -2,13 +2,13 @@
 
 import { use, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { MyCountryTabsList } from "~/components/mycountry/tabs";
-import { FactbookMetricsProvider } from "~/components/mycountry/FactbookMetricsProvider";
-import { FactbookModals } from "~/components/mycountry/FactbookModals";
-import { useCountryData } from "~/components/mycountry/primitives";
+import { MyCountryTabsList } from "~/components/mycountry/shared/tabs";
+import { FactbookMetricsProvider } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
+import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookModals";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { FactbookSidebar } from "../../_components/FactbookSidebar";
 import { calculateVitalityData } from "../../_utils/countryDataTransformers";
-import { sectionFromPathname } from "~/lib/factbook-routes";
+import { sectionFromPathname } from "~/lib/wiki";
 
 /**
  * FactbookLayout — persistent shell for all five factbook sections
@@ -41,20 +41,16 @@ export default function FactbookLayout({
   return (
     <FactbookMetricsProvider section={section}>
       <div className="space-y-4">
-        {/* Tier 2 — inner section pills (link mode) */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground/70">
-            Factbook
-          </span>
-          <div className="min-w-0 flex-1">
-            <MyCountryTabsList
-              activeTab={section}
-              onChangeAction={() => {}}
-              govComponentCount={0}
-              baseHref={`/countries/${slug}/factbook`}
-              showGovSetupBadge={false}
-            />
-          </div>
+        {/* Tier 2 — inner section pills (minimalist text rail + sliding underline) */}
+        <div className="w-full min-w-0">
+          <MyCountryTabsList
+            activeTab={section}
+            onChangeAction={() => {}}
+            govComponentCount={0}
+            baseHref={`/countries/${slug}/factbook`}
+            showGovSetupBadge={false}
+            variant="underline"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

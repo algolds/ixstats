@@ -4,11 +4,11 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
 import { splashGold } from "~/lib/splash/mycountry-gold";
-import { formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
-import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { formatThinkpagesContentForDisplay } from "~/lib/utils";
+import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/url-utils";
+import { createUrl } from "~/lib/utils";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 

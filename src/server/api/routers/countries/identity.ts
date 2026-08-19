@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { isSystemOwner } from "~/lib/auth";
 import { fetchWikiIntro } from "./utils";
-import { invalidateCache } from "~/lib/trpc-cache";
+import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 export const identityProcedures = {

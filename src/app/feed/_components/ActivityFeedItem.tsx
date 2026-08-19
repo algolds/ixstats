@@ -15,7 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 

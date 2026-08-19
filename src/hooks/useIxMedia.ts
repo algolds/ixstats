@@ -1,2 +1,1 @@
-import { useIxMedia } from "~/components/media/MediaContext";
-export { useIxMedia };
+export { useIxMedia } from "~/components/media/MediaContext";

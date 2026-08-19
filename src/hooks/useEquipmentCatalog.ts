@@ -10,7 +10,7 @@ import {
   DEFAULT_EQUIPMENT_FORM,
   filterEquipment,
   type EquipmentFormData,
-} from "~/lib/equipment-catalog-utils";
+} from "~/lib/military/catalog-utils";
 import { useEquipmentMutations } from "~/hooks/useEquipmentMutations";
 
 export function useEquipmentCatalog() {

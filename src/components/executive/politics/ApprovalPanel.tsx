@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Vote } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { computeApproval, isNewsworthySwing } from "~/lib/approval";
+import { computeApproval, isNewsworthySwing } from "~/lib/government/approval";
 
 interface ApprovalPanelProps {
   countryId: string;

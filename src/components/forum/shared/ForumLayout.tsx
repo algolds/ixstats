@@ -25,7 +25,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";

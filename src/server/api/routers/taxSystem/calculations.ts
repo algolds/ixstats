@@ -5,9 +5,9 @@ import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import {
   getUnifiedTaxEffectiveness,
   getTaxEconomyImpact,
-} from "~/lib/unified-atomic-tax-integration";
+} from "~/lib/economy/unified-atomic-tax-integration";
 import { ComponentType } from "@prisma/client";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationHooks } from "~/lib/notifications/hooks";
 
 // Validation helpers for brackets
 function validateBracketsState(

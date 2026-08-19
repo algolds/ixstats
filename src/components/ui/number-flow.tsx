@@ -2,7 +2,7 @@
 
 import NumberFlow from "@number-flow/react";
 import { cn } from "~/lib/utils";
-import { getCurrencyInfo, safeFormatCurrency } from "~/lib/format-utils";
+import { getCurrencyInfo, safeFormatCurrency } from "~/lib/utils";
 
 interface NumberFlowDisplayProps {
   value: number;
@@ -11,13 +11,7 @@ interface NumberFlowDisplayProps {
   suffix?: string;
   decimalPlaces?: number;
   format?:
-    | "default"
-    | "currency"
-    | "population"
-    | "percentage"
-    | "financial"
-    | "compact"
-    | "decimal";
+    "default" | "currency" | "population" | "percentage" | "financial" | "compact" | "decimal";
   duration?: number;
   trend?: "up" | "down" | "stable";
   locale?: string;

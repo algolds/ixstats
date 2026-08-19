@@ -4,8 +4,7 @@
 import "~/styles/forum.css";
 import { type Metadata } from "next";
 import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
-import { ForumDIPlugin } from "~/components/DynamicIsland/plugins/ForumDIPlugin";
-
+import { ForumDIPlugin } from "~/components/halo/plugins/ForumDIPlugin";
 
 export const metadata: Metadata = {
   title: {

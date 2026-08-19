@@ -32,7 +32,7 @@ This specification unifies the Halo Dynamic Island executive calendar (`Calendar
 
 ## Decoupling & Legacy Cleanup
 
-### 1. Halo Dynamic Island (`src/components/DynamicIsland/`)
+### 1. Halo Dynamic Island (`src/components/halo/`)
 - Remove `CalendarView.tsx` and `plugins/CalendarLiveDIPlugin.tsx`.
 - Remove `"calendar"` view mode from `types.ts`, `CompactView.tsx`, `ExpandedView.tsx`, `hooks.ts`, and `HaloTourContext.tsx`.
 

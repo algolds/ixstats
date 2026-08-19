@@ -7,7 +7,7 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Pencil, Copy, Trash2, EyeOff, Rocket } from "lucide-react";
-import { CATEGORY_ICONS } from "~/lib/equipment-catalog-utils";
+import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 
 interface EquipmentCardProps {
   equipment: any;

@@ -1,4 +1,4 @@
-import { htmlToDiscordMarkdown, formatThinkPagesEmbed } from "../discord-ixtwitter-sync";
+import { htmlToDiscordMarkdown, formatThinkPagesEmbed } from "../discord/ixtwitter-sync";
 
 describe("htmlToDiscordMarkdown", () => {
   test("strips standard paragraph tags and trims whitespace", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { TaxBuilderStateSchema } from "~/types/validation/tax";
+import { TaxBuilderStateSchema } from "~/types/tax-system";
 
 describe("TaxBuilder validation", () => {
   it("requires flatTaxRate when not progressive", () => {

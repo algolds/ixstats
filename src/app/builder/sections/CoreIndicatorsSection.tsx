@@ -6,7 +6,7 @@ import React, { useMemo } from "react";
 import { BarChart3, Users, DollarSign, Activity, Percent } from "lucide-react";
 import { SliderWithDirectInput } from "../primitives/enhanced";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { GlassBarChart } from "~/components/charts/RechartsIntegration";
+import { GlassBarChart } from "~/components/ui/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
@@ -352,8 +352,7 @@ export function CoreIndicatorsSection({
                             sanitizedCoreIndicators.gdpPerCapita *
                             clamped) /
                           100,
-                        taxRevenuePerCapita:
-                          (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
+                        taxRevenuePerCapita: (sanitizedCoreIndicators.gdpPerCapita * clamped) / 100,
                       },
                     });
                   }}
@@ -368,7 +367,9 @@ export function CoreIndicatorsSection({
                 />
                 <div className="border-border/20 text-muted-foreground flex justify-between border-t pt-3 text-[10px]">
                   <span>Min: 5%</span>
-                  <span>Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%</span>
+                  <span>
+                    Selected: {(inputs.fiscalSystem?.taxRevenueGDPPercent ?? 20).toFixed(1)}%
+                  </span>
                   <span>Max: 50%</span>
                 </div>
               </GlassCardContent>
@@ -452,7 +453,7 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
+              <div className="text-foreground flex items-center gap-1.5 text-2xl font-bold">
                 {sanitizedCoreIndicators.totalPopulation.toLocaleString()}
                 <InlineHelpIcon
                   title="Population Scale"
@@ -479,7 +480,7 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
+              <div className="text-foreground flex items-center gap-1.5 text-2xl font-bold">
                 ${sanitizedCoreIndicators.gdpPerCapita.toLocaleString()}
                 <InlineHelpIcon
                   title="GDP per Capita"
@@ -506,7 +507,7 @@ export function CoreIndicatorsSection({
               </div>
             </div>
             <div>
-              <div className="text-foreground text-2xl font-bold flex items-center gap-1.5">
+              <div className="text-foreground flex items-center gap-1.5 text-2xl font-bold">
                 {formatCurrency(sanitizedCoreIndicators.nominalGDP)}
                 <InlineHelpIcon
                   title="Nominal GDP"

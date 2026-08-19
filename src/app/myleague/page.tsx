@@ -25,7 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { LeagueCreator } from "~/components/myleague/LeagueCreator";
+import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";

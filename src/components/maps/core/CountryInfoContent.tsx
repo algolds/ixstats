@@ -156,7 +156,7 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
         <h3 className="text-foreground truncate text-sm font-semibold">{state.displayName}</h3>
         {state.summary && (
           <div className="text-muted-foreground flex gap-3 text-xs">
-            <span>GDP: {formatCompact(state.summary.gdp)}</span>
+            <span>GDP: {formatCompact(state.summary.totalGdp ?? (state.summary as any).gdp)}</span>
             <span>Pop: {formatCompact(state.summary.population)}</span>
           </div>
         )}

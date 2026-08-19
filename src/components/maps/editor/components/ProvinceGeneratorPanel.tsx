@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Dice5, Check, X, Grid3X3, Loader2 } from "lucide-react";
-import { generateProvinces } from "~/lib/province-generator";
+import { generateProvinces } from "~/lib/maps/province-generator";
 import { api } from "~/trpc/react";
 import type { Polygon, MultiPolygon } from "geojson";
 

@@ -6,7 +6,7 @@
  */
 
 import type { Feature, Polygon } from "geojson";
-import { mergeBordersAsOf } from "../border-history-asof";
+import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
 
 function square(minLng: number, minLat: number, maxLng: number, maxLat: number): Polygon {
   return {

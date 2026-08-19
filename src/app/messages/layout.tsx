@@ -3,7 +3,6 @@ import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/Dashboard
 
 import type { Metadata } from "next";
 
-
 export const metadata: Metadata = {
   title: "Messages - IxStats",
   description: "Unified messaging",

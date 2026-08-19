@@ -18,7 +18,7 @@ import type {
 } from "geojson";
 import type { PackedGraph } from "./types";
 import { isLand, cellLng, cellLat, cellAreaKm2 } from "./voronoi-mesh";
-import { ELEVATION_ZONES } from "../elevation-config";
+import { ELEVATION_ZONES } from "~/lib/maps/elevation-config";
 
 // ──────────────────────────────────────────────
 // Main Export
@@ -37,7 +37,7 @@ export interface ExportedLayers {
 import {
   generateMarchingSquaresAltitudes,
   generateMarchingSquaresBackground,
-  generateMarchingSquaresPolitical
+  generateMarchingSquaresPolitical,
 } from "./marching-squares";
 
 /**
@@ -581,8 +581,14 @@ function smoothRing(ring: Position[], iterations = 3): Position[] {
     for (let i = 0; i < n; i++) {
       const p0 = pts[i]!;
       const p1 = pts[i + 1]!;
-      const q: Position = [round4(0.75 * p0[0] + 0.25 * p1[0]), round4(0.75 * p0[1] + 0.25 * p1[1])];
-      const r: Position = [round4(0.25 * p0[0] + 0.75 * p1[0]), round4(0.25 * p0[1] + 0.75 * p1[1])];
+      const q: Position = [
+        round4(0.75 * p0[0] + 0.25 * p1[0]),
+        round4(0.75 * p0[1] + 0.25 * p1[1]),
+      ];
+      const r: Position = [
+        round4(0.25 * p0[0] + 0.75 * p1[0]),
+        round4(0.25 * p0[1] + 0.75 * p1[1]),
+      ];
       next.push(q, r);
     }
     next.push(next[0]!); // close ring

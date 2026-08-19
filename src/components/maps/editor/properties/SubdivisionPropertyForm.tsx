@@ -2,11 +2,11 @@
 
 import React from "react";
 import { Label } from "~/components/ui/label";
-import { ColorPickerInput } from "~/components/kibo-ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Ruler } from "lucide-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
-import { geometryAreaSqKm } from "~/lib/geo-math";
+import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 
 const SUBDIVISION_TYPES = [
   "province",
@@ -138,7 +138,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         <Label className="text-muted-foreground text-xs">Color</Label>
         <ColorPickerInput
           value={form.color ?? "#a78bfa"}
-          onChange={(val) => onChange({ ...form, color: val })}
+          onChange={(val: string) => onChange({ ...form, color: val })}
         />
       </div>
       <WikiLinkWizard

@@ -12,9 +12,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
-import { getVaultConfig } from "~/lib/vault-service";
-import { grantCardXp } from "~/lib/card-xp-utils";
+import { notificationAPI } from "~/lib/notifications/api";
+import { getVaultConfig } from "~/lib/vault";
+import { grantCardXp } from "~/lib/cards";
 
 /**
  * Trade offer creation schema

@@ -15,7 +15,14 @@ import type { WorldGraph } from "./types";
 import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } from "geojson";
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
-import { chaikinSmooth, chaikinSmoothLine, catmullRomSmooth, catmullRomSmoothLine, simplifyRing, perturbRing } from "./helpers/chaikin";
+import {
+  chaikinSmooth,
+  chaikinSmoothLine,
+  catmullRomSmooth,
+  catmullRomSmoothLine,
+  simplifyRing,
+  perturbRing,
+} from "./helpers/chaikin";
 import { cellLng, cellLat } from "./mesh";
 
 export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollection> {
@@ -157,7 +164,8 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
 
   for (const state of states) {
     const stateCells: number[] = [];
-    let sumLng = 0, sumLat = 0;
+    let sumLng = 0,
+      sumLat = 0;
 
     for (let i = 0; i < cells.n; i++) {
       if (cells.state[i] === state.id) {
@@ -287,7 +295,8 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
 
   const iceCells: number[] = [];
   for (let i = 0; i < cells.n; i++) {
-    if (cells.biome[i] === 10) { // 10 = Fi Ice Cap
+    if (cells.biome[i] === 10) {
+      // 10 = Fi Ice Cap
       iceCells.push(i);
     }
   }
@@ -325,10 +334,7 @@ function processVectorRing(ring: [number, number][], passes: number): [number, n
   return perturbRing(smoothed, 42, 0.08, 0.004);
 }
 
-function smoothGeometry(
-  geom: Polygon | MultiPolygon,
-  passes: number
-): Polygon | MultiPolygon {
+function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon | MultiPolygon {
   if (geom.type === "Polygon") {
     return {
       type: "Polygon",
@@ -346,11 +352,7 @@ function smoothGeometry(
   };
 }
 
-function filterSmallComponents(
-  graph: WorldGraph,
-  cellList: number[],
-  minSize: number
-): number[] {
+function filterSmallComponents(graph: WorldGraph, cellList: number[], minSize: number): number[] {
   const { cells } = graph;
   const cellSet = new Set(cellList);
   const visited = new Set<number>();

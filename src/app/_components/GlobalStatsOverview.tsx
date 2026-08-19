@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";

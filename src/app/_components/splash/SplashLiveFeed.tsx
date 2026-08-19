@@ -13,7 +13,7 @@ import {
   Trophy,
   ChevronRight,
 } from "lucide-react";
-import { Marquee } from "~/components/magicui/marquee";
+import { Marquee } from "~/components/ui/magicui/marquee";
 import { api } from "~/trpc/react";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 

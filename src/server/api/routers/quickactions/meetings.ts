@@ -5,9 +5,9 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { notificationHooks } from "~/lib/notification-hooks";
-import { CountryEventSpine } from "~/lib/country-event-spine";
-import { applyPolicyEffect } from "~/lib/policy-effects-sync";
+import { notificationHooks } from "~/lib/notifications/hooks";
+import { CountryEventSpine } from "~/lib/activity";
+import { applyPolicyEffect } from "~/lib/policies";
 
 /**
  * QUICK ACTIONS ROUTER

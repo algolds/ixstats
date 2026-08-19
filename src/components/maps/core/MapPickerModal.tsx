@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { X, MapPin, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
-import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
+import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Button } from "~/components/ui/button";
 
 // Tree-shakeable Turf imports for containment checks

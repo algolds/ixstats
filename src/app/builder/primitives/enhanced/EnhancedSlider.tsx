@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import debounce from "lodash/debounce";
 import { motion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useAnimatedPercentage, DEFAULT_ANIMATIONS } from "./animation-utils";
 import type { EnhancedInputProps } from "./types";

@@ -21,14 +21,13 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { WikiSearch } from "./WikiSearch";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { AccountTypeSelector } from "./account/AccountTypeSelector";
+import { AccountDetailsForm } from "./account/AccountDetailsForm";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -54,60 +53,6 @@ interface ThinkpagesAccountInput {
   personality: "serious" | "casual" | "satirical";
   profileImageUrl?: string;
 }
-
-const ACCOUNT_TYPES = {
-  government: {
-    icon: Crown,
-    label: "Government",
-    description: "Official government accounts (Presidential, ministerial, diplomatic)",
-    maxAccounts: 5,
-    color: "amber",
-    examples: ["Presidential Office", "Minister of Foreign Affairs", "Ambassador to UN"],
-  },
-  media: {
-    icon: Newspaper,
-    label: "Media",
-    description: "News organizations, journalists, and bloggers",
-    maxAccounts: 10,
-    color: "blue",
-    examples: ["National News Network", "Political Reporter", "Economic Analyst"],
-  },
-  citizen: {
-    icon: Users,
-    label: "Citizens",
-    description: "Activists, influencers, and common people",
-    maxAccounts: 17,
-    color: "green",
-    examples: ["Student Activist", "Business Owner", "Cultural Influencer"],
-  },
-} as const;
-
-const COLOR_CLASSES = {
-  amber: "bg-amber-500/20 text-amber-400",
-  blue: "bg-blue-500/20 text-blue-400",
-  green: "bg-green-500/20 text-green-400",
-} as const;
-
-const TYPE_THEME_CLASSES = {
-  government: {
-    selected:
-      "border-amber-500/65 bg-[var(--color-bg-secondary)] shadow-[0_0_15px_rgba(245,158,11,0.15)] scale-[1.01]",
-    unselected:
-      "border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-amber-500/30 hover:bg-[var(--color-bg-tertiary)] hover:scale-[1.005]",
-  },
-  media: {
-    selected:
-      "border-blue-500/65 bg-[var(--color-bg-secondary)] shadow-[0_0_15px_rgba(59,130,246,0.15)] scale-[1.01]",
-    unselected:
-      "border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-blue-500/30 hover:bg-[var(--color-bg-tertiary)] hover:scale-[1.005]",
-  },
-  citizen: {
-    selected:
-      "border-green-500/65 bg-[var(--color-bg-secondary)] shadow-[0_0_15px_rgba(16,185,129,0.15)] scale-[1.01]",
-    unselected:
-      "border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-green-500/30 hover:bg-[var(--color-bg-tertiary)] hover:scale-[1.005]",
-  },
-} as const;
 
 export function AccountCreationModal({
   isOpen,
@@ -348,7 +293,7 @@ export function AccountCreationModal({
                     />
                   </div>
                   <div>
-                    <h3 className="flex items-center gap-1.5 text-base font-extrabold tracking-wide text-[var(--color-text-primary)] sm:text-lg">
+                    <h3 className="flex items-center gap-1.5 text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:text-lg">
                       <span>Create Thinkpages Account</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -412,103 +357,18 @@ export function AccountCreationModal({
                       initial={{ opacity: 0, x: 30 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -30 }}
-                      className="space-y-4"
                     >
-                      <h3 className="text-base font-semibold text-[var(--color-text-primary)] sm:text-lg">
-                        Choose Account Type
-                      </h3>
-                      <div className="grid gap-3 sm:gap-4">
-                        {Object.entries(ACCOUNT_TYPES).map(([type, config]) => {
-                          const Icon = config.icon;
-                          const isSelected = formData.accountType === type;
-                          const currentCount =
-                            accountCountsByType?.[type as keyof typeof ACCOUNT_TYPES] || 0;
-                          const canCreateThisType = currentCount < config.maxAccounts;
-                          const typeAccountsRemaining = config.maxAccounts - currentCount;
-
-                          return (
-                            <button
-                              key={type}
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  accountType: type as any,
-                                  verified: type === "government",
-                                }))
-                              }
-                              disabled={!canCreateThisType || isLoadingAccountCountsByType}
-                              className={cn(
-                                "flex w-full items-start gap-2 rounded-xl border p-3 text-left transition-all duration-300 sm:gap-4 sm:p-4",
-                                isSelected
-                                  ? TYPE_THEME_CLASSES[type as keyof typeof TYPE_THEME_CLASSES]
-                                      .selected
-                                  : TYPE_THEME_CLASSES[type as keyof typeof TYPE_THEME_CLASSES]
-                                      .unselected,
-                                (!canCreateThisType || isLoadingAccountCountsByType) &&
-                                  "cursor-not-allowed border-neutral-800 bg-neutral-900/10 opacity-40 hover:scale-100"
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "shrink-0 rounded-xl border border-transparent p-2.5 transition-all duration-300",
-                                  isSelected
-                                    ? config.color === "amber"
-                                      ? "border-amber-500/30 bg-amber-500/25 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
-                                      : config.color === "blue"
-                                        ? "border-blue-500/30 bg-blue-500/25 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                                        : "border-green-500/30 bg-green-500/25 text-green-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
-                                    : COLOR_CLASSES[config.color]
-                                )}
-                              >
-                                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="mb-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                  <h4 className="text-sm font-semibold text-[var(--color-text-primary)] sm:text-base">
-                                    {config.label}
-                                  </h4>
-                                  <span className="rounded-full border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] px-2 py-0.5 text-[10px] text-[var(--color-text-secondary)] sm:text-xs">
-                                    Max {config.maxAccounts}
-                                  </span>
-                                  {type === "government" && (
-                                    <span className="rounded-full border border-blue-500/10 bg-blue-500/15 px-2 py-0.5 text-[10px] font-semibold text-blue-400 sm:text-xs">
-                                      Auto-Verified
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="mb-2 text-xs text-[var(--color-text-muted)] sm:text-sm">
-                                  {config.description}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--color-text-muted)]/80 sm:text-xs">
-                                  <span>
-                                    {canCreateThisType
-                                      ? `Remaining: ${typeAccountsRemaining} / ${config.maxAccounts}`
-                                      : `Limit Reached: ${config.maxAccounts} / ${config.maxAccounts}`}
-                                  </span>
-                                  <span className="text-[var(--color-text-muted)]/40">•</span>
-                                  <span className="max-w-[280px] truncate text-[var(--color-text-muted)]/80">
-                                    Examples: {config.examples.join(", ")}
-                                  </span>
-                                </div>
-                              </div>
-                              {isSelected && (
-                                <div
-                                  className={cn(
-                                    "shrink-0 rounded-full p-1 text-white shadow-sm",
-                                    config.color === "amber"
-                                      ? "bg-amber-500"
-                                      : config.color === "blue"
-                                        ? "bg-blue-500"
-                                        : "bg-green-500"
-                                  )}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <AccountTypeSelector
+                        selectedType={formData.accountType}
+                        onSelectType={(t) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            accountType: t,
+                            verified: t === "government",
+                          }))
+                        }
+                        onContinue={() => setStep("details")}
+                      />
                     </motion.div>
                   ) : (
                     <motion.div
@@ -518,188 +378,17 @@ export function AccountCreationModal({
                       exit={{ opacity: 0, x: -30 }}
                       className="space-y-6"
                     >
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <button
-                          onClick={() => setStep("type")}
-                          className="rounded-full p-1.5 text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] active:scale-95 sm:p-2"
-                        >
-                          <ArrowLeft className="h-4 w-4" />
-                        </button>
-                        <h3 className="text-base font-semibold text-[var(--color-text-primary)] sm:text-lg">
-                          Account Details
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                        <div>
-                          <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                            First Name
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.firstName}
-                            onChange={(e) =>
-                              setFormData((p) => ({ ...p, firstName: e.target.value }))
-                            }
-                            placeholder="Enter first name"
-                            className={cn(
-                              "block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm",
-                              errors.firstName &&
-                                "border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-[var(--color-error)]/30"
-                            )}
-                          />
-                          {errors.firstName && (
-                            <p className="mt-1 text-[10px] text-[var(--color-error)] sm:text-xs">
-                              {errors.firstName}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                            Last Name (optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.lastName}
-                            onChange={(e) =>
-                              setFormData((p) => ({ ...p, lastName: e.target.value }))
-                            }
-                            placeholder="Enter last name"
-                            className={cn(
-                              "block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:text-sm",
-                              errors.lastName &&
-                                "border-[var(--color-error)] focus:border-[var(--color-error)] focus:ring-[var(--color-error)]/30"
-                            )}
-                          />
-                          {errors.lastName && (
-                            <p className="mt-1 text-[10px] text-[var(--color-error)] sm:text-xs">
-                              {errors.lastName}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-xs font-medium text-[var(--color-text-secondary)] sm:text-sm">
-                          Username
-                        </label>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-2 flex items-center text-xs text-[var(--color-text-muted)] sm:left-3 sm:text-sm">
-                            @
-                          </span>
-                          <input
-                            type="text"
-                            value={formData.username}
-                            onChange={(e) => handleUsernameChange(e.target.value)}
-                            placeholder="username"
-                            className={cn(
-                              "block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-2.5 pl-6 text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30 sm:px-4 sm:py-3 sm:pl-8 sm:text-sm",
-                              errors.username &&
-                                "border-[var(--color-error)] focus:border-[var(--color-error)]/30",
-                              isUsernameAvailable &&
-                                "border-[var(--color-success)] focus:border-[var(--color-success)]/30"
-                            )}
-                          />
-                          <div className="absolute inset-y-0 right-3 flex items-center">
-                            {isCheckingUsername && (
-                              <Loader2 className="h-4 w-4 animate-spin text-[var(--color-text-muted)]" />
-                            )}
-                            {isUsernameAvailable === true && (
-                              <Check className="h-5 w-5 text-[var(--color-success)]" />
-                            )}
-                            {isUsernameAvailable === false && !errors.username && (
-                              <AlertCircle className="h-5 w-5 text-[var(--color-error)]" />
-                            )}
-                          </div>
-                        </div>
-                        {errors.username ? (
-                          <p className="mt-1 text-xs text-[var(--color-error)]">
-                            {errors.username}
-                          </p>
-                        ) : isUsernameAvailable === true ? (
-                          <p className="mt-1 text-xs text-[var(--color-success)]">
-                            Username is available
-                          </p>
-                        ) : isUsernameAvailable === false && formData.username.length >= 3 ? (
-                          !isValidUsernameFormat ? (
-                            <p className="mt-1 text-xs text-[var(--color-error)]">
-                              Username must start with a letter and contain only letters, numbers,
-                              and underscores
-                            </p>
-                          ) : (
-                            <p className="mt-1 text-xs text-[var(--color-error)]">
-                              Username is already taken
-                            </p>
-                          )
-                        ) : (
-                          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                            3-20 characters, must start with a letter, letters/numbers/underscores
-                            only
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
-                          Bio (optional)
-                        </label>
-                        <textarea
-                          value={formData.bio}
-                          onChange={(e) => setFormData((p) => ({ ...p, bio: e.target.value }))}
-                          placeholder="Describe this account..."
-                          maxLength={160}
-                          className={cn(
-                            "block min-h-[90px] w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30",
-                            errors.bio &&
-                              "border-[var(--color-error)] focus:border-[var(--color-error)]/30"
-                          )}
-                        />
-                        <div className="mt-1 flex items-center justify-between">
-                          {errors.bio ? (
-                            <p className="text-xs text-[var(--color-error)]">{errors.bio}</p>
-                          ) : (
-                            <span />
-                          )}
-                          <span className="text-xs text-[var(--color-text-muted)]">
-                            {formData.bio.length}/160
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">
-                          Profile Picture (optional)
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border-2 border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_25px_rgba(59,130,246,0.1)]">
-                            {formData.profileImageUrl ? (
-                              <img
-                                src={formData.profileImageUrl}
-                                alt="Profile"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-[var(--color-bg-tertiary)] text-xs text-[var(--color-text-muted)]">
-                                No Image
-                              </div>
-                            )}
-                          </div>
-                          <div className="relative flex flex-col gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setShowUnsplashSearch(true)}
-                              className="inline-flex items-center gap-x-2 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-2.5 text-sm font-semibold text-blue-400 shadow-md shadow-blue-500/5 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-600/20 hover:text-blue-300 active:scale-[0.98]"
-                            >
-                              Search Image Repository
-                            </button>
-                            {formData.profileImageUrl && (
-                              <button
-                                type="button"
-                                onClick={() => setFormData((p) => ({ ...p, profileImageUrl: "" }))}
-                                className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
-                              >
-                                Remove Image
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      <AccountDetailsForm
+                        formData={formData}
+                        setFormData={setFormData}
+                        errors={errors}
+                        isCheckingUsername={isCheckingUsername}
+                        isUsernameAvailable={isUsernameAvailable}
+                        isValidUsernameFormat={isValidUsernameFormat}
+                        handleUsernameChange={handleUsernameChange}
+                        onBack={() => setStep("type")}
+                        onOpenImageSearch={() => setShowUnsplashSearch(true)}
+                      />
                       <div className="border-t border-white/5 pt-4">
                         <button
                           type="button"

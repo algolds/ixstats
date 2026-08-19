@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Compass, User, X, Lightbulb } from "lucide-react";
-import { UserProfileMenu } from "~/components/UserProfileMenu";
+import { UserProfileMenu } from "~/components/navigation/UserProfileMenu";
 import type { ContextualMenuDefinition, NavigationItem } from "~/lib/navigation-config";
 import { ContextualMenu } from "~/components/navigation/ContextualMenu";
 
@@ -196,10 +196,10 @@ export function MobileMenu({
       <div className="mt-8 space-y-3">
         <div className="border-border/60 bg-muted/40 text-muted-foreground rounded-2xl border border-dashed px-4 py-3 text-xs leading-relaxed">
           <span className="font-semibold">
-            <Lightbulb className="mr-1 h-3.5 w-3.5 text-amber-400 inline align-text-bottom" />
+            <Lightbulb className="mr-1 inline h-3.5 w-3.5 align-text-bottom text-amber-400" />
             Smart Navigation:
-          </span> This menu adapts to your
-          current page. Use it for rapid jumps across IxStats systems.
+          </span>{" "}
+          This menu adapts to your current page. Use it for rapid jumps across IxStats systems.
         </div>
 
         {/* Close Button for easier mobile UX */}

@@ -10,26 +10,26 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { StandingsTable } from "~/components/myleague/StandingsTable";
-import { NextMatchCountdown } from "~/components/myleague/NextMatchCountdown";
-import { ScheduleView } from "~/components/myleague/ScheduleView";
-import { BracketView } from "~/components/myleague/BracketView";
-import { RaceResults } from "~/components/myleague/RaceResults";
-import { DraftPicksView } from "~/components/myleague/DraftPicksView";
-import MatchDetailModal from "~/components/myleague/MatchDetailModal";
-import { TeamRosterModal } from "~/components/myleague/TeamRosterModal";
-import { LeagueSettingsModal } from "~/components/myleague/LeagueSettingsModal";
-import { TeamSettingsModal } from "~/components/myleague/TeamSettingsModal";
+import { StandingsTable } from "~/components/sports/league/StandingsTable";
+import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdown";
+import { ScheduleView } from "~/components/sports/league/ScheduleView";
+import { BracketView } from "~/components/sports/league/BracketView";
+import { RaceResults } from "~/components/sports/league/RaceResults";
+import { DraftPicksView } from "~/components/sports/league/DraftPicksView";
+import MatchDetailModal from "~/components/sports/league/MatchDetailModal";
+import { TeamRosterModal } from "~/components/sports/league/TeamRosterModal";
+import { LeagueSettingsModal } from "~/components/sports/league/LeagueSettingsModal";
+import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
-import { LeagueSidebarLayout } from "~/components/myleague/LeagueSidebarLayout";
+import { isSystemOwner } from "~/lib/auth";
+import { LeagueSidebarLayout } from "~/components/sports/league/LeagueSidebarLayout";
 import Standings from "~/components/sports/standings/Standings1";
 import LatestResults from "~/components/sports/latest-results/LatestResults1";
 import {
   LeagueBrandCard,
   ReigningChampionWidget,
   type LeagueSection,
-} from "~/components/myleague/LeagueSidebarNav";
+} from "~/components/sports/league/LeagueSidebarNav";
 import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
 import {
   ArrowLeft,

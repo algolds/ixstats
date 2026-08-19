@@ -1,9 +1,5 @@
-"use client";
-
 import { MyCountryRouter } from "~/components/mycountry";
 
-export const dynamic = "force-dynamic";
-
-export default function ExecutivePage() {
-  return <MyCountryRouter v2 />;
+export default function MyCountryExecutivePage() {
+  return <MyCountryRouter />;
 }

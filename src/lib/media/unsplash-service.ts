@@ -1,0 +1,298 @@
+/**
+ * Unsplash Service for Dynamic Country Header Images
+ * Generates contextual images based on country economic/population tiers
+ */
+
+import { Cache } from "~/lib/cache";
+
+export interface UnsplashImageData {
+  id: string;
+  url: string;
+  downloadUrl: string;
+  photographer: string;
+  photographerUrl: string;
+  description: string | null;
+}
+
+interface UnsplashSearchParams {
+  query: string;
+  orientation?: "landscape" | "portrait" | "squarish";
+  size?: "small" | "regular" | "full";
+  per_page?: number;
+  page?: number;
+}
+
+class UnsplashService {
+  private readonly accessKey = process.env.UNSPLASH_ACCESS_KEY || "";
+  private readonly baseUrl = "https://api.unsplash.com";
+  private readonly unsplashCache = new Cache<UnsplashImageData[]>({
+    defaultTtlMs: 1000 * 60 * 60 * 24, // 24 hours
+    maxSize: 200,
+  });
+
+  /**
+   * Generate search query based on country tier and characteristics
+   */
+  private generateSearchQuery(
+    economicTier: string,
+    populationTier: string,
+    continent?: string
+  ): string {
+    const economicKeywords = {
+      Extravagant: ["luxury skyline", "modern architecture", "advanced technology", "prosperity"],
+      "Very Strong": ["developed city", "modern infrastructure", "urban development", "progress"],
+      Strong: ["growing city", "development", "modern buildings", "advancement"],
+      Healthy: ["city development", "infrastructure", "urban growth", "community"],
+      Developing: ["developing nation", "traditional life", "emerging economy", "culture"],
+      Struggling: ["rural landscape", "traditional culture", "natural beauty", "heritage"],
+    };
+
+    const populationKeywords = {
+      Huge: ["crowded city", "metropolis", "busy streets"],
+      Large: ["bustling city", "urban center", "city life"],
+      Medium: ["balanced city", "town center", "community"],
+      Small: ["small town", "peaceful community", "scenic"],
+      Micro: ["island nation", "isolated beauty", "unique landscape"],
+    };
+
+    const continentKeywords = {
+      Africa: ["african", "saharan", "tropical"],
+      Asia: ["asian", "oriental", "eastern"],
+      Europe: ["european", "mediterranean", "northern"],
+      "North America": ["american", "western", "continental"],
+      "South America": ["latin american", "amazonian", "andean"],
+      Oceania: ["pacific", "island", "coastal"],
+    };
+
+    const ecoTerms = economicKeywords[economicTier as keyof typeof economicKeywords] || [
+      "city",
+      "development",
+    ];
+    const popTerms = populationKeywords[populationTier as keyof typeof populationKeywords] || [
+      "urban",
+    ];
+    const continentTerms = continent
+      ? continentKeywords[continent as keyof typeof continentKeywords] || []
+      : [];
+
+    // Combine terms strategically
+    const selectedTerms = [
+      ecoTerms[Math.floor(Math.random() * ecoTerms.length)],
+      ...popTerms.slice(0, 1),
+      ...continentTerms.slice(0, 1),
+    ].filter(Boolean);
+
+    return selectedTerms.join(" ");
+  }
+
+  /**
+   * Fetch images from Unsplash API
+   */
+  private async fetchImages(params: UnsplashSearchParams): Promise<UnsplashImageData[]> {
+    const cacheKey = JSON.stringify(params);
+    const cached = this.unsplashCache.get(cacheKey);
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    if (typeof window === "undefined") {
+      try {
+        const { externalApiCache } = await import("~/lib/cache");
+        const dbCached = await externalApiCache.get<UnsplashImageData[]>({
+          service: "unsplash",
+          type: "json",
+          identifier: cacheKey,
+        });
+        if (dbCached && dbCached.data) {
+          this.unsplashCache.set(cacheKey, dbCached.data);
+          return dbCached.data;
+        }
+      } catch (err) {
+        console.error("[UnsplashService] Error reading from externalApiCache:", err);
+      }
+    }
+
+    const searchParams = new URLSearchParams({
+      query: params.query,
+      orientation: params.orientation || "landscape",
+      per_page: (params.per_page || 5).toString(),
+      page: (params.page || 1).toString(),
+    });
+
+    if (!this.accessKey) {
+      console.warn("Unsplash API access key is missing, using fallback images");
+      return this.getFallbackImages(params.query);
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch(`${this.baseUrl}/search/photos?${searchParams}`, {
+        headers: {
+          Authorization: `Client-ID ${this.accessKey}`,
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error("Unsplash API unauthorized (401). Check UNSPLASH_ACCESS_KEY.");
+        } else {
+          console.warn(`Unsplash API returned ${response.status}, using fallback images`);
+        }
+        return this.getFallbackImages(params.query);
+      }
+
+      const data = await response.json();
+
+      if (!data.results || data.results.length === 0) {
+        console.warn("No Unsplash images found, using fallback images");
+        return this.getFallbackImages(params.query);
+      }
+
+      const images: UnsplashImageData[] = data.results.map((photo: any) => ({
+        id: photo.id,
+        url: photo.urls[params.size || "regular"],
+        downloadUrl: photo.links.download_location,
+        photographer: photo.user.name,
+        photographerUrl: photo.user.links.html,
+        description: photo.description || photo.alt_description,
+      }));
+
+      // Cache the results
+      this.unsplashCache.set(cacheKey, images);
+
+      if (typeof window === "undefined") {
+        try {
+          const { externalApiCache } = await import("~/lib/cache");
+          await externalApiCache.set<UnsplashImageData[]>(
+            {
+              service: "unsplash",
+              type: "json",
+              identifier: cacheKey,
+              ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
+            },
+            images
+          );
+        } catch (err) {
+          console.error("[UnsplashService] Error writing to externalApiCache:", err);
+        }
+      }
+
+      return images;
+    } catch (error) {
+      // Silently fall back to default images - this is not a critical error
+      if (error instanceof Error && error.name === "AbortError") {
+        console.warn("Unsplash API request timed out, using fallback images");
+      } else if (error instanceof TypeError && error.message === "Failed to fetch") {
+        console.warn(
+          "Network error fetching Unsplash images (CORS/network issue), using fallback images"
+        );
+      } else {
+        console.warn("Unsplash API error, using fallback images:", error);
+      }
+      return this.getFallbackImages(params.query);
+    }
+  }
+
+  /**
+   * Get fallback images for when API fails
+   */
+  private getFallbackImages(query: string): UnsplashImageData[] {
+    const fallbackUrls = [
+      "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1449156001437-3a1661acda71?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+    ];
+
+    return fallbackUrls.map((url, index) => ({
+      id: `fallback-${index}`,
+      url,
+      downloadUrl: "",
+      photographer: "Unsplash",
+      photographerUrl: "https://unsplash.com",
+      description: `Fallback image for ${query}`,
+    }));
+  }
+
+  /**
+   * Get header image for a specific country based on its characteristics
+   */
+  async getCountryHeaderImage(
+    economicTier: string,
+    populationTier: string,
+    countryName: string,
+    continent?: string
+  ): Promise<UnsplashImageData> {
+    const query = this.generateSearchQuery(economicTier, populationTier, continent);
+
+    const images = await this.fetchImages({
+      query,
+      orientation: "landscape",
+      size: "regular",
+      per_page: 5,
+    });
+
+    // Select image based on tier (higher tiers get first pick)
+    const tierPriority = {
+      Extravagant: 0,
+      "Very Strong": 0,
+      Strong: 1,
+      Healthy: 1,
+      Developed: 2,
+      Developing: 3,
+      Impoverished: 4,
+    };
+
+    const imageIndex = Math.min(
+      tierPriority[economicTier as keyof typeof tierPriority] || 0,
+      images.length - 1
+    );
+
+    return (
+      images[imageIndex] ||
+      images[0] || {
+        id: "",
+        url: "",
+        downloadUrl: "",
+        photographer: "",
+        photographerUrl: "",
+        description: null,
+      }
+    );
+  }
+
+  /**
+   * Trigger download tracking (required by Unsplash API terms)
+   */
+  async trackDownload(downloadUrl: string): Promise<void> {
+    if (!downloadUrl) return;
+
+    try {
+      await fetch(downloadUrl, {
+        headers: {
+          Authorization: `Client-ID ${this.accessKey}`,
+        },
+        signal: AbortSignal.timeout(5000), // 5s timeout — tracking is non-critical
+      });
+    } catch (error) {
+      console.error("Failed to track Unsplash download:", error);
+    }
+  }
+
+  /**
+   * Search images from Unsplash API for general use.
+   */
+  public async searchImages(params: UnsplashSearchParams): Promise<UnsplashImageData[]> {
+    return this.fetchImages(params);
+  }
+}
+
+export const unsplashService = new UnsplashService();
+export default UnsplashService;

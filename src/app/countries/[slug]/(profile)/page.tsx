@@ -2,8 +2,8 @@
 
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/url-utils";
-import { hashToFactbookRoute } from "~/lib/factbook-routes";
+import { createUrl } from "~/lib/utils";
+import { hashToFactbookRoute } from "~/lib/wiki";
 
 /**
  * PublicCountryPage — `/countries/[slug]` (route group `(profile)`).
@@ -17,11 +17,7 @@ import { hashToFactbookRoute } from "~/lib/factbook-routes";
  * `/countries/[slug]/modeling` lives outside this route group and is unaffected.
  */
 
-export default function PublicCountryPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default function PublicCountryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
 

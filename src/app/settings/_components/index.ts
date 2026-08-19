@@ -10,3 +10,4 @@ export { VaultSettingsCard } from "./VaultSettingsCard";
 export { PrivacySecurityCard } from "./PrivacySecurityCard";
 export { GeographicReconciliationCard } from "./GeographicReconciliationCard";
 export { NotificationSettingsCard } from "./NotificationSettingsCard";
+export { NSCardSettingsCard } from "./NSCardSettingsCard";

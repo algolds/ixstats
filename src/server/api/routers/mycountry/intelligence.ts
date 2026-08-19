@@ -15,8 +15,8 @@ import { createTRPCRouter, protectedProcedure, countryOwnerProcedure } from "~/s
 import { db } from "~/server/db";
 import { IxTime } from "~/lib/ixtime";
 
-import { notificationAPI } from "~/lib/notification-api";
-import { notificationHooks } from "~/lib/notification-hooks";
+import { notificationAPI } from "~/lib/notifications/api";
+import { notificationHooks } from "~/lib/notifications/hooks";
 import {
   generateIntelligenceFeed,
   calculateVitalityScores,

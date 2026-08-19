@@ -8,7 +8,12 @@
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 
 export type GeoJSONMutation =
-  | { type: "UPDATE_FEATURE"; featureId: string; geometry: GeoJSON.Geometry; properties?: Record<string, unknown> }
+  | {
+      type: "UPDATE_FEATURE";
+      featureId: string;
+      geometry: GeoJSON.Geometry;
+      properties?: Record<string, unknown>;
+    }
   | { type: "ADD_FEATURE"; feature: GeoJSON.Feature }
   | { type: "REMOVE_FEATURE"; featureId: string };
 
@@ -31,11 +36,7 @@ class GeoJSONPatchEngine {
   /**
    * Applies a single feature mutation to a MapLibre GeoJSON source without full re-serialization.
    */
-  public patchSource(
-    map: MapLibreMap,
-    sourceId: string,
-    mutation: GeoJSONMutation
-  ): boolean {
+  public patchSource(map: MapLibreMap, sourceId: string, mutation: GeoJSONMutation): boolean {
     const source = map.getSource(sourceId) as GeoJSONSource | undefined;
     if (!source) return false;
 

@@ -8,7 +8,7 @@ import {
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
-import { IxStatsCalculator } from "~/lib/calculations";
+import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { getEconomicTierFromGdpPerCapita } from "~/types/ixstats";
 import {
   safelyIncludeRelations,

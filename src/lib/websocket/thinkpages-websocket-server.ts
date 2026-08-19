@@ -1,5 +1,4 @@
 // ThinkPages WebSocket Server: real-time messaging, presence, typing, read receipts
-import "server-only";
 import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
 

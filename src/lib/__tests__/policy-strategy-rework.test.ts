@@ -5,16 +5,16 @@ jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "te
 jest.mock("~/server/db", () => ({
   db: { systemLog: { create: jest.fn(() => Promise.resolve()) } },
 }));
-jest.mock("~/lib/notification-api", () => ({
+jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
 }));
-jest.mock("~/lib/country-event-spine", () => ({
+jest.mock("~/lib/activity/event-spine", () => ({
   CountryEventSpine: { recordCountryEvent: jest.fn(() => Promise.resolve()) },
 }));
-jest.mock("~/lib/diplomatic-news-generator", () => ({
+jest.mock("~/lib/diplomacy/news-generator", () => ({
   generateDiplomaticNews: jest.fn(() => Promise.resolve()),
 }));
-jest.mock("~/lib/activity-hooks", () => ({
+jest.mock("~/lib/activity/hooks", () => ({
   ActivityHooks: {
     Economic: {
       onTaxPolicyChange: jest.fn(() => Promise.resolve()),
@@ -23,7 +23,7 @@ jest.mock("~/lib/activity-hooks", () => ({
 }));
 
 import { PREDEFINED_DECRETALS } from "../policies/registry";
-import { NationalIssuesEngine, type CountrySnapshot } from "../national-issues-engine";
+import { NationalIssuesEngine, type CountrySnapshot } from "~/lib/national-issues";
 import { createCallerFactory } from "../../server/api/trpc";
 import { policiesRouter } from "../../server/api/routers/policies";
 

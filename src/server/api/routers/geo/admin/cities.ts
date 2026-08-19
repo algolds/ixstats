@@ -12,9 +12,9 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { upsertCity } from "~/lib/country-geo-service";
-import { invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
+import { upsertCity } from "~/lib/country-geo";
+import { invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 // ── Shared schema ─────────────────────────────────────────────────────────────

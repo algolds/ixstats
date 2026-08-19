@@ -8,6 +8,7 @@ import { StudioWorkshop } from "./studio/StudioWorkshop";
 import { StudioNameSets } from "./studio/StudioNameSets";
 import { StudioLexicon } from "./studio/StudioLexicon";
 import { StudioPhonology } from "./studio/StudioPhonology";
+import { StudioSoundShifts } from "./studio/StudioSoundShifts";
 import { StudioVisualizer } from "./studio/StudioVisualizer";
 import BatchSection from "../sections/BatchSection";
 import LinguisticsSection from "./LinguisticsSection";
@@ -55,9 +56,8 @@ export function StudioSection({
           {applyFlanking("Onoma Studio", speechConfig?.brand?.flankingStyle)}
         </h2>
         <p className="text-muted-foreground text-sm">
-          Import your own lexicons and linguistic data, or leverage our ever-growing collection of
-          real-world cultural datasets to create names that feel authentic, resonant, and unique to
-          your world.
+          Import your own lexicons and linguistic data, simulate historical sound shifts, or leverage our
+          ever-growing collection of real-world cultural datasets to create names that feel authentic and resonant.
         </p>
       </div>
 
@@ -69,6 +69,8 @@ export function StudioSection({
         <StudioNameSets />
       ) : currentSubTab === "phonology" ? (
         <StudioPhonology />
+      ) : currentSubTab === "shifts" ? (
+        <StudioSoundShifts />
       ) : currentSubTab === "batch" ? (
         <BatchSection />
       ) : currentSubTab === "linguistics" ? (

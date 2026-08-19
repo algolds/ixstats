@@ -4,6 +4,7 @@
 // Onoma Lab — Card component to display individual generated names
 
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy,
   Check,
@@ -307,7 +308,7 @@ export function NameResultCard({
         {/* Name Display Stack */}
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
           <span
-            className="text-foreground w-full truncate text-sm font-semibold tracking-wide whitespace-nowrap transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base"
+            className="text-foreground w-full truncate text-sm font-semibold tracking-[-0.015em] whitespace-nowrap transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base"
             style={dynamicFontSize ? { fontSize: dynamicFontSize } : undefined}
             title={name}
           >
@@ -322,7 +323,7 @@ export function NameResultCard({
                   onClick={handlePlayPronunciation}
                   title="Click to hear the exact phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] whitespace-nowrap transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]",
+                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]",
                     allowCustomize ? "rounded-l-full" : "rounded-full",
                     hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
                   )}
@@ -337,7 +338,7 @@ export function NameResultCard({
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
                     className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/5 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                      "text-muted-foreground border-border/40 bg-secondary/5 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]"
                     )}
                   >
                     <Pencil className="h-2.5 w-2.5" />
@@ -365,7 +366,7 @@ export function NameResultCard({
             }}
             title={showDetailsModal ? "Hide linguistic details" : "Show linguistic details"}
             className={cn(
-              "cursor-pointer rounded-md p-1.5 transition-all duration-200 active:scale-90",
+              "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92]",
               showDetailsModal
                 ? "bg-[#0091ff]/20 text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1 ring-[#0091ff]/30"
                 : "text-muted-foreground hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
@@ -378,7 +379,7 @@ export function NameResultCard({
           <button
             onClick={handleCopy}
             title="Copy name to clipboard"
-            className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-200 hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-90 dark:hover:text-emerald-400"
+            className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.92] dark:hover:text-emerald-400"
           >
             {copied ? (
               <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -394,7 +395,7 @@ export function NameResultCard({
               disabled={localSaved || saving}
               title={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
               className={cn(
-                "cursor-pointer rounded-md p-1.5 transition-all duration-200 active:scale-90 disabled:opacity-50",
+                "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92] disabled:opacity-50",
                 localSaved
                   ? "scale-105 bg-[#0091ff]/20 text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-[#0091ff]/30"
                   : "text-muted-foreground hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
@@ -418,7 +419,7 @@ export function NameResultCard({
                 onUse(name);
               }}
               title="Deploy name in game"
-              className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-200 hover:bg-amber-500/10 hover:text-amber-500 active:scale-90"
+              className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out hover:bg-amber-500/10 hover:text-amber-500 active:scale-[0.92]"
             >
               <ArrowUpRight className="h-4 w-4" />
             </button>
@@ -445,15 +446,25 @@ export function NameResultCard({
       )}
 
       {/* Expanded Inline Morph Area */}
-      {showDetailsModal && (
-        <LinguisticProfile
-          name={name}
-          morphology={morphology}
-          savedAt={savedAt}
-          originLabel={originLabel}
-          localSaved={localSaved}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {showDetailsModal && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, scale: 0.98 }}
+            animate={{ opacity: 1, height: "auto", scale: 1 }}
+            exit={{ opacity: 0, height: 0, scale: 0.98 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+            className="overflow-hidden"
+          >
+            <LinguisticProfile
+              name={name}
+              morphology={morphology}
+              savedAt={savedAt}
+              originLabel={originLabel}
+              localSaved={localSaved}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </FacetCard>
   );
 }

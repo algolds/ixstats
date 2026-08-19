@@ -30,8 +30,8 @@ import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import { IxTime } from "~/lib/ixtime";
-import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime-accuracy";
-import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime-sync";
+import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime";
+import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime";
 
 interface TimeVisualizationData {
   currentIxTime: number;

@@ -11,7 +11,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { CountryEventSpine } from "~/lib/country-event-spine";
+import { CountryEventSpine } from "~/lib/activity";
 import {
   assemblePackages,
   weightAcceptance,
@@ -21,7 +21,7 @@ import {
   type Category,
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
-import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft-power-brokers";
+import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
 import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
@@ -93,7 +93,7 @@ export const intentRouter = createTRPCRouter({
   suggest: publicProcedure
     .input(z.object({ countryId: z.string(), goal: z.string().min(2).max(200) }))
     .query(async ({ ctx, input }) => {
-      const { category, target, packages } = assemblePackages(input.goal);
+      const { category, packages } = assemblePackages(input.goal);
       const status = await cooldownStatus(ctx.db, input.countryId);
 
       // broker-weighted acceptance (falls back to tier-based if brokers unavailable)
@@ -117,8 +117,8 @@ export const intentRouter = createTRPCRouter({
       return {
         goal: input.goal,
         category,
-        target: target ?? null,
-        foreignNeedsTarget: category === "foreign" && !target,
+        target: null,
+        foreignNeedsTarget: false,
         packages: weighted,
         broker: broker
           ? { name: broker.name, unlocked: broker.unlocked, satisfied: broker.satisfied }
@@ -133,17 +133,17 @@ export const intentRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => cooldownStatus(ctx.db, input.countryId)),
 
   /** Get a single intent by ID. */
-  getIntent: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.intent.findUnique({
-        where: { id: input.id },
-      });
-    }),
+  getIntent: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    return await ctx.db.intent.findUnique({
+      where: { id: input.id },
+    });
+  }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
   updateStatus: protectedProcedure
-    .input(z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) }))
+    .input(
+      z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) })
+    )
     .mutation(async ({ ctx, input }) => {
       const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
@@ -216,7 +216,14 @@ export const intentRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         goal: z.string().min(2).max(200),
-        tier: z.enum(["proposed", "measured", "moderate", "extreme"]),
+        tier: z.enum([
+          "proposed",
+          "measured",
+          "moderate",
+          "extreme",
+          "broker_unlocked",
+          "structural_unlocked",
+        ]),
         parentId: z.string().optional(),
         intentId: z.string().optional(),
       })
@@ -224,7 +231,7 @@ export const intentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryAccess(ctx, input.countryId);
 
-      const { category, target, packages } = assemblePackages(input.goal);
+      const { category, packages } = assemblePackages(input.goal);
       const now = IxTime.getCurrentIxTime();
 
       // Foreign policy is gated at classification time (assemble.classifyGoal throws
@@ -238,7 +245,7 @@ export const intentRouter = createTRPCRouter({
             goal: input.goal,
             tier: "proposed",
             category,
-            target: target ?? null,
+            target: null,
             status: "proposed",
             changesJson: "[]",
             summary: `Proposed Goal: ${input.goal}`,
@@ -342,7 +349,7 @@ export const intentRouter = createTRPCRouter({
             goal: input.goal,
             tier: input.tier,
             category,
-            target: target ?? null,
+            target: null,
             status: "active",
             changesJson: JSON.stringify(pkg.changes),
             summary,
@@ -418,10 +425,7 @@ export const intentRouter = createTRPCRouter({
         issues,
         resolvedCount: resolved,
         totalCount: issues.length,
-        progress:
-          issues.length === 0
-            ? 0
-            : Math.round((resolved / issues.length) * 100),
+        progress: issues.length === 0 ? 0 : Math.round((resolved / issues.length) * 100),
       };
     }),
 });

@@ -63,7 +63,9 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
   // 1. Get login token
   const tokenRes = await fetch(`${apiBase}?action=query&meta=tokens&type=login&format=json`);
   updateCookies(tokenRes);
-  const tokenData = (await tokenRes.json()) as any;
+  const tokenData = (await tokenRes.json()) as {
+    query?: { tokens?: { logintoken?: string } };
+  };
   const logintoken = tokenData.query?.tokens?.logintoken;
   if (!logintoken) throw new Error("Failed to get login token from MediaWiki");
 
@@ -83,7 +85,9 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
     }).toString(),
   });
   updateCookies(loginRes);
-  const loginData = (await loginRes.json()) as any;
+  const loginData = (await loginRes.json()) as {
+    login?: { result?: string; reason?: string };
+  };
   if (loginData.login?.result !== "Success") {
     throw new Error(`MediaWiki bot login failed: ${loginData.login?.reason || "unknown reason"}`);
   }
@@ -95,7 +99,9 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
     },
   });
   updateCookies(csrfRes);
-  const csrfData = (await csrfRes.json()) as any;
+  const csrfData = (await csrfRes.json()) as {
+    query?: { tokens?: { csrftoken?: string } };
+  };
   const csrfToken = csrfData.query?.tokens?.csrftoken;
   if (!csrfToken || csrfToken === "+\\") {
     throw new Error("Failed to get authenticated CSRF token for bot");
@@ -113,7 +119,7 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
  * Forwards cookies to ensure the action is performed by the actual logged-in user.
  */
 export async function getUserSessionAndToken(ctx: {
-  user: any;
+  user: { wikiUsername?: string | null } | null;
   auth: { userId: string | null };
   headers: Headers;
 }): Promise<{ cookies: string[]; csrfToken: string }> {

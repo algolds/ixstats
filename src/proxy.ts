@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
-import { isStandaloneRequest } from "~/lib/standalone-detection";
+import { isStandaloneRequest } from "~/lib/system";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -258,7 +258,7 @@ function getClerkMiddleware() {
           // Check for admin role on /admin routes
           if (req.nextUrl.pathname.startsWith("/admin")) {
             // Use centralized system owner constants
-            const { isSystemOwner } = await import("~/lib/system-owner-constants");
+            const { isSystemOwner } = await import("~/lib/auth");
             const isSystemOwnerUser = isSystemOwner(userId);
 
             if (!isSystemOwnerUser) {

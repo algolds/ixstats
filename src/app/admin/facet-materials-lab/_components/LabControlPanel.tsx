@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Sliders, GlassWater, Sun, Palette } from "lucide-react";
-import { ColorPicker } from "~/components/ui/color-picker";
+import { ColorPickerInput } from "~/components/ui/color-picker";
 import {
   type LabConfig,
   type MaterialType,
@@ -454,9 +454,9 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                 Background Color
               </label>
-              <ColorPicker
-                color={config.bgCustomColor}
-                onChange={(color) => onChange({ bgCustomColor: color })}
+              <ColorPickerInput
+                value={config.bgCustomColor}
+                onChange={(color: string) => onChange({ bgCustomColor: color })}
               />
             </div>
           )}

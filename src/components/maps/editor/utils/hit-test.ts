@@ -93,11 +93,7 @@ function getAnchorCoords(feature: any): [number, number] | null {
   return null;
 }
 
-function pixelDistance(
-  map: MapLibreMap,
-  point: { x: number; y: number },
-  feature: any
-): number {
+function pixelDistance(map: MapLibreMap, point: { x: number; y: number }, feature: any): number {
   const coords = getAnchorCoords(feature);
   if (!coords) return Number.POSITIVE_INFINITY;
   try {
@@ -179,9 +175,7 @@ export function hitTestFeatures(
     return { hit: bestExactPoint, locked: !!lockedHit };
   }
 
-  const bestExactPoly = exactPolys.find(
-    (h) => !opts.excludeLayers?.includes(h.layerId)
-  );
+  const bestExactPoly = exactPolys.find((h) => !opts.excludeLayers?.includes(h.layerId));
   if (bestExactPoly) {
     return { hit: bestExactPoly, locked: !!lockedHit };
   }

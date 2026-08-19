@@ -12,13 +12,13 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "~/lib/utils";
 import { type BuilderStep, getStepsForMode } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/system";
 import { useNotify } from "~/hooks/useNotify";
 import type {
   GovernmentDepartment,
@@ -30,11 +30,11 @@ import { createDefaultEconomicInputs } from "../lib/economy-data-service";
 import type { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
 import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
 import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
-import { registerCustomCurrency } from "~/lib/format-utils";
+import { registerCustomCurrency } from "~/lib/utils";
 
 const CURRENT_SCHEMA_VERSION = 1;
 

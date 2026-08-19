@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
-import { normalizeFlagUrl } from "~/lib/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 import { TRPCError } from "@trpc/server";
 
 export const listProcedures = {
@@ -123,17 +123,25 @@ export const listProcedures = {
         ctx.db.country.count({ where }),
       ]);
 
-      const countries = rawCountries.map((country: any) => {
-        const boundingBox = country.boundingBox as any;
+      const countries = rawCountries.map((country) => {
+        const boundingBox = country.boundingBox as
+          | [number, number, number, number]
+          | { minLat?: number; minLng?: number; maxLat?: number; maxLng?: number }
+          | null
+          | undefined;
+
         const bounds =
-          boundingBox && Array.isArray(boundingBox) && boundingBox.length === 4
+          Array.isArray(boundingBox) && boundingBox.length === 4
             ? {
                 minLat: boundingBox[0],
                 minLng: boundingBox[1],
                 maxLat: boundingBox[2],
                 maxLng: boundingBox[3],
               }
-            : boundingBox?.minLng !== undefined
+            : typeof boundingBox === "object" &&
+                boundingBox !== null &&
+                "minLng" in boundingBox &&
+                boundingBox.minLng !== undefined
               ? {
                   minLat: boundingBox.minLat,
                   minLng: boundingBox.minLng,
@@ -142,7 +150,8 @@ export const listProcedures = {
                 }
               : {};
 
-        const centroid = country.centroid as any;
+        const centroid = country.centroid as { coordinates?: number[] } | null | undefined;
+
         const centerCoords =
           centroid?.coordinates &&
           Array.isArray(centroid.coordinates) &&
@@ -168,8 +177,11 @@ export const listProcedures = {
               avgPopGrowth: country.populationGrowthRate || 0,
               avgGdpGrowth: country.adjustedGdpGrowth || 0,
             },
-            riskFlags: [],
-            tierChangeProjection: { year: new Date().getFullYear(), newTier: country.economicTier },
+            riskFlags: [] as string[],
+            tierChangeProjection: {
+              year: new Date().getFullYear(),
+              newTier: country.economicTier ?? "Unknown",
+            },
           },
         };
       });

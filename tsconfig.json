@@ -84,7 +84,11 @@
     "prisma/migrations",
     "prisma/backups",
     "scripts",
-    ".next",
+    ".next/cache",
+    ".next/server",
+    ".next/static",
+    ".next/standalone",
+    ".next/diagnostics",
     "dist",
     "build",
     "out",
@@ -98,5 +102,7 @@
     "jest.config.js",
     "odysseus"
   ],
-  "typescript.disableAutomaticTypeAcquisition": true
+  "typeAcquisition": {
+    "enable": false
+  }
 }

@@ -9,7 +9,7 @@
  */
 
 import { db } from "~/server/db";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { globalCache } from "~/lib/cache";
 import { IxTime } from "~/lib/ixtime";
 
 import type {
@@ -179,10 +179,7 @@ export async function generateIntelligenceFeed(countryId: string): Promise<Intel
         title: item.title,
         description: item.content,
         category: item.category.toLowerCase() as
-          | "economic"
-          | "diplomatic"
-          | "social"
-          | "governance",
+          "economic" | "diplomatic" | "social" | "governance",
         timestamp: item.timestamp.getTime(),
         actionable: item.priority !== "low",
         source: item.source,

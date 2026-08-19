@@ -21,10 +21,7 @@ import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
  * Main entry point for the unified hydrology and climate pass.
  * Mutates graph.cells attributes and populates graph.rivers and graph.watersheds in-place.
  */
-export function computeHydroClimate(
-  graph: WorldGraph,
-  params: WorldGenParams
-): void {
+export function computeHydroClimate(graph: WorldGraph, params: WorldGenParams): void {
   const rng = makeRng(params.seed + 40);
   const { cells } = graph;
   const n = cells.n;
@@ -80,8 +77,7 @@ function computeTemperature(graph: WorldGraph): void {
 
     // Base temperature curve from equator (30°C) to pole (-30°C)
     const baseTemp =
-      CLIMATE_CONSTANTS.equatorialTemp -
-      CLIMATE_CONSTANTS.latitudeTempGradient * lat;
+      CLIMATE_CONSTANTS.equatorialTemp - CLIMATE_CONSTANTS.latitudeTempGradient * lat;
 
     // Thermodynamic lapse rate: -6.5°C per 1000m elevation
     const lapse = (elevMeters / 1000) * CLIMATE_CONSTANTS.lapseRatePerKm;
@@ -214,8 +210,10 @@ function computePrecipitationAndRainShadows(graph: WorldGraph): void {
     // Base precipitation curve (mm/yr): high near equator (2000mm), low at poles (200mm), dip at subtropics 20-30° (500mm)
     let basePrec = 1000;
     if (lat < 15) basePrec = 2200;
-    else if (lat < 35) basePrec = 500; // Subtropical dry belt
-    else if (lat < 60) basePrec = 1200; // Temperate wet belt
+    else if (lat < 35)
+      basePrec = 500; // Subtropical dry belt
+    else if (lat < 60)
+      basePrec = 1200; // Temperate wet belt
     else basePrec = 250; // Polar dry belt
 
     // Continental interior drying (precipitation decreases inland)
@@ -272,25 +270,16 @@ function computePrecipitationAndRainShadows(graph: WorldGraph): void {
 
     if (maxUpwindElevDiff > 0) {
       // Windward lift: multiply precipitation
-      cells.prec[i] = Math.min(
-        4000,
-        cells.prec[i]! * CLIMATE_CONSTANTS.orographicLiftMultiplier
-      );
+      cells.prec[i] = Math.min(4000, cells.prec[i]! * CLIMATE_CONSTANTS.orographicLiftMultiplier);
     } else if (maxDownwindElevDiff > 0) {
       // Leeward rain shadow: reduce precipitation
-      cells.prec[i] = Math.max(
-        50,
-        cells.prec[i]! * CLIMATE_CONSTANTS.rainShadowMultiplier
-      );
+      cells.prec[i] = Math.max(50, cells.prec[i]! * CLIMATE_CONSTANTS.rainShadowMultiplier);
     }
 
     // Compute aridity index (0 = wet, 1 = dry)
     // High temp + low prec = high aridity
     const potentialEvap = Math.max(100, (cells.temp[i]! + 10) * 60);
-    const aridityVal = Math.max(
-      0,
-      Math.min(1.0, 1.0 - cells.prec[i]! / potentialEvap)
-    );
+    const aridityVal = Math.max(0, Math.min(1.0, 1.0 - cells.prec[i]! / potentialEvap));
     cells.aridity[i] = aridityVal;
   }
 }
@@ -381,11 +370,7 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
 // Pass 6: Rivers & Flux Accumulation
 // ──────────────────────────────────────────────
 
-function generateRiverNetworks(
-  graph: WorldGraph,
-  params: WorldGenParams,
-  rng: () => number
-): void {
+function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, rng: () => number): void {
   const { cells } = graph;
   const n = cells.n;
 
@@ -418,10 +403,7 @@ function generateRiverNetworks(
 
   // Adaptive threshold for river detection
   const fluxValues = Array.from(cells.flux).sort((a, b) => b - a);
-  const targetCount = Math.min(
-    1200,
-    Math.max(300, Math.floor(landCells.length * 0.08))
-  );
+  const targetCount = Math.min(1200, Math.max(300, Math.floor(landCells.length * 0.08)));
   const fluxCutoff = fluxValues[targetCount] ?? 50;
 
   // Trace rivers from high-flux coastal mouth cells upstream
@@ -614,7 +596,7 @@ function classifyBiomes(graph: WorldGraph): void {
     } else if (aridity > 0.75 || prec < 250) {
       // 3: Bw (Desert)
       biomeId = 3;
-    } else if (aridity > 0.50 || prec < 500) {
+    } else if (aridity > 0.5 || prec < 500) {
       // 2: Bs (Steppe)
       biomeId = 2;
     } else if (temp > 20 && lat < 25) {

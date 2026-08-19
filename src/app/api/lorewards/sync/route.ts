@@ -2,7 +2,7 @@
 // Called daily by cron (1:00 AM ET) or manually. Requires API key or admin auth.
 
 import { NextRequest, NextResponse } from "next/server";
-import { syncFromStateFile, grantLorewardBonuses } from "~/lib/lorewards-sync";
+import { syncFromStateFile, grantLorewardBonuses } from "~/lib/lorewards";
 
 const CRON_SECRET = process.env.CRON_SECRET ?? process.env.XENFORO_API_KEY;
 

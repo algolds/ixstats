@@ -29,21 +29,18 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 - **Sidebar notifications** — `useMyCountryNotifications(countryId)` drives per-section indicator dots.
 - **Demo / dev modes** — `layout.tsx` adds `DemoModeProvider`, `DevCountryViewProvider`, a demo banner, and the dev "viewing as" toolbar.
 
-## Architecture
+## Architecture (v5)
 
-| Path | Contents |
-| --- | --- |
-| `page.tsx`, `*/page.tsx` | Thin entry points, each rendering `<MyCountryRouter />` (except `editor/`). |
-| `layout.tsx` | Demo/dev providers, banners, `MyCountryDIPlugin` (Dynamic Island). |
-| `components/MobileOptimizations.tsx` | `MobileOptimized` wrapper (touch gestures). |
-| `diplomacy/_components/` | `DiplomaticEventsHub`. |
-| `intelligence/_components/` | `AnalyticsDashboard`, `DiplomaticAnalytics`, `PolicyAnalytics`, `AlertThresholdSettings`. |
-| `editor/page.tsx`, `editor/hooks/` | Country editor (BuilderRouter); `usePendingLocks`. |
-| `map-editor/page.tsx` | Map editor entry. |
-| `utils/` | `keyValidation.ts`, `liveDataTransformers.ts`. |
-| `types/` | `intelligence.ts` payload types. |
+The MyCountry subsystem uses a **4-tier modular domain architecture** located at `src/components/mycountry/`:
 
-Section content lives in `src/components/mycountry/` as `Enhanced*Content` components (`EnhancedMyCountryContent`, `EnhancedExecutiveContent`, `EnhancedDiplomacyContent`, `EnhancedPoliticsContent`, plus lazy `EnhancedIntelligenceContent`, `EnhancedDefenseContent`, `EnhancedMapEditorContent`). Each receives `activeSection`, `onNavigate`, and `notifications` props.
+| Tier | Path | Description |
+| --- | --- | --- |
+| **Shell** | `shell/` | Executive command center (`CommandSurface`, `ExecutiveConsole`, `ExecutiveHome`, `DomainSurface`, `DomainContextRail`, `DrillSheets`, `MyCountryRouter`, `MyCountrySidebarNav`, `domain-meta.ts`). |
+| **Shared** | `shared/` | Universal reusable primitives (`cards/`, `banners/`, `headers/`, `context/`, `metrics/`, `modals/`, `primitives/`, `tabs/`). |
+| **Domains** | `domains/` | 6 simulation pillar modules: `defense/`, `diplomacy/`, `economy/`, `government/`, `intelligence/`, `geography/`. |
+| **Dossier** | `dossier/` | Public country dossier views, factbooks, and Wiki infobox cards. |
+
+Directive primitives under `shared/primitives/composer/` provide preset catalogs, tuning controls, and diff previews.
 
 Key hooks (in `src/hooks/`): `useMyCountryCompliance`, `useMyCountryNotifications`, `useNationalIssuesToast`, `usePremium`, `useUserCountry`.
 

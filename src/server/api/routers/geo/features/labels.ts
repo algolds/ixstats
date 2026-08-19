@@ -16,9 +16,9 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import { validatePointContainment } from "~/lib/geo-validation";
+import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { validatePointContainment } from "~/lib/maps/geo-validation";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z

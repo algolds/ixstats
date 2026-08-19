@@ -302,11 +302,7 @@ export type GenerationStage =
   | "politics"
   | "export";
 
-export type ProgressCallback = (
-  stage: GenerationStage,
-  progress: number,
-  message: string
-) => void;
+export type ProgressCallback = (stage: GenerationStage, progress: number, message: string) => void;
 
 // ──────────────────────────────────────────────
 // Quality Gate

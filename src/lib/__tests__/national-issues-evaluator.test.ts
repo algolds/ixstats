@@ -3,8 +3,8 @@ import { describe, it, expect, jest } from "@jest/globals";
 // Mock env
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 
-import { NationalIssuesEngine } from "../national-issues-engine";
-import type { CountrySnapshot } from "../national-issues-engine";
+import { NationalIssuesEngine } from "~/lib/national-issues";
+import type { CountrySnapshot } from "~/lib/national-issues";
 
 const baseSnapshot: CountrySnapshot = {
   id: "country-1",

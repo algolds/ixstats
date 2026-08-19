@@ -83,10 +83,7 @@ export function bfsAssign(
  * Find all connected components within a set of cell IDs.
  * Returns an array of components, each being an array of cell IDs.
  */
-export function findConnectedComponents(
-  graph: WorldGraph,
-  cellSet: Set<number>
-): number[][] {
+export function findConnectedComponents(graph: WorldGraph, cellSet: Set<number>): number[][] {
   const { cells } = graph;
   const visited = new Set<number>();
   const components: number[][] = [];
@@ -197,7 +194,8 @@ export function dijkstraMultiSource(
         cost[nb] = newCost;
         sourceId[nb] = sourceId[cell]!;
         // Binary search insert to maintain sorted order
-        let lo = 0, hi = pq.length;
+        let lo = 0,
+          hi = pq.length;
         while (lo < hi) {
           const mid = (lo + hi) >>> 1;
           if (pq[mid]!.cost < newCost) lo = mid + 1;

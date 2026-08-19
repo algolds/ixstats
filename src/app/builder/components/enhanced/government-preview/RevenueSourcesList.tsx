@@ -7,7 +7,7 @@ import { Progress } from "~/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Receipt, ChevronDown, ChevronRight } from "lucide-react";
 import type { RevenueSource } from "~/types/government";
-import { formatCurrency } from "~/lib/format-utils";
+import { formatCurrency } from "~/lib/utils";
 
 interface RevenueSourcesListProps {
   sources: RevenueSource[];

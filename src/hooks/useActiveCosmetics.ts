@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { getCosmeticEffects } from "~/lib/cosmetics";
+import { getCosmeticEffects } from "~/lib/media";
 import { useUser } from "~/context/auth-context";
 
 export interface AvatarGlowConfig {

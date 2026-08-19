@@ -12,12 +12,7 @@ export interface WikiGovernmentAttributes {
   decisionEvidence: string[];
   legitimacySources: Array<{
     type:
-      | "electoral"
-      | "traditional"
-      | "performance"
-      | "charismatic"
-      | "religious"
-      | "institutional";
+      "electoral" | "traditional" | "performance" | "charismatic" | "religious" | "institutional";
     confidence: number;
     evidence: string;
   }>;

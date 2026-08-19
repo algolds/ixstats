@@ -14,12 +14,12 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { FacetMaterial } from "~/components/facet-ui";
+import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { useNotify } from "~/hooks/useNotify";
 import { speakName } from "~/lib/onoma/browser-speech";
-import { exportToCSV, exportToJSON } from "~/lib/onoma/export";
+import { exportToCSV, exportToJSON } from "~/lib/onoma/name-generator";
 import type { NameCategory } from "~/lib/onoma/types";
 
 interface BatchNameResult {

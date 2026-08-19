@@ -22,7 +22,7 @@ import {
   getParticleConfig,
   getHolographicAnimation,
   getLightRefractionStyle,
-} from "~/lib/holographic-effects";
+} from "~/lib/themes";
 
 /**
  * HolographicOverlay component props
@@ -97,12 +97,12 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
     const particleIdRef = useRef(0);
 
     const pattern = getHolographicPattern(rarity);
-    const intensity = getHolographicIntensity(rarity);
+    const _intensity = getHolographicIntensity(rarity);
     const lightRays = generateLightRays(8);
     const foilStamp = getFoilStampConfig(rarity);
     const borderConfig = getPremiumBorderConfig(rarity);
     const particleConfig = getParticleConfig(rarity);
-    const holographicAnimation = getHolographicAnimation(rarity);
+    const _holographicAnimation = getHolographicAnimation(rarity);
 
     // Show light rays only for rare+ cards
     const showLightRays =
@@ -212,7 +212,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
         <motion.div
           className={cn(getHolographicClasses(rarity))}
           style={{
-            background:
+            backgroundImage:
               pattern === "rainbow-shimmer"
                 ? getRainbowHolographicGradient(45, true)
                 : pattern === "cosmic"
@@ -221,21 +221,25 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                     ? getMetallicGradient("purple")
                     : getMetallicGradient("gold"),
             backgroundSize: "200% 200%",
-            animation: holographicAnimation,
+            backgroundPosition:
+              isHovered && containerRef.current
+                ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                : "50% 50%",
+            opacity: isHovered ? 0.75 : 0,
+            transition: "background-position 0.1s ease-out, opacity 0.3s ease-out",
             willChange: "background-position, opacity",
           }}
-          animate={
-            enableMouseTracking && isHovered
-              ? {
-                  backgroundPosition: [
-                    "0% 0%",
-                    `${(mousePosition.x / 100) * 50}% ${(mousePosition.y / 100) * 50}%`,
-                  ],
-                }
-              : {}
-          }
-          transition={{ duration: 0.3, ease: "easeOut" }}
         />
+
+        {/* Specular Cursor Spotlight — centered directly on mouse cursor */}
+        {isHovered && (
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-overlay transition-opacity duration-200"
+            style={{
+              background: `radial-gradient(circle 140px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.15) 45%, transparent 80%)`,
+            }}
+          />
+        )}
 
         {/* Light refraction layer */}
         {enableMouseTracking && isHovered && (
@@ -246,26 +250,28 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
           />
         )}
 
-        {/* Animated light rays - only on hover */}
+        {/* Animated light rays - originating from mouse cursor */}
         {showLightRays && isHovered && (
-          <div className="absolute inset-0">
+          <div className="pointer-events-none absolute inset-0">
             {lightRays.map((ray, index) => (
               <motion.div
                 key={index}
-                className="absolute top-1/2 left-1/2 w-1 origin-left bg-gradient-to-r from-white/40 to-transparent"
+                className="pointer-events-none absolute w-1 origin-left bg-gradient-to-r from-white/60 to-transparent"
                 style={{
+                  left: `${mousePosition.x}px`,
+                  top: `${mousePosition.y}px`,
                   height: `${ray.length}%`,
                   transform: `rotate(${ray.angle}deg)`,
                 }}
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{
-                  opacity: [0, 0.6, 0],
-                  scaleX: [0, 1, 0],
+                  opacity: [0.2, 0.7, 0.2],
+                  scaleX: [0.2, 1, 0.2],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 1.8,
                   delay: ray.delay,
-                  repeat: 2, // Only repeat twice instead of infinite
+                  repeat: Infinity,
                   ease: "easeInOut",
                 }}
               />
@@ -278,7 +284,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
           <motion.div
             className={cn("absolute inset-0 rounded-2xl border-2", borderConfig.glow)}
             style={{
-              borderImage: `linear-gradient(135deg, var(--tw-gradient-stops)) 1`,
+              borderImageSource: `linear-gradient(135deg, var(--tw-gradient-stops))`,
               borderImageSlice: 1,
             }}
             animate={

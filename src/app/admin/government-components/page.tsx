@@ -7,7 +7,7 @@ import { useState, useMemo, Fragment } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { SignInButton, useUser } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";

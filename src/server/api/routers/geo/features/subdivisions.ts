@@ -16,11 +16,11 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/trpc-cache";
-import { broadcastMapUpdate } from "~/lib/map-update-bus";
-import { getTerrainForArea } from "~/lib/base-layer-query";
-import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/geo-validation";
-import { generateProvinces } from "~/lib/province-generator";
+import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { getTerrainForArea } from "~/lib/country-geo";
+import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
+import { generateProvinces } from "~/lib/maps/province-generator";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 const coordinatesSchema = z
@@ -220,7 +220,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
         input.geometry,
         "Subdivision"
       );
-      const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+      const { alignSubdivisionBorders } = await import("~/lib/country-geo");
       const alignedGeometry = await alignSubdivisionBorders(
         ctx.db as any,
         input.countryId,
@@ -314,7 +314,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           input.geometry,
           "Subdivision"
         );
-        const { alignSubdivisionBorders } = await import("~/lib/country-geo-service");
+        const { alignSubdivisionBorders } = await import("~/lib/country-geo");
         clippedGeometry = await alignSubdivisionBorders(
           ctx.db as any,
           input.countryId,
@@ -350,7 +350,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
           input.cascadedNeighbors.map((neighbor) =>
             ctx.db.subdivision.update({
               where: { id: neighbor.subdivisionId },
-              data: { geometry: neighbor.geometry },
+              data: { geometry: neighbor.geometry as any },
             })
           )
         );
@@ -424,7 +424,7 @@ export const geoFeaturesSubdivisionsRouter = createTRPCRouter({
       }
 
       const { simplifyProvinceBatch, countVertices } =
-        await import("~/lib/province-importer/topo-simplify");
+        await import("~/lib/maps/province-importer/topo-simplify");
 
       // Build Feature array from all subdivisions with valid geometry
       const validSubs = subdivisions.filter((s) => s.geometry);

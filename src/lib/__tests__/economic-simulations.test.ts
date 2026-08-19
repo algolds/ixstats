@@ -1,13 +1,13 @@
-import { IxStatsCalculator, EconomicTier, PopulationTier } from "../calculations";
-import { IxTime } from "../ixtime";
-import { EconomicCalculationGroups } from "../economic-calculation-groups";
+import { IxStatsCalculator, EconomicTier, PopulationTier } from "~/lib/economy/calculations";
+import { IxTime } from "~/lib/ixtime";
+import { EconomicCalculationGroups } from "~/lib/economy/calculation-groups";
 import {
   calculateModelHealth,
   validateModelParameters,
   calculateGdpProjections,
-} from "../economic-modeling-engine";
-import type { BaseCountryData, CountryStats, EconomicConfig } from "../../types/ixstats";
-import type { EconomyData } from "../../types/economics";
+} from "~/lib/economy/modeling-engine";
+import type { BaseCountryData, CountryStats, EconomicConfig } from "~/types/ixstats";
+import type { EconomyData } from "~/types/economics";
 
 // Mock Config alignment with 7-tier classifications
 const mockConfig: EconomicConfig = {

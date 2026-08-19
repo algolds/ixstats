@@ -1,42 +1,12 @@
 // src/hooks/useOnomaGenerator.ts
 // Onoma Lab — Custom Hook for Client-side Generation
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { trainLM, naturalnessScore, type NgramLM } from "~/lib/onoma/perplexity";
 import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
-import { generateFantasySyllableName, generateNobleSurname } from "~/lib/onoma/name-generator";
-import {
-  generateGoblinName,
-  generateOrcName,
-  generateOgreName,
-  generatePrimitiveName,
-  generateDwarfName,
-  generateHalflingName,
-  generateGnomeName,
-  generateElfName,
-  generateFaeryName,
-  generateDarkElfName,
-  generateHalfDemonName,
-  generateDragonName,
-  generateDemonName,
-  generateAngelName,
-} from "~/lib/onoma/species-generator";
-import {
-  generateMysticOrderName,
-  generateMilitaryUnitName,
-  generateCovertOrgName,
-  generateBusinessCompanyName,
-  generateAcademicInstitutionName,
-  generateMercenaryBandName,
-  generatePoliticalPartyName,
-  generateGovernmentAgencyName,
-  generateMediaOutletName,
-  generateNgoName,
-  generateReligiousOrderName,
-} from "~/lib/onoma/group-generator";
-import { generateTavernName } from "~/lib/onoma/tavern-generator";
+import { generatePresetName } from "~/lib/onoma/name-generator";
 import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/lib/onoma/types";
 
 /**
@@ -160,7 +130,8 @@ export function useOnomaGenerator() {
   }, [lexiconCat]);
 
   // Phonotactic perplexity model over the current training set (naturalness scoring).
-  const lmRef = useRef<NgramLM | null>(null);
+  const activeSeedsRef = useRef<string[]>([]);
+  const lmCacheRef = useRef<{ key: string; lm: NgramLM | null }>({ key: "", lm: null });
 
   // Instantiate client-side Markov Chain engines (both character-based and syllable-based)
   const characterChain = useMemo(() => new MarkovChain(order, "character"), [order]);
@@ -209,12 +180,11 @@ export function useOnomaGenerator() {
     }
 
     const allSeeds = [...presetSeeds, ...lexiconSeeds, ...worldSeeds];
+    activeSeedsRef.current = allSeeds;
     if (allSeeds.length > 0) {
       characterChain.addWords(allSeeds);
       syllableChain.addWords(allSeeds);
     }
-    // Phonotactic perplexity model over the same seeds (for naturalness scoring).
-    lmRef.current = allSeeds.length > 0 ? trainLM(allSeeds, 3) : null;
   }, [
     culture,
     category,
@@ -225,12 +195,28 @@ export function useOnomaGenerator() {
     order,
     characterChain,
     syllableChain,
-    lmRef,
   ]);
 
+  const getOrTrainLM = useCallback((): NgramLM | null => {
+    const seeds = activeSeedsRef.current;
+    if (!seeds || seeds.length === 0) return null;
+    const cacheKey = `${culture}:${category}:${subType}:${seeds.length}`;
+    if (lmCacheRef.current.key === cacheKey && lmCacheRef.current.lm) {
+      return lmCacheRef.current.lm;
+    }
+    const trained = trainLM(seeds, 3);
+    lmCacheRef.current = { key: cacheKey, lm: trained };
+    return trained;
+  }, [culture, category, subType]);
+
   // Naturalness scorer (0–100) for a generated name, vs the current training set.
-  const scoreNaturalness = (name: string): number | null =>
-    lmRef.current ? naturalnessScore(name, lmRef.current) : null;
+  const scoreNaturalness = useCallback(
+    (name: string): number | null => {
+      const lm = getOrTrainLM();
+      return lm ? naturalnessScore(name, lm) : null;
+    },
+    [getOrTrainLM]
+  );
 
   /**
    * Generates a batch of names based on current configuration and rule-based presets.
@@ -247,83 +233,15 @@ export function useOnomaGenerator() {
       let name: string | null = null;
 
       // 1. Check if generating rule-based custom presets (non-Markov)
-      if (category === "person" && subType !== "generic") {
-        if (subType === "goblin") name = generateGoblinName();
-        else if (subType === "orc") name = generateOrcName();
-        else if (subType === "ogre") name = generateOgreName();
-        else if (subType === "primitive") name = generatePrimitiveName(gender);
-        else if (subType === "dwarf") name = generateDwarfName(gender);
-        else if (subType === "halfling") name = generateHalflingName(gender);
-        else if (subType === "gnome") name = generateGnomeName(gender);
-        else if (subType === "elf") name = generateElfName(gender);
-        else if (subType === "elf-alt") name = generateElfName(gender, true);
-        else if (subType === "faery") name = generateFaeryName(gender);
-        else if (subType === "faery-alt") name = generateFaeryName(gender, true);
-        else if (subType === "dark-elf") name = generateDarkElfName(gender);
-        else if (subType === "dark-elf-alt") name = generateDarkElfName(gender, true);
-        else if (subType === "half-demon") name = generateHalfDemonName(gender);
-        else if (subType === "dragon") name = generateDragonName(gender);
-        else if (subType === "demon") name = generateDemonName();
-        else if (subType === "angel") name = generateAngelName(gender);
-      } else if (category === "organization" && subType !== "generic") {
-        if (subType === "mystic-order") name = generateMysticOrderName(characterChain, genOptions);
-        else if (subType === "military-unit")
-          name = generateMilitaryUnitName(characterChain, genOptions);
-        else if (subType === "covert-org") name = generateCovertOrgName(characterChain, genOptions);
-        else if (subType === "tavern") name = generateTavernName(genOptions);
-        else if (subType === "business-company")
-          name = generateBusinessCompanyName(characterChain, genOptions);
-        else if (subType === "academic-institution")
-          name = generateAcademicInstitutionName(characterChain, genOptions);
-        else if (subType === "political-party")
-          name = generatePoliticalPartyName(characterChain, genOptions);
-        else if (subType === "government-agency")
-          name = generateGovernmentAgencyName(characterChain, genOptions);
-        else if (subType === "media-outlet")
-          name = generateMediaOutletName(characterChain, genOptions);
-        else if (subType === "ngo-foundation") name = generateNgoName(characterChain, genOptions);
-        else if (subType === "religious-order")
-          name = generateReligiousOrderName(characterChain, genOptions);
-      } else if (category === "military" && subType !== "generic") {
-        if (subType === "military-unit")
-          name = generateMilitaryUnitName(characterChain, genOptions);
-        else if (subType === "mercenary-band")
-          name = generateMercenaryBandName(characterChain, genOptions);
-      } else if (category === "dynasty" && subType !== "generic") {
-        if (subType === "fantasy-syllable") name = generateFantasySyllableName();
-        else if (subType === "noble-surname")
-          name = generateNobleSurname(culture, characterChain, genOptions);
-      } else if (category === "city" && subType === "settlement-colony") {
-        const base =
-          characterChain.generate(genOptions) ||
-          syllableChain.generate(genOptions) ||
-          generateFantasySyllableName();
-        const d3 = Math.floor(Math.random() * 3);
-        const capitalized = MarkovChain.capitalize(base);
-        if (d3 === 0) name = `New ${capitalized}`;
-        else if (d3 === 1) name = `Port ${capitalized}`;
-        else name = `${capitalized} Colony`;
-      } else if (category === "geography" && subType === "natural-landmark") {
-        const base =
-          characterChain.generate(genOptions) ||
-          syllableChain.generate(genOptions) ||
-          generateFantasySyllableName();
-        const suffixes = [
-          "River",
-          "Valley",
-          "Mount",
-          "Bay",
-          "Lake",
-          "Ridge",
-          "Coast",
-          "Canyon",
-          "Forest",
-          "Peak",
-          "Hills",
-        ];
-        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-        name = `${MarkovChain.capitalize(base)} ${suffix}`;
-      }
+      name = generatePresetName({
+        category,
+        subType,
+        gender,
+        culture,
+        characterChain,
+        syllableChain,
+        options: genOptions,
+      });
 
       // 2. Fallback to Markov chain generation
       if (!name) {

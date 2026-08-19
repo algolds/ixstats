@@ -1,5 +1,4 @@
-import { WikiDIPlugin } from "~/components/DynamicIsland/plugins/WikiDIPlugin";
-
+import { WikiDIPlugin } from "~/components/halo/plugins/WikiDIPlugin";
 
 export default function WikiosLayout({ children }: { children: React.ReactNode }) {
   return (

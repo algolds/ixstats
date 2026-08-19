@@ -141,13 +141,7 @@ const FeatureRowItem = React.memo(
       </div>
     );
 
-    return wikiTitle ? (
-      <WikiPreviewTooltip wikiTitle={wikiTitle}>
-        {row}
-      </WikiPreviewTooltip>
-    ) : (
-      row
-    );
+    return wikiTitle ? <WikiPreviewTooltip wikiTitle={wikiTitle}>{row}</WikiPreviewTooltip> : row;
   },
   (prev, next) =>
     prev.feature.id === next.feature.id &&
@@ -305,7 +299,7 @@ export const FeatureList = React.memo(function FeatureList({
                   : group.items;
 
                 return (
-                  <div className="space-y-0.5 pl-1 [content-visibility:auto] [contain-intrinsic-size:1000px_36px]">
+                  <div className="space-y-0.5 pl-1 [contain-intrinsic-size:1000px_36px] [content-visibility:auto]">
                     {visibleItems.map((feature) => {
                       const isSelected = selectedFeature?.id === feature.id;
                       const isMultiSelected = selectedIds?.has(feature.id) ?? false;

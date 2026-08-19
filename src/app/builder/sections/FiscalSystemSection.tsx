@@ -11,7 +11,7 @@ import {
   PieChart,
   Zap,
 } from "lucide-react";
-import { AtomicEconomicEffectivenessPanel } from "~/components/economics/AtomicEconomicEffectivenessPanel";
+import { AtomicEconomicEffectivenessPanel } from "~/components/mycountry/domains/economy/atomic";
 import { api } from "~/trpc/react";
 import type { ComponentType } from "~/types/government";
 import {
@@ -32,7 +32,7 @@ import {
 // Help System
 import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
 
-import { TaxBuilder } from "~/components/tax-system/TaxBuilder";
+import { TaxBuilder } from "~/components/mycountry/domains/government/tax/TaxBuilder";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 interface FiscalSystemSectionProps extends ExtendedSectionProps {

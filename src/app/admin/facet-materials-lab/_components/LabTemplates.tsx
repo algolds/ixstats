@@ -935,7 +935,7 @@ export function LabTemplates({
               tabSize: 2,
             }}
           >
-            <code>{`import { FacetMaterial } from "~/components/facet-ui/shared/FacetMaterial";
+            <code>{`import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 export default function CustomFacetWidget() {

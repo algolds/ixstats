@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CronSchedule } from "~/components/cron-schedule";
+import { CronSchedule } from "~/components/ui/cron-schedule";
 import { cn } from "~/lib/utils";
 import { Gavel, Coins, LineChart, Sparkles, RefreshCw, Award, Clock } from "lucide-react";
 

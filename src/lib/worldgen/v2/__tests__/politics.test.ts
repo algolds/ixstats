@@ -15,9 +15,24 @@ const TEST_CELLS = 3000;
 
 describe("v2/politics", () => {
   const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
-  generateTectonicPlates(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, plateCount: 8 });
-  generateTerrain(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, oceanPercentage: 0.65 });
-  refineCoastlines(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS, coastlineComplexity: 0.8 });
+  generateTectonicPlates(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    plateCount: 8,
+  });
+  generateTerrain(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    oceanPercentage: 0.65,
+  });
+  refineCoastlines(graph, {
+    ...DEFAULT_PARAMS,
+    seed: TEST_SEED,
+    cellCount: TEST_CELLS,
+    coastlineComplexity: 0.8,
+  });
   computeHydroClimate(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
 
   // Record physical elevation before politics pass to verify read-only immutability

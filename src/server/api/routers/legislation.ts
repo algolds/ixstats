@@ -2,18 +2,18 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { notificationAPI } from "~/lib/notification-api";
-import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
-import { applyPolicyEffect } from "~/lib/policy-effects-sync";
+import { notificationAPI } from "~/lib/notifications/api";
+import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { applyPolicyEffect } from "~/lib/policies";
 import {
   tallyVote,
   IDEOLOGY_AXIS,
   type Ideology,
   type VotingBloc,
   type VoteResult,
-} from "~/lib/legislative-vote";
-import { computeApproval } from "~/lib/approval";
-import { fogVoteProjection } from "~/lib/statecraft-whip";
+} from "~/lib/statecraft/legislative-vote";
+import { computeApproval } from "~/lib/government/approval";
+import { fogVoteProjection } from "~/lib/statecraft/whip";
 
 /**
  * Legislation — bills go to the floor and parties vote them up or down.

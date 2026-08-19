@@ -353,7 +353,8 @@ export default function RingsAuditPage() {
               {
                 name: "PublicVitalityRings",
                 path: "components/countries/PublicVitalityRings.tsx",
-                usage: "RETIRED — public country profile now uses shared VitalityRings (sidebar variant) in a FacetCard telemetry grid",
+                usage:
+                  "RETIRED — public country profile now uses shared VitalityRings (sidebar variant) in a FacetCard telemetry grid",
                 sizes: "—",
               },
               {

@@ -1,5 +1,5 @@
 import type { Polygon } from "geojson";
-import { vkey, buildTopologyIndex, cascadeMoveVertex } from "../topology-engine";
+import { vkey, buildTopologyIndex, cascadeMoveVertex } from "~/lib/maps/topology-engine";
 
 // Two adjacent unit squares sharing the edge at x=1:
 //   A: (0,0)-(1,0)-(1,1)-(0,1)

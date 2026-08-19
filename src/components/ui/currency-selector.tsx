@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/format-utils";
+import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 
 interface CurrencySelectorProps {

@@ -3,8 +3,8 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 // Import the wiki search service
-import { validateNoXSS } from "~/lib/sanitize-html";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { validateNoXSS } from "~/lib/utils";
+import { globalCache } from "~/lib/cache";
 
 const invalidateFeeds = async () => {
   try {
@@ -556,7 +556,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   triggerCitizenReaction: publicProcedure
     .input(z.object({ postId: z.string() }))
     .mutation(async ({ input }) => {
-      const { generateAndPostCitizenReaction } = await import("~/lib/auto-post-service");
+      const { generateAndPostCitizenReaction } = await import("~/lib/activity");
       await generateAndPostCitizenReaction(input.postId);
       return { success: true, message: "Citizen reaction triggered" };
     }),
@@ -564,7 +564,7 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Calculate and store country mood metrics
   calculateCountryMoodMetrics: publicProcedure.mutation(async ({ ctx }) => {
     const { db } = ctx;
-    const { analyzePostSentiment } = await import("~/lib/sentiment-analysis");
+    const { analyzePostSentiment } = await import("~/lib/ai");
     const currentIxTime = IxTime.getCurrentIxTime();
     const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
 

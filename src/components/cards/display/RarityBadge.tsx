@@ -9,8 +9,8 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/card-display-utils";
-import type { CardRarity } from "~/lib/card-enums";
+import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/cards";
+import type { CardRarity } from "~/lib/cards";
 
 /**
  * RarityBadge component props
@@ -49,20 +49,19 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
     // Size-specific classes
     const sizeClasses = {
-      small: "px-1.5 py-0.5 text-[10px]",
-      medium: "px-2.5 py-1 text-xs",
-      large: "px-3 py-1 text-sm",
+      small: "px-2 py-0.5 text-[10px] gap-1",
+      medium: "px-2.5 py-1 text-xs gap-1.5",
+      large: "px-3.5 py-1.5 text-sm gap-2",
     };
 
     return (
       <motion.div
         className={cn(
           // Base styles
-          "inline-flex items-center justify-center gap-1",
-          "rounded-full font-bold",
-          "border backdrop-blur-sm",
-          // Glass effect
-          "bg-black/40",
+          "inline-flex items-center justify-center font-bold tracking-wide",
+          "rounded-full border shadow-xs backdrop-blur-md",
+          // Glass background
+          "bg-background/80 dark:bg-black/50",
           // Rarity-specific styles
           config.color,
           config.borderColor,
@@ -79,10 +78,17 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           transition: { duration: 0.2 },
         }}
         animate={
-          animated && rarity === CARD_RARITIES.LEGENDARY
+          animated &&
+          (rarity === CARD_RARITIES.LEGENDARY ||
+            rarity === CARD_RARITIES.MYTHIC ||
+            rarity === CARD_RARITIES.DIVINE)
             ? {
-                // Static glow for legendary - no pulsing
-                boxShadow: "0 0 15px rgba(251, 191, 36, 0.6)",
+                boxShadow:
+                  rarity === CARD_RARITIES.DIVINE
+                    ? "0 0 20px rgba(253, 224, 71, 0.6)"
+                    : rarity === CARD_RARITIES.MYTHIC
+                      ? "0 0 15px rgba(244, 63, 94, 0.5)"
+                      : "0 0 15px rgba(251, 191, 36, 0.4)",
               }
             : undefined
         }
@@ -102,19 +108,20 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
         {/* Label or Season */}
         {season !== undefined ? (
-          <span className="relative z-10 leading-none font-bold tracking-wide text-white">
+          <span className="text-foreground relative z-10 leading-none font-bold tracking-wide">
             S{season}
           </span>
         ) : (
           <span className="relative z-10 leading-none">{config.label}</span>
         )}
 
-        {/* Static shimmer gradient for legendary - no animation */}
+        {/* Static shimmer gradient for legendary */}
         {animated && rarity === CARD_RARITIES.LEGENDARY && (
           <div
             className="pointer-events-none absolute inset-0 rounded-full opacity-30"
             style={{
-              background: "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
+              backgroundImage:
+                "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",
               backgroundPosition: "50% 50%",
             }}

@@ -9,7 +9,7 @@ import {
   rebuildGeometry,
   projectPointToSegment,
   distanceDeg,
-} from "~/lib/border-editor";
+} from "~/lib/maps/border-editor";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 

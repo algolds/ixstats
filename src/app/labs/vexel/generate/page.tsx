@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import GalleryMode from "~/components/vexel/GalleryMode";
+import GalleryMode from "~/components/maps/vexel/GalleryMode";
 
 export default function VexelGeneratePage() {
   return (

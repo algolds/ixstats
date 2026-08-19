@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { Globe, TrendingUp, Crown, ArrowRight, Hammer } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { isValidGlobalStats } from "./splash-stats";
 import { IxTime } from "~/lib/ixtime";

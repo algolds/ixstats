@@ -8,7 +8,7 @@ import { AdminErrorBoundary } from "./_components/ErrorBoundary";
 import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
 import { AdminNavigationProvider } from "./_components";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
-import { isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -73,7 +73,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = isSystemOwner(user.id);
   const hasAdminRole =
-    (typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role)) ||
+    (typeof user?.publicMetadata?.role === "string" &&
+      allowedRoles.has(user.publicMetadata.role)) ||
     (typeof permissionUser?.role?.name === "string" && allowedRoles.has(permissionUser.role.name));
 
   if (!isSystemOwnerUser && !hasAdminRole) {

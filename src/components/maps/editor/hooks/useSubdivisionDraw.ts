@@ -4,9 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { snapToBorderEdge, snapPointToGeometries } from "~/lib/border-editor";
-import { getSnapEnabled, getSnapTolerance } from "~/lib/editor-prefs";
-import { clipGeometryToBorder } from "~/lib/province-importer/topology";
+import { snapToBorderEdge, snapPointToGeometries } from "~/lib/maps/border-editor";
+import { getSnapEnabled, getSnapTolerance } from "~/lib/maps/editor-prefs";
+import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
 import {
   getGeoJSONSource,
   calculateOverlapGeoJson,

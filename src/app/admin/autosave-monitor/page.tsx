@@ -3,7 +3,6 @@
 
 import { AutosaveMonitoringDashboard } from "../_components/AutosaveMonitoringDashboard";
 
-
 export const metadata = {
   title: "Autosave Monitor | Admin Console",
   description: "Monitor autosave system health and performance",

@@ -28,6 +28,46 @@ export interface TocEntry {
 }
 
 // ---------------------------------------------------------------------------
+// Pre-compiled Regular Expressions (Module-Scoped for Performance)
+// ---------------------------------------------------------------------------
+
+const OUTER_WRAPPER_REGEX =
+  /^<div[^>]*class="[^"]*mw-parser-output[^"]*"[^>]*>([\s\S]*)<\/div>\s*$/u;
+
+const CONTENT_START_REGEX =
+  /<(?:table[^>]*class="[^"]*infobox|div[^>]*class="mw-heading|h[2-6][\s>])/iu;
+
+const AMBOX_PATTERN = /<table[^>]*class="[^"]*ambox[^"]*"[\s\S]*?<\/table>/giu;
+const HATNOTE_PATTERN = /<div[^>]*class="[^"]*(?:hatnote|dablink)[^"]*"[^>]*>[\s\S]*?<\/div>/giu;
+const NOTICE_PATTERN =
+  /<div[^>]*class="[^"]*(?:messagebox|notice|banner-notice|mw-message-box)[^"]*"[^>]*>[\s\S]*?<\/div>/giu;
+
+const INFOBOX_TABLE_START_REGEX = /<table[^>]*class="[^"]*infobox[^"]*"/iu;
+const INFOBOX_ASIDE_START_REGEX = /<aside[^>]*class="[^"]*portable-infobox[^"]*"/iu;
+
+const HEADING_DIV_REGEX =
+  /<div[^>]*class="mw-heading[^"]*"[^>]*>\s*<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>\s*<\/div>/giu;
+
+const HEADING_PLAIN_REGEX = /<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>/giu;
+const EDIT_SECTION_REGEX = /<span[^>]*class="mw-editsection[^"]*"[^>]*>[\s\S]*?<\/span>/giu;
+const TAG_STRIP_REGEX = /<[^>]+>/gu;
+
+const BUILTIN_TOC_REGEX = /<div[^>]*id="toc"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)?/giu;
+const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
+const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
+const CLASS_NEW_REGEX = /class="new"/gu;
+
+const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
+const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
+const IMG_REFERRER_REGEX = /<img(?![^>]*referrerpolicy=)/gu;
+
+const STYLE_EDIT_SECTION_REGEX = /class="mw-editsection"/gu;
+const IMG_SRC_COMMON_REGEX =
+  /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/gu;
+
+const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
+
+// ---------------------------------------------------------------------------
 // Main transformer
 // ---------------------------------------------------------------------------
 
@@ -53,22 +93,23 @@ export function transformArticleHtml(
   const { infoboxHtml, remainingHtml } = extractInfobox(processed);
   processed = remainingHtml;
 
-  // 3. Extract TOC from headings
+  // 4. Extract TOC from headings
   const toc = extractTocFromHeadings(processed);
 
-  // 4. Remove MediaWiki's built-in TOC block if present
+  // 5. Remove MediaWiki's built-in TOC block if present
   processed = removeBuiltInToc(processed);
 
-  // 5. Transform wiki links from /wiki/ to /wiki/
+  // 6. Transform wiki links from /wiki/ to /wiki/
   processed = transformLinks(processed, basePath);
 
-  // 6. Transform image URLs to be absolute
+  // 7. Transform image URLs to be absolute
   processed = transformImages(processed, wikiSource);
 
-  // 7. Add section edit links styling class
+  // 8. Add section edit links styling class & performance optimization
   processed = styleEditSectionLinks(processed);
+  processed = applySectionOptimization(processed);
 
-  // 8. Extract image URLs
+  // 9. Extract image URLs
   const images = extractImageUrls(processed);
 
   return {
@@ -84,52 +125,46 @@ export function transformArticleHtml(
   };
 }
 
+function applySectionOptimization(html: string): string {
+  return html.replace(
+    /class="mw-heading mw-heading2"/gu,
+    'class="mw-heading mw-heading2 wikios-article-section"'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Extraction helpers
 // ---------------------------------------------------------------------------
 
 function stripOuterWrapper(html: string): string {
-  // Remove <div class="mw-content-ltr mw-parser-output" ...>...</div>
-  const match = html.match(
-    /^<div[^>]*class="[^"]*mw-parser-output[^"]*"[^>]*>([\s\S]*)<\/div>\s*$/
-  );
+  const match = html.match(OUTER_WRAPPER_REGEX);
   return match ? match[1]! : html;
 }
 
 /**
  * Extract page-top notice banners (ambox, hatnotes, maintenance templates).
  * These appear before the infobox/content and should render above everything.
- * Matches: <table class="...ambox...">, <div class="...hatnote...">,
- *          <div class="...dablink...">, <div class="...notice...">
  */
 function extractNotices(html: string): { noticesHtml: string | null; remainingHtml: string } {
   const notices: string[] = [];
-  let remaining = html;
 
   // Find the first heading or infobox — notices only appear before those
-  const contentStart = remaining.search(
-    /<(?:table[^>]*class="[^"]*infobox|div[^>]*class="mw-heading|h[2-6][\s>])/i
-  );
-  // Only search the top portion of the HTML for notices
-  const searchArea = contentStart > 0 ? remaining.slice(0, contentStart) : remaining.slice(0, 3000);
+  const contentStart = html.search(CONTENT_START_REGEX);
+  const searchArea = contentStart > 0 ? html.slice(0, contentStart) : html.slice(0, 3000);
 
-  // Extract ambox tables (WIP, stub, cleanup, etc.)
-  const amboxPattern = /<table[^>]*class="[^"]*ambox[^"]*"[\s\S]*?<\/table>/gi;
+  // Reset regex state
+  AMBOX_PATTERN.lastIndex = 0;
+  HATNOTE_PATTERN.lastIndex = 0;
+  NOTICE_PATTERN.lastIndex = 0;
+
   let match;
-  while ((match = amboxPattern.exec(searchArea)) !== null) {
+  while ((match = AMBOX_PATTERN.exec(searchArea)) !== null) {
     notices.push(match[0]);
   }
-
-  // Extract hatnote divs ("For other uses, see...")
-  const hatnotePattern = /<div[^>]*class="[^"]*(?:hatnote|dablink)[^"]*"[^>]*>[\s\S]*?<\/div>/gi;
-  while ((match = hatnotePattern.exec(searchArea)) !== null) {
+  while ((match = HATNOTE_PATTERN.exec(searchArea)) !== null) {
     notices.push(match[0]);
   }
-
-  // Extract message boxes / notice divs
-  const noticePattern =
-    /<div[^>]*class="[^"]*(?:messagebox|notice|banner-notice|mw-message-box)[^"]*"[^>]*>[\s\S]*?<\/div>/gi;
-  while ((match = noticePattern.exec(searchArea)) !== null) {
+  while ((match = NOTICE_PATTERN.exec(searchArea)) !== null) {
     notices.push(match[0]);
   }
 
@@ -137,7 +172,7 @@ function extractNotices(html: string): { noticesHtml: string | null; remainingHt
     return { noticesHtml: null, remainingHtml: html };
   }
 
-  // Remove extracted notices from the HTML
+  let remaining = html;
   for (const notice of notices) {
     remaining = remaining.replace(notice, "");
   }
@@ -149,12 +184,9 @@ function extractNotices(html: string): { noticesHtml: string | null; remainingHt
 }
 
 function extractInfobox(html: string): { infoboxHtml: string | null; remainingHtml: string } {
-  // Match the infobox table — uses a balanced tag approach for nested tables
-  // MediaWiki infoboxes are <table class="infobox ...">
-  const infoboxStart = html.search(/<table[^>]*class="[^"]*infobox[^"]*"/i);
+  const infoboxStart = html.search(INFOBOX_TABLE_START_REGEX);
   if (infoboxStart === -1) {
-    // Also check for portable infobox (<aside>)
-    const portableStart = html.search(/<aside[^>]*class="[^"]*portable-infobox[^"]*"/i);
+    const portableStart = html.search(INFOBOX_ASIDE_START_REGEX);
     if (portableStart === -1) {
       return { infoboxHtml: null, remainingHtml: html };
     }
@@ -204,19 +236,16 @@ function extractBalancedTag(
 
 function extractTocFromHeadings(html: string): TocEntry[] {
   const toc: TocEntry[] = [];
+  HEADING_DIV_REGEX.lastIndex = 0;
 
-  // MediaWiki 1.45 uses <div class="mw-heading mw-heading2"><h2 id="...">...</h2></div>
-  const headingRegex =
-    /<div[^>]*class="mw-heading[^"]*"[^>]*>\s*<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>\s*<\/div>/gi;
   let match;
-
-  while ((match = headingRegex.exec(html)) !== null) {
+  while ((match = HEADING_DIV_REGEX.exec(html)) !== null) {
     const level = parseInt(match[1]!, 10);
     const id = match[2]!;
     // Strip HTML tags and [edit] links from heading text
     const text = match[3]!
-      .replace(/<span[^>]*class="mw-editsection[^"]*"[^>]*>[\s\S]*?<\/span>/gi, "")
-      .replace(/<[^>]+>/g, "")
+      .replace(EDIT_SECTION_REGEX, "")
+      .replace(TAG_STRIP_REGEX, "")
       .trim();
     if (text) {
       toc.push({ id, text, level });
@@ -225,13 +254,13 @@ function extractTocFromHeadings(html: string): TocEntry[] {
 
   // Fallback: try plain <h2 id="..."> without mw-heading wrapper
   if (toc.length === 0) {
-    const plainRegex = /<h([2-6])[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h[2-6]>/gi;
-    while ((match = plainRegex.exec(html)) !== null) {
+    HEADING_PLAIN_REGEX.lastIndex = 0;
+    while ((match = HEADING_PLAIN_REGEX.exec(html)) !== null) {
       const level = parseInt(match[1]!, 10);
       const id = match[2]!;
       const text = match[3]!
-        .replace(/<span[^>]*class="mw-editsection[^"]*"[^>]*>[\s\S]*?<\/span>/gi, "")
-        .replace(/<[^>]+>/g, "")
+        .replace(EDIT_SECTION_REGEX, "")
+        .replace(TAG_STRIP_REGEX, "")
         .trim();
       if (text) {
         toc.push({ id, text, level });
@@ -243,17 +272,14 @@ function extractTocFromHeadings(html: string): TocEntry[] {
 }
 
 function removeBuiltInToc(html: string): string {
-  // Remove MediaWiki's <div id="toc" ...>...</div>
-  return html.replace(/<div[^>]*id="toc"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)?/gi, "");
+  return html.replace(BUILTIN_TOC_REGEX, "");
 }
 
 function transformLinks(html: string, basePath: string): string {
   const origin = "https://ixwiki.com";
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
-  //    Special: and File: links stay pointing to MediaWiki with noreferrer
-  //    to avoid Cloudflare hotlink blocking
-  let result = html.replace(/href="\/wiki\/([^"]*?)"/g, (_match, path: string) => {
+  let result = html.replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => {
     if (
       path.startsWith("Special:") ||
       path.startsWith("Special%3A") ||
@@ -267,12 +293,12 @@ function transformLinks(html: string, basePath: string): string {
 
   // 2. Transform red links with noreferrer
   result = result.replace(
-    /href="\/index\.php\?([^"]*)"/g,
+    INDEX_PHP_HREF_REGEX,
     (_match, query: string) => `href="${origin}/index.php?${query}" rel="noreferrer"`
   );
 
-  // 3. Add wikios-redlink class to links with class="new" (MediaWiki red links)
-  result = result.replace(/class="new"/g, 'class="new wikios-redlink"');
+  // 3. Add wikios-redlink class to links with class="new"
+  result = result.replace(CLASS_NEW_REGEX, 'class="new wikios-redlink"');
 
   return result;
 }
@@ -292,92 +318,81 @@ function transformImages(
     proxyBase = withBasePath("/api/mediawiki/althistory");
   }
 
-  // 1. Make relative image/asset URLs absolute or proxied
-  // Handles /images/, /data/, and other MediaWiki-served paths
   let result = html;
 
   if (wikiSource === "ixwiki") {
     result = result
-      .replace(/src="\/images\//g, `src="${origin}/images/`)
-      .replace(/src="\/data\//g, `src="${origin}/data/`)
-      .replace(/src="\/load\.php/g, `src="${origin}/load.php`)
-      .replace(/srcset="([^"]*)"/g, (_match, srcset: string) => {
+      .replace(/src="\/images\//gu, `src="${origin}/images/`)
+      .replace(/src="\/data\//gu, `src="${origin}/data/`)
+      .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
+      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
-          .replace(/\/images\//g, `${origin}/images/`)
-          .replace(/\/data\//g, `${origin}/data/`);
+          .replace(/\/images\//gu, `${origin}/images/`)
+          .replace(/\/data\//gu, `${origin}/data/`);
         return `srcset="${transformed}"`;
       });
   } else {
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
-      .replace(/src="\/images\//g, `src="${proxyBase}/images/`)
-      .replace(/src="\/data\//g, `src="${proxyBase}/data/`)
-      .replace(/src="\/load\.php/g, `src="${origin}/load.php`) // load.php remains original
-      // Also map full URL paths if they are in the HTML
-      .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `src="${proxyBase}/images/`)
+      .replace(/src="\/images\//gu, `src="${proxyBase}/images/`)
+      .replace(/src="\/data\//gu, `src="${proxyBase}/data/`)
+      .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
+      .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `src="${proxyBase}/images/`)
       .replace(
-        /src="https?:\/\/(?:www\.)?iiwiki\.com\/wiki\/Special:FilePath\//g,
+        /src="https?:\/\/(?:www\.)?iiwiki\.com\/wiki\/Special:FilePath\//gu,
         `src="${proxyBase}/wiki/Special:FilePath/`
       )
       .replace(
-        /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//g,
+        /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//gu,
         `src="${proxyBase}/wiki/Special:FilePath/`
       )
-      .replace(/srcset="([^"]*)"/g, (_match, srcset: string) => {
+      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
-          .replace(/\/images\//g, `${proxyBase}/images/`)
-          .replace(/\/data\//g, `${proxyBase}/data/`)
-          .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `${proxyBase}/images/`);
+          .replace(/\/images\//gu, `${proxyBase}/images/`)
+          .replace(/\/data\//gu, `${proxyBase}/data/`)
+          .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `${proxyBase}/images/`);
         return `srcset="${transformed}"`;
       });
   }
 
-  // 2. Transform url() references in inline CSS (background-image, etc.)
+  // 2. Transform url() references in inline CSS
   if (wikiSource === "ixwiki") {
     result = result.replace(
-      /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/g,
+      /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/gu,
       (_match, path: string) => `url("${origin}${path}")`
     );
   } else {
     result = result
       .replace(
-        /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/g,
+        /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/gu,
         (_match, path: string) => `url("${proxyBase}${path}")`
       )
       .replace(
-        /url\(["']?https?:\/\/(?:www\.)?iiwiki\.com(\/(?:images|data)[^"')\s]*)["']?\)/g,
+        /url\(["']?https?:\/\/(?:www\.)?iiwiki\.com(\/(?:images|data)[^"')\s]*)["']?\)/gu,
         (_match, path: string) => `url("${proxyBase}${path}")`
       );
   }
 
   // 3. Transform href for stylesheets (/load.php)
-  result = result.replace(/href="\/load\.php/g, `href="${origin}/load.php`);
+  result = result.replace(/href="\/load\.php/gu, `href="${origin}/load.php`);
 
-  // 4. Add lazy loading to all images
-  result = result.replace(/<img(?![^>]*loading=)/g, '<img loading="lazy"');
-
-  // 5. Add decoding="async" for better rendering performance
-  result = result.replace(/<img(?![^>]*decoding=)/g, '<img decoding="async"');
-
-  // 6. Add referrerpolicy="no-referrer" to prevent Cloudflare hotlink blocking
-  // Without this, browsers send Referer: http://localhost:3000 which triggers 403
-  result = result.replace(/<img(?![^>]*referrerpolicy=)/g, '<img referrerpolicy="no-referrer"');
+  // 4. Add lazy loading, async decoding, and no-referrer
+  result = result.replace(IMG_LAZY_REGEX, '<img loading="lazy"');
+  result = result.replace(IMG_ASYNC_REGEX, '<img decoding="async"');
+  result = result.replace(IMG_REFERRER_REGEX, '<img referrerpolicy="no-referrer"');
 
   return result;
 }
 
 function styleEditSectionLinks(html: string): string {
-  // Add WikiOS class to edit section links for styling control
-  return html.replace(/class="mw-editsection"/g, 'class="mw-editsection wikios-edit-section"');
+  return html.replace(STYLE_EDIT_SECTION_REGEX, 'class="mw-editsection wikios-edit-section"');
 }
 
 function extractImageUrls(html: string): string[] {
   const urls: string[] = [];
-  // Match images from ixwiki.com/images/ AND upload.wikimedia.org (Commons)
-  const imgRegex =
-    /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/g;
+  IMG_SRC_COMMON_REGEX.lastIndex = 0;
   let match;
-  while ((match = imgRegex.exec(html)) !== null) {
+  while ((match = IMG_SRC_COMMON_REGEX.exec(html)) !== null) {
     urls.push(match[1]!);
   }
   return urls;
@@ -389,14 +404,11 @@ function extractImageUrls(html: string): string[] {
 
 /**
  * Strip MediaWiki skin-specific CSS while keeping page template styles.
- * Removes skin overrides (Citizen, Vector, theme-clientpref) but preserves
- * layout styles used by templates (home-grid, home-card, featured_article, etc.).
  */
 export function stripConflictingStyles(html: string): string {
   return html.replace(
-    /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/gi,
+    STYLE_DEDUPLICATE_REGEX,
     (fullMatch, content: string) => {
-      // Only strip blocks that contain skin-specific selectors
       const isSkinSpecific =
         content.includes(".skin-citizen") ||
         content.includes(".skin-vector") ||
@@ -404,7 +416,6 @@ export function stripConflictingStyles(html: string): string {
         content.includes(".mw-page-title") ||
         content.includes(".mw-body-content parsoid-body");
 
-      // Keep blocks with page-specific template styles
       const hasTemplateStyles =
         content.includes(".home-grid") ||
         content.includes(".home-card") ||
@@ -414,9 +425,9 @@ export function stripConflictingStyles(html: string): string {
         content.includes(".infobox") ||
         content.includes(".template-");
 
-      if (hasTemplateStyles) return fullMatch; // preserve
-      if (isSkinSpecific) return ""; // remove
-      return fullMatch; // keep by default
+      if (hasTemplateStyles) return fullMatch;
+      if (isSkinSpecific) return "";
+      return fullMatch;
     }
   );
 }

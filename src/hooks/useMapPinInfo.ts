@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
-import { queryPointClientSide, type ClientPointQueryResult } from "~/lib/map-point-query";
+import { queryPointClientSide, type ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { FeatureCollection } from "geojson";
 
 export interface PinPosition {

@@ -6,8 +6,8 @@ import { NextRequest } from "next/server";
 import { GET, POST, splitIntoSentences, mergeWavBuffers, mergeMp3Buffers } from "../route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
-import { rateLimiter } from "~/lib/rate-limiter";
-import { globalCache } from "~/lib/advanced-cache-system";
+import { rateLimiter } from "~/lib/cache";
+import { globalCache } from "~/lib/cache";
 
 // Mock external dependencies
 jest.mock("@clerk/nextjs/server", () => ({
@@ -25,20 +25,17 @@ jest.mock("~/server/db", () => ({
   },
 }));
 
-jest.mock("~/lib/rate-limiter", () => ({
+jest.mock("~/lib/cache", () => ({
   rateLimiter: {
     check: jest.fn(),
   },
-}));
-
-jest.mock("~/lib/advanced-cache-system", () => ({
   globalCache: {
     get: jest.fn(),
     set: jest.fn(),
   },
 }));
 
-jest.mock("~/lib/system-owner-constants", () => ({
+jest.mock("~/lib/auth", () => ({
   isSystemOwner: jest.fn(() => false),
 }));
 

@@ -14,7 +14,12 @@ import { lineString, polygon, featureCollection } from "@turf/helpers";
 
 export interface GeometryWorkerMessage {
   id: string;
-  type: "COMPUTE_SPLINE" | "COMPUTE_AREA" | "COMPUTE_UNION" | "COMPUTE_DIFFERENCE" | "FILTER_SPATIAL_FEATURES";
+  type:
+    | "COMPUTE_SPLINE"
+    | "COMPUTE_AREA"
+    | "COMPUTE_UNION"
+    | "COMPUTE_DIFFERENCE"
+    | "FILTER_SPATIAL_FEATURES";
   payload: any;
 }
 

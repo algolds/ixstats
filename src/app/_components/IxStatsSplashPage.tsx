@@ -4,8 +4,8 @@ import React, { useEffect, useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
-import { createUrl } from "~/lib/url-utils";
+import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
+import { createUrl } from "~/lib/utils";
 import {
   SplashHero,
   SplashLiveFeed,
@@ -13,6 +13,7 @@ import {
   SplashTwoWorlds,
   SplashIssuesTeaser,
   SplashFold,
+  SplashFooter,
 } from "./splash";
 
 export function IxStatsSplashPage() {
@@ -74,6 +75,7 @@ export function IxStatsSplashPage() {
         <SplashTwoWorlds topCountries={topCountriesRecords} />
         <SplashIssuesTeaser />
         <SplashFold />
+        <SplashFooter />
       </div>
     </div>
   );

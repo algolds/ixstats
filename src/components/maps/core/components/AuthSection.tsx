@@ -3,7 +3,7 @@
 import { LogIn, User, LayoutDashboard, Crown } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { getNationUrl } from "~/lib/slug-utils";
+import { getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface AuthSectionProps {

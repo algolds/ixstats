@@ -17,10 +17,7 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { useHistoricalEconomicData } from "~/hooks/useHistoricalEconomicData";
-import type {
-  EconomicEvent,
-  HistoricalDataPoint,
-} from "~/lib/historical-economic-data-transformers";
+import type { EconomicEvent, HistoricalDataPoint } from "~/lib/economy/historical-transformers";
 import {
   TimeSeriesChart,
   EconomicHealthCard,
@@ -31,7 +28,7 @@ import {
   SeverityDistributionCard,
   ImpactSummaryCard,
   AddEventForm,
-} from "~/components/economy/historical-charts";
+} from "~/components/mycountry/domains/economy/historical-charts";
 
 interface HistoricalEconomicTrackerProps {
   countryId: string;

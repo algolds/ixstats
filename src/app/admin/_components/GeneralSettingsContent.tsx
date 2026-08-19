@@ -7,7 +7,7 @@ import { AdminHeader } from "./AdminHeader";
 import { ImportPreviewDialog } from "./ImportPreviewDialog";
 import { NavigationSettings } from "./NavigationSettings";
 import { IxTimeVisualizer } from "./IxTimeVisualizer";
-import { FlagCacheManager } from "~/components/FlagCacheManager";
+import { FlagCacheManager } from "~/components/ui/FlagCacheManager";
 import { SystemValidationDashboard } from "./SystemValidationDashboard";
 import { DatabaseExplorer } from "./DatabaseExplorer";
 import { api } from "~/trpc/react";

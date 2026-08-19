@@ -38,7 +38,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
   const [mounted, setMounted] = useState(false);
 
   // Only fetch when visible (enabled flag)
-  const { data: intro, isLoading } = api.wiki.getIntro.useQuery(
+  const { data: intro, isLoading } = api.wikios.getIntro.useQuery(
     { title: wikiTitle, wiki: "ixwiki" },
     { enabled: visible, staleTime: 5 * 60_000 }
   );
