@@ -1,7 +1,5 @@
-// src/server/api/routers/onoma/loanwords.ts
-// Onoma — Loanword & Contact Registry sub-router
-
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaLoanwordsRouter = createTRPCRouter({
@@ -31,7 +29,9 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         targetPackId: z.string(),
         domain: z.string(), // military | trade | religious | academic | general
         intensity: z.number().min(0).max(1).default(0.3),
-        adaptationRules: z.any().default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
+        adaptationRules: z
+          .record(z.string(), z.unknown())
+          .default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -55,7 +55,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         targetPackId: input.targetPackId,
         domain: input.domain,
         intensity: input.intensity,
-        adaptationRules: input.adaptationRules || {},
+        adaptationRules: (input.adaptationRules || {}) as Prisma.InputJsonValue,
       };
 
       if (input.id) {

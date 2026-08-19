@@ -1,7 +1,5 @@
-// src/server/api/routers/onoma/writing.ts
-// Onoma — Writing System Studio sub-router
-
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaWritingRouter = createTRPCRouter({
@@ -60,8 +58,8 @@ export const onomaWritingRouter = createTRPCRouter({
         name: z.string().min(1),
         scriptType: z.string().default("alphabet"),
         direction: z.string().default("ltr"),
-        glyphs: z.any().default([]),
-        ligatures: z.any().default([]),
+        glyphs: z.array(z.record(z.string(), z.unknown())).default([]),
+        ligatures: z.array(z.record(z.string(), z.unknown())).default([]),
         baselineOffset: z.number().default(0),
         glyphSize: z.number().default(32),
       })
@@ -75,8 +73,8 @@ export const onomaWritingRouter = createTRPCRouter({
         name: input.name,
         scriptType: input.scriptType,
         direction: input.direction,
-        glyphs: input.glyphs || [],
-        ligatures: input.ligatures || [],
+        glyphs: (input.glyphs || []) as Prisma.InputJsonValue,
+        ligatures: (input.ligatures || []) as Prisma.InputJsonValue,
         baselineOffset: input.baselineOffset,
         glyphSize: input.glyphSize,
       };

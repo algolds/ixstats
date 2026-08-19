@@ -5,7 +5,13 @@ import Link from "next/link";
 import { BookOpen, MessageSquare, Bookmark, Users, Compass } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/ui/status-indicator";
-import { BUILD_VERSION, PLATFORM_VERSION, CHANNEL } from "~/lib/buildVersion";
+import {
+  BUILD_VERSION,
+  PLATFORM_VERSION,
+  CHANNEL,
+  getChannelStatus,
+  CHANNEL_CONFIG,
+} from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/ui/modals/FeedbackModal";
 import {
@@ -44,6 +50,7 @@ interface DashboardQuickLinksProps {
 export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { isSignedIn } = useUser();
+  const channelTheme = CHANNEL_CONFIG[CHANNEL];
 
   return (
     <CutoutCard
@@ -65,9 +72,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
             Quick Links
           </span>
         </div>
-        <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-1.5 py-0.5 text-[9px] font-medium tracking-wider text-cyan-700 uppercase dark:text-cyan-400/90">
-          Shortcuts
-        </span>
+     
       </div>
       <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         {/* Links */}
@@ -115,10 +120,37 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </Dialog>
         </div>
 
-        <div className="border-border/30 space-y-1.5 border-t pt-2.5">
-          <StatusIndicator status="operational" label="System Online" size="sm" />
-          <div className="text-muted-foreground/60 font-mono text-[9px] font-normal tracking-normal whitespace-nowrap tabular-nums">
-            v{PLATFORM_VERSION} {CHANNEL} · Build {BUILD_VERSION}
+        <div className="border-border/30 space-y-2 border-t pt-2">
+          <StatusIndicator
+            status={getChannelStatus(CHANNEL)}
+            label={`v${PLATFORM_VERSION} ${CHANNEL} · Build ${BUILD_VERSION}`}
+            size="sm"
+            className={cn(
+              "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-colors",
+              channelTheme.borderColor,
+              channelTheme.bgColor
+            )}
+          />
+
+          <div className="space-y-1 text-center">
+            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-[9.5px]">
+              <Link
+                href="/privacy"
+                className="hover:text-foreground transition-colors hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              <span className="opacity-40">·</span>
+              <Link
+                href="/terms"
+                className="hover:text-foreground transition-colors hover:underline"
+              >
+                Terms
+              </Link>
+            </div>
+            <p className="text-muted-foreground/50 text-[8.5px] tracking-tight">
+              &copy; {new Date().getFullYear()} IxStates 
+            </p>
           </div>
         </div>
       </CutoutCardContent>

@@ -27,11 +27,6 @@ export class MarkovNode {
     this.token = token;
     this.neighbors = [];
   }
-
-  // Backwards compatibility alias
-  get character(): string {
-    return this.token;
-  }
 }
 
 export class MarkovChain {
@@ -46,21 +41,6 @@ export class MarkovChain {
   constructor(order = 2, mode: "character" | "syllable" = "character") {
     this.order = order;
     this.mode = mode;
-  }
-
-  // Backwards compatibility getters
-  get start(): MarkovNode {
-    if (!this.starts[this.order]) {
-      this.starts[this.order] = new MarkovNode("");
-    }
-    return this.starts[this.order];
-  }
-
-  get map(): Record<string, MarkovNode> {
-    if (!this.maps[this.order]) {
-      this.maps[this.order] = {};
-    }
-    return this.maps[this.order];
   }
 
   /**

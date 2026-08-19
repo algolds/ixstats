@@ -71,8 +71,8 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   );
 
   const originLabel = stashedEntry
-    ? (stashedEntry as any).setName
-      ? `Dictionary: ${(stashedEntry as any).setName}`
+    ? stashedEntry.setName
+      ? `Dictionary: ${stashedEntry.setName}`
       : stashedEntry.category
         ? `Category: ${stashedEntry.category}`
         : "Saved name"

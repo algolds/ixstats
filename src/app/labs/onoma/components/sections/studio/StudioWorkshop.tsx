@@ -270,7 +270,9 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </label>
                   <Select
                     value={options.vowelHarmony || "none"}
-                    onValueChange={(val) => setOptions({ ...options, vowelHarmony: val as any })}
+                    onValueChange={(val: "none" | "front" | "back") =>
+                      setOptions({ ...options, vowelHarmony: val })
+                    }
                   >
                     <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs transition-colors focus:outline-none">
                       <SelectValue placeholder="None (Standard)" />

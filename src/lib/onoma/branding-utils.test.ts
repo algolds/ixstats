@@ -21,6 +21,11 @@ describe("ipaToSpeechSpelling (chunk-based)", () => {
   it("re-spells each word and preserves separators", () => {
     expect(ipaToSpeechSpelling("/ˈnoʊvə ˈroʊma/")).toBe("NOH-vuh ROH-mah");
   });
+
+  it("produces clean syllable onsets for words starting with vowels", () => {
+    expect(ipaToSpeechSpelling("/oʊˈnoʊmə/")).toBe("oh-NOH-muh");
+    expect(ipaToSpeechSpelling("/ˈɑrəgən/")).toBe("AH-ruh-guhn");
+  });
 });
 
 describe("ipaToSpokenText", () => {

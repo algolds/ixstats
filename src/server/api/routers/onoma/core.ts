@@ -10,6 +10,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { ActivityGenerator } from "~/lib/activity";
+import { StashNoteMetadataSchema } from "~/lib/onoma/types";
 
 // Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
 function parseVoiceMap(raw: string | undefined): Record<string, string> {
@@ -80,24 +81,31 @@ export const onomaCoreRouter = createTRPCRouter({
 
         if (item.note) {
           try {
-            const parsed = JSON.parse(item.note);
-            if (parsed && typeof parsed === "object") {
-              category = parsed.category || null;
-              role = parsed.role || null;
-              gender = parsed.gender || null;
-              setName = parsed.setName || null;
-              const rawValues = parsed.values || [];
-              values = Array.isArray(rawValues)
-                ? rawValues
-                    .flatMap((v: string) => v.split(/[\r\n,\s]+/))
-                    .map((v: string) => v.trim())
-                    .filter(Boolean)
-                : typeof rawValues === "string"
-                  ? rawValues
-                      .split(/[\r\n,\s]+/)
-                      .map((v: string) => v.trim())
-                      .filter(Boolean)
-                  : [];
+            const raw = JSON.parse(item.note);
+            const parsed = StashNoteMetadataSchema.safeParse(raw);
+            if (parsed.success) {
+              category = parsed.data.category || null;
+              role = parsed.data.role || null;
+              gender = parsed.data.gender || null;
+              setName = parsed.data.setName || null;
+              const rawValues = parsed.data.values || [];
+              values = rawValues
+                .flatMap((v: string) => v.split(/[\r\n,\s]+/))
+                .map((v: string) => v.trim())
+                .filter(Boolean);
+            } else if (raw && typeof raw === "object") {
+              const obj = raw as Record<string, unknown>;
+              category = typeof obj.category === "string" ? obj.category : null;
+              role = typeof obj.role === "string" ? obj.role : null;
+              gender = typeof obj.gender === "string" ? obj.gender : null;
+              setName = typeof obj.setName === "string" ? obj.setName : null;
+              if (Array.isArray(obj.values)) {
+                values = obj.values
+                  .filter((v): v is string => typeof v === "string")
+                  .flatMap((v) => v.split(/[\r\n,\s]+/))
+                  .map((v) => v.trim())
+                  .filter(Boolean);
+              }
             }
           } catch {
             // Fallback for legacy comma-separated values
@@ -618,7 +626,7 @@ export const onomaCoreRouter = createTRPCRouter({
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma." } },
     });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     const kokoroEnabled = map.get("onoma.kokoro.enabled") === "true";
     const kokoroVoice = map.get("onoma.kokoro.voice") || "af_heart";
     const kokoroModel = map.get("onoma.kokoro.model") || "model_q8f16";
@@ -657,7 +665,7 @@ export const onomaCoreRouter = createTRPCRouter({
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     const speedVal = map.get("onoma.kokoro.speed");
     return {
       enabled: map.get("onoma.kokoro.enabled") === "true",
@@ -682,7 +690,7 @@ export const onomaCoreRouter = createTRPCRouter({
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     let baseUrl = (map.get("onoma.kokoro.baseUrl") || "").trim();
     const apiKey = map.get("onoma.kokoro.apiKey") || "";
 
@@ -726,7 +734,7 @@ export const onomaCoreRouter = createTRPCRouter({
       const rows = await ctx.db.systemConfig.findMany({
         where: { key: { in: ["onoma.kokoro.fastApiUrl", "onoma.kokoro.apiKey"] } },
       });
-      const map = new Map(rows.map((r) => [r.key, r.value]));
+      const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
       let fastApiUrl = (map.get("onoma.kokoro.fastApiUrl") || "").trim();
       const apiKey = map.get("onoma.kokoro.apiKey") || "";
 
@@ -781,7 +789,7 @@ export const onomaCoreRouter = createTRPCRouter({
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
-    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     let baseUrl = (map.get("onoma.kokoro.baseUrl") || "").trim();
     let fastApiUrl = (map.get("onoma.kokoro.fastApiUrl") || "").trim();
     const apiKey = map.get("onoma.kokoro.apiKey") || "";
@@ -827,6 +835,86 @@ export const onomaCoreRouter = createTRPCRouter({
     }
 
     return health;
+  }),
+
+  /**
+   * Public: Actively ping / wake up the Hugging Face / Kokoro server.
+   * If the Space is sleeping or cold-starting, waits with a 45s timeout to wake it up.
+   */
+  wakeKokoroServer: publicProcedure.mutation(async ({ ctx }) => {
+    const rows = await ctx.db.systemConfig.findMany({
+      where: { key: { startsWith: "onoma.kokoro." } },
+    });
+    const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
+    let baseUrl = (map.get("onoma.kokoro.baseUrl") || "").trim();
+    let fastApiUrl = (map.get("onoma.kokoro.fastApiUrl") || "").trim();
+    const apiKey = map.get("onoma.kokoro.apiKey") || "";
+    const engine =
+      (map.get("onoma.kokoro.engine") as "kokoro-fastapi" | "kokoro-web") || "kokoro-fastapi";
+
+    if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
+    if (fastApiUrl && !/^https?:\/\//i.test(fastApiUrl)) fastApiUrl = `http://${fastApiUrl}`;
+
+    const targetUrl =
+      engine === "kokoro-fastapi" ? fastApiUrl || baseUrl : baseUrl || fastApiUrl;
+    if (!targetUrl) {
+      return {
+        status: "unconfigured" as const,
+        message: "No Kokoro / HuggingFace server URL is configured.",
+        latencyMs: 0,
+        targetUrl: "",
+      };
+    }
+
+    const headers: Record<string, string> = {};
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    const startTime = Date.now();
+    try {
+      const cleanUrl = targetUrl.replace(/\/$/, "");
+      const pingEndpoint =
+        engine === "kokoro-fastapi"
+          ? `${cleanUrl}/`
+          : `${cleanUrl.replace(/\/api$/, "")}/api/v1/audio/voices`;
+
+      const res = await fetch(pingEndpoint, {
+        method: "GET",
+        headers,
+        signal: AbortSignal.timeout(45000),
+      });
+
+      const latencyMs = Date.now() - startTime;
+      if (res.ok || res.status === 404) {
+        return {
+          status: "awake" as const,
+          message: `Server is active and responsive (${latencyMs}ms).`,
+          latencyMs,
+          targetUrl,
+        };
+      } else if (res.status === 503 || res.status === 504) {
+        return {
+          status: "waking" as const,
+          message: `Server received wake ping (HTTP ${res.status}). Booting container...`,
+          latencyMs,
+          targetUrl,
+        };
+      } else {
+        return {
+          status: "down" as const,
+          message: `Server returned HTTP status ${res.status}.`,
+          latencyMs,
+          targetUrl,
+        };
+      }
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      return {
+        status: "down" as const,
+        message: `Connection timed out or failed: ${err?.message || err}`,
+        latencyMs,
+        targetUrl,
+      };
+    }
   }),
 
   /** Admin: persist the Kokoro config keys. */

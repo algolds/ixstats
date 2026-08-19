@@ -2,6 +2,7 @@
 // Onoma — Generation History & Favorites sub-router
 
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaHistoryRouter = createTRPCRouter({
@@ -32,7 +33,7 @@ export const onomaHistoryRouter = createTRPCRouter({
           category: input.category,
           culturalProfile: input.culturalProfile ?? null,
           trainingMode: input.trainingMode,
-          parameters: input.parameters as any,
+          parameters: input.parameters as Prisma.InputJsonValue,
           count: input.count,
         },
       });

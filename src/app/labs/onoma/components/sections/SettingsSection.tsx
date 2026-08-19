@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  Zap,
+  Activity,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -140,6 +142,47 @@ export function SettingsSection() {
 
   // tRPC suggestion mutation
   const suggestMutation = api.onoma.suggestPhonemes.useMutation();
+
+  // Kokoro / Hugging Face health & wake mutation
+  const utils = api.useUtils();
+  const { data: healthData, refetch: refetchHealth } = api.onoma.getEngineHealth.useQuery(
+    undefined,
+    {
+      refetchInterval: 30000,
+    }
+  );
+  const [isWaking, setIsWaking] = useState(false);
+  const [wakeStatusMsg, setWakeStatusMsg] = useState<string | null>(null);
+
+  const wakeMutation = api.onoma.wakeKokoroServer.useMutation({
+    onSuccess: async (res) => {
+      await refetchHealth();
+      await utils.onoma.getKokoroVoices.invalidate();
+      if (res.status === "awake") {
+        setWakeStatusMsg(`Awake (${res.latencyMs}ms)`);
+        notify.success(res.message);
+      } else if (res.status === "waking") {
+        setWakeStatusMsg("Booting container...");
+        notify.info(res.message);
+      } else {
+        setWakeStatusMsg(res.message);
+        notify.error(res.message);
+      }
+    },
+    onError: (err) => {
+      notify.error(`Wake ping failed: ${err.message}`);
+    },
+  });
+
+  const handleWakeServer = async () => {
+    setIsWaking(true);
+    setWakeStatusMsg("Waking Hugging Face space / container...");
+    try {
+      await wakeMutation.mutateAsync();
+    } finally {
+      setIsWaking(false);
+    }
+  };
 
   // Local storage states
   const [personalVoice, setPersonalVoice] = useState("");
@@ -577,9 +620,52 @@ export function SettingsSection() {
       <div className="grid gap-6 md:grid-cols-2">
         {/* Left Column: Preferences Card */}
         <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
-          <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-            Voice Preferences
-          </h4>
+          <div className="flex items-center justify-between border-b border-border/30 pb-2">
+            <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+              Voice Preferences
+            </h4>
+            <div className="flex items-center gap-2">
+              {healthData && (
+                <span className="flex items-center gap-1 text-[9px] font-semibold">
+                  <span
+                    className={
+                      healthData.fastapi === "up" || healthData.web === "up"
+                        ? "text-emerald-500"
+                        : healthData.fastapi === "down" && healthData.web === "down"
+                          ? "text-rose-500"
+                          : "text-muted-foreground"
+                    }
+                  >
+                    {healthData.fastapi === "up" || healthData.web === "up"
+                      ? "● Server Online"
+                      : healthData.fastapi === "down" && healthData.web === "down"
+                        ? "○ Server Sleeping"
+                        : "Server Configured"}
+                  </span>
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleWakeServer}
+                disabled={isWaking}
+                title="Send a wake ping to the Hugging Face space or Kokoro server container"
+                className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isWaking ? (
+                  <Loader2 className="h-2.5 w-2.5 animate-spin text-[#0091ff]" />
+                ) : (
+                  <Zap className="h-2.5 w-2.5 text-[#0091ff]" />
+                )}
+                <span>{isWaking ? "Waking..." : "Ping / Wake"}</span>
+              </button>
+            </div>
+          </div>
+          {wakeStatusMsg && (
+            <p className="text-muted-foreground flex items-center gap-1 font-mono text-[9px]">
+              <Activity className="h-2.5 w-2.5 text-[#0091ff]" />
+              <span>{wakeStatusMsg}</span>
+            </p>
+          )}
           <p className="text-muted-foreground text-[10px] leading-normal">
             These preferences act as a default override for your browser session, running on top of
             per-culture voice selections.

@@ -24,6 +24,11 @@ describe("anglicizeForSpeech", () => {
     expect(anglicizeForSpeech("ˌæktɪˈveɪʃən")).toBe("ˌæktɪˈveɪʃən");
   });
 
+  it("preserves word-initial cardinal vowels as clear onsets rather than hesitation schwa", () => {
+    expect(anglicizeForSpeech("/onoma/")).toBe("/oʊnəmə/");
+    expect(anglicizeForSpeech("/aragon/")).toBe("/ɑrəgən/");
+  });
+
   it("returns empty for blank input", () => {
     expect(anglicizeForSpeech("")).toBe("");
   });

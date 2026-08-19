@@ -11,10 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import type { MorphologyDetails } from "~/lib/onoma/morphology";
 
 interface LinguisticProfileProps {
   name: string;
-  morphology: {
+  morphology: MorphologyDetails | {
     gender: string;
     declensionTable: Record<
       string,

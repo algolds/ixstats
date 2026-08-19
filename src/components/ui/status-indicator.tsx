@@ -9,7 +9,12 @@ type Status =
   | "major-outage"
   | "maintenance"
   | "incident"
-  | "unknown";
+  | "unknown"
+  | "developer"
+  | "alpha"
+  | "beta"
+  | "rc"
+  | "stable";
 
 const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }> = {
   operational: {
@@ -46,6 +51,32 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
     label: "Unknown",
     dot: "bg-zinc-400 dark:bg-zinc-500",
     text: "text-zinc-600 dark:text-zinc-400",
+  },
+  // Release channel statuses
+  developer: {
+    label: "Developer",
+    dot: "bg-purple-500",
+    text: "text-purple-700 dark:text-purple-400",
+  },
+  alpha: {
+    label: "Alpha",
+    dot: "bg-amber-500",
+    text: "text-amber-700 dark:text-amber-400",
+  },
+  beta: {
+    label: "Beta",
+    dot: "bg-sky-500",
+    text: "text-sky-700 dark:text-sky-400",
+  },
+  rc: {
+    label: "Release Candidate",
+    dot: "bg-teal-500",
+    text: "text-teal-700 dark:text-teal-400",
+  },
+  stable: {
+    label: "Stable",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-400",
   },
 };
 

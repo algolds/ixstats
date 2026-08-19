@@ -4,7 +4,7 @@
 // Onoma Lab — Unified Workspace & Router (Facet Rebuild)
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { OnomaSection, StudioSubTab } from "~/lib/onoma/types";
@@ -26,6 +26,7 @@ import {
   BookOpen,
   AudioLines,
   Network,
+  GitFork,
   FileDown,
   ShoppingBag,
   Languages,
@@ -40,11 +41,32 @@ import PeopleSection from "./sections/PeopleSection";
 import MilitarySection from "./sections/MilitarySection";
 import OrganizationsSection from "./sections/OrganizationsSection";
 import CultureSection from "./sections/CultureSection";
-import StudioSection from "./sections/StudioSection";
-import StashSection from "./sections/StashSection";
-import SettingsSection from "./sections/SettingsSection";
-import MarketplaceSection from "./sections/MarketplaceSection";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
+
+const SectionLoadingFallback = () => (
+  <div className="flex h-64 w-full items-center justify-center">
+    <Loader2 className="h-6 w-6 animate-spin text-[#0091ff]" />
+  </div>
+);
+
+const StudioSection = dynamic(() => import("./sections/StudioSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const MarketplaceSection = dynamic(() => import("./sections/MarketplaceSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const StashSection = dynamic(() => import("./sections/StashSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
+const SettingsSection = dynamic(() => import("./sections/SettingsSection"), {
+  loading: SectionLoadingFallback,
+  ssr: false,
+});
 
 const SECTION_TITLES: Record<OnomaSection, string> = {
   overview: "Overview",
@@ -319,6 +341,17 @@ export function OnomaRouter() {
         activeIconClassName: "text-violet-500 dark:text-violet-400",
       },
       {
+        id: "shifts",
+        label: "Sound Shifts",
+        icon: GitFork,
+        themeColor: "#ec4899",
+        glowClassName: "bg-pink-500/20 dark:bg-pink-500/10",
+        activeIndicatorClassName:
+          "bg-pink-500/5 border-pink-500/20 text-pink-600 dark:text-pink-400 shadow-[inset_0_1px_0_rgba(236,72,153,0.15)]",
+        activeTextClassName: "text-pink-600 dark:text-pink-400",
+        activeIconClassName: "text-pink-500 dark:text-pink-400",
+      },
+      {
         id: "batch",
         label: "Batch Generator",
         icon: FileDown,
@@ -345,6 +378,7 @@ export function OnomaRouter() {
   );
 
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   // Auto-open guide for first-time visitors
   useEffect(() => {
@@ -525,8 +559,14 @@ export function OnomaRouter() {
               <HelpCircle className="h-4 w-4" />
             </button>
             <motion.button
-              animate={shouldAnimateStash ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              animate={
+                shouldAnimateStash
+                  ? shouldReduceMotion
+                    ? { opacity: [1, 0.6, 1] }
+                    : { scale: [1, 1.15, 0.95, 1.05, 1] }
+                  : { scale: 1, opacity: 1 }
+              }
+              transition={{ duration: 0.4, ease: "easeInOut" }}
               onClick={() => handleNavigate("bank")}
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
                 activeSection === "bank"
@@ -535,7 +575,11 @@ export function OnomaRouter() {
               }`}
             >
               <motion.span
-                animate={shouldAnimateStash ? { rotate: [0, -18, 15, -10, 8, 0] } : { rotate: 0 }}
+                animate={
+                  shouldAnimateStash && !shouldReduceMotion
+                    ? { rotate: [0, -18, 15, -10, 8, 0] }
+                    : { rotate: 0 }
+                }
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className="inline-flex"
               >

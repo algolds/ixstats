@@ -84,8 +84,72 @@ export const APP_VERSION = `${p.major}.${p.minor} ${p.release}`;
 export const PLATFORM_VERSION = `${p.major}.${p.minor}.${p.patch}`;
 /** Permanent epoch release name, e.g. "Ogma". */
 export const RELEASE_NAME = p.release;
-/** Current release channel, e.g. "Alpha". */
+/** Current release channel, e.g. "Alpha" | "Beta". */
 export const CHANNEL: ReleaseChannel = p.channel;
+
+export type ChannelStatus = "developer" | "alpha" | "beta" | "rc" | "stable";
+
+export interface ChannelTheme {
+  name: ReleaseChannel;
+  status: ChannelStatus;
+  dotColor: string;
+  textColor: string;
+  borderColor: string;
+  bgColor: string;
+  badgeClass: string;
+}
+
+export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
+  Developer: {
+    name: "Developer",
+    status: "developer",
+    dotColor: "bg-purple-500",
+    textColor: "text-purple-700 dark:text-purple-400",
+    borderColor: "border-purple-500/25",
+    bgColor: "bg-purple-500/10",
+    badgeClass: "border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  },
+  Alpha: {
+    name: "Alpha",
+    status: "alpha",
+    dotColor: "bg-amber-500",
+    textColor: "text-amber-700 dark:text-amber-400",
+    borderColor: "border-amber-500/25",
+    bgColor: "bg-amber-500/10",
+    badgeClass: "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  },
+  Beta: {
+    name: "Beta",
+    status: "beta",
+    dotColor: "bg-sky-500",
+    textColor: "text-sky-700 dark:text-sky-400",
+    borderColor: "border-sky-500/25",
+    bgColor: "bg-sky-500/10",
+    badgeClass: "border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  },
+  "Release Candidate": {
+    name: "Release Candidate",
+    status: "rc",
+    dotColor: "bg-teal-500",
+    textColor: "text-teal-700 dark:text-teal-400",
+    borderColor: "border-teal-500/25",
+    bgColor: "bg-teal-500/10",
+    badgeClass: "border-teal-500/30 bg-teal-500/15 text-teal-700 dark:text-teal-300",
+  },
+  Stable: {
+    name: "Stable",
+    status: "stable",
+    dotColor: "bg-emerald-500",
+    textColor: "text-emerald-700 dark:text-emerald-400",
+    borderColor: "border-emerald-500/25",
+    bgColor: "bg-emerald-500/10",
+    badgeClass: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  },
+};
+
+export function getChannelStatus(channel: ReleaseChannel): ChannelStatus {
+  return CHANNEL_CONFIG[channel]?.status ?? "beta";
+}
 
 // Apps (single integer, rendered as "v{n}").
 export const IXWORLD_VERSION = String(VERSIONS.apps.ixworld);

@@ -12,6 +12,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useIxMedia } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
+import { withBasePath } from "~/lib/base-path";
 
 export interface PlaybackBlock {
   id: string; // DOM element ID or data-index key
@@ -209,7 +210,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       const params = new URLSearchParams({ text, ipa: "" });
       const chosenVoice = voiceRef.current || config?.kokoro?.voice;
       if (chosenVoice) params.set("voice", chosenVoice);
-      return `/api/onoma/tts?${params.toString()}`;
+      return withBasePath(`/api/onoma/tts?${params.toString()}`);
     },
     [config]
   );

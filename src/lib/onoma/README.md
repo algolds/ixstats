@@ -1,185 +1,147 @@
 # Onoma — Language & Naming Engine
 
-Client-side procedural name generator + linguistics engine at **`/labs/onoma`**. The
-philosophy is **"deterministic first"**: procedural generation is the source of truth.
+Client-side procedural name generator + computational linguistics engine at **`/labs/onoma`**. The philosophy is **"deterministic first"**: procedural generation and formal phonotactic rules are the source of truth.
 
-Three layers:
+Four core pillars:
 
-1. **Markov engine** (`markov-chain.ts`) — the flagship. Multi-order character **and**
-   syllable models trained on a word list, with automatic **backoff** (tries order N, falls
-   back to N−1 … down to 1 when constraints are tight) and phonotactic safeguards
-   (consonant/vowel cluster caps, vowel harmony, double-letter control). Generates novel,
-   pronounceable names in the trained style.
-2. **Linguistics engine** — enriches each generated name: IPA (`phonology.ts`), grammatical
-   gender + 5-case declensions (`morphology.ts`), and Cyrillic/Greek/Arabic transcription
-   (`orthography.ts`).
-3. **Rule-based assemblers** — syllable/template generators ported from the original
-   [Onoma](https://github.com/algolds/onoma) (fantasy species, taverns, mystic orders,
-   military units, civic organizations, noble surnames, etc.). Pattern-driven, not learned.
+1. **Markov Engine** (`markov-chain.ts`) — Multi-order character **and** syllable models trained on a word list, with automatic **backoff** (tries order $N$, falls back to $N-1 \dots 1$ when constraints are tight) and phonotactic safeguards (consonant/vowel cluster caps, vowel harmony, double-letter control).
+2. **Linguistics Engine** — Enriches each generated name: IPA phonetic transcription (`phonology.ts`), grammatical gender + 5-case noun declensions (`morphology.ts`), and Cyrillic/Greek/Arabic script transcription (`orthography.ts`).
+3. **Sound Change & Conlang Evolution Engine** (`sound-shifts.ts`) — Historical phonological sound shift rule interpreter ($X \to Y\ /\ \text{ENV}$) across chronological epochs (e.g. Grimm's Law, Latin-to-Romance Lenition, Slavic Palatalization, Great Vowel Shift) to derive daughter conlangs and regional dialects from Proto-Lexicons with full step tracking.
+4. **Acoustic Formants & Spectrogram Engine** (`vowel-formants.ts`) — Real-time 2D IPA Vowel Quadrilateral ($F_1$ vowel height vs $F_2$ vowel frontness/backness), acoustic center of gravity calculations, and Web Audio API FFT spectrum visualization.
 
-Everything runs in the browser. The server is only touched to save names to the Stash,
-fetch optional live-world training data, and log generation activity.
+Everything runs in the browser. The server is only touched to save names to the Stash, fetch optional live-world training data, and proxy natural neural voice synthesis through Kokoro TTS.
 
-## Training source (one culture selector + optional world data)
+---
 
-The generator trains on **one blended pool**, configured in `GeneratorPanel` →
-`useOnomaGenerator`:
+## 7 Core Optimization & Architecture Initiatives (Plans 125–131)
 
-- **Culture / Linguistic Family** (`culture`, default `"any"`) — picks the flavour from **13
-  families** (Latin, Germanic, Celtic, Slavic, Arabic, Persian, Turkic, Indic, East-Asian,
-  Austronesian, African, Uralic, Constructed) plus six selectable **hybrid** buckets
-  (`celtic+germanic`, `latin+slavic`, …). For a given family it trains on the hand-authored
-  `cultural-profiles.ts` list **plus** the matching bucket from the prebuilt wiki **lexicon**
-  (`data/lexicon/<category>.json`). The wiki lexicon is always mixed into the presets — there
-  is no separate "source" toggle. `"any"` blends every culture; `"constructed"` and the five
-  newer families are preset/seed-only (the wikis lack tagged content for them).
-- **Per-family phonotactics** (`FAMILY_PHONOTACTICS` in `useOnomaGenerator`) — each family
-  applies a consonant-cluster floor at generation (Austronesian/East-Asian stay open-syllable
-  CV, Slavic tolerates dense clusters, etc.), so families differ by structure, not just word
-  list. User advanced options override it.
-- **Include Live World Data** (`includeWorldData`, advanced toggle, default off) — also folds
-  in current country/city/province/official names from the live DB
-  (`api.onoma.getTrainingData`).
+| Initiative | Scope | Description |
+|---|---|---|
+| **Plan 125** | Production BasePath & Voice Clean | Enforced Next.js production `withBasePath` on `/api/onoma/tts` fetch endpoints. Preserved word-initial cardinal vowels ($ɑ$, $ɛ$, $oʊ$) in `branding-utils.ts` and `kokoro-phonemes.ts` to eliminate leading "uh/eh" vocal hesitation artifacts. Replaced CJS `require()` with static ESM dictionary loaders. |
+| **Plan 126** | Centralized Presets & Ponytail Trim | Unified all preset naming paths (species, taverns, mystic orders, noble dynasties) into `generatePresetName` in `name-generator.ts`. Trimmed dead `export.ts` file and removed legacy getters in `markov-chain.ts`. Unified speech synthesis to `speakBrowserNative`. |
+| **Plan 127** | Code-Splitting & Lazy LM Calibration | Converted heavy Studio sections (`StudioSection`, `MarketplaceSection`, `StashSection`, `SettingsSection`) to Next.js `next/dynamic` imports to eliminate main-thread TBT. Refactored `useOnomaGenerator.ts` to lazily calibrate and cache n-gram language models (`getOrTrainLM`) on demand. |
+| **Plan 128** | Strict Schemas & Nominal Branding | Defined nominal branded types (`IPAString`, `LanguagePackId`) and strict Zod validation schemas (`PhonologyRulesSchema`, `MorphologyRulesSchema`, `StashNoteMetadataSchema`). Eliminated `z.any()` across `marketplace.ts`, `syntax.ts`, and `core.ts`. |
+| **Plan 129** | Apple Motion & Facet Aesthetics | Implemented spring-physics layout expansion (`bounce: 0, duration: 0.35`) for `NameResultCard.tsx` linguistic details. Added tactile active press compression (`active:scale-[0.92]`), optical typography tracking (`tracking-[-0.015em]`), and OS accessibility support (`useReducedMotion`). |
+| **Plan 130** | Historical Sound Shift Evolution Engine | Built rule parser and execution engine (`src/lib/onoma/sound-shifts.ts`) for environmental phonological shifts (`V_V`, `_[ei]`, `_#`, `#_`, `(?![ʰh])`). Integrated multi-epoch chronological evolution studio (`StudioSoundShifts.tsx`) with side-by-side Proto-Word vs Daughter Word comparisons. |
+| **Plan 131** | Acoustic Formants & FFT Spectrogram | Built $F_1/F_2$ vowel formant coordinates and inverted trapezoid chart space (`src/lib/onoma/vowel-formants.ts`). Integrated real-time 2D IPA Vowel Quadrilateral and FFT audio frequency spectrum canvas into IPA Studio (`AcousticFormantVisualizer.tsx`). |
 
-Two chains are trained in parallel (`characterChain`, `syllableChain`); generation tries the
-character chain, then the syllable chain, then a fantasy-syllable fallback.
+---
 
-### Culture section subtypes
-
-The **Culture** tab exposes three subtypes — *Cultures & Ethnicities*, *Sports*, and
-*Cuisine* — each Markov-**generated** but trained on its own per-category curated dictionary
-(`culture_generic` / `culture_sports` / `culture_cuisine`), so e.g. cuisine names are
-modelled on real dishes rather than ethnonyms. The generic subtype additionally folds in the
-`cultural-profiles.ts` ethnonym presets; sports/cuisine train on their lexicon alone.
-Architecture/buildings live under **Places → Landmarks & Features**.
-
-## File map
+## File Map
 
 ```
 src/lib/onoma/
-  markov-chain.ts        Markov engine (multi-order backoff, char+syllable modes, cluster
-                         limits, vowel harmony, getTransitions for the visualizer)
-  name-generator.ts      Markov wrapper + fantasy-syllable & noble-surname assemblers
-  phonology.ts           Grapheme→IPA parser per culture + consonant-onset stress heuristic
-  morphology.ts          Grammatical gender detection & 5-case noun declension tables
-  orthography.ts         Script transcribers for Cyrillic, Greek, and Arabic (RTL)
-  perplexity.ts          Char n-gram LM → name "naturalness" 0–100 (Phase 5)
-  browser-speech.ts      Browser-native SpeechSynthesis player mapping naming cultures to language tags
-  branding-utils.ts      Linguistic flanking styles, Google Fonts registry, and IPA-to-Speech-Spelling converter
-  lexicon-analytics.ts   Shannon entropy, letter/bigram/trigram freqs, 0–100 health audit
-  species/group/tavern   Rule-based assemblers (port)
-  cultural-profiles.ts   13 culture word lists (preset training + classifier training)
-  data/                  Generated, COMMITTED:
-    fantasy/species/group/tavern-data.ts   syllable/template data (from the original repo)
+  markov-chain.ts              Markov engine (multi-order backoff, char+syllable modes, cluster limits, vowel harmony)
+  name-generator.ts            Markov wrapper + preset dispatcher (generatePresetName) + CSV/JSON export
+  phonology.ts                 Grapheme→IPA parser per culture + consonant-onset stress heuristics
+  sound-shifts.ts              Historical sound change rule interpreter (Grimm's Law, Romance Lenition, Slavic Palatalization)
+  vowel-formants.ts            Acoustic vowel formant frequencies (F1/F2), coordinate projections, center of gravity
+  morphology.ts                Grammatical gender detection & 5-case noun declension tables
+  orthography.ts               Script transcribers for Cyrillic, Greek, and Arabic (RTL)
+  perplexity.ts                Char n-gram LM → name "naturalness" 0–100 percentile fit scoring
+  browser-speech.ts            Browser-native SpeechSynthesis player mapping naming cultures to BCP-47 language tags
+  branding-utils.ts            Linguistic flanking styles, Google Fonts registry, and IPA-to-Speech-Spelling converter
+  kokoro-phonemes.ts           IPA to Kokoro phoneme converter and token normalizer
+  lexicon-analytics.ts         Shannon entropy, letter/bigram/trigram frequencies, 0–100 health audit
+  types.ts                     Nominal branded types (IPAString, LanguagePackId) and strict Zod validation schemas
+  cultural-profiles.ts         13 culture word lists (preset training + classifier training)
+  species/group/tavern         Rule-based fantasy assemblers
+  data/                        Generated, COMMITTED:
+    fantasy/species/group/tavern-data.ts   syllable/template data
     lexicon/<category>.json + manifest.json  compact wiki dictionaries (build output)
-  lexicon/               Lexicon pipeline logic (pure, jest-tested):
-    clean.ts             title → trainable name
-    culture-classifier.ts  n-gram Naive-Bayes → single culture or "A+B" compound
-    bucket.ts            final bucket assignment + top-compound ranking
-src/hooks/useOnomaGenerator.ts   state, lazy lexicon loading, training, per-family
-                         phonotactics (FAMILY_PHONOTACTICS), curated pickers, generate()
-src/app/labs/onoma/              SPA router + sections + Studio + GeneratorPanel UI
-src/server/api/routers/onoma.ts  Stash save/load, training data, activity log
-scripts/onoma/                   offline build pipeline (run with bun)
+  lexicon/                     Lexicon pipeline logic (pure, jest-tested):
+    clean.ts                   title → trainable name
+    culture-classifier.ts      n-gram Naive-Bayes → single culture or "A+B" compound
+    bucket.ts                  final bucket assignment + top-compound ranking
+
+src/hooks/
+  useOnomaGenerator.ts         State, lazy lexicon loading, training, cached LM calibration, curated pickers
+  useNameBank.ts               Name Bank queries, Stash persistence, and dictionary mutations
+  useWikiNarrator.ts           Immersive natural audio narrator for WikiOS article voiceover
+
+src/app/labs/onoma/components/
+  OnomaRouter.tsx              SPA router + Facet navigation tabs + dynamic code-splitting
+  sections/
+    OverviewSection.tsx        Quick generator & popular presets
+    PlacesSection.tsx          Settlement, geography & natural feature generators
+    PeopleSection.tsx          First names, noble houses & cultural ethnonyms
+    MilitarySection.tsx        Military regiments, ships & fortress namers
+    StudioSection.tsx          Conlang creation suite (Workshop, Visualizer, Name Sets, Lexicon, IPA, Sound Shifts)
+    MarketplaceSection.tsx     Conlang sharing & community dictionary repository
+    StashSection.tsx           Saved names & exported conlang dictionaries
+    SettingsSection.tsx        Voice sandbox, speed/pitch preferences & server wake controls
+  sections/studio/
+    StudioSoundShifts.tsx      Historical sound change rule timeline & Proto-to-Daughter evolution diff
+    AcousticFormantVisualizer.tsx  Interactive 2D IPA Vowel Quadrilateral ($F_1/F_2$) & FFT audio spectrum canvas
+    StudioPhonology.tsx        IPA Studio: interactive grapheme-to-sound mapper & live formant feedback
+    StudioWorkshop.tsx         Markov model weight inspector & token path simulator
+    StudioLexicon.tsx          Lexicon dictionary editor, definition manager & health analyzer
 ```
 
-## Rebuilding the wiki lexicon
+---
 
-The wiki-trained dictionaries (`data/lexicon/`) are built offline. **Run with `bun`** (not
-`tsx` — `cultural-profiles.ts` has a type-only import tsx ESM mishandles). Re-run manually
-whenever you want fresh wiki data; output is deterministic.
+## Historical Sound Change Engine (`sound-shifts.ts`)
+
+Languages evolve systematically through historical sound shifts. Onoma supports standard linguistic notation:
+- **`source` $\to$ `target` / `context`**: Target phoneme becomes replacement in specified phonetic environment.
+- **Environments**:
+  - `V_V`: Intervocalic (between vowels, e.g. `p → b / V_V` in Latin *ripa* $\to$ *riba*).
+  - `_[ei]`: Front vowel palatalization (e.g. `c → tʃ / _[ei]` in Latin *civitas* $\to$ *tʃividas*).
+  - `#_`: Word-initial onset (e.g. `p → pf / #_` in German *pan* $\to$ *pfan*).
+  - `_#`: Word-final apocope (e.g. `m → ∅ / _#` in Latin *aurum* $\to$ *auru*).
+  - `(?![ʰh])`: Aspiration lookahead preserving digraphs (e.g. Grimm's Law $d \to t$ vs $d^h \to d$).
+
+### Built-in Historical Presets
+1. **Grimm's Law (PIE $\to$ Proto-Germanic)**: $P, T, K \to F, \theta, H$; $B, D, G \to P, T, K$; $B^h, D^h, G^h \to B, D, G$.
+2. **Latin to Early Romance Lenition**: Palatalization before front vowels, intervocalic stop voicing, and terminal $m$-apocope.
+3. **Proto-Slavic First Palatalization**: $k, g, x \to č, ž, š$ before front vowels.
+4. **Great Vowel Shift**: High vowel diphthongization and mid-vowel raising.
+
+---
+
+## Acoustic Phonetics & Vowel Quadrilateral (`vowel-formants.ts`)
+
+Acoustic phonetics defines vowel qualities by their first two formant resonance frequencies:
+- **$F_1$ (Vowel Height / Jaw Openness)**: Inversely related to tongue height. Close vowels ($/i/, /u/ \approx 280-300\text{Hz}$) have low $F_1$; Open vowels ($/a/, /ɑ/ \approx 700-750\text{Hz}$) have high $F_1$.
+- **$F_2$ (Vowel Frontness / Tongue Advancement)**: Directly related to tongue advancement. Front vowels ($/i/ \approx 2250\text{Hz}$) have high $F_2$; Back vowels ($/u/ \approx 800\text{Hz}$) have low $F_2$.
+
+### Real-Time Visualization
+`AcousticFormantVisualizer.tsx` renders:
+- An inverted SVG IPA Quadrilateral plotting active word vowels in real time.
+- Animated trajectory lines tracing the phonetic path through vowel space during articulation.
+- Mean **Acoustic Center of Gravity** marker and Front/Back distribution ratios.
+- Simulated Web Audio API FFT frequency resonance spectrum ($0 - 3000\text{Hz}$).
+
+---
+
+## Natural Neural Voice & Server Wake Engine
+
+Onoma provides dual voice synthesis:
+1. **🔊 Browser-Native SpeechSynthesis** (`browser-speech.ts`): Instant client-side playback mapping conworld cultures to standard BCP-47 language codes.
+2. **🎙 Kokoro Neural TTS** (`/api/onoma/tts`): Self-hosted neural model proxy passing canonical IPA phonemes directly to `/dev/generate_from_phonemes`.
+
+### Hugging Face / GPU Cold-Start Wake Engine
+Idle Hugging Face spaces and GPU containers sleep when inactive. The `wakeKokoroServer` tRPC mutation in `src/server/api/routers/onoma/core.ts` provides:
+- Extended **45-second cold-start timeout** to allow container bootup.
+- Live status reporting (`awake`, `waking`, `down`, `unconfigured`) and latency tracking ($ms$).
+- Interactive "Ping / Wake Server" triggers in both the Admin Panel and Onoma Lab Settings.
+
+---
+
+## Automated Test Suites
+
+Run the full Onoma test suite with `bun`:
 
 ```bash
-bun scripts/onoma/extract-lexicon.ts  # 1. harvest → scripts/onoma/raw/lexicon-raw.json (gitignored)
-bun scripts/onoma/clean.ts            # 2. clean+dedup → raw/lexicon-clean.json
-bun scripts/onoma/build-dicts.ts      # 3+4. classify, bucket, emit → src/lib/onoma/data/lexicon/*.json
+# Run all Onoma engine, linguistics, and TTS proxy tests (18 test suites, 154 tests)
+bun run test -- src/lib/onoma src/app/api/onoma/tts
+
+# Run dedicated Initiatives 125-131 verification suite
+bun run test -- src/lib/onoma/onoma-audit-initiatives.test.ts
+
+# Run sound shift engine tests
+bun run test -- src/lib/onoma/sound-shifts.test.ts
+
+# Run vowel formant acoustic tests
+bun run test -- src/lib/onoma/vowel-formants.test.ts
 ```
-
-`extract-lexicon.ts` reads IxWiki straight from MariaDB (creds parsed from
-`/ixwiki/config/LocalSettings.php`) and the external wikis (**iiwiki** + **althistory**) via
-the MediaWiki action API. Both type names by which `Infobox_*` template a page transcludes
-(SQL `templatelinks` / API `list=embeddedin`). External fetches are disk-cached under
-`scripts/onoma/raw/cache/` — the cache is **incremental**: re-running fetches only
-`INFOBOX_CATEGORY` entries whose category is missing from the cache (so adding a new template
-category tops up without a full re-crawl). Delete `scripts/onoma/raw/cache/*-typed.json` to
-force a full external rebuild. `rebuild-from-committed.ts` re-derives the lexicon from the
-committed JSON without re-fetching.
-
-> **iiwiki note:** requests must send `User-Agent: IxStats-Builder` (allowlisted past its
-> Cloudflare challenge) and hit `https://iiwiki.com/api.php`. See CLAUDE.md → "External
-> Wiki Access".
-
-## Linguistics engine
-
-Applied per generated name (in `NameResultCard`), all pure-TS and deterministic:
-
-- **`translateToIPA(name, culture)`** — left-to-right grapheme→IPA scan using per-culture
-  rule tables (Latin, Germanic, Celtic, Slavic, Arabic, Persian, Turkic, African, Indic,
-  Uralic, East-Asian, Austronesian, Constructed), then a consonant-onset primary-stress mark.
-- **`getMorphologyDetails(name, culture)`** — grammatical gender from word endings, plus a
-  full singular/plural declension table across 5 cases (Nominative→Ablative), with
-  culture-specific paradigms (Latin declensions, Greek, Slavic, Arabic triptote, Quenya…).
-- **`transcribeToScript(name, "cyrillic"|"greek"|"arabic")`** — grapheme→script mapping
-  (Greek final-sigma handling, Arabic RTL).
-
-## Naturalness scoring (Phase 5)
-
-`trainLM(words)` builds a char n-gram language model; `naturalnessScore(name, lm)` returns
-0–100 — the percentile of training words a candidate is at least as natural/pronounceable as
-(no magic constants). `useOnomaGenerator` trains an LM on the active seed pool and exposes
-`scoreNaturalness(name)`; `NameResultCard` shows it as a "% fit" badge.
-
-## Voice (Phase 7)
-
-Two distinct modes (two buttons in `NameResultCard`), not one speaker:
-
-- **🔊 IPA badge (Pronounce)** (done) — the *pronunciation engine*. The IPA badge has an inline speaker icon; clicking it speaks the name via the browser's native Web Speech API `window.speechSynthesis` (mapping conworld naming cultures to BCP-47 language tags). If the browser engine is unavailable, it surfaces a toast (no eSpeak fallback).
-- **🎙 Read Naturally** (done) — immersive natural neural voice. Proxies to a self-hosted **kokoro-fastapi** Docker container via Next.js `/api/onoma/tts`. Onoma sends the canonical IPA from `translateToIPA` straight to the model's `/dev/generate_from_phonemes` endpoint, so pronunciation comes from the language's own rules rather than English G2P. Caches synthesized audio in Redis. Falls back to the browser-native voice if the container is unreachable.
-  > [!TIP]
-  > **502 Bad Gateway Troubleshooting**: If natural voice playback fails with a `502 Bad Gateway` or `502 (Bad Gateway)` network error, it indicates that the Next.js API route cannot communicate with the self-hosted Kokoro container. This usually happens if the server restarts and the container isn't running. Spin it up by running:
-  > ```bash
-  > KOKORO_API_KEY=your_key docker compose up -d kokoro
-  > ```
-  > Ensure the `onoma.kokoro.baseUrl` in `SystemConfig` is set to `http://localhost:3004` (its host mapping) and `onoma.kokoro.apiKey` matches the host `KOKORO_API_KEY` token.
-
-## Lexicon analytics
-
-`lexicon-analytics.ts` powers the Studio's health panel: `calculateEntropy` (Shannon entropy
-of letter distribution), `getLetterFrequencies` / `getNgramFrequencies`, and
-`auditLexiconHealth` → a 0–100 score + issue list (size, duplicates, invalid chars, length
-outliers, noise words).
-
-## Culture classification
-
-`classifyCulture(name)` is a character bigram+trigram Naive-Bayes classifier (pure TS, no
-ML dependency). It trains at module load from the `CULTURAL_PROFILES` lists. For each
-name it returns either a **single culture** (one wins by `MIN_MARGIN`) or a **compound
-`A+B`** blend when the top two are close — which is the norm for invented conworld names.
-`build-dicts.ts` keeps the singles + the **top-6 compounds** as dictionary buckets;
-rarer blends collapse to their dominant single, and under-represented cultures pool into a
-per-category `mixed` bucket. Each category — including `culture_sports` / `culture_cuisine` /
-`culture_architecture` / `culture_generic` — merges the extracted wiki rows (ixwiki + iiwiki +
-althistory) with a curated `PUBLIC_SEEDS` floor in `build-dicts.ts`, so even the thinly-tagged
-culture categories train on a solid dictionary.
-
-## Tuning knobs
-
-| Knob | Where | Effect |
-|------|-------|--------|
-| `MIN_MARGIN` | `culture-classifier.ts` | Higher → purer single-culture buckets, more compounds/`mixed`. ~0.08 ≈ 90% coverage / 80% precision. |
-| `CAP_PER_BUCKET` | `build-dicts.ts` | Names per bucket. Lower → smaller dict files, less variety. |
-| `TOP_N_COMPOUNDS` | `build-dicts.ts` | How many compound blends become their own buckets. |
-| `order` | UI (Advanced) | Markov look-back depth (1–4 chars). Higher → closer to training, less novel. |
-
-After changing a classifier/build knob, re-run `bun scripts/onoma/build-dicts.ts`.
-
-## Tests
-
-```bash
-bun run test -- src/lib/onoma           # engine, linguistics, lexicon logic
-```
-
-Covers: Markov capitalize/dedup/constraints, phonology/morphology/orthography, lexicon
-analytics, lexicon cleaning, the culture classifier (held-out names + precision floor), and
-bucket assignment. The extractor seam check runs standalone:
-`bunx tsx scripts/onoma/extract-lexicon.test.ts`.

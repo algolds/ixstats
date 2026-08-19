@@ -18,6 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Volume2, RotateCcw, Sparkles, HelpCircle } from "lucide-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
+import { speakBrowserNative } from "~/lib/onoma/browser-speech";
 
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
@@ -282,13 +283,10 @@ export function MarkovVisualizerInner({
     }
   };
 
-  // Play pronunciation via SpeechSynthesis
+  // Play pronunciation via speakBrowserNative
   const handleSpeak = () => {
-    if (!activePrefix || typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(MarkovChain.capitalize(activePrefix));
-    utterance.rate = 0.88;
-    window.speechSynthesis.speak(utterance);
+    if (!activePrefix) return;
+    speakBrowserNative(MarkovChain.capitalize(activePrefix), "", "any").catch(() => {});
   };
 
   return (

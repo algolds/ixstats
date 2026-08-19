@@ -2,58 +2,122 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MessageCircle, ExternalLink, MessageSquareQuote, ChevronRight, Quote } from "lucide-react";
+import {
+  MessageCircle,
+  ExternalLink,
+  ChevronRight,
+  Send,
+  CheckCircle2,
+  Compass,
+  Quote,
+  Loader2,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/utils";
+import { cn, createUrl } from "~/lib/utils";
+
+function formatRelativeTime(date: Date | string | number): string {
+  const d = new Date(date);
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);
-  const { data: prompt } = api.blurbs.getRandomActivePrompt.useQuery();
+  const { data: prompt, isLoading } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-4 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-28 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+          <div className="h-4 w-16 animate-pulse rounded-full bg-black/5 dark:bg-white/5" />
+        </div>
+        <div className="space-y-2 py-1">
+          <div className="h-4 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+          <div className="h-4 w-4/5 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <div className="h-3 w-20 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+          <div className="h-6 w-20 animate-pulse rounded-full bg-black/5 dark:bg-white/5" />
+        </div>
+      </div>
+    );
+  }
 
   if (!prompt) return null;
 
+  const responseCount = prompt._count?.responses ?? 0;
+
   return (
     <>
-      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-3.5 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40">
-        <div className="flex items-center justify-between">
+      <div
+        onClick={() => setModalOpen(true)}
+        className="no-wiki-tooltip group relative flex cursor-pointer flex-col justify-between space-y-3.5 overflow-hidden rounded-2xl border border-indigo-500/15 bg-white/70 p-4 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/85 active:scale-[0.99] dark:border-indigo-400/15 dark:bg-black/40 dark:hover:border-indigo-400/30 dark:hover:bg-black/55"
+      >
+        {/* Subtle Ambient Specular Glow */}
+        <div className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-transparent blur-2xl dark:from-indigo-400/20 dark:via-violet-400/10" />
+
+        {/* Top Header */}
+        <div className="relative z-10 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <MessageSquareQuote className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <div className="flex h-5 w-5 items-center justify-center rounded-md border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <Quote className="h-3 w-3" />
+            </div>
             <span className="text-foreground text-xs font-semibold tracking-tight">
               Blurb of the Day
             </span>
           </div>
 
-          <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-medium tracking-wider text-purple-700 uppercase dark:text-purple-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-indigo-700 uppercase dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
+            <Compass className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
             Daily Prompt
           </span>
         </div>
 
-        {/* Editorial Quote Vignette (No input borders) */}
-        <div className="relative overflow-hidden rounded-2xl border-l-3 border-purple-500 bg-gradient-to-br from-purple-500/10 via-purple-500/[0.03] to-transparent p-3.5 shadow-xs dark:border-purple-400 dark:from-purple-500/15 dark:via-purple-500/[0.05]">
-          <Quote className="pointer-events-none absolute -right-2 -bottom-2 h-12 w-12 text-purple-500/10 select-none dark:text-purple-400/10" />
-          <p className="text-foreground relative z-10 text-xs leading-relaxed font-normal tracking-normal select-text">
+        {/* Prompt Question Body */}
+        <div className="relative z-10 space-y-1">
+          {prompt.title && (
+            <p className="text-[11px] font-medium tracking-tight text-indigo-600/90 dark:text-indigo-400/90">
+              {prompt.title}
+            </p>
+          )}
+          <blockquote className="text-foreground/90 dark:text-zinc-200 text-[13px] font-normal leading-relaxed tracking-normal select-text">
             &ldquo;{prompt.question}&rdquo;
-          </p>
+          </blockquote>
         </div>
 
-        <div className="flex items-center justify-between pt-0.5">
-          <span className="text-muted-foreground/80 flex items-center gap-1 text-[10px] font-medium tabular-nums">
-            <MessageCircle className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-            {prompt._count?.responses ?? 0}{" "}
-            {prompt._count?.responses === 1 ? "response" : "responses"}
+        {/* Footer Meta & Tactile CTA */}
+        <div className="relative z-10 flex items-center justify-between pt-1">
+          <span className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px] font-medium tabular-nums">
+            <MessageCircle className="h-3.5 w-3.5 text-indigo-500/70 dark:text-indigo-400/70" />
+            {responseCount} {responseCount === 1 ? "response" : "responses"}
           </span>
 
           <button
-            onClick={() => setModalOpen(true)}
-            className="group/btn flex cursor-pointer items-center gap-1 rounded-full border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-[10px] font-semibold text-purple-700 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-purple-500/60 hover:bg-purple-500/25 active:scale-95 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setModalOpen(true);
+            }}
+            className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
           >
-            <span>Write Response</span>
-            <ChevronRight className="h-3 w-3 shrink-0 text-purple-700 transition-transform duration-200 group-hover/btn:translate-x-0.5 dark:text-purple-300" />
+            <span>Respond</span>
+            <ChevronRight className="h-3 w-3 shrink-0 text-indigo-600/80 transition-transform duration-150 group-hover/btn:translate-x-0.5 dark:text-indigo-300/80" />
           </button>
         </div>
       </div>
@@ -91,8 +155,9 @@ export function BlurbResponseModal({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading: responsesLoading,
   } = api.blurbs.getResponsesForPrompt.useInfiniteQuery(
-    { promptId: prompt.id, limit: 8, featuredFirst: true },
+    { promptId: prompt.id, limit: 10, featuredFirst: true },
     {
       enabled: open,
       getNextPageParam: (lastPage: any) => lastPage.nextCursor,
@@ -115,157 +180,256 @@ export function BlurbResponseModal({
   });
 
   const responses = responsesData?.pages.flatMap((p: any) => p.responses) ?? [];
+  const totalCount = prompt._count?.responses ?? responses.length;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCloseAction()}>
-      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-indigo-500/15 bg-background/95 p-0 shadow-2xl backdrop-blur-2xl dark:border-indigo-400/20 sm:max-w-lg">
         {/* Header */}
-        <DialogHeader className="border-border/30 border-b px-5 py-4">
+        <DialogHeader className="border-border/40 border-b px-5 py-4 text-left">
           <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10">
-              <MessageCircle className="h-4 w-4 text-purple-400" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <Quote className="h-4 w-4" />
             </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-sm font-semibold">
-                {prompt.title ?? "Blurb of the Day"}
-              </DialogTitle>
-              <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
-                {prompt.question}
+            <div className="min-w-0 flex-1 pr-6">
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-sm font-semibold tracking-tight">
+                  {prompt.title ?? "Blurb of the Day"}
+                </DialogTitle>
+                <Badge
+                  variant="outline"
+                  className="border-indigo-500/25 bg-indigo-500/10 px-2 py-0 text-[10px] font-medium text-indigo-700 tabular-nums dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300"
+                >
+                  {totalCount} {totalCount === 1 ? "response" : "responses"}
+                </Badge>
+              </div>
+              <p className="text-foreground/90 dark:text-zinc-300 mt-1.5 text-xs leading-relaxed font-normal">
+                &ldquo;{prompt.question}&rdquo;
               </p>
-              <Badge variant="secondary" className="mt-1.5 text-[10px]">
-                {prompt._count?.responses ?? 0}{" "}
-                {(prompt._count?.responses ?? 0) === 1 ? "response" : "responses"}
-              </Badge>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Submission Form (If active and not answered yet) */}
+        {/* Submission Form (If signed in and not yet responded) */}
         {isSignedIn && !myResponse && (
-          <div className="border-border/20 bg-muted/10 border-b px-5 py-3">
-            <div className="flex flex-col gap-2">
-              <textarea
-                value={newResponse}
-                onChange={(e) => setNewResponse(e.target.value)}
-                placeholder="Share your country's perspective..."
-                maxLength={1000}
-                rows={3}
-                className="border-border/40 w-full resize-none rounded-lg border bg-white/5 px-3 py-2 text-xs focus:border-purple-500 focus:outline-none"
-              />
-              <div className="text-muted-foreground flex items-center justify-between text-[10px]">
-                <span>{newResponse.length}/1000 characters</span>
-                <Button
-                  size="sm"
-                  className="h-6 bg-purple-600 px-3 text-[10px] text-white hover:bg-purple-700"
-                  onClick={() =>
-                    submitMutation.mutate({
-                      promptId: prompt.id,
-                      content: newResponse,
-                    })
-                  }
-                  disabled={
-                    !newResponse.trim() || newResponse.length > 1000 || submitMutation.isPending
-                  }
-                >
-                  {submitMutation.isPending ? "Submitting..." : "Submit Response"}
-                </Button>
+          <div className="border-border/30 bg-muted/20 border-b px-5 py-3.5">
+            <div className="flex flex-col gap-2.5">
+              <div className="relative rounded-xl border border-black/10 bg-white/70 shadow-2xs transition-colors focus-within:border-indigo-500/40 dark:border-white/10 dark:bg-black/30 dark:focus-within:border-indigo-400/40">
+                <textarea
+                  value={newResponse}
+                  onChange={(e) => setNewResponse(e.target.value)}
+                  placeholder="Share your country's perspective, culture, or lore..."
+                  maxLength={1000}
+                  rows={3}
+                  className="text-foreground placeholder:text-muted-foreground/60 w-full resize-none bg-transparent px-3 py-2.5 text-xs leading-relaxed focus:outline-none"
+                />
+                <div className="border-border/30 flex items-center justify-between border-t px-3 py-1.5 text-[10px]">
+                  <span
+                    className={cn(
+                      "font-mono transition-colors",
+                      newResponse.length > 900
+                        ? "text-amber-500"
+                        : "text-muted-foreground/70"
+                    )}
+                  >
+                    {newResponse.length} / 1000
+                  </span>
+                  <Button
+                    size="sm"
+                    className="h-6 cursor-pointer gap-1 rounded-md bg-indigo-600 px-2.5 text-[10px] font-medium text-white shadow-xs hover:bg-indigo-700 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    onClick={() =>
+                      submitMutation.mutate({
+                        promptId: prompt.id,
+                        content: newResponse,
+                      })
+                    }
+                    disabled={
+                      !newResponse.trim() ||
+                      newResponse.length > 1000 ||
+                      submitMutation.isPending
+                    }
+                  >
+                    {submitMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-2.5 w-2.5" />
+                        <span>Submit Dispatch</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               {submitMutation.error && (
-                <p className="mt-1 text-[10px] text-red-400">{submitMutation.error.message}</p>
+                <p className="text-[10px] font-medium text-red-500 dark:text-red-400">
+                  {submitMutation.error.message}
+                </p>
               )}
             </div>
           </div>
         )}
 
-        {/* User's existing response */}
+        {/* User's existing submitted response */}
         {isSignedIn && myResponse && (
-          <div className="border-border/20 border-b bg-emerald-500/5 px-5 py-3">
-            <h4 className="mb-1 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
-              Your Submitted Response
-            </h4>
-            <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
+          <div className="border-border/30 border-b bg-emerald-500/[0.04] px-5 py-3.5">
+            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Your Country&apos;s Dispatch</span>
+            </div>
+            <p className="text-foreground/90 dark:text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap">
               {myResponse.content}
             </p>
           </div>
         )}
 
-        {/* Sign in prompt */}
+        {/* Unauthenticated note */}
         {!isSignedIn && (
-          <div className="border-border/20 bg-muted/10 border-b px-5 py-3 text-center">
+          <div className="border-border/30 bg-muted/15 border-b px-5 py-3 text-center">
             <p className="text-muted-foreground text-xs">
-              Sign in to submit your country's response.
+              Sign in with your nation to submit a cultural dispatch.
             </p>
           </div>
         )}
 
-        {/* Responses */}
-        <div className="flex-1 space-y-2 overflow-y-auto px-5 py-3">
-          {responses.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-xs">
-              No responses yet. Be the first!
-            </p>
+        {/* Responses Feed */}
+        <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-4">
+          {responsesLoading && (
+            <div className="space-y-2 py-4">
+              <div className="h-16 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+              <div className="h-16 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+            </div>
           )}
-          {responses.map((r: any) => (
-            <div
-              key={r.id}
-              className={cn(
-                "rounded-lg border p-3",
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-border/30"
-              )}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                {r.country?.flag && (
-                  <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
-                )}
-                <span className="text-foreground text-xs font-medium">
-                  {r.country?.name ?? "Unknown"}
-                </span>
-                {r.featured && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-500/30 px-1 py-0 text-[9px] text-amber-400"
-                  >
-                    Featured
-                  </Badge>
-                )}
+
+          {!responsesLoading && responses.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:border-indigo-400/20 dark:bg-indigo-500/15 dark:text-indigo-400">
+                <MessageCircle className="h-5 w-5 opacity-80" />
               </div>
-              <p className="text-muted-foreground line-clamp-4 text-xs whitespace-pre-wrap">
-                {r.content}
+              <p className="text-foreground mt-2.5 text-xs font-medium">No responses yet</p>
+              <p className="text-muted-foreground mt-0.5 text-[11px]">
+                Be the first country to share a perspective on this topic.
               </p>
             </div>
-          ))}
+          )}
+
+          {responses.map((r: any) => {
+            const countryName = r.country?.name ?? r.user?.country?.name ?? "Unknown";
+            const countryFlag = r.country?.flag ?? r.user?.country?.flag;
+
+            return (
+              <div
+                key={r.id}
+                className={cn(
+                  "rounded-xl border p-3 transition-colors",
+                  r.featured
+                    ? "border-amber-500/30 bg-amber-500/[0.04]"
+                    : "border-black/5 bg-black/[0.02] hover:bg-black/[0.04] dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+                )}
+              >
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {countryFlag ? (
+                      <img
+                        src={countryFlag}
+                        alt=""
+                        className="h-3.5 w-5 rounded-xs object-cover shadow-2xs"
+                      />
+                    ) : (
+                      <UnifiedCountryFlag
+                        showTooltip={false}
+                        countryName={countryName}
+                        size="sm"
+                        className="shrink-0"
+                      />
+                    )}
+                    <span className="text-foreground text-xs font-semibold tracking-tight">
+                      {countryName}
+                    </span>
+                    {r.featured && (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500/30 px-1.5 py-0 text-[8px] font-semibold text-amber-600 dark:text-amber-400"
+                      >
+                        Featured
+                      </Badge>
+                    )}
+                  </div>
+
+                  {r.createdAt && (
+                    <span className="text-muted-foreground/60 text-[10px] tabular-nums">
+                      {formatRelativeTime(r.createdAt)}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-foreground/90 dark:text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap select-text">
+                  {r.content}
+                </p>
+
+                {r.linkedArticles &&
+                  Array.isArray(r.linkedArticles) &&
+                  r.linkedArticles.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {r.linkedArticles.map((article: { title: string; url: string }, i: number) => (
+                        <Link
+                          key={i}
+                          href={article.url}
+                          className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1 text-[10px] underline underline-offset-2"
+                        >
+                          <ExternalLink className="h-2.5 w-2.5" />
+                          {article.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+              </div>
+            );
+          })}
+
           {hasNextPage && (
-            <div className="py-1 text-center">
+            <div className="pt-2 text-center">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs"
+                className="h-7 cursor-pointer text-xs active:scale-95"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
               >
-                {isFetchingNextPage ? "Loading..." : "Load more"}
+                {isFetchingNextPage ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load more responses"
+                )}
               </Button>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-border/30 flex items-center justify-between border-t px-5 py-3">
+        {/* Footer Navigation */}
+        <div className="border-border/40 flex items-center justify-between border-t px-5 py-3">
           <Link
             href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
-            className="inline-flex items-center gap-1.5 text-xs text-purple-400 transition-colors hover:text-purple-300"
+            className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1.5 text-xs transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
-            Open full prompt
+            <span>Open full topic</span>
           </Link>
           <Link
             href={createUrl("/blurbs")}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
           >
-            All prompts →
+            <span>All topics</span>
+            <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+

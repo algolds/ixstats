@@ -13,6 +13,7 @@ import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/p
 import { speakName } from "~/lib/onoma/browser-speech";
 import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
 import { cn } from "~/lib/utils";
+import { AcousticFormantVisualizer } from "./AcousticFormantVisualizer";
 import {
   Select,
   SelectContent,
@@ -448,6 +449,13 @@ export function StudioPhonology() {
           </div>
         )}
       </div>
+
+      {/* Acoustic Formant & Spectrogram Visualizer */}
+      <AcousticFormantVisualizer
+        currentIpa={previewIpa}
+        currentName={previewText}
+        accentColor={ACCENT}
+      />
 
       {/* Rule editor */}
       <div className="border-border/40 space-y-3 rounded-xl border p-4">
