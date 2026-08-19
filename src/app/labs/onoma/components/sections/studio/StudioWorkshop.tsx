@@ -3,7 +3,8 @@
 // src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx
 // Onoma Custom Studio Workshop View
 
-import { Wand2, SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
+import { SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
+import { ScienceGameIcon } from "../../nav/onoma-tabs";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -556,7 +557,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 disabled={trainingWords.length === 0}
                 className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] disabled:opacity-50"
               >
-                <Wand2 className="h-4 w-4" />
+                <ScienceGameIcon className="h-4 w-4" />
                 <span>Assemble Seeds</span>
               </button>
             </div>

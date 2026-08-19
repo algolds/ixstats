@@ -8,7 +8,6 @@ import {
   Activity,
   AudioWaveform,
   Sliders,
-  Sparkles,
   Info,
   Radio,
   Eye,

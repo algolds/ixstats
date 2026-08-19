@@ -1,11 +1,12 @@
 "use client";
 
 // src/app/labs/onoma/components/sections/studio/StudioNameSets.tsx
-// Onoma Studio — Full-name generator. Combines dictionaries tagged into a Name Set
+// Onoma Studio — Full-name compositor. Combines dictionaries tagged into a Name Set
 // (role + gender) via a configurable template, Markov-generating each part.
 
 import { useMemo, useState, useEffect } from "react";
-import { Wand2, Info, Plus, Trash2, Users, HelpCircle } from "lucide-react";
+import { Info, Plus, Trash2, Users, HelpCircle } from "lucide-react";
+import { NationGameIcon } from "../../nav/onoma-tabs";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -497,7 +498,7 @@ export function StudioNameSets() {
                             <input
                               value={slot.parentName || ""}
                               onChange={(e) => updateSlot(idx, { parentName: e.target.value })}
-                              placeholder="Leave blank for random Markov parent"
+                              placeholder="Leave blank for derived Markov parent"
                               className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
                             />
                           </div>
@@ -573,7 +574,7 @@ export function StudioNameSets() {
                   disabled={slots.length === 0}
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white hover:bg-[#33a7ff] disabled:opacity-50"
                 >
-                  <Wand2 className="h-4 w-4" /> Generate Full Names
+                  <NationGameIcon className="h-4 w-4" /> Generate Full Names
                 </button>
               </div>
             </>

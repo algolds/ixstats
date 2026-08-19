@@ -4,7 +4,8 @@
 // Onoma Lab — Loanword & Contact Registry Section
 
 import { useState, useEffect } from "react";
-import { Languages, Plus, Trash2, ArrowRightLeft, Sparkles } from "lucide-react";
+import { Languages, Plus, Trash2, ArrowRightLeft } from "lucide-react";
+import { CultureGameIcon } from "../nav/onoma-tabs";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -439,7 +440,7 @@ export default function LoanwordsSection() {
         <div className="space-y-4 lg:col-span-7">
           <FacetMaterial material="satin" className="space-y-4 border border-emerald-500/20 p-4">
             <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
-              <Sparkles className="h-4.5 w-4.5 animate-pulse text-emerald-500" />
+              <CultureGameIcon className="h-4.5 w-4.5 text-emerald-500" />
               Adaptation Simulator Sandbox
             </h3>
 

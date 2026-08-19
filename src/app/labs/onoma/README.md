@@ -57,11 +57,15 @@ src/app/labs/onoma/
 ├── components/
 │   ├── OnomaRouter.tsx              # Master coordinator (82 lines)
 │   ├── OnomaSectionRenderer.tsx     # Dynamic lazy section dispatcher
+│   ├── glyphs/                      # ⟨ONOMA⟩ Linguistic Glyph System (Apple SF Symbols × IPA)
+│   │   ├── OnomaGlyph.tsx           # Vector glyph & composable expression renderer
+│   │   ├── onoma-glyphs-catalog.tsx # 24 pure SVG mathematical vector paths
+│   │   └── index.ts                 # Clean barrel export
 │   ├── nav/
-│   │   ├── OnomaHeader.tsx          # Apple toolbar, pronunciation attractor, utilities
-│   │   └── onoma-tabs.tsx           # Tab schemas, theme tokens, Game-Icons
+│   │   ├── OnomaHeader.tsx          # Apple toolbar, pronunciation lockup, Iconoir utilities
+│   │   └── onoma-tabs.tsx           # Tab schemas, theme tokens, OnomaGlyph adapters
 │   ├── sections/
-│   │   ├── OverviewSection.tsx      # Quick generate & preset assembler
+│   │   ├── OverviewSection.tsx      # Quick Start synthesis surface
 │   │   ├── CategoryDomainSection.tsx # Unified declarative domain panel (Places, People, Orgs, Culture, Military)
 │   │   ├── domain-taxonomies.ts     # Domain category definitions and subtype options
 │   │   ├── BatchSection.tsx         # Batch generation workbench coordinator
@@ -78,7 +82,7 @@ src/app/labs/onoma/
 │   │   │   ├── SyntaxSentenceBuilder.tsx # Live translation and inflection preview engine
 │   │   │   └── SyntaxDictionaryEditor.tsx# Vocabulary lookup and word pair manager
 │   │   ├── StashSection.tsx         # User saved names and custom dictionary bank
-│   │   ├── MarketplaceSection.tsx   # Community dictionary pack sharing and discovery
+│   │   ├── MarketplaceSection.tsx   # Community language pack sharing and discovery
 │   │   └── studio/
 │   │       ├── StudioWorkshop.tsx   # Model training workspace & transition graph
 │   │       ├── StudioPhonology.tsx  # Phonotactic templates & IPA rule editor
@@ -89,7 +93,7 @@ src/app/labs/onoma/
 │   │       └── StudioVisualizer.tsx # Transition trie path explorer
 │   └── shared/
 │       ├── OnomaBrandLogo.tsx       # Canonical vector brand asset
-│       ├── OnomaHelpModal.tsx       # Guided walkthrough modal with Game-Icons
+│       ├── OnomaHelpModal.tsx       # Guided walkthrough modal
 │       ├── GeneratorPanel.tsx       # Primary procedural generation interface
 │       └── NameResultCard.tsx       # Name card with Kokoro audio, IPA, and morphology
 ├── hooks/

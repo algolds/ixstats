@@ -339,7 +339,7 @@ export function VoicePreferencesPanel({
                   className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1.5 text-[11px] focus:outline-none"
                 >
                   <option value="custom">Custom (No preset)</option>
-                  <option value="elven">Elven (Soft & Magical)</option>
+                  <option value="elven">Elven (Soft & Luminous)</option>
                   <option value="dwarven">Dwarven (Deep & Stout)</option>
                   <option value="orcish">Orcish (Rough & Energetic)</option>
                   <option value="wraith">Wraith (Whispered & Mysterious)</option>

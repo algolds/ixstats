@@ -1,19 +1,23 @@
 "use client";
 
 // src/app/labs/onoma/hooks/useOnomaRouter.ts
-// Encapsulated state management, navigation routing, and audio interactions for Onoma
+// Encapsulated state management and navigation routing for Onoma (Product Model: CREATE · STUDIO · EXPLORE)
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
-import type { OnomaSection, StudioSubTab } from "~/lib/onoma/types";
-import { getSectionFromPathname, getStudioSubTabFromPathname } from "~/lib/onoma/types";
+import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
+import {
+  getSectionFromPathname,
+  getStudioSubTabFromPathname,
+  getExploreSubTabFromPathname,
+} from "~/lib/onoma/types";
 import { useNameBank } from "~/hooks/useNameBank";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { speakName } from "~/lib/onoma/browser-speech";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
-import { SECTION_TITLES, studioSubTabLabel } from "../components/nav/onoma-tabs";
+import { SECTION_TITLES, studioSubTabLabel, exploreSubTabLabel } from "../components/nav/onoma-tabs";
+import { useOnomaPronunciation } from "./useOnomaPronunciation";
 
 export function useOnomaRouter() {
   const pathname = usePathname();
@@ -24,39 +28,45 @@ export function useOnomaRouter() {
     return getGoogleFontLink(speechConfig?.brand?.fontFamily || "Inter");
   }, [speechConfig?.brand?.fontFamily]);
 
-  // Active section state
+  // Pronunciation hook
+  const { hasInteractedPronunciation, setHasInteractedPronunciation, playPronunciation } =
+    useOnomaPronunciation({
+      kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
+      kokoroVoice: speechConfig?.kokoro?.voice,
+    });
+
+  // Active top-level section state
   const [activeSection, setActiveSection] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
     const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
     if (isSignedIn && !rawSegment) {
-      return "studio";
+      return "overview";
     }
     return initial;
   });
 
-  // Active sub-tab state for Markov Studio
+  // Active sub-tab state for STUDIO (Construction Engine)
   const [activeSubTab, setActiveSubTab] = useState<StudioSubTab>(() =>
     getStudioSubTabFromPathname(pathname)
   );
 
-  // Track the last standard tab visited (default to overview)
+  // Active sub-tab state for EXPLORE (Analysis & Understanding Engine)
+  const [activeExploreSubTab, setActiveExploreSubTab] = useState<ExploreSubTab>(() =>
+    getExploreSubTabFromPathname(pathname)
+  );
+
+  // Track the last standard CREATE tab visited (default to overview)
   const [lastActiveTab, setLastActiveTab] = useState<OnomaSection>(() => {
     const initial = getSectionFromPathname(pathname);
-    return initial === "bank" || initial === "studio" || initial === "settings"
+    return initial === "bank" || initial === "studio" || initial === "explore" || initial === "settings"
       ? "overview"
       : initial;
   });
 
-  // When auth state loads, if user is signed in and at the root onoma page, default to Studio
-  const hasAppliedAuthDefault = useRef(false);
-  useEffect(() => {
-    if (!isLoaded || hasAppliedAuthDefault.current) return;
-    hasAppliedAuthDefault.current = true;
-    const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
-    if (isSignedIn && !rawSegment) {
-      setActiveSection("studio");
-    }
-  }, [isLoaded, isSignedIn, pathname]);
+  const isUtilityOrMode = useCallback(
+    (s: OnomaSection) => s === "bank" || s === "studio" || s === "explore" || s === "settings",
+    []
+  );
 
   const bank = useNameBank();
 
@@ -76,58 +86,6 @@ export function useOnomaRouter() {
       if (t) clearTimeout(t);
     };
   }, [bankLength]);
-
-  // Pronunciation Audio Attractor State & Player
-  const [hasInteractedPronunciation, setHasInteractedPronunciation] = useState(true);
-  useEffect(() => {
-    const tried = localStorage.getItem("onoma-pronunciation-tried");
-    if (!tried) {
-      setHasInteractedPronunciation(false);
-    }
-  }, []);
-
-  const playPronunciation = useCallback(async () => {
-    if (!hasInteractedPronunciation) {
-      setHasInteractedPronunciation(true);
-      localStorage.setItem("onoma-pronunciation-tried", "true");
-    }
-    const kokoroEnabled = Boolean(speechConfig?.kokoro?.enabled);
-    if (kokoroEnabled) {
-      try {
-        await speakName({
-          name: "Onoma",
-          ipa: "ˈɒnəmə",
-          culture: "constructed",
-          kokoroEnabled: true,
-          defaultVoice: speechConfig?.kokoro?.voice,
-        });
-        return;
-      } catch (err) {
-        console.error("Kokoro TTS failed for hero, falling back to browser speech:", err);
-      }
-    }
-
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance();
-    const voices = window.speechSynthesis.getVoices();
-    const greekVoice = voices.find((v) => v.lang.startsWith("el-") || v.lang.includes("Greek"));
-    if (greekVoice) {
-      utterance.voice = greekVoice;
-      utterance.text = "Όνομα";
-      utterance.lang = "el-GR";
-    } else {
-      utterance.text = "OH-nuh-muh";
-      utterance.lang = "en-US";
-      const englishVoice = voices.find(
-        (v) => v.lang.startsWith("en-") || v.lang.includes("English")
-      );
-      if (englishVoice) utterance.voice = englishVoice;
-    }
-    utterance.rate = 0.82;
-    utterance.pitch = 1.0;
-    window.speechSynthesis.speak(utterance);
-  }, [hasInteractedPronunciation, speechConfig?.kokoro?.enabled, speechConfig?.kokoro?.voice]);
 
   // Dynamic lexicon terms count computation
   const lexiconCount = useMemo(() => {
@@ -163,7 +121,7 @@ export function useOnomaRouter() {
     }
   }, []);
 
-  // States to pass data to Studio from Name Bank
+  // States to pass data to Studio from Stash
   const [studioInitialWords, setStudioInitialWords] = useState<string[] | undefined>(undefined);
   const [studioInitialTitle, setStudioInitialTitle] = useState<string | undefined>(undefined);
 
@@ -176,17 +134,27 @@ export function useOnomaRouter() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // Handle SPA navigation
+  // Handle Explore-specific subtab navigation
+  const handleNavigateExplore = useCallback((tab: ExploreSubTab) => {
+    setActiveExploreSubTab(tab);
+    const href = `/labs/onoma/explore/${tab}`;
+    window.history.pushState(null, "", withBasePath(href));
+    document.title = `Onoma Explore: ${exploreSubTabLabel(tab)}`;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  // Handle top-level SPA navigation
   const handleNavigate = useCallback(
     (section: OnomaSection) => {
+      // Toggle behavior if clicking the same utility button
       if (section === activeSection) {
-        if (section === "bank" || section === "studio" || section === "settings") {
+        if (isUtilityOrMode(section)) {
           handleNavigate(lastActiveTab);
         }
         return;
       }
 
-      if (section !== "bank" && section !== "studio" && section !== "settings") {
+      if (!isUtilityOrMode(section)) {
         setLastActiveTab(section);
       }
 
@@ -197,17 +165,21 @@ export function useOnomaRouter() {
           ? "/labs/onoma"
           : section === "studio"
             ? `/labs/onoma/studio/${activeSubTab}`
-            : `/labs/onoma/${section}`;
+            : section === "explore"
+              ? `/labs/onoma/explore/${activeExploreSubTab}`
+              : `/labs/onoma/${section}`;
       window.history.pushState(null, "", withBasePath(href));
 
       document.title =
         section === "studio"
           ? `Onoma Studio: ${studioSubTabLabel(activeSubTab)}`
-          : `Onoma — ${SECTION_TITLES[section]}`;
+          : section === "explore"
+            ? `Onoma Explore: ${exploreSubTabLabel(activeExploreSubTab)}`
+            : `Onoma — ${SECTION_TITLES[section]}`;
 
       window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, lastActiveTab, activeSubTab]
+    [activeSection, lastActiveTab, activeSubTab, activeExploreSubTab, isUtilityOrMode]
   );
 
   // Handle browser back/forward navigation
@@ -217,38 +189,44 @@ export function useOnomaRouter() {
       setActiveSection(newSection);
       if (newSection === "studio") {
         setActiveSubTab(getStudioSubTabFromPathname(window.location.pathname));
+      } else if (newSection === "explore") {
+        setActiveExploreSubTab(getExploreSubTabFromPathname(window.location.pathname));
       }
-      if (newSection !== "bank" && newSection !== "studio" && newSection !== "settings") {
+      if (!isUtilityOrMode(newSection)) {
         setLastActiveTab(newSection);
       }
       window.scrollTo({ top: 0, behavior: "instant" });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [isUtilityOrMode]);
 
   // Sync state if pathname changes externally
   useEffect(() => {
     const routeSection = getSectionFromPathname(pathname);
     if (routeSection !== activeSection) {
       setActiveSection(routeSection);
-      if (routeSection !== "bank" && routeSection !== "studio" && routeSection !== "settings") {
+      if (!isUtilityOrMode(routeSection)) {
         setLastActiveTab(routeSection);
       }
     }
     if (routeSection === "studio") {
       setActiveSubTab(getStudioSubTabFromPathname(pathname));
+    } else if (routeSection === "explore") {
+      setActiveExploreSubTab(getExploreSubTabFromPathname(pathname));
     }
-  }, [pathname, activeSection]);
+  }, [pathname, activeSection, isUtilityOrMode]);
 
   // Set document title on load/change
   useEffect(() => {
     if (activeSection === "studio") {
       document.title = `Onoma Studio: ${studioSubTabLabel(activeSubTab)} — Linguistic Engine`;
+    } else if (activeSection === "explore") {
+      document.title = `Onoma Explore: ${exploreSubTabLabel(activeExploreSubTab)} — Linguistic Engine`;
     } else {
       document.title = `Onoma — ${SECTION_TITLES[activeSection]}`;
     }
-  }, [activeSection, activeSubTab]);
+  }, [activeSection, activeSubTab, activeExploreSubTab]);
 
   const handleLoadToStudio = useCallback((words: string[], title: string) => {
     setStudioInitialWords(words);
@@ -265,6 +243,7 @@ export function useOnomaRouter() {
     fontLink,
     activeSection,
     activeSubTab,
+    activeExploreSubTab,
     lastActiveTab,
     lexiconCount,
     shouldAnimateStash,
@@ -277,8 +256,10 @@ export function useOnomaRouter() {
     studioInitialTitle,
     handleNavigate,
     handleNavigateStudio,
+    handleNavigateExplore,
     handleLoadToStudio,
     handleClearStudioInitial,
     setActiveSubTab,
+    setActiveExploreSubTab,
   };
 }

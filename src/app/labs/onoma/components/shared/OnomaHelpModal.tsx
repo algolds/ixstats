@@ -33,7 +33,7 @@ interface StepItem {
 const STEPS: StepItem[] = [
   {
     category: "SCIENCE",
-    badge: "",
+    badge: "01 · THE THESIS",
     title: "Language is a system.",
     subtitle: "From rules to language",
     quote:
@@ -42,48 +42,48 @@ const STEPS: StepItem[] = [
       "A name is never simply a string of letters. It emerges naturally from a structured linguistic chain:",
     progression: "sound → structure → pattern → vocabulary → culture → history",
     features: [
-      "Onoma is not a name generator — it is the linguistic engine",
-      "Engineered with mathematical rules and formal linguistic models",
-      "Define the phonotactic rules and let authentic vocabulary emerge",
+      "Onoma is not a name generator — it is the linguistic engine behind the name",
+      "Engineered with deterministic Markov matrices and formal linguistic constraints",
+      "Define the sound system and permitted syllables; authentic vocabulary emerges",
     ],
   },
   {
     category: "GEOGRAPHY",
-    badge: "02 · CREATE",
+    badge: "02 · CREATE · CVC · CCVCC",
     title: "Make language useful.",
     subtitle: "Build the language behind your world",
     description:
       "Synthesize culturally coherent names and entities across dedicated worldbuilding environments:",
     features: [
-      "Places: Nations, provinces, settlements, mountain ranges, and rivers",
-      "People: First names, surnames, noble dynasties, and cultural ethnonyms",
+      "Places: Nations, settlements, provinces, rivers, and mountain ranges",
+      "People: First names, patronymics, noble dynasties, and cultural ethnonyms",
       "Organizations & Culture: Guilds, chivalric orders, deities, and sacred traditions",
     ],
   },
   {
     category: "HISTORY",
-    badge: "03 · STUDIO",
+    badge: "03 · STUDIO · X → Y / V_V",
     title: "Build the system.",
-    subtitle: "Computational linguistics environment",
+    subtitle: "Language construction environment",
     description:
-      "A complete laboratory to define sound systems, train models, and simulate centuries of language change:",
+      "A complete workshop to define sound systems, train Markov models, and simulate historical change:",
     features: [
-      "Workshop & Phonology: Multi-order Markov models, syllable templates (CVC, CCVCC), and sonority rules",
-      "Acoustics: Real-time 2D IPA Vowel Quadrilateral (F₁ vs F₂) and resonant formant spectrum",
+      "Model Workshop & Visualizer: Multi-order Markov chains, interactive transition graphs",
+      "Name Sets Compositor: Combine multi-part dictionaries into structured compound names",
       "Sound Shifts: Historical sound change interpreter (X → Y / ENV) across epochs (Grimm's Law, Romance Lenition)",
     ],
   },
   {
     category: "CULTURE",
-    badge: "04 · EXPLORE & STASH",
+    badge: "04 · EXPLORE · F₁ vs F₂ · σ",
     title: "Understand the language.",
-    subtitle: "The permanent world lexicon",
+    subtitle: "Analysis, acoustics & permanent lexicon",
     description:
       "Inspect underlying mechanics, audit linguistic health, audition natural speech, and stash vocabulary:",
     features: [
-      "Linguistic Enrichments: 5-case noun declensions, grammatical gender, and script transcriptions",
-      "Dual Speech Engine: Instant browser BCP-47 accents and Kokoro neural phoneme voiceover",
-      "Stash: Organize discovered names and export directly into your worldbuilding collections",
+      "Acoustics & IPA: Real-time 2D IPA Vowel Quadrilateral (F₁ vs F₂) and formant spectrum",
+      "Syntax, Writing & Etymology: 5-case declensions, grapheme-to-glyph systems, and root trees",
+      "Stash: Permanent repository to organize discovered vocabulary and deploy into your world",
     ],
   },
 ];
@@ -265,7 +265,7 @@ export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
                   onClick={handleNext}
                   className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-[#0091ff]/20 transition-all hover:bg-[#33a7ff] active:scale-95 cursor-pointer"
                 >
-                  <span>{activeStep === STEPS.length - 1 ? "Enter Lab" : "Next"}</span>
+                  <span>{activeStep === STEPS.length - 1 ? "Begin" : "Next"}</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>

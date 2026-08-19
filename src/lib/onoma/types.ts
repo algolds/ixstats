@@ -207,28 +207,64 @@ export interface GenerationResult {
   generatedAt: Date;
 }
 
+export type DictionaryId = Brand<string, "DictionaryId">;
+export type StashEntryId = Brand<string, "StashEntryId">;
+
 /**
- * Configuration for the Onoma sidebar sections.
+ * The three primary Product Model pillars defined in the Onoma Brand Guide:
+ * - CREATE: Make language useful (Places, People, Organizations, Cultures, Names)
+ * - STUDIO: Build the system (Workshop, Path Visualizer, Name Sets, Sound Shifts, Lexicon, Batch Synthesis)
+ * - EXPLORE: Understand the language (Acoustics/IPA, Etymology, Syntax, Writing Systems, Loanwords, Comparator)
+ */
+export type OnomaProductPillar = "create" | "studio" | "explore";
+
+/**
+ * Top-level active sections in the Onoma Workspace.
  */
 export type OnomaSection =
   | "overview"
   | "places"
   | "people"
-  | "military"
   | "organizations"
   | "culture"
-  | "history"
-  | "batch"
-  | "compare"
   | "marketplace"
+  | "studio"
+  | "explore"
+  | "bank"
+  | "settings";
+
+/**
+ * Sections belonging to the CREATE pillar.
+ */
+export type CreateSection =
+  | "overview"
+  | "places"
+  | "people"
+  | "organizations"
+  | "culture";
+
+/**
+ * Studio workspace sub-tabs (System Construction Layer).
+ */
+export type StudioSubTab =
+  | "workshop"
+  | "visualizer"
+  | "namesets"
+  | "shifts"
+  | "lexicon"
+  | "batch";
+
+/**
+ * Explore workspace sub-tabs (Language Analysis & Understanding Layer).
+ */
+export type ExploreSubTab =
+  | "phonology"
   | "etymology"
   | "syntax"
   | "writing"
   | "loanwords"
-  | "linguistics"
-  | "studio"
-  | "bank"
-  | "settings";
+  | "compare"
+  | "packs";
 
 /**
  * Mapping of section IDs to display metadata.
@@ -239,18 +275,20 @@ export interface OnomaNavItem {
   icon: string;
   description: string;
   path: string;
+  pillar: OnomaProductPillar | "utility";
 }
 
 /**
- * All available Onoma nav items, ordered as they appear in the sidebar.
+ * All available Onoma nav items for the CREATE pillar and primary utilities.
  */
 export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
   {
     id: "overview",
     label: "Overview",
     icon: "Sparkles",
-    description: "Dashboard & recent generations",
+    description: "Quick synthesis & language engine overview",
     path: "/labs/onoma",
+    pillar: "create",
   },
   {
     id: "places",
@@ -258,13 +296,15 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "MapPin",
     description: "Countries, cities, provinces, geography",
     path: "/labs/onoma/places",
+    pillar: "create",
   },
   {
     id: "people",
     label: "People",
     icon: "Users",
-    description: "Characters, rulers, dynasties",
+    description: "Characters, rulers, dynasties, surnames",
     path: "/labs/onoma/people",
+    pillar: "create",
   },
   {
     id: "organizations",
@@ -272,13 +312,15 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "Building2",
     description: "Orders, guilds, institutions, taverns",
     path: "/labs/onoma/organizations",
+    pillar: "create",
   },
   {
     id: "culture",
     label: "Culture",
     icon: "Globe",
-    description: "Ethnic groups, tribes, languages",
+    description: "Ethnic groups, tribes, traditions, languages",
     path: "/labs/onoma/culture",
+    pillar: "create",
   },
   {
     id: "marketplace",
@@ -286,20 +328,31 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "ShoppingBag",
     description: "Discover, review, and fork community conlangs",
     path: "/labs/onoma/marketplace",
+    pillar: "create",
   },
   {
     id: "studio",
     label: "Studio",
     icon: "Wrench",
-    description: "Markov chain workshop",
+    description: "Language construction environment",
     path: "/labs/onoma/studio",
+    pillar: "studio",
+  },
+  {
+    id: "explore",
+    label: "Explore",
+    icon: "Compass",
+    description: "Acoustics, etymology, syntax, and linguistic analysis",
+    path: "/labs/onoma/explore",
+    pillar: "explore",
   },
   {
     id: "bank",
-    label: "Name Bank",
+    label: "Stash",
     icon: "Bookmark",
-    description: "Saved names & dictionaries",
+    description: "Saved vocabulary & dictionaries",
     path: "/labs/onoma/bank",
+    pillar: "utility",
   },
   {
     id: "settings",
@@ -307,6 +360,7 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     icon: "SlidersHorizontal",
     description: "Voice preferences & sandbox",
     path: "/labs/onoma/settings",
+    pillar: "utility",
   },
 ];
 
@@ -317,13 +371,18 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   const segment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
   const baseSegment = segment.split("/")[0];
 
-  // Backward compatibility & routing for conlang features now inside Studio
-  if (
-    ["etymology", "syntax", "writing", "loanwords", "compare", "linguistics"].includes(baseSegment)
-  ) {
+  if (baseSegment === "explore") {
+    return "explore";
+  }
+  if (baseSegment === "studio") {
     return "studio";
   }
-  if (baseSegment === "history") {
+  if (
+    ["etymology", "syntax", "writing", "loanwords", "compare", "phonology"].includes(baseSegment)
+  ) {
+    return "explore";
+  }
+  if (baseSegment === "history" || baseSegment === "stash") {
     return "bank";
   }
   if (baseSegment === "batch") {
@@ -336,17 +395,6 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
   return match?.id ?? "overview";
 }
 
-/** Studio workspace sub-tabs. */
-export type StudioSubTab =
-  | "workshop"
-  | "visualizer"
-  | "namesets"
-  | "lexicon"
-  | "phonology"
-  | "shifts"
-  | "batch"
-  | "linguistics";
-
 /**
  * Helper to get studio sub-tab from a pathname.
  */
@@ -356,24 +404,40 @@ export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   if (subsegment === "visualizer") return "visualizer";
   if (subsegment === "namesets") return "namesets";
   if (subsegment === "lexicon") return "lexicon";
-  if (subsegment === "phonology") return "phonology";
   if (subsegment === "shifts" || subsegment === "sound-shifts") return "shifts";
   if (subsegment === "batch") return "batch";
-  if (subsegment === "linguistics") return "linguistics";
 
-  // Backward compatibility for old conlang URLs
-  const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
-  const rootSegment = parts[0] || "";
-  if (
-    ["etymology", "syntax", "writing", "loanwords", "compare", "linguistics"].includes(rootSegment)
-  ) {
-    return "linguistics";
-  }
-
-  // Backward compatibility for old /labs/onoma/batch URL
+  // Backward compatibility for /labs/onoma/batch URL
   if (pathname.includes("/labs/onoma/batch")) {
     return "batch";
   }
 
   return "workshop";
+}
+
+/**
+ * Helper to get explore sub-tab from a pathname.
+ */
+export function getExploreSubTabFromPathname(pathname: string): ExploreSubTab {
+  const segment = pathname.split("/labs/onoma/explore")[1]?.replace(/^\//, "") || "";
+  const subsegment = segment.split("/")[0];
+  if (subsegment === "phonology" || subsegment === "acoustics") return "phonology";
+  if (subsegment === "syntax") return "syntax";
+  if (subsegment === "writing") return "writing";
+  if (subsegment === "loanwords") return "loanwords";
+  if (subsegment === "compare") return "compare";
+  if (subsegment === "etymology") return "etymology";
+  if (subsegment === "packs" || subsegment === "marketplace" || subsegment === "community") return "packs";
+
+  // Backward compatibility for root-level direct URLs
+  const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
+  const rootSegment = parts[0] || "";
+  if (rootSegment === "phonology" || rootSegment === "acoustics") return "phonology";
+  if (rootSegment === "syntax") return "syntax";
+  if (rootSegment === "writing") return "writing";
+  if (rootSegment === "loanwords") return "loanwords";
+  if (rootSegment === "compare") return "compare";
+  if (rootSegment === "packs" || rootSegment === "marketplace") return "packs";
+
+  return "phonology";
 }

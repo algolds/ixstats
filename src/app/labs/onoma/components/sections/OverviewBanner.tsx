@@ -2,46 +2,32 @@
 
 // src/app/labs/onoma/components/sections/OverviewBanner.tsx
 // Onoma Lab — Contextual Overview Intro Bar (⟨ONOMA⟩ Linguistic Engine)
+// Graphic Language: sound → structure → pattern → vocabulary → culture → history
 
-import { Info } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 
-interface OverviewBannerProps {
-  speechConfig?: any;
-  playPronunciation?: () => void;
-  isHeroHovered?: boolean;
-  setIsHeroHovered?: (hovered: boolean) => void;
-  publicDictsCount?: number;
-  stashedCount?: number;
-}
-
-export function OverviewBanner({
-  speechConfig: _speechConfig,
-  playPronunciation: _playPronunciation,
-  isHeroHovered: _isHeroHovered,
-  setIsHeroHovered: _setIsHeroHovered,
-  publicDictsCount: _publicDictsCount,
-  stashedCount: _stashedCount,
-}: OverviewBannerProps) {
+export function OverviewBanner() {
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/40 bg-secondary/[0.03] p-4 text-xs transition-all duration-200">
+    <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-secondary/[0.03] p-4 text-xs transition-all duration-200 sm:flex-row sm:items-center sm:justify-between">
       {/* Contextual Tagline & Description */}
-      <div className="space-y-1 max-w-2xl">
-        <p className="text-xs sm:text-sm font-medium text-foreground tracking-tight">
-          Language, engineered.{" "}
-          <span className="text-muted-foreground font-normal">
-            Build the language behind your world.
-          </span>
-        </p>
+      <div className="space-y-1.5 max-w-2xl">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs sm:text-sm font-semibold text-foreground tracking-tight">
+            Language, engineered.{" "}
+            <span className="text-muted-foreground font-normal">
+              Build the language behind your world.
+            </span>
+          </p>
+        </div>
         <p className="text-muted-foreground text-xs leading-relaxed">
-          A computational environment for phonology,{" "}
+          A computational environment for phonological modeling,{" "}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 className="inline cursor-help items-baseline font-semibold text-foreground underline decoration-[#0091ff]/60 decoration-dotted underline-offset-4 transition-colors hover:text-[#0091ff] focus:outline-none"
               >
-                language modeling
+                Markov transition networks
               </button>
             </TooltipTrigger>
             <TooltipContent
@@ -53,21 +39,22 @@ export function OverviewBanner({
                 Statistical N-Gram Language Modeling
               </p>
               <p className="text-muted-foreground">
-                A Markov model analyzes the character, syllable, and phonotactic transition probabilities of a training lexicon.
-              </p>
-              <p className="text-muted-foreground">
-                Instead of arbitrary generation, it computes mathematical probabilities — preserving authentic cultural flavor with 0% AI hallucination.
+                Markov chains model the character and syllable transition matrices of training lexicons, ensuring structural and phonotactic naturalism.
               </p>
             </TooltipContent>
           </Tooltip>
-          , lexicon construction, and historical sound change.
+          , syllable templates, acoustic vowel spectra, and historical sound shifts.
         </p>
       </div>
 
-      {/* Subtle Disclaimer Pill */}
-      <div className="text-muted-foreground/60 flex items-center gap-1.5 shrink-0 select-none text-[11px]">
-        <Info className="h-3.5 w-3.5 shrink-0 text-[#0091ff]/50" />
-        <span>Deterministic linguistic engine · 0% LLM</span>
+      {/* Progression Chain Pill */}
+      <div className="flex flex-col sm:items-end gap-1 shrink-0 select-none">
+        <span className="rounded-md border border-[#0091ff]/20 bg-[#0091ff]/5 px-2 py-1 font-mono text-[10px] font-semibold text-[#0091ff] tracking-tight">
+          sound → structure → pattern → vocabulary → history
+        </span>
+        <span className="text-[10px] text-muted-foreground/70 font-mono tracking-wider uppercase">
+          ⟨ONOMA⟩ Linguistic Engine
+        </span>
       </div>
     </div>
   );

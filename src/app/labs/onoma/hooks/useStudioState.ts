@@ -225,7 +225,7 @@ export function useStudioState({
     return classifyCulture(sample).culture;
   }, [trainingWords]);
 
-  // Memoized user's personal dictionaries from the name bank
+  // Memoized user's personal dictionaries from Stash
   const savedDictionaries = useMemo(() => {
     if (!bank.nameBank) return [];
     return bank.nameBank.filter((entry) => entry.type === "dictionary");
@@ -272,7 +272,7 @@ export function useStudioState({
     }
   };
 
-  // Save the training seeds as a dictionary to NameBank
+  // Save the training seeds as a dictionary to Stash
   const handleSaveDictionary = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dictTitle.trim() || trainingWords.length === 0) return;
@@ -286,7 +286,7 @@ export function useStudioState({
       });
       setLoadedDictContent(inputText);
       setDictTitle("");
-      setSuccessMsg("Dictionary saved to Name Bank successfully!");
+      setSuccessMsg("Dictionary saved to Stash.");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
       console.error("Failed to save dictionary:", err);
@@ -392,7 +392,7 @@ export function useStudioState({
     window.dispatchEvent(new Event("onoma-definitions-updated"));
   };
 
-  // Delete lexicon entry from both local definitions and name bank stash
+  // Delete lexicon entry from both local definitions and Stash
   const handleDeleteTerm = async (term: string) => {
     if (typeof window !== "undefined") {
       const defsJson = localStorage.getItem("onoma-lexicon-definitions") || "{}";

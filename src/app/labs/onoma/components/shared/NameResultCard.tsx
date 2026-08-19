@@ -36,7 +36,7 @@ import { LinguisticProfile } from "./LinguisticProfile";
 interface NameResultCardProps {
   name: string;
   isSaved?: boolean;
-  onSave?: (name: string, stashId?: string) => Promise<any>;
+  onSave?: (name: string, stashId?: string) => Promise<any> | void;
   onUse?: (name: string) => void;
   culture?: string;
   /** Phonotactic naturalness 0–100 vs the training set (Phase 5 perplexity scorer). */
@@ -196,19 +196,24 @@ export function NameResultCard({
 
   const dynamicFontSize = useMemo(() => {
     const len = name.length;
-    if (len <= 12) return undefined;
-    // Scale down linearly: 12 chars -> 16px, 30 chars -> 9.5px
-    const sizePx = Math.max(9.5, 16 - (len - 12) * 0.36);
-    return `${sizePx}px`;
+    if (len <= 7) return "1.375rem"; // 22px
+    if (len <= 10) return "1.25rem"; // 20px
+    if (len <= 13) return "1.125rem"; // 18px
+    if (len <= 16) return "1rem"; // 16px
+    if (len <= 20) return "0.875rem"; // 14px
+    if (len <= 25) return "0.775rem"; // ~12.4px
+    if (len <= 30) return "0.7rem"; // ~11.2px
+    // Smoothly scale down for extreme compounds so they always remain on 1 single line
+    const px = Math.max(9.5, 11 - (len - 30) * 0.25);
+    return `${px}px`;
   }, [name]);
 
   const dynamicIpaFontSize = useMemo(() => {
     if (!ipa) return undefined;
     const len = ipa.length;
-    if (len <= 15) return undefined;
-    // 15 chars -> 9px, 30 chars -> 7.5px
-    const sizePx = Math.max(7.5, 9 - (len - 15) * 0.1);
-    return `${sizePx}px`;
+    if (len <= 14) return undefined;
+    if (len <= 20) return "10px";
+    return "9.5px";
   }, [ipa]);
 
   const fitColor =
@@ -225,13 +230,13 @@ export function NameResultCard({
       depth={showDetailsModal ? 2 : 1}
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
-        "group relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-3.5 transition-all duration-500 ease-out",
+        "group relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-4 transition-all duration-300 ease-out rounded-2xl",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
-        fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.01]",
-        fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.01]",
-        fitColor === "rose" && "border-rose-500/10 bg-rose-500/[0.005]",
-        !fitColor && "border-border/40",
+        fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.015]",
+        fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.015]",
+        fitColor === "rose" && "border-rose-500/10 bg-rose-500/[0.01]",
+        !fitColor && "border-border/40 bg-secondary/5",
         // Expanded details modal border styles
         showDetailsModal
           ? cn(
@@ -304,33 +309,33 @@ export function NameResultCard({
       )}
 
       {/* Main Top Row */}
-      <div className="relative z-10 flex w-full min-w-0 items-center justify-between gap-3">
+      <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
         {/* Name Display Stack */}
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
           <span
-            className="text-foreground w-full truncate text-sm font-semibold tracking-[-0.015em] whitespace-nowrap transition-colors duration-300 group-hover:text-[#0091ff] sm:text-base"
-            style={dynamicFontSize ? { fontSize: dynamicFontSize } : undefined}
+            className="text-foreground w-full whitespace-nowrap font-bold tracking-tight leading-none transition-colors duration-300 group-hover:text-[#0091ff]"
+            style={{ fontSize: dynamicFontSize }}
             title={name}
           >
             {name}
           </span>
-          <div className="mt-0.5 flex w-full min-w-0 flex-wrap items-center gap-1.5">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">
             {/* IPA badge — click to hear the exact phonetic pronunciation */}
             {ipa && (
               <span className="flex min-w-0 flex-shrink-0 items-center">
                 <button
                   type="button"
                   onClick={handlePlayPronunciation}
-                  title="Click to hear the exact phonetic pronunciation"
+                  title="Click to hear phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/5 flex cursor-pointer items-center gap-1 border py-0.5 pr-2 pl-2 font-mono text-[9px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]",
+                    "text-muted-foreground border-border/40 bg-secondary/15 flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]",
                     allowCustomize ? "rounded-l-full" : "rounded-full",
                     hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
                   )}
                   style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="h-2.5 w-2.5 flex-shrink-0" />
-                  <span className="truncate">{ipa}</span>
+                  <Volume2 className="h-3 w-3 flex-shrink-0 text-[#0091ff]" />
+                  <span className="whitespace-nowrap">{ipa}</span>
                 </button>
                 {allowCustomize && (
                   <button
@@ -338,7 +343,7 @@ export function NameResultCard({
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
                     className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/5 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]"
+                      "text-muted-foreground border-border/40 bg-secondary/15 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]"
                     )}
                   >
                     <Pencil className="h-2.5 w-2.5" />
@@ -349,10 +354,10 @@ export function NameResultCard({
           </div>
         </div>
 
-        {/* Action Buttons (Fades in on hover, but occupies fixed space in flex row) */}
+        {/* Action Buttons */}
         <div
           className={cn(
-            "border-border/40 bg-background/85 flex flex-shrink-0 items-center gap-1 rounded-lg border px-1.5 py-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-out select-none",
+            "border-border/40 bg-background/90 flex flex-shrink-0 items-center gap-0.5 rounded-lg border px-1 py-0.5 shadow-sm backdrop-blur-md transition-all duration-200 ease-out select-none",
             showDetailsModal
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"

@@ -10,7 +10,6 @@ import {
   Trash2,
   Volume2,
   RotateCcw,
-  Sparkles,
   ArrowRight,
   HelpCircle,
   Copy,
@@ -22,6 +21,7 @@ import {
   ArrowDown,
   Bookmark,
 } from "lucide-react";
+import { HistoryGameIcon } from "../../nav/onoma-tabs";
 import {
   SOUND_SHIFT_PRESETS,
   applySoundShifts,
@@ -494,7 +494,7 @@ export function StudioSoundShifts() {
           <div className="border-border/40 bg-card/40 space-y-3 rounded-xl border p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-pink-500" />
+                <HistoryGameIcon className="h-4 w-4 text-pink-500" />
                 <h4 className="text-foreground text-xs font-bold">Evolved Daughter Lexicon</h4>
               </div>
               <span className="text-muted-foreground text-[10px]">

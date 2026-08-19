@@ -10,33 +10,49 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
-### ⟨ONOMA⟩ Linguistic Engine Refactoring, Architecture Compliance & Ponytail Condensation (`apps.onoma` v4, `design.facet` v2)
+### ⟨ONOMA⟩ Linguistic Engine Refactoring, Apple Design System & Local Lexicon Store (`apps.onoma` v4, `design.facet` v2)
 
-- **Comprehensive Single-Page Router & Navigation Modularization (`src/app/labs/onoma/`)**:
-  - Modularized `OnomaRouter.tsx` from an 819-line monolith into a lean 82-line coordinator delegating to `useOnomaRouter.ts`, `OnomaHeader.tsx`, `OnomaSectionRenderer.tsx`, and `onoma-tabs.tsx`.
-  - Replaced bespoke raw icon wrappers with standardized vector Game-Icons (`CategoryIcon` from `src/components/cards/icons`) across all top-level domain tabs and studio tools.
-  - Implemented Apple-inspired `/ˈɒnəmə/` Greek pronunciation button with first-visit ping animation attractor, tooltip hints, and fallback browser speech synthesis.
+- **Apple Design & Emil Kowalski Two-Tier Header Navigation (`src/app/labs/onoma/components/nav/`)**:
+  - Rebuilt `OnomaHeader.tsx` and `onoma-tabs.tsx` with a unified two-tier navigation console: top-level **3-Pillar Navigation** (`Create`, `Studio`, `Explore`) integrated via `ONOMA_PILLAR_TABS` with `FacetTabs`, connected dynamically to context-sensitive sub-nav shelves.
+  - Added specular accent connection bridge lines and Emil Kowalski spring transitions (`[0.23, 1, 0.32, 1]`) that adapt color tokens per pillar (`#0091ff` Create, `#ec4899` Studio, `#8b5cf6` Explore).
+  - Cleaned typography to crisp SF Pro / Inter styling with clean title casing, removing clutter and standardizing subtabs (**Quick Generator**, **Places**, **People**, **Factions**, **Culture**, **Compare**).
+  - Resolved nested `backdrop-blur-md` GPU compositing bug on Retina displays, replacing compound blurring with solid elevated white/zinc cards and subtle micro-shadows to ensure razor-sharp font subpixel antialiasing.
+  - High-contrast Apple light mode refinements: softened tab well to cool translucent zinc (`bg-zinc-100/75 border-zinc-200/80`) with elevated white active indicators.
 
-- **Unified Declarative Domain Section & Boilerplate Elimination**:
-  - Eliminated 5 duplicate domain wrapper components (`PlacesSection.tsx`, `PeopleSection.tsx`, `OrganizationsSection.tsx`, `CultureSection.tsx`, `MilitarySection.tsx`) in favor of a single declarative [`CategoryDomainSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CategoryDomainSection.tsx) powered by [`domain-taxonomies.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/domain-taxonomies.ts).
-  - Deleted 803-line dead experimental branding sandbox (`src/app/labs/onoma/branding/page.tsx`) and 618-line dead component `OnomaDoubleHelixIcon.tsx`.
+- **⟨ONOMA⟩ Glyph System v0.1 & Geometric Vector Brand Identity**:
+  - Authored 24 mathematical and linguistic vector glyphs in [`onoma-glyphs-catalog.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/glyphs/onoma-glyphs-catalog.tsx) and [`OnomaGlyph.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/glyphs/OnomaGlyph.tsx), replacing generic icons with precise phonological notation across the suite.
+  - Replaced generic AI sparkle icon with the Apple Drafting Stylus / Compose mark (`emerge-synthesis`) across creation and synthesis triggers.
+  - Upgraded [`OnomaBrandLogo.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx) with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
+  - Added interactive `/ˈɒnəmə/` IPA pronunciation button with first-visit ping animation and browser speech fallback.
 
-- **Settings, Batch & Syntax Subsystem Decompositions**:
-  - Decomposed 1,204-line `SettingsSection.tsx` into focused subpanels: `VoicePreferencesPanel.tsx` (Kokoro voice map & species presets), `VoiceSandboxPanel.tsx` (interactive synthesizer & G2P phoneme suggestions), and `ConlangDataManagerPanel.tsx` (local backup/restore).
-  - Modularized `BatchSection.tsx` (747 lines → 399 lines) with `batch-constants.ts` and `BatchResultsTable.tsx`.
-  - Modularized `SyntaxSection.tsx` (729 lines → 329 lines) with `SyntaxSentenceBuilder.tsx` and `SyntaxDictionaryEditor.tsx`.
+- **Quick Generator UI/UX Refresh & Always-Expanded Seed Words Editor (`QuickGeneratorControls.tsx`)**:
+  - Removed seed words accordion: the **Training Seed Words** textarea is now always expanded and connected in real-time to the Markov chain synthesis engine.
+  - Removed custom badge; streamlined header to a clean **Dictionary** selector.
+  - Implemented client-side local storage dictionary management in [`src/lib/onoma/custom-dictionaries.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/custom-dictionaries.ts) with full CRUD support (**Save As New**, **Update/Save**, **Rename**, **Delete**, and **Revert**), grouped by **Your Lexicons** and **Built-in Presets**.
+  - **Contextual Action Controls**:
+    - **Save As New**: Hidden on pristine presets; smoothly transitions in only when seed words are modified (`isWordsModified === true`).
+    - **Dedupe**: Automatically scans draft words on load and keystroke, displaying only when duplicate tokens exist with dynamic count badge.
+  - Built Apple-style segmented stepper wells for Markov Order (`n=2`) and Batch Size (`20`) with `NumberFlowDisplay`.
+  - Polished primary **Synthesize Batch** action button with tactile spring compression and hover glyph transitions.
+  - Upgraded [`CandidateResultsPanel.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CandidateResultsPanel.tsx) with floating toolbar actions, count counters, and tactile **Copy All** / **Save to Stash** buttons.
+
+- **Feathered Wide-Canvas Footer & Lineage Attribution (`OnomaFooter.tsx`)**:
+  - Extended footer canvas width to $1.33\times$ (`max-w-[1720px]`) with vertical ambient gradient bridge (`h-16 bg-gradient-to-b from-transparent via-background/40 to-background/90`) and specular hairline top highlight.
+  - Condensed sitemap into 4 tactile chips (**Quick Generator**, **Language Packs**, **Compare**, **Linguistic Studio**).
+  - Integrated copyright (`© IxLabs Research`), privacy/terms links, and lineage attribution to `fantasygen`.
+
+- **Comprehensive Single-Page Router & Modularization (`src/app/labs/onoma/`)**:
+  - Modularized `OnomaRouter.tsx` from an 819-line monolith into a lean coordinator delegating to `useOnomaRouter.ts`, `OnomaHeader.tsx`, `OnomaSectionRenderer.tsx`, and `onoma-tabs.tsx`.
+  - Eliminated 5 duplicate domain wrapper components in favor of declarative [`CategoryDomainSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/CategoryDomainSection.tsx) powered by [`domain-taxonomies.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/domain-taxonomies.ts).
+  - Deleted dead experimental sandbox (`branding/page.tsx`) and obsolete components (`OnomaDoubleHelixIcon.tsx`).
+  - Decomposed 1,204-line `SettingsSection.tsx` into `VoicePreferencesPanel.tsx`, `VoiceSandboxPanel.tsx`, and `ConlangDataManagerPanel.tsx`.
+  - Modularized `BatchSection.tsx` (747 lines → 399 lines) and `SyntaxSection.tsx` (729 lines → 329 lines).
 
 - **Server tRPC Architecture Guard Compliance (`src/server/api/routers/onoma/`)**:
-  - Resolved `audit:arch` god-file violation by splitting 1,032-line `core.ts` into [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) (594 lines) and [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) (446 lines), recombined seamlessly via `mergeRouters` in `index.ts`. All 9 domain routers now strictly satisfy the ≤700 architecture ceiling.
-
-- **FacetTabs Component Polish & GPU Compositor Fix (`src/components/ui/facet/tabs/`)**:
-  - Eliminated triple-layer compound blur and 190% saturation filter stacking that caused diffuse halo artifacts around active tab pills.
-  - Resolved Chromium/WebKit corner blur flare on edge tabs (`Overview`, `Marketplace`) by standardizing the container to a clean, crisp background (`border-border/60 bg-secondary/30 dark:bg-muted/20`).
-  - Added size-aware `indicatorInset` tokens (`inset-y-0.5`, `inset-y-1`, `inset-y-1.5`) in `constants.ts` and responsive `:active` scale transitions (`active:scale-[0.97]`).
-  - Fixed initial mount spring animation flash in `useSliderPhysics.ts` using zero-duration `jump()` initialization.
+  - Resolved `audit:arch` god-file violation by splitting 1,032-line `core.ts` into [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) (594 lines) and [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) (446 lines), recombined via `mergeRouters` in `index.ts`. All 9 domain routers strictly satisfy the ≤700 architecture ceiling.
 
 - **Shared Pattern Engine & Massive Dataset Compaction**:
-  - Introduced [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicating template tag regex parsing across `group-generator.ts` and `tavern-generator.ts`.
+  - Introduced [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicating template tag regex parsing across conlang generators.
   - Compacted multi-line arrays across `fantasy-names-data.ts` (9,271 lines → 787 lines), `cultural-profiles.ts` (2,291 lines → 363 lines), `species-data.ts` (2,469 lines → 316 lines), `default-dictionaries.ts` (1,474 lines → 238 lines), and `group-data.ts` (568 lines → 126 lines), saving over **15,480 net lines** and ~104KB of memory/bundle overhead.
   - Added `visibilitychange` listener in `AcousticFormantVisualizer.tsx` to automatically halt 60fps canvas waveform render loops when the browser tab is hidden.
 

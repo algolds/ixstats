@@ -15,6 +15,7 @@ import {
 } from "./constants";
 import { SPRING_PRESETS } from "../shared/constants";
 
+
 function blendColors(c1: string, c2: string, progress: number): string {
   const hex = (h: string) => {
     let clean = h.replace("#", "");
@@ -50,8 +51,6 @@ interface FacetTabTriggerProps {
   tab: any;
   isActive: boolean;
   useThemeColor: boolean;
-  springX: any;
-  springWidth: any;
   bounds: any;
   metrics: any;
   tone: string;
@@ -62,30 +61,13 @@ interface FacetTabTriggerProps {
 function FacetTabTrigger({
   tab,
   isActive,
-  useThemeColor,
-  springX,
-  springWidth,
-  bounds,
+  useThemeColor: _useThemeColor,
+  bounds: _bounds,
   metrics,
   tone,
   handlers,
   handleTabClick,
 }: FacetTabTriggerProps) {
-  const tabColor = useTransform([springX, springWidth], ([x, width]) => {
-    if (!tab.themeColor) return "rgba(100, 116, 139, 0.85)";
-
-    const center = (x as number) + (width as number) / 2;
-    const tabBound = bounds[tab.id];
-    if (!tabBound) return "rgba(100, 116, 139, 0.85)";
-
-    const tabCenter = tabBound.left + tabBound.width / 2;
-    const distance = Math.abs(center - tabCenter);
-    const maxDistance = tabBound.width * 1.1;
-    const progress = Math.max(0, Math.min(1, 1 - distance / maxDistance));
-
-    return blendColors("#64748b", tab.themeColor!, progress);
-  });
-
   const Icon = tab.icon;
 
   return (
@@ -97,56 +79,58 @@ function FacetTabTrigger({
       onPointerUp={handlers.onPointerUp}
       onPointerCancel={handlers.onPointerCancel}
       className={cn(
-        "relative z-20 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
-        useThemeColor ? "" : "transition-colors duration-200",
+        "relative z-20 flex cursor-pointer items-center justify-center outline-none select-none whitespace-nowrap transition-colors duration-150",
+        tab.className ?? "flex-1",
         "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
         metrics.item,
-        isActive ? "font-semibold" : "opacity-80 hover:opacity-100"
+        isActive
+          ? cn(
+              "font-semibold",
+              tab.activeTextClassName ||
+                (tone === "neutral"
+                  ? "text-slate-950 dark:text-white"
+                  : tone === "accent"
+                    ? "text-foreground"
+                    : "text-foreground")
+            )
+          : "text-muted-foreground hover:text-foreground opacity-80 hover:opacity-100"
       )}
       style={{
         touchAction: "pan-y",
       }}
     >
       {Icon && (
-        <motion.div
-          style={{
-            color: useThemeColor ? tabColor : undefined,
-          }}
+        <div
           className={cn(
             metrics.icon,
-            "mr-1.5 flex items-center justify-center shrink-0",
-            useThemeColor ? "" : "transition-colors duration-200",
-            !useThemeColor &&
-              (isActive
-                ? tab.activeIconClassName ||
-                  (tone === "neutral"
-                    ? "text-slate-950 dark:text-white"
-                    : tone === "accent"
-                      ? "text-indigo-500 dark:text-indigo-400"
-                      : tone === "mycountry"
-                        ? "text-amber-500 dark:text-amber-400"
-                        : tone === "forum"
-                          ? "text-orange-500 dark:text-orange-400"
-                          : "text-red-500 dark:text-red-400")
-                : "text-slate-400 dark:text-slate-500")
+            "mr-1.5 flex items-center justify-center shrink-0 transition-colors duration-150",
+            isActive
+              ? tab.activeIconClassName ||
+                (tone === "neutral"
+                  ? "text-slate-950 dark:text-white"
+                  : tone === "accent"
+                    ? "text-indigo-500 dark:text-indigo-400"
+                    : tone === "mycountry"
+                      ? "text-amber-500 dark:text-amber-400"
+                      : tone === "forum"
+                        ? "text-orange-500 dark:text-orange-400"
+                        : "text-red-500 dark:text-red-400")
+              : "text-slate-400 dark:text-slate-500"
           )}
         >
           <Icon className="h-full w-full" />
-        </motion.div>
+        </div>
       )}
 
-      <motion.span
-        style={{
-          color: useThemeColor ? tabColor : undefined,
-        }}
+      <span
         className={cn(
-          useThemeColor ? "" : "transition-colors duration-200",
-          !useThemeColor &&
-            (isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground")
+          "whitespace-nowrap transition-colors duration-150",
+          isActive ? tab.activeTextClassName || "text-foreground" : "text-muted-foreground"
         )}
       >
         {tab.label}
-      </motion.span>
+      </span>
+
 
       {tab.badge !== undefined && (
         <span
@@ -171,9 +155,12 @@ export function FacetTabs({
   size = "md",
   tone = "accent",
   springPreset = "fluid",
+  texture: _texture,
+  showTexture: _showTexture,
   className,
   indicatorClassName,
 }: FacetTabsProps) {
+
   const metrics = sizeClasses[size];
   const { bounds, containerRef } = useTabBounds(tabs);
   const activeBounds = bounds[activeTab];
@@ -282,7 +269,7 @@ export function FacetTabs({
       ref={containerRef}
       className={cn(
         "group/tabs relative flex items-center overflow-hidden transition-all duration-200 select-none",
-        "border border-border/60 bg-secondary/30 dark:bg-muted/20",
+        "border border-border/60 bg-secondary/40 dark:bg-muted/30",
         "shadow-xs",
         metrics.container,
         className
@@ -314,7 +301,10 @@ export function FacetTabs({
                   ),
             indicatorClassName
           )}
-        />
+        >
+          {/* Subtle light-catching top specular edge */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/15" />
+        </motion.div>
       )}
 
       {/* 2. Tab Triggers (Z-20) */}
@@ -324,8 +314,6 @@ export function FacetTabs({
           tab={tab}
           isActive={tab.id === activeTab}
           useThemeColor={useThemeColor}
-          springX={springX}
-          springWidth={springWidth}
           bounds={bounds}
           metrics={metrics}
           tone={tone}
@@ -336,3 +324,5 @@ export function FacetTabs({
     </div>
   );
 }
+
+

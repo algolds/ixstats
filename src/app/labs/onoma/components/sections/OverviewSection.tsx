@@ -1,13 +1,18 @@
 "use client";
 
 // src/app/labs/onoma/components/sections/OverviewSection.tsx
-// Onoma Lab — Overview & Quick Generator Section (Facet Rebuild)
+// Onoma Lab — Overview & Quick Generator Section (Product Model: CREATE Synthesis Surface)
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { generateFantasySyllableName } from "~/lib/onoma/name-generator";
 import { UseNameDialog } from "../shared/UseNameDialog";
+import {
+  loadCustomDictionaries,
+  CUSTOM_DICTS_CHANGED_EVENT,
+  type CustomDictionary,
+} from "~/lib/onoma/custom-dictionaries";
 import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
 import { CandidateResultsPanel } from "./CandidateResultsPanel";
@@ -18,8 +23,30 @@ export function OverviewSection() {
   // Public dictionaries
   const publicDicts = useMemo(() => bank.publicDictionaries || [], [bank.publicDictionaries]);
 
+  // Custom dictionaries from localStorage
+  const [customDicts, setCustomDicts] = useState<CustomDictionary[]>([]);
+
+  const refreshCustomDicts = useCallback(() => {
+    setCustomDicts(loadCustomDictionaries());
+  }, []);
+
+  useEffect(() => {
+    refreshCustomDicts();
+    const handleStorage = () => refreshCustomDicts();
+    window.addEventListener(CUSTOM_DICTS_CHANGED_EVENT, handleStorage);
+    return () => {
+      window.removeEventListener(CUSTOM_DICTS_CHANGED_EVENT, handleStorage);
+    };
+  }, [refreshCustomDicts]);
+
+  // Combined dictionary map
+  const allDicts = useMemo(() => {
+    return [...customDicts, ...publicDicts];
+  }, [customDicts, publicDicts]);
+
   // Local UI State
   const [selectedDictId, setSelectedDictId] = useState<string>("");
+  const [customWords, setCustomWords] = useState<string[] | null>(null);
   const [batchCount, setBatchCount] = useState<number>(20);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [order, setOrder] = useState<number>(2);
@@ -49,7 +76,7 @@ export function OverviewSection() {
   const [useName, setUseName] = useState<string | null>(null);
 
   const hasGeneratedOnLoad = useRef(false);
-  const timeoutRef = useRef<any>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
@@ -61,14 +88,20 @@ export function OverviewSection() {
 
   // Auto-select "Iron Age States" dictionary when loaded
   useEffect(() => {
-    if (publicDicts.length > 0 && !selectedDictId) {
+    if (allDicts.length > 0 && !selectedDictId) {
       const ironAgeDict = publicDicts.find((d) => d.title.toLowerCase() === "iron age states");
-      setSelectedDictId(ironAgeDict ? ironAgeDict.id : publicDicts[0].id);
+      setSelectedDictId(ironAgeDict ? ironAgeDict.id : allDicts[0].id);
     }
-  }, [publicDicts, selectedDictId]);
+  }, [allDicts, publicDicts, selectedDictId]);
 
   // Find currently selected dictionary details
-  const selectedDict = publicDicts.find((d) => d.id === selectedDictId);
+  const selectedDict = allDicts.find((d) => d.id === selectedDictId);
+
+  // Reset custom words when dictionary selection changes
+  const handleDictChange = (id: string) => {
+    setSelectedDictId(id);
+    setCustomWords(null);
+  };
 
   // Auto-generate on load once a dictionary is selected
   useEffect(() => {
@@ -77,7 +110,12 @@ export function OverviewSection() {
       setIsGenerating(true);
       try {
         const chain = new MarkovChain(order);
-        const values = Array.isArray(selectedDict.values) ? (selectedDict.values as string[]) : [];
+        const values =
+          customWords && customWords.length > 0
+            ? customWords
+            : Array.isArray(selectedDict.values)
+              ? (selectedDict.values as string[])
+              : [];
         chain.addWords(values);
         const results: string[] = [];
         for (let i = 0; i < batchCount; i++) {
@@ -94,7 +132,7 @@ export function OverviewSection() {
         setIsGenerating(false);
       }
     }
-  }, [selectedDict, order, batchCount, options]);
+  }, [selectedDict, order, batchCount, options, customWords]);
 
   // Perform Generation
   const handleGenerate = () => {
@@ -109,7 +147,12 @@ export function OverviewSection() {
       try {
         // 1. Instantiate and train Markov Chain
         const chain = new MarkovChain(order);
-        const values = Array.isArray(selectedDict.values) ? (selectedDict.values as string[]) : [];
+        const values =
+          customWords && customWords.length > 0
+            ? customWords
+            : Array.isArray(selectedDict.values)
+              ? (selectedDict.values as string[])
+              : [];
         chain.addWords(values);
 
         // 2. Generate batch size
@@ -129,7 +172,7 @@ export function OverviewSection() {
         setIsGenerating(false);
         setShowSaveDictForm(false);
       }
-    }, 450);
+    }, 350);
   };
 
   // Save single generated name
@@ -180,14 +223,16 @@ export function OverviewSection() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Quick Generator Workspace */}
-      <div className="grid items-start gap-6 lg:grid-cols-12">
-        {/* Left Column (5/12): Configuration Panel */}
-        <div className="space-y-4 lg:col-span-5">
+    <div className="space-y-5">
+      {/* 30% Controls + 70% Results Layout */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
+        {/* 30% Control Column */}
+        <div className="lg:col-span-3">
           <QuickGeneratorControls
             selectedDictId={selectedDictId}
-            setSelectedDictId={setSelectedDictId}
+            setSelectedDictId={handleDictChange}
+            customWords={customWords}
+            setCustomWords={setCustomWords}
             publicDicts={publicDicts}
             batchCount={batchCount}
             setBatchCount={setBatchCount}
@@ -202,22 +247,24 @@ export function OverviewSection() {
           />
         </div>
 
-        {/* Right Column (7/12): Results Card */}
-        <CandidateResultsPanel
-          generatedNames={generatedNames}
-          isGenerating={isGenerating}
-          copiedBatch={copiedBatch}
-          handleCopyBatch={handleCopyBatch}
-          showSaveDictForm={showSaveDictForm}
-          setShowSaveDictForm={setShowSaveDictForm}
-          dictionaryTitle={dictionaryTitle}
-          setDictionaryTitle={setDictionaryTitle}
-          handleSaveBatchAsDictionary={handleSaveBatchAsDictionary}
-          isSavingDict={isSavingDict}
-          nameBank={bank.nameBank}
-          handleSaveName={handleSaveName}
-          onUseName={(n) => setUseName(n)}
-        />
+        {/* 70% Candidate Results Column */}
+        <div className="lg:col-span-7">
+          <CandidateResultsPanel
+            generatedNames={generatedNames}
+            isGenerating={isGenerating}
+            copiedBatch={copiedBatch}
+            handleCopyBatch={handleCopyBatch}
+            showSaveDictForm={showSaveDictForm}
+            setShowSaveDictForm={setShowSaveDictForm}
+            dictionaryTitle={dictionaryTitle}
+            setDictionaryTitle={setDictionaryTitle}
+            handleSaveBatchAsDictionary={handleSaveBatchAsDictionary}
+            isSavingDict={isSavingDict}
+            nameBank={bank.nameBank}
+            handleSaveName={handleSaveName}
+            onUseName={(n) => setUseName(n)}
+          />
+        </div>
       </div>
 
       {/* Redirect Modal for deployment */}

@@ -1,16 +1,16 @@
 "use client";
 
 // src/app/labs/onoma/components/sections/BatchSection.tsx
-// Onoma Lab — Batch Name Generator & Workbench
+// Onoma Lab — Batch Name Synthesis & Workbench
 
 import React, { useState, useMemo } from "react";
 import {
-  Wand2,
   RefreshCw,
   Sliders,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { EconomyGameIcon } from "../nav/onoma-tabs";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -167,7 +167,7 @@ export default function BatchSection() {
       }
     }
 
-    notify.success(`Saved ${savedCount} names to your Name Bank.`);
+    notify.success(`Saved ${savedCount} names to your Stash.`);
     setSelectedNames(new Set());
   };
 
@@ -218,7 +218,7 @@ export default function BatchSection() {
       {/* Workbench Header */}
       <div className="border-b border-border/40 pb-3 text-left">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-          <Wand2 className="h-4 w-4 text-[#10b981]" /> Batch Generation Workbench
+          <EconomyGameIcon className="h-4 w-4 text-[#10b981]" /> Batch Generation Workbench
         </h3>
         <p className="text-sm text-muted-foreground">
           Synthesize large corpora of procedurally generated names, filter by phonetic naturalness,
@@ -367,7 +367,7 @@ export default function BatchSection() {
           {batchMutation.isPending ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (
-            <Wand2 className="h-4 w-4" />
+            <EconomyGameIcon className="h-4 w-4" />
           )}
           <span>{batchMutation.isPending ? "Assembling Corpus..." : `Synthesize ${count} Names`}</span>
         </button>
