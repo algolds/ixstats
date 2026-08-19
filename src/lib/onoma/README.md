@@ -24,6 +24,7 @@ Everything runs in the browser. The server is only touched to save names to the 
 | **Plan 129** | Apple Motion & Facet Aesthetics | Implemented spring-physics layout expansion (`bounce: 0, duration: 0.35`) for `NameResultCard.tsx` linguistic details. Added tactile active press compression (`active:scale-[0.92]`), optical typography tracking (`tracking-[-0.015em]`), and OS accessibility support (`useReducedMotion`). |
 | **Plan 130** | Historical Sound Shift Evolution Engine | Built rule parser and execution engine (`src/lib/onoma/sound-shifts.ts`) for environmental phonological shifts (`V_V`, `_[ei]`, `_#`, `#_`, `(?![ʰh])`). Integrated multi-epoch chronological evolution studio (`StudioSoundShifts.tsx`) with side-by-side Proto-Word vs Daughter Word comparisons. |
 | **Plan 131** | Acoustic Formants & FFT Spectrogram | Built $F_1/F_2$ vowel formant coordinates and inverted trapezoid chart space (`src/lib/onoma/vowel-formants.ts`). Integrated real-time 2D IPA Vowel Quadrilateral and FFT audio frequency spectrum canvas into IPA Studio (`AcousticFormantVisualizer.tsx`). |
+| **Plan 132** | Customized IRL & Template Phonetics Engine | Upgraded all 13 IRL culture phonetic tables with authentic diacritics and regional stress. Built 18+ dedicated linguistic profiles (`template-phonetics.ts`) for fantasy species, organizations, and noble lineages. Implemented 5-tier hierarchical resolver (`resolveNamePhonetics`) and canonical "Hello World" benchmark suite (`template-phonetics.test.ts`). |
 
 ---
 
@@ -33,7 +34,8 @@ Everything runs in the browser. The server is only touched to save names to the 
 src/lib/onoma/
   markov-chain.ts              Markov engine (multi-order backoff, char+syllable modes, cluster limits, vowel harmony)
   name-generator.ts            Markov wrapper + preset dispatcher (generatePresetName) + CSV/JSON export
-  phonology.ts                 Grapheme→IPA parser per culture + consonant-onset stress heuristics
+  phonology.ts                 Grapheme→IPA parser per culture/template + 5-tier hierarchical phonetic resolver
+  template-phonetics.ts        18+ dedicated linguistic profiles, BCP-47 speech tags, and Kokoro voice personas
   sound-shifts.ts              Historical sound change rule interpreter (Grimm's Law, Romance Lenition, Slavic Palatalization)
   vowel-formants.ts            Acoustic vowel formant frequencies (F1/F2), coordinate projections, center of gravity
   morphology.ts                Grammatical gender detection & 5-case noun declension tables

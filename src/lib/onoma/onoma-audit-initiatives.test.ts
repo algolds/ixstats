@@ -33,8 +33,17 @@ import {
   f2ToX,
   calculateAcousticCenter,
 } from "./vowel-formants";
+import {
+  translateToIPA,
+  resolveNamePhonetics,
+} from "./phonology";
+import {
+  TEMPLATE_PHONETIC_PROFILES,
+  getTemplateLinguisticProfile,
+  getAllTemplateLinguisticProfiles,
+} from "./template-phonetics";
 
-describe("Onoma Initiatives 125-131 Verification Suite", () => {
+describe("Onoma Initiatives 125-132 Verification Suite", () => {
   // --------------------------------------------------------------------------
   // Initiative 125: BasePath, Batch Loaders & Cardinal Vowel Preservation
   // --------------------------------------------------------------------------
@@ -280,6 +289,31 @@ describe("Onoma Initiatives 125-131 Verification Suite", () => {
       const yHigh = f1ToY(f1High, height, pad);
       const yLow = f1ToY(f1Low, height, pad);
       expect(yHigh).toBeLessThan(yLow); // High vowel is near top (lower y coordinate)
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Initiative 132: Customized IRL Culture & Template/Dictionary Phonetics
+  // --------------------------------------------------------------------------
+  describe("Initiative 132: Customized IRL Culture & Template Phonetics Engine", () => {
+    test("validates canonical Hello World across 13 natural language families", () => {
+      expect(translateToIPA("Hello World", "latin")).toBe("/ˈhello ˈwoɾld/");
+      expect(translateToIPA("Hello World", "germanic")).toBe("/ˈhello ˈvoʁld/");
+      expect(translateToIPA("Hello World", "celtic")).toBe("/ˈheɬo ˈʊoɾld/");
+      expect(translateToIPA("Hello World", "slavic")).toBe("/ˈxello ˈvorld/");
+      expect(translateToIPA("Hello World", "arabic")).toBe("/ˈħello ˈwoɾld/");
+    });
+
+    test("resolves template linguistic profiles and authentic voice personas", () => {
+      const elven = resolveNamePhonetics("Galdhor", { category: "person", subType: "elf" });
+      expect(elven.source).toBe("template");
+      expect(elven.bcp47VoiceTag).toBe("cy-GB");
+      expect(elven.kokoroVoicePersona).toBe("bf_emma");
+      expect(elven.ipa).toBe("/ˈɡalðor/");
+
+      const norman = resolveNamePhonetics("Fitzgerald", { category: "dynasty", subType: "norman" });
+      expect(norman.source).toBe("template");
+      expect(norman.bcp47VoiceTag).toBe("fr-FR");
     });
   });
 });

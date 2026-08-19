@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { getGoogleFontLink } from "~/lib/onoma/branding-utils";
+import { useUser } from "~/context/auth-context";
 
 // Import sections
 import OverviewSection from "./sections/OverviewSection";
@@ -181,17 +182,6 @@ const ONOMA_TABS = [
     activeIconClassName: "text-cyan-500 dark:text-cyan-400",
   },
   {
-    id: "linguistics",
-    label: "Linguistics",
-    icon: Languages,
-    themeColor: "#8b5cf6",
-    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
-    activeIndicatorClassName:
-      "bg-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400 shadow-[inset_0_1px_0_rgba(139,92,246,0.15)]",
-    activeTextClassName: "text-violet-600 dark:text-violet-400",
-    activeIconClassName: "text-violet-500 dark:text-violet-400",
-  },
-  {
     id: "marketplace",
     label: "Marketplace",
     icon: ShoppingBag,
@@ -206,6 +196,7 @@ const ONOMA_TABS = [
 
 export function OnomaRouter() {
   const pathname = usePathname();
+  const { isSignedIn, isLoaded } = useUser();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
 
   const fontLink = useMemo(() => {
@@ -213,9 +204,14 @@ export function OnomaRouter() {
   }, [speechConfig?.brand?.fontFamily]);
 
   // Active section state
-  const [activeSection, setActiveSection] = useState<OnomaSection>(() =>
-    getSectionFromPathname(pathname)
-  );
+  const [activeSection, setActiveSection] = useState<OnomaSection>(() => {
+    const initial = getSectionFromPathname(pathname);
+    const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
+    if (isSignedIn && !rawSegment) {
+      return "studio";
+    }
+    return initial;
+  });
 
   // Active sub-tab state for Markov Studio
   const [activeSubTab, setActiveSubTab] = useState<StudioSubTab>(() =>
@@ -229,6 +225,17 @@ export function OnomaRouter() {
       ? "overview"
       : initial;
   });
+
+  // When auth state loads, if user is signed in and at the root onoma page, default to Studio
+  const hasAppliedAuthDefault = useRef(false);
+  useEffect(() => {
+    if (!isLoaded || hasAppliedAuthDefault.current) return;
+    hasAppliedAuthDefault.current = true;
+    const rawSegment = pathname.split("/labs/onoma")[1]?.replace(/^\//, "") || "";
+    if (isSignedIn && !rawSegment) {
+      setActiveSection("studio");
+    }
+  }, [isLoaded, isSignedIn, pathname]);
 
   const bank = useNameBank();
 

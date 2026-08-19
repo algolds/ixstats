@@ -23,7 +23,7 @@ describe("Phonology Grapheme-to-IPA Parser", () => {
     it("should map soft c (before e) to ts, v to w, and r to ɾ", () => {
       // Venceia -> w + e + n + ts + e + i + a. First vowel "e", onset "w".
       expect(translateToIPA("Venceia", "latin")).toBe("/ˈwentseia/");
-      expect(translateToIPA("Carthago", "latin")).toBe("/ˈkaɾtago/");
+      expect(translateToIPA("Carthago", "latin")).toBe("/ˈkaɾtaɡo/");
     });
   });
 

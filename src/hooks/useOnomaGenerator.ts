@@ -1,7 +1,7 @@
 // src/hooks/useOnomaGenerator.ts
 // Onoma Lab — Custom Hook for Client-side Generation
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { trainLM, naturalnessScore, type NgramLM } from "~/lib/onoma/perplexity";

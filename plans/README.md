@@ -111,6 +111,7 @@ the live working set stays here.
 | [129-onoma-apple-motion-and-facets-refinement.md](129-onoma-apple-motion-and-facets-refinement.md) | Spring-damped layout expansion for NameResultCard, instant press compression, optical tracking | DONE |
 | [130-onoma-sound-change-evolution-engine.md](130-onoma-sound-change-evolution-engine.md) | Feature: Historical sound shift rule interpreter and Proto-to-Daughter language evolution in Studio | DONE |
 | [131-onoma-realtime-formant-spectrogram-visualizer.md](131-onoma-realtime-formant-spectrogram-visualizer.md) | Feature: Real-time Web Audio API FFT spectrum visualizer & 2D IPA Vowel Quadrilateral ($F_1/F_2$) | DONE |
+| [132-onoma-customized-template-and-dictionary-phonetics.md](132-onoma-customized-template-and-dictionary-phonetics.md) | Feature: Customized IRL Culture & Template/Dictionary Phonetics with "Hello World" Benchmark | DONE |
 
 ---
 

@@ -31,7 +31,33 @@ export const StashNoteMetadataSchema = z.object({
   gender: z.string().nullable().optional(),
   setName: z.string().nullable().optional(),
   values: z.array(z.string()).default([]),
+  phonology: z
+    .object({
+      culture: z.string().optional(),
+      customRules: z.array(z.tuple([z.string(), z.string()])).optional(),
+      voiceTag: z.string().optional(),
+      kokoroVoice: z.string().optional(),
+    })
+    .optional(),
 });
+
+export interface LinguisticProfile {
+  id: string;
+  name: string;
+  category: "culture" | "template" | "custom";
+  description: string;
+  rules: [string, string][];
+  stressRule: "initial" | "penultimate" | "ultimate" | "vowel-weight" | "none";
+  bcp47VoiceTag: string;
+  kokoroVoicePersona?: string;
+}
+
+export interface ResolvedNamePhonetics {
+  ipa: IPAString;
+  bcp47VoiceTag: string;
+  kokoroVoicePersona?: string;
+  source: "override" | "dictionary" | "template" | "culture" | "default";
+}
 
 export type PhonologyRules = z.infer<typeof PhonologyRulesSchema>;
 export type MorphologyRules = z.infer<typeof MorphologyRulesSchema>;
