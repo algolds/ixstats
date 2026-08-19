@@ -11,6 +11,9 @@ export { DepartmentList } from "./DepartmentList";
 export { BudgetAllocationList } from "./BudgetAllocationList";
 export { NavigationButtons } from "./NavigationButtons";
 export { TemplateModal } from "./TemplateModal";
+export { SuggestionsPanel } from "./SuggestionsPanel";
+export { AutosaveHistoryPanel } from "./AutosaveHistoryPanel";
+export { ConflictWarningDialog } from "./ConflictWarningDialog";
 
 export type { Step, StepProgressProps } from "./StepProgress";
 export type { ValidationAlertProps } from "./ValidationAlert";
@@ -19,3 +22,5 @@ export type { DepartmentListProps } from "./DepartmentList";
 export type { BudgetAllocationListProps } from "./BudgetAllocationList";
 export type { NavigationButtonsProps } from "./NavigationButtons";
 export type { TemplateModalProps } from "./TemplateModal";
+export type { SuggestionItem, SuggestionsPanelProps } from "./SuggestionsPanel";
+

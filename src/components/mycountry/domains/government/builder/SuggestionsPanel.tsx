@@ -15,7 +15,7 @@ export interface SuggestionItem<T = any> {
   action?: () => void;
 }
 
-interface SuggestionsPanelProps<T = any> {
+export interface SuggestionsPanelProps<T = any> {
   suggestions: SuggestionItem<T>[];
   onApply: (suggestion: SuggestionItem<T>) => void;
   onDismiss?: (id: string) => void;
@@ -77,3 +77,5 @@ export function SuggestionsPanel<T = any>({
     </Card>
   );
 }
+
+export default SuggestionsPanel;
