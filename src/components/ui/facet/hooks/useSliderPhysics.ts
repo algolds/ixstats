@@ -93,17 +93,27 @@ export function useSliderPhysics({
     }
   }, [indicatorSpringConfig]);
 
+  const isInitialMounted = useRef(false);
+
   // Keep target X & Width in sync with active changes when not dragging
   useEffect(() => {
     if (!isDragging.current) {
       if (activeBounds) {
-        rawX.set(activeBounds.left);
-        rawWidth.set(activeBounds.width);
+        if (!isInitialMounted.current) {
+          rawX.jump(activeBounds.left);
+          rawWidth.jump(activeBounds.width);
+          springX.jump(activeBounds.left);
+          springWidth.jump(activeBounds.width);
+          isInitialMounted.current = true;
+        } else {
+          rawX.set(activeBounds.left);
+          rawWidth.set(activeBounds.width);
+        }
       } else {
         rawWidth.set(0);
       }
     }
-  }, [activeId, bounds, activeBounds, rawX, rawWidth]);
+  }, [activeId, bounds, activeBounds, rawX, rawWidth, springX, springWidth]);
 
   // ─── Gesture Handlers ──────────────────────────────────────────────────────
 
@@ -274,14 +284,8 @@ export function useSliderPhysics({
     }
 
     clearClickTimeout();
-    // Fast snap settings: stiffness: 3000, damping: 120 (settles in ~60ms)
-    setSpringConfig({ stiffness: 3000, damping: 120, mass: 1 });
+    setSpringConfig(indicatorSpringConfig);
     onChange(id);
-
-    // After animation settles, restore default spring configuration
-    clickTimeoutRef.current = setTimeout(() => {
-      setSpringConfig(indicatorSpringConfig);
-    }, 150);
   };
 
   // Cleanup on unmount

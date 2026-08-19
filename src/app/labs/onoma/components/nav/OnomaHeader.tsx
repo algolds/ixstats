@@ -69,40 +69,17 @@ export function OnomaHeader({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="relative inline-flex items-center">
-                {!hasInteractedPronunciation && (
-                  <span className="pointer-events-none absolute -inset-1 animate-ping rounded-md bg-[#0091ff]/30 opacity-75 duration-1000" />
-                )}
-                <button
-                  type="button"
-                  onClick={playPronunciation}
-                  onMouseEnter={() => {
-                    if (!hasInteractedPronunciation) {
-                      setHasInteractedPronunciation(true);
-                      localStorage.setItem("onoma-pronunciation-tried", "true");
-                    }
-                  }}
-                  className={cn(
-                    "relative inline-flex cursor-pointer items-center gap-1.5 rounded-md font-mono text-xs transition-all duration-150 select-none active:scale-[0.94] focus:outline-none",
-                    !hasInteractedPronunciation
-                      ? "bg-[#0091ff]/15 px-2 py-0.5 font-bold text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-[#0091ff]/50 animate-pulse hover:bg-[#0091ff]/25"
-                      : "border border-border/50 bg-secondary/30 px-1.5 py-0.5 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
-                  )}
-                >
-                  <span>/ˈɒnəmə/</span>
-                  <Volume2
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                      !hasInteractedPronunciation ? "text-[#0091ff]" : "opacity-70 hover:scale-110"
-                    )}
-                  />
-                </button>
-              </span>
+              <button
+                type="button"
+                onClick={playPronunciation}
+                className="border-border/50 bg-secondary/30 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff] relative inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-xs transition-all duration-150 select-none active:scale-[0.94] focus:outline-none"
+              >
+                <span>/ˈɒnəmə/</span>
+                <Volume2 className="h-3.5 w-3.5 shrink-0 opacity-70 transition-transform duration-200 hover:scale-110" />
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" align="start" className="text-xs font-semibold shadow-lg">
-              {!hasInteractedPronunciation
-                ? "🔊 Click to hear authentic Greek pronunciation!"
-                : "Click to listen to pronunciation (Greek for “name”)"}
+            <TooltipContent side="top" align="center" className="text-xs font-semibold shadow-md">
+              Click to listen to Greek pronunciation (“name”)
             </TooltipContent>
           </Tooltip>
 
@@ -184,25 +161,23 @@ export function OnomaHeader({
       </div>
 
       {/* Bottom Row: Sliding Navigation Tabs */}
-      <div className="border-border/30 overflow-hidden rounded-xl border shadow-xs">
-        <FacetTabs
-          tabs={activeSection === "studio" ? studioTabs : ONOMA_TABS}
-          activeTab={activeSection === "studio" ? activeSubTab : activeSection}
-          onChange={(id) => {
-            if (activeSection === "studio") {
-              if (id === "exit-studio") {
-                onNavigate(lastActiveTab);
-              } else {
-                onNavigateStudio(id as StudioSubTab);
-              }
+      <FacetTabs
+        tabs={activeSection === "studio" ? studioTabs : ONOMA_TABS}
+        activeTab={activeSection === "studio" ? activeSubTab : activeSection}
+        onChange={(id) => {
+          if (activeSection === "studio") {
+            if (id === "exit-studio") {
+              onNavigate(lastActiveTab);
             } else {
-              onNavigate(id as OnomaSection);
+              onNavigateStudio(id as StudioSubTab);
             }
-          }}
-          tone="accent"
-          size="md"
-        />
-      </div>
+          } else {
+            onNavigate(id as OnomaSection);
+          }
+        }}
+        tone="accent"
+        size="md"
+      />
     </div>
   );
 }

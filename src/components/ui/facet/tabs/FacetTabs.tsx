@@ -9,7 +9,6 @@ import { useSliderPhysics } from "../hooks/useSliderPhysics";
 import {
   sizeClasses,
   toneIndicatorStyles,
-  toneGlowClasses,
   grabSpringConfig,
   DRAG_ELASTICITY,
   DRAG_DEAD_ZONE,
@@ -58,7 +57,6 @@ interface FacetTabTriggerProps {
   tone: string;
   handlers: any;
   handleTabClick: any;
-  updateSheenFromEvent: any;
 }
 
 function FacetTabTrigger({
@@ -72,7 +70,6 @@ function FacetTabTrigger({
   tone,
   handlers,
   handleTabClick,
-  updateSheenFromEvent,
 }: FacetTabTriggerProps) {
   const tabColor = useTransform([springX, springWidth], ([x, width]) => {
     if (!tab.themeColor) return "rgba(100, 116, 139, 0.85)";
@@ -95,28 +92,16 @@ function FacetTabTrigger({
     <button
       data-tab-id={tab.id}
       onClick={(e) => handleTabClick(tab.id, e)}
-      onPointerDown={(e) => {
-        handlers.onPointerDown(e);
-        updateSheenFromEvent(e);
-      }}
-      onPointerMove={(e) => {
-        handlers.onPointerMove(e);
-        updateSheenFromEvent(e);
-      }}
-      onPointerUp={(e) => {
-        handlers.onPointerUp(e);
-        updateSheenFromEvent(e);
-      }}
-      onPointerCancel={(e) => {
-        handlers.onPointerCancel(e);
-        updateSheenFromEvent(e);
-      }}
+      onPointerDown={handlers.onPointerDown}
+      onPointerMove={handlers.onPointerMove}
+      onPointerUp={handlers.onPointerUp}
+      onPointerCancel={handlers.onPointerCancel}
       className={cn(
-        "relative z-30 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
+        "relative z-20 flex flex-1 cursor-pointer items-center justify-center outline-none select-none",
         useThemeColor ? "" : "transition-colors duration-200",
         "focus-visible:ring-2 focus-visible:ring-indigo-500/50",
         metrics.item,
-        isActive ? "font-semibold" : ""
+        isActive ? "font-semibold" : "opacity-80 hover:opacity-100"
       )}
       style={{
         touchAction: "pan-y",
@@ -129,7 +114,7 @@ function FacetTabTrigger({
           }}
           className={cn(
             metrics.icon,
-            "mr-1.5 flex items-center justify-center",
+            "mr-1.5 flex items-center justify-center shrink-0",
             useThemeColor ? "" : "transition-colors duration-200",
             !useThemeColor &&
               (isActive
@@ -289,100 +274,21 @@ export function FacetTabs({
     }
   };
 
-  const glowColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.25));
-  const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.08));
-  const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.22));
-
-  const updateSheenFromEvent = (e: React.PointerEvent) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const pointerX = e.clientX - rect.left;
-    const pointerY = e.clientY - rect.top;
-
-    if (activeBounds) {
-      const indicatorLeft = activeBounds.left;
-      const indicatorWidth = activeBounds.width;
-      const relativeX = ((pointerX - indicatorLeft) / indicatorWidth) * 100;
-      const relativeY = (pointerY / rect.height) * 100;
-
-      container.style.setProperty(
-        "--sheen-x",
-        `${Math.max(0, Math.min(100, relativeX)).toFixed(1)}%`
-      );
-      container.style.setProperty(
-        "--sheen-y",
-        `${Math.max(0, Math.min(100, relativeY)).toFixed(1)}%`
-      );
-      container.style.setProperty("--sheen-active", "1");
-    }
-  };
-
-  const handlePointerLeave = () => {
-    const container = containerRef.current;
-    if (container) {
-      container.style.setProperty("--sheen-active", "0");
-    }
-  };
+  const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.12));
+  const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.28));
 
   return (
     <div
       ref={containerRef}
-      onPointerMove={updateSheenFromEvent}
-      onPointerLeave={handlePointerLeave}
       className={cn(
-        "group/tabs relative flex overflow-hidden transition-all duration-300 select-none",
-        "border border-black/[0.08] dark:border-white/10",
-        "shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]",
+        "group/tabs relative flex items-center overflow-hidden transition-all duration-200 select-none",
+        "border border-border/60 bg-secondary/30 dark:bg-muted/20",
+        "shadow-xs",
         metrics.container,
         className
       )}
-      style={
-        {
-          "--sheen-x": "50%",
-          "--sheen-y": "50%",
-          "--sheen-active": "0",
-        } as React.CSSProperties
-      }
     >
-      {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
-        {/* Softened edge sheens */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
-        </div>
-      </div>
-
-      {/* 2. Subtle backing glow matching the active tone (Z-0) */}
-      <motion.div
-        style={{
-          x: springX,
-          width: springWidth,
-          backgroundColor: useThemeColor ? glowColor : undefined,
-        }}
-        className={cn(
-          "pointer-events-none absolute inset-y-1 rounded-[inherit] blur-md",
-          useThemeColor
-            ? "opacity-35 dark:opacity-30"
-            : cn(
-                "transition-colors duration-300",
-                tabs.find((t) => t.id === activeTab)?.glowClassName || toneGlowClasses[tone]
-              )
-        )}
-      />
-
-      {/* 3. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
-        style={{
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
-        }}
-      />
-
-      {/* 4. Active background indicator (Z-20) */}
+      {/* 1. Active Sliding Background Indicator (Z-10) */}
       {activeBounds && (
         <motion.div
           style={{
@@ -393,8 +299,8 @@ export function FacetTabs({
             borderColor: useThemeColor ? indicatorBorderColor : undefined,
           }}
           className={cn(
-            "pointer-events-none absolute inset-y-1 z-20 overflow-hidden border shadow-sm backdrop-blur-sm",
-            useThemeColor ? "" : "transition-colors duration-300",
+            "pointer-events-none absolute z-10 overflow-hidden border shadow-xs transition-colors duration-200",
+            metrics.indicatorInset,
             metrics.indicator,
             useThemeColor
               ? ""
@@ -408,20 +314,10 @@ export function FacetTabs({
                   ),
             indicatorClassName
           )}
-        >
-          {/* Frosted Satin Sheen Overlay (follows pointer relative to indicator bounds) */}
-          <div
-            className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
-            style={{
-              background: `radial-gradient(circle 130px at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255, 255, 255, 0.14) 0%, transparent 100%)`,
-              mixBlendMode: "overlay",
-              opacity: "var(--sheen-active, 0)",
-            }}
-          />
-        </motion.div>
+        />
       )}
 
-      {/* 5. Tab Triggers (Z-30) */}
+      {/* 2. Tab Triggers (Z-20) */}
       {tabs.map((tab) => (
         <FacetTabTrigger
           key={tab.id}
@@ -435,7 +331,6 @@ export function FacetTabs({
           tone={tone}
           handlers={handlers}
           handleTabClick={handleTabClick}
-          updateSheenFromEvent={updateSheenFromEvent}
         />
       ))}
     </div>

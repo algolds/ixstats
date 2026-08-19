@@ -1,23 +1,26 @@
 export const sizeClasses = {
   sm: {
     container: "p-0.5 rounded-lg gap-0.5",
-    item: "px-2.5 py-1 text-[10px] gap-1 rounded-md font-medium",
+    item: "px-2.5 py-1 text-[10px] gap-1 rounded-md font-medium active:scale-[0.97] transition-transform",
     icon: "h-3 w-3",
     indicator: "rounded-md",
+    indicatorInset: "inset-y-0.5",
     padding: 2,
   },
   md: {
     container: "p-1 rounded-xl gap-1",
-    item: "px-3 py-2 text-xs gap-1.5 rounded-lg font-medium",
+    item: "px-3 py-2 text-xs gap-1.5 rounded-lg font-medium active:scale-[0.97] transition-transform",
     icon: "h-3.5 w-3.5",
     indicator: "rounded-lg",
+    indicatorInset: "inset-y-1",
     padding: 4,
   },
   lg: {
     container: "p-1.5 rounded-2xl gap-1.5",
-    item: "px-5 py-2.5 text-sm gap-2 rounded-xl font-bold",
+    item: "px-5 py-2.5 text-sm gap-2 rounded-xl font-bold active:scale-[0.98] transition-transform",
     icon: "h-4 w-4",
     indicator: "rounded-xl",
+    indicatorInset: "inset-y-1.5",
     padding: 6,
   },
 } as const;

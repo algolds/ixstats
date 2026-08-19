@@ -119,7 +119,7 @@ export function OnomaBrandLogo({
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 508.06 88.79"
+        viewBox="0 0 480.06 88.79"
         className={cn(SIZE_MAP.lockup[size], className)}
       >
         <g id="Type" className="fill-current text-foreground">
@@ -131,7 +131,6 @@ export function OnomaBrandLogo({
         </g>
         <g
           id="Logo"
-          transform="translate(28, 0)"
           className={cn(
             "transition-all duration-300",
             tone === "monochrome" ? "fill-current text-foreground" : "fill-[#0091ff]"

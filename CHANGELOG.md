@@ -29,6 +29,12 @@ capability integer. Each release entry below lists which components advanced and
 - **Server tRPC Architecture Guard Compliance (`src/server/api/routers/onoma/`)**:
   - Resolved `audit:arch` god-file violation by splitting 1,032-line `core.ts` into [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) (594 lines) and [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) (446 lines), recombined seamlessly via `mergeRouters` in `index.ts`. All 9 domain routers now strictly satisfy the ≤700 architecture ceiling.
 
+- **FacetTabs Component Polish & GPU Compositor Fix (`src/components/ui/facet/tabs/`)**:
+  - Eliminated triple-layer compound blur and 190% saturation filter stacking that caused diffuse halo artifacts around active tab pills.
+  - Resolved Chromium/WebKit corner blur flare on edge tabs (`Overview`, `Marketplace`) by standardizing the container to a clean, crisp background (`border-border/60 bg-secondary/30 dark:bg-muted/20`).
+  - Added size-aware `indicatorInset` tokens (`inset-y-0.5`, `inset-y-1`, `inset-y-1.5`) in `constants.ts` and responsive `:active` scale transitions (`active:scale-[0.97]`).
+  - Fixed initial mount spring animation flash in `useSliderPhysics.ts` using zero-duration `jump()` initialization.
+
 - **Shared Pattern Engine & Massive Dataset Compaction**:
   - Introduced [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicating template tag regex parsing across `group-generator.ts` and `tavern-generator.ts`.
   - Compacted multi-line arrays across `fantasy-names-data.ts` (9,271 lines → 787 lines), `cultural-profiles.ts` (2,291 lines → 363 lines), `species-data.ts` (2,469 lines → 316 lines), `default-dictionaries.ts` (1,474 lines → 238 lines), and `group-data.ts` (568 lines → 126 lines), saving over **15,480 net lines** and ~104KB of memory/bundle overhead.
