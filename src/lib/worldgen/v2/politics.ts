@@ -21,8 +21,8 @@ import { QUALITY_THRESHOLDS } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
 import { dijkstraMultiSource } from "./helpers/flood-fill";
-import { MarkovNameGenerator } from "../../procedural-archive/markov-naming";
-import { getLanguageFamilies } from "../../procedural-archive/language-families";
+import { MarkovNameGenerator } from "~/lib/onoma/markov-naming";
+import { getLanguageFamilies } from "~/lib/onoma/language-families";
 
 /**
  * Generate cultures, settlements, and political states with natural borders.

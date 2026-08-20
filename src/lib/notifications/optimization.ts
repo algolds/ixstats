@@ -14,7 +14,17 @@ import type {
   UserNotificationPreferences,
   NotificationBatch,
 } from "~/types/unified-notifications";
-import { generateSafeKey } from "~/app/mycountry/utils/keyValidation";
+
+/** Generate a deterministic/safe unique key for notification items without ceremony */
+export function generateSafeKey(
+  id: string | undefined | null,
+  fallbackPrefix: string,
+  index: number = 0
+): string {
+  const cleanId = id && typeof id === "string" ? id.trim() : "";
+  if (cleanId) return `${fallbackPrefix}-${cleanId}`;
+  return `${fallbackPrefix}-fallback-${index}-${Date.now()}`;
+}
 
 const PRIORITY_ORDER: NotificationPriority[] = ["low", "medium", "high", "critical"];
 

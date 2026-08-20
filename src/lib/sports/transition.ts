@@ -387,57 +387,59 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
     }
 
     // ─── Season awards: top scorer & most assists from match stats ───
-    try {
-      const matchStats = await tx.sportMatchStat.findMany({
-        where: { match: { seasonId: season.id } },
-        select: { playerId: true, stats: true },
-      });
-      const tally = new Map<string, { goals: number; assists: number }>();
-      for (const ms of matchStats) {
-        const s = (ms.stats ?? {}) as Record<string, number>;
-        const t = tally.get(ms.playerId) ?? { goals: 0, assists: 0 };
-        t.goals += s.goals ?? 0;
-        t.assists += s.assists ?? 0;
-        tally.set(ms.playerId, t);
-      }
-      const entries = Array.from(tally.entries());
-      const topBy = (key: "goals" | "assists") =>
-        entries.filter(([, v]) => v[key] > 0).sort(([, a], [, b]) => b[key] - a[key])[0];
-      const topScorer = topBy("goals");
-      const topAssister = topBy("assists");
+    if (typeof (tx as any).sportMatchStat?.findMany === "function") {
+      try {
+        const matchStats = await tx.sportMatchStat.findMany({
+          where: { match: { seasonId: season.id } },
+          select: { playerId: true, stats: true },
+        });
+        const tally = new Map<string, { goals: number; assists: number }>();
+        for (const ms of matchStats) {
+          const s = (ms.stats ?? {}) as Record<string, number>;
+          const t = tally.get(ms.playerId) ?? { goals: 0, assists: 0 };
+          t.goals += s.goals ?? 0;
+          t.assists += s.assists ?? 0;
+          tally.set(ms.playerId, t);
+        }
+        const entries = Array.from(tally.entries());
+        const topBy = (key: "goals" | "assists") =>
+          entries.filter(([, v]) => v[key] > 0).sort(([, a], [, b]) => b[key] - a[key])[0];
+        const topScorer = topBy("goals");
+        const topAssister = topBy("assists");
 
-      // Idempotent: clear any prior awards for this season before re-creating.
-      await tx.sportSeasonRecord.deleteMany({
-        where: { seasonId: season.id, recordType: { in: ["top_scorer", "most_assists", "mvp"] } },
-      });
-      const awards: Array<{ recordType: string; holderId: string; value: string }> = [];
-      if (topScorer) {
-        awards.push({
-          recordType: "top_scorer",
-          holderId: topScorer[0],
-          value: String(topScorer[1].goals),
+        // Idempotent: clear any prior awards for this season before re-creating.
+        await tx.sportSeasonRecord.deleteMany({
+          where: { seasonId: season.id, recordType: { in: ["top_scorer", "most_assists", "mvp"] } },
         });
-        // MVP heuristic: leading scorer (goals + assists tiebreak handled by goals order).
-        awards.push({
-          recordType: "mvp",
-          holderId: topScorer[0],
-          value: String(topScorer[1].goals + topScorer[1].assists),
-        });
+        const awards: Array<{ recordType: string; holderId: string; value: string }> = [];
+        if (topScorer) {
+          awards.push({
+            recordType: "top_scorer",
+            holderId: topScorer[0],
+            value: String(topScorer[1].goals),
+          });
+          // MVP heuristic: leading scorer (goals + assists tiebreak handled by goals order).
+          awards.push({
+            recordType: "mvp",
+            holderId: topScorer[0],
+            value: String(topScorer[1].goals + topScorer[1].assists),
+          });
+        }
+        if (topAssister) {
+          awards.push({
+            recordType: "most_assists",
+            holderId: topAssister[0],
+            value: String(topAssister[1].assists),
+          });
+        }
+        if (awards.length > 0) {
+          await tx.sportSeasonRecord.createMany({
+            data: awards.map((a) => ({ ...a, leagueId: season.leagueId, seasonId: season.id })),
+          });
+        }
+      } catch (awardErr) {
+        console.error("[Season Awards Error]", awardErr);
       }
-      if (topAssister) {
-        awards.push({
-          recordType: "most_assists",
-          holderId: topAssister[0],
-          value: String(topAssister[1].assists),
-        });
-      }
-      if (awards.length > 0) {
-        await tx.sportSeasonRecord.createMany({
-          data: awards.map((a) => ({ ...a, leagueId: season.leagueId, seasonId: season.id })),
-        });
-      }
-    } catch (awardErr) {
-      console.error("[Season Awards Error]", awardErr);
     }
 
     const preset = getPreset(season.league.sportPreset as SportPresetKey);

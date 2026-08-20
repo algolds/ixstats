@@ -179,6 +179,40 @@ export function generatePresetName(ctx: PresetGenerationContext): string | null 
     if (subType === "media-outlet") return generateMediaOutletName(characterChain, options);
     if (subType === "ngo-foundation") return generateNgoName(characterChain, options);
     if (subType === "religious-order") return generateReligiousOrderName(characterChain, options);
+    if (subType === "tavern") {
+      const adjectives = [
+        "Golden",
+        "Prancing",
+        "Rusty",
+        "Drunken",
+        "Green",
+        "Silver",
+        "Blind",
+        "Laughing",
+        "Broken",
+        "Wandering",
+      ];
+      const nouns = [
+        "Pony",
+        "Dragon",
+        "Boar",
+        "Anchor",
+        "Goblet",
+        "Shield",
+        "Fox",
+        "Hound",
+        "Barrel",
+        "Raven",
+        "Flagon",
+      ];
+      const adj = pickRandom(adjectives);
+      const noun = pickRandom(nouns);
+      const base = characterChain.generate(options);
+      if (base && Math.random() < 0.3) {
+        return `${MarkovChain.capitalize(base)}'s ${noun}`;
+      }
+      return `The ${adj} ${noun}`;
+    }
   }
 
   if (category === "military") {

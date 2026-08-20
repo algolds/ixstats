@@ -53,6 +53,9 @@ export async function resolveMatchPredictions(
   matchId: string,
   outcome: PredictionOutcome
 ): Promise<void> {
+  if (!prisma || typeof (prisma as any).sportPrediction?.findMany !== "function") {
+    return;
+  }
   try {
     const open = await prisma.sportPrediction.findMany({ where: { matchId, status: "open" } });
     if (open.length === 0) return;

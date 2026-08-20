@@ -102,7 +102,12 @@ const DEFAULT_CONFIG: LogStorageConfig = {
   persistToDatabaseLevel: LogLevel.ERROR, // Persist errors and above
   persistToFileLevel: LogLevel.INFO, // Log info and above to file
   sendToDiscordLevel: LogLevel.CRITICAL, // Alert on critical issues
-  consoleLevel: process.env.NODE_ENV === "development" ? LogLevel.DEBUG : LogLevel.INFO,
+  consoleLevel:
+    process.env.NODE_ENV === "test"
+      ? LogLevel.ERROR
+      : process.env.NODE_ENV === "development"
+        ? LogLevel.DEBUG
+        : LogLevel.INFO,
 };
 
 class Logger {
@@ -132,11 +137,20 @@ class Logger {
   private startFlushInterval() {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
+      this.flushInterval = null;
+    }
+
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
     }
 
     this.flushInterval = setInterval(() => {
       this.flush().catch(console.error);
     }, this.FLUSH_INTERVAL_MS);
+
+    if (this.flushInterval?.unref) {
+      this.flushInterval.unref();
+    }
   }
 
   /**

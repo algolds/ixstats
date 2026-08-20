@@ -60,11 +60,11 @@ The platform uses the **Canon Platform Readiness Scale** as established in `docs
 
 | Feature System | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
 | :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **Nation Builder** | `v3` | `/builder` | `atomicGovernment.ts`, `atomicEconomic.ts`, `builderDraft.ts` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-593L`** (Unified with `useGenericAutoSync.ts`) | None — Ready to Ship |
+| **Nation Builder** | `v3` | `/builder` | `atomicGovernment.ts`, `atomicEconomic.ts`, `builderDraft.ts` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-3,313L`** (Extracted `government-mappings.ts`, unified auto-sync & parsers) | None — Ready to Ship |
 | **ThinkPages & ThinkShare** | `v2` | `/thinkpages`, `/messages` | `thinkpages/`, `messages/`, `activities/`, `polls/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Strongly-typed `hydratePostDates`, global cache invalidation) | None — Ready to Ship |
-| **Onoma Linguistic Engine** | `v4` | `/labs/onoma` | `onoma/`, `src/app/api/onoma/tts/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-362L`** (Deleted tavern fantasy generator, added silent WAV fallback) | None — Ready to Ship |
+| **Onoma Linguistic Engine** | `v4` | `/labs/onoma` | `onoma/`, `src/app/api/onoma/tts/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Consolidated** (Integrated `language-families` & `markov-naming` into `src/lib/onoma/`) | None — Ready to Ship |
 | **Achievements & Awards** | `v2` | `/achievements`, `/leaderboards` | `achievements/`, `lorewards/`, `activities/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Eliminated `as any`, cached leaderboard queries) | None — Ready to Ship |
-| **Sports Management (MyLeague)**| `v1` | `/myleague`, `/myclub` | `sports/` (leagues, teams, sim, transfers) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Mulberry32 PRNG determinism & typed parimutuel settlement) | None — Ready to Ship |
+| **Sports Management (MyLeague)**| `v1` | `/myleague`, `/myclub` | `sports/` (leagues, teams, sim, transfers) | **A+ (100%)** | 📀 **Gold Master** | ✅ **AST Split `-2,225L`** (`leagues.ts` & `matches.ts` decomposed to sub-routers $\le 450\text{L}$) | None — Ready to Ship |
 
 ### Platform Infrastructure & Administrative
 

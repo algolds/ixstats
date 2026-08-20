@@ -239,11 +239,19 @@ Process: scout that the router is live + a single flat `createTRPCRouter` (dead/
 `scripts/verify-router-splits.ts` (**line-grep undercounts procedures — always verify at the AST level**) →
 `eslint --fix` to trim carry-all unused imports. Done: thinkpages, admin, sports, activities, security.
 
+### Tooling & Reusable Scripts Archive
+
+- Active build, setup, and audit tooling is cataloged in [`scripts/README.md`](file:///home/jxsig/projects/ixstats/scripts/README.md).
+- **Historical Migrations & Backfills Archive** ([`scripts/archive/migrations/`](file:///home/jxsig/projects/ixstats/scripts/archive/migrations/)): Contains reusable ETL scripts (e.g. `migrate-messages-to-thinkshare.ts`, `backfill-vault-effects.ts`, `sync-wiki-flags.ts`, `setup-system-owner-access.ts`, `generate-country-slugs.ts`) that can be adapted for future bulk data transformations.
+- **GIS Tools & Spatial Calculators Archive** ([`scripts/archive/gis_tools/`](file:///home/jxsig/projects/ixstats/scripts/archive/gis_tools/)): Contains spatial math algorithms (e.g. `country-geo-report.ts`, `align-political-to-terrain.ts`, `calculate-scale-factor.ts`, `rebuild-adjacency.ts`, `reprocess-icecaps.ts`) for geometry and projection analysis.
+
 ## Instruction Sources
 
 - `CLAUDE.md` — Detailed architecture, design system, MyCountry routing, maps system
 - `docs/README.md` — Documentation hub
 - `docs/reference/api-complete.md` — Full tRPC API catalog (1,450+ procedures across 90 routers)
 - `docs/systems/` — System-specific guides
+- `scripts/README.md` — Active & archived tooling catalog
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)
 - `/ixwiki/.cursor/rules/design.mdc` — for design token mappings and usage guidelines
+

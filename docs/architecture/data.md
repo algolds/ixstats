@@ -1,55 +1,115 @@
-# Data Architecture
+# Data & Database Architecture
 
-**Last updated:** June 2026
+**Database Engine**: PostgreSQL 16 with PostGIS Extension  
+**ORM**: Prisma 6.19.3 (Multi-file Schema Architecture)  
+**Location**: `prisma/schema/*.prisma` (15 schema files, 296 models) · `src/server/db.ts`
 
-IxStates (IxStats) stores structured gameplay data using Prisma 6.19. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, cards/vault, elections, and operational logs.
+---
 
-## Schema Overview
-- Prisma schema is split across `prisma/schema/*.prisma` (14 files)
-- 272 models span government, economic, diplomatic, social, notification, cards/vault, elections, national issues, forum, crafting/trading, and audit domains
-- Enum duplication (e.g., `Priority`, `Category`) retains legacy casing for compatibility across services
+## 1. Database Infrastructure & PostGIS
 
-## Database Targets
-- **Development** – PostgreSQL (`localhost:5433/ixstats`) for full feature parity with production
-- **Production** – PostgreSQL with PostGIS extension for geographic data
-- **Migration Note (October 2025)** – Migrated from SQLite to PostgreSQL for better performance and PostGIS support
-- Migrations applied via `prisma migrate deploy` or `bun run db:migrate:force` (db:migrate is BLOCKED by default for data safety)
+The database backend is PostgreSQL with PostGIS extensions running inside Docker:
 
-## Data Lifecycle
-| Phase | Scripts & Locations |
-| --- | --- |
-| Generation | `bun run db:generate`, `bun run db:push:force` (db:push is BLOCKED), `bun run db:init` |
-| Seeding | `scripts/setup/seed-db.ts`, domain-specific importers in `src/services` |
-| Backups | `scripts/setup/backup-db.ts`, stored under `prisma/` with timestamped filenames |
-| Restore | `scripts/setup/restore-db.ts` |
-| Sync | `scripts/sync-prod-db.sh`, `scripts/audit` verification tools |
+```
+Container: ixstats-postgres
+Port: 5433
+Connection: postgresql://postgres:postgres@localhost:5433/ixstats
+Spatial Engine: PostGIS 3.x (ST_AsGeoJSON, ST_Touches, ST_Centroid, ST_Area)
+```
 
-## Key Domains
-- **Countries & Intelligence** – `Country`, `CountryIntelligence`, `DiplomaticRelation`, `DiplomaticEvent`
-- **Economics** – `EconomicHistory`, `EconomicProjection`, `TradeBalance`, `LaborMetric`
-- **Government & Atomic** – `GovernmentComponent`, `AtomicComponent`, `ComponentSynergy`
-- **Social** – `ThinkPage`, `ThinkPost`, `ThinkComment`, `Activity`
-- **Achievements & Notifications** – `Achievement`, `UserAchievement`, `Notification`, `NotificationRule`
-- **Security & Audit** – `User`, `Role`, `Permission`, `UserLogEntry`
-- **Cards & Vault** – `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardBackgroundImage`, `LoreCard`
-- **Elections & Politics** – `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`
-- **Crafting & Trading** – `CraftingRecipe`, `TradeOffer`, `AuctionListing`, `TradeReview`
-- **Autosave** – `AutosaveHistory`
+### Production Data Protection Rule:
+> [!CAUTION]
+> Direct database write commands (`db:migrate`, `db:push`, `db:reset`) are intentionally blocked by safety wrappers to protect 82 nations of live production data. Schema modifications must be reviewed and pushed using `bun run db:push:force`.
 
-## Access Patterns
-- tRPC routers use the generated Prisma client through `~/server/db`
-- Helper utilities in `src/services` wrap complex queries (e.g., aggregations, projections)
-- Historical queries leverage dedicated tables for precomputed metrics, keeping heavy calculations off hot paths
+---
 
-## Environment Variables Affecting Data
-- `DATABASE_URL` – Primary connection string
-- `ENABLE_QUERY_CACHE` – Enables caching in select services
-- `ENABLE_RATE_LIMITING` / `RATE_LIMIT_*` – Controls API write throughput
-- `IXWIKI_API_URL`, `FLAG_SERVICE_URL` – External imports powering builder flows
+## 2. Multi-File Schema Architecture (`prisma/schema/`)
 
-## Tooling
-- Prisma Studio scripts (`bun run db:studio`, `bun run db:studio:prod`)
-- Audit scripts for economic correctness (`bun run test:economics`) and CRUD health (`bun run test:crud`)
-- Generated outputs (CSV/JSON) should be stored under `docs/reference` when used for documentation
+Prisma models are domain-isolated across 15 individual `.prisma` files:
 
-Update this reference whenever the schema evolves, new data domains appear, or database targets change.
+```
+prisma/schema/
+├── base.prisma           # Generator and datasource config (PostgreSQL provider)
+├── enums.prisma          # Shared Enums (Priority, Category, EconomicTier, Stance, Rarity)
+├── core.prisma           # User, Role, Permission, UserActivityLog, Session
+├── government.prisma     # GovernmentStructure, Department, Policy, Legislature, Intent, Issue
+├── economy.prisma        # EconomicHistory, TaxSystem, BudgetAllocation, SectorAnalysis
+├── diplomacy.prisma      # DiplomaticRelation, Embassy, ConcordState, Treaty, DiplomaticEvent
+├── intelligence.prisma   # CountryIntelligence, ThreatAssessment, VitalityScore
+├── maps.prisma           # Territory, Subdivision, City, PointOfInterest, GeoFeature (PostGIS)
+├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, LoreCard, Perk
+├── military.prisma       # MilitaryBranch, EquipmentCatalog, ForceDeployment, WarRoom
+├── social.prisma         # ThinkPage, ThinkPost, ThinkComment, DirectMessage, Poll
+├── wiki.prisma           # WikiArticle, WikiRevision, WikiInfoboxCache, WikiCategory
+├── sports.prisma         # League, Club, Match, Competition, PlayerRoster, Commentary
+├── activities.prisma     # ActivityStream, PublicNotification, AuditLogEntry
+└── ...
+```
+
+---
+
+## 3. Core Database Domains & Models
+
+### 3.1 Core & Identity
+- **`User`**: Account identity (Clerk `userId`), email, display preferences, platform role (`USER`, `MODERATOR`, `ADMIN`, `SYSTEM_OWNER`).
+- **`Country`**: Geopolitical identity, slug, name, population, GDP per capita, government type, religion, leader, flag URL, realm tag (`realm="default"`).
+
+### 3.2 Statecraft & Executive Simulation
+- **`Intent`**: Player-declared strategic directive. Stores `goal`, `category`, `status`, `riskRating` (`stable` | `volatile` | `high-risk`), and `progress`.
+- **`NationalIssue`**: Dilemmas arriving in the executive inbox. Linked to `intentId` for grounded feedback loops.
+- **`Policy`**: Active government policies. Derives `civCapCost` and background volatility risk.
+- **`CountryEventSpine`**: Append-only ledger recording all statecraft actions, metric shifts, and narrative entries.
+
+### 3.3 Spatial & GIS Geometry (PostGIS)
+- **`Subdivision`**: Administrative provinces with PostGIS `geometry` MultiPolygon columns, area, and centroid coordinates.
+- **`City`**: Capital and regional settlements with PostGIS `Point` geometry, population tier, and elevation.
+- **`PointOfInterest`**: Landmarks, naval bases, radar stations, and natural marvels.
+
+### 3.4 Cards, Vault & Economy
+- **`MyVault`**: Player card binder, level progression, and credit wallet.
+- **`Card` / `CardOwnership`**: Collectible trading cards with dynamic rarity (`COMMON`, `UNCOMMON`, `RARE`, `EPIC`, `LEGENDARY`, `MYTHIC`).
+- **`IxCredit`**: Virtual currency ledger with atomic conditional balance checks preventing negative race conditions.
+
+---
+
+## 4. Prisma Client Access & Connection Pooling (`src/server/db.ts`)
+
+Database queries are executed through a singleton Prisma client instance:
+
+```typescript
+// src/server/db.ts
+import { PrismaClient } from "@prisma/client";
+import { env } from "~/env";
+
+const createPrismaClient = () =>
+  new PrismaClient({
+    log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+
+export const db = globalForPrisma.prisma ?? createPrismaClient();
+
+if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+```
+
+---
+
+## 5. Developer Database Commands
+
+```bash
+# Generate Prisma Client (runs automatically on bun install)
+bun run db:generate
+
+# Safely preview and apply schema changes to dev database
+bun run db:push:force
+
+# Launch Prisma Studio web interface on localhost:5555
+bun run db:studio
+
+# Sync production database snapshot to local dev container
+bun run db:sync
+
+# Run database sub-project typecheck (4096MB safe heap)
+bun run typecheck:db
+```

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useIxMedia } from "~/hooks/useIxMedia";
+import { useIxMedia } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Play, Trash2, XCircle } from "lucide-react";
 

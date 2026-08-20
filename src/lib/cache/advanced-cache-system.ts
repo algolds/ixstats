@@ -110,7 +110,7 @@ class RedisCache {
         });
 
         this.enabled = true;
-      } else {
+      } else if (process.env.NODE_ENV !== "test") {
         console.warn("[RedisCache] Redis not configured or not enabled, using in-memory fallback");
       }
     } catch (error) {

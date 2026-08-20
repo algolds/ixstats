@@ -562,6 +562,9 @@ export class UserLogger {
    * Persist log entry to database
    */
   private static async persistToDatabase(logEntry: any): Promise<void> {
+    if (process.env.NODE_ENV === "test" || !db || typeof (db as any).systemLog?.create !== "function") {
+      return;
+    }
     try {
       await db.systemLog.create({
         data: {

@@ -195,10 +195,14 @@ class RealTimeIntelligenceServer {
   }
 
   private startUpdateProcessor() {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
     this.processingInterval = setInterval(() => {
       this.processUpdateQueue();
       this.cleanupStaleConnections();
     }, 1000); // Process every second
+    if (this.processingInterval && typeof (this.processingInterval as any).unref === "function") {
+      (this.processingInterval as any).unref();
+    }
   }
 
   private processUpdateQueue() {

@@ -112,6 +112,10 @@ export async function buildGroundedContext(
     neighbors: [],
   };
 
+  if (!db || typeof (db as any).countryGeoProfile?.findUnique !== "function") {
+    return empty;
+  }
+
   try {
     const [
       geoRow,

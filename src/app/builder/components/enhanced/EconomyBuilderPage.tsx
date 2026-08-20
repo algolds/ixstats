@@ -80,7 +80,7 @@ import { api } from "~/trpc/react";
 import type { RevenueSource } from "~/types/government";
 
 // Autosave hook
-import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
+import { useGenericAutoSync } from "~/hooks/useGenericAutoSync";
 
 // Builder context
 import { useBuilderContextOptional } from "./context/BuilderStateContext";
@@ -543,17 +543,27 @@ export function EconomyBuilderPage({
   }, [economyBuilder, economicInputs]);
 
   // Autosave hook integration
-  const {
-    syncState: autoSyncState,
-    syncNow,
-    showSuccessAnimation,
-  } = useEconomyBuilderAutoSync(countryId, economyDataForSync, {
+  const autosaveMutation = api.economics.autoSaveEconomyBuilder.useMutation();
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+
+  const sync = useGenericAutoSync(economyDataForSync, {
     // Inside the unified builder, useBuilderState owns persistence (updateCountry
     // in edit mode, BuilderDraft in create mode). Disable this side-channel so it
     // can't race/clobber the Country row or fire against a template countryCode in
     // create mode (which FORBIDDEN-fails after flashing optimistic "Saved").
     // Only autosave when used standalone (no BuilderStateProvider).
     enabled: !!countryId && !builderContext,
+    debounceMs: 15000,
+    syncFn: async (data) => {
+      if (!countryId) return;
+      const res = await autosaveMutation.mutateAsync({
+        countryId,
+        changes: data as Record<string, string | number | boolean | Date | null>,
+      });
+      setShowSuccessAnimation(true);
+      setTimeout(() => setShowSuccessAnimation(false), 2000);
+      return res;
+    },
     onSyncSuccess: () => {
       console.log("[EconomyBuilder] Autosave successful");
       setLastSaved(new Date());
@@ -563,6 +573,16 @@ export function EconomyBuilderPage({
       notify.error("Failed to autosave economy data");
     },
   });
+
+  const autoSyncState = {
+    isSyncing: sync.isSyncing,
+    lastSyncTime: sync.lastSyncTime,
+    pendingChanges: sync.pendingChanges,
+    conflictWarnings: [] as string[],
+    syncError: sync.syncError?.message ?? null,
+    optimistic: sync.status === "saved",
+  };
+  const syncNow = sync.forceSync;
 
   // Register autosync with BuilderContext (if available)
   useEffect(() => {

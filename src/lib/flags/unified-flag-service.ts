@@ -878,6 +878,9 @@ class UnifiedFlagService {
 
   // Utility methods
   private async loadLocalMetadata(): Promise<void> {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
     // In browser environment, try localStorage first
     if (typeof window !== "undefined") {
       try {

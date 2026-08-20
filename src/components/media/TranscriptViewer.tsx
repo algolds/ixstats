@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { useIxMedia } from "~/hooks/useIxMedia";
+import { useIxMedia } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
 
 export function TranscriptViewer() {

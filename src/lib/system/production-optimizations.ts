@@ -530,6 +530,9 @@ export class ProductionStartup {
    * In prod mode: standard monitoring with GC triggers
    */
   static async initialize(): Promise<void> {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
     const mode = isDevMode ? "development" : "production";
     console.log(`[ProductionStartup] Initializing ${mode} optimizations...`);
 
@@ -544,12 +547,18 @@ export class ProductionStartup {
       this.monitoringInterval = setInterval(() => {
         MemoryOptimizer.monitorMemoryUsage();
       }, monitoringInterval);
+      if (this.monitoringInterval && typeof (this.monitoringInterval as any).unref === "function") {
+        (this.monitoringInterval as any).unref();
+      }
 
       // Analyze slow queries periodically (only in prod to save memory in dev)
       if (!isDevMode) {
         this.queryAnalysisInterval = setInterval(() => {
           DatabaseOptimizer.analyzeSlowQueries();
         }, 300000); // Every 5 minutes
+        if (this.queryAnalysisInterval && typeof (this.queryAnalysisInterval as any).unref === "function") {
+          (this.queryAnalysisInterval as any).unref();
+        }
       }
 
       // Log initial memory state

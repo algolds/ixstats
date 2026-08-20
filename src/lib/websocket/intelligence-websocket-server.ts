@@ -378,7 +378,8 @@ export class IntelligenceWebSocketServer {
    * Start periodic health checks
    */
   private startHealthChecks(): void {
-    setInterval(() => {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
+    const timer = setInterval(() => {
       const now = Date.now();
       const staleConnections: string[] = [];
 
@@ -405,20 +406,27 @@ export class IntelligenceWebSocketServer {
 
       this.updateConnectionStats();
     }, 60000); // Check every minute
+    if (timer && typeof (timer as any).unref === "function") {
+      (timer as any).unref();
+    }
   }
 
   /**
    * Start intelligence processing loop
    */
   private startIntelligenceProcessing(): void {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
     // Process intelligence updates every 30 seconds
-    setInterval(async () => {
+    const timer = setInterval(async () => {
       try {
         await this.processIntelligenceUpdates();
       } catch (error) {
         console.error("Error processing intelligence updates:", error);
       }
     }, 30000);
+    if (timer && typeof (timer as any).unref === "function") {
+      (timer as any).unref();
+    }
   }
 
   /**

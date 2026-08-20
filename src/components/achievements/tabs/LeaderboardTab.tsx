@@ -23,7 +23,7 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
-import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface AchievementEntry {
@@ -127,7 +127,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
     );
   }
   return (
-    <EnhancedCountryFlag
+    <UnifiedCountryFlag
       countryName={countryName}
       size="sm"
       className="h-5 w-7 rounded object-cover shadow-sm"

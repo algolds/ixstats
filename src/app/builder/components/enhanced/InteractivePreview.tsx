@@ -33,7 +33,7 @@ import { withBasePath } from "~/lib/base-path";
 import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
 import type { ExtractedColors } from "~/lib/media";
 import type { BuilderStyle, BuilderMode } from "../glass/BuilderStyleToggle";
-import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 
 // Placeholder for MyCountryLogo (assuming it's an image or simple text)
 const MyCountryLogo = () => (
@@ -340,11 +340,9 @@ export function InteractivePreview({
             </Button>
             {referenceCountry ? (
               <div className="flex items-center gap-4">
-                <EnhancedCountryFlag
+                <UnifiedCountryFlag
                   countryName={referenceCountry.name}
                   size="lg"
-                  hoverBlur={false}
-                  priority={true}
                 />
                 <h2 className="text-3xl font-bold text-white">{inputs.countryName}</h2>
               </div>

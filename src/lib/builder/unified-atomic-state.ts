@@ -679,12 +679,18 @@ export class UnifiedAtomicStateManager {
   }
 
   private startRealTimeUpdates() {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
     // Update metrics every 30 seconds
     this.updateInterval = setInterval(() => {
       this.updateRealTimeMetrics();
       this.updatePerformanceAnalytics();
       this.notifyListeners();
     }, 30000);
+    if (this.updateInterval?.unref) {
+      this.updateInterval.unref();
+    }
   }
 
   private notifyListeners() {

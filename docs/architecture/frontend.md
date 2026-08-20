@@ -1,122 +1,167 @@
 # Frontend Architecture
 
-**Last updated:** June 2026
+**Framework**: Next.js 16.3.0 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 5.9.3  
+**Design System**: **Facet** (Refraction, Depth Hierarchy, Tactile Feedback)  
+**Location**: `src/app/` (210+ routes) · `src/components/` (750+ UI components) · `src/hooks/` (90+ custom hooks)
 
-The frontend is built entirely on the Next.js 16.2.9 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (750+ components, 210+ page routes).
+---
 
-## Layout Composition
-- **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.
-- **Authentication-aware routing** – `src/app/page.tsx` switches between the splash page (`IxStatsSplashPage.tsx`) and the signed-in command center (`EnhancedCommandCenter.tsx`) using the Clerk-backed `useUser` hook.
-- **Dynamic segments** – Features such as countries, settings, and wiki content use nested routes in `src/app/countries`, `src/app/settings`, and `src/app/wiki`.
+## 1. App Router & Layout Architecture
 
-## Component Layers
-- **Design System (`src/components/ui`)** – Buttons, cards, dialogs, badges, and Apple-style carousel components that power the **Facet** (glass/refraction) theme.
-- **Domain Widgets (`src/components/*`)** – Intelligence dashboards, diplomatic feeds, economic charts, and compliance modals. Components are grouped by domain to encourage reuse.
-- **Feature Shells (`src/app/**/components`)** – Lightweight wrappers that stitch together UI primitives and data hooks for specific pages.
+The frontend is structured around Next.js App Router conventions with strong domain co-location:
 
-## Modular Component Architecture
+```
+src/
+├── app/                              # Route tree & server layouts
+│   ├── layout.tsx                    # Root HTML document, fonts, Clerk provider, Halo wayfinding
+│   ├── page.tsx                      # Root route (splash vs signed-in command center)
+│   ├── mycountry/                    # Single-page executive command suite (/mycountry/*)
+│   ├── dashboard/                    # Signed-in executive overview & feed hub
+│   ├── vault/                        # IxVault (cards, packs, marketplace, credits)
+│   ├── thinkpages/                   # Social knowledge sharing & ThinkShare messaging
+│   ├── maps/                         # Interactive IxWorld map viewer (also maps.ixwiki.com)
+│   ├── countries/                    # Public Factbook country profiles (/countries/[slug])
+│   ├── builder/                      # Nation creation & editing wizard
+│   ├── labs/                         # Experimental suites (Onoma, Vexel)
+│   └── admin/                        # 50+ admin CMS interfaces (RBAC guarded)
+├── components/                       # Shared UI and domain presentation components
+│   ├── ui/                           # Base design primitives (buttons, dialogs, badges)
+│   ├── facet-ui/                     # Facet design system primitives (cards, tabs, containers)
+│   ├── mycountry/                    # MyCountry single-page hub & domain tabs
+│   ├── maps/                         # MapLibre GL core, editors, and vector overlays
+│   └── modals/                       # Standardized drill-down modals (BaseMetricDetailsModal)
+└── hooks/                            # Domain state, tRPC data queries, and sync engines
+```
 
-The codebase follows a strict modular architecture pattern for complex components, separating concerns into distinct layers:
+### Root Layout Providers (`src/app/layout.tsx`)
+1. **`ClerkProvider`**: Multi-tenant authentication context (optional in development demo mode).
+2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
+3. **`FacetThemeProvider`**: Theme context (dark/light, flag-ambient glow injection).
+4. **`HaloWayfinding`**: Global navigation overlay (`<Halo />`) providing contextual shortcuts and system status.
 
-### Layer Separation
-1. **Business Logic Layer** (`src/lib/*.ts`)
-   - Pure functions for calculations, transformations, validations
-   - No React dependencies
-   - Fully testable in isolation
-   - Examples: `synergy-calculator.ts`, `wiki-markup-parser.ts`, `tax-builder-validation.ts`
+---
 
-2. **State Management Layer** (`src/hooks/*.ts`)
-   - Custom React hooks for data fetching and state management
-   - Encapsulate tRPC queries and mutations
-   - Use React.useMemo for expensive computations
-   - Examples: `useEmbassyNetworkData.ts`, `useIntelligenceMetrics.ts`, `useTaxBuilderState.ts`
+## 2. The 4-Layer Modular Component Pattern
 
-3. **Presentation Layer** (`src/components/**/component-name/*.tsx`)
-   - Focused UI components with single responsibilities
-   - Optimized with React.memo to prevent unnecessary re-renders
-   - Barrel exports via `index.ts` for clean imports
-   - Examples: `embassy-network/`, `intelligence-briefing/`, `tax-builder/`
+To enforce maintainability and performance across 750+ components, complex views (>500 lines) are decomposed into four strict layers:
 
-4. **Orchestration Layer** (main component)
-   - Thin wrapper that composes hooks and UI components
-   - Minimal logic, primarily composition
-   - Clear, readable component structure
-   - Examples: `EnhancedEmbassyNetwork.tsx`, `EnhancedIntelligenceBriefing.tsx`
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ORCHESTRATION LAYER                      │
+│   Thin page/container wrapper (e.g. MyCountryRouter.tsx)    │
+└──────────────┬───────────────────────────────┬──────────────┘
+               │                               │
+               ▼                               ▼
+┌─────────────────────────────┐ ┌─────────────────────────────┐
+│     PRESENTATION LAYER      │ │    STATE MANAGEMENT LAYER   │
+│ Focused UI components       │ │ Custom domain React hooks   │
+│ Optimized with React.memo   │ │ Encapsulates tRPC & caching │
+│ (src/components/domain/*)   │ │ (src/hooks/use*Data.ts)     │
+└──────────────┬──────────────┘ └──────────────┬──────────────┘
+               │                               │
+               └───────────────┬───────────────┘
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    BUSINESS LOGIC LAYER                     │
+│ Pure TypeScript functions, math formulas, data transforms   │
+│ Zero React dependencies, 100% testable (src/lib/*.ts)       │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### Refactoring Pattern
-Large monolithic components (>1000 lines) are refactored into modular architectures:
-- Extract business logic to `src/lib/` utilities
-- Create custom hooks in `src/hooks/` for state management
-- Split UI into focused components under `src/components/domain/feature/`
-- Optimize all components with React.memo
-- Add comprehensive JSDoc documentation
+### Layer Rules & Responsibilities:
+1. **Business Logic Layer (`src/lib/*.ts`)**: Pure functions (e.g. `synergy-calculator.ts`, `wiki/bridge.ts`, `ixtime.ts`). Never import React or UI elements.
+2. **State Management Layer (`src/hooks/*.ts`)**: Custom hooks that query tRPC, manage optimistic updates, and wrap timers (e.g. `useUnifiedFlags.ts`, `useNationalIdentityState.ts`).
+3. **Presentation Layer (`src/components/domain/*`)**: Reusable UI components styled with Facet tokens. Memoized with `React.memo` to prevent unnecessary re-renders.
+4. **Orchestration Layer (`src/app/**/page.tsx`)**: Composes hooks and UI components with minimal inline logic.
 
-This pattern has been successfully applied to:
-- `EnhancedIntelligenceBriefing` (2,724 → 445 lines, 83.7% reduction)
-- `TaxBuilder` (1,851 → 567 lines, 69.4% reduction)
-- `EnhancedEmbassyNetwork` (402 → 103 lines, 74.4% reduction)
+---
 
-### Benefits
-- **Maintainability**: Clear separation of concerns, single responsibility principle
-- **Reusability**: Hooks and utilities can be shared across features
-- **Testability**: Each layer can be tested independently
-- **Performance**: React.memo prevents unnecessary re-renders
-- **Readability**: Main components are simple orchestrators
-- **Type Safety**: TypeScript interfaces distributed across modules
+## 3. Single-Page Router Architecture
 
-## Single-Page Router Pattern (February 2026)
+Major platform pillars use the **Single-Page Router Pattern** for instantaneous sub-navigation without Next.js route transition delays:
 
-Major sections use a client-side routing pattern for instant, SPA-like navigation while retaining Next.js App Router structure:
+```tsx
+// Pattern: Single-Page Hub Controller
+export function MyCountryRouter() {
+  const [activeSection, setActiveSection] = useState<MyCountrySection>("overview");
 
-- A central `*Router.tsx` component manages section state via `useState`
-- URL synchronization via `window.history.pushState()` (bypasses Next.js route transitions)
-- All sub-page `page.tsx` files render the same Router component
-- `popstate` listener enables browser back/forward navigation
+  // Sync with browser URL without full Next.js page unmount
+  const navigateTo = useCallback((section: MyCountrySection) => {
+    setActiveSection(section);
+    window.history.pushState(null, "", `/mycountry/${section}`);
+  }, []);
 
-| Router | Location | Sections |
-|--------|----------|----------|
-| `MyCountryRouter` | `src/components/mycountry/MyCountryRouter.tsx` | Overview, Executive, Diplomacy, Intelligence, Defense |
-| `VaultRouter` | `src/components/vault/VaultRouter.tsx` | Dashboard, Cards, Acquire, Create, Import |
-| `ThinkPagesRouter` | `src/components/thinkpages/ThinkPagesRouter.tsx` | Feed, ThinkTanks, ThinkShare |
-| `DashboardRouter` | `src/components/dashboard/DashboardRouter.tsx` | Main, Diplomacy, Feed, Trends |
+  return (
+    <MyCountrySidebarLayout activeSection={activeSection} onNavigate={navigateTo}>
+      {activeSection === "overview" && <OverviewSection />}
+      {activeSection === "executive" && <ExecutiveSection />}
+      {activeSection === "diplomacy" && <DiplomacySection />}
+      {activeSection === "defense" && <DefenseSection />}
+      {activeSection === "politics" && <PoliticsSection />}
+    </MyCountrySidebarLayout>
+  );
+}
+```
 
-**Supporting Infrastructure:**
-- `*SidebarNav` - Dual-mode navigation (controlled via props or uncontrolled via pathname)
-- `*SidebarLayout` - Shared responsive grid (`lg:grid-cols-4`)
-- Sidebar widgets per section (Executive, Diplomacy, Defense)
-- `BaseMetricDetailsModal` with 4-tab drill-down system
+### Active Hub Routers:
+| Router | Location | Sub-Sections |
+| :--- | :--- | :--- |
+| **`MyCountryRouter`** | [`src/components/mycountry/MyCountryRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx) | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
+| **`VaultRouter`** | [`src/components/vault/VaultRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/vault/VaultRouter.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
+| **`ThinkPagesRouter`**| [`src/components/thinkpages/ThinkPagesRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/thinkpages/ThinkPagesRouter.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
+| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/dashboard/DashboardRouter.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
 
-## Hooks Library
+---
 
-107+ custom hooks in `src/hooks/` organized by domain:
-- **Builder/Sync**: `useAtomicEconomicBuilder`, `useBuilderAutoSync`, `useGovernmentAutoSync`, `useTaxSystemAutoSync`
-- **Data**: `useEconomicComponentsData`, `useGovernmentComponentsData`, `useEconomyData`, `useFiscalData`
-- **Flags**: `useFlag`, `useSimpleFlag`, `useUnifiedFlags`, `useCountryFlags`, `useBulkFlagCache`
-- **Intelligence**: `useIntelligenceData`, `useIntelligenceMetrics`, `useRealTimeIntelligence`
-- **Diplomatic**: `useDiplomaticOperations`, `useDiplomaticScenarios`, `useEmbassyNetworkData`
-- **Vault**: `useVaultBalance`, `useVaultStats`, `useCollections`, `useDailyBonus`, `useEarnCredits`
-- **UI**: `useMetricDetailsModal`, `usePageTitle`, `useRelativeTime`, `useAmbientImage`
+## 4. Facet Design System & Styling Rules
 
-## Styling & Theming
-- Tailwind CSS 4 with `prettier-plugin-tailwindcss` ensures consistent class ordering.
-- **Facet & Depth**: Dark/light mode friendly gradients, blur, and depth levels are implemented via utility classes and helper components.
-- **GPU Acceleration**: High-performance rendering components utilize `.force-gpu` promotion styles (`transform: translate3d(0,0,0)` and `backface-visibility: hidden`) to promote glows and animated containers to independent hardware compositor layers, preventing browser micro-stuttering.
-- **Rack-Focus Transitions**: Layout shifts and visual swapping jumps are resolved using a custom two-stage animation state machine (`hidden` -> `blurring` -> `focusing` -> `visible`) that fades/blurs out active data, swaps content while fully hidden, and then focuses/scales the new text back into view.
-- **Page Loading Blurs**: App page load states employ custom layout wrappers that apply standard CSS filters (`filter: blur(10px)`) to blur children dynamically without breaking layout flow.
-- **Iconography**: Uses `lucide-react`, with icons imported per use to minimise bundle size.
+The platform UI is built on **Facet** — a tactile, refraction-based design language:
 
-## State & Data Fetching
-- **tRPC React Query** – The `api` client from `src/trpc/react.tsx` wraps hooks like `api.countries.getByIdWithEconomicData.useQuery()`.
-- **Custom hooks** – Domain hooks (e.g., `useMyCountryCompliance.ts`, `useUnifiedFlags.ts`) encapsulate derived state, timers, and formatting logic.
-- **Server Components** – Data-heavy sections such as leaderboards and dashboard cards leverage server components for hydration efficiency when feasible.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FACET DEPTH HIERARCHY                    │
+├─────────┬───────────────────┬───────────────────────────────┤
+│ Depth 1 │ Surface Base      │ Flat cards, subtle borders    │
+│ Depth 2 │ Raised Widget     │ Interactive cards, metrics    │
+│ Depth 3 │ Floated Overlay   │ Dropdowns, tooltips, popovers │
+│ Depth 4 │ Modal / Dialog    │ High blur, prominent shadow   │
+└─────────┴───────────────────┴───────────────────────────────┘
+```
 
-## Performance Considerations
-- Turbopack dev server (`bun run dev`) — Next.js 16 defaults to Turbopack.
-- Lazy loading via dynamic imports for large visualisations and modals.
-- Shared chart utilities (`src/lib/chart-utils.ts`) to standardise formatting and avoid duplicate logic.
+### Key UI Primitives:
+- **`FacetCard`** (`src/components/facet-ui/FacetCard.tsx`): Container with depth levels (`depth={1..4}`), subtle refraction borders, and optional flag ambient glow.
+- **`FacetTabs`** (`src/components/facet-ui/FacetTabs.tsx`): Spring-physics tab bar with sliding sheen indicator (`tone: "neutral" | "accent" | "mycountry" | "forum" | "sdi"`).
+- **`BaseMetricDetailsModal`** (`src/components/modals/metric-details/BaseMetricDetailsModal.tsx`): Universal 4-tab drilldown modal (Overview, Trends, Comparison, Details).
 
-## Testing & Storytelling
-- Jest tests cover critical components and routers; add component-level tests under `tests/` when expanding UI.
-- Use the in-app help articles as living UX documentation; each major UI module should link to its help article for product alignment.
+### Styling Best Practices:
+1. **Tailwind CSS v4**: Configured via CSS `@theme` tokens. Avoid legacy Tailwind v3 JavaScript configs.
+2. **GPU Promotion**: Use `.force-gpu` (`transform: translate3d(0,0,0); backface-visibility: hidden;`) on heavy animated glows and map overlays to offload composition to the GPU.
+3. **No Unicoded Regex Stripping**: Always use the `/u` flag in regex expressions to avoid stripping Latin ASCII characters when parsing emojis.
 
-Keep this guide aligned with structural changes (e.g., new design primitives, layout conventions, or state management patterns).
+---
+
+## 5. Universal State & Sync Hooks
+
+Form builders and country editors use the canonical auto-sync engine:
+
+```tsx
+import { useGenericAutoSync } from "~/hooks/useGenericAutoSync";
+
+export function useMyBuilderAutoSync(countryId: string, initialData: FormData) {
+  const updateMutation = api.myDomain.update.useMutation();
+
+  return useGenericAutoSync(initialData, {
+    enabled: !!countryId,
+    debounceMs: 2000,
+    syncFn: async (dataToSync) => {
+      return await updateMutation.mutateAsync({ countryId, data: dataToSync });
+    },
+  });
+}
+```
+
+### Canonical Hook Directory:
+- **Flags**: `useFlag`, `useUnifiedFlags` (`src/hooks/useUnifiedFlags.ts`) — single source of truth for country flag URLs and SVG badge rendering.
+- **Auto-Sync**: `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`) — universal debounced autosave engine.
+- **Notifications**: `useNotify` (`src/hooks/useNotify.ts`) — standardized toast and status messages.
+- **Media / Wiki**: `useWikiProfile` (`src/hooks/useWikiProfile.ts`) — cached MediaWiki infobox extraction.

@@ -10,7 +10,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import NumberFlow from "~/components/ui/number-flow";
-import { useSimpleFlag } from "~/hooks/useSimpleFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 
 // Subcomponents
 import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
@@ -84,7 +84,7 @@ export default function AchievementsPage() {
   );
   const globalRank = rankIndex !== undefined && rankIndex !== -1 ? rankIndex + 1 : 0;
 
-  const { flagUrl: simpleFlagUrl } = useSimpleFlag(userProfile?.country?.name);
+  const { flagUrl: simpleFlagUrl } = useFlag(userProfile?.country?.name);
   const country = userProfile?.country;
   const countryFlagUrl =
     (country && "flagUrl" in country && typeof country.flagUrl === "string" ? country.flagUrl : null) ??

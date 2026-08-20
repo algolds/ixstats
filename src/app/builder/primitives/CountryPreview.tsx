@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { DollarSign, Activity, BarChart } from "lucide-react";
-import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
 import { getEconomicTier } from "../lib/economy-data-service";
 import { formatNumber } from "../utils/country-selector-utils";
@@ -78,11 +78,9 @@ export function CountryPreview({ country, size = "large" }: CountryPreviewProps)
       {!isSmall && (
         <div className="mb-6 text-center">
           <div className="mb-3 flex h-auto w-full justify-center">
-            <EnhancedCountryFlag
+            <UnifiedCountryFlag
               countryName={country.name}
               size="xl"
-              hoverBlur={false}
-              priority={true}
             />
           </div>
           <h4 className="mb-1 text-xl font-bold text-[var(--color-text-primary)]">

@@ -117,5 +117,6 @@ export function useGenericAutoSync<TData extends object, TResult = unknown, TErr
   return {
     ...syncState,
     forceSync,
+    triggerSync: forceSync,
   };
 }

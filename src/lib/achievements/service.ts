@@ -95,9 +95,15 @@ export class AchievementService {
   }
 
   private startWorker() {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
     this.workerInterval = setInterval(async () => {
       await this.processNextQueueItem();
     }, 1000);
+    if (this.workerInterval?.unref) {
+      this.workerInterval.unref();
+    }
   }
 
   private async processNextQueueItem() {
@@ -455,28 +461,40 @@ export class AchievementService {
             }
 
             // Create UserAchievement record (references Achievement.key)
-            await db.userAchievement.create({
-              data: {
-                userId,
-                achievementId: achievement.key,
-                title: achievement.title,
-                description: achievement.description,
-                category: achievement.category,
-                rarity: achievement.rarity,
-                iconUrl: achievement.iconUrl,
-                metadata: JSON.stringify({
-                  points: achievement.points,
-                  unlockedAt: new Date().toISOString(),
-                  titles,
-                  rewards: {
-                    credits: creditReward,
-                    cardIds,
-                    packIds,
+            try {
+              await db.userAchievement.create({
+                data: {
+                  userId,
+                  achievementId: achievement.key,
+                  title: achievement.title,
+                  description: achievement.description,
+                  category: achievement.category,
+                  rarity: achievement.rarity,
+                  iconUrl: achievement.iconUrl,
+                  metadata: JSON.stringify({
+                    points: achievement.points,
+                    unlockedAt: new Date().toISOString(),
                     titles,
-                  },
-                }),
-              },
-            });
+                    rewards: {
+                      credits: creditReward,
+                      cardIds,
+                      packIds,
+                      titles,
+                    },
+                  }),
+                },
+              });
+            } catch (createErr: any) {
+              if (
+                createErr?.code === "P2002" ||
+                createErr?.message?.includes("Unique constraint") ||
+                createErr?.statusCode === 409
+              ) {
+                // Already unlocked by concurrent request — skip duplicate unlock
+                continue;
+              }
+              throw createErr;
+            }
 
             unlocked.push(achievement.key);
             console.log(`[Achievement Service] Unlocked: ${achievement.title} for user ${userId}`);
@@ -623,28 +641,41 @@ export class AchievementService {
         }
       }
 
-      await db.userAchievement.create({
-        data: {
-          userId,
-          achievementId: achievement.key,
-          title: achievement.title,
-          description: achievement.description,
-          category: achievement.category,
-          rarity: achievement.rarity,
-          iconUrl: achievement.iconUrl,
-          metadata: JSON.stringify({
-            points: achievement.points,
-            unlockedAt: new Date().toISOString(),
-            titles,
-            rewards: {
-              credits: creditReward,
-              cardIds,
-              packIds,
+      let userAchievement;
+      try {
+        userAchievement = await db.userAchievement.create({
+          data: {
+            userId,
+            achievementId: achievement.key,
+            title: achievement.title,
+            description: achievement.description,
+            category: achievement.category,
+            rarity: achievement.rarity,
+            iconUrl: achievement.iconUrl,
+            metadata: JSON.stringify({
+              points: achievement.points,
+              unlockedAt: new Date().toISOString(),
               titles,
-            },
-          }),
-        },
-      });
+              rewards: {
+                credits: creditReward,
+                cardIds,
+                packIds,
+                titles,
+              },
+            }),
+          },
+        });
+      } catch (createErr: any) {
+        if (
+          createErr?.code === "P2002" ||
+          createErr?.message?.includes("Unique constraint") ||
+          createErr?.statusCode === 409
+        ) {
+          // Already created concurrently — return false
+          return false;
+        }
+        throw createErr;
+      }
 
       // Award credits (EARN_BONUS — uncapped; one-time per achievement)
       if (creditReward > 0) {

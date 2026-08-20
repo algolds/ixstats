@@ -30,6 +30,7 @@ function enabled(): boolean {
  */
 export async function resolveNeighbors(countryId: string, db: PrismaClient): Promise<Neighbor[]> {
   if (!enabled()) return [];
+  if (!db || typeof (db as any).mapLayer?.findFirst !== "function") return [];
 
   const cached = cache.get(countryId);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.value;

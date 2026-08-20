@@ -1,8 +1,5 @@
-// src/hooks/useFiscalData.ts
-
 import { useState, useMemo, useCallback } from "react";
 import type { FiscalSystemData } from "~/types/economics";
-import { calculateBudgetHealth } from "~/app/countries/_components/economy/utils";
 import {
   recalculateFiscalData,
   generateRevenueChartData,
@@ -13,6 +10,20 @@ import {
   type SpendingDataItem,
   type FiscalMetric,
 } from "~/lib/economy/fiscal-calculations";
+
+function calculateBudgetHealth(fiscalData: { budgetDeficitSurplus?: number; nominalGDP?: number }): {
+  color: string;
+  label: string;
+} {
+  const deficit = fiscalData.budgetDeficitSurplus || 0;
+  const gdp = fiscalData.nominalGDP || 1;
+  const deficitPercent = (deficit / gdp) * 100;
+
+  if (deficitPercent > 1) return { color: "text-green-600", label: "Surplus" };
+  if (deficitPercent > -2) return { color: "text-blue-600", label: "Balanced" };
+  if (deficitPercent > -5) return { color: "text-yellow-600", label: "Moderate Deficit" };
+  return { color: "text-red-600", label: "High Deficit" };
+}
 
 /**
  * Props for useFiscalData hook

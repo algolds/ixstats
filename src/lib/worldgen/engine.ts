@@ -26,6 +26,7 @@ import { placeSettlements } from "./settlements";
 import { generateStates } from "./states";
 import { validateAndRepair } from "./validate";
 import { exportToGeoJSON } from "./export-geojson";
+import { sampleIxWorldTemplate } from "./ixworld-template";
 
 import { generateWorld as generateWorldV2 } from "./v2";
 
@@ -63,7 +64,6 @@ export function generateWorld(
   let template: Uint8Array | null = null;
   if (params.useIxWorldTemplate) {
     report("template", 15, "Sampling IxWorld base template...");
-    const { sampleIxWorldTemplate } = require("./ixworld-template");
     template = sampleIxWorldTemplate(graph);
     report("template", 17, "IxWorld base template sampled");
   }

@@ -12,7 +12,7 @@ import {
   CLIMATE_NAMES,
   CLIMATE_COLORS,
   type IxWorldClimate,
-} from "~/lib/procedural-archive/climate-system";
+} from "~/lib/worldgen/climate-system";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [

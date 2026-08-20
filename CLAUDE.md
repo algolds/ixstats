@@ -194,3 +194,11 @@ Current release: **IxStates 1.1.1 "Ogma"** (channel: Alpha). Version source of t
 - **API endpoints**: iiwiki = `https://iiwiki.com/api.php` (NOT `/mediawiki/api.php` — that 404s), althistory = `https://althistory.fandom.com/api.php`, ixwiki = local MariaDB (db `ixwiki`, no table prefix) or `https://ixwiki.com/api.php`.
 - **MW 1.43–1.45 schema**: `categorylinks`/`templatelinks` are normalized — the title lives in `linktarget` (`lt_id`/`lt_title`); join via `*_target_id`. There is no `cl_to`/`tl_title`.
 - **Typed name extraction**: to get pages of a given type, list pages transcluding the relevant `Infobox_*` template — SQL `templatelinks→linktarget` locally, or API `list=embeddedin&eititle=Template:Infobox_country` remotely.
+
+## Scripts & Reusable Tooling
+
+- Active build, setup, and audit tooling is cataloged in [`scripts/README.md`](file:///home/jxsig/projects/ixstats/scripts/README.md).
+- **Historical Migrations & Backfills Archive** ([`scripts/archive/migrations/`](file:///home/jxsig/projects/ixstats/scripts/archive/migrations/)): Reusable ETL scripts (`migrate-messages-to-thinkshare.ts`, `backfill-vault-effects.ts`, `sync-wiki-flags.ts`, `setup-system-owner-access.ts`, `generate-country-slugs.ts`) preserved for future bulk data transformations.
+- **GIS Tools & Spatial Calculators Archive** ([`scripts/archive/gis_tools/`](file:///home/jxsig/projects/ixstats/scripts/archive/gis_tools/)): Spatial math algorithms (`country-geo-report.ts`, `align-political-to-terrain.ts`, `calculate-scale-factor.ts`, `rebuild-adjacency.ts`, `reprocess-icecaps.ts`) for geometry and projection analysis.
+
+

@@ -180,6 +180,10 @@ export class IxTimeSyncManager {
     // Update master state (works in both browser and server)
     await this.updateMasterState();
 
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
+
     // Network sync only works server-side (localhost targets aren't reachable from browser)
     if (!this.isBrowser) {
       await this.syncAllTargets();
@@ -192,6 +196,9 @@ export class IxTimeSyncManager {
         await this.syncAllTargets();
       }
     }, 15000); // Check every 15 seconds
+    if (this.syncInterval && typeof (this.syncInterval as any).unref === "function") {
+      (this.syncInterval as any).unref();
+    }
 
     console.log("[IxTime Sync] Synchronization manager started");
   }

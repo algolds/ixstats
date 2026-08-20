@@ -49,7 +49,7 @@ import {
   Line,
   ComposedChart,
 } from "recharts";
-import { formatCurrency, formatPercentage, formatPopulation } from "./utils";
+import { formatCurrency, formatPercent as formatPercentage, formatPopulation } from "~/lib/utils";
 import type {
   CountryEconomicSummary,
   EconomicYearData,

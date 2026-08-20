@@ -1,4 +1,7 @@
 export async function getGlobalLLMConfig(prisma: any) {
+  if (!prisma || typeof prisma.systemConfig?.findMany !== "function") {
+    return undefined;
+  }
   try {
     const configs = await prisma.systemConfig.findMany({
       where: {

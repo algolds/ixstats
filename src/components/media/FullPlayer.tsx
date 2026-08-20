@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useIxMedia } from "~/hooks/useIxMedia";
+import { useIxMedia } from "./MediaContext";
 import { FacetModal } from "~/components/ui/facet-container";
 import { X, Play, Pause, SkipForward, SkipBack, Volume2, ListMusic, Gauge } from "lucide-react";
 import { WaveformVisualizer } from "./WaveformVisualizer";

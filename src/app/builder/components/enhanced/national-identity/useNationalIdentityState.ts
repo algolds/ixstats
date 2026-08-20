@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
-import { useNationalIdentityAutoSync } from "~/hooks/useNationalIdentityAutoSync";
 import type {
   EconomicInputs,
   RealCountryData,
@@ -118,17 +117,22 @@ export function useNationalIdentityState(
     [inputs.nationalIdentity, inputs.countryName]
   );
 
-  // Auto-sync DISABLED: this hook only ever runs inside the unified builder, where
-  // useBuilderState's updateCountry (1.5s) is the single writer and already persists
-  // nationalIdentity. This was a parallel partial-write side-channel that could race
-  // updateCountry and push a stale 15s-old identity snapshot to the DB. Identity now
-  // flows through builderState only. (enabled:false keeps the hook's shape intact.)
-  const autoSync = useNationalIdentityAutoSync(countryId, identity, {
-    enabled: false,
-    debounceMs: 15000,
-    onSyncSuccess: () => {},
-    onSyncError: () => {},
-  });
+  // Auto-sync is handled by parent useBuilderState (updateCountry).
+  const autoSync = {
+    syncState: {
+      isSyncing: false,
+      lastSyncTime: null,
+      pendingChanges: false,
+      conflictWarnings: [] as string[],
+      syncError: null,
+      optimistic: false,
+    },
+    syncNow: async () => {},
+    clearConflicts: () => {},
+    resetSyncState: () => {},
+    isEnabled: false,
+    showSuccessAnimation: false,
+  };
 
   // Sync local state with loaded identity data
   useEffect(() => {

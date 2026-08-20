@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { forwardRef, useEffect, useId, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
+import { clamp } from "~/lib/utils/math";
 
 const switchSizes = {
   sm: {
@@ -76,10 +77,6 @@ interface AppleSwitchProps extends Omit<
   /** @default "right" */
   labelSide?: "left" | "right";
 }
-
-const clamp = (value: number, min: number, max: number) => {
-  return Math.min(Math.max(value, min), max);
-};
 
 const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
   (

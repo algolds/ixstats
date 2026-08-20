@@ -59,6 +59,9 @@ export class IntelligenceBroadcastService {
       console.warn("Intelligence Broadcasting Service is already running");
       return;
     }
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") {
+      return;
+    }
 
     console.log("Starting Intelligence Broadcasting Service...");
     this.isRunning = true;
@@ -70,6 +73,9 @@ export class IntelligenceBroadcastService {
         console.error("Error in intelligence broadcasting:", error);
       });
     }, this.broadcastInterval);
+    if (this.intervalId && typeof (this.intervalId as any).unref === "function") {
+      (this.intervalId as any).unref();
+    }
 
     // Initial broadcast
     this.processBroadcasts().catch((error) => {

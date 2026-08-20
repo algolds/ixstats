@@ -162,6 +162,7 @@ export class MarketWebSocketServerInstance {
    * Pings each client every 30s; terminates if no pong within 35s.
    */
   private startHeartbeat(): void {
+    if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
     const PING_INTERVAL = 30_000;
 
     this.heartbeatInterval = setInterval(() => {

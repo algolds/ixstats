@@ -180,3 +180,38 @@ export function buildSharedVertexIndex(
 
   return sharedVertices;
 }
+
+/**
+ * Moves a shared vertex across all referenced geometries to a new position.
+ */
+export function moveSharedVertex<T extends Polygon | MultiPolygon>(
+  target: SharedVertexData,
+  to: Position,
+  features: Map<string, T>
+): Map<string, T> {
+  const updated = new Map<string, T>();
+
+  for (const [id, geom] of features.entries()) {
+    const cloned = JSON.parse(JSON.stringify(geom)) as T;
+    updated.set(id, cloned);
+  }
+
+  for (const ref of target.featureRefs) {
+    const geom = updated.get(ref.featureId);
+    if (!geom) continue;
+
+    if (geom.type === "Polygon") {
+      const ring = geom.coordinates[ref.ringIndex];
+      if (ring && ring[ref.vertexIndex]) {
+        ring[ref.vertexIndex] = [to[0], to[1]];
+        // If it was the first vertex, also update closing vertex if closed
+        if (ref.vertexIndex === 0 && ring.length > 1) {
+          ring[ring.length - 1] = [to[0], to[1]];
+        }
+      }
+    }
+  }
+
+  return updated;
+}
+

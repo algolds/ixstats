@@ -18,10 +18,51 @@ function TooltipProvider({
   );
 }
 
-function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+interface TooltipProps extends React.ComponentProps<typeof TooltipPrimitive.Root> {
+  content?: React.ReactNode;
+  shortcut?: string;
+  side?: "top" | "right" | "bottom" | "left";
+  sideOffset?: number;
+  contentClassName?: string;
+}
+
+function Tooltip({
+  children,
+  content,
+  shortcut,
+  side,
+  sideOffset = 4,
+  contentClassName,
+  ...props
+}: TooltipProps) {
+  // If content is passed as a prop, render full compound structure automatically
+  if (content !== undefined) {
+    return (
+      <TooltipProvider>
+        <TooltipPrimitive.Root data-slot="tooltip" {...props}>
+          <TooltipPrimitive.Trigger asChild data-slot="tooltip-trigger">
+            {typeof children === "string" ? <span>{children}</span> : (children as React.ReactElement)}
+          </TooltipPrimitive.Trigger>
+          <TooltipContent side={side} sideOffset={sideOffset} className={contentClassName}>
+            <div className="flex items-center gap-2">
+              <span>{content}</span>
+              {shortcut && (
+                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded px-1.5 font-mono text-[10px] font-medium opacity-100">
+                  {shortcut}
+                </kbd>
+              )}
+            </div>
+          </TooltipContent>
+        </TooltipPrimitive.Root>
+      </TooltipProvider>
+    );
+  }
+
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root data-slot="tooltip" {...props}>
+        {children}
+      </TooltipPrimitive.Root>
     </TooltipProvider>
   );
 }
@@ -32,7 +73,7 @@ function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimiti
 
 function TooltipContent({
   className,
-  sideOffset = 0,
+  sideOffset = 4,
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
@@ -43,7 +84,7 @@ function TooltipContent({
         sideOffset={sideOffset}
         className={cn(
           "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          "z-[150000] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-lg px-3 py-2 text-xs text-balance",
+          "z-[150000] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-lg px-3 py-1.5 text-xs text-balance",
           "bg-popover text-popover-foreground border-border/60 border shadow-md",
           className
         )}

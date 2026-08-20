@@ -1,163 +1,144 @@
-# IxStates (IxStats) Documentation Hub
+# IxStates Documentation Hub
 
-The single index for all IxStates documentation. Guides are grouped by purpose so
-engineers, storytellers, and operators land in the right place. Version info comes from
-the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
+The authoritative index for all IxStates architecture, systems, operations, specifications, reference, and research. Version information is governed by the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Last refreshed August 2026 — **IxStates 1.3.0 "Ogma"** (Beta). Treat this structure as the source of truth.  
-> Working plans/PRDs/audits live in the gitignored root `plans/`; completed/historical docs live in [`archive/`](archive/).
+> Last refreshed August 2026 — **IxStates 1.1.1 "Ogma"** (Alpha), branch `v2`. Treat this structure as the source of truth.  
+> Active implementation plans live in [`plans/`](../plans/); historical completion records live in [`archive/`](archive/) and [`plans/archive/`](../plans/archive/).
 
-## Quick Links
+---
 
-- **System Status & Going Gold Audit** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
-- **Product overview** — [overview/platform.md](overview/platform.md)
-- **Versioning & releases** — [reference/revision.md](reference/revision.md)
-- **API catalog** — [reference/api-complete.md](reference/api-complete.md)
-- **Database models** — [reference/database.md](reference/database.md)
-- **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
-- **Deployment** — [operations/deployment.md](operations/deployment.md)
-- **Design system (Facet)** — [reference/facet-design-system.md](reference/facet-design-system.md)
-- **Maps system** — [systems/maps.md](systems/maps.md)
-- **WikiOS platform** — [systems/wikios.md](systems/wikios.md)
+## 🗺️ Quick Navigation
 
-## Overview
+- **Platform Overview** — [overview/platform.md](overview/platform.md)
+- **Master System Status & Going Gold Audit** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
+- **Statecraft Engine & Decision Simulator** — [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md)
+- **WikiOS Platform & Architecture** — [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md)
+- **Versioning & Release Architecture** — [reference/revision.md](reference/revision.md)
+- **API Catalog (90 Routers / 1,450+ Endpoints)** — [reference/api-complete.md](reference/api-complete.md)
+- **Database Schema Models** — [reference/database.md](reference/database.md)
+- **Facet Design System Specification** — [reference/facet-design-system.md](reference/facet-design-system.md)
+- **Maps & Geographic Engine (UPG v2)** — [systems/maps.md](systems/maps.md)
+- **Local Dev Setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
+- **Production Deployment** — [operations/deployment.md](operations/deployment.md)
 
-| Document | Summary |
+---
+
+## 🏛️ Architecture & Core Engineering
+
+| Document | Purpose & Scope |
 | --- | --- |
-| [overview/platform.md](overview/platform.md) | Product charter, personas, pillars, release positioning |
+| [architecture/frontend.md](architecture/frontend.md) | Next.js 16 App Router architecture, component layers, and Facet design rules |
+| [architecture/backend.md](architecture/backend.md) | tRPC router patterns, modular sub-routers, middleware, rate limiting, and auth context |
+| [architecture/data.md](architecture/data.md) | Prisma schema domains (15 schema files), PostGIS models, seeders, and data lifecycle |
+| [architecture/autosave.md](architecture/autosave.md) | Universal autosave engine (`useGenericAutoSync`), debounced delta sync, and conflict handling |
+| [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | IxWorld & Realms multi-tenant platform architecture and schema isolation |
+| [architecture/ts-graph-isolation.md](architecture/ts-graph-isolation.md) | TypeScript partitioned sub-project checks (`typecheck:ui`, `server`, `trpc`, `db`) and safe heap bounds |
+| [architecture/caching.md](architecture/caching.md) | Multi-tier caching architecture (in-memory layer-cache, Redis rate-limiting, WikiOS shadow store) |
 
-## Architecture
+---
 
-| Document | Summary |
+## ⚙️ Systems & Platform Pillars
+
+| System | Document | Scope & Architecture | Launch Status |
+| :--- | :--- | :--- | :---: |
+| **Status Audit** | [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md) | **Master System Status & Public Launch Readiness Matrix ("Going Gold")** | 📀 **Target: 1.0.0 GM** |
+| **Statecraft** | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | **Statecraft Philosophy** — Executive decision simulator vs spreadsheet simulation | 🥈 Release Candidate |
+| **Statecraft** | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | Statecraft closed game loops: Directives, Volatility, National Issues, Consequences | 🥈 Release Candidate |
+| **MyCountry** | [systems/mycountry.md](systems/mycountry.md) | Executive command suite (Command Surface v5, Statecraft Engine v4, Directives) | 🥈 Release Candidate |
+| **MyCountry** | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | **WikiOS Master Spec** — MediaWiki headless independence, PlateJS editor, Parsoid pipeline | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | WikiOS Stage 2b (Postgres dual-write) & Stage 3 (render-service isolation) | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) | WikiOS Stage 3 render-service configuration and deployment architecture | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | Multi-year WikiOS engine longevity and packaging workflow | 🥈 Release Candidate |
+| **Builder** | [systems/builder.md](systems/builder.md) | Nation creation wizard (Builder v3), atomic components, wiki cache | 🥈 Release Candidate |
+| **Economy** | [systems/economy.md](systems/economy.md) | Economic indicators, projections, tax system components, growth tiers | 🥈 Release Candidate |
+| **Calculations**| [systems/calculations.md](systems/calculations.md) | Mathematical formulas for economic modeling, ERI, PII, and synergies | 🥈 Release Candidate |
+| **Intelligence**| [systems/intelligence.md](systems/intelligence.md) | Intelligence feeds, vitality dashboard, threat forecasts, globalCache | 🥈 Release Candidate |
+| **Diplomacy** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, ThinkShare messaging, Concord v2 | 🥈 Release Candidate |
+| **Defense** | [systems/defense.md](systems/defense.md) | Defense posture, readiness scoring, military operations, equipment catalogs | 🥈 Release Candidate |
+| **Elections** | [systems/elections.md](systems/elections.md) | Elections, political parties, legislature, D'Hondt/FPTP simulation, hemicycle | 🥈 Release Candidate |
+| **NPC AI** | [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 🥈 Release Candidate |
+| **Crises** | [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 🥈 Release Candidate |
+| **Social** | [systems/social.md](systems/social.md) | ThinkPages v2, ThinkShare unified messaging, activity feeds, polls | 🥈 Release Candidate |
+| **Cards & Vault** | [systems/cards.md](systems/cards.md) · [systems/myvault.md](systems/myvault.md) | IxCards v2 & MyVault v2 UI — dynamic rarity, pack opening, crafting, store perks | 🥈 Release Candidate |
+| **IxCredits** | [systems/ixcredits.md](systems/ixcredits.md) | Virtual currency ledger, atomic conditional balance locks, passive income | 🥈 Release Candidate |
+| **NationStates**| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown | 🥈 Release Candidate |
+| **Achievements**| [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon awards, LoreWards, leaderboards | 🥈 Release Candidate |
+| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic CMS reference data, RBAC, audit logging | 📀 **Gold Master** |
+| **Help Center** | [systems/help.md](systems/help.md) | In-app help center architecture, 10 categories, authoring workflow | 📀 **Gold Master** |
+| **Forum** | [systems/forum.md](systems/forum.md) | XenForo forum integration (IxForum v1.3), BBCode transformation, IxnayID | 🥉 Beta |
+| **Maps** | [systems/maps.md](systems/maps.md) | IxWorld 1.2 & Atlas Engine v4: UPG v2 100k mesh, MapLibre GL, Realms platform | 🥈 Release Candidate |
+| **Map Editor** | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | Map editor architecture overview, performance and topology features | 🥈 Release Candidate |
+| **Halo** | [systems/halo.md](systems/halo.md) | **Halo v4** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
+| **MyLeague** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, lore competitions) | 🥉 Beta |
+| **Onoma** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) · [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🥈 Release Candidate |
+
+---
+
+## 📋 Formal Specifications & PRDs
+
+| Document | Scope |
 | --- | --- |
-| [architecture/frontend.md](architecture/frontend.md) | App Router layout, component layers, design-system guidelines |
-| [architecture/backend.md](architecture/backend.md) | tRPC patterns, middleware, rate limiting, auth context |
-| [architecture/data.md](architecture/data.md) | Prisma schema domains, migrations, seeders, data lifecycle |
-| [prevent_ts_graph_explosion.md](prevent_ts_graph_explosion.md) | TypeScript graph isolation (modular tsconfigs, cross-router import ban). Resolved in 1.0.6; enforced by `scripts/audit/audit-arch.ts` |
-| [AUTOSAVE_ARCHITECTURE.md](AUTOSAVE_ARCHITECTURE.md) | Autosave system architecture (map editor) |
-| [FRAMEWORK_SPEC.md](FRAMEWORK_SPEC.md) | IxWorld & Realms multi-tenant framework specification, creation studio, and data models |
+| [specs/vexel-prd.md](specs/vexel-prd.md) | **Vexel v1.0 PRD** — Heraldic symbol and coat-of-arms generator in IxLabs |
+| [specs/myleague-v1-prd.md](specs/myleague-v1-prd.md) | **MyLeague v1.0 PRD** — Comprehensive sports league and simulation engine requirements |
+| [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuilt specification |
+| [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbon award design specification |
 
-> Root-level [`arch.md`](../arch.md) is the agent-facing condensed version of the TS-graph architecture rules (referenced by `CLAUDE.md`).
+---
 
-## Systems & Launch Status
+## 🛠️ Operations & Development Processes
 
-| Document | Summary | Launch Status |
-| --- | --- | :---: |
-| [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md) | **Master System Status & Public Launch Readiness Audit ("Going Gold")** | 📀 **Target: 1.0.0 GM** |
-| [systems/mycountry.md](systems/mycountry.md) | Executive command suite (Command Surface v5, Statecraft Engine v4, Directives) | 🥈 Release Candidate |
-| [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 🥈 Release Candidate |
-| [systems/mycountry-v2-command-surface-plan.md](systems/mycountry-v2-command-surface-plan.md) | Command Surface transition record and single production surface reference | ✅ Completed |
-| [systems/community-feedback-audit.md](systems/community-feedback-audit.md) | Co-design audit (Urcea, Keaor, Burg, Heku) establishing the Statecraft Loop | 🥈 Release Candidate |
-| [systems/builder.md](systems/builder.md) | Nation creation wizard (Builder v3), atomic components, wiki cache | 🥈 Release Candidate |
-| [systems/economy.md](systems/economy.md) | Economic indicators, projections, tax system components, growth tiers | 🥈 Release Candidate |
-| [systems/calculations.md](systems/calculations.md) | Mathematical formulas for economic modeling, ERI, PII, and synergies | 🥈 Release Candidate |
-| [systems/intelligence.md](systems/intelligence.md) | Intelligence feeds, vitality dashboard, threat forecasts, globalCache | 🥈 Release Candidate |
-| [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, ThinkShare messaging, Concord v2 | 🥈 Release Candidate |
-| [systems/defense.md](systems/defense.md) | Defense posture, readiness scoring, military operations, equipment catalogs | 🥈 Release Candidate |
-| [systems/elections.md](systems/elections.md) | Elections, political parties, legislature, D'Hondt/FPTP simulation, hemicycle | 🥈 Release Candidate |
-| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 🥈 Release Candidate |
-| [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 🥈 Release Candidate |
-| [systems/social.md](systems/social.md) | ThinkPages v2, ThinkShare unified messaging, activity feeds, polls | 🥈 Release Candidate |
-| [systems/wikios.md](systems/wikios.md) | **WikiOS v1 Knowledge Platform** (PlateJS editor, Canvas v1, Parsoid, Narrator) | 🥈 Release Candidate |
-| [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon awards, LoreWards, leaderboards | 🥈 Release Candidate |
-| [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic CMS reference data, RBAC, audit logging | 📀 **Gold Master** |
-| [systems/help.md](systems/help.md) | In-app help center architecture, 10 categories, authoring workflow | 📀 **Gold Master** |
-| [systems/forum.md](systems/forum.md) | XenForo forum integration (IxForum v1.3), BBCode transformation, IxnayID | 🥉 Beta |
-| [systems/maps.md](systems/maps.md) | IxWorld 1.2 & Atlas Engine v4: UPG v2 100k mesh, MapLibre GL, Realms platform | 🥈 Release Candidate |
-| [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo v4** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
-| [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports simulation engine (7 sports, tactics, transfers) | 🥉 Beta |
-| [systems/myleague-lore-integration.md](systems/myleague-lore-integration.md) | MyLeague sports lore audit, canonical competition mapping, and gap analysis | 🥉 Beta |
-| [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) | Onoma v4 brand guide, linguistic engine philosophy, Pattern Depth abstraction | 🥈 Release Candidate |
-| [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) | Onoma v4 glyph system specification, 6 semantic domains, `<OnomaGlyph />` | 🥈 Release Candidate |
-| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro TTS double-engine) developer integration & testing guide | 🥈 Release Candidate |
-
-### IxVault
-
-| Document | Summary | Launch Status |
-| --- | --- | :---: |
-| [systems/cards.md](systems/cards.md) | IxCards v2 — card types, dynamic rarity, pack opening, crafting, junking | 🥈 Release Candidate |
-| [systems/myvault.md](systems/myvault.md) | MyVault v2 UI & economy hub, VaultRouter, level progression, config | 🥈 Release Candidate |
-| [systems/ixcredits.md](systems/ixcredits.md) | IxCredits virtual currency engine, passive dividends, daily caps, sinks | 🥈 Release Candidate |
-| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown | 🥈 Release Candidate |
-| [PREMIUM_FEATURES.md](PREMIUM_FEATURES.md) | Premium features matrix | 🥈 Release Candidate |
-
-## Operations
-
-| Document | Summary |
+| Document | Focus Area |
 | --- | --- |
-| [operations/local-dev-setup.md](operations/local-dev-setup.md) | WSL2 local dev setup, DB syncing, automation workflow |
-| [operations/deployment.md](operations/deployment.md) | Build pipeline, base paths, server scripts, rollback |
-| [operations/monitoring.md](operations/monitoring.md) | Logging, webhook alerts, runtime health checks |
-| [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |
-| [CREDENTIALS.md](CREDENTIALS.md) | Credential & secrets management |
-| [RATE_LIMITING_GUIDE.md](RATE_LIMITING_GUIDE.md) | Rate limiting config, Redis setup, endpoint protection |
+| [operations/local-dev-setup.md](operations/local-dev-setup.md) | Native Linux dev environment, DB syncing, Redis, and dev commands |
+| [operations/deployment.md](operations/deployment.md) | Standalone build output, basePath wrapper, PM2 process management, and health checks |
+| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Pre-flight and post-deployment checklist |
+| [operations/credentials.md](operations/credentials.md) | Credential and environment variables configuration |
+| [operations/rate-limiting.md](operations/rate-limiting.md) | Redis-backed rate limiting configuration and endpoint protection |
+| [operations/monitoring.md](operations/monitoring.md) | Logging, webhook alerts, disk space monitoring, and runtime health checks |
+| [processes/testing.md](processes/testing.md) | Jest testing strategy, typecheck partition gates, and test fixtures |
+| [processes/contributing.md](processes/contributing.md) | Code style, PR lifecycle, and branch conventions (`v2`) |
+| [processes/refactoring.md](processes/refactoring.md) | Modular architecture patterns, file size ceilings (≤700L), and router-split recipe |
+| [../scripts/README.md](../scripts/README.md) | **Active & Archived Scripts Catalog** — tooling, migration archives, and GIS calculators |
+| [audits/src-monolith-candidates.md](audits/src-monolith-candidates.md) | Large file refactoring tracker (>800 lines) |
 
-## Processes
+---
 
-| Document | Summary |
-| --- | --- |
-| [processes/testing.md](processes/testing.md) | Jest strategy, wiring audits, fixtures, automation |
-| [processes/contributing.md](processes/contributing.md) | Coding standards, review protocol, release cadence |
-| [processes/refactoring.md](processes/refactoring.md) | Modular architecture patterns, router-split recipe |
+## 📚 Reference Documentation
 
-## Reference
-
-| Document | Summary |
+| Document | Topic |
 | --- | --- |
 | [reference/api-complete.md](reference/api-complete.md) | Complete tRPC API catalog (90 routers, 1,450+ procedures) |
-| [reference/database.md](reference/database.md) | Prisma models, relations, derived views, data ownership |
-| [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions, Version Registry |
-| [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, colors, visual tokens |
-| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system tokens, depth, materials, refraction |
-| [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, scheduled jobs |
-| [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling and error scenarios |
-| [SYNERGY_REFERENCE.md](SYNERGY_REFERENCE.md) | Government component synergy system and interactions |
-| [ADMIN_ENDPOINT_SECURITY_MAP.md](ADMIN_ENDPOINT_SECURITY_MAP.md) | Admin endpoint security mappings & auth requirements |
-| [USER_PROFILE_UTILS_USAGE.md](USER_PROFILE_UTILS_USAGE.md) | User profile utilities & display-name implementation |
-| [EXTERNAL_API_CACHE.md](EXTERNAL_API_CACHE.md) | External API caching strategy |
-| [CACHE_INTEGRATION_EXAMPLE.md](CACHE_INTEGRATION_EXAMPLE.md) | Cache integration code examples |
+| [reference/database.md](reference/database.md) | Prisma models, relations, PostGIS extensions, and data ownership |
+| [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions |
+| [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, and visual tokens |
+| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system tokens, depth hierarchy, materials, refraction |
+| [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, and scheduled cron jobs |
+| [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling, error boundaries, and recovery scenarios |
+| [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
+| [reference/premium-features.md](reference/premium-features.md) | Premium tiers, perk mappings, and feature access |
+| [reference/synergies.md](reference/synergies.md) | Government and economic component synergy calculation tables |
+| [reference/user-profile-utils.md](reference/user-profile-utils.md) | User display name, avatar, and profile resolution utilities |
+| [reference/admin-endpoint-security-map.md](reference/admin-endpoint-security-map.md) | Admin endpoint security mappings & RBAC requirements |
 
-## Maps & World
+---
 
-| Document | Summary |
+## 🔬 Research & Player Feedback
+
+| Document | Topic |
 | --- | --- |
-| [systems/maps.md](systems/maps.md) | IxWorld map system (primary maps guide) |
-| [IXWORLD_OCEANOGRAPHY_REPORT.md](IXWORLD_OCEANOGRAPHY_REPORT.md) | Ocean basins, seas, currents, shipping routes, marine ecology |
-| [maps-1.1.md](maps-1.1.md) | Maps 1.1 core editing engine spec |
-| [design/territory-brush.md](design/territory-brush.md) | Territory brush design doc |
-| [design/province-generator.md](design/province-generator.md) | Province generator design doc |
-| [superpowers/specs/2026-06-15-unified-world-editor-design.md](superpowers/specs/2026-06-15-unified-world-editor-design.md) | Unified world editor design spec |
+| [research/community-feedback-analysis.md](research/community-feedback-analysis.md) | Player feedback analysis (Urcea, Burg, Keaor, Heku) establishing the Statecraft Loop |
+| [research/chatgpt-logs.md](research/chatgpt-logs.md) | Historical architectural synthesis and foundational game loops transcript |
+| [research/community-logs.md](research/community-logs.md) | Community discussion logs and playtesting feedback |
+| [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | Research spike on LLM-generated sports commentary and match tickers |
 
-## Voice & Speech (Onoma)
+---
 
-| Document | Summary |
-| --- | --- |
-| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro) developer integration & testing guide |
-| [superpowers/plans/2026-06-27-wikios-voice-narrator-plan.md](superpowers/plans/2026-06-27-wikios-voice-narrator-plan.md) | Implementation plan for WikiOS Article Narrator |
+## 🗄️ Historical Archive (`docs/archive/`)
 
-## Audits & Research
-
-| Document | Summary |
-| --- | --- |
-| [audits/AUDIT_2026-06.md](audits/AUDIT_2026-06.md) | V1 compliance audit (production-readiness review) |
-| [audits/AUDIT_2026-06-13.md](audits/AUDIT_2026-06-13.md) | Router refactor audit (patch 1.0.6) |
-| [audits/REFACTOR_PLAN_2026-06.md](audits/REFACTOR_PLAN_2026-06.md) | Plan behind the V1 compliance work |
-| [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | Research spike: sports LLM commentary |
-| [MyLeague_v1_PRD.md](MyLeague_v1_PRD.md) | MyLeague v1 product requirements |
-
-## Archive
-
-Completed implementation reports, historical audits, and retired guides live in
-[`archive/`](archive/) — kept for context, not maintained:
-
-- [`archive/v1/`](archive/v1/) — v1.0 historical docs and technical guides (80+ files)
-- [`archive/pre-consolidation/`](archive/pre-consolidation/) — pre-October-2025 state (incl. tax-system docs)
-- [`archive/`](archive/) — v1.1.x completion reports, security audits, performance benchmarks
-
-## Maintenance
-
-1. Update the relevant table here when adding, renaming, or archiving a doc.
-2. Update Markdown alongside code — feature-directory READMEs and the relevant system guide.
-3. Keep `/help` in sync with the system guides so in-app and repo guidance match.
-4. Retire docs to `archive/` instead of deleting them when a feature is removed.
-5. Keep the project root clean — only README, CHANGELOG, CLAUDE, AGENTS, arch.md, maps.md.
+Completed implementation plans, feature spike records, and legacy changelogs live in [`docs/archive/`](archive/):
+- **Superpowers Brainstorming Archive**: [`docs/archive/superpowers/`](archive/superpowers/) (25 plans and 67 design specs from June–August 2026 feature sprints).
+- **Design Spikes Archive**: [`docs/archive/design/`](archive/design/) (`province-generator.md`, `territory-brush.md`).
+- **Legacy Changelog**: [`docs/archive/CHANGELOG_PRE_OGMA.md`](archive/CHANGELOG_PRE_OGMA.md) (v0.9 to v2.2.0).
+- **Command Surface Migration Record**: [`docs/archive/mycountry-v2-command-surface-plan.md`](archive/mycountry-v2-command-surface-plan.md).
+- **Pre-UPG v2 Maps Spec**: [`docs/archive/maps-1.1.md`](archive/maps-1.1.md).

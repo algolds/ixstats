@@ -13,7 +13,7 @@ import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
 import { getCardImagePreset, getFallbackGradient, type CardImageType } from "~/lib/cards";
-import { useSimpleFlag } from "~/hooks/useSimpleFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
 
@@ -150,7 +150,7 @@ export function MetricCardGrid({
       { enabled: !!backgroundImage?.countryId }
     );
 
-  const { flagUrl: countryFlagUrl } = useSimpleFlag(backgroundImage?.countryName);
+  const { flagUrl: countryFlagUrl } = useFlag(backgroundImage?.countryName);
 
   const gridCols = {
     2: "grid-cols-1 sm:grid-cols-2",

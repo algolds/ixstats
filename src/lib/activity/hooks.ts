@@ -9,6 +9,9 @@ import { eventBus } from "~/lib/event-bus";
 
 // Helper to asynchronously queue achievement evaluation from activity hooks
 async function triggerAchievementCheck(countryId: string, eventName: string, userId?: string) {
+  if (!db || typeof (db as any).user?.findFirst !== "function") {
+    return;
+  }
   try {
     let activeUserId = userId;
     if (!activeUserId && countryId) {
@@ -410,6 +413,9 @@ export class EconomicActivityHooks {
     impactedPopulation: number,
     userId?: string
   ): Promise<void> {
+    if (!db || typeof (db as any).country?.findUnique !== "function") {
+      return;
+    }
     try {
       triggerAchievementCheck(countryId, "country:updated", userId).catch(console.error);
 

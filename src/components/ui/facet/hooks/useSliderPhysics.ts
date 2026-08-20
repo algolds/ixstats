@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRef, useEffect } from "react";
 import { useMotionValue, useSpring } from "motion/react";
+import { clamp } from "~/lib/utils/math";
 
 export interface SliderBounds {
   left: number;
@@ -30,10 +31,6 @@ const defaultIndicatorSpring = {
 const defaultGrabSpring = {
   stiffness: 400,
   damping: 22,
-};
-
-const clamp = (value: number, min: number, max: number) => {
-  return Math.min(Math.max(value, min), max);
 };
 
 export function useSliderPhysics({

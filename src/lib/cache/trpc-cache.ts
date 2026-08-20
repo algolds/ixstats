@@ -80,6 +80,7 @@ let cleanupInterval: NodeJS.Timeout | null = null;
 
 function startMemoryCacheCleanup() {
   if (cleanupInterval) return;
+  if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
 
   cleanupInterval = setInterval(() => {
     const now = Date.now();
@@ -96,6 +97,10 @@ function startMemoryCacheCleanup() {
       console.log(`[TRPC_CACHE] Cleaned up ${deleted} expired memory cache entries`);
     }
   }, 60 * 1000); // Clean up every minute
+
+  if (cleanupInterval?.unref) {
+    cleanupInterval.unref();
+  }
 }
 
 startMemoryCacheCleanup();

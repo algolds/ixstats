@@ -154,6 +154,9 @@ export async function generateDiplomaticNews(
   eventType: NewsEventType,
   context: NewsContext
 ): Promise<string | null> {
+  if (!db || typeof (db as any).thinkpagesAccount?.findFirst !== "function") {
+    return null;
+  }
   try {
     // Find the country's government or media ThinkPages account
     const account = await db.thinkpagesAccount.findFirst({

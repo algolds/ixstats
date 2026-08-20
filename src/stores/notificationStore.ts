@@ -21,12 +21,12 @@ import type {
   DeliveryMethod,
 } from "~/types/unified-notifications";
 
-import { generateSafeKey } from "~/app/mycountry/utils/keyValidation";
 import {
   calculateEnhancedPriority,
   categorizeNotification,
   optimizeDeliveryMethod,
   createSmartBatches,
+  generateSafeKey,
 } from "~/lib/notifications/optimization";
 
 interface NotificationState {

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { cn } from "~/lib/utils";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
-import { EnhancedTooltip } from "~/components/ui/enhanced-tooltip";
+import { Tooltip } from "~/components/ui/tooltip";
 import {
   useReactTable,
   getCoreRowModel,
@@ -120,11 +120,11 @@ function StandingsTableInner({
         id: "rank",
         accessorFn: (row) => row.rank,
         header: () => (
-          <EnhancedTooltip content="Rank / Seed">
+          <Tooltip content="Rank / Seed">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">
               POS
             </span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ row, getValue }) => {
           const val = getValue<number | undefined>();
@@ -166,65 +166,65 @@ function StandingsTableInner({
       {
         accessorKey: "wins",
         header: () => (
-          <EnhancedTooltip content="Wins">
+          <Tooltip content="Wins">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">W</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => getValue(),
       },
       {
         accessorKey: "losses",
         header: () => (
-          <EnhancedTooltip content="Losses">
+          <Tooltip content="Losses">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">L</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => getValue(),
       },
       {
         accessorKey: "draws",
         header: () => (
-          <EnhancedTooltip content="Draws">
+          <Tooltip content="Draws">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">D</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => getValue(),
       },
       {
         accessorKey: "points",
         header: () => (
-          <EnhancedTooltip content="Points">
+          <Tooltip content="Points">
             <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
               Pts
             </span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => <span className="font-bold">{getValue<number>()}</span>,
       },
       {
         accessorKey: "pointsFor",
         header: () => (
-          <EnhancedTooltip content="Points For (Goals/Points Scored)">
+          <Tooltip content="Points For (Goals/Points Scored)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">PF</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => getValue(),
       },
       {
         accessorKey: "pointsAgainst",
         header: () => (
-          <EnhancedTooltip content="Points Against (Goals/Points Allowed)">
+          <Tooltip content="Points Against (Goals/Points Allowed)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">PA</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         cell: ({ getValue }) => getValue(),
       },
       {
         id: "gamesPlayed",
         header: () => (
-          <EnhancedTooltip content="Games Played (Total matches played this season)">
+          <Tooltip content="Games Played (Total matches played this season)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">GP</span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         accessorFn: (row) => row.wins + row.losses + row.draws,
         cell: ({ getValue }) => getValue(),
@@ -232,11 +232,11 @@ function StandingsTableInner({
       {
         id: "difference",
         header: () => (
-          <EnhancedTooltip content="Point Differential (PF minus PA)">
+          <Tooltip content="Point Differential (PF minus PA)">
             <span className="decoration-border/60 cursor-help underline decoration-dotted">
               DIFF
             </span>
-          </EnhancedTooltip>
+          </Tooltip>
         ),
         accessorFn: (row) => row.pointsFor - row.pointsAgainst,
         cell: ({ getValue }) => {

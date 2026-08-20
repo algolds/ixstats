@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useMotionValue, useSpring, useTransform } from "motion/react";
+import { clamp } from "~/lib/utils/math";
 import {
   SPRING_PRESETS,
   DEFAULT_THRESHOLDS,
@@ -29,8 +30,6 @@ import {
 import type { SpringPreset, SwipeState, SwipeSide, SwipeThresholds } from "./types";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 function getDocDir(): "ltr" | "rtl" {
   if (typeof document === "undefined") return "ltr";
