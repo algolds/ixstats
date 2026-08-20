@@ -58,7 +58,7 @@ next-env.d.ts
 .tsbuild/
 
 # --------------------------------------------------------------------------------
-# System & IDE junk
+# System, IDE & AI Agent Workspaces
 # --------------------------------------------------------------------------------
 .DS_Store
 Thumbs.db
@@ -67,6 +67,30 @@ Thumbs.db
 *.swo
 .vscode/
 *.code-workspace
+.agents/
+.claude/
+.opencode/
+.superpowers/
+.cursor/
+.gemini/
+.copilot/
+.windsurf/
+.zed/
+.cline/
+.roo/
+.prompts/
+skills-lock.json
+opencode.json
+kokoro-cache/
+traces/
+AGENTS.md
+CLAUDE.md
+arch.md
+maps.md
+plans/
+ws-backend.mjs
+c15t-backend.config.ts
+typecheck-*.log
 
 # --------------------------------------------------------------------------------
 # Deployment
@@ -78,10 +102,12 @@ firebase-debug.log
 functions/node_modules/
 
 # --------------------------------------------------------------------------------
-# Testing
+# Testing & Mocks
 # --------------------------------------------------------------------------------
 coverage/
 test-results/
+jest-mocks/
+.jest/
 cypress/screenshots/
 cypress/videos/
 
@@ -144,9 +170,9 @@ scripts/world-roster-data.json
 # --------------------------------------------------------------------------------
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
-.claude/*
-!.claude/memory/
-!.claude/settings.json
+.claude/
+.agents/
+.superpowers/
 .antigravitycli/
 .antigravityignore
 .cursor/
@@ -227,3 +253,4 @@ scripts/onoma/raw/
 # Kokoro TTS Service local caches
 # --------------------------------------------------------------------------------
 kokoro-cache/
+scripts/merge-and-cleanup.ts
