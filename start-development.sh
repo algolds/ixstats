@@ -106,7 +106,7 @@ try {
 ' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Ogma\""')"
 
 BUN_VER=$(bun --version 2>/dev/null || echo "1.4.0")
-GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
+GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "development")
 GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "HEAD")
 
 # ------------------------------------------------------------------------------

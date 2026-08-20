@@ -17,9 +17,9 @@ fi
 if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     echo "🔄 Production VPS directory detected. Force-syncing with the latest git commit..."
     if command -v git &> /dev/null; then
-        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
+        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "development")
         if [ -z "$CURRENT_BRANCH" ]; then
-            CURRENT_BRANCH="v2"
+            CURRENT_BRANCH="development"
         fi
         echo "📄 Fetching $CURRENT_BRANCH from master and resetting --hard to FETCH_HEAD..."
         git fetch master "$CURRENT_BRANCH"
