@@ -15,119 +15,138 @@
 
 ---
 
-## What IxStates Actually Is
 
-Two perspectives. One persistent, living world.
-
-### 🏛️ For the Worldbuilder — A Nation That Breathes
+## For the Worldbuilder — A Nation That Breathes
 
 In traditional worldbuilding, lore is frozen in time. Numbers stay static until you manually edit them, and your civilization stops existing the moment you close the tab.
 
 **IxStates breaks the frozen lore barrier:**
 
 - **Continuous Simulation**: Design your country once in the **Builder**. From that moment forward, its economy hums, tax dividends compound, populations shift across provinces, and international trade balances evolve automatically.
-- **The World Clock (IxTime)**: The world advances on a configurable and dynamic timeline. Crises emerge, elections resolve, sports seasons advance, and articles happen organically and in realtime.
+- **Time is Everything (Temporal Engine)**: The universe breathes on a continuous timeline operating at 2x speed. Crises unfold, elections resolve, your economy grows or shrinks, and your stats organically sync in real time across the entire platform.
 - **Geography Is King**: Your nation is not an arbitrary shape on a flat image. It occupies real, physics-driven terrain on a 100,000-cell Voronoi mesh with tectonic elevations, Coriolis-modeled river networks, and 12 distinct climate biomes.
-- **Statecraft That Pushes Back**: You don’t just adjust stat sliders. You declare national **Directives**. Your Civil Service Capacity (CivCap) and domestic power brokers react—pushing back against radical mandates with legislative gridlock, economic friction, or civil unrest.
-
-### 💻 For the Engineer — An Integrated Simulation Micro-OS
-
-IxStates is engineered as a low-latency, modular micro-OS built for high-throughput computation and zero-drift persistence.
-
-- **Layered OS Architecture**:
-  - **Apps** (`IxWorld`, `WikiOS`, `IxVault`): Independent, high-polish user surfaces with dedicated product lifecycles.
-  - **Engines** (`MyCountry Engine`, `Concord`, `Atlas`): Headless simulation cores powering macroeconomics, living-world crises, NPC diplomacy, and procedural Voronoi spatial mathematics.
-  - **Core Systems** (`Command Surface`, `Builder`, `ThinkPages`, `Achievements`, `Halo`, `Onoma`): Interactive feature systems wired directly into the headless engines.
-- **Architectural Rigor**:
-  - **90 Domain-Split tRPC Routers**: Over 1,450 end-to-end typed procedures composed seamlessly via `mergeRouters`.
-  - **PostgreSQL + PostGIS Foundation**: 296 Prisma schemas powering atomic financial ledgers, spatial operations (`ST_Touches`), and immutable event logs (`CountryEventSpine`).
-  - **Automated Architecture Guard**: Continuous CI enforcement (`bun run audit:arch`) guaranteeing strict file ceilings ($\le 700$ lines) and preventing circular cross-router coupling.
+- **MyCountry**:  Take the helm of your country. You will face complex decisions, navigate international relations, and manage your country's resources to ensure the prosperity and security of your people. Your choices will shape the future of your nation and its place in the world. 
 
 ---
 
-## Core Feature Pillars
+## The Architecture
 
-```
-                                  ┌────────────────────────────────────────────────────────┐
-                                  │                        IXSTATES                        │
-                                  │         The Operating System for Worldbuilding         │
-                                  └───────────────────────────┬────────────────────────────┘
-                                                              │
-                    ┌─────────────────────────┬───────────────┴───────────────┬─────────────────────────┐
-                    ▼                         ▼                               ▼                         ▼
-         ┌────────────────────┐    ┌────────────────────┐          ┌────────────────────┐    ┌────────────────────┐
-         │      IXWORLD       │    │     MYCOUNTRY      │          │      WIKIOS        │    │      IXVAULT       │
-         │  Procedural Maps   │    │  Statecraft & Sim  │          │   Living Wiki &    │    │  Cards, Economy &  │
-         │  & Spatial Mesh    │    │  Executive Suite   │          │   Canvas Editor    │    │    Marketplace     │
-         └────────────────────┘    └────────────────────┘          └────────────────────┘    └────────────────────┘
-```
+IxStates is a layered micro-OS: three **Apps** are the end-user surfaces, four **Engines** run the simulation underneath them, and **Core Systems** wire the two together. Every mechanic sits on the same spine — one gameplay loop, one immutable ledger, one shared clock, one geographic source of truth.
 
-### 🌍 IxWorld — The Map, The Mesh, and The Editor
+### The Statecraft Loop — the gameplay grammar
 
-IxWorld unifies cartography, procedural generation, and spatial analytics into a single GPU-accelerated rendering stack (MapLibre GL JS):
+Domestic governance, diplomacy, and politics are the *same* loop — `IN → SEE → OUT → RIPPLE` — differing only in the counterparty and how commitments resolve:
 
-- **The Canonical World Map**: Converts hand-authored vector cartography through an automated pipeline (`svg-parser` $\to$ affine WGS84 transform $\to$ topology locking $\to$ GeoJSON compression) into seven live layers (rivers, lakes, icecaps, political borders, altitudes, climate, and background). Hydrology and topology render with deterministic layering above sovereign borders. Deployable standalone as **IxMaps** (`maps.ixwiki.com`).
-- **Procedural Realms Engine (Atlas / UPG v2)**: World generation from pure mathematics. Simulates tectonic plate collisions, coastal hypsometric damping, Coriolis precipitation, and 12-biome Trewartha climate classification across 100,000 Voronoi cells, smoothed with 4-pass Catmull-Rom spline subdivision ($\tau=0.5$).
-- **In-App Map Editor**: Professional in-browser cartography suite featuring contextual tools (vector border editing with vertex snapping, province population painters, POI placement, and trade route routing) plus a spatial analyzer that computes actual geographic records (tallest peak, longest river, primary biome) directly from terrain mesh geometry.
+| Beat | Domestic | Diplomacy | Politics |
+| :--- | :--- | :--- | :--- |
+| **IN** (stimulus) | National issue | Foreign overture / threat | Bill / coalition demand |
+| **SEE** (recon) | Minister's minutes | Ambassador's cable | Whip count |
+| **OUT** (commit) | Policy | Foreign policy / treaty | Bill vote |
+| **Resolves by** | Executive fiat | Foreign consent | Legislative vote |
 
----
+Play is two verbs — *See* (pay to look) and *Commit* (pay to act) — spent against three heterogeneous levers: **Capacity** (a *rate*: civil-service bandwidth), **Treasury** (a *stock*: the actual budget), and **Mandate** (a *standing*: legitimacy you risk, which abroad becomes Influence & Reputation). Over-extending Capacity or low government efficiency triggers **Information Fog** — the engine *never lies*, it withholds or qualifies (the *never-lie contract*), masking precise effects behind qualitative risk bands rather than fabricated numbers.
 
-### 🏛️ MyCountry Suite — The Executive Desk
+### The Canonical Loop — Action → World Effect → Narrative → Ledger
 
-A single, unified Command Surface replaces fragmented menus with an authentic executive desk centered around **Directives**:
+Every commitment produces a **bounded, clamped** world-state change, an automatic narrative headline on ThinkPages, and an immutable ledger row via the `CountryEventSpine` dispatcher. Stat changes are capped by the 7-tier growth engine, recorded through `VaultTransaction` double-entry ledgers and the `AuditLog`, and surfaced in the **Country Change Log Timeline** — the "Burg's Guardrail" guarantee that no stat can be quietly inflated.
 
-- **Directive-Driven Statecraft**: Enact Measured, Moderate, or Extreme directives. The Statecraft engine validates Civil Service Capacity (CivCap), factors in locked levers, applies clamped economic modifiers, and publishes news bulletins across the global feed. Extreme measures trigger resistance events from power broker factions.
-- **Four Integrated Governance Dashboards**:
-  - **Politics & Power Brokers**: Manage parliamentary seat allocation, candidate registration, polling trends, and five influential power brokers (Military Junta, Merchant Guilds, Clerisy, Bureaucracy, Industrialists).
-  - **Macroeconomics & Fiscal Policy**: Real-time GDP calculation, sector composition, tax bracket modeling with live dividend projections, and labor market telemetry.
-  - **Defense & Strategic Security**: Military readiness ratings, equipment procurement pipelines, Strategic Defense Initiative postures, and border threat matrices.
-  - **Diplomacy & Intelligence**: Embassy networks, bilateral treaties, cultural missions, and real-time risk briefings synthesized from global geopolitical signals.
-- **The Six-Step Country Builder**: Launch new nations via an intuitive wizard (Identity $\to$ Government $\to$ Economy $\to$ Demographics $\to$ Fiscal $\to$ Review) featuring atomic component synergy scoring, MediaWiki infobox auto-import, and autosaving drafts.
-- **Concord Living-World Engine**: Drives autonomous NPC reactions, dynamic crises, and time progression. Every stat change is immutably recorded to the `CountryEventSpine` ledger.
+### System Engines
 
----
+| Engine | Role |
+| :--- | :--- |
+| **IxTime** (Temporal) | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps. |
+| **Statecraft** (MyCountry Engine v4) | Validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, classifies intent, and spawns resistance issues from 5 domestic power brokers. |
+| **Concord** (Living-World, v2) | NPC nation AI (8 traits → 6 behavioral archetypes, naturalistic drift), crisis lifecycle state machine (`BREWING → ACTIVE → ESCALATING → CONTAINED → RESOLVING → RESOLVED`), and event fatigue dampening. |
+| **Atlas** (Spatial, v4) | 100,000-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
 
-### 📖 WikiOS — The Living Wiki
+### Apps & Core Systems
 
-WikiOS replaces legacy MediaWiki interfaces with a high-performance, reactive Next.js frontend while retaining MediaWiki headlessly for template and wikitext resolution:
+**Apps** — `IxWorld`, `WikiOS`, `IxVault` — are independently versioned user surfaces with their own product lifecycles. **Core Systems** — `MyCountry` (Command Suite), `Builder`, `ThinkPages`, `Achievements`, `Halo`, `Onoma` — are interactive features wired directly into the engines. Each is detailed in the feature sections below.
 
-- **Instant Client-Side Navigation**: Multi-tier IndexedDB caching, speculative link prefetching, hover previews, sticky tables of contents, and zero full-page reloads.
-- **Living Simulation Embeds**: Wiki infoboxes embed interactive, live-rendered IxWorld 3D maps and dynamic IxTime date tooltips tied to the active universe timeline.
-- **Dual-Mode Editing Studio**: Seamlessly switch between a modern visual WYSIWYG editor (HTML $\leftrightarrow$ Parsoid $\leftrightarrow$ Wikitext roundtrip) and a CodeMirror 6 source editor with real-time preview and template parameter forms.
-- **Resilient Four-Tier Waterfall**: Read queries resolve through a local Postgres shadow copy ($<5\text{ms}$), direct MariaDB queries ($\sim 38\text{ms}$), MediaWiki Action API fallback ($\sim 400\text{ms}$), and stale cache guarantees—ensuring 100% uptime even during upstream maintenance.
+### API, Data & Platform Infrastructure
 
----
+- **API**: 90 domain-split **tRPC routers** (~1,450 end-to-end typed procedures) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
+- **Data**: PostgreSQL + PostGIS, 296 Prisma models across 15 schema files — spatial geometry, immutable financial ledgers, and event spines included.
+- **Realtime**: Socket.IO WebSockets (diplomatic/crisis feeds, markets) and Redis-backed caching + rate limiting with in-memory fallback.
+- **Design**: the **Facet** design system (glass materials, physics springs, 4-tier depth) and the **Halo** global overlay (context-aware dynamic action bar, notifications, command palette).
 
-### 🎴 IxVault — Cards, Credits, and Rewards Economy
+### Realm-First Product Model
 
-A complete collectible card and micro-economic system backed by immutable financial ledgers:
+IxWorld is architecturally just the `realm="default"` tenant — it shares identical code paths, models, and engines with the multi-tenant **Realms** platform, where external players create isolated realms with procedural geography and sovereign simulation instances. Everything is realm-scoped.
 
-- **IxCards (Four Pillars System)**: Trading cards powered by Force, Wealth, Influence, and Legacy attributes across five distinct types:
-  - `NATION`: Auto-generated and continuously recalculated from live country telemetry.
-  - `LORE`: Procedurally minted from WikiOS articles, scored on historical depth and inbound citation volume.
-  - `NS_IMPORT`: Synchronized with external NationStates card dumps under strict compliance guardrails (zero local image storage, live proxying, and self-service takedown checksums).
-  - `SPECIAL` & `COMMUNITY`: Commemorative event and contest editions.
-  - *Mechanics*: 6 rarity tiers (Common $\to$ Legendary), 6 pack varieties, card fusion, evolution upgrades, and atomic card junking.
-- **IxCredits (IxC)**: The universal platform currency earned through passive economic dividends, active gameplay streaks, diplomatic resolution, and community authorship. Every transaction is immutably ledgered.
-- **Marketplace & Trade Escrow**: Live auctions with automated bidding and secure peer-to-peer card trading with escrow protection.
-- **Achievements & LoreWards**: Dual-track recognition rewarding economic milestones, military feats, and deep wiki lore authorship with badges, profile medals, and direct credit payouts.
+### 🏛️ MyCountry — Head of State Command Suite & Simulation
+
+The flagship executive desk (`MYCOUNTRY_VERSION = 5`, `MYCOUNTRY_ENGINE_VERSION = 4`). Lead your nation through authentic governance systems centered around executive power:
+
+- **The Single Command Surface**: Unified leadership cockpit (`CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, CivCap, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
+- **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft simulation engine validates Civil Service Capacity (CivCap) throughput, applies clamped stat modifiers, and broadcasts narrative bulletins across global feeds. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from 5 domestic power brokers (Military Junta, Merchant Guilds, Clerisy, Bureaucracy, Industrialists). Over-allocating CivCap activates **Information Fog**, masking exact numeric outcomes into qualitative risk bands.
+- **Grounded National Issues & 4-Branch Briefs**: The dynamic issue engine builds real-time national dilemmas by resolving live PostGIS `ST_Touches` neighboring countries, active cabinet ministers, and trade partners into templates (`{{neighborName}}`, `{{ministerName}}`). Leaders resolve dilemmas via 4 distinct action paths:
+  - `Delegate`: Consumes 15 CivCap to pass non-urgent matters to the civil service for 5 in-game days.
+  - `Resolve Brief`: Choose an immediate executive option with direct statistical tradeoffs.
+  - `Set Cabinet Meeting`: Schedule a formal meeting in the 7-day Agenda (+7 IxTime days) to deliberate complex crises without slot cooldowns.
+  - `Make Directive`: Escalate the dilemma directly into the Intent Composer to enact a formal national directive.
+- **Politics, Parliament & Hemicycles**: Manage political parties with ideological spectrum ratings (-100 to +100), configure unicameral or bicameral legislatures (10–1,000 seats), and run elections using D'Hondt proportional representation, First-Past-The-Post (FPTP), or Mixed allocation. An 11-step simulation algorithm factors GDP growth, campaign charisma, and stability margins into live SVG Parliament Hemicycle seat visualizations and cabinet minister appointments.
+- **Macroeconomics, 42-Tax System & Fiscal Policy**: Model economic output across 12+ macro templates (Free Market, Nordic Social Democracy, Developmental State, etc.), 42 distinct tax components across 4 brackets (income, corporate, consumption, wealth), sector composition donuts, and daily Vault dividend yields.
+- **Defense Readiness, SDI & Border Threats**: Calibrate readiness postures across 5 military branches (Army, Navy, Air Force, Cyber, Strategic Defense Initiative), procure hardware from military equipment catalogs, track border threat heatmaps, and deploy forces via the Operations Wizard.
+- **Diplomacy & NPC AI Reactions**: Establish physical embassies with dedicated specializations (Economic, Cultural, Security, General), sign bilateral treaties, deploy cultural missions, and negotiate with autonomous NPC nations governed by 8 core personality traits and 6 behavioral archetypes with dynamic event fatigue dampening.
+- **Vitality Tracking & Governance Ledger**: Server-side composite vitality calculations (Economic, Wellbeing, Diplomatic, Efficiency) and immutable `CountryEventSpine` audit timeline preventing unearned stat inflation ("Burg's Guardrail").
+- **The 6-Step Country Builder**: Launch new sovereign states via a guided wizard (Identity $\to$ Government $\to$ Economy $\to$ Demographics $\to$ Fiscal $\to$ Review) with atomic component synergy scoring and MediaWiki infobox auto-import.
 
 ---
 
-### 💬 ThinkPages & ThinkShare — The Social Backbone
+### 🌍 IxWorld — Interactive Maps, Map Editor & Worldgen
 
-- **ThinkPages**: The in-universe social and intelligence feed. Features rich post authoring, hashtag exploration, community polling, and persistent ThinkTanks (collaborative research groups). Cached read feeds deliver sub-$2\text{ms}$ response times with instantaneous write invalidation.
-- **ThinkShare**: Unified, cross-platform encrypted messaging powering personal DMs, diplomatic communiqués, and secure group channels with 5 security classification levels (Public $\to$ Top Secret) and digital signatures.
+A complete cartography, spatial analytics, and procedural world generation suite powered by GPU-accelerated MapLibre GL (`IXWORLD_VERSION = 1.2`, `ATLAS_ENGINE_VERSION = 4`):
+
+- **The Interactive World Map**: High-performance WebGL vector globe and map rendering 7 distinct layers (rivers, lakes, icecaps, sovereign borders, altitudes, climate, and background) with deterministic hypsometry (hydrology rendering strictly above political borders). Features projection switching (Globe, Mercator, Equal Earth) and standalone deployment as **IxMaps** (`maps.ixwiki.com`).
+- **Professional In-App Vector Map Editor**: Draw and edit sovereign borders with vertex snapping, paint provinces and administrative regions, place cities and Points of Interest (POIs), route trade networks, attach localized lore stories to territories, and import/export raw vector SVG and GeoJSON cartography.
+- **Procedural Realms Engine (Atlas / UPG v2)**: Procedural world generation from pure mathematics on a 100,000-cell Voronoi spatial mesh with 5 Lloyd iterations. Simulates tectonic plate collisions, crust types, Euler rotation vectors, coastal hypsometric damping ($H_{\text{final}} = H_{\text{raw}} \cdot \min(1.0, 0.15 + 0.35 \cdot \text{coastDist})$), Coriolis wind precipitation, steepest-descent river networks, and 12 Trewartha climate biomes smoothed with 4-pass Catmull-Rom spline subdivision ($\tau=0.5$).
+- **Spatial Geographic Analyzer & Tier-0 Grounding**: Computes exact geographic metrics directly from terrain mesh geometry (highest peaks, longest rivers, surface areas, biomes) and serves as the single source of truth for all nation borders (`ST_Touches`), neighbor relations, and regional attribute rollups.
 
 ---
 
-### 🏆 MyLeague & MyClub — Sports Simulation
+### 🎴 Vault — Collectible Cards, Economy & Rewards
 
-A full-featured sports simulation engine covering soccer, Formula 1, hockey, boxing, basketball, baseball, and American football:
+A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`IXVAULT_VERSION = 2`):
 
-- **Seeded Match Resolution**: Computes multi-vector tactical matchups and generates granular play-by-play events (goals, penalties, injuries).
-- **Career Lifecycles**: Simulates player development from Rookie $\to$ Prime $\to$ Veteran $\to$ Retired using Markov chains.
-- **Economic Integration**: Ticket revenue, sponsorship contracts, and franchise claims tie directly into club budgets and national IxCredit sinks.
+- **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
+  - `NATION`: Dynamically minted and continuously recalculated from live country telemetry (GDP per capita, military readiness, embassy network, social vitality).
+  - `LORE`: Procedurally generated from WikiOS articles, scored on historical depth, reference citations, and inbound cross-links.
+  - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
+  - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.
+- **Pack Openings & 6 Rarity Tiers**: 6 rarity tiers (Common 65%, Uncommon 25%, Rare 7%, Ultra Rare 2%, Epic 0.9%, Legendary 0.1%) with particle shatter animations and rarity-specific audio reveals across 6 pack tiers (Basic, Premium, Elite, Themed, Seasonal, Event).
+- **Crafting, Fusion & Card Junking**: Combine duplicate cards into higher rarities via fusion recipes, upgrade cards directly through evolution, or recycle unlocked cards for instant IxCredits.
+- **Marketplace & P2P Escrow Trading**: Live public auctions with automated bidding and secure peer-to-peer card trading protected by atomic escrow locks.
+- **IxCredits (IxC) & Achievements**: The universal platform currency earned through passive economic dividends, daily streaks, diplomatic resolutions, and achievements (LoreWards) recorded on double-entry transaction ledgers.
+
+---
+
+### 📖 WikiOS — The Living Knowledge Platform
+
+A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headlessly integrates MediaWiki (`WIKIOS_VERSION = 1`, `CANVAS_VERSION = 1`):
+
+- **Instant Client-Side Navigation**: Multi-tier IndexedDB caching, speculative link prefetching, hover previews, sticky tables of contents, and sub-10ms page loads backed by direct MariaDB SQL caching.
+- **Canvas Visual Block Editor (PlateJS)**: Dual-mode editing studio supporting visual WYSIWYG block authoring (HTML $\leftrightarrow$ Parsoid $\leftrightarrow$ Wikitext roundtrip) and CodeMirror 6 raw source editing with live preview and template parameter forms.
+- **Living Simulation Embeds**: Wiki infoboxes dynamically embed live interactive IxWorld 3D maps and real-time IxTime universe timestamps.
+- **Kokoro TTS Audio Narration**: Listen to wiki articles narrated by neural text-to-speech with integrated Halo dynamic audio visualizer and sentence scrubbing.
+- **Stash Bookmarks & Media Commons**: Save articles for offline reading in Stash and search the centralized Commons multimedia repository for SVG coats of arms, flags, and historical imagery.
+
+---
+
+### 💬 ThinkPages & ThinkShare — In-Universe Social & Comms
+
+- **ThinkPages**: The in-universe social and intelligence feed (`THINKPAGES_VERSION = 2`). Features rich post authoring, hashtag exploration, community polling, headline blurb integration, and persistent collaborative ThinkTanks.
+- **ThinkShare**: Unified, cross-platform encrypted messaging powering personal DMs, diplomatic communiqués, and secure group channels across 5 classification clearance levels (`PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`) with digital signatures.
+
+---
+
+### 🏆 MyLeague & Creative Labs
+
+- **MyLeague & MyClub**: 7-sport simulation engine (soccer, Formula 1, hockey, boxing, basketball, baseball, American football) with seeded play-by-play match engines, club finances, ticket revenue, and Markov-chain player career lifecycles.
+- **⟨ONOMA⟩ Linguistics Studio (`ONOMA_VERSION = 4`)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
+- **Vexel Heraldry**: Vector blazon generator creating heraldic shields, charges, and national flags adhering to classic tincture rules.
+- **Simulation Sandbox**: Interactive formula tester and verification suite for economic, demographic, and tax algorithms.
+
 
 ---
 
@@ -135,7 +154,7 @@ A full-featured sports simulation engine covering soccer, Formula 1, hockey, box
 
 | Utility | Description |
 |---|---|
-| **IxTime** | The universal platform clock operating on fixed multipliers against real time. Automatically synchronizes economic ticks, election cycles, card seasons, and wiki timestamps across the ecosystem. |
+| **IxTime** | The universal Temporal Engine operating on mathematical time dilation ($2.0\times$ modern era) with automated drift synchronization. Drives economic ticks, election cycles, card seasons, and wiki timestamps across the ecosystem. |
 | **IxnayID** | Unified authentication and identity layer bridging Clerk credentials, XenForo forum profiles, and Discord accounts into a single persona. |
 | **Facet** | The signature design system: volumetric glass surfaces, physical spring animations, edge-glare refraction, and a strict 4-tier Z-axis depth hierarchy. |
 | **Halo** | Context-aware dynamic action bar providing universal notifications, command palettes, and fast actions across all applications. |
@@ -223,8 +242,8 @@ For comprehensive instructions on WSL2 automation, SSH VPS tunneling, and databa
 ### Testing & Verification
 
 ```bash
-bun run test                   # Execute all 151 Jest test suites across the repository
-bun run test -- <pattern>      # Run tests matching a specific pattern (e.g., bun run test -- onoma)
+bun run test                   # Execute all 153 Jest test suites across the repository
+bun run test -- <pattern>      # Run tests matching a specific pattern (e.g., bun run test -- ixtime)
 bun run test:watch             # Interactive Jest watch mode
 ```
 
