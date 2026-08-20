@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 
-export async function GET(request: NextRequest) {
+export const runtime = "nodejs";
+
+export async function GET() {
   try {
     const status = await IxTime.getStatus();
     return NextResponse.json(status, { status: 200 });

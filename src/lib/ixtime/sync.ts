@@ -218,15 +218,23 @@ export class IxTimeSyncManager {
   }
 
   private async updateMasterState(): Promise<void> {
-    const accuracyStatus = IxTimeAccuracyVerifier.getAccuracyStatus();
+    // Calculate aggregate runtime accuracy from active sync statuses without running full test suites
+    let activeAccuracy = 100.0;
+    if (this.syncStatuses.size > 0) {
+      let totalAcc = 0;
+      for (const s of this.syncStatuses.values()) {
+        totalAcc += s.accuracy;
+      }
+      activeAccuracy = Math.round((totalAcc / this.syncStatuses.size) * 100) / 100;
+    }
 
     this.masterState = {
       currentIxTime: IxTime.getCurrentIxTime(),
       currentRealTime: Date.now(),
       multiplier: IxTime.getTimeMultiplier(),
       isPaused: IxTime.isPaused(),
-      hasOverrides: !IxTime.isMultiplierNatural() || false, // Add this method to IxTime if missing
-      accuracy: accuracyStatus.accuracy,
+      hasOverrides: !IxTime.isMultiplierNatural() || false,
+      accuracy: activeAccuracy,
       epoch: {
         realWorld: IxTime.getRealWorldEpoch(),
         inGame: IxTime.getInGameEpoch(),
@@ -440,6 +448,21 @@ export class IxTimeSyncManager {
 
         const result = await response.json();
         console.log(`[IxTime Sync] Drift corrected for ${target.name}:`, result.message);
+
+        // Proactive alert notification in production
+        if (
+          process.env.NODE_ENV === "production" &&
+          Math.abs(syncStatus.drift) > IxTimeSyncManager.DRIFT_CRITICAL_THRESHOLD
+        ) {
+          try {
+            const { exec } = await import("child_process");
+            exec(
+              `/usr/local/bin/ixwiki-notify.sh "⚠️ IxTime Sync Alert: Auto-corrected critical drift of ${syncStatus.drift}ms on ${target.name}"`
+            );
+          } catch {
+            // Ignore notification delivery failures
+          }
+        }
       }
     } catch (error) {
       console.error(`[IxTime Sync] Failed to correct drift for ${target.name}:`, error);

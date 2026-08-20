@@ -72,8 +72,10 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | **Halo** | [systems/halo.md](systems/halo.md) | **Halo v4** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
 | **MyLeague** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, lore competitions) | 🥉 Beta |
 | **Onoma** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) · [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🥈 Release Candidate |
+| **IxTime** | [systems/ixtime.md](systems/ixtime.md) | **IxTime: Temporal Engine & Sync v2** — Continuous world simulation clock, speed dilation, bot sync, Statecraft temporal feeds | 📀 **Gold Master** |
 
 ---
+
 
 ## 📋 Formal Specifications & PRDs
 

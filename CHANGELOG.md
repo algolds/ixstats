@@ -10,6 +10,27 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### ⏱️ IxTime: Temporal Engine Architecture, System Docs & Ponytail Optimizations
+
+- **Canonical System Documentation ([`docs/systems/ixtime.md`](file:///home/jxsig/projects/ixstats/docs/systems/ixtime.md))**:
+  - Published comprehensive architectural specification for the platform's world simulation clock and temporal engine.
+  - Documented mathematical conversion models ($t_{\text{real}} \leftrightarrow t_{\text{ix}}$), 4.0x historical dilation vs. 2.0x modern continuous era speed pivot (July 27, 2025 $\equiv$ Jan 1, 2040), and realm-first configurability note.
+  - Added multi-tier Unicode box architecture diagram, public/admin tRPC routes, REST gateways, PM2 daemons (`ixwiki-discord-bot`), and Statecraft/Halo/Sports/Diplomacy integration points.
+  - Linked entry in master [`docs/README.md`](file:///home/jxsig/projects/ixstats/docs/README.md).
+- **Ponytail Codebase Auditing & Dead Code Purge**:
+  - Deleted unreferenced legacy route [`src/app/api/ixtime/set-override-direct/`](file:///home/jxsig/projects/ixstats/src/app/api/ixtime/set-override-direct/route.ts).
+  - Streamlined [`src/context/IxTimeContext.tsx`](file:///home/jxsig/projects/ixstats/src/context/IxTimeContext.tsx) to eliminate redundant function wrappers and directly re-export Zustand granular selector hooks for $O(1)$ selective re-rendering.
+  - Cleaned up [`src/app/api/ixtime-status/route.ts`](file:///home/jxsig/projects/ixstats/src/app/api/ixtime-status/route.ts) into a concise diagnostic proxy.
+  - Removed dead/buggy `getCurrentIxTimeInternal()` in [`src/lib/ixtime/core.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/core.ts) and fixed multiplier override pause logic.
+- **Runtime Efficiency, Alerting & Safe Coercion**:
+  - Decoupled 11-test accuracy verification suite execution from the 15-second background server synchronization loop in [`src/lib/ixtime/sync.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/sync.ts).
+  - Added production alert notification hook in `correctDrift()` notifying sysadmins via `/usr/local/bin/ixwiki-notify.sh` when critical drift ($>5,000\text{ms}$) is corrected on the Discord bot daemon.
+  - Added `applyExternalTimeUpdate` to [`src/stores/ixtime-store.ts`](file:///home/jxsig/projects/ixstats/src/stores/ixtime-store.ts) for instant client-side synchronization on WebSocket or admin broadcast events.
+  - Added safe timestamp coercion helpers (`IxTime.toTimestamp`, `IxTime.toDate`, `IxTime.toIsoString`) in [`src/lib/ixtime/core.ts`](file:///home/jxsig/projects/ixstats/src/lib/ixtime/core.ts).
+- **Dedicated Test Suites ([`src/tests/lib/ixtime/`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/))**:
+  - Added [`core.test.ts`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/core.test.ts) covering epochs, pivot conversions, calendar arithmetic, formatting, pause/overrides, and coercion helpers.
+  - Added [`accuracy.test.ts`](file:///home/jxsig/projects/ixstats/src/tests/lib/ixtime/accuracy.test.ts) running all 11 mathematical verification test suites of `IxTimeAccuracyVerifier`.
+
 ### 🧪 Test Suite Consolidation, Clean Output & Worker Leak Elimination
 
 - **Centralized Test Architecture (`src/tests/`)**:

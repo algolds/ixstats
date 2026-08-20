@@ -46,8 +46,7 @@ export function IxTimeProvider({ children, updateInterval = 1000 }: IxTimeProvid
   return <>{children}</>;
 }
 
-// Convenience hooks for specific values — using Zustand selectors means
-// components only re-render when THEIR value changes, not on every tick
+// Convenience composite hook for components needing multiple fields
 export function useIxTime() {
   return {
     ixTimeTimestamp: useIxTimeTimestamp(),
@@ -64,18 +63,14 @@ export function useIxTime() {
   };
 }
 
-export function useCurrentIxTime(): number {
-  return useIxTimeTimestamp();
-}
+// Re-export granular selectors directly for optimal O(1) performance
+export {
+  useIxTimeTimestamp,
+  useIxTimeFormatted,
+  useIxTimeGameYear,
+  useIxTimeMultiplier,
+  useIxTimeIsPaused,
+  useIxTimeAll,
+  useIxTimeActions,
+} from "~/stores/ixtime-store";
 
-export function useFormattedIxTime(): string {
-  return useIxTimeFormatted();
-}
-
-export function useCurrentGameYear(): number {
-  return useIxTimeGameYear();
-}
-
-export function useTimeMultiplier(): number {
-  return useIxTimeMultiplier();
-}

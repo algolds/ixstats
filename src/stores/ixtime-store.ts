@@ -20,6 +20,7 @@ interface IxTimeState {
 interface IxTimeActions {
   refreshTime: () => Promise<void>;
   tick: () => void;
+  applyExternalTimeUpdate: (update: Partial<IxTimeState>) => void;
 }
 
 type IxTimeStore = IxTimeState & IxTimeActions;
@@ -107,6 +108,17 @@ export const useIxTimeStore = create<IxTimeStore>()((set, get) => ({
   refreshTime: async () => {
     const newStateData = await fetchTimeFromAPI();
     set((state) => ({ ...state, ...newStateData }));
+  },
+
+  applyExternalTimeUpdate: (update: Partial<IxTimeState>) => {
+    const now = Date.now();
+    set((state) => ({
+      ...state,
+      ...update,
+      referenceRealTime: update.referenceRealTime ?? now,
+      lastUpdated: now,
+      isLoading: false,
+    }));
   },
 }));
 

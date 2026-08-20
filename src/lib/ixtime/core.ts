@@ -59,7 +59,7 @@ export class IxTime {
    */
   static convertToIxTime(realWorldTimestamp: number): number {
     if (this.multiplierOverride === 0) {
-      return this.timeOverride ?? this.getCurrentIxTimeInternal();
+      return this.timeOverride ?? this.getCurrentIxTime();
     }
 
     const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
@@ -121,13 +121,6 @@ export class IxTime {
       const ixTimeElapsed = realTimeElapsed * this.BASE_TIME_MULTIPLIER * 1000;
       return this.REAL_WORLD_EPOCH + ixTimeElapsed;
     }
-  }
-
-  private static getCurrentIxTimeInternal(): number {
-    const now = Date.now();
-    const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
-    const ixSecondsElapsed = realSecondsElapsed * this.BASE_TIME_MULTIPLIER;
-    return this.REAL_WORLD_EPOCH + ixSecondsElapsed * 1000;
   }
 
   /**
@@ -639,4 +632,38 @@ export class IxTime {
   static timestampToDate(timestamp: number): Date {
     return new Date(timestamp);
   }
+
+  /**
+   * Safe timestamp coercion: converts number, Date, or date string to Unix millisecond number.
+   * Returns null if value is null/undefined or invalid.
+   */
+  static toTimestamp(value: number | Date | string | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number") return isNaN(value) ? null : value;
+    if (value instanceof Date) return isNaN(value.getTime()) ? null : value.getTime();
+    if (typeof value === "string") {
+      const parsed = Date.parse(value);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return null;
+  }
+
+  /**
+   * Safe Date coercion: converts number, Date, or date string to Date object.
+   * Returns null if value is null/undefined or invalid.
+   */
+  static toDate(value: number | Date | string | null | undefined): Date | null {
+    const ts = this.toTimestamp(value);
+    return ts !== null ? new Date(ts) : null;
+  }
+
+  /**
+   * Safe ISO string coercion: converts number, Date, or date string to ISO date string.
+   * Returns null if value is null/undefined or invalid.
+   */
+  static toIsoString(value: number | Date | string | null | undefined): string | null {
+    const d = this.toDate(value);
+    return d !== null ? d.toISOString() : null;
+  }
 }
+
