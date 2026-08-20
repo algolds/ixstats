@@ -293,22 +293,22 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
-          className="glass-surface glass-refraction-none relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c1524]/90 text-white shadow-2xl"
+          className="relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <MapIcon className="h-5 w-5 text-emerald-400" />
               Insert Map Coords &amp; Embeds
             </h3>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors active:scale-95 dark:hover:bg-white/10"
             >
               <X className="h-5 w-5" />
             </button>
@@ -316,25 +316,25 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
           <div className="flex flex-1 overflow-hidden">
             {/* Left Panel: Configuration */}
-            <div className="flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r border-white/10 bg-white/[0.02] p-6">
+            <div className="border-border bg-muted/10 flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r p-6 dark:border-white/10 dark:bg-white/[0.02]">
               {/* Tab Selector */}
-              <div className="flex shrink-0 rounded-lg border border-white/10 bg-[#060e19] p-0.5">
+              <div className="border-border bg-secondary flex shrink-0 rounded-lg border p-0.5">
                 <button
                   onClick={() => setActiveTab("coords")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-colors ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
                     activeTab === "coords"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "text-white/60 hover:text-white"
+                      ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Coords Link
                 </button>
                 <button
                   onClick={() => setActiveTab("mapembed")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-colors ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
                     activeTab === "mapembed"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "text-white/60 hover:text-white"
+                      ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Map Embed
@@ -342,29 +342,29 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               </div>
 
               {/* Coordinates status */}
-              <div className="grid shrink-0 grid-cols-2 gap-3 rounded-lg border border-white/5 bg-black/35 p-3">
+              <div className="border-border bg-muted/30 grid shrink-0 grid-cols-2 gap-3 rounded-lg border p-3">
                 <div>
-                  <span className="block text-[10px] font-bold text-zinc-500 uppercase">
+                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
                     Latitude (Y)
                   </span>
-                  <span className="font-mono text-sm font-semibold text-zinc-200">{lat}</span>
+                  <span className="text-foreground font-mono text-sm font-semibold">{lat}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold text-zinc-500 uppercase">
+                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
                     Longitude (X)
                   </span>
-                  <span className="font-mono text-sm font-semibold text-zinc-200">{lng}</span>
+                  <span className="text-foreground font-mono text-sm font-semibold">{lng}</span>
                 </div>
               </div>
 
               {/* Markers Picker */}
               <div className="shrink-0 space-y-1.5">
-                <label className="block text-xs font-semibold text-white/75">
+                <label className="text-foreground block text-xs font-semibold">
                   Quick Select Existing Marker
                 </label>
-                <div className="max-h-36 scrollbar-thin divide-y divide-white/5 overflow-y-auto rounded-lg border border-white/10 bg-black/20 text-xs">
+                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border text-xs">
                   {isMapBundleLoading && (
-                    <div className="flex items-center gap-1.5 p-3 text-white/50">
+                    <div className="text-muted-foreground flex items-center gap-1.5 p-3">
                       <Loader2 className="h-3 w-3 animate-spin text-emerald-400" /> Loading
                       features...
                     </div>
@@ -378,10 +378,10 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-white/5"
+                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
                       >
-                        <span className="font-semibold text-white/80">{c.name}</span>
-                        <span className="text-[9px] font-bold text-white/40 uppercase">
+                        <span className="text-foreground font-semibold">{c.name}</span>
+                        <span className="text-muted-foreground text-[9px] font-bold uppercase">
                           {c.isNationalCapital ? "Capital" : "City"}
                         </span>
                       </button>
@@ -395,16 +395,16 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-white/5"
+                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
                       >
-                        <span className="text-white/80">{p.name}</span>
-                        <span className="rounded bg-white/5 px-1.5 text-[9px] text-white/40 capitalize">
+                        <span className="text-foreground">{p.name}</span>
+                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-[9px] capitalize">
                           {p.category}
                         </span>
                       </button>
                     ))}
                   {!isMapBundleLoading && cities.length === 0 && pois.length === 0 && (
-                    <div className="p-3 text-center text-white/40">
+                    <div className="text-muted-foreground p-3 text-center">
                       No markers found in database.
                     </div>
                   )}
@@ -414,7 +414,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               {/* Shared parameters */}
               <div className="shrink-0 space-y-3">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-white/75">
+                  <label className="text-foreground block text-xs font-semibold">
                     {activeTab === "coords" ? "Link Label (Required)" : "Marker Title (Optional)"}
                   </label>
                   <input
@@ -423,12 +423,12 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                     placeholder={activeTab === "coords" ? "e.g. Royal Palace" : "e.g. My Capital"}
                     value={label}
                     onChange={(e) => setLabel(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white focus:outline-none"
+                    className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1.5 text-xs focus:ring-2 focus:outline-none"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-white/75">
+                  <label className="text-foreground block text-xs font-semibold">
                     Map Zoom level ({zoom})
                   </label>
                   <input
@@ -444,32 +444,32 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         mapRef.current.setZoom(newZ);
                       }
                     }}
-                    className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/10 accent-emerald-500"
+                    className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-emerald-500"
                   />
                 </div>
               </div>
 
               {/* Embed parameters */}
               {activeTab === "mapembed" && (
-                <div className="shrink-0 space-y-3 border-t border-white/5 pt-3">
+                <div className="border-border shrink-0 space-y-3 border-t pt-3">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-white/75">
+                    <label className="text-foreground block text-xs font-semibold">
                       Embed Height (px)
                     </label>
                     <input
                       type="number"
                       value={embedHeight}
                       onChange={(e) => setEmbedHeight(parseInt(e.target.value) || 400)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white focus:outline-none"
+                      className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1 text-xs focus:ring-2 focus:outline-none"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-white/75">Embed Width</label>
+                    <label className="text-foreground block text-xs font-semibold">Embed Width</label>
                     <input
                       type="text"
                       value={embedWidth}
                       onChange={(e) => setEmbedWidth(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white focus:outline-none"
+                      className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1 text-xs focus:ring-2 focus:outline-none"
                     />
                   </div>
                   <label className="flex cursor-pointer items-center gap-2 py-1">
@@ -477,15 +477,15 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                       type="checkbox"
                       checked={embedInteractive}
                       onChange={(e) => setEmbedInteractive(e.target.checked)}
-                      className="rounded border-white/10 bg-white/5 text-emerald-600 focus:ring-emerald-500"
+                      className="border-input bg-secondary text-emerald-600 focus:ring-emerald-500 rounded"
                     />
-                    <span className="text-xs text-white/80">Interactive panning / zoom</span>
+                    <span className="text-foreground text-xs">Interactive panning / zoom</span>
                   </label>
                 </div>
               )}
 
               {/* Syntax preview */}
-              <div className="mt-auto shrink-0 rounded border border-emerald-950 bg-[#0a182b] p-2.5 text-center font-mono text-[11px] text-emerald-400">
+              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-[11px] text-emerald-400">
                 {activeTab === "coords" ? (
                   <span>
                     [[Coords:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
@@ -505,16 +505,16 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <button
                 onClick={handleInsertLink}
                 disabled={activeTab === "coords" && !label.trim()}
-                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Map Feature
               </button>
             </div>
 
             {/* Right Panel: Map Canvas */}
-            <div className="relative flex-1 bg-[#060e19]">
+            <div className="bg-background relative flex-1">
               {isMapBundleLoading ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/60">
+                <div className="text-muted-foreground absolute inset-0 flex flex-col items-center justify-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
                   <span className="text-xs font-semibold">Loading border layers...</span>
                 </div>
@@ -523,7 +523,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                   <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
                   {/* Status Indicator overlay */}
                   <div className="pointer-events-none absolute top-4 left-4 z-10">
-                    <div className="glass-surface flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 p-2.5 text-xs text-white/80 shadow-lg backdrop-blur-md">
+                    <div className="border-border bg-card/85 text-foreground flex items-center gap-2 rounded-lg border p-2.5 text-xs shadow-lg backdrop-blur-md">
                       <Compass className="animate-spin-slow h-4 w-4 text-emerald-400" />
                       <span>Click on map to capture pin coords</span>
                     </div>

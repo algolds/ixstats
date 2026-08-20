@@ -10,7 +10,6 @@ import {
   RiVipCrownLine,
   RiGitForkLine,
   RiNodeTree,
-  RiSparklingLine,
   RiSunLine,
   RiSkull2Line,
   RiGhostLine,
@@ -108,7 +107,7 @@ export function getDomainIconByFamily(
     title.includes("seraph") ||
     title.includes("cherub")
   ) {
-    return RiSparklingLine;
+    return RiSunLine;
   }
 
   // 5. Demons, Monsters, Fiends, Mythological Creatures, Beasts

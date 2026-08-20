@@ -19,14 +19,25 @@ import {
 } from "~/components/ui/select";
 import { ImportStashPanel } from "../stash/ImportStashPanel";
 import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
+import { StudioLexicon } from "./studio/StudioLexicon";
+import { useStudioState } from "../../hooks/useStudioState";
 import HistorySection from "./HistorySection";
+import { cn } from "~/lib/utils";
+import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
 
 interface StashSectionProps {
   onLoadToStudio?: (words: string[], title: string) => void;
+  onNavigateExplore?: (tab: ExploreSubTab, words?: string[], title?: string) => void;
+  onNavigateStudio?: (tab: StudioSubTab, words?: string[], title?: string) => void;
 }
 
-export function StashSection({ onLoadToStudio }: StashSectionProps) {
+export function StashSection({
+  onLoadToStudio,
+  onNavigateExplore,
+  onNavigateStudio,
+}: StashSectionProps) {
   const bank = useNameBank();
+  const studioState = useStudioState();
 
   // Search and Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,19 +80,21 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
   // Filter entries based on search and folder filter
   const savedNames =
     bank.nameBank?.filter((e) => {
+      const entry = e as { type: string; title: string; stashId?: string };
       const matchSearch =
-        e.type === "saved-name" && e.title.toLowerCase().includes(searchTerm.toLowerCase());
+        entry.type === "saved-name" && entry.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchFolder =
-        selectedStashFilterId === "all" || (e as any).stashId === selectedStashFilterId;
+        selectedStashFilterId === "all" || entry.stashId === selectedStashFilterId;
       return matchSearch && matchFolder;
     }) || [];
 
   const dictionaries =
     bank.nameBank?.filter((e) => {
+      const entry = e as { type: string; title: string; stashId?: string };
       const matchSearch =
-        e.type === "dictionary" && e.title.toLowerCase().includes(searchTerm.toLowerCase());
+        entry.type === "dictionary" && entry.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchFolder =
-        selectedStashFilterId === "all" || (e as any).stashId === selectedStashFilterId;
+        selectedStashFilterId === "all" || entry.stashId === selectedStashFilterId;
       return matchSearch && matchFolder;
     }) || [];
 
@@ -122,7 +135,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
       type: "dictionary",
       title: next.title,
       values: next.values,
-      category: next.category as any,
+      category: (next.category as NameCategory) || null,
       role: next.role,
       gender: next.gender,
       setName: next.setName,
@@ -180,42 +193,44 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
     }
   };
 
-  const [stashTab, setStashTab] = useState<"saved" | "history">("saved");
+  const [stashTab, setStashTab] = useState<"saved" | "lexicon" | "history">("saved");
 
   return (
     <div className="space-y-5">
-      {/* Title Header & Search/Filters */}
-      <div className="border-border/40 flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-foreground text-xl font-bold tracking-tight">Stash</h2>
-          <p className="text-muted-foreground text-sm">
-            {stashTab === "saved"
-              ? "Manage your saved names and custom dictionaries."
-              : "Review and favorite names from your recent generation sessions."}
-          </p>
-        </div>
-
-        {/* Tab Switcher & Filters/Import */}
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 md:w-auto md:justify-end">
-          {/* Sub-tab Toggle buttons */}
-          <div className="bg-secondary/15 border-border/20 flex gap-1 rounded-lg border p-1">
+      {/* Tab Switcher & Filters/Import */}
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+        {/* Sub-tab Toggle buttons */}
+        <div className="bg-secondary/15 border-border/20 flex gap-1 rounded-lg border p-1 select-none">
             <button
               onClick={() => setStashTab("saved")}
-              className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
                 stashTab === "saved"
-                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff]"
+                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff] font-bold"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+              )}
             >
               Saved Items
             </button>
             <button
-              onClick={() => setStashTab("history")}
-              className={`rounded-md px-3 py-1 text-xs font-semibold transition-all ${
-                stashTab === "history"
-                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff]"
+              onClick={() => setStashTab("lexicon")}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
+                stashTab === "lexicon"
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)] font-bold"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+              )}
+            >
+              Lexicon Dictionary
+            </button>
+            <button
+              onClick={() => setStashTab("history")}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
+                stashTab === "history"
+                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff] font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
               Generation History
             </button>
@@ -266,17 +281,20 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
             </div>
           )}
         </div>
-      </div>
 
       {stashTab === "history" ? (
-        <HistorySection hideHeader={true} />
+        <HistorySection hideHeader={true} onLoadToStudio={onLoadToStudio} />
+      ) : stashTab === "lexicon" ? (
+        <StudioLexicon state={studioState} />
       ) : (
         <>
           {/* Existing Name Sets for the editor datalist */}
           <datalist id="onoma-existing-sets">
             {Array.from(
               new Set(
-                (bank.nameBank ?? []).map((e) => (e as any).setName).filter((s): s is string => !!s)
+                (bank.nameBank ?? [])
+                  .map((e) => (e as { setName?: string | null }).setName)
+                  .filter((s): s is string => !!s)
               )
             ).map((s) => (
               <option key={s} value={s} />
@@ -298,7 +316,7 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                   {savedNames.map((entry) => {
                     const nameValue = entry.values[0] || entry.title;
                     const isStashingThis = stashNameId === entry.id;
-                    const e = entry as any;
+                    const e = entry as { setName?: string | null; category?: string | null };
                     // What kind of word: dictionary-set origin wins, else generator category.
                     const originLabel = e.setName
                       ? `Dictionary: ${e.setName}`
@@ -432,6 +450,8 @@ export function StashSection({ onLoadToStudio }: StashSectionProps) {
                         isExpanded={isExpanded}
                         onToggleExpand={() => toggleExpandDict(dict.id)}
                         onLoadToStudio={onLoadToStudio}
+                        onNavigateExplore={onNavigateExplore}
+                        onNavigateStudio={onNavigateStudio}
                         onEdit={(d) =>
                           setEditDict({
                             id: d.id,

@@ -54,7 +54,7 @@ const CULTURES = [
   "constructed",
 ];
 
-const PRESETS: Record<string, any> = {
+export const SPECIES_PRESETS: Record<string, any> = {
   elven: {
     voice: "af_heart",
     speed: 0.85,

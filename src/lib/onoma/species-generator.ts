@@ -3,16 +3,9 @@
 
 import { SPECIES_SYLLABLES } from "./data/species-data";
 import { MarkovChain } from "./markov-chain";
+import { pickRandom } from "./template-resolver";
+import { isVowel } from "./phonetics-shared";
 import type { Gender } from "./types";
-
-function isVowel(c: string): boolean {
-  const cl = c.toLowerCase();
-  return cl === "a" || cl === "e" || cl === "i" || cl === "o" || cl === "u";
-}
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 
 /**
  * Helper to resolve neutral gender to male or female.

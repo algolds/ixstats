@@ -242,7 +242,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               className={cn(
                 "flex items-center justify-between gap-4 rounded-xl border p-3 text-left transition-all duration-200 sm:p-4",
                 hasVotedOpt
-                  ? "border-[#ff8a65]/40 bg-[#ff8a65]/5 shadow-sm"
+                  ? "border-poll/40 bg-poll/5 shadow-xs"
                   : "border-border/60 bg-card/40 hover:bg-muted/30"
               )}
             >
@@ -261,9 +261,9 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 onClick={() => handleFeatureToggleVote(opt.id)}
                 disabled={isDisabled || !isSignedIn}
                 className={cn(
-                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200",
+                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95",
                   hasVotedOpt
-                    ? "border-[#ff8a65] bg-[#ff8a65] text-white hover:bg-[#ff8a65]/90"
+                    ? "border-poll bg-poll hover:bg-poll/90 text-white shadow-xs"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >

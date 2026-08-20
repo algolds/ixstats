@@ -9,72 +9,12 @@ import { CULTURAL_PROFILES } from "~/lib/onoma/cultural-profiles";
 import { generateFantasySyllableName, generatePresetName } from "~/lib/onoma/name-generator";
 import type { NameCategory, CulturalProfile, GenerateOptions, Gender } from "~/lib/onoma/types";
 
-/**
- * Maps NameCategory to training data types fetched from backend.
- */
-// Must return one of the categories the onoma.getTrainingData router accepts.
-function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "person" {
-  if (cat === "city" || cat === "geography") return "city";
-  if (cat === "province") return "province";
-  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty")
-    return "person";
-  return "country";
-}
-
-// Prebuilt wiki lexicon dictionaries (one chunk per category, lazy code-split).
-type LexiconCat =
-  | "country"
-  | "city"
-  | "province"
-  | "person"
-  | "organization"
-  | "culture_generic"
-  | "culture_sports"
-  | "culture_cuisine"
-  | "culture_architecture";
-
-const LEXICON_LOADERS: Record<LexiconCat, () => Promise<{ default: Record<string, string[]> }>> = {
-  country: () => import("~/lib/onoma/data/lexicon/country.json"),
-  city: () => import("~/lib/onoma/data/lexicon/city.json"),
-  province: () => import("~/lib/onoma/data/lexicon/province.json"),
-  person: () => import("~/lib/onoma/data/lexicon/person.json"),
-  organization: () => import("~/lib/onoma/data/lexicon/organization.json"),
-  culture_generic: () => import("~/lib/onoma/data/lexicon/culture_generic.json"),
-  culture_sports: () => import("~/lib/onoma/data/lexicon/culture_sports.json"),
-  culture_cuisine: () => import("~/lib/onoma/data/lexicon/culture_cuisine.json"),
-  culture_architecture: () => import("~/lib/onoma/data/lexicon/culture_architecture.json"),
-};
-
-function mapCategoryForLexicon(cat: NameCategory, subType?: string): LexiconCat {
-  if (cat === "culture") {
-    if (subType === "sports") return "culture_sports";
-    if (subType === "cuisine") return "culture_cuisine";
-    return "culture_generic";
-  }
-  // Architecture/buildings live under the Places > Landmarks tab now.
-  if (cat === "geography" && subType === "architecture") return "culture_architecture";
-  if (cat === "city" || cat === "geography") return "city";
-  if (cat === "province") return "province";
-  if (cat === "person" || cat === "dynasty") return "person";
-  if (cat === "organization" || cat === "military") return "organization";
-  return "country";
-}
-
-// Per-family phonotactic floor applied to generation so families differ by
-// *structure*, not just seed list (austronesian stays open-syllable CV, slavic
-// tolerates dense clusters, etc.). User advanced options override these.
-const FAMILY_PHONOTACTICS: Record<string, Partial<GenerateOptions>> = {
-  austronesian: { maxConsonantCluster: 1 },
-  "east-asian": { maxConsonantCluster: 1 },
-  arabic: { maxConsonantCluster: 2 },
-  persian: { maxConsonantCluster: 2 },
-  turkic: { maxConsonantCluster: 2 },
-  indic: { maxConsonantCluster: 2 },
-  african: { maxConsonantCluster: 2 },
-  uralic: { maxConsonantCluster: 2 },
-  germanic: { maxConsonantCluster: 3 },
-  slavic: { maxConsonantCluster: 4 },
-};
+import {
+  LEXICON_LOADERS,
+  mapCategoryForTraining,
+  mapCategoryForLexicon,
+  FAMILY_PHONOTACTICS,
+} from "~/lib/onoma/lexicon-loader";
 
 export function useOnomaGenerator() {
   const [culture, setCulture] = useState<string>("any");
@@ -107,7 +47,7 @@ export function useOnomaGenerator() {
     { enabled: includeWorldData, staleTime: 600000 }
   );
 
-  // tRPC mutation to log activity when names are generated
+  const utils = api.useUtils();
   const logActivityMutation = api.onoma.logGeneration.useMutation();
   const logHistoryMutation = api.onoma.logEvent.useMutation();
   const sessionIdRef = useRef(
@@ -221,7 +161,7 @@ export function useOnomaGenerator() {
   /**
    * Generates a batch of names based on current configuration and rule-based presets.
    */
-  const generate = (count = 10): string[] => {
+  const generate = (count = 15): string[] => {
     setIsGenerating(true);
     const results: string[] = [];
 
@@ -284,25 +224,31 @@ export function useOnomaGenerator() {
 
     // Asynchronously log generation activity in feed
     if (results.length > 0) {
+      const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
+
       logActivityMutation
         .mutateAsync({
           count: results.length,
           category: category,
         })
-        .catch((err) => console.error("Failed to log generation activity:", err));
+        .catch(() => {});
 
-      // Also log to generation history with full name list
+      // Also log to generation history with unique run hash
       logHistoryMutation
         .mutateAsync({
-          sessionId: sessionIdRef.current,
+          sessionId: runHash,
           names: results,
           category,
           culturalProfile: culture,
           trainingMode: includeWorldData ? "ixworld" : "preset",
-          parameters: options as any,
+          parameters: options as Record<string, unknown>,
           count: results.length,
         })
-        .catch((err) => console.error("Failed to log generation history:", err));
+        .then(() => {
+          void utils.onoma.getHistory.invalidate();
+          void utils.onoma.getStats.invalidate();
+        })
+        .catch(() => {});
     }
 
     return results;

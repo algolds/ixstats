@@ -2,6 +2,7 @@
 // Onoma — Etymology Web sub-router
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaEtymologyRouter = createTRPCRouter({
@@ -72,7 +73,10 @@ export const onomaEtymologyRouter = createTRPCRouter({
       });
 
       if (!root) {
-        throw new Error("Root not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Root not found or unauthorized",
+        });
       }
 
       return ctx.db.etymologyRoot.delete({
@@ -105,7 +109,10 @@ export const onomaEtymologyRouter = createTRPCRouter({
       });
 
       if (!root) {
-        throw new Error("Root not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Root not found or unauthorized",
+        });
       }
 
       // If parentId is provided, validate it belongs to the same root
@@ -114,7 +121,10 @@ export const onomaEtymologyRouter = createTRPCRouter({
           where: { id: input.parentId, rootId: input.rootId },
         });
         if (!parent) {
-          throw new Error("Parent derivation not found under the same root.");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Parent derivation not found under the same root.",
+          });
         }
       }
 
@@ -150,7 +160,10 @@ export const onomaEtymologyRouter = createTRPCRouter({
       });
 
       if (!derivation || derivation.root.userId !== userId) {
-        throw new Error("Derivation not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Derivation not found or unauthorized",
+        });
       }
 
       return ctx.db.etymologyDerivation.delete({
@@ -176,7 +189,10 @@ export const onomaEtymologyRouter = createTRPCRouter({
       });
 
       if (!root) {
-        throw new Error("Root not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Root not found or unauthorized",
+        });
       }
 
       const list = await ctx.db.etymologyDerivation.findMany({

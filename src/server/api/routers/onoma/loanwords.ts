@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaLoanwordsRouter = createTRPCRouter({
@@ -46,7 +47,10 @@ export const onomaLoanwordsRouter = createTRPCRouter({
       });
 
       if (!source || !target) {
-        throw new Error("Language pack not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Language pack not found",
+        });
       }
 
       const data = {
@@ -63,7 +67,10 @@ export const onomaLoanwordsRouter = createTRPCRouter({
           where: { id: input.id, userId },
         });
         if (!existing) {
-          throw new Error("Contact registry entry not found or unauthorized");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Contact registry entry not found or unauthorized",
+          });
         }
 
         return ctx.db.loanwordContact.update({
@@ -89,7 +96,10 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         where: { id: input.id, userId },
       });
       if (!existing) {
-        throw new Error("Contact registry entry not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Contact registry entry not found or unauthorized",
+        });
       }
 
       return ctx.db.loanwordContact.delete({

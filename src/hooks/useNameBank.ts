@@ -70,6 +70,12 @@ export function useNameBank() {
     isPublic?: boolean;
     countryId?: string | null;
     stashId?: string;
+    lexiconDefinition?: {
+      partOfSpeech: string;
+      root: string;
+      meaning: string;
+      origin: string;
+    };
   }) => {
     return saveMutation.mutateAsync({
       id: params.id,
@@ -84,6 +90,7 @@ export function useNameBank() {
       isPublic: params.isPublic,
       countryId: params.countryId || null,
       stashId: params.stashId,
+      lexiconDefinition: params.lexiconDefinition,
     });
   };
 

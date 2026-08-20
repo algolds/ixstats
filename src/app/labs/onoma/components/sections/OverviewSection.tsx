@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNameBank } from "~/hooks/useNameBank";
+import { api } from "~/trpc/react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { generateFantasySyllableName } from "~/lib/onoma/name-generator";
 import { UseNameDialog } from "../shared/UseNameDialog";
@@ -15,10 +16,13 @@ import {
 } from "~/lib/onoma/custom-dictionaries";
 import type { NameCategory, GenerateOptions } from "~/lib/onoma/types";
 import { QuickGeneratorControls } from "./QuickGeneratorControls";
-import { CandidateResultsPanel } from "./CandidateResultsPanel";
+import { SynthesisResultsGrid } from "../shared/SynthesisResultsGrid";
 
 export function OverviewSection() {
   const bank = useNameBank();
+  const utils = api.useUtils();
+  const logActivityMutation = api.onoma.logGeneration.useMutation();
+  const logHistoryMutation = api.onoma.logEvent.useMutation();
 
   // Public dictionaries
   const publicDicts = useMemo(() => bank.publicDictionaries || [], [bank.publicDictionaries]);
@@ -47,7 +51,7 @@ export function OverviewSection() {
   // Local UI State
   const [selectedDictId, setSelectedDictId] = useState<string>("");
   const [customWords, setCustomWords] = useState<string[] | null>(null);
-  const [batchCount, setBatchCount] = useState<number>(20);
+  const [batchCount, setBatchCount] = useState<number>(15);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [order, setOrder] = useState<number>(2);
 
@@ -166,6 +170,41 @@ export function OverviewSection() {
         }
 
         setGeneratedNames(results);
+
+        // 3. Log generation event with unique run hash to live history
+        if (results.length > 0) {
+          const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
+          const cat = (selectedDict?.category as string) || "sandbox";
+          
+          logActivityMutation
+            .mutateAsync({
+              count: results.length,
+              category: cat,
+            })
+            .catch(() => {});
+
+          logHistoryMutation
+            .mutateAsync({
+              sessionId: runHash,
+              names: results,
+              category: cat,
+              culturalProfile: selectedDict?.title || "Custom",
+              trainingMode: "markov",
+              parameters: {
+                ...options,
+                order,
+                dictTitle: selectedDict?.title,
+                dictId: selectedDict?.id,
+                batchCount: results.length,
+              },
+              count: results.length,
+            })
+            .then(() => {
+              void utils.onoma.getHistory.invalidate();
+              void utils.onoma.getStats.invalidate();
+            })
+            .catch(() => {});
+        }
       } catch (err) {
         console.error("Failed to generate Markov names:", err);
       } finally {
@@ -249,7 +288,7 @@ export function OverviewSection() {
 
         {/* 70% Candidate Results Column */}
         <div className="lg:col-span-7">
-          <CandidateResultsPanel
+          <SynthesisResultsGrid
             generatedNames={generatedNames}
             isGenerating={isGenerating}
             copiedBatch={copiedBatch}
@@ -263,6 +302,7 @@ export function OverviewSection() {
             nameBank={bank.nameBank}
             handleSaveName={handleSaveName}
             onUseName={(n) => setUseName(n)}
+            category={(selectedDict?.category as string) || "sandbox"}
           />
         </div>
       </div>

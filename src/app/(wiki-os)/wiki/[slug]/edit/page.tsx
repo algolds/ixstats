@@ -293,30 +293,14 @@ export default function WikiOSEditPage() {
 
   // Edit conflict banner
   const conflictBanner = editConflict && (
-    <div
-      style={{
-        margin: "12px 0",
-        padding: "12px 16px",
-        borderRadius: 10,
-        background: "rgba(239,68,68,0.08)",
-        border: "1px solid rgba(239,68,68,0.3)",
-        fontSize: "0.875rem",
-        color: "#fca5a5",
-      }}
-    >
-      <p style={{ fontWeight: 600, marginBottom: 6, color: "#f87171" }}>Edit conflict detected</p>
-      <p style={{ marginBottom: 8 }}>
+    <div className="my-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-300 backdrop-blur-sm">
+      <p className="text-destructive mb-1.5 font-semibold">Edit conflict detected</p>
+      <p className="mb-2">
         Someone else edited this page while you were working. Your changes have not been saved.
       </p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="flex flex-wrap gap-2">
         <button
-          className="wikios-action-btn"
-          style={{
-            background: "rgba(251,191,36,0.12)",
-            borderColor: "rgba(251,191,36,0.3)",
-            color: "#fbbf24",
-            fontSize: "0.8125rem",
-          }}
+          className="wikios-action-btn border-amber-500/40 bg-amber-500/20 text-xs text-amber-400 hover:bg-amber-500/30 active:scale-95"
           onClick={() => {
             // Force save (overwrite)
             setEditConflict(false);
@@ -339,8 +323,7 @@ export default function WikiOSEditPage() {
           Overwrite with my version
         </button>
         <button
-          className="wikios-action-btn"
-          style={{ fontSize: "0.8125rem" }}
+          className="wikios-action-btn text-xs active:scale-95"
           onClick={() => {
             setEditConflict(false);
             void refetchWikitext();
@@ -349,8 +332,7 @@ export default function WikiOSEditPage() {
           Reload latest version (discard my changes)
         </button>
         <button
-          className="wikios-action-btn"
-          style={{ fontSize: "0.8125rem" }}
+          className="wikios-action-btn text-xs active:scale-95"
           onClick={() => {
             // Open diff in new tab to compare
             window.open(

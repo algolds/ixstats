@@ -4,8 +4,6 @@
 // Unified declarative domain section powered by domain-taxonomies.ts and horizontal Synthesis Surface
 
 import React, { useState, useEffect } from "react";
-import { FacetTabs } from "~/components/ui/facet";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { DomainControlBar } from "../shared/DomainControlBar";
 import { SynthesisResultsGrid } from "../shared/SynthesisResultsGrid";
 import { UseNameDialog } from "../shared/UseNameDialog";
@@ -18,34 +16,6 @@ interface CategoryDomainSectionProps {
   domain: "places" | "people" | "organizations" | "culture" | "military";
 }
 
-const DOMAIN_NOTATIONS: Record<string, { notation: string; badge: string; accentColor: string }> = {
-  places: {
-    notation: "σ₁·σ₂",
-    badge: "Toponyms & Settlements",
-    accentColor: "#10b981",
-  },
-  people: {
-    notation: "Patronym",
-    badge: "Anthroponyms & Dynasties",
-    accentColor: "#a855f7",
-  },
-  organizations: {
-    notation: "Guild",
-    badge: "Polities & Institutions",
-    accentColor: "#f59e0b",
-  },
-  culture: {
-    notation: "Ethnos",
-    badge: "Ethnonyms & Traditions",
-    accentColor: "#06b6d4",
-  },
-  military: {
-    notation: "Matrix",
-    badge: "Units & Formations",
-    accentColor: "#ef4444",
-  },
-};
-
 export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   const config = DOMAIN_CONFIGS[domain];
   const [activeTab, setActiveTab] = useState<NameCategory>(config?.defaultTab || "city");
@@ -55,7 +25,7 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
 
   // Local UI State
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [batchCount, setBatchCount] = useState(20);
+  const [batchCount, setBatchCount] = useState(15);
   const [useName, setUseName] = useState<string | null>(null);
   const [dictionaryTitle, setDictionaryTitle] = useState("");
   const [isSavingDict, setIsSavingDict] = useState(false);
@@ -73,11 +43,6 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
   if (!config) return null;
 
   const currentTab = config.tabs.find((t) => t.id === activeTab) || config.tabs[0];
-  const meta = DOMAIN_NOTATIONS[domain] || {
-    notation: "CVC",
-    badge: "Domain Synthesis",
-    accentColor: "#0091ff",
-  };
 
   const handleGenerate = () => {
     gen.generate(batchCount);
@@ -130,67 +95,14 @@ export function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
 
   return (
     <div className="space-y-5">
-      {/* Contextual Domain Header with Monospace Graphic Notation and light specular line */}
-      <div
-        className="relative overflow-hidden rounded-xl border p-4 shadow-xs"
-        style={{
-          borderColor: `${meta.accentColor}30`,
-          background: `linear-gradient(90deg, ${meta.accentColor}0f, ${meta.accentColor}03, transparent)`,
-        }}
-      >
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[1px]"
-          style={{
-            background: `linear-gradient(90deg, ${meta.accentColor}40, transparent)`,
-          }}
-        />
-
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span
-                className="font-mono text-xs font-bold px-2 py-0.5 rounded-md border"
-                style={{
-                  borderColor: `${meta.accentColor}40`,
-                  backgroundColor: `${meta.accentColor}15`,
-                  color: meta.accentColor,
-                }}
-              >
-                ⟨{meta.notation}⟩
-              </span>
-              <h2 className="text-foreground text-lg font-bold tracking-tight">
-                {currentTab.label}
-              </h2>
-              <span className="text-muted-foreground text-xs hidden sm:inline">
-                · {meta.badge}
-              </span>
-            </div>
-            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-              {currentTab.desc}
-            </p>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Domain Subcategory Sliding Tabs (if more than 1 tab) */}
-      {config.tabs.length > 1 && (
-        <FacetTabs
-          tabs={config.tabs}
-          activeTab={activeTab}
-          onChange={(id) => setActiveTab(id as NameCategory)}
-          tone="accent"
-          size="sm"
-        />
-      )}
-
       {/* 30% Controls + 70% Results Layout */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
         {/* 30% Control Column */}
         <div className="lg:col-span-3">
           <DomainControlBar
             category={activeTab}
+            onCategoryChange={setActiveTab}
+            categories={config.tabs}
             subTypes={currentTab.subTypes || []}
             gen={gen}
             batchCount={batchCount}

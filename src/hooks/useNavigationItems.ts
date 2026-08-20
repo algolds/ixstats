@@ -14,6 +14,7 @@ import {
 import { FaWikipediaW } from "react-icons/fa";
 import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
+import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
 import type { NavigationItem } from "~/lib/navigation-config";
 
 export interface UseNavigationItemsParams {
@@ -119,8 +120,8 @@ export function useNavigationItems({
           {
             name: "Onoma",
             href: "/labs/onoma",
-            icon: Database,
-            description: "Markov name generator",
+            icon: OnomaNavIcon,
+            description: "Linguistic Engine",
           },
         ],
       },

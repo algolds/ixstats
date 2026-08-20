@@ -75,23 +75,23 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
-          className="glass-surface glass-refraction-none relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c1524]/90 text-white shadow-2xl"
+          className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <BarChart2 className="h-5 w-5 text-amber-400" />
               Insert Country Stat
             </h3>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors active:scale-95 dark:hover:bg-white/10"
             >
               <X className="h-5 w-5" />
             </button>
@@ -101,23 +101,23 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
           <div className="space-y-6 p-6">
             {/* Step 1: Select Country */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-white/75">1. Select Country</label>
+              <label className="text-foreground block text-xs font-semibold">1. Select Country</label>
               <div className="relative">
-                <Search className="absolute top-2.5 left-3 h-4 w-4 text-white/40" />
+                <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
                 <input
                   ref={firstInputRef}
                   type="text"
                   placeholder="Search country name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pr-3 pl-9 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
                 />
               </div>
 
               {/* List Results */}
-              <div className="max-h-32 scrollbar-thin divide-y divide-white/5 overflow-y-auto rounded-lg border border-white/10 bg-black/20">
+              <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-32 divide-y overflow-y-auto rounded-lg border">
                 {isLoading && (
-                  <div className="flex items-center gap-2 p-3 text-xs text-white/50">
+                  <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Loading...
                   </div>
@@ -130,7 +130,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                       className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
                         selectedCountry?.id === c.id
                           ? "bg-amber-500/20 font-semibold text-amber-400"
-                          : "text-white/80 hover:bg-white/5"
+                          : "text-foreground hover:bg-muted/50"
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                           <img
                             src={c.flagUrl}
                             alt=""
-                            className="h-3 w-5 rounded-sm border border-white/10 object-cover"
+                            className="border-border h-3 w-5 rounded-sm border object-cover"
                           />
                         )}
                         {c.name}
@@ -151,17 +151,17 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                     </button>
                   ))}
                 {!isLoading && countries?.length === 0 && (
-                  <div className="p-3 text-center text-xs text-white/40">No countries found.</div>
+                  <div className="text-muted-foreground p-3 text-center text-xs">No countries found.</div>
                 )}
               </div>
             </div>
 
             {/* Selected Country Badge */}
             {selectedCountry && (
-              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 p-3">
+              <div className="border-border bg-muted/20 flex items-center justify-between rounded-lg border p-3">
                 <div>
-                  <span className="block text-xs text-white/40">Selected Country</span>
-                  <span className="text-sm font-bold text-white">{selectedCountry.name}</span>
+                  <span className="text-muted-foreground block text-xs">Selected Country</span>
+                  <span className="text-foreground text-sm font-bold">{selectedCountry.name}</span>
                 </div>
                 <Compass className="h-5 w-5 text-amber-400" />
               </div>
@@ -169,16 +169,16 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
             {/* Step 2: Select Stat */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-white/75">
+              <label className="text-foreground block text-xs font-semibold">
                 2. Choose Stat Attribute
               </label>
               <select
                 value={selectedStat}
                 onChange={(e) => setSelectedStat(e.target.value)}
-                className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-white/5 bg-[right_12px_center] bg-no-repeat px-3 py-2 text-sm text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                className="border-input bg-secondary text-foreground focus:ring-ring w-full cursor-pointer rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               >
                 {STAT_FIELDS.map((stat) => (
-                  <option key={stat.value} value={stat.value} className="bg-[#121c2c] text-white">
+                  <option key={stat.value} value={stat.value} className="bg-popover text-foreground">
                     {stat.label}
                   </option>
                 ))}
@@ -187,7 +187,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
             {/* Preview syntax */}
             {selectedCountry && (
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-3 text-center font-mono text-xs text-emerald-400">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center font-mono text-xs text-emerald-400">
                 Syntax:{" "}
                 {viewerCountryId && selectedCountry.id === viewerCountryId
                   ? `{{MyCountry:${selectedStat}}}`
@@ -196,17 +196,17 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
             )}
 
             {/* Footer Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+            <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
               <button
                 onClick={onClose}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInsertStat}
                 disabled={!selectedCountry}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-all hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Stat
               </button>

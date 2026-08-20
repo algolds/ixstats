@@ -1,275 +1,403 @@
+// src/app/labs/onoma/components/shared/OnomaHelpModal.tsx
+// ⟨ONOMA⟩ Linguistic Engine — Contextual Help & Interactive Brand Walkthrough
+// Philosophy: Clean Typography × Apple Interactive Inspector × Focused Walkthrough
+
 "use client";
 
-// src/app/labs/onoma/components/shared/OnomaHelpModal.tsx
-// ⟨ONOMA⟩ Linguistic Engine — Brand Walkthrough & System Guide (Apple / Facet Design)
-// Uses Game-Icons from Cards library (Icons by Lorc, Delapouite & contributors, CC BY 3.0)
-// Reference: docs/systems/onoma-brand-guide.md
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { X, ChevronRight, ChevronLeft } from "lucide-react";
-import { CategoryIcon } from "~/components/cards/icons";
-import type { LoreCategory } from "~/lib/cards/category-enums";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  BookOpen,
+} from "lucide-react";
 import { OnomaBrandLogo } from "./OnomaBrandLogo";
 import { cn } from "~/lib/utils";
+import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
+import {
+  WALKTHROUGH_STEPS,
+  SYSTEM_GUIDES,
+  type WalkthroughStep,
+  type SystemGuideItem,
+} from "./onoma-help-data";
 
-interface OnomaHelpModalProps {
+export interface OnomaHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
+  activeSection?: OnomaSection;
+  activeSubTab?: StudioSubTab;
+  activeExploreSubTab?: ExploreSubTab;
+  initialMode?: "walkthrough" | "module";
 }
 
-interface StepItem {
-  category: LoreCategory;
-  badge: string;
-  title: string;
-  subtitle: string;
-  quote?: string;
-  progression?: string;
-  description: string;
-  features: string[];
-}
 
-const STEPS: StepItem[] = [
-  {
-    category: "SCIENCE",
-    badge: "01 · THE THESIS",
-    title: "Language is a system.",
-    subtitle: "From rules to language",
-    quote:
-      "Good linguistic creation does not begin with words. It begins with the system that makes those words possible.",
-    description:
-      "A name is never simply a string of letters. It emerges naturally from a structured linguistic chain:",
-    progression: "sound → structure → pattern → vocabulary → culture → history",
-    features: [
-      "Onoma is not a name generator — it is the linguistic engine behind the name",
-      "Engineered with deterministic Markov matrices and formal linguistic constraints",
-      "Define the sound system and permitted syllables; authentic vocabulary emerges",
-    ],
-  },
-  {
-    category: "GEOGRAPHY",
-    badge: "02 · CREATE · CVC · CCVCC",
-    title: "Make language useful.",
-    subtitle: "Build the language behind your world",
-    description:
-      "Synthesize culturally coherent names and entities across dedicated worldbuilding environments:",
-    features: [
-      "Places: Nations, settlements, provinces, rivers, and mountain ranges",
-      "People: First names, patronymics, noble dynasties, and cultural ethnonyms",
-      "Organizations & Culture: Guilds, chivalric orders, deities, and sacred traditions",
-    ],
-  },
-  {
-    category: "HISTORY",
-    badge: "03 · STUDIO · X → Y / V_V",
-    title: "Build the system.",
-    subtitle: "Language construction environment",
-    description:
-      "A complete workshop to define sound systems, train Markov models, and simulate historical change:",
-    features: [
-      "Model Workshop & Visualizer: Multi-order Markov chains, interactive transition graphs",
-      "Name Sets Compositor: Combine multi-part dictionaries into structured compound names",
-      "Sound Shifts: Historical sound change interpreter (X → Y / ENV) across epochs (Grimm's Law, Romance Lenition)",
-    ],
-  },
-  {
-    category: "CULTURE",
-    badge: "04 · EXPLORE · F₁ vs F₂ · σ",
-    title: "Understand the language.",
-    subtitle: "Analysis, acoustics & permanent lexicon",
-    description:
-      "Inspect underlying mechanics, audit linguistic health, audition natural speech, and stash vocabulary:",
-    features: [
-      "Acoustics & IPA: Real-time 2D IPA Vowel Quadrilateral (F₁ vs F₂) and formant spectrum",
-      "Syntax, Writing & Etymology: 5-case declensions, grapheme-to-glyph systems, and root trees",
-      "Stash: Permanent repository to organize discovered vocabulary and deploy into your world",
-    ],
-  },
-];
-
-export function OnomaHelpModal({ isOpen, onClose }: OnomaHelpModalProps) {
-  const [activeStep, setActiveStep] = useState(0);
+export function OnomaHelpModal({
+  isOpen,
+  onClose,
+  activeSection = "overview",
+  activeSubTab,
+  activeExploreSubTab,
+  initialMode,
+}: OnomaHelpModalProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
+  const [activeWalkthroughStep, setActiveWalkthroughStep] = useState(0);
+
+  // Resolve initial contextual guide ID from router state
+  const contextId = useMemo(() => {
+    if (activeSection === "explore") {
+      return activeExploreSubTab || "phonology";
+    }
+    if (activeSection === "studio") {
+      return activeSubTab || "workshop";
+    }
+    if (
+      activeSection === "overview" ||
+      activeSection === "places" ||
+      activeSection === "people" ||
+      activeSection === "organizations" ||
+      activeSection === "culture"
+    ) {
+      return "create";
+    }
+    if (activeSection === "bank") {
+      return "bank";
+    }
+    return "create";
+  }, [activeSection, activeSubTab, activeExploreSubTab]);
+
+  const [selectedGuideId, setSelectedGuideId] = useState<string>("walkthrough");
+
+  // When modal opens, auto-focus depending on initialMode
+  useEffect(() => {
+    if (isOpen) {
+      if (initialMode === "walkthrough") {
+        setSelectedGuideId("walkthrough");
+        setActiveWalkthroughStep(0);
+      } else {
+        setSelectedGuideId(contextId);
+      }
+    }
+  }, [isOpen, contextId, initialMode]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Keyboard navigation (Escape to close, Left/Right arrows to step)
+  // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") {
-        setActiveStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-      }
-      if (e.key === "ArrowLeft") {
-        setActiveStep((prev) => Math.max(prev - 1, 0));
+      if (selectedGuideId === "walkthrough") {
+        if (e.key === "ArrowRight") {
+          setActiveWalkthroughStep((prev) => Math.min(prev + 1, WALKTHROUGH_STEPS.length - 1));
+        }
+        if (e.key === "ArrowLeft") {
+          setActiveWalkthroughStep((prev) => Math.max(prev - 1, 0));
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, selectedGuideId]);
 
-  const handleNext = () => {
-    if (activeStep < STEPS.length - 1) {
-      setActiveStep(activeStep + 1);
-    } else {
-      onClose();
-    }
-  };
+  const currentGuide = useMemo(
+    () => SYSTEM_GUIDES.find((g) => g.id === selectedGuideId) || SYSTEM_GUIDES[0],
+    [selectedGuideId]
+  );
 
-  const handleBack = () => {
-    if (activeStep > 0) {
-      setActiveStep(activeStep - 1);
+  const currentWalkthrough = WALKTHROUGH_STEPS[activeWalkthroughStep];
+
+  const handleDismissWalkthrough = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("onoma-welcome-seen", "true");
     }
+    onClose();
   };
 
   if (!mounted || !isOpen) return null;
 
-  const currentStep = STEPS[activeStep];
-
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop (Frosted Refraction Blur) */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-6">
+          {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="bg-background/60 absolute inset-0 backdrop-blur-md"
+            className="bg-background/70 absolute inset-0 backdrop-blur-md"
           />
 
-          {/* Modal Container (Facet Volumetric Card) */}
+          {/* Modal Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            className="border-border/50 bg-card/95 relative z-10 flex w-full max-w-lg flex-col justify-between overflow-hidden rounded-2xl border p-6 sm:p-7 shadow-2xl shadow-black/50 backdrop-blur-xl"
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            className={cn(
+              "border-border/40 bg-card/95 relative z-10 flex flex-col overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-2xl transition-all duration-300",
+              selectedGuideId === "walkthrough"
+                ? "h-auto max-h-[620px] w-full max-w-xl"
+                : "h-[90vh] max-h-[700px] w-full max-w-3xl"
+            )}
           >
-            {/* Header: Logo, Tagline & Close Trigger */}
-            <div className="border-border/30 mb-5 flex items-start justify-between border-b pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2.5">
-                  <OnomaBrandLogo variant="lockup" className="h-6 w-auto text-foreground" />
-                </div>
-                <p className="text-[12px] font-medium text-foreground tracking-tight">
-                  Language, engineered.{" "}
-                  <span className="text-muted-foreground font-normal">
-                    Build the language behind your world.
-                  </span>
-                </p>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border/35 px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <OnomaBrandLogo variant="wordmark" className="h-5.5 w-auto text-foreground" />
+                <span className="text-muted-foreground/50 font-mono text-xs">·</span>
+                <span className="text-foreground text-xs font-semibold tracking-tight">
+                  {selectedGuideId === "walkthrough" ? "Welcome to Onoma" : "System Help & Reference"}
+                </span>
               </div>
+
               <button
+                type="button"
                 onClick={onClose}
-                className="text-muted-foreground hover:bg-secondary/40 hover:text-foreground rounded-lg p-1.5 transition-all -mr-1 -mt-1 active:scale-95 cursor-pointer"
-                title="Close Guide"
+                className="text-muted-foreground hover:bg-secondary/40 hover:text-foreground rounded-xl p-1.5 transition-colors cursor-pointer active:scale-95"
+                title="Close Help (Esc)"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Content Display */}
-            <div className="flex min-h-[280px] flex-col items-center space-y-3.5 text-center">
-              {/* Category Badge & Game-Icon Silhouette from Cards */}
-              <div className="relative">
-                <div className="rounded-2xl border border-[#0091ff]/20 bg-[#0091ff]/10 p-3 text-[#0091ff] shadow-[0_0_20px_rgba(0,145,255,0.15)] flex items-center justify-center">
-                  <CategoryIcon
-                    category={currentStep.category}
-                    treatment="emblem"
-                    className="h-6 w-6 text-[#0091ff]"
-                  />
-                </div>
-                {currentStep.badge ? (
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#0091ff]/30 bg-background px-2 py-0.5 text-[9px] font-bold tracking-widest text-[#0091ff] uppercase">
-                    {currentStep.badge}
-                  </span>
-                ) : null}
-              </div>
+            {/* Main Modal Body */}
+            {selectedGuideId === "walkthrough" ? (
+              /* --- FOCUSED INTERACTIVE 4-STEP WALKTHROUGH VIEW (NO MODULE REFERENCES) --- */
+              <div className="flex flex-col justify-between overflow-y-auto p-6 sm:p-7 flex-1 scrollbar-thin">
+                <div className="space-y-4 max-w-lg mx-auto w-full">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-foreground text-lg sm:text-xl font-bold tracking-tight">
+                        {currentWalkthrough.title}
+                      </h3>
+                      <p className="text-muted-foreground text-xs font-medium">
+                        {currentWalkthrough.subtitle}
+                      </p>
+                    </div>
 
-              <div className="space-y-1 pt-1">
-                <h3 className="text-foreground text-base sm:text-lg font-semibold tracking-tight">
-                  {currentStep.title}
-                </h3>
-                <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto font-normal">
-                  {currentStep.description}
-                </p>
-              </div>
-
-              {/* Special Quote / Progression Chain for Step 1 */}
-              {currentStep.quote && (
-                <div className="w-full space-y-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-3 py-2 text-center">
-                  <p className="text-[11px] font-medium text-foreground italic">
-                    “{currentStep.quote}”
-                  </p>
-                  <p className="font-mono text-[10px] text-[#0091ff] font-semibold tracking-tight">
-                    {currentStep.progression}
-                  </p>
-                </div>
-              )}
-
-              {/* Feature Bullet Points */}
-              <div className="w-full space-y-1.5 rounded-xl border border-border/40 bg-secondary/[0.04] p-3 text-left">
-                {currentStep.features.map((feat, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs">
-                    <span className="mt-0.5 shrink-0 text-[#0091ff] font-bold">›</span>
-                    <span className="text-foreground/90 leading-relaxed font-medium">{feat}</span>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0091ff]/10 text-[#0091ff] shadow-xs">
+                      <OnomaBrandLogo variant="symbol" className="h-6 w-6 text-[#0091ff]" />
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Footer Navigation Controls & North Star Mantra */}
-            <div className="border-border/30 mt-5 flex items-center justify-between border-t pt-4">
-              {/* Skip Guide */}
-              <button
-                onClick={onClose}
-                className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
-              >
-                Skip Guide
-              </button>
+                  {currentWalkthrough.quote && (
+                    <div className="border-[#0091ff]/20 bg-[#0091ff]/5 rounded-xl border p-3 text-center space-y-1">
+                      <p className="text-foreground text-xs italic font-medium">
+                        “{currentWalkthrough.quote}”
+                      </p>
+                      {currentWalkthrough.progression && (
+                        <p className="text-[#0091ff] font-mono text-[10px] font-semibold">
+                          {currentWalkthrough.progression}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-              {/* Segmented Dots Progress */}
-              <div className="flex items-center gap-1.5">
-                {STEPS.map((_, idx) => (
+                  <p className="text-foreground/90 text-xs leading-relaxed">
+                    {currentWalkthrough.description}
+                  </p>
+
+                  <div className="border-border/30 bg-secondary/15 space-y-2 rounded-2xl border p-3.5">
+                    {currentWalkthrough.features.map((feat, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs">
+                        <span className="text-[#0091ff] font-bold shrink-0">›</span>
+                        <span className="text-foreground/90 leading-relaxed font-medium">
+                          {feat}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Walkthrough Navigation Bar */}
+                <div className="border-border/30 mt-6 flex items-center justify-between border-t pt-4 max-w-lg mx-auto w-full">
                   <button
-                    key={idx}
-                    onClick={() => setActiveStep(idx)}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
-                      idx === activeStep
-                        ? "w-5 bg-[#0091ff]"
-                        : "bg-border/80 hover:bg-muted-foreground w-1.5"
-                    )}
-                  />
-                ))}
-              </div>
-
-              {/* Back / Next Buttons */}
-              <div className="flex items-center gap-2">
-                {activeStep > 0 && (
-                  <button
-                    onClick={handleBack}
-                    className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer"
+                    type="button"
+                    onClick={handleDismissWalkthrough}
+                    className="text-muted-foreground hover:text-foreground text-xs font-medium transition-colors cursor-pointer"
                   >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    <span>Back</span>
+                    Don't show on startup
                   </button>
-                )}
 
-                <button
-                  onClick={handleNext}
-                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-[#0091ff]/20 transition-all hover:bg-[#33a7ff] active:scale-95 cursor-pointer"
-                >
-                  <span>{activeStep === STEPS.length - 1 ? "Begin" : "Next"}</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                  {/* Step Dots */}
+                  <div className="flex items-center gap-1.5">
+                    {WALKTHROUGH_STEPS.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveWalkthroughStep(idx)}
+                        className={cn(
+                          "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                          idx === activeWalkthroughStep
+                            ? "w-5 bg-[#0091ff]"
+                            : "bg-border/80 hover:bg-muted-foreground w-1.5"
+                        )}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Back & Next / Begin Buttons */}
+                  <div className="flex items-center gap-2">
+                    {activeWalkthroughStep > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveWalkthroughStep((prev) => prev - 1)}
+                        className="border-border/40 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 cursor-pointer"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <span>Back</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeWalkthroughStep < WALKTHROUGH_STEPS.length - 1) {
+                          setActiveWalkthroughStep((prev) => prev + 1);
+                        } else {
+                          handleDismissWalkthrough();
+                        }
+                      }}
+                      className="bg-[#0091ff] hover:bg-[#0080e6] flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span>
+                        {activeWalkthroughStep === WALKTHROUGH_STEPS.length - 1 ? "Begin" : "Next"}
+                      </span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* --- SPLIT-PANE MODULE REFERENCES VIEW --- */
+              <div className="grid flex-1 grid-cols-1 overflow-hidden sm:grid-cols-12">
+                {/* Left System Switcher Column (4 cols) */}
+                <div className="border-border/30 bg-secondary/10 flex flex-row sm:flex-col gap-1 overflow-x-auto sm:overflow-y-auto border-b p-2.5 sm:border-r sm:border-b-0 sm:col-span-4 scrollbar-thin">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGuideId("walkthrough")}
+                    className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-all cursor-pointer select-none active:scale-[0.98] shrink-0 sm:shrink mb-1 text-muted-foreground hover:text-foreground hover:bg-secondary/20 border border-transparent"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#0091ff]" />
+                      <span className="truncate text-[11px] font-medium">Welcome to Onoma</span>
+                    </div>
+                  </button>
+
+                  <span className="text-muted-foreground hidden sm:block px-2 py-1 text-[9px] font-bold tracking-wider uppercase mt-1">
+                    Module References
+                  </span>
+                  {SYSTEM_GUIDES.map((g) => {
+                    const Icon = g.icon;
+                    const isSelected = g.id === selectedGuideId;
+
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setSelectedGuideId(g.id)}
+                        className={cn(
+                          "flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-all cursor-pointer select-none active:scale-[0.98] shrink-0 sm:shrink",
+                          isSelected
+                            ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff] border shadow-2xs font-semibold"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/20 border border-transparent"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate text-[11px] font-medium">{g.title}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right System Inspector Details (8 cols) */}
+                <div className="flex flex-col justify-between overflow-y-auto p-5 sm:col-span-8 scrollbar-thin">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-foreground text-lg font-bold tracking-tight">
+                          {currentGuide.title}
+                        </h3>
+                        <p className="text-muted-foreground text-xs font-medium">
+                          {currentGuide.subtitle}
+                        </p>
+                      </div>
+
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0091ff]/10 text-[#0091ff] shadow-xs">
+                        {React.createElement(currentGuide.icon, { className: "h-5 w-5" })}
+                      </div>
+                    </div>
+
+                    {currentGuide.formula && (
+                      <div className="border-[#0091ff]/20 bg-[#0091ff]/5 rounded-xl border p-2.5 text-center">
+                        <span className="text-[#0091ff] font-mono text-[10px] font-semibold tracking-tight">
+                          {currentGuide.formula}
+                        </span>
+                      </div>
+                    )}
+
+                    <p className="text-foreground/90 text-xs leading-relaxed">
+                      {currentGuide.description}
+                    </p>
+
+                    <div className="space-y-2">
+                      <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                        Core Mechanics
+                      </span>
+                      <div className="border-border/30 bg-secondary/15 space-y-2 rounded-2xl border p-3">
+                        {currentGuide.mechanics.map((m, idx) => (
+                          <div key={idx} className="space-y-0.5 text-xs">
+                            <span className="text-foreground font-bold">{m.label}: </span>
+                            <span className="text-muted-foreground text-[11px] leading-relaxed">
+                              {m.detail}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {currentGuide.proTips.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Worldbuilding Pro Tips
+                        </span>
+                        <div className="space-y-2">
+                          {currentGuide.proTips.map((tip, idx) => (
+                            <div
+                              key={idx}
+                              className="border-border/30 bg-secondary/10 flex items-start gap-2.5 rounded-xl border p-2.5 text-xs"
+                            >
+                              <span className="text-[#0091ff] mt-0.5 font-bold shrink-0">›</span>
+                              <span className="text-foreground/90 text-[11px] leading-relaxed">
+                                {tip}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-border/30 mt-6 flex items-center justify-end border-t pt-3.5">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="bg-[#0091ff] hover:bg-[#0080e6] flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span>Got it</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       )}

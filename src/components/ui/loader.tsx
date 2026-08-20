@@ -252,7 +252,7 @@ const IxLogoSVG = (props: React.SVGProps<SVGSVGElement>) => (
     {...props}
   >
     <defs>
-      <style>{`.cls-1{fill:#1d4e89;}`}</style>
+      <style>{`.cls-1{fill:var(--color-brand-primary, #1d4e89);}`}</style>
     </defs>
     <title>IxWiki_4</title>
     <path

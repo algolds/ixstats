@@ -7,7 +7,11 @@ import React, { useState, useEffect } from "react";
 import { Sliders } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { VoicePreferencesPanel, VOICE_LABELS } from "./settings/VoicePreferencesPanel";
+import {
+  VoicePreferencesPanel,
+  VOICE_LABELS,
+  SPECIES_PRESETS,
+} from "./settings/VoicePreferencesPanel";
 import { VoiceSandboxPanel } from "./settings/VoiceSandboxPanel";
 import { ConlangDataManagerPanel } from "./settings/ConlangDataManagerPanel";
 
@@ -144,6 +148,19 @@ export function SettingsSection() {
     if (typeof window === "undefined") return;
     localStorage.setItem("onoma-personal-preset", presetName);
     setSelectedPreset(presetName);
+
+    if (SPECIES_PRESETS[presetName]) {
+      const p = SPECIES_PRESETS[presetName];
+      savePersonalPreferences(p.voice, p.speed);
+      handleUpdateAdvancedSetting("onoma-personal-volume", p.volume);
+      handleUpdateAdvancedSetting("onoma-personal-pitch", p.pitch);
+      handleUpdateAdvancedSetting("onoma-personal-anglicize", p.anglicize);
+      handleUpdateAdvancedSetting("onoma-personal-phoneme-prefix", p.phonemePrefix);
+      handleUpdateAdvancedSetting("onoma-personal-strip-stress", p.stripStress);
+      handleUpdateAdvancedSetting("onoma-personal-prosody", p.prosody);
+      handleUpdateAdvancedSetting("onoma-personal-voice-blend-active", p.blendActive);
+      notify.success(`Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`);
+    }
   };
 
   const handleResetPreferences = () => {
@@ -217,17 +234,6 @@ export function SettingsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
-      <div className="border-border/40 space-y-1 border-b pb-3 text-left">
-        <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-          <Sliders className="h-4 w-4 text-[#0091ff]" /> Onoma Preferences & Sandbox
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          Customize playback parameters, preview voices, and manage conlang dictionaries stored in
-          this browser.
-        </p>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
         {/* Left Column: Preferences Card */}
         <VoicePreferencesPanel

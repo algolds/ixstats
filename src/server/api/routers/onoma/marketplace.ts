@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { PhonologyRulesSchema, MorphologyRulesSchema } from "~/lib/onoma/types";
 
@@ -26,7 +27,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       const limit = input?.limit ?? 20;
       const cursor = input?.cursor;
 
-      const where: any = {
+      const where: Prisma.LanguagePackWhereInput = {
         visibility: "public",
       };
 
@@ -163,7 +164,10 @@ export const onomaMarketplaceRouter = createTRPCRouter({
       });
 
       if (!sourcePack || sourcePack.versions.length === 0) {
-        throw new Error("Source pack not found or has no versions.");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Source pack not found or has no versions.",
+        });
       }
 
       const latestVer = sourcePack.versions[0];

@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNameBank } from "~/hooks/useNameBank";
-import { type GenerateOptions, type StudioSubTab } from "~/lib/onoma/types";
+import { type GenerateOptions, type StudioSubTab, type NameCategory } from "~/lib/onoma/types";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { translateToIPA } from "~/lib/onoma/phonology";
@@ -59,7 +59,7 @@ export function useStudioState({
 
   // Generator Config
   const [order, setOrder] = useState<number>(2);
-  const [batchCount, setBatchCount] = useState<number>(10);
+  const [batchCount, setBatchCount] = useState<number>(15);
   const [options, setOptions] = useState<GenerateOptions>({
     minLength: 4,
     maxLength: 12,
@@ -295,15 +295,49 @@ export function useStudioState({
     }
   };
 
-  // Load conlang lexicon definitions from localStorage
+  // Load conlang lexicon definitions from localStorage and merge with database stash items
   const loadDefinitions = useCallback(() => {
+    let localDefs: Record<
+      string,
+      { partOfSpeech: string; root: string; meaning: string; origin: string }
+    > = {};
+
     if (typeof window !== "undefined") {
-      const defsJson = localStorage.getItem("onoma-lexicon-definitions");
-      if (defsJson) {
-        setDefinitions(JSON.parse(defsJson));
+      try {
+        const defsJson = localStorage.getItem("onoma-lexicon-definitions");
+        if (defsJson) {
+          localDefs = JSON.parse(defsJson);
+        }
+      } catch {
+        // ignore JSON parse error
       }
     }
-  }, []);
+
+    // Merge from database stash records
+    if (bank.nameBank && bank.nameBank.length > 0) {
+      for (const entry of bank.nameBank) {
+        const anyEntry = entry as {
+          title: string;
+          lexiconDefinition?: {
+            partOfSpeech?: string;
+            root?: string;
+            meaning?: string;
+            origin?: string;
+          } | null;
+        };
+        if (anyEntry.lexiconDefinition && anyEntry.title) {
+          localDefs[anyEntry.title] = {
+            partOfSpeech: anyEntry.lexiconDefinition.partOfSpeech || "Noun",
+            root: anyEntry.lexiconDefinition.root || "",
+            meaning: anyEntry.lexiconDefinition.meaning || "",
+            origin: anyEntry.lexiconDefinition.origin || "",
+          };
+        }
+      }
+    }
+
+    setDefinitions(localDefs);
+  }, [bank.nameBank]);
 
   useEffect(() => {
     loadDefinitions();
@@ -374,7 +408,7 @@ export function useStudioState({
     }
   }, [selectedTerm, definitions]);
 
-  // Save lexicon entry from details panel
+  // Save lexicon entry from details panel (persisting locally and to database)
   const handleSaveLexiconDefinition = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTerm || typeof window === "undefined") return;
@@ -390,6 +424,19 @@ export function useStudioState({
     localStorage.setItem("onoma-lexicon-definitions", JSON.stringify(defs));
     setDefinitions(defs);
     window.dispatchEvent(new Event("onoma-definitions-updated"));
+
+    // Sync to database if entry exists or as a saved lexicon word
+    const existingStashItem = bank.nameBank?.find(
+      (item) => item.title.toLowerCase() === selectedTerm.toLowerCase()
+    );
+    void bank.saveEntry({
+      id: existingStashItem?.id,
+      type: (existingStashItem?.type as "dictionary" | "saved-name") || "saved-name",
+      title: selectedTerm,
+      values: existingStashItem?.values && existingStashItem.values.length > 0 ? existingStashItem.values : [selectedTerm],
+      category: (existingStashItem?.category as NameCategory) || null,
+      lexiconDefinition: newDef,
+    });
   };
 
   // Delete lexicon entry from both local definitions and Stash

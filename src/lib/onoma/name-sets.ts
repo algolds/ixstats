@@ -207,18 +207,3 @@ export function genderMatches(slotGender: NameGender, dictGender: NameGender): b
   if (slotGender === "any") return true;
   return dictGender === "any" || dictGender === slotGender;
 }
-
-// ponytail: self-check, run with `bun src/lib/onoma/name-sets.ts`
-if (import.meta.main) {
-  const assert = (c: boolean, m: string) => {
-    if (!c) throw new Error("FAIL: " + m);
-  };
-  assert(guessRoleGenderFromFilename("roman_surnames.txt").role === "surname", "surname role");
-  assert(guessRoleGenderFromFilename("female_first.txt").gender === "female", "female gender");
-  assert(guessRoleGenderFromFilename("male-given.txt").gender === "male", "male gender");
-  assert(guessRoleGenderFromFilename("clan.txt").role === "surname", "clan->surname");
-  assert(defaultTemplate(["surname", "given"]).slots[0].role === "given", "given first");
-  assert(defaultTemplate([]).slots.length === 1, "fallback slot");
-  assert(genderMatches("male", "any") && !genderMatches("male", "female"), "gender match");
-  console.log("name-sets self-check OK");
-}

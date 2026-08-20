@@ -88,35 +88,35 @@ export function WikiAndStashPopovers({
             className={cn(
               "h-7 w-7 rounded-xl p-0 transition-all duration-150 active:scale-95",
               isWikiOpen
-                ? "bg-[#1d4e89]/15 text-[#1d4e89] ring-1 ring-[#1d4e89]/30 dark:text-[#3b82f6]"
-                : "text-slate-500 hover:bg-black/5 hover:text-[#1d4e89] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-[#3b82f6]"
+                ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
+                : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
             )}
             title="Insert Wiki Link or Embed"
             aria-label="Insert Wiki Link or Embed"
           >
-            <FaWikipediaW className="h-3.5 w-3.5 text-[#1d4e89] dark:text-[#3b82f6]" />
+            <FaWikipediaW className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
           </Button>
         </PopoverTrigger>
         <PopoverContent
           side="bottom"
           align="start"
           sideOffset={8}
-          className="dark:border-border dark:bg-popover/98 text-foreground z-50 w-80 space-y-3 rounded-2xl border border-black/10 bg-white/95 p-3.5 shadow-2xl backdrop-blur-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+          className="border-border bg-popover/98 text-foreground z-50 w-80 space-y-3 rounded-2xl p-3.5 shadow-2xl backdrop-blur-2xl"
         >
-          <div className="dark:border-border/60 flex items-center justify-between border-b border-black/5 pb-2.5">
+          <div className="border-border/60 flex items-center justify-between border-b pb-2.5">
             <span className="text-foreground flex items-center gap-1.5 text-xs font-bold">
-              <FaWikipediaW className="h-3.5 w-3.5 text-[#1d4e89] dark:text-[#3b82f6]" />
+              <FaWikipediaW className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
               Wiki Link / Embed
             </span>
-            <div className="flex items-center gap-1 rounded-xl border border-black/10 bg-black/5 p-0.5 dark:border-white/10 dark:bg-black/40">
+            <div className="border-border bg-muted/40 flex items-center gap-1 rounded-xl border p-0.5">
               <button
                 type="button"
                 onClick={() => setWikiInsertMode("link")}
                 className={cn(
                   "rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all active:scale-95",
                   wikiInsertMode === "link"
-                    ? "bg-[#1d4e89] text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-wiki text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Inline Link
@@ -127,8 +127,8 @@ export function WikiAndStashPopovers({
                 className={cn(
                   "rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all active:scale-95",
                   wikiInsertMode === "embed"
-                    ? "bg-[#1d4e89] text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-wiki text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Card Embed
@@ -144,8 +144,8 @@ export function WikiAndStashPopovers({
               className={cn(
                 "flex-1 rounded-xl border py-1.5 text-center text-xs font-bold transition-all active:scale-[0.98]",
                 wikiSource === "ixwiki"
-                  ? "border-[#1d4e89] bg-[#1d4e89] text-white shadow-sm"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:text-white"
+                  ? "border-wiki bg-wiki text-white shadow-xs"
+                  : "border-input bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
               IxWiki
@@ -156,8 +156,8 @@ export function WikiAndStashPopovers({
               className={cn(
                 "flex-1 rounded-xl border py-1.5 text-center text-xs font-bold transition-all active:scale-[0.98]",
                 wikiSource === "iiwiki"
-                  ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:text-white"
+                  ? "border-blue-600 bg-blue-600 text-white shadow-xs"
+                  : "border-input bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
               IIWiki
@@ -165,27 +165,27 @@ export function WikiAndStashPopovers({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+            <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
               Article Title
             </Label>
             <Input
               value={wikiTarget}
               onChange={(e) => setWikiTarget(e.target.value)}
               placeholder="e.g. Empire of Ixnay"
-              className="h-8.5 rounded-xl border-black/10 bg-black/[0.03] text-xs font-medium text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#1d4e89]/50 dark:border-white/15 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-slate-500"
+              className="border-input bg-secondary text-foreground placeholder:text-muted-foreground focus-visible:ring-wiki/50 h-8.5 rounded-xl text-xs font-medium"
             />
           </div>
 
           {wikiInsertMode === "link" && (
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              <Label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Display Text (Optional)
               </Label>
               <Input
                 value={wikiLabel}
                 onChange={(e) => setWikiLabel(e.target.value)}
                 placeholder="Defaults to article title"
-                className="h-8.5 rounded-xl border-black/10 bg-black/[0.03] text-xs font-medium text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#1d4e89]/50 dark:border-white/15 dark:bg-white/[0.04] dark:text-white dark:placeholder:text-slate-500"
+                className="border-input bg-secondary text-foreground placeholder:text-muted-foreground focus-visible:ring-wiki/50 h-8.5 rounded-xl text-xs font-medium"
               />
             </div>
           )}
@@ -194,7 +194,7 @@ export function WikiAndStashPopovers({
             size="sm"
             onClick={insertWikiLink}
             disabled={!wikiTarget.trim()}
-            className="h-8.5 w-full rounded-xl bg-[#1d4e89] text-xs font-bold text-white shadow-md transition-all hover:bg-[#184275] active:scale-[0.98]"
+            className="bg-wiki hover:bg-wiki-hover h-8.5 w-full rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-[0.98]"
           >
             {wikiInsertMode === "embed" ? "Insert Card Embed" : "Insert Wiki Link"}
           </Button>

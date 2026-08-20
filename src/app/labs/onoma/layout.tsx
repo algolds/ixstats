@@ -7,7 +7,7 @@ import { withBasePath } from "~/lib/base-path";
 // Onoma Lab — Layout Wrapper & Favicon Metadata
 
 export const metadata: Metadata = {
-  title: "⟨ONOMA⟩ Linguistic Engine — Language, engineered.",
+  title: "Onoma — Linguistic Engine",
   description:
     "A linguistic engine for creating, modeling, and evolving language. Build the language behind your world.",
   icons: [

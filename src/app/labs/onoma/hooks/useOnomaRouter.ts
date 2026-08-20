@@ -109,15 +109,21 @@ export function useOnomaRouter() {
     return new Set(stashedNames).size;
   }, [bank.nameBank]);
 
-  // Help walkthrough modal
+  // Help walkthrough modal state & mode
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [helpModalMode, setHelpModalMode] = useState<"walkthrough" | "module">("module");
 
-  // Auto-open guide for first-time visitors
+  const openHelp = useCallback((mode: "walkthrough" | "module" = "module") => {
+    setHelpModalMode(mode);
+    setShowHelpModal(true);
+  }, []);
+
+  // Auto-open guide for first-time visitors in walkthrough mode
   useEffect(() => {
     const seen = localStorage.getItem("onoma-welcome-seen");
     if (!seen) {
+      setHelpModalMode("walkthrough");
       setShowHelpModal(true);
-      localStorage.setItem("onoma-welcome-seen", "true");
     }
   }, []);
 
@@ -126,22 +132,38 @@ export function useOnomaRouter() {
   const [studioInitialTitle, setStudioInitialTitle] = useState<string | undefined>(undefined);
 
   // Handle Studio-specific subtab navigation
-  const handleNavigateStudio = useCallback((tab: StudioSubTab) => {
-    setActiveSubTab(tab);
-    const href = `/labs/onoma/studio/${tab}`;
-    window.history.pushState(null, "", withBasePath(href));
-    document.title = `Onoma Studio: ${studioSubTabLabel(tab)}`;
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  const handleNavigateStudio = useCallback(
+    (tab: StudioSubTab, words?: string[], title?: string) => {
+      if (words && words.length > 0) {
+        setStudioInitialWords(words);
+        setStudioInitialTitle(title || "Custom Corpus");
+      }
+      setActiveSection("studio");
+      setActiveSubTab(tab);
+      const href = `/labs/onoma/studio/${tab}`;
+      window.history.pushState(null, "", withBasePath(href));
+      document.title = `Onoma Studio — ${studioSubTabLabel(tab)}`;
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    []
+  );
 
   // Handle Explore-specific subtab navigation
-  const handleNavigateExplore = useCallback((tab: ExploreSubTab) => {
-    setActiveExploreSubTab(tab);
-    const href = `/labs/onoma/explore/${tab}`;
-    window.history.pushState(null, "", withBasePath(href));
-    document.title = `Onoma Explore: ${exploreSubTabLabel(tab)}`;
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  const handleNavigateExplore = useCallback(
+    (tab: ExploreSubTab, words?: string[], title?: string) => {
+      if (words && words.length > 0) {
+        setStudioInitialWords(words);
+        setStudioInitialTitle(title || "Custom Corpus");
+      }
+      setActiveSection("explore");
+      setActiveExploreSubTab(tab);
+      const href = `/labs/onoma/explore/${tab}`;
+      window.history.pushState(null, "", withBasePath(href));
+      document.title = `Onoma Explore — ${exploreSubTabLabel(tab)}`;
+      window.scrollTo({ top: 0, behavior: "instant" });
+    },
+    []
+  );
 
   // Handle top-level SPA navigation
   const handleNavigate = useCallback(
@@ -163,18 +185,20 @@ export function useOnomaRouter() {
       const href =
         section === "overview"
           ? "/labs/onoma"
-          : section === "studio"
-            ? `/labs/onoma/studio/${activeSubTab}`
-            : section === "explore"
-              ? `/labs/onoma/explore/${activeExploreSubTab}`
-              : `/labs/onoma/${section}`;
+          : section === "bank"
+            ? "/labs/onoma/stash"
+            : section === "studio"
+              ? `/labs/onoma/studio/${activeSubTab}`
+              : section === "explore"
+                ? `/labs/onoma/explore/${activeExploreSubTab}`
+                : `/labs/onoma/${section}`;
       window.history.pushState(null, "", withBasePath(href));
 
       document.title =
         section === "studio"
-          ? `Onoma Studio: ${studioSubTabLabel(activeSubTab)}`
+          ? `Onoma Studio — ${studioSubTabLabel(activeSubTab)}`
           : section === "explore"
-            ? `Onoma Explore: ${exploreSubTabLabel(activeExploreSubTab)}`
+            ? `Onoma Explore — ${exploreSubTabLabel(activeExploreSubTab)}`
             : `Onoma — ${SECTION_TITLES[section]}`;
 
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -220,9 +244,9 @@ export function useOnomaRouter() {
   // Set document title on load/change
   useEffect(() => {
     if (activeSection === "studio") {
-      document.title = `Onoma Studio: ${studioSubTabLabel(activeSubTab)} — Linguistic Engine`;
+      document.title = `Onoma Studio — ${studioSubTabLabel(activeSubTab)}`;
     } else if (activeSection === "explore") {
-      document.title = `Onoma Explore: ${exploreSubTabLabel(activeExploreSubTab)} — Linguistic Engine`;
+      document.title = `Onoma Explore — ${exploreSubTabLabel(activeExploreSubTab)}`;
     } else {
       document.title = `Onoma — ${SECTION_TITLES[activeSection]}`;
     }
@@ -231,8 +255,8 @@ export function useOnomaRouter() {
   const handleLoadToStudio = useCallback((words: string[], title: string) => {
     setStudioInitialWords(words);
     setStudioInitialTitle(title);
-    handleNavigate("studio");
-  }, [handleNavigate]);
+    handleNavigateStudio("workshop");
+  }, [handleNavigateStudio]);
 
   const handleClearStudioInitial = useCallback(() => {
     setStudioInitialWords(undefined);
@@ -252,6 +276,8 @@ export function useOnomaRouter() {
     playPronunciation,
     showHelpModal,
     setShowHelpModal,
+    helpModalMode,
+    openHelp,
     studioInitialWords,
     studioInitialTitle,
     handleNavigate,

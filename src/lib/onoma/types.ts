@@ -6,8 +6,12 @@ import { z } from "zod";
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 export type IPAString = Brand<string, "IPAString">;
 export type LanguagePackId = Brand<string, "LanguagePackId">;
+export type SVGPathString = Brand<string, "SVGPathString">;
+export type ConlangWord = Brand<string, "ConlangWord">;
 
 export const toIPAString = (s: string): IPAString => s as IPAString;
+export const toSVGPathString = (s: string): SVGPathString => s as SVGPathString;
+export const toConlangWord = (s: string): ConlangWord => s as ConlangWord;
 
 // Strict Conlang Marketplace & Syntax Schemas
 export const PhonologyRulesSchema = z.object({
@@ -25,12 +29,22 @@ export const MorphologyRulesSchema = z.object({
   declensionPatterns: z.record(z.string(), z.record(z.string(), z.string())).default({}),
 });
 
+export const LexiconDefinitionSchema = z.object({
+  partOfSpeech: z.string().default("Noun"),
+  root: z.string().default(""),
+  meaning: z.string().default(""),
+  origin: z.string().default(""),
+});
+
+export type LexiconDefinition = z.infer<typeof LexiconDefinitionSchema>;
+
 export const StashNoteMetadataSchema = z.object({
   category: z.string().nullable().optional(),
   role: z.string().nullable().optional(),
   gender: z.string().nullable().optional(),
   setName: z.string().nullable().optional(),
   values: z.array(z.string()).default([]),
+  lexiconDefinition: LexiconDefinitionSchema.optional(),
   phonology: z
     .object({
       culture: z.string().optional(),
@@ -40,6 +54,21 @@ export const StashNoteMetadataSchema = z.object({
     })
     .optional(),
 });
+
+export interface GrammarProfileData {
+  id?: string;
+  userId?: string;
+  languagePackId?: string | null;
+  name: string;
+  wordOrder: "SVO" | "SOV" | "VSO" | "VOS" | "OVS" | "OSV" | string;
+  caseSystem: Record<string, string>;
+  verbConjugation: Record<string, string>;
+  articles: Record<string, string>;
+  numberSystem: Record<string, string>;
+  adjectiveOrder: "before" | "after" | string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 export interface LinguisticProfile {
   id: string;
@@ -250,20 +279,15 @@ export type StudioSubTab =
   | "workshop"
   | "visualizer"
   | "namesets"
-  | "shifts"
-  | "lexicon"
-  | "batch";
+  | "shifts";
 
 /**
- * Explore workspace sub-tabs (Language Analysis & Understanding Layer).
+ * Explore workspace sub-tabs (Language Analysis & Understanding Layer — Pure Reference).
  */
 export type ExploreSubTab =
   | "phonology"
-  | "etymology"
-  | "syntax"
+  | "grammar"
   | "writing"
-  | "loanwords"
-  | "compare"
   | "packs";
 
 /**
@@ -284,9 +308,9 @@ export interface OnomaNavItem {
 export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "Sandbox",
     icon: "Sparkles",
-    description: "Quick synthesis & language engine overview",
+    description: "Freeform Markov synthesis sandbox",
     path: "/labs/onoma",
     pillar: "create",
   },
@@ -350,8 +374,8 @@ export const ONOMA_NAV_ITEMS: OnomaNavItem[] = [
     id: "bank",
     label: "Stash",
     icon: "Bookmark",
-    description: "Saved vocabulary & dictionaries",
-    path: "/labs/onoma/bank",
+    description: "Saved vocabulary & lexicon dictionary",
+    path: "/labs/onoma/stash",
     pillar: "utility",
   },
   {
@@ -378,11 +402,20 @@ export function getSectionFromPathname(pathname: string): OnomaSection {
     return "studio";
   }
   if (
-    ["etymology", "syntax", "writing", "loanwords", "compare", "phonology"].includes(baseSegment)
+    [
+      "grammar",
+      "syntax",
+      "etymology",
+      "roots",
+      "writing",
+      "loanwords",
+      "compare",
+      "phonology",
+    ].includes(baseSegment)
   ) {
     return "explore";
   }
-  if (baseSegment === "history" || baseSegment === "stash") {
+  if (baseSegment === "history" || baseSegment === "stash" || baseSegment === "bank") {
     return "bank";
   }
   if (baseSegment === "batch") {
@@ -403,14 +436,7 @@ export function getStudioSubTabFromPathname(pathname: string): StudioSubTab {
   const subsegment = segment.split("/")[0];
   if (subsegment === "visualizer") return "visualizer";
   if (subsegment === "namesets") return "namesets";
-  if (subsegment === "lexicon") return "lexicon";
   if (subsegment === "shifts" || subsegment === "sound-shifts") return "shifts";
-  if (subsegment === "batch") return "batch";
-
-  // Backward compatibility for /labs/onoma/batch URL
-  if (pathname.includes("/labs/onoma/batch")) {
-    return "batch";
-  }
 
   return "workshop";
 }
@@ -422,21 +448,32 @@ export function getExploreSubTabFromPathname(pathname: string): ExploreSubTab {
   const segment = pathname.split("/labs/onoma/explore")[1]?.replace(/^\//, "") || "";
   const subsegment = segment.split("/")[0];
   if (subsegment === "phonology" || subsegment === "acoustics") return "phonology";
-  if (subsegment === "syntax") return "syntax";
+  if (
+    subsegment === "grammar" ||
+    subsegment === "syntax" ||
+    subsegment === "etymology" ||
+    subsegment === "roots"
+  ) {
+    return "grammar";
+  }
   if (subsegment === "writing") return "writing";
-  if (subsegment === "loanwords") return "loanwords";
-  if (subsegment === "compare") return "compare";
-  if (subsegment === "etymology") return "etymology";
-  if (subsegment === "packs" || subsegment === "marketplace" || subsegment === "community") return "packs";
+  if (subsegment === "compare" || subsegment === "comparator") return "phonology";
+  if (subsegment === "packs" || subsegment === "marketplace" || subsegment === "community")
+    return "packs";
 
   // Backward compatibility for root-level direct URLs
   const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
   const rootSegment = parts[0] || "";
-  if (rootSegment === "phonology" || rootSegment === "acoustics") return "phonology";
-  if (rootSegment === "syntax") return "syntax";
+  if (rootSegment === "phonology" || rootSegment === "acoustics" || rootSegment === "compare") return "phonology";
+  if (
+    rootSegment === "grammar" ||
+    rootSegment === "syntax" ||
+    rootSegment === "etymology" ||
+    rootSegment === "roots"
+  ) {
+    return "grammar";
+  }
   if (rootSegment === "writing") return "writing";
-  if (rootSegment === "loanwords") return "loanwords";
-  if (rootSegment === "compare") return "compare";
   if (rootSegment === "packs" || rootSegment === "marketplace") return "packs";
 
   return "phonology";

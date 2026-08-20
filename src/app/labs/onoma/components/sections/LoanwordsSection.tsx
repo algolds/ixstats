@@ -1,49 +1,56 @@
-"use client";
-
 // src/app/labs/onoma/components/sections/LoanwordsSection.tsx
 // Onoma Lab — Loanword & Contact Registry Section
+// Philosophy: Historical Linguistics × Apple Design × Emil Design Engineering
 
-import { useState, useEffect } from "react";
-import { Languages, Plus, Trash2, ArrowRightLeft } from "lucide-react";
-import { CultureGameIcon } from "../nav/onoma-tabs";
+"use client";
+
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+  Plus,
+  Trash2,
+  ArrowRight,
+  Copy,
+  Check,
+  RefreshCw,
+  Sliders,
+  Globe2,
+  HelpCircle,
+  X,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { cn } from "~/lib/utils";
 
-interface SoundShift {
-  from: string;
-  to: string;
-}
-
-interface SourceWord {
-  word: string;
-  meaning: string;
-}
-
-const PRESET_WORDS: SourceWord[] = [
-  { word: "phalanx", meaning: "military unit" },
-  { word: "centaur", meaning: "mythical creature" },
-  { word: "basilica", meaning: "large church" },
-  { word: "emporium", meaning: "trading marketplace" },
-  { word: "scholar", meaning: "academic student" },
-];
+import {
+  THEMATIC_PRESETS,
+  PHONETIC_LAW_PRESETS,
+  type SoundShift,
+  type SourceWord,
+} from "~/lib/onoma/loanwords-presets";
 
 export default function LoanwordsSection() {
   const notify = useNotify();
   const utils = api.useUtils();
+  const shouldReduceMotion = useReducedMotion();
+  const donorSelectRef = useRef<HTMLSelectElement | null>(null);
 
   // Selected contact state
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
 
   // Form states for contact entry
   const [sourcePackId, setSourcePackId] = useState("");
   const [targetPackId, setTargetPackId] = useState("");
   const [domain, setDomain] = useState("trade");
-  const [intensity, setIntensity] = useState(0.3);
+  const [intensity, setIntensity] = useState(0.35);
 
   // Phonetic adaptation rules
   const [soundShifts, setSoundShifts] = useState<SoundShift[]>([
-    { from: "ph", to: "p" },
+    { from: "ph", to: "f" },
     { from: "c", to: "k" },
     { from: "x", to: "ks" },
   ]);
@@ -54,14 +61,24 @@ export default function LoanwordsSection() {
   const [vowelEpenthesis, setVowelEpenthesis] = useState(true);
   const [epentheticVowel, setEpentheticVowel] = useState("a");
 
-  // Word simulation list
-  const [testWords, setTestWords] = useState<SourceWord[]>(PRESET_WORDS);
+  // Word simulation list & active preset
+  const [activePresetKey, setActivePresetKey] = useState<string>("trade");
+  const [testWords, setTestWords] = useState<SourceWord[]>(THEMATIC_PRESETS.trade.words);
   const [newTestWord, setNewTestWord] = useState("");
   const [newTestMeaning, setNewTestMeaning] = useState("");
+
+  // Feedback states
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // Queries
   const { data: contacts, isLoading: contactsLoading } = api.onoma.listContacts.useQuery();
   const { data: packsData } = api.onoma.list.useQuery();
+
+  // Selected source and target pack models
+  const sourcePack = useMemo(
+    () => packsData?.packs?.find((p: any) => p.id === sourcePackId),
+    [packsData, sourcePackId]
+  );
 
   // Mutations
   const saveContactMutation = api.onoma.saveContact.useMutation({
@@ -110,23 +127,10 @@ export default function LoanwordsSection() {
         setVowelEpenthesis(!!rules.vowelEpenthesis);
         setEpentheticVowel(rules.epentheticVowel || "a");
       }
-    } else {
-      setSourcePackId("");
-      setTargetPackId("");
-      setDomain("trade");
-      setIntensity(0.3);
-      setSoundShifts([
-        { from: "ph", to: "p" },
-        { from: "c", to: "k" },
-        { from: "x", to: "ks" },
-      ]);
-      setCodaDrop(false);
-      setVowelEpenthesis(true);
-      setEpentheticVowel("a");
     }
   }, [selectedContactId, contacts]);
 
-  // Execute borrow simulation on changes
+  // Execute borrow simulation on rule/word changes
   useEffect(() => {
     if (testWords.length > 0) {
       borrowMutation.mutate({
@@ -140,10 +144,65 @@ export default function LoanwordsSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testWords, soundShifts, codaDrop, vowelEpenthesis, epentheticVowel]);
 
+  // Dedicated Reset & Create New Channel Handler
+  const handleNewChannel = () => {
+    setSelectedContactId(null);
+    setSourcePackId("");
+    setTargetPackId("");
+    setDomain("trade");
+    setIntensity(0.35);
+    setSoundShifts([
+      { from: "ph", to: "f" },
+      { from: "c", to: "k" },
+      { from: "x", to: "ks" },
+    ]);
+    setCodaDrop(false);
+    setVowelEpenthesis(true);
+    setEpentheticVowel("a");
+    notify.info("Drafting new contact channel. Select Donor and Recipient below.");
+    setTimeout(() => {
+      donorSelectRef.current?.focus();
+    }, 60);
+  };
+
+  // 1-Click Sync from Source Language Pack's actual lexicon
+  const handleSyncSourceLexicon = () => {
+    if (!sourcePack) {
+      notify.error("Select a source language pack first.");
+      return;
+    }
+
+    const pack = sourcePack as { name: string; lexiconSeed?: unknown };
+    const lexiconWords: string[] = Array.isArray(pack.lexiconSeed)
+      ? (pack.lexiconSeed as string[])
+      : [];
+
+    if (lexiconWords.length === 0) {
+      notify.info(`No custom lexicon words found in ${sourcePack.name}. Using domain preset.`);
+      return;
+    }
+
+    const formatted: SourceWord[] = lexiconWords.slice(0, 10).map((w, i) => ({
+      word: w,
+      meaning: `derived term ${i + 1}`,
+    }));
+
+    setTestWords(formatted);
+    notify.success(`Loaded ${formatted.length} words from ${sourcePack.name}`);
+  };
+
+  const handleApplyPhoneticLaw = (law: (typeof PHONETIC_LAW_PRESETS)[0]) => {
+    setSoundShifts(law.shifts);
+    notify.success(`Applied ${law.name} sound shift rules.`);
+  };
+
   const handleAddShift = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFrom) return;
-    setSoundShifts((prev) => [...prev, { from: newFrom, to: newTo }]);
+    if (!newFrom.trim()) return;
+    setSoundShifts((prev) => [
+      ...prev,
+      { from: newFrom.trim().toLowerCase(), to: newTo.trim().toLowerCase() },
+    ]);
     setNewFrom("");
     setNewTo("");
   };
@@ -155,7 +214,7 @@ export default function LoanwordsSection() {
   const handleSaveContact = (e: React.FormEvent) => {
     e.preventDefault();
     if (!sourcePackId || !targetPackId || sourcePackId === targetPackId) {
-      notify.error("Please select two distinct conlang packs.");
+      notify.error("Please select two distinct language packs.");
       return;
     }
 
@@ -176,8 +235,11 @@ export default function LoanwordsSection() {
 
   const handleAddTestWord = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTestWord || !newTestMeaning) return;
-    setTestWords((prev) => [...prev, { word: newTestWord, meaning: newTestMeaning }]);
+    if (!newTestWord.trim() || !newTestMeaning.trim()) return;
+    setTestWords((prev) => [
+      ...prev,
+      { word: newTestWord.trim().toLowerCase(), meaning: newTestMeaning.trim() },
+    ]);
     setNewTestWord("");
     setNewTestMeaning("");
   };
@@ -186,100 +248,189 @@ export default function LoanwordsSection() {
     setTestWords((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
-          <Languages className="h-5 w-5 text-emerald-500" />
-          Loanword & Contact Registry
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Map contact history between conlangs and simulate vocabulary borrowing with phonetic
-          adaptation rules.
-        </p>
-      </div>
+  const handleCopyWord = async (text: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 1500);
+    } catch {
+      // ignore
+    }
+  };
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Column: Contact Links Registry */}
+  return (
+    <div className="space-y-4">
+      {/* Help Guide Drawer Overlay */}
+      <AnimatePresence>
+        {showHelpGuide && (
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <FacetMaterial
+              material="satin"
+              className="border-[#0091ff]/30 bg-[#0091ff]/5 space-y-2.5 rounded-2xl border p-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[#0091ff]" />
+                  <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                    Loanwords & Historical Language Contact Guide
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowHelpGuide(false)}
+                  className="hover:bg-secondary/40 text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
+                <div className="space-y-1">
+                  <span className="text-foreground font-semibold">1. Contact Channels</span>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    Map relationships between Donor (L1) and Recipient (L2) languages across trade, warfare, or academic domains.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-foreground font-semibold">2. Phonetic Shifts</span>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or Grimm&apos;s Consonant Shift).
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-foreground font-semibold">3. Syllable Constraints</span>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to maintain open syllable harmony.
+                  </p>
+                </div>
+              </div>
+            </FacetMaterial>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Studio Grid */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
-          <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
-            <div className="border-border/10 flex items-center justify-between border-b pb-2">
-              <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
-                <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
-                Contact Registry Links
-              </h3>
-              <button
-                onClick={() => setSelectedContactId(null)}
-                className="cursor-pointer text-[10px] font-bold text-emerald-500 hover:text-emerald-400"
-              >
-                + New Contact
-              </button>
+          {/* Contact Registry List */}
+          <FacetMaterial material="satin" className="border-border/30 space-y-3 rounded-2xl border p-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0091ff]/10 text-[#0091ff]">
+                  <Globe2 className="h-3.5 w-3.5" />
+                </div>
+                <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                  Contact Channels
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowHelpGuide(!showHelpGuide)}
+                  title="Toggle Contact Guide"
+                  className={cn(
+                    "flex h-6.5 w-6.5 items-center justify-center rounded-lg border transition-all cursor-pointer active:scale-95",
+                    showHelpGuide
+                      ? "border-[#0091ff]/40 bg-[#0091ff]/15 text-[#0091ff]"
+                      : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNewChannel}
+                  className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/40 bg-secondary/20 flex h-6.5 items-center gap-1 rounded-lg border px-2.5 text-[10px] font-bold text-[#0091ff] transition-all cursor-pointer active:scale-[0.97]"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>New Channel</span>
+                </button>
+              </div>
             </div>
 
             {contactsLoading ? (
-              <div className="text-muted-foreground text-xs">Loading contacts...</div>
-            ) : contacts?.length === 0 ? (
-              <div className="text-muted-foreground text-xs italic">
-                No contact mappings created yet.
+              <div className="text-muted-foreground py-2 text-xs">Loading contact channels...</div>
+            ) : !contacts || contacts.length === 0 ? (
+              <div className="text-muted-foreground py-3 text-xs italic text-center">
+                No active contact channels mapped yet. Click &quot;New Channel&quot; to begin.
               </div>
             ) : (
-              <div className="max-h-48 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
-                {contacts?.map((c: any) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedContactId(c.id)}
-                    className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left text-xs transition-colors ${
-                      selectedContactId === c.id
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                        : "hover:bg-secondary/15 text-foreground border-transparent"
-                    }`}
-                  >
-                    <div>
-                      <span className="font-semibold">{c.sourcePack.name}</span>
-                      <span className="text-muted-foreground mx-2">→</span>
-                      <span className="font-semibold">{c.targetPack.name}</span>
-                    </div>
-                    <span className="text-muted-foreground rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] capitalize">
-                      {c.domain}
-                    </span>
-                  </button>
-                ))}
+              <div className="max-h-44 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
+                {contacts.map((c: any) => {
+                  const isSelected = selectedContactId === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedContactId(c.id)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer active:scale-[0.98]",
+                        isSelected
+                          ? "border-[#0091ff]/50 bg-[#0091ff]/10 text-[#0091ff] shadow-xs font-semibold"
+                          : "border-border/30 bg-background/50 hover:bg-secondary/20 text-foreground"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold truncate">{c.sourcePack?.name}</span>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="font-bold truncate">{c.targetPack?.name}</span>
+                      </div>
+                      <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 text-[9px] font-mono capitalize shrink-0 ml-1">
+                        {c.domain}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </FacetMaterial>
 
           {/* Form to configure Contact Registry */}
-          <FacetMaterial material="satin" className="border-border/20 border p-4">
-            <form onSubmit={handleSaveContact} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                  Contact Configuration
-                </h4>
+          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
+            <form onSubmit={handleSaveContact} className="space-y-3.5">
+              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                    Channel Settings
+                  </h4>
+                  {!selectedContactId && (
+                    <span className="text-[#0091ff] bg-[#0091ff]/10 border border-[#0091ff]/30 rounded px-1.5 py-0.2 text-[9px] font-mono font-semibold">
+                      New
+                    </span>
+                  )}
+                </div>
                 {selectedContactId && (
                   <button
                     type="button"
                     onClick={() => deleteContactMutation.mutate({ id: selectedContactId })}
-                    className="flex cursor-pointer items-center gap-1 text-xs text-red-400 hover:text-red-300"
+                    className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer active:scale-[0.97]"
                   >
-                    <Trash2 className="h-3 w-3" /> Delete
+                    <Trash2 className="h-3 w-3" />
+                    <span>Delete</span>
                   </button>
                 )}
               </div>
 
-              {/* Source Conlang */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Source & Target Language Selectors */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
-                    Source Conlang (L1)
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                    Donor Language (L1)
                   </label>
                   <select
+                    ref={donorSelectRef}
                     value={sourcePackId}
                     onChange={(e) => setSourcePackId(e.target.value)}
                     required
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
+                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
                   >
-                    <option value="">(Select Source)</option>
+                    <option value="">(Select Donor L1)</option>
                     {packsData?.packs?.map((p: any) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -287,17 +438,18 @@ export default function LoanwordsSection() {
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
-                    Target Conlang (L2)
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                    Recipient Language (L2)
                   </label>
                   <select
                     value={targetPackId}
                     onChange={(e) => setTargetPackId(e.target.value)}
                     required
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs focus:outline-none"
+                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
                   >
-                    <option value="">(Select Target)</option>
+                    <option value="">(Select Recipient L2)</option>
                     {packsData?.packs?.map((p: any) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -307,28 +459,32 @@ export default function LoanwordsSection() {
                 </div>
               </div>
 
-              {/* Domain & Intensity */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Contact Domain & Intensity */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
+                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
                     Contact Domain
                   </label>
                   <select
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    className="bg-background/50 border-border/40 text-foreground w-full rounded border px-2 py-1.5 text-xs"
+                    className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 w-full rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-all outline-none"
                   >
                     <option value="trade">Trade & Commerce</option>
-                    <option value="military">Military & War</option>
+                    <option value="military">Military & Warfare</option>
                     <option value="religious">Religion & Ritual</option>
-                    <option value="academic">Academic & Sciences</option>
-                    <option value="general">General Contact</option>
+                    <option value="academic">Sciences & Academia</option>
+                    <option value="general">General Cultural Exchange</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-medium">
-                    Borrowing Intensity: {Math.round(intensity * 100)}%
-                  </label>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-muted-foreground font-bold tracking-wider uppercase">Intensity</span>
+                    <span className="text-[#0091ff] font-mono font-bold bg-[#0091ff]/10 rounded px-1.5 py-0.2">
+                      {Math.round(intensity * 100)}%
+                    </span>
+                  </div>
                   <input
                     type="range"
                     min="0"
@@ -336,91 +492,118 @@ export default function LoanwordsSection() {
                     step="0.05"
                     value={intensity}
                     onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="bg-secondary/50 mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-lg accent-emerald-500"
+                    className="accent-[#0091ff] mt-1 h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
                   />
                 </div>
               </div>
 
-              {/* Adaptation Rules */}
-              <div className="border-border/10 space-y-3 border-t pt-3">
-                <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                  Phonological Adaptation Rules
-                </h5>
+              {/* Phonological Adaptation Rules Suite */}
+              <div className="border-border/20 space-y-2.5 border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                    Phonetic Adaptation Rules
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {PHONETIC_LAW_PRESETS.map((law) => (
+                      <button
+                        key={law.name}
+                        type="button"
+                        onClick={() => handleApplyPhoneticLaw(law)}
+                        title={law.description}
+                        className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/30 bg-secondary/20 rounded-md border px-1.5 py-0.5 text-[9px] font-mono font-semibold transition-all cursor-pointer active:scale-95"
+                      >
+                        {law.name.split(" ")[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                {/* Syllable Coda Adaptations */}
-                <div className="flex gap-4">
+                {/* Syllable Coda & Epenthesis Controls */}
+                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/30 bg-secondary/15 p-2 text-xs">
                   <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
                     <input
                       type="checkbox"
                       checked={codaDrop}
                       onChange={(e) => setCodaDrop(e.target.checked)}
-                      className="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0"
+                      className="accent-[#0091ff] rounded"
                     />
-                    Coda Drop (Drop final C)
+                    <span>Coda Drop (Drop final C)</span>
                   </label>
-                  <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
-                    <input
-                      type="checkbox"
-                      checked={vowelEpenthesis}
-                      onChange={(e) => setVowelEpenthesis(e.target.checked)}
-                      className="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0"
-                    />
-                    Epenthesis (Add V)
-                  </label>
-                  {vowelEpenthesis && (
-                    <input
-                      type="text"
-                      maxLength={1}
-                      value={epentheticVowel}
-                      onChange={(e) => setEpentheticVowel(e.target.value)}
-                      placeholder="a"
-                      className="bg-background/50 border-border/40 text-foreground w-8 rounded border text-center font-mono text-xs"
-                    />
-                  )}
+
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs select-none">
+                      <input
+                        type="checkbox"
+                        checked={vowelEpenthesis}
+                        onChange={(e) => setVowelEpenthesis(e.target.checked)}
+                        className="accent-[#0091ff] rounded"
+                      />
+                      <span>Epenthesis (+V)</span>
+                    </label>
+
+                    {vowelEpenthesis && (
+                      <input
+                        type="text"
+                        maxLength={1}
+                        value={epentheticVowel}
+                        onChange={(e) => setEpentheticVowel(e.target.value)}
+                        placeholder="a"
+                        className="bg-background/80 border-border/40 text-foreground focus:border-[#0091ff]/60 h-6 w-7 rounded-md border text-center font-mono text-xs font-bold outline-none"
+                      />
+                    )}
+                  </div>
                 </div>
 
-                {/* Sound Shift Builder */}
+                {/* Sound Shift Builder Input Strip */}
                 <div className="space-y-2">
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <input
                       type="text"
                       placeholder="From (e.g. ph)"
                       value={newFrom}
                       onChange={(e) => setNewFrom(e.target.value)}
-                      className="bg-background/50 border-border/40 text-foreground flex-1 rounded border px-2 py-1 font-mono text-xs"
+                      className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-2.5 py-1.5 font-mono text-xs outline-none"
                     />
+                    <span className="text-muted-foreground self-center">→</span>
                     <input
                       type="text"
                       placeholder="To (e.g. p)"
                       value={newTo}
                       onChange={(e) => setNewTo(e.target.value)}
-                      className="bg-background/50 border-border/40 text-foreground flex-1 rounded border px-2 py-1 font-mono text-xs"
+                      className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-2.5 py-1.5 font-mono text-xs outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleAddShift}
-                      className="bg-secondary/40 hover:bg-secondary/60 text-foreground rounded px-3 py-1 text-xs font-bold"
+                      disabled={!newFrom.trim()}
+                      className="hover:border-[#0091ff]/40 bg-secondary/30 hover:bg-[#0091ff]/10 text-foreground rounded-xl border border-border/40 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-30"
                     >
-                      Add Rule
+                      Add
                     </button>
                   </div>
 
-                  <div className="flex max-h-24 scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
-                    {soundShifts.map((shift, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-secondary/10 border-border/10 inline-flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-xs"
-                      >
-                        {shift.from} → {shift.to || "∅"}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveShift(idx)}
-                          className="font-bold text-red-400 hover:text-red-300"
+                  {/* Sound Shifts Active Pill Stream */}
+                  <div className="flex max-h-20 scrollbar-thin flex-wrap gap-1.5 overflow-y-auto pr-1">
+                    <AnimatePresence>
+                      {soundShifts.map((shift, idx) => (
+                        <motion.span
+                          key={`${shift.from}-${shift.to}-${idx}`}
+                          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="bg-[#0091ff]/10 border-[#0091ff]/25 text-[#0091ff] inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 font-mono text-xs font-semibold"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                          {shift.from} → {shift.to || "∅"}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveShift(idx)}
+                            className="text-[#0091ff]/60 hover:text-rose-400 font-bold transition-colors cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
@@ -428,103 +611,195 @@ export default function LoanwordsSection() {
               <button
                 type="submit"
                 disabled={saveContactMutation.isPending}
-                className="w-full cursor-pointer rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white transition-all hover:bg-emerald-700 active:scale-95"
+                className="bg-[#0091ff] hover:bg-[#0080e6] disabled:opacity-40 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97]"
               >
-                Save Contact Configuration
+                <span>{saveContactMutation.isPending ? "Saving Channel..." : "Save Contact Channel"}</span>
               </button>
             </form>
           </FacetMaterial>
         </div>
 
-        {/* Right Column: Loanword Adaptation Simulator Sandbox */}
+        {/* Right Column: Loanword Adaptation Simulator Sandbox (7 cols) */}
         <div className="space-y-4 lg:col-span-7">
-          <FacetMaterial material="satin" className="space-y-4 border border-emerald-500/20 p-4">
-            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
-              <CultureGameIcon className="h-4.5 w-4.5 text-emerald-500" />
-              Adaptation Simulator Sandbox
-            </h3>
+          <FacetMaterial material="satin" className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm">
+            {/* Simulator Header & Action Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#0091ff]/10 text-[#0091ff]">
+                  <Sliders className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
+                    Adaptation Simulator
+                  </h3>
+                  <p className="text-muted-foreground text-[10px]">
+                    Real-time phonological mutation & borrowing pipeline
+                  </p>
+                </div>
+              </div>
 
-            {/* Simulated Words Output Grid */}
-            <div className="border-border/15 overflow-hidden rounded-lg border bg-black/40">
-              <div className="bg-secondary/15 text-muted-foreground border-border/10 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[10px] font-bold tracking-wider uppercase">
-                <span className="col-span-4">Source Word</span>
-                <span className="col-span-4">Adaptation Rules</span>
-                <span className="col-span-4">Adapted Loanword</span>
+              {/* Source Pack Sync & Presets Toolbar */}
+              <div className="flex items-center gap-1.5">
+                {sourcePack && (
+                  <button
+                    type="button"
+                    onClick={handleSyncSourceLexicon}
+                    title={`Sync lexicon words from ${sourcePack.name}`}
+                    className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/40 bg-secondary/20 flex items-center gap-1 rounded-xl border px-2.5 py-1 text-[10px] font-bold text-[#0091ff] transition-all cursor-pointer active:scale-95"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    <span>Sync {sourcePack.name}</span>
+                  </button>
+                )}
+
+                {/* Thematic Preset Selector */}
+                <div className="flex items-center gap-0.5 rounded-xl border border-border/40 bg-secondary/20 p-0.5">
+                  {Object.keys(THEMATIC_PRESETS).map((key) => {
+                    const preset = THEMATIC_PRESETS[key];
+                    const isSelected = activePresetKey === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setActivePresetKey(key);
+                          setTestWords(preset.words);
+                          notify.info(`Loaded ${preset.label} vocabulary.`);
+                        }}
+                        className={cn(
+                          "rounded-lg px-2 py-1 text-[9px] font-semibold transition-all cursor-pointer active:scale-95",
+                          isSelected
+                            ? "bg-background text-foreground shadow-2xs font-bold"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {preset.label.split(" ")[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Simulated Words Output Table */}
+            <div className="border-border/30 overflow-hidden rounded-xl border bg-background/50 dark:bg-card/20 shadow-inner">
+              <div className="bg-secondary/20 text-muted-foreground border-border/20 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[10px] font-bold tracking-wider uppercase select-none">
+                <span className="col-span-4">Donor Word (L1)</span>
+                <span className="col-span-4">Transformation Pipeline</span>
+                <span className="col-span-4 text-right">Adapted Form (L2)</span>
               </div>
 
               {borrowMutation.data?.results && borrowMutation.data.results.length > 0 ? (
-                <div className="divide-border/5 max-h-72 scrollbar-thin divide-y overflow-y-auto pr-1">
-                  {borrowMutation.data.results.map((res: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="hover:bg-secondary/5 grid grid-cols-12 items-center gap-2 px-4 py-3 text-xs transition-colors"
-                    >
-                      <div className="col-span-4 flex flex-col">
-                        <span className="text-foreground font-bold">{res.original}</span>
-                        <span className="text-muted-foreground truncate text-[10px] italic">
-                          {res.meaning}
-                        </span>
+                <div className="divide-border/10 max-h-80 scrollbar-thin divide-y overflow-y-auto">
+                  {borrowMutation.data.results.map((res: any, idx: number) => {
+                    const isCopied = copiedIndex === idx;
+                    const adaptedWord = res.borrowed || res.original;
+                    return (
+                      <div
+                        key={idx}
+                        className="hover:bg-secondary/15 group grid grid-cols-12 items-center gap-2 px-4 py-3 text-xs transition-colors"
+                      >
+                        {/* Column 1: Source Word & Meaning */}
+                        <div className="col-span-4 flex flex-col">
+                          <span className="text-foreground font-mono font-bold text-xs">{res.original}</span>
+                          <span className="text-muted-foreground truncate text-[10px] italic">
+                            {res.meaning}
+                          </span>
+                        </div>
+
+                        {/* Column 2: Applied Rules Breakdown */}
+                        <div className="col-span-4 flex flex-wrap gap-1 font-mono text-[9px]">
+                          {soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) && (
+                            <span className="text-[#0091ff] bg-[#0091ff]/10 rounded px-1.5 py-0.2 font-semibold">
+                              shift
+                            </span>
+                          )}
+                          {codaDrop && (
+                            <span className="text-amber-500 bg-amber-500/10 rounded px-1.5 py-0.2 font-semibold">
+                              -coda
+                            </span>
+                          )}
+                          {vowelEpenthesis && (
+                            <span className="text-indigo-400 bg-indigo-500/10 rounded px-1.5 py-0.2 font-semibold">
+                              +{epentheticVowel}
+                            </span>
+                          )}
+                          {!soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) &&
+                            !codaDrop &&
+                            !vowelEpenthesis && (
+                              <span className="text-muted-foreground opacity-60">direct</span>
+                            )}
+                        </div>
+
+                        {/* Column 3: Adapted Result & Actions */}
+                        <div className="col-span-4 flex items-center justify-end gap-2">
+                          <span className="text-sm font-extrabold font-mono text-[#0091ff] tracking-tight">
+                            {adaptedWord}
+                          </span>
+                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyWord(adaptedWord, idx)}
+                              title="Copy adapted word"
+                              className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground rounded p-1 transition-colors cursor-pointer active:scale-90"
+                            >
+                              {isCopied ? (
+                                <Check className="h-3 w-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTestWord(idx)}
+                              title="Remove word"
+                              className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 rounded p-1 transition-colors cursor-pointer active:scale-90"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-muted-foreground col-span-4 flex flex-col gap-0.5 font-mono text-[10px]">
-                        {soundShifts.some((s) => res.original.includes(s.from)) && (
-                          <span className="text-emerald-400">✓ Sound Shifts applied</span>
-                        )}
-                        {codaDrop && <span className="text-amber-400">✓ Coda Dropped</span>}
-                        {vowelEpenthesis && (
-                          <span className="text-blue-400">✓ Epenthesis (+{epentheticVowel})</span>
-                        )}
-                      </div>
-                      <div className="col-span-4 flex items-center justify-between">
-                        <span className="text-sm font-extrabold text-emerald-400">
-                          {res.borrowed || res.original}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTestWord(idx)}
-                          className="cursor-pointer p-1 text-xs text-red-400 opacity-0 transition-opacity hover:text-red-300 hover:opacity-100"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-muted-foreground p-8 text-center text-xs italic">
-                  No source words added to simulate. Add some below.
+                  No source words active in simulator. Choose a preset above or add a word below.
                 </div>
               )}
             </div>
 
-            {/* Add Custom Word to Sandbox Form */}
-            <form onSubmit={handleAddTestWord} className="border-border/10 space-y-3 border-t pt-4">
-              <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                Add Source Word to Simulator
+            {/* Add Custom Word to Simulator Form */}
+            <form onSubmit={handleAddTestWord} className="border-border/20 space-y-2.5 border-t pt-3.5">
+              <h4 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                Add Custom Word to Simulator
               </h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   required
                   placeholder="Source Word (e.g. centaur)"
                   value={newTestWord}
                   onChange={(e) => setNewTestWord(e.target.value)}
-                  className="bg-background/50 border-border/40 text-foreground rounded border px-2.5 py-1.5 text-xs focus:outline-none"
+                  className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-3 py-1.5 font-mono text-xs outline-none"
                 />
                 <input
                   type="text"
                   required
-                  placeholder="English Meaning"
+                  placeholder="Meaning / Gloss"
                   value={newTestMeaning}
                   onChange={(e) => setNewTestMeaning(e.target.value)}
-                  className="bg-background/50 border-border/40 text-foreground rounded border px-2.5 py-1.5 text-xs focus:outline-none"
+                  className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 flex-1 rounded-xl border px-3 py-1.5 text-xs outline-none"
                 />
+                <button
+                  type="submit"
+                  className="hover:border-[#0091ff]/40 bg-secondary/30 hover:bg-[#0091ff]/10 text-foreground rounded-xl border border-border/40 px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer active:scale-95 shrink-0"
+                >
+                  <Plus className="inline h-3.5 w-3.5 mr-1 text-[#0091ff]" />
+                  <span>Add Word</span>
+                </button>
               </div>
-              <button
-                type="submit"
-                className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded bg-emerald-600 py-1.5 text-xs font-bold text-white transition-all hover:bg-emerald-700 active:scale-95"
-              >
-                <Plus className="h-3.5 w-3.5" /> Add to Simulation
-              </button>
             </form>
           </FacetMaterial>
         </div>

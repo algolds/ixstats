@@ -181,7 +181,7 @@ const GLYPH_METADATA: GlyphMeta[] = [
     domainColor: "#06b6d4",
   },
 
-  // EMERGENCE (Markov & Synthesis)
+  // EMERGENCE (Markov & Generation)
   {
     name: "emerge-branch",
     domain: "EMERGENCE",
@@ -193,9 +193,9 @@ const GLYPH_METADATA: GlyphMeta[] = [
   {
     name: "emerge-synthesis",
     domain: "EMERGENCE",
-    title: "Emergence / Synthesis (✦)",
-    description: "Deterministic linguistic synthesis from phonotactic constraints and seed state.",
-    linguisticNotation: "Synthesize()",
+    title: "Emergence / Generation (✦)",
+    description: "Deterministic linguistic generation from phonotactic constraints and seed state.",
+    linguisticNotation: "Generate()",
     domainColor: "#ec4899",
   },
   {
@@ -296,10 +296,10 @@ export default function OnomaGlyphsDevPage() {
                 className="hover:text-foreground flex items-center gap-1 transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Labs / ⟨ONOMA⟩</span>
+                <span>Labs / Onoma</span>
               </Link>
               <span>/</span>
-              <span className="text-foreground font-semibold">Glyphs Catalog (Dev)</span>
+              <span className="text-foreground font-semibold">Glyph Catalog</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -308,7 +308,7 @@ export default function OnomaGlyphsDevPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight font-mono">
-                  ⟨ONOMA⟩ Glyph Catalog <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">v0.1</span>
+                  Onoma Glyph Catalog <span className="text-xs font-mono text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">v0.1</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Mathematical vector grammar for notation over illustration (SF Symbols × IPA × Scientific Diagrams).

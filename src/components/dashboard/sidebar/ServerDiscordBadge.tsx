@@ -13,7 +13,7 @@ export function ServerDiscordBadge() {
   return (
     <Suspense
       fallback={
-        <span className="inline-flex h-7 w-full animate-pulse items-center rounded-md bg-[#5865F2]/30 px-2.5" />
+        <span className="bg-discord/30 inline-flex h-7 w-full animate-pulse items-center rounded-md px-2.5" />
       }
     >
       <DiscordBadge

@@ -15,7 +15,7 @@ import {
 export type OnomaGlyphSize = "xs" | "sm" | "md" | "lg" | "xl" | "display";
 export type OnomaGlyphState = "idle" | "active" | "generating" | "disabled";
 
-export interface OnomaGlyphProps extends React.SVGAttributes<SVGElement> {
+export interface OnomaGlyphProps extends React.HTMLAttributes<HTMLDivElement> {
   name?: OnomaGlyphName;
   variant?: "canonical" | "composed" | "framed";
   size?: OnomaGlyphSize;
@@ -131,7 +131,7 @@ export function OnomaGlyph({
       )}
       style={state === "active" && accentColor ? { color: accentColor } : undefined}
       title={title || name}
-      {...(rest as any)}
+      {...rest}
     >
       {GlyphRenderer({ strokeWidth: stroke })}
     </div>

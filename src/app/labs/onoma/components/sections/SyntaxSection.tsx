@@ -73,12 +73,12 @@ export default function SyntaxSection() {
 
   // Mutations
   const saveProfileMutation = api.onoma.saveProfile.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       notify.success(`Profile '${data.name}' saved.`);
       setSelectedProfileId(data.id);
       void utils.onoma.listProfiles.invalidate();
     },
-    onError: (err: any) => {
+    onError: (err) => {
       notify.error(`Failed to save profile: ${err.message}`);
     },
   });
@@ -89,7 +89,7 @@ export default function SyntaxSection() {
       setSelectedProfileId(null);
       void utils.onoma.listProfiles.invalidate();
     },
-    onError: (err: any) => {
+    onError: (err) => {
       notify.error(`Failed to delete profile: ${err.message}`);
     },
   });
@@ -97,7 +97,7 @@ export default function SyntaxSection() {
   // Automatically update form fields when selected profile changes
   useEffect(() => {
     if (selectedProfileId && profiles) {
-      const p = profiles.find((item: any) => item.id === selectedProfileId);
+      const p = profiles.find((item) => item.id === selectedProfileId);
       if (p) {
         setProfileName(p.name);
         setWordOrder(p.wordOrder);
@@ -168,17 +168,6 @@ export default function SyntaxSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-border/40 pb-3 text-left">
-        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-[#d946ef]" /> Syntax & Grammar Engine
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Define syntactic word order, morphological case suffixes, verbal tenses, and preview live
-          translations with custom conlang grammar rules.
-        </p>
-      </div>
-
       {/* Grammar Rules Formulation Card */}
       <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/20 pb-3">
@@ -197,7 +186,7 @@ export default function SyntaxSection() {
                 className="rounded-md border border-border/60 bg-background px-2 py-1.5 text-xs text-foreground focus:outline-none"
               >
                 <option value="">Load Existing Profile...</option>
-                {profiles.map((p: any) => (
+                {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} ({p.wordOrder})
                   </option>
@@ -210,7 +199,7 @@ export default function SyntaxSection() {
             {selectedProfileId && (
               <button
                 onClick={() => deleteProfileMutation.mutate({ id: selectedProfileId })}
-                className="flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-500/20 cursor-pointer"
+                className="flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-500/20 cursor-pointer active:scale-[0.97] transition-all"
               >
                 <Trash2 className="h-3 w-3" /> Delete
               </button>
@@ -218,7 +207,7 @@ export default function SyntaxSection() {
             <button
               onClick={handleSave}
               disabled={saveProfileMutation.isPending}
-              className="rounded-md bg-[#d946ef] px-3.5 py-1 text-xs font-bold text-white shadow hover:bg-[#c026d3] transition-colors cursor-pointer"
+              className="rounded-md bg-[#0091ff] px-3.5 py-1 text-xs font-bold text-white shadow hover:bg-[#007cdb] transition-all cursor-pointer active:scale-[0.97] disabled:opacity-50"
             >
               {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
             </button>

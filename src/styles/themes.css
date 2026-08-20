@@ -67,6 +67,14 @@
   --color-glass: rgba(22, 24, 29, 0.8);  /* WikiOS surface */
   --color-surface-blur: rgba(22, 24, 29, 0.95);
 
+  /* Domain & Brand Specific Tokens */
+  --color-poll: #ff8a65;              /* Poll coral orange */
+  --color-discord: #5865F2;           /* Discord blurple */
+  --color-discord-hover: #4752C4;     /* Discord blurple hover */
+  --color-wiki: #1d4e89;              /* Wiki blue */
+  --color-wiki-hover: #184275;        /* Wiki blue hover */
+  --color-map-ocean: #0a1628;         /* Map dark oceanic / spatial canvas */
+
   /* Component Specific Colors */
   --color-input-bg: #1e2028;
   --color-input-border: rgba(255, 255, 255, 0.12);
@@ -240,6 +248,14 @@
   --color-backdrop: rgba(0, 0, 0, 0.2);
   --color-glass: rgba(255, 255, 255, 0.88); /* frosted white glass surface */
   --color-surface-blur: rgba(255, 255, 255, 0.95);
+
+  /* Domain & Brand Specific Tokens (Light Mode) */
+  --color-poll: #ea580c;              /* WCAG AA contrast orange */
+  --color-discord: #5865F2;
+  --color-discord-hover: #4752C4;
+  --color-wiki: #1d4e89;
+  --color-wiki-hover: #184275;
+  --color-map-ocean: #0a1628;
 
   --color-input-bg: #ffffff;
   --color-input-border: rgba(0, 0, 0, 0.1);

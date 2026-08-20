@@ -19,6 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import { createAbsoluteUrl } from "~/lib/utils";
+import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -887,10 +888,10 @@ export const commands = [
 
   // Labs & Generators (only built routes; others 404)
   {
-    name: "Onoma Lab",
+    name: "Onoma",
     path: "/labs/onoma",
-    icon: Activity,
-    description: "Markov-based name generator",
+    icon: OnomaNavIcon,
+    description: "Linguistic Engine",
   },
 ];
 
@@ -1041,10 +1042,10 @@ export const features = [
 
   // Creative Labs & Generators (only built routes; others 404)
   {
-    name: "Name Generation",
+    name: "Onoma",
     path: "/labs/onoma",
-    icon: Activity,
-    description: "Generate names using Markov chains",
+    icon: OnomaNavIcon,
+    description: "Linguistic Engine",
   },
 
   // Administrative & System Tools

@@ -1,9 +1,10 @@
-"use client";
-
 // src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx
 // Onoma Lab — Unified Brand Logo & App Icon Component
+// Features: Apple Spring Hover Physics with Signature "Eye-Wink" Micro-Interaction
 
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import { cn } from "~/lib/utils";
 
 export type OnomaLogoVariant = "symbol" | "wordmark" | "lockup" | "app-icon";
@@ -57,29 +58,46 @@ export function OnomaBrandLogo({
   isHovered = false,
   animated = false,
 }: OnomaBrandLogoProps) {
+  const [isSelfHovered, setIsSelfHovered] = useState(false);
+  const isWinking = isHovered || isSelfHovered;
+
   // --------------------------------------------------------------------------
-  // Variant: Standalone Symbol
+  // Variant: Standalone Symbol (with Interactive Wink)
   // --------------------------------------------------------------------------
   if (variant === "symbol") {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 154.41 148.26"
+        onMouseEnter={() => setIsSelfHovered(true)}
+        onMouseLeave={() => setIsSelfHovered(false)}
         className={cn(
-          "transition-all duration-300",
+          "transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group/logo select-none",
           SIZE_MAP.symbol[size],
           tone === "monochrome" ? "fill-current text-foreground" : "fill-[#0091ff]",
-          isHovered && "scale-105",
+          isWinking && "scale-105 -rotate-2",
+          "group-hover/footer:scale-105 group-hover/footer:rotate-3",
+          "group-hover/brand:scale-105 group-hover/brand:-rotate-2",
+          "group-hover/logo:scale-105 group-hover/logo:-rotate-2",
           className
         )}
       >
         <g id="Logo">
           <path d="M122.5,121.6c4.2-3.79,7.64-10.09,8.84-15.63,4.16-19.19-7.45-31.88-15.97-47.33-.46-.84-4.55-9.55-5.03-9.23-21.25,37.03-54,66-90.3,87.88-3.6,2.17-8.95,7.1-12.5,3.2-1.37-1.51-5.25-8.26-6.27-10.33-1.13-2.3-2.2-3.92.1-6,42.11-22.48,76.52-54.36,99.4-96.45,4.33-7.97,7.69-17.45,12.06-24.99C113.69,1.21,114.46.02,116.5,0c1.42-.02,11.66,4.83,13.29,5.9,2.6,1.69,2.77,2.74,1.62,5.62-1.9,4.72-6.53,10.75-7.98,15.46-.13.41-.39.77-.24,1.25,9.18,30.35,38.58,48.96,29.52,84.2-10.31,40.1-66.21,48.17-90.47,15.95-1.35-1.8-3.46-4.14-2.34-6.58.29-.63,8.05-7.44,9.18-8.27,1.53-1.13,2.66-1.98,4.67-1.34,1.46.47,7.52,7.88,9.55,9.61,11.4,9.77,27.96,9.94,39.22-.2Z" />
+          {/* Eye with Apple Spring Wink Physics (Scale Y compression & slight X expansion) */}
           <circle
             cx="25.02"
             cy="68.66"
             r="15.11"
-            className={cn(animated && isHovered && "animate-pulse")}
+            style={{ transformOrigin: "25.02px 68.66px" }}
+            className={cn(
+              "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+              isWinking && "scale-y-[0.12] scale-x-[1.18]",
+              "group-hover/logo:scale-y-[0.12] group-hover/logo:scale-x-[1.18]",
+              "group-hover/footer:scale-y-[0.12] group-hover/footer:scale-x-[1.18]",
+              "group-hover/brand:scale-y-[0.12] group-hover/brand:scale-x-[1.18]",
+              animated && !isWinking && "animate-pulse"
+            )}
           />
           <path d="M74.45,3.08c2.16-.47,12.25,3.89,13.09,5.89.98,2.32-.51,4.97-1.41,7.09-2.57,6.05-7.66,18.38-11.06,23.42-.94,1.39-1.84,2.38-3.69,2.29-1.09-.05-9.16-3.54-10.23-4.29-2.69-1.88-2.11-4.45-1.13-7.1,1.97-5.39,8.51-20.22,11.49-24.7.66-1,1.73-2.34,2.95-2.6Z" />
         </g>
@@ -96,7 +114,7 @@ export function OnomaBrandLogo({
         xmlns="http://www.w3.org/2000/svg"
         viewBox="70 295 1665 295"
         className={cn(
-          "fill-current text-foreground transition-colors duration-200",
+          "fill-current text-foreground transition-colors duration-200 select-none",
           SIZE_MAP.wordmark[size],
           className
         )}
@@ -126,14 +144,20 @@ export function OnomaBrandLogo({
   }
 
   // --------------------------------------------------------------------------
-  // Variant: Logomark Lockup (ONOMA + Signature Seal)
+  // Variant: Logomark Lockup (ONOMA + Signature Seal with Wink)
   // --------------------------------------------------------------------------
   if (variant === "lockup") {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 450 88.79"
-        className={cn(SIZE_MAP.lockup[size], className)}
+        onMouseEnter={() => setIsSelfHovered(true)}
+        onMouseLeave={() => setIsSelfHovered(false)}
+        className={cn(
+          "transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group/logo select-none",
+          SIZE_MAP.lockup[size],
+          className
+        )}
       >
         <g id="Type" className="fill-current text-foreground">
           {/* Letter O (1) */}
@@ -159,7 +183,18 @@ export function OnomaBrandLogo({
           )}
         >
           <path d="M385.3,72.21c1.99-1.79,3.61-4.77,4.18-7.4,1.97-9.08-3.53-15.08-7.56-22.39-.22-.4-2.15-4.52-2.38-4.37-10.05,17.52-25.55,31.23-42.73,41.58-1.7,1.03-4.23,3.36-5.91,1.52-.65-.71-2.48-3.91-2.97-4.89-.54-1.09-1.04-1.85.05-2.84,19.92-10.64,36.2-25.72,47.03-45.64,2.05-3.77,3.64-8.26,5.71-11.82.41-.71.78-1.27,1.74-1.29.67,0,5.51,2.29,6.29,2.79,1.23.8,1.31,1.3.77,2.66-.9,2.23-3.09,5.09-3.78,7.32-.06.2-.19.37-.11.59,4.34,14.36,18.25,23.17,13.97,39.84-4.88,18.97-31.33,22.79-42.8,7.55-.64-.85-1.64-1.96-1.11-3.11.14-.3,3.81-3.52,4.34-3.91.72-.53,1.26-.94,2.21-.63.69.22,3.56,3.73,4.52,4.55,5.39,4.62,13.23,4.7,18.56-.1Z" />
-          <circle cx="339.18" cy="47.17" r="7.15" />
+          {/* Eye with Apple Spring Wink Physics */}
+          <circle
+            cx="339.18"
+            cy="47.17"
+            r="7.15"
+            style={{ transformOrigin: "339.18px 47.17px" }}
+            className={cn(
+              "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+              isWinking && "scale-y-[0.12] scale-x-[1.18]",
+              "group-hover/logo:scale-y-[0.12] group-hover/logo:scale-x-[1.18]"
+            )}
+          />
           <path d="M362.57,16.14c1.02-.22,5.8,1.84,6.2,2.79.46,1.1-.24,2.35-.67,3.36-1.22,2.86-3.62,8.7-5.23,11.08-.44.66-.87,1.13-1.75,1.08-.52-.03-4.33-1.67-4.84-2.03-1.27-.89-1-2.1-.54-3.36.93-2.55,4.03-9.57,5.43-11.69.31-.47.82-1.11,1.39-1.23Z" />
         </g>
       </svg>
@@ -188,4 +223,41 @@ export function OnomaBrandLogo({
     </div>
   );
 }
+
+/**
+ * Standard 16x16 / 4x4 nav icon adapter with interactive wink
+ */
+export function OnomaNavIcon(props: { className?: string }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 154.41 148.26"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        "h-4 w-4 fill-current transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group/logo select-none",
+        props.className
+      )}
+    >
+      <g id="Logo">
+        <path d="M122.5,121.6c4.2-3.79,7.64-10.09,8.84-15.63,4.16-19.19-7.45-31.88-15.97-47.33-.46-.84-4.55-9.55-5.03-9.23-21.25,37.03-54,66-90.3,87.88-3.6,2.17-8.95,7.1-12.5,3.2-1.37-1.51-5.25-8.26-6.27-10.33-1.13-2.3-2.2-3.92.1-6,42.11-22.48,76.52-54.36,99.4-96.45,4.33-7.97,7.69-17.45,12.06-24.99C113.69,1.21,114.46.02,116.5,0c1.42-.02,11.66,4.83,13.29,5.9,2.6,1.69,2.77,2.74,1.62,5.62-1.9,4.72-6.53,10.75-7.98,15.46-.13.41-.39.77-.24,1.25,9.18,30.35,38.58,48.96,29.52,84.2-10.31,40.1-66.21,48.17-90.47,15.95-1.35-1.8-3.46-4.14-2.34-6.58.29-.63,8.05-7.44,9.18-8.27,1.53-1.13,2.66-1.98,4.67-1.34,1.46.47,7.52,7.88,9.55,9.61,11.4,9.77,27.96,9.94,39.22-.2Z" />
+        <circle
+          cx="25.02"
+          cy="68.66"
+          r="15.11"
+          style={{ transformOrigin: "25.02px 68.66px" }}
+          className={cn(
+            "transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+            isHovered && "scale-y-[0.12] scale-x-[1.18]",
+            "group-hover/logo:scale-y-[0.12] group-hover/logo:scale-x-[1.18]"
+          )}
+        />
+        <path d="M74.45,3.08c2.16-.47,12.25,3.89,13.09,5.89.98,2.32-.51,4.97-1.41,7.09-2.57,6.05-7.66,18.38-11.06,23.42-.94,1.39-1.84,2.38-3.69,2.29-1.09-.05-9.16-3.54-10.23-4.29-2.69-1.88-2.11-4.45-1.13-7.1,1.97-5.39,8.51-20.22,11.49-24.7.66-1,1.73-2.34,2.95-2.6Z" />
+      </g>
+    </svg>
+  );
+}
+
 export default OnomaBrandLogo;

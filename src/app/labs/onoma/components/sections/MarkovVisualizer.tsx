@@ -17,7 +17,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Volume2, RotateCcw, HelpCircle } from "lucide-react";
-import { ScienceGameIcon } from "../nav/onoma-tabs";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { speakBrowserNative } from "~/lib/onoma/browser-speech";
 
@@ -328,10 +327,9 @@ export function MarkovVisualizerInner({
         <div className="flex items-center gap-2">
           <button
             onClick={handleDerivePath}
-            className="flex cursor-pointer items-center gap-1 rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 px-2.5 py-1 text-xs font-semibold text-[#0091ff] transition-all hover:bg-[#0091ff]/10"
+            className="flex cursor-pointer items-center justify-center rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 px-2.5 py-1 text-xs font-semibold text-[#0091ff] transition-all hover:bg-[#0091ff]/10 active:scale-95"
             title="Derive remaining path to end"
           >
-            <ScienceGameIcon className="h-3.5 w-3.5" />
             <span>Derive Path</span>
           </button>
 

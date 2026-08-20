@@ -13,8 +13,8 @@ export interface SpeciesSyllables {
   elegantEvil: { prefixesDarkElves: string[]; prefixesAlternateDarkElves: string[]; middle: string[]; maleSuffixes: string[]; femaleSuffixes: string[] };
   malevolent: { prefixes: string[]; maleSuffixes: string[]; femaleSuffixes: string[] };
   draconic: { prefixes: string[]; suffixes: string[] };
-  infernal: { prefixes: string[]; middle: string[]; suffixes: string[] };
-  celestial: { prefixes: string[]; middle: string[]; suffixes: string[] };
+  infernal: { softs: string[]; dulls: string[]; sharps: string[] };
+  empyreal: { prefixes: string[]; maleSuffixes: string[]; femaleSuffixes: string[]; titles: string[] };
 }
 
 export const SPECIES_SYLLABLES: SpeciesSyllables = {

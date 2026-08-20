@@ -141,12 +141,12 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <Card className="glass-hierarchy-child relative gap-0 overflow-hidden border-[#ff8a65]/35 bg-[#ff8a65]/5 p-5">
+      <Card className="glass-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/15">
-              <Newspaper className="h-5 w-5 text-[#ff8a65]" />
+            <div className="border-poll/20 bg-poll/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+              <Newspaper className="text-poll h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-foreground text-xs font-semibold">
@@ -161,7 +161,7 @@ export function GlassCanvasComposer({
           <Button
             size="sm"
             onClick={onCreateAccount}
-            className="h-8 shrink-0 cursor-pointer border-0 bg-[#ff8a65] text-xs text-white hover:bg-[#ff8a65]/90"
+            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-all active:scale-95"
           >
             Create Account
           </Button>
@@ -320,10 +320,10 @@ export function GlassCanvasComposer({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="mt-1.5 flex items-center justify-between rounded-xl border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3.5"
+              className="border-poll/20 bg-poll/5 mt-1.5 flex items-center justify-between rounded-xl border p-3.5"
             >
               <div className="flex items-center gap-2">
-                <Vote className="h-4 w-4 shrink-0 text-[#ff8a65]" />
+                <Vote className="text-poll h-4 w-4 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-foreground truncate text-xs font-semibold">
                     {pollDraft.question || "Untitled Poll"}
@@ -340,7 +340,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="h-7 cursor-pointer border-[#ff8a65]/30 px-2.5 text-[10px] font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-[10px] font-semibold transition-all active:scale-95"
                 >
                   Edit Poll
                 </Button>

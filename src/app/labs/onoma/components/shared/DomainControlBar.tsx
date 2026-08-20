@@ -4,8 +4,7 @@
 // Onoma Lab — Modular Domain Synthesis Control Bar (Horizontal Surface Layout)
 
 import React from "react";
-import { SlidersHorizontal, Loader2, ChevronDown, Layers } from "lucide-react";
-import { ScienceGameIcon } from "../nav/onoma-tabs";
+import { SlidersHorizontal, Loader2, ChevronDown } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
@@ -18,11 +17,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
+import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { NameCategory } from "~/lib/onoma/types";
 import { cn } from "~/lib/utils";
 
 interface DomainControlBarProps {
   category: NameCategory;
+  onCategoryChange?: (cat: NameCategory) => void;
+  categories?: Array<{ id: NameCategory; label: string; desc?: string }>;
   subTypes?: Array<{ value: string; label: string }>;
   gen: any;
   batchCount: number;
@@ -34,6 +36,8 @@ interface DomainControlBarProps {
 
 export function DomainControlBar({
   category,
+  onCategoryChange,
+  categories = [],
   subTypes = [],
   gen,
   batchCount,
@@ -43,53 +47,48 @@ export function DomainControlBar({
   handleGenerate,
 }: DomainControlBarProps) {
   return (
-    <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4 shadow-sm backdrop-blur-md rounded-2xl">
-      {/* Top Header Row */}
-      <div className="border-border/30 flex items-center justify-between border-b pb-2.5">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#0091ff]" />
-          <h3 className="text-foreground text-xs font-bold tracking-tight">
-            Domain Parameters
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className={cn(
-            "flex cursor-pointer items-center gap-1 text-[11px] font-medium transition-colors px-2 py-0.5 rounded-md border",
-            showAdvanced
-              ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff]"
-              : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"
-          )}
-          title="Toggle advanced conlang constraints"
-        >
-          <SlidersHorizontal className="h-3 w-3" />
-          <span>Rules</span>
-          <ChevronDown
-            className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
-          />
-        </button>
-      </div>
-
-      {/* 1. SubType Preset Selector (if available) */}
-      {subTypes.length > 0 && (
+    <FacetCard className="border-border/40 bg-secondary/5 space-y-3.5 border p-4 shadow-sm backdrop-blur-md rounded-2xl">
+      {/* 1. Category / Type Selector (if categories are provided) */}
+      {categories.length > 1 && (
         <div className="space-y-1.5">
-          <label className="text-foreground flex items-center gap-1.5 text-xs font-medium">
-            <Layers className="h-3.5 w-3.5 text-[#0091ff]" />
-            <span>Synthesis Preset</span>
-          </label>
-          <Select value={gen.subType} onValueChange={gen.setSubType}>
-            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-[#0091ff]/60 focus:outline-none">
-              <SelectValue placeholder="Select preset" />
+          <div className="flex items-center justify-between">
+            <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight">
+              Category
+            </label>
+            {/* Rules trigger */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={cn(
+                "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
+                showAdvanced
+                  ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+                  : "border-border/60 bg-background/80 text-muted-foreground hover:text-foreground"
+              )}
+              title="Toggle advanced conlang constraints"
+            >
+              <SlidersHorizontal className="h-3 w-3" />
+              <span>Rules</span>
+              <ChevronDown
+                className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
+              />
+            </button>
+          </div>
+          <Select
+            value={category}
+            onValueChange={(val) => onCategoryChange?.(val as NameCategory)}
+          >
+            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
-              {subTypes.map((type) => (
+              {categories.map((cat) => (
                 <SelectItem
-                  key={type.value}
-                  value={type.value}
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer"
+                  key={cat.id}
+                  value={cat.id}
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer font-medium"
                 >
-                  {type.label}
+                  {cat.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -97,14 +96,67 @@ export function DomainControlBar({
         </div>
       )}
 
-      {/* 2. Cultural Profile / Seed Selector */}
+      {/* 2. SubType Variant Selector (if available) */}
+      {subTypes.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight">
+              Variant
+            </label>
+            {categories.length <= 1 && (
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className={cn(
+                  "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
+                  showAdvanced
+                    ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+                    : "border-border/60 bg-background/80 text-muted-foreground hover:text-foreground"
+                )}
+                title="Toggle advanced conlang constraints"
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+                <span>Rules</span>
+                <ChevronDown
+                  className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
+                />
+              </button>
+            )}
+          </div>
+          <Select
+            value={gen.subType}
+            onValueChange={(val) => gen.setSubType(val)}
+          >
+            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+              <SelectValue placeholder="Select variant" />
+            </SelectTrigger>
+            <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
+              <SelectGroup>
+                <SelectLabel className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider px-2 py-1">
+                  Variants
+                </SelectLabel>
+                {subTypes.map((st) => (
+                  <SelectItem
+                    key={st.value}
+                    value={st.value}
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer font-medium"
+                  >
+                    {st.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* 3. Cultural Profile / Seed Selector */}
       <div className="space-y-1.5">
-        <label className="text-foreground flex items-center gap-1.5 text-xs font-medium">
-          <span className="font-mono text-[10px] text-[#0091ff]">⟨Phonology⟩</span>
-          <span>Cultural Seed</span>
+        <label className="text-foreground text-xs font-semibold">
+          Cultural Seed
         </label>
         <Select value={gen.culture} onValueChange={gen.setCulture}>
-          <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-[#0091ff]/60 focus:outline-none">
+          <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
             <SelectValue placeholder="Select culture family" />
           </SelectTrigger>
           <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
@@ -159,38 +211,10 @@ export function DomainControlBar({
         </Select>
       </div>
 
-      {/* 3. Batch Size Stepper */}
-      <div className="space-y-1">
-        <label className="text-muted-foreground font-mono text-[10px] font-semibold uppercase block">
-          Batch Size
-        </label>
-        <div className="border-border/60 bg-background/80 flex h-8.5 w-full items-center justify-between rounded-xl border px-2 select-none">
-          <button
-            type="button"
-            onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
-            disabled={batchCount <= 5}
-            className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-1 text-xs font-bold transition-colors disabled:opacity-30"
-          >
-            -
-          </button>
-          <div className="flex items-center gap-1 font-mono text-xs font-semibold">
-            <NumberFlowDisplay value={batchCount} className="text-foreground text-xs font-bold" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
-            disabled={batchCount >= 50}
-            className="text-muted-foreground hover:text-foreground flex h-full cursor-pointer items-center px-1 text-xs font-bold transition-colors disabled:opacity-30"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Gender Modifier for People if applicable */}
+      {/* 3. Gender Modifier for People if applicable */}
       {category === "person" && gen.subType !== "generic" && (
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-semibold uppercase block">
+          <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight block">
             Gender Modifier
           </label>
           <div className="grid grid-cols-3 gap-1">
@@ -200,7 +224,7 @@ export function DomainControlBar({
                 type="button"
                 onClick={() => gen.setGender(g)}
                 className={cn(
-                  "cursor-pointer rounded-lg border py-1 text-center text-xs font-semibold capitalize transition-all active:scale-95",
+                  "cursor-pointer rounded-lg border py-1 text-center text-xs font-semibold capitalize transition-all active:scale-95 tracking-tight",
                   gen.gender === g
                     ? "border-[#0091ff]/40 bg-[#0091ff]/15 font-bold text-[#0091ff]"
                     : "border-border/60 bg-background/80 text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
@@ -213,19 +237,67 @@ export function DomainControlBar({
         </div>
       )}
 
-      {/* 5. Primary Synthesize Button */}
-      <button
-        onClick={handleGenerate}
-        disabled={gen.isGenerating}
-        className="flex h-9.5 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0091ff] px-4 font-mono text-xs font-bold text-white shadow-md shadow-[#0091ff]/20 transition-all hover:bg-[#33a7ff] active:scale-[0.96] disabled:opacity-40"
-      >
-        {gen.isGenerating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <ScienceGameIcon className="h-4 w-4" />
-        )}
-        <span>⟨Synthesize⟩</span>
-      </button>
+      {/* 4. Unified Generate Action & Quantity Pill */}
+      <div className="relative flex h-11 w-full items-center rounded-xl bg-[#0091ff] hover:bg-[#0086eb] active:bg-[#007cdb] shadow-md shadow-[#0091ff]/25 border border-white/20 select-none overflow-hidden transition-all group">
+        {/* Left / Center: Primary Generate Action Trigger */}
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={gen.isGenerating}
+          className="flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pl-4 pr-3 text-xs font-semibold tracking-tight text-white transition-all active:scale-[0.98] disabled:opacity-40 select-none"
+        >
+          {gen.isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <OnomaGlyph
+              name="emerge-synthesis"
+              size="xs"
+              className="text-white transition-transform group-hover:scale-110"
+            />
+          )}
+          <span className="text-sm font-semibold tracking-tight">Generate</span>
+        </button>
+
+        {/* Subtle Vertical Divider */}
+        <div className="h-5 w-[1px] bg-white/25 shrink-0" />
+
+        {/* Right: Quantity Stepper Pill */}
+        <div className="flex h-full items-center pr-1.5 pl-1 text-white shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setBatchCount((c) =>
+                c > 100 ? Math.max(100, c - 50) : c > 50 ? Math.max(50, c - 25) : Math.max(5, c - 5)
+              )
+            }}
+            disabled={batchCount <= 5 || gen.isGenerating}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            title="Decrease count"
+            aria-label="Decrease count"
+          >
+            -
+          </button>
+          <div className="flex items-center px-1 min-w-[28px] justify-center text-sm font-bold tracking-tight text-white leading-none">
+            <NumberFlowDisplay value={batchCount} className="text-sm font-bold tracking-tight text-white" />
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setBatchCount((c) =>
+                c >= 100 ? Math.min(500, c + 50) : c >= 50 ? Math.min(100, c + 25) : c + 5
+              )
+            }}
+            disabled={batchCount >= 500 || gen.isGenerating}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            title="Increase count"
+            aria-label="Increase count"
+          >
+            +
+          </button>
+        </div>
+      </div>
 
       {/* Collapsible Advanced Conlang Settings */}
       {showAdvanced && (

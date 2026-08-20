@@ -175,10 +175,10 @@ const optionVariants = cva(
   {
     variants: {
       state: {
-        idle: ["border-border bg-background hover:border-[#ff8a65]/50 hover:bg-[#ff8a65]/5"],
+        idle: ["border-border bg-background hover:border-poll/50 hover:bg-poll/5"],
         selected: [
-          "border-[#ff8a65]/55 bg-[#ff8a65]/5 shadow-sm",
-          "hover:border-[#ff8a65] hover:bg-[#ff8a65]/10",
+          "border-poll/55 bg-poll/5 shadow-xs",
+          "hover:border-poll hover:bg-poll/10",
         ],
         voted: ["cursor-default border-border bg-muted/30"],
       },
@@ -198,7 +198,7 @@ const indicatorVariants = cva(
     variants: {
       state: {
         idle: "border-muted-foreground/30 bg-background",
-        selected: "border-[#ff8a65] bg-[#ff8a65] text-white",
+        selected: "border-poll bg-poll text-white",
         voted: "border-muted-foreground/30 bg-muted",
       },
       multiple: {
@@ -219,8 +219,8 @@ const progressVariants = cva(
     variants: {
       state: {
         idle: "bg-transparent",
-        selected: "bg-[#ff8a65]/15",
-        voted: "bg-[#ff8a65]/10",
+        selected: "bg-poll/15",
+        voted: "bg-poll/10",
       },
     },
     defaultVariants: {
@@ -1146,7 +1146,7 @@ export function PollWidgetSubmit({
         </DialogClose>
         <Button
           className={cn(
-            "min-w-[120px] bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90",
+            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-all active:scale-[0.98]",
             className
           )}
           data-slot="poll-widget-submit"
@@ -1164,7 +1164,7 @@ export function PollWidgetSubmit({
   return (
     <Button
       className={cn(
-        "w-full overflow-hidden bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90",
+        "bg-poll hover:bg-poll/90 w-full overflow-hidden font-semibold text-white shadow-xs transition-all active:scale-[0.98]",
         className
       )}
       data-slot="poll-widget-submit"

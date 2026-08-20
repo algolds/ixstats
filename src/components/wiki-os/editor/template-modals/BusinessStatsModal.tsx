@@ -134,46 +134,46 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
         onClick={onClose}
       >
         <div
-          className="glass-surface glass-refraction-none relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0c1524]/90 text-white shadow-2xl"
+          className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <Building className="h-5 w-5 text-cyan-400" />
               Insert Business Data
             </h3>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors active:scale-95 dark:hover:bg-white/10"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* Tab Selection */}
-          <div className="flex border-b border-white/10 bg-white/5 p-1">
+          <div className="flex border-b border-border bg-muted/20 p-1 dark:border-white/10 dark:bg-white/5">
             <button
               onClick={() => setActiveTab("search")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
                 activeTab === "search"
-                  ? "bg-cyan-500/20 text-cyan-400"
-                  : "text-white/60 hover:text-white"
+                  ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Search Approved Businesses
             </button>
             <button
               onClick={() => setActiveTab("create")}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-[0.98] ${
                 activeTab === "create"
-                  ? "bg-cyan-500/20 text-cyan-400"
-                  : "text-white/60 hover:text-white"
+                  ? "bg-cyan-500/20 text-cyan-400 shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               + Register &amp; Link Business
@@ -185,23 +185,23 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             <div className="space-y-4 p-6">
               {/* Search */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white/75">Find Company</label>
+                <label className="text-foreground block text-xs font-semibold">Find Company</label>
                 <div className="relative">
-                  <Search className="absolute top-2.5 left-3 h-4 w-4 text-white/40" />
+                  <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
                   <input
                     ref={searchInputRef}
                     type="text"
                     placeholder="Search registered business..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pr-3 pl-9 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
                   />
                 </div>
 
                 {/* List */}
-                <div className="max-h-36 scrollbar-thin divide-y divide-white/5 overflow-y-auto rounded-lg border border-white/10 bg-black/20">
+                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border">
                   {searchLoading && (
-                    <div className="flex items-center gap-2 p-3 text-xs text-white/50">
+                    <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
                       Searching...
                     </div>
@@ -214,17 +214,17 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                         className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
                           selectedBusiness?.name === b.name
                             ? "bg-cyan-500/20 font-semibold text-cyan-400"
-                            : "text-white/80 hover:bg-white/5"
+                            : "text-foreground hover:bg-muted/50"
                         }`}
                       >
                         <span>{b.name}</span>
-                        <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] capitalize opacity-60">
+                        <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-[10px] capitalize">
                           {b.category}
                         </span>
                       </button>
                     ))}
                   {!searchLoading && businesses?.length === 0 && (
-                    <div className="p-3 text-center text-xs text-white/40">
+                    <div className="text-muted-foreground p-3 text-center text-xs">
                       No matching businesses found.
                     </div>
                   )}
@@ -233,12 +233,12 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
               {/* Selected Business */}
               {selectedBusiness && (
-                <div className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-3">
+                <div className="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-3">
                   <div>
-                    <span className="block text-xs font-semibold text-cyan-400/60">
+                    <span className="block text-xs font-semibold text-cyan-400/80">
                       Ready to Link
                     </span>
-                    <span className="text-sm font-bold text-white">{selectedBusiness.name}</span>
+                    <span className="text-foreground text-sm font-bold">{selectedBusiness.name}</span>
                   </div>
                   {createSuccess && (
                     <span className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
@@ -250,13 +250,13 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
               {/* Field selection */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white/75">
+                <label className="text-foreground block text-xs font-semibold">
                   Select Attribute Field
                 </label>
                 <select
                   value={selectedField}
                   onChange={(e) => setSelectedField(e.target.value)}
-                  className="w-full cursor-pointer appearance-none rounded-lg border border-white/10 bg-[#121c2c] bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  className="border-input bg-secondary text-foreground focus:ring-ring w-full cursor-pointer rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                 >
                   {BUSINESS_FIELDS.map((f) => (
                     <option key={f.value} value={f.value}>
@@ -267,23 +267,23 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               </div>
 
               {selectedBusiness && (
-                <div className="rounded border border-cyan-950 bg-[#0e223a]/40 p-2.5 text-center font-mono text-xs text-cyan-400">
+                <div className="rounded border border-cyan-500/20 bg-cyan-500/10 p-2.5 text-center font-mono text-xs text-cyan-400">
                   Syntax: {`{{BusinessData:${selectedBusiness.name}:${selectedField}}}`}
                 </div>
               )}
 
               {/* Footer */}
-              <div className="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+              <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
                 <button
                   onClick={onClose}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                  className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleInsertBusiness}
                   disabled={!selectedBusiness}
-                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
+                  className="animate-pulse-subtle rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                 >
                   Insert Business Data
                 </button>
@@ -293,13 +293,13 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
             /* Create and Link business POI */
             <form
               onSubmit={handleCreateBusiness}
-              className="max-h-[60vh] scrollbar-thin space-y-4 overflow-y-auto p-6"
+              className="scrollbar-thin max-h-[60vh] space-y-4 overflow-y-auto p-6"
             >
               {!viewerCountryId ? (
                 <div className="space-y-2 rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-center">
                   <AlertTriangle className="mx-auto h-8 w-8 text-red-400" />
                   <h4 className="text-sm font-bold text-red-200">Registration Locked</h4>
-                  <p className="text-xs text-white/60">
+                  <p className="text-muted-foreground text-xs">
                     Only country owners can construct new business points of interest in the
                     database. You can type a business name in the search tab to reference it
                     manually if it exists.
@@ -308,7 +308,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               ) : (
                 <>
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-white/75">
+                    <label className="text-foreground block text-xs font-semibold">
                       Business/Company Name
                     </label>
                     <input
@@ -318,18 +318,18 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                       placeholder="e.g. Caphira Logistics"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-white/75">
+                    <label className="text-foreground block text-xs font-semibold">
                       POI Category
                     </label>
                     <select
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      className="w-full cursor-pointer rounded-lg border border-white/10 bg-[#121c2c] bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="border-input bg-secondary text-foreground focus:ring-ring w-full cursor-pointer rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                     >
                       <option value="commercial">Commercial Shop / Retail</option>
                       <option value="office">Corporate Office / Finance</option>
@@ -340,7 +340,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-white/75">
+                      <label className="text-foreground block text-xs font-semibold">
                         Latitude (Y)
                       </label>
                       <input
@@ -349,11 +349,11 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                         placeholder="e.g. 12.3456"
                         value={newLat}
                         onChange={(e) => setNewLat(e.target.value)}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-white/75">
+                      <label className="text-foreground block text-xs font-semibold">
                         Longitude (X)
                       </label>
                       <input
@@ -362,13 +362,13 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                         placeholder="e.g. 45.6789"
                         value={newLng}
                         onChange={(e) => setNewLng(e.target.value)}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-white/75">
+                    <label className="text-foreground block text-xs font-semibold">
                       Short Description
                     </label>
                     <textarea
@@ -376,7 +376,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                       placeholder="Short summary of this corporate establishment..."
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
-                      className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                      className="border-input bg-secondary text-foreground focus:ring-ring w-full resize-none rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
                     />
                   </div>
 
@@ -391,14 +391,14 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                     <button
                       type="button"
                       onClick={() => setActiveTab("search")}
-                      className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                      className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={createPoiMutation.isPending}
-                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-500 active:scale-[0.97] disabled:opacity-50"
                     >
                       {createPoiMutation.isPending && (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

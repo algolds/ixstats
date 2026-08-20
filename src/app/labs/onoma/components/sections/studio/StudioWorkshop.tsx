@@ -4,7 +4,6 @@
 // Onoma Custom Studio Workshop View
 
 import { SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
-import { ScienceGameIcon } from "../../nav/onoma-tabs";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -18,6 +17,7 @@ import {
 import { useState } from "react";
 import { type StudioState } from "../../../hooks/useStudioState";
 import { AppleSwitch } from "~/components/ui/apple-switch";
+import { PatternDepthControl } from "../../shared/PatternDepthControl";
 
 interface StudioWorkshopProps {
   state: StudioState;
@@ -177,24 +177,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 Parameters
               </h3>
 
-              {/* Look-back order */}
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                    Markov Order
-                  </label>
-                  <span className="text-[10px] font-bold text-[#0091ff]">{order} char</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={4}
-                  step={1}
-                  value={order}
-                  onChange={(e) => setOrder(parseInt(e.target.value))}
-                  className="bg-secondary/80 h-1.5 w-full cursor-pointer rounded-lg accent-[#0091ff]"
-                />
-              </div>
+              {/* Pattern Depth Control */}
+              <PatternDepthControl
+                value={order}
+                onChange={setOrder}
+                variant="inspector"
+              />
 
               {/* Length limits */}
               <div className="grid grid-cols-2 gap-3">
@@ -540,7 +528,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 </button>
                 <NumberFlowDisplay
                   value={batchCount}
-                  className="text-foreground min-w-[20px] px-1 text-center font-mono text-xs font-semibold"
+                  className="text-foreground min-w-[20px] px-1 text-center text-sm font-bold tracking-tight"
                 />
                 <button
                   type="button"
@@ -555,9 +543,8 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <button
                 onClick={() => generateNames()}
                 disabled={trainingWords.length === 0}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
-                <ScienceGameIcon className="h-4 w-4" />
                 <span>Assemble Seeds</span>
               </button>
             </div>
@@ -573,7 +560,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   Custom Model Output
                 </h3>
                 <p className="text-muted-foreground mt-0.5 text-[11px]">
-                  Names assembled by training Markov trie on input seeds.
+                  Names assembled by modeling phonetic patterns from input seeds.
                 </p>
               </div>
 
@@ -604,7 +591,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <p className="font-semibold">Generate name candidates</p>
               <p className="text-muted-foreground mt-1 text-xs">
                 Enter your seed list (comma or newline separated) in the training box, and click
-                Assemble to view Markov results.
+                Assemble to generate new names matching your pattern depth.
               </p>
             </FacetCard>
           )}

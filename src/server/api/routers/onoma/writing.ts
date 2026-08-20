@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaWritingRouter = createTRPCRouter({
@@ -41,7 +42,10 @@ export const onomaWritingRouter = createTRPCRouter({
       });
 
       if (!system) {
-        throw new Error("Writing system not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Writing system not found or unauthorized",
+        });
       }
 
       return system;
@@ -85,7 +89,10 @@ export const onomaWritingRouter = createTRPCRouter({
           where: { id: input.id, userId },
         });
         if (!existing) {
-          throw new Error("Writing system not found or unauthorized");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Writing system not found or unauthorized",
+          });
         }
 
         return ctx.db.writingSystem.update({
@@ -115,7 +122,10 @@ export const onomaWritingRouter = createTRPCRouter({
         where: { id: input.id, userId },
       });
       if (!existing) {
-        throw new Error("Writing system not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Writing system not found or unauthorized",
+        });
       }
 
       return ctx.db.writingSystem.delete({

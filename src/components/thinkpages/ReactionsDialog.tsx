@@ -121,21 +121,21 @@ export function ReactionsDialog({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Inner glass card with overflow-hidden */}
-            <div className="text-foreground relative flex max-h-[580px] w-full flex-col overflow-hidden rounded-2xl bg-white backdrop-blur-2xl dark:bg-[#0e0c15]/95 dark:text-white">
+            <div className="text-foreground relative flex max-h-[580px] w-full flex-col overflow-hidden rounded-2xl bg-card/95 backdrop-blur-2xl dark:border-white/10 dark:bg-card/95">
               {/* Ambient inner glow */}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-violet-500/10 via-transparent to-transparent" />
 
               {/* Header */}
               <div className="border-border bg-muted/20 relative flex items-center justify-between border-b px-6 py-4.5 dark:border-white/10 dark:bg-white/5">
                 <div>
-                  <h3 className="text-foreground text-lg font-bold tracking-wide dark:text-white">
+                  <h3 className="text-foreground text-lg font-bold tracking-wide">
                     Post Activity
                   </h3>
                   <p className="text-muted-foreground text-xs">View interactions and reactions</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center justify-center rounded-full p-1.5 transition-all dark:hover:bg-white/10 dark:hover:text-white"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center justify-center rounded-full p-1.5 transition-all active:scale-95 dark:hover:bg-white/10"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -148,10 +148,10 @@ export function ReactionsDialog({
               false ? (
                 <div className="relative flex flex-1 flex-col items-center justify-center space-y-6 p-8 text-center">
                   {/* Glowing Discord Icon container */}
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#5865F2]/30 bg-[#5865F2]/15 shadow-[0_0_35px_rgba(88,101,242,0.25)]">
-                    <div className="absolute inset-0 animate-pulse rounded-2xl bg-gradient-to-tr from-[#5865F2]/20 to-transparent" />
+                  <div className="border-discord/30 bg-discord/15 shadow-discord/25 relative flex h-16 w-16 items-center justify-center rounded-2xl border shadow-lg">
+                    <div className="from-discord/20 absolute inset-0 animate-pulse rounded-2xl bg-gradient-to-tr to-transparent" />
                     <svg
-                      className="relative z-10 h-8 w-8 text-[#5865F2]"
+                      className="text-discord relative z-10 h-8 w-8"
                       fill="currentColor"
                       viewBox="0 0 127.14 96.36"
                     >
@@ -160,12 +160,12 @@ export function ReactionsDialog({
                   </div>
 
                   <div className="max-w-sm space-y-2.5">
-                    <h4 className="text-foreground text-base font-bold tracking-wide dark:text-white">
+                    <h4 className="text-foreground text-base font-bold tracking-wide">
                       Imported from Discord
                     </h4>
                     <p className="text-muted-foreground mx-auto max-w-[280px] text-xs leading-relaxed">
                       These reactions were synchronized directly from our official{" "}
-                      <span className="font-semibold text-[#5865F2]">#ixtwitter</span> Discord
+                      <span className="text-discord font-semibold">#ixtwitter</span> Discord
                       channel! Local profile directories aren't stored on the website, but you can
                       view all reaction profiles directly inside Discord.
                     </p>
@@ -175,7 +175,7 @@ export function ReactionsDialog({
                     href={discordMsgUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-[#5865F2] px-6 py-3 font-semibold text-white shadow-lg shadow-[#5865F2]/20 transition-all duration-200 hover:from-indigo-600 hover:to-[#4752C4] active:scale-98"
+                    className="from-discord to-discord-hover shadow-discord/20 inline-flex w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r px-6 py-3 font-semibold text-white shadow-lg transition-all duration-200 active:scale-[0.98]"
                   >
                     <MessageSquare className="h-4 w-4" />
                     Open Original Discord Post
@@ -333,7 +333,7 @@ export function ReactionsDialog({
                                     </span>
                                   )}
                                   {reaction.account.isDiscordUser ? (
-                                    <div className="flex shrink-0 items-center gap-0.5 rounded border border-[#5865F2]/30 bg-[#5865F2]/20 px-1 py-0.5 text-[9px] font-bold text-[#5865F2]">
+                                    <div className="border-discord/30 bg-discord/20 text-discord flex shrink-0 items-center gap-0.5 rounded border px-1 py-0.5 text-[9px] font-bold">
                                       <svg
                                         className="h-2.5 w-2.5"
                                         fill="currentColor"
@@ -395,7 +395,7 @@ export function ReactionsDialog({
                         href={discordMsgUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#5865F2] transition-colors hover:text-[#4752C4] hover:underline"
+                        className="text-discord hover:text-discord-hover inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors hover:underline"
                       >
                         <MessageSquare className="h-3.5 w-3.5" />
                         Open original conversation in Discord

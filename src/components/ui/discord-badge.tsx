@@ -15,7 +15,7 @@ function DiscordIcon({
     <svg
       viewBox="0 -28.5 256 256"
       aria-hidden="true"
-      fill={iconStyle === "discord" ? "#5865F2" : "currentColor"}
+      fill={iconStyle === "discord" ? "var(--color-discord)" : "currentColor"}
       className={className}
     >
       <path
@@ -62,7 +62,7 @@ const inlineVariants = cva(
           "rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         subtle:
           "rounded-full border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
-        discord: "rounded-md bg-[#5865F2] text-white shadow-xs hover:bg-[#4752C4]",
+        discord: "bg-discord hover:bg-discord-hover rounded-md text-white shadow-xs",
       },
       size: {
         sm: "h-7 gap-1.5 px-2.5 text-xs [&_svg]:size-3.5",

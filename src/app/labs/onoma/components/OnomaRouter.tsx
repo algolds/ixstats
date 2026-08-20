@@ -11,6 +11,7 @@ import { useOnomaRouter } from "../hooks/useOnomaRouter";
 
 import { OnomaHeader } from "./nav/OnomaHeader";
 import { OnomaFooter } from "./nav/OnomaFooter";
+import { PhysicsPullFooter } from "./nav/PhysicsPullFooter";
 import { OnomaSectionRenderer } from "./OnomaSectionRenderer";
 import { SECTION_COLORS } from "./nav/onoma-tabs";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
@@ -30,6 +31,8 @@ export function OnomaRouter() {
     playPronunciation,
     showHelpModal,
     setShowHelpModal,
+    helpModalMode,
+    openHelp,
     studioInitialWords,
     studioInitialTitle,
     handleNavigate,
@@ -65,13 +68,6 @@ export function OnomaRouter() {
         ? "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(236, 72, 153, 0.12)"
         : "0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 0 20px 0px rgba(139, 92, 246, 0.12)";
 
-  const activePillarAccent =
-    activePillar === "create"
-      ? SECTION_COLORS[activeSection] || "#0091ff"
-      : activePillar === "studio"
-        ? "#ec4899"
-        : "#8b5cf6";
-
   return (
     <div className="bg-background text-foreground min-h-screen p-3.5 antialiased transition-colors duration-300 sm:p-6">
       {fontLink && <link rel="stylesheet" href={fontLink} />}
@@ -87,7 +83,7 @@ export function OnomaRouter() {
           hasInteractedPronunciation={hasInteractedPronunciation}
           setHasInteractedPronunciation={setHasInteractedPronunciation}
           playPronunciation={playPronunciation}
-          onOpenHelp={() => setShowHelpModal(true)}
+          onOpenHelp={() => openHelp("module")}
           onNavigate={handleNavigate}
           onNavigateStudio={handleNavigateStudio}
           onNavigateExplore={handleNavigateExplore}
@@ -133,27 +129,33 @@ export function OnomaRouter() {
                 studioInitialTitle={studioInitialTitle}
                 onClearStudioInitial={handleClearStudioInitial}
                 onLoadToStudio={handleLoadToStudio}
+                onNavigateExplore={handleNavigateExplore}
+                onNavigateStudio={handleNavigateStudio}
               />
             </motion.div>
           </AnimatePresence>
         </FacetMaterial>
       </div>
 
-      {/* Gradual Feathered Bridge & 1/3 Wider Footer (max-w-[1720px]) */}
-      <div className="relative mx-auto mt-14 w-full max-w-[1720px] px-1 sm:px-3 lg:px-5">
-        {/* Subtle feathered gradient fade from bottom of main container */}
-        <div className="pointer-events-none absolute -top-12 inset-x-0 h-16 bg-gradient-to-b from-transparent via-background/40 to-background/90" />
-
+      {/* Physics-Based Elastic Pull Footer */}
+      <PhysicsPullFooter>
         <OnomaFooter
           onNavigate={handleNavigate}
           onNavigateStudio={handleNavigateStudio}
           onNavigateExplore={handleNavigateExplore}
-          onOpenHelp={() => setShowHelpModal(true)}
+          onOpenHelp={() => openHelp("walkthrough")}
         />
-      </div>
+      </PhysicsPullFooter>
 
-      {/* Help Walkthrough Guide Modal */}
-      <OnomaHelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
+      {/* Contextual System Architecture & Walkthrough Guide Modal */}
+      <OnomaHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        activeSection={activeSection}
+        activeSubTab={activeSubTab}
+        activeExploreSubTab={activeExploreSubTab}
+        initialMode={helpModalMode}
+      />
     </div>
   );
 }

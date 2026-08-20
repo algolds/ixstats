@@ -16,11 +16,15 @@ import {
   Download,
   Trash2,
   Loader2,
+  AudioLines,
+  GitFork,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
+import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
 
 interface SavedDictionaryCardProps {
   dict: {
@@ -28,13 +32,20 @@ interface SavedDictionaryCardProps {
     title: string;
     values: string[];
     category?: string | null;
+    role?: string | null;
+    gender?: string | null;
+    setName?: string | null;
+    stashName?: string | null;
+    stashColor?: string | null;
     isPublic: boolean;
     clonedFromId?: string | null;
   };
   isExpanded: boolean;
   onToggleExpand: () => void;
   onLoadToStudio?: (values: string[], title: string) => void;
-  onEdit: (dict: any) => void;
+  onNavigateExplore?: (tab: ExploreSubTab, words?: string[], title?: string) => void;
+  onNavigateStudio?: (tab: StudioSubTab, words?: string[], title?: string) => void;
+  onEdit: (dict: SavedDictionaryCardProps["dict"]) => void;
   onDelete: (id: string) => void;
   handleExport: (title: string, values: string[], format: "txt" | "csv" | "json") => void;
 }
@@ -44,39 +55,38 @@ export function SavedDictionaryCard({
   isExpanded,
   onToggleExpand,
   onLoadToStudio,
+  onNavigateExplore,
+  onNavigateStudio,
   onEdit,
   onDelete,
   handleExport,
 }: SavedDictionaryCardProps) {
   const bank = useNameBank();
-
-  // Popover State
-  const [showStashPopover, setShowStashPopover] = useState(false);
-  const [showExportPopover, setShowExportPopover] = useState(false);
   const [stashingFolderId, setStashingFolderId] = useState<string | null>(null);
+  const [isStashingThis, setIsStashingThis] = useState(false);
+  const [showExportPopover, setShowExportPopover] = useState(false);
   const [stashFeedback, setStashFeedback] = useState<string | null>(null);
-
   const popoverRef = useRef<HTMLDivElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  // Queries
+  // Stash queries
   const stashesQuery = api.wikios.getStashes.useQuery();
 
-  // Outside Clicks Handler
+  // Close popover on outside click
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setShowStashPopover(false);
+        setIsStashingThis(false);
       }
       if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
         setShowExportPopover(false);
       }
     };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleStashDict = async (stashId: string, stashName: string) => {
+  const handleMoveFolder = async (stashId: string, stashName: string) => {
     setStashingFolderId(stashId);
     try {
       await bank.saveEntry({
@@ -84,12 +94,16 @@ export function SavedDictionaryCard({
         type: "dictionary",
         title: dict.title,
         values: dict.values,
+        category: (dict.category as NameCategory) || null,
+        role: dict.role,
+        gender: dict.gender,
+        setName: dict.setName,
         stashId,
       });
       setStashFeedback(`Moved to ${stashName}!`);
       setTimeout(() => {
         setStashFeedback(null);
-        setShowStashPopover(false);
+        setIsStashingThis(false);
       }, 1500);
     } catch (err) {
       console.error("Failed to move dictionary:", err);
@@ -104,19 +118,27 @@ export function SavedDictionaryCard({
   const previewWords = dict.values.slice(0, 12).join(", ");
 
   return (
-    <FacetCard className="border-border/40 bg-secondary/5 space-y-3 border p-3">
-      <div className="space-y-3">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <BookOpen className="h-4 w-4 flex-shrink-0 text-[#0091ff]/80" />
-            <h4 className="text-foreground truncate text-sm font-bold">{dict.title}</h4>
+    <FacetCard
+      className="border-border/40 bg-card/40 rounded-xl p-3.5 shadow-sm transition-all"
+    >
+      <div className="space-y-2.5">
+        {/* Header & Meta Row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-foreground truncate text-xs font-bold">{dict.title}</h4>
+            <div className="text-muted-foreground/80 mt-0.5 flex items-center gap-1.5 text-[10px]">
+              <span>{wordsCount} words</span>
+              {dict.category && (
+                <>
+                  <span>•</span>
+                  <span className="capitalize">{dict.category}</span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="capitalize">Category: {dict.category || "Any"}</span>
-            <span>•</span>
-            <span>{wordsCount} seeds</span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-1">
+
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+            <span className="bg-secondary/40 text-muted-foreground flex items-center gap-1 rounded px-1.5 py-0.5">
               {dict.isPublic ? (
                 <>
                   <Globe className="h-3 w-3 text-emerald-500" />
@@ -129,17 +151,15 @@ export function SavedDictionaryCard({
                 </>
               )}
             </span>
-            {(dict as any).role && (
+            {dict.role && (
               <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
-                {(dict as any).role}
-                {(dict as any).gender && (dict as any).gender !== "any"
-                  ? ` · ${(dict as any).gender}`
-                  : ""}
+                {dict.role}
+                {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
               </span>
             )}
-            {(dict as any).setName && (
+            {dict.setName && (
               <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-400">
-                ⚇ {(dict as any).setName}
+                ⚇ {dict.setName}
               </span>
             )}
             {dict.clonedFromId && (
@@ -148,17 +168,17 @@ export function SavedDictionaryCard({
                 <span className="font-semibold text-[#0091ff]/80">Cloned</span>
               </>
             )}
-            {(dict as any).stashName && (
+            {dict.stashName && (
               <>
                 <span>•</span>
                 <span
                   className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold select-none"
                   style={{
-                    backgroundColor: `${(dict as any).stashColor || "#3b82f6"}20`,
-                    color: (dict as any).stashColor || "#3b82f6",
+                    backgroundColor: `${dict.stashColor || "#3b82f6"}20`,
+                    color: dict.stashColor || "#3b82f6",
                   }}
                 >
-                  📁 {(dict as any).stashName}
+                  📁 {dict.stashName}
                 </span>
               </>
             )}
@@ -172,7 +192,7 @@ export function SavedDictionaryCard({
             {/* Expand Button */}
             <button
               onClick={onToggleExpand}
-              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px]"
+              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] active:scale-[0.97] transition-all"
               title={isExpanded ? "Hide word list" : "Show word list"}
             >
               {isExpanded ? (
@@ -187,11 +207,45 @@ export function SavedDictionaryCard({
             {onLoadToStudio && (
               <button
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-[#0091ff]/10 px-2.5 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-[#0091ff]/10 px-2 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 active:scale-[0.97] transition-all"
                 title="Load into Studio Workshop"
               >
-                <Wrench className="h-3.5 w-3.5" />
-                <span>Load Studio</span>
+                <Wrench className="h-3 w-3" />
+                <span>Studio</span>
+              </button>
+            )}
+
+            {/* Quick Cross-System Actions */}
+            {onNavigateExplore && (
+              <button
+                onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
+                className="bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                title="Inspect IPA acoustics & compare profile"
+              >
+                <AudioLines className="h-3 w-3" />
+                <span className="hidden sm:inline">Compare</span>
+              </button>
+            )}
+
+            {onNavigateStudio && (
+              <button
+                onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
+                className="bg-pink-500/10 text-pink-600 dark:text-pink-400 hover:bg-pink-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                title="Evolve words in Historical Sound Shifts"
+              >
+                <GitFork className="h-3 w-3" />
+                <span className="hidden sm:inline">Shifts</span>
+              </button>
+            )}
+
+            {onNavigateExplore && (
+              <button
+                onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
+                className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold active:scale-[0.97] transition-all"
+                title="Typeset words in Writing Systems"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span className="hidden sm:inline">Script</span>
               </button>
             )}
 
@@ -199,11 +253,11 @@ export function SavedDictionaryCard({
             <div className="relative">
               <button
                 onClick={() => {
-                  setShowStashPopover(!showStashPopover);
+                  setIsStashingThis(!isStashingThis);
                 }}
                 className={cn(
-                  "flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-colors",
-                  showStashPopover
+                  "flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-all active:scale-[0.97]",
+                  isStashingThis
                     ? "bg-indigo-500/10 text-indigo-500"
                     : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-[#0091ff]"
                 )}
@@ -213,7 +267,7 @@ export function SavedDictionaryCard({
                 <span>Move</span>
               </button>
 
-              {showStashPopover && (
+              {isStashingThis && (
                 <div
                   ref={popoverRef}
                   className="bg-popover/95 animate-in fade-in border-border/60 absolute left-0 z-30 mt-1.5 w-52 rounded-xl border p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100"
@@ -240,7 +294,7 @@ export function SavedDictionaryCard({
                       <button
                         key={s.id}
                         disabled={stashingFolderId !== null}
-                        onClick={() => handleStashDict(s.id, s.name)}
+                        onClick={() => handleMoveFolder(s.id, s.name)}
                         className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
                       >
                         <span className="flex items-center gap-1.5 truncate">

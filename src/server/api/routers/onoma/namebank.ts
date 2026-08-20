@@ -9,11 +9,16 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { ActivityGenerator } from "~/lib/activity";
-import { StashNoteMetadataSchema } from "~/lib/onoma/types";
+import {
+  cleanRawValues,
+  mapStashItemToEntry,
+  mapStandaloneItemToEntry,
+  parseStashItemNote,
+} from "./namebank-helpers";
 
 export const onomaNameBankRouter = createTRPCRouter({
   /**
-   * Fetch the saved names or dictionaries for the authenticated user from the global Stash system.
+   * Fetch saved names or dictionaries for the authenticated user (supporting both global Stash and standalone Onoma NameBank).
    */
   getNameBank: protectedProcedure
     .input(
@@ -27,7 +32,7 @@ export const onomaNameBankRouter = createTRPCRouter({
       const { db } = ctx;
       const userId = ctx.auth.userId;
 
-      // Fetch all user's stash items of type name or dictionary
+      // 1. Fetch user's global stash items of type name or dictionary
       const userStashItems = await db.stashItem.findMany({
         where: {
           stash: { userId },
@@ -45,85 +50,37 @@ export const onomaNameBankRouter = createTRPCRouter({
         orderBy: { savedAt: "desc" },
       });
 
-      // Map StashItem to NameBankEntry structure expected by the frontend
-      const mapped = userStashItems.map((item) => {
-        let category: string | null = null;
-        let role: string | null = null;
-        let gender: string | null = null;
-        let setName: string | null = null;
-        let values: string[] = [];
-
-        if (item.note) {
-          try {
-            const raw = JSON.parse(item.note);
-            const parsed = StashNoteMetadataSchema.safeParse(raw);
-            if (parsed.success) {
-              category = parsed.data.category || null;
-              role = parsed.data.role || null;
-              gender = parsed.data.gender || null;
-              setName = parsed.data.setName || null;
-              const rawValues = parsed.data.values || [];
-              values = rawValues
-                .flatMap((v: string) => v.split(/[\r\n,\s]+/))
-                .map((v: string) => v.trim())
-                .filter(Boolean);
-            } else if (raw && typeof raw === "object") {
-              const obj = raw as Record<string, unknown>;
-              category = typeof obj.category === "string" ? obj.category : null;
-              role = typeof obj.role === "string" ? obj.role : null;
-              gender = typeof obj.gender === "string" ? obj.gender : null;
-              setName = typeof obj.setName === "string" ? obj.setName : null;
-              if (Array.isArray(obj.values)) {
-                values = obj.values
-                  .filter((v): v is string => typeof v === "string")
-                  .flatMap((v) => v.split(/[\r\n,\s]+/))
-                  .map((v) => v.trim())
-                  .filter(Boolean);
-              }
-            }
-          } catch {
-            // Fallback for legacy comma-separated values
-            if (item.contentType === "dictionary") {
-              values = item.note
-                .split(/[\r\n,\s]+/)
-                .map((v) => v.trim())
-                .filter(Boolean);
-            }
-          }
-        }
-
-        // Default value for name contentType
-        if (item.contentType === "name" && values.length === 0) {
-          values = [item.pageTitle];
-        }
-
-        return {
-          id: item.id,
-          userId,
-          type: item.contentType === "dictionary" ? "dictionary" : "saved-name",
-          title: item.pageTitle,
-          values,
-          category,
-          role,
-          gender,
-          setName,
-          culturalProfile: null,
-          isPublic: false,
-          countryId: null,
-          clonedFromId: null,
-          createdAt: item.savedAt,
-          updatedAt: item.updatedAt,
-          stashId: item.stash.id,
-          stashName: item.stash.name,
-          stashColor: item.stash.color,
-        };
+      // 2. Fetch standalone NameBank records
+      const standaloneItems = await db.nameBank.findMany({
+        where: {
+          userId: ctx.user.id,
+          type: input?.type ? input.type : undefined,
+        },
+        orderBy: { createdAt: "desc" },
       });
 
+      // Map records using shared helpers
+      const stashMapped = userStashItems.map((item) => mapStashItemToEntry(item, userId));
+
+      const standaloneMapped = standaloneItems
+        .filter(
+          (item) =>
+            !userStashItems.some(
+              (si) =>
+                si.pageTitle === item.title &&
+                (si.contentType === item.type ||
+                  (si.contentType === "name" && item.type === "saved-name"))
+            )
+        )
+        .map((item) => mapStandaloneItemToEntry(item, userId));
+
+      const combined = [...stashMapped, ...standaloneMapped];
+
       if (input?.type) {
-        return mapped.filter((item) => item.type === input.type);
+        return combined.filter((item) => item.type === input.type);
       }
 
-      return mapped;
+      return combined;
     }),
 
   /**
@@ -151,25 +108,10 @@ export const onomaNameBankRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return items.map((item) => {
-        const rawValues = item.values;
-        let values: string[] = [];
-        if (Array.isArray(rawValues)) {
-          values = (rawValues as string[])
-            .flatMap((v) => v.split(/[\r\n,\s]+/))
-            .map((v) => v.trim())
-            .filter(Boolean);
-        } else if (typeof rawValues === "string") {
-          values = (rawValues as string)
-            .split(/[\r\n,\s]+/)
-            .map((v) => v.trim())
-            .filter(Boolean);
-        }
-        return {
-          ...item,
-          values,
-        };
-      });
+      return items.map((item) => ({
+        ...item,
+        values: cleanRawValues(item.values),
+      }));
     }),
 
   /**
@@ -212,7 +154,7 @@ export const onomaNameBankRouter = createTRPCRouter({
     }),
 
   /**
-   * Save a generated name or custom dictionary directly into a global Stash folder.
+   * Save a generated name or custom dictionary directly into a global Stash folder or standalone Onoma NameBank.
    */
   saveToNameBank: protectedProcedure
     .input(
@@ -229,11 +171,64 @@ export const onomaNameBankRouter = createTRPCRouter({
         isPublic: z.boolean().optional(),
         countryId: z.string().nullable().optional(),
         stashId: z.string().optional(),
+        lexiconDefinition: z
+          .object({
+            partOfSpeech: z.string(),
+            root: z.string(),
+            meaning: z.string(),
+            origin: z.string(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const userId = ctx.auth.userId;
+      const cleanValues = cleanRawValues(input.values);
+
+      // Handle standalone save mode if explicitly requested
+      if (input.stashId === "standalone") {
+        if (input.id) {
+          const updated = await db.nameBank.update({
+            where: { id: input.id },
+            data: {
+              title: input.title,
+              values: cleanValues,
+              category: input.category,
+              culturalProfile: input.culturalProfile,
+              isPublic: input.isPublic ?? false,
+            },
+          });
+          return {
+            ...mapStandaloneItemToEntry(updated, userId),
+            role: input.role || null,
+            gender: input.gender || null,
+            setName: input.setName || null,
+            lexiconDefinition: input.lexiconDefinition || null,
+          };
+        }
+
+        const created = await db.nameBank.create({
+          data: {
+            userId: ctx.user.id,
+            type: input.type,
+            title: input.title,
+            values: cleanValues,
+            category: input.category,
+            culturalProfile: input.culturalProfile,
+            isPublic: input.isPublic ?? false,
+            countryId: input.countryId,
+          },
+        });
+
+        return {
+          ...mapStandaloneItemToEntry(created, userId),
+          role: input.role || null,
+          gender: input.gender || null,
+          setName: input.setName || null,
+          lexiconDefinition: input.lexiconDefinition || null,
+        };
+      }
 
       // 1. Get or create the stash folder
       let targetStashId = input.stashId;
@@ -250,18 +245,13 @@ export const onomaNameBankRouter = createTRPCRouter({
       }
 
       // 2. Serialize metadata into JSON note
-      const rawValues = input.values;
-      const cleanValues = rawValues
-        .flatMap((v) => v.split(/[\r\n,\s]+/))
-        .map((v) => v.trim())
-        .filter(Boolean);
-
       const noteData = {
         category: input.category || null,
         role: input.role || null,
         gender: input.gender || null,
         setName: input.setName || null,
         values: cleanValues,
+        lexiconDefinition: input.lexiconDefinition || null,
       };
       const note = JSON.stringify(noteData);
       const pageTitle = input.title;
@@ -276,9 +266,33 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
 
         if (!existing) {
+          // If not in stashItem, try updating standalone nameBank
+          const standalone = await db.nameBank.findFirst({
+            where: { id: input.id, userId: ctx.user.id },
+          });
+          if (standalone) {
+            const updated = await db.nameBank.update({
+              where: { id: input.id },
+              data: {
+                title: input.title,
+                values: cleanValues,
+                category: input.category,
+                culturalProfile: input.culturalProfile,
+                isPublic: input.isPublic ?? false,
+              },
+            });
+            return {
+              ...mapStandaloneItemToEntry(updated, userId),
+              role: input.role || null,
+              gender: input.gender || null,
+              setName: input.setName || null,
+              lexiconDefinition: input.lexiconDefinition || null,
+            };
+          }
+
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Stash item not found",
+            message: "Entry not found",
           });
         }
 
@@ -322,30 +336,11 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      return {
-        id: item.id,
-        userId,
-        type: item.contentType === "dictionary" ? "dictionary" : "saved-name",
-        title: item.pageTitle,
-        values: input.values,
-        category: input.category || null,
-        role: input.role || null,
-        gender: input.gender || null,
-        setName: input.setName || null,
-        culturalProfile: null,
-        isPublic: false,
-        countryId: null,
-        clonedFromId: null,
-        createdAt: item.savedAt,
-        updatedAt: item.updatedAt,
-        stashId: item.stash.id,
-        stashName: item.stash.name,
-        stashColor: item.stash.color,
-      };
+      return mapStashItemToEntry(item, userId);
     }),
 
   /**
-   * Delete a saved name or dictionary from the global Stash system.
+   * Delete a saved name or dictionary from the global Stash system or standalone NameBank.
    */
   deleteFromNameBank: protectedProcedure
     .input(
@@ -363,9 +358,19 @@ export const onomaNameBankRouter = createTRPCRouter({
       });
 
       if (!existing) {
+        // Fallback: Check if it's a standalone NameBank record
+        const standalone = await db.nameBank.findFirst({
+          where: { id: input.id, userId: ctx.user.id },
+        });
+        if (standalone) {
+          return db.nameBank.delete({
+            where: { id: input.id },
+          });
+        }
+
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Stash item not found",
+          message: "Item not found",
         });
       }
 
@@ -457,21 +462,8 @@ export const onomaNameBankRouter = createTRPCRouter({
       });
 
       return {
-        id: item.id,
-        userId,
-        type: "dictionary",
-        title: item.pageTitle,
-        values: source.values as string[],
-        category: source.category,
-        culturalProfile: null,
-        isPublic: false,
-        countryId: null,
+        ...mapStashItemToEntry(item, userId),
         clonedFromId: source.id,
-        createdAt: item.savedAt,
-        updatedAt: item.updatedAt,
-        stashId: item.stash.id,
-        stashName: item.stash.name,
-        stashColor: item.stash.color,
       };
     }),
 
@@ -508,17 +500,7 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       }
 
-      let category: string | null = null;
-      let values: string[] = [];
-      if (item.note) {
-        try {
-          const parsed = JSON.parse(item.note);
-          if (parsed && typeof parsed === "object") {
-            category = parsed.category || null;
-            values = parsed.values || [];
-          }
-        } catch {}
-      }
+      const parsed = parseStashItemNote(item.note, item.contentType);
 
       if (input.isPublic) {
         const published = await db.nameBank.upsert({
@@ -530,14 +512,14 @@ export const onomaNameBankRouter = createTRPCRouter({
             userId: ctx.user.id,
             type: item.contentType === "dictionary" ? "dictionary" : "saved-name",
             title: item.pageTitle,
-            values,
-            category,
+            values: parsed.values,
+            category: parsed.category,
             isPublic: true,
           },
           update: {
             title: item.pageTitle,
-            values,
-            category,
+            values: parsed.values,
+            category: parsed.category,
             isPublic: true,
           },
         });

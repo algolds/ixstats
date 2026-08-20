@@ -635,15 +635,16 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
 
           <div className="bg-muted/30 border-border/20 relative h-2.5 overflow-hidden rounded-full border">
             <div
-              className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
+              className={cn(
+                "absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out",
+                lafferPosition === "optimal"
+                  ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  : lafferPosition === "below-optimal"
+                    ? "bg-gradient-to-r from-amber-500 to-amber-400"
+                    : "bg-gradient-to-r from-red-500 to-red-400"
+              )}
               style={{
                 width: `${Math.min((effectiveTaxBurden / 50) * 100, 100)}%`,
-                background:
-                  lafferPosition === "optimal"
-                    ? "linear-gradient(90deg, #10b981, #34d399)"
-                    : lafferPosition === "below-optimal"
-                      ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
-                      : "linear-gradient(90deg, #ef4444, #f87171)",
               }}
             />
             <div

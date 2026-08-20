@@ -125,38 +125,24 @@ export default function HistoryPage() {
 
         {/* Undo confirmation dialog */}
         {undoTarget && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: "12px 16px",
-              borderRadius: 8,
-              background: "rgba(251,191,36,0.08)",
-              border: "1px solid rgba(251,191,36,0.3)",
-              fontSize: "0.875rem",
-            }}
-          >
-            <p style={{ color: "#fbbf24", marginBottom: 8 }}>
+          <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm backdrop-blur-sm">
+            <p className="mb-2 text-amber-400">
               Revert to revision <strong>r{undoTarget.revid}</strong> by {undoTarget.user}?
             </p>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-2">
               <button
-                className="wikios-action-btn"
-                style={{
-                  background: "rgba(251,191,36,0.15)",
-                  borderColor: "rgba(251,191,36,0.3)",
-                  color: "#fbbf24",
-                }}
+                className="wikios-action-btn border-amber-500/40 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 active:scale-95"
                 disabled={revertMutation.isPending}
                 onClick={() => revertMutation.mutate({ title, revid: undoTarget.revid })}
               >
                 {revertMutation.isPending ? "Reverting..." : "Confirm Revert"}
               </button>
-              <button className="wikios-action-btn" onClick={() => setUndoTarget(null)}>
+              <button className="wikios-action-btn active:scale-95" onClick={() => setUndoTarget(null)}>
                 Cancel
               </button>
             </div>
             {revertMutation.isError && (
-              <p style={{ color: "#f87171", marginTop: 8 }}>
+              <p className="text-destructive mt-2 text-xs">
                 Error: {revertMutation.error.message}
               </p>
             )}

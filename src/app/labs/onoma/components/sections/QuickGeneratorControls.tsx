@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { PatternDepthControl } from "../shared/PatternDepthControl";
 import {
   Select,
   SelectContent,
@@ -48,7 +49,13 @@ interface QuickGeneratorControlsProps {
   setSelectedDictId: (id: string) => void;
   customWords?: string[] | null;
   setCustomWords?: (words: string[] | null) => void;
-  publicDicts: any[];
+  publicDicts: Array<{
+    id: string;
+    title: string;
+    values: string[];
+    category?: string | null;
+    culturalProfile?: string | null;
+  }>;
   batchCount: number;
   setBatchCount: (c: number | ((prev: number) => number)) => void;
   showAdvanced: boolean;
@@ -229,51 +236,38 @@ export function QuickGeneratorControls({
         customWords.some((w, idx) => w !== defaultValues[idx]))
   );
 
-  const DictCorpusIcon = getOnomaDomainIcon();
-
   return (
     <div className="relative overflow-hidden rounded-2xl border border-zinc-200/85 bg-white/95 dark:border-zinc-800/85 dark:bg-zinc-900/90 p-4.5 shadow-sm space-y-4">
       {/* Specular top highlight */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-[#0091ff]/30 via-[#0091ff]/10 to-transparent" />
 
-      {/* Top Header Row */}
-
-      <div className="relative z-10 border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between border-b pb-3">
-
-        <div className="flex items-center gap-2">
-          <h3 className="text-zinc-900 dark:text-zinc-50 text-xs font-bold tracking-tight">
-            Quick Generator
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className={cn(
-            "flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold transition-all px-2.5 py-1 rounded-lg border shadow-2xs active:scale-95",
-            showAdvanced
-              ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
-              : "border-zinc-200/80 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-          )}
-          title="Toggle phonotactic constraints"
-        >
-          <SlidersHorizontal className="h-3 w-3" />
-          <span>Rules</span>
-          <ChevronDown
-            className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
-          />
-        </button>
-      </div>
-
       {/* 1. Dictionary Selector & Actions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 text-xs font-semibold">
-            <DictCorpusIcon className="h-3.5 w-3.5 text-[#0091ff]" />
-            <span>Dictionary</span>
+          <label className="text-zinc-800 dark:text-zinc-200 text-xs font-semibold tracking-tight">
+            Dictionary
           </label>
 
-          {/* Dictionary Action Controls */}
-          <div className="flex items-center gap-1">
+          {/* Dictionary Action Controls & Rules toggle */}
+          <div className="flex items-center gap-1.5">
+            {/* Rules / Constraints toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={cn(
+                "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
+                showAdvanced
+                  ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+                  : "border-zinc-200/80 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              )}
+              title="Toggle phonotactic rules"
+            >
+              <SlidersHorizontal className="h-3 w-3" />
+              <span>Rules</span>
+              <ChevronDown
+                className={cn("h-3 w-3 transition-transform duration-200", showAdvanced && "rotate-180")}
+              />
+            </button>
             {isCustomDict && (
               <>
                 {/* Update changes to this custom lexicon */}
@@ -281,7 +275,7 @@ export function QuickGeneratorControls({
                   <button
                     type="button"
                     onClick={handleUpdateCurrentDict}
-                    className="flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 px-2 py-0.5 rounded-md transition-all shadow-2xs active:scale-95"
+                    className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 px-2 py-0.5 rounded-lg transition-all shadow-2xs active:scale-95"
                     title="Save changes to this dictionary"
                   >
                     <Save className="h-2.5 w-2.5" />
@@ -296,7 +290,7 @@ export function QuickGeneratorControls({
                     setIsRenaming(true);
                     setRenameTitle(selectedDict?.title || "");
                   }}
-                  className="flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white px-2 py-0.5 rounded-md border border-zinc-200/80 dark:border-zinc-700 transition-all shadow-2xs active:scale-95"
+                  className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white px-2 py-0.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 transition-all shadow-2xs active:scale-95"
                   title="Rename this custom dictionary"
                 >
                   <Edit2 className="h-2.5 w-2.5" />
@@ -307,7 +301,7 @@ export function QuickGeneratorControls({
                 <button
                   type="button"
                   onClick={handleDeleteCurrentDict}
-                  className="flex cursor-pointer items-center text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 p-1 rounded-md transition-all shadow-2xs active:scale-95"
+                  className="flex cursor-pointer items-center text-[11px] font-medium tracking-tight text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 p-1.5 rounded-lg transition-all shadow-2xs active:scale-95"
                   title="Delete this custom dictionary"
                 >
                   <Trash2 className="h-2.5 w-2.5" />
@@ -325,7 +319,7 @@ export function QuickGeneratorControls({
                     `${selectedDict?.title || "Custom"} (Edited)`
                   );
                 }}
-                className="flex cursor-pointer items-center gap-1 text-[10px] font-semibold text-[#0091ff] bg-[#0091ff]/10 hover:bg-[#0091ff]/15 border border-[#0091ff]/25 px-2 py-0.5 rounded-md transition-all shadow-2xs active:scale-95 animate-in fade-in duration-150"
+                className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-tight text-[#0091ff] bg-[#0091ff]/10 hover:bg-[#0091ff]/15 border border-[#0091ff]/25 px-2 py-0.5 rounded-lg transition-all shadow-2xs active:scale-95 animate-in fade-in duration-150"
                 title="Save current modified words as a new custom dictionary"
               >
                 <Plus className="h-2.5 w-2.5" />
@@ -343,7 +337,7 @@ export function QuickGeneratorControls({
               value={renameTitle}
               onChange={(e) => setRenameTitle(e.target.value)}
               placeholder="Dictionary name..."
-              className="h-7 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-xs font-medium text-foreground focus:border-[#0091ff]/60 focus:outline-none"
+              className="h-7.5 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-medium text-foreground focus:border-[#0091ff]/60 focus:outline-none"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRenameCurrentDict();
@@ -353,14 +347,14 @@ export function QuickGeneratorControls({
             <button
               type="button"
               onClick={handleRenameCurrentDict}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0091ff] text-white hover:bg-[#0080e6] active:scale-95 cursor-pointer shadow-xs"
+              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-[#0091ff] text-white hover:bg-[#0080e6] active:scale-95 cursor-pointer shadow-xs"
             >
               <Check className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={() => setIsRenaming(false)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
+              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
             >
               <X className="h-3 w-3" />
             </button>
@@ -375,7 +369,7 @@ export function QuickGeneratorControls({
               value={newDictTitle}
               onChange={(e) => setNewDictTitle(e.target.value)}
               placeholder="New dictionary title..."
-              className="h-7 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 text-xs font-medium text-foreground focus:border-[#0091ff]/60 focus:outline-none"
+              className="h-7.5 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 text-xs font-medium text-foreground focus:border-[#0091ff]/60 focus:outline-none"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSaveAsNewDict();
@@ -385,14 +379,14 @@ export function QuickGeneratorControls({
             <button
               type="button"
               onClick={handleSaveAsNewDict}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0091ff] text-white hover:bg-[#0080e6] active:scale-95 cursor-pointer shadow-xs"
+              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-[#0091ff] text-white hover:bg-[#0080e6] active:scale-95 cursor-pointer shadow-xs"
             >
               <Check className="h-3 w-3" />
             </button>
             <button
               type="button"
               onClick={() => setIsCreatingNew(false)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
+              className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 active:scale-95 cursor-pointer"
             >
               <X className="h-3 w-3" />
             </button>
@@ -401,26 +395,25 @@ export function QuickGeneratorControls({
 
         {/* Dictionary Select Dropdown */}
         <Select value={selectedDictId} onValueChange={setSelectedDictId}>
-          <SelectTrigger className="border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/80 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+          <SelectTrigger className="border-zinc-200/85 dark:border-zinc-700/80 bg-zinc-50/80 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
             <SelectValue placeholder="Select lexicon..." />
           </SelectTrigger>
           <SelectContent className="border-zinc-200/80 dark:border-zinc-700/80 bg-popover/95 max-h-[320px] backdrop-blur-xl shadow-lg">
             {/* Custom Dictionaries Group */}
             {customDicts.length > 0 && (
               <SelectGroup>
-                <SelectLabel className="text-[10px] uppercase font-bold text-[#0091ff] tracking-wider px-2 py-1">
+                <SelectLabel className="text-[10px] uppercase font-semibold text-[#0091ff] tracking-wider px-2 py-1">
                   Your Lexicons ({customDicts.length})
                 </SelectLabel>
                 {customDicts.map((dict) => (
                   <SelectItem
                     key={dict.id}
                     value={dict.id}
-                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer py-1.5"
+                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer py-1.5 font-medium"
                   >
-                    <div className="flex items-center gap-2 min-w-0 w-full">
-                      <Bookmark className="h-3.5 w-3.5 flex-shrink-0 text-[#0091ff]" />
+                    <div className="flex items-center justify-between min-w-0 w-full gap-2">
                       <span className="font-semibold text-foreground truncate">{dict.title}</span>
-                      <span className="text-[10px] text-muted-foreground ml-auto">({dict.values.length})</span>
+                      <span className="text-[10px] font-mono text-muted-foreground ml-auto">({dict.values.length})</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -429,24 +422,18 @@ export function QuickGeneratorControls({
 
             {/* Built-in Presets Group */}
             <SelectGroup>
-              <SelectLabel className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider px-2 py-1">
+              <SelectLabel className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider px-2 py-1">
                 Built-in Presets ({publicDicts.length})
               </SelectLabel>
-              {publicDicts.map((dict) => {
-                const DictCategoryIcon = getOnomaDomainIcon(dict);
-                return (
-                  <SelectItem
-                    key={dict.id}
-                    value={dict.id}
-                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer py-1.5"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 w-full">
-                      <DictCategoryIcon className="h-3.5 w-3.5 flex-shrink-0 text-[#0091ff]" />
-                      <span className="font-medium text-foreground truncate">{dict.title}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {publicDicts.map((dict) => (
+                <SelectItem
+                  key={dict.id}
+                  value={dict.id}
+                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer py-1.5 font-medium"
+                >
+                  <span className="font-medium text-foreground truncate">{dict.title}</span>
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -460,18 +447,18 @@ export function QuickGeneratorControls({
               <button
                 type="button"
                 onClick={handleCleanWords}
-                className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 flex items-center gap-1 cursor-pointer transition-all px-2 py-0.5 rounded-md active:scale-95 shadow-2xs animate-in fade-in zoom-in-95 duration-150"
+                className="text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 flex items-center gap-1 cursor-pointer transition-all px-2 py-0.5 rounded-lg active:scale-95 shadow-2xs animate-in fade-in zoom-in-95 duration-150 tracking-tight"
                 title={`Remove ${duplicateCount} duplicate word${duplicateCount === 1 ? "" : "s"}`}
               >
                 <span>Dedupe</span>
-                <span className="font-mono text-[9px] opacity-85">({duplicateCount})</span>
+                <span className="font-mono text-[9.5px] opacity-85">({duplicateCount})</span>
               </button>
             )}
             {isWordsModified && (
               <button
                 type="button"
                 onClick={handleResetToDefault}
-                className="text-[10px] font-semibold text-[#0091ff] hover:underline flex items-center gap-0.5 cursor-pointer px-1.5 py-0.5"
+                className="text-[11px] font-medium text-[#0091ff] hover:underline flex items-center gap-1 cursor-pointer px-1.5 py-0.5 tracking-tight"
                 title="Revert to original dictionary"
               >
                 <RotateCcw className="h-2.5 w-2.5" />
@@ -481,91 +468,92 @@ export function QuickGeneratorControls({
           </div>
         )}
 
-
         <textarea
           value={wordDraft}
           onChange={handleTextChange}
           placeholder="Enter training words separated by commas or line breaks..."
-          rows={4}
-          className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-foreground placeholder:text-muted-foreground/60 w-full resize-y rounded-xl p-2.5 font-mono text-xs focus:border-[#0091ff]/60 focus:outline-none leading-relaxed shadow-inner"
+          rows={8}
+          className="border border-zinc-200/90 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/90 text-foreground placeholder:text-muted-foreground/50 w-full min-h-[160px] resize-y rounded-xl p-3 font-mono text-[12px] tracking-tight leading-relaxed focus:border-[#0091ff]/60 focus:ring-1 focus:ring-[#0091ff]/25 focus:outline-none shadow-inner"
         />
 
-        <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400 px-0.5">
-          <span>Comma or newline separated</span>
-          <span className="font-mono">{activeWords.length} active words</span>
+        <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 px-0.5">
+          <span className="font-normal">Comma or newline separated</span>
+          <span className="font-mono text-[10.5px] font-medium text-[#0091ff] bg-[#0091ff]/10 px-1.5 py-0.2 rounded-md">
+            {activeWords.length} active words
+          </span>
         </div>
       </div>
 
-      {/* 3. Parameters Grid (Order & Batch Size) */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Order Stepper */}
-        <div className="space-y-1">
-          <label className="text-zinc-600 dark:text-zinc-400 text-[10px] font-semibold uppercase tracking-wider block">
-            Order
-          </label>
-          <div className="flex h-9 w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-zinc-100/70 p-1 select-none dark:border-zinc-700/70 dark:bg-zinc-800/60 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setOrder(Math.max(1, order - 1))}
-              disabled={order <= 1}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
-            >
-              -
-            </button>
-            <span className="font-mono text-xs font-bold text-[#0091ff]">n={order}</span>
-            <button
-              type="button"
-              onClick={() => setOrder(Math.min(4, order + 1))}
-              disabled={order >= 4}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
-            >
-              +
-            </button>
-          </div>
-        </div>
+      {/* 3. Pattern Depth (Apple Stepped Pill Group with Spring Feel) */}
+      <PatternDepthControl
+        value={order}
+        onChange={setOrder}
+        variant="segmented"
+        showDescription={false}
+      />
 
-        {/* Batch Size Stepper */}
-        <div className="space-y-1">
-          <label className="text-zinc-600 dark:text-zinc-400 text-[10px] font-semibold uppercase tracking-wider block">
-            Batch Size
-          </label>
-          <div className="flex h-9 w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-zinc-100/70 p-1 select-none dark:border-zinc-700/70 dark:bg-zinc-800/60 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
-              disabled={batchCount <= 5}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
-            >
-              -
-            </button>
-            <div className="flex items-center gap-1 font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
-              <NumberFlowDisplay value={batchCount} className="text-xs font-bold" />
-            </div>
-            <button
-              type="button"
-              onClick={() => setBatchCount((c) => Math.min(100, c + 5))}
-              disabled={batchCount >= 100}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
-            >
-              +
-            </button>
+      {/* 4. Batch Size Stepper */}
+      {/* 4. Unified Generate Action & Quantity Pill */}
+      <div className="relative flex h-11 w-full items-center rounded-xl bg-[#0091ff] hover:bg-[#0086eb] active:bg-[#007cdb] shadow-md shadow-[#0091ff]/25 border border-white/20 select-none overflow-hidden transition-all group">
+        {/* Left / Center: Primary Generate Action Trigger */}
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={isGenerating || !selectedDictId}
+          className="flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pl-4 pr-3 text-xs font-semibold tracking-tight text-white transition-all active:scale-[0.98] disabled:opacity-40 select-none"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <OnomaGlyph
+              name="emerge-synthesis"
+              size="xs"
+              className="text-white transition-transform group-hover:scale-110"
+            />
+          )}
+          <span className="text-sm font-semibold tracking-tight">Generate</span>
+        </button>
+
+        {/* Subtle Vertical Divider */}
+        <div className="h-5 w-[1px] bg-white/25 shrink-0" />
+
+        {/* Right: Quantity Stepper Pill */}
+        <div className="flex h-full items-center pr-1.5 pl-1 text-white shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setBatchCount((c) =>
+                c > 100 ? Math.max(100, c - 50) : c > 50 ? Math.max(50, c - 25) : Math.max(5, c - 5)
+              )
+            }}
+            disabled={batchCount <= 5 || isGenerating}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            title="Decrease count"
+            aria-label="Decrease count"
+          >
+            -
+          </button>
+          <div className="flex items-center px-1 min-w-[28px] justify-center text-sm font-bold tracking-tight text-white leading-none">
+            <NumberFlowDisplay value={batchCount} className="text-sm font-bold tracking-tight text-white" />
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setBatchCount((c) =>
+                c >= 100 ? Math.min(500, c + 50) : c >= 50 ? Math.min(100, c + 25) : c + 5
+              )
+            }}
+            disabled={batchCount >= 500 || isGenerating}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white/80 hover:text-white hover:bg-black/15 active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-all"
+            title="Increase count"
+            aria-label="Increase count"
+          >
+            +
+          </button>
         </div>
       </div>
-
-      {/* 4. Primary Synthesize Button */}
-      <button
-        onClick={handleGenerate}
-        disabled={isGenerating || !selectedDictId}
-        className="group relative flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0091ff] hover:bg-[#0080e6] active:bg-[#0070cc] px-4 text-xs font-bold text-white shadow-sm shadow-[#0091ff]/25 transition-all duration-150 active:scale-[0.98] disabled:opacity-40 select-none"
-      >
-        {isGenerating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <OnomaGlyph name="emerge-synthesis" size="xs" className="text-white transition-transform group-hover:scale-110" />
-        )}
-        <span className="tracking-tight">Synthesize Batch</span>
-      </button>
 
       {/* Collapsible Phonotactics & Constraints */}
       {showAdvanced && (
@@ -574,7 +562,7 @@ export function QuickGeneratorControls({
             {/* Length Range */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
+                <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
                   Min Length
                 </label>
                 <input
@@ -585,12 +573,12 @@ export function QuickGeneratorControls({
                   onChange={(e) =>
                     setOptions({ ...options, minLength: parseInt(e.target.value) || 0 })
                   }
-                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
+                <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
                   Max Length
                 </label>
                 <input
@@ -601,70 +589,70 @@ export function QuickGeneratorControls({
                   onChange={(e) =>
                     setOptions({ ...options, maxLength: parseInt(e.target.value) || 0 })
                   }
-                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Prefix / Suffix Affixes */}
             <div className="space-y-1">
-              <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
-                Starts With (#_)
+              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                Starts With <span className="font-mono text-[10px] text-muted-foreground/75">(#_)</span>
               </label>
               <input
                 type="text"
                 placeholder="#_"
                 value={options.startsWith || ""}
                 onChange={(e) => setOptions({ ...options, startsWith: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
-                Ends With (_#)
+              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                Ends With <span className="font-mono text-[10px] text-muted-foreground/75">(_#)</span>
               </label>
               <input
                 type="text"
                 placeholder="_#"
                 value={options.endsWith || ""}
                 onChange={(e) => setOptions({ ...options, endsWith: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
               />
             </div>
 
             {/* Contains Filter */}
             <div className="space-y-1">
-              <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
-                Contains
+              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                Contains Pattern
               </label>
               <input
                 type="text"
                 placeholder="e.g. 'an'"
                 value={options.contains || ""}
                 onChange={(e) => setOptions({ ...options, contains: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
               />
             </div>
 
             {/* Excludes Filter */}
             <div className="space-y-1">
-              <label className="text-muted-foreground font-mono text-[9px] font-semibold uppercase">
-                Excludes
+              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+                Excludes Pattern
               </label>
               <input
                 type="text"
                 placeholder="e.g. 'xx'"
                 value={options.excludes || ""}
                 onChange={(e) => setOptions({ ...options, excludes: e.target.value })}
-                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/50 focus:outline-none"
               />
             </div>
 
             {/* Permit Seed Duplicates */}
-            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-secondary/15 px-2.5 py-1.5 pt-2">
-              <label className="text-muted-foreground text-[11px] font-medium">
-                Allow Duplicates
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-secondary/15 px-2.5 py-2">
+              <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+                Allow Seed Duplicates
               </label>
               <input
                 type="checkbox"

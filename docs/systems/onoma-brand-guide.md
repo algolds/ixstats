@@ -252,6 +252,36 @@ Notation is the visual language of Onoma:
 
 ---
 
+# 17 — Linguistic Vocabulary & Parameter Abstraction
+
+A foundational rule of the Onoma product design language:
+
+> **Expose the linguistic concept. Hide the implementation.**
+
+The Onoma UI separates conceptual meaning from statistical mechanics across three distinct vocabulary layers:
+
+| Layer | Audience | Terminology Examples |
+| --- | --- | --- |
+| **User / Creative** | Worldbuilders, authors, creators | **Pattern Depth**, Variation, Sound Profile, Corpus, Vocabulary |
+| **Linguistic / Analytical** | Conlangers, linguists | Phonotactics, N-grams, Phoneme Distribution, Lexical Diversity, Sound Shifts |
+| **Implementation / Code** | Engine developers | `markovOrder`, `transitionMatrix`, `nGramSize`, `samplingTemperature` |
+
+---
+
+### Canonical Parameter: Pattern Depth
+
+* **Definition**: *The depth of linguistic context used to model and generate forms.*
+* **Behavioral Scale & Chromatic Thought Levels**:
+
+| Depth | Tier | Color Code | Hex | Creative Outcome |
+| :---: | :--- | :--- | :---: | :--- |
+| **1** | **Fluid** | **Cyan** | `#06b6d4` | Broad linguistic patterns; high phonetic variation and exploratory sound combinations |
+| **2** | **Organic** *(Recommended)* | **Azure** | `#0091ff` | Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion |
+| **3** | **Faithful** | **Violet** | `#8b5cf6` | Strong structural fidelity; generates forms closely echoing seed language roots |
+| **4** | **Strict** | **Amber** | `#f59e0b` | High pattern constraints; closely preserves literal word structures from training data |
+
+---
+
 ## Canonical Brand Stack
 
 ```text
@@ -276,3 +306,4 @@ Notation is the visual language of Onoma:
 
 **Brand North Star:**
 ### **Don't generate the answer. Build the system that produces it.**
+

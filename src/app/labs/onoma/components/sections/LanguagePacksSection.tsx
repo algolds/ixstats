@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, RefreshCw, Sparkles, ExternalLink, X, BookOpen, Volume2 } from "lucide-react";
+import { Search, RefreshCw, ExternalLink, X, BookOpen, Volume2 } from "lucide-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
@@ -74,8 +74,11 @@ export function LanguagePacksSection({
     onSuccess: (data) => {
       notify.success("Language pack successfully forked into your local studio!");
       void utils.onoma.list.invalidate();
-      if (data && onLoadToStudio && Array.isArray((data as any).lexiconSeed)) {
-        onLoadToStudio((data as any).name || "Forked Pack", (data as any).lexiconSeed);
+      if (data && onLoadToStudio) {
+        const forked = data as { name?: string; lexiconSeed?: string[] };
+        if (Array.isArray(forked.lexiconSeed)) {
+          onLoadToStudio(forked.name || "Forked Pack", forked.lexiconSeed);
+        }
       }
     },
     onError: (err) => {
@@ -114,21 +117,13 @@ export function LanguagePacksSection({
   return (
     <div className="space-y-6">
       {/* Header & Vault Bridge Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-foreground text-xl font-bold tracking-tight">
-              Community Language Packs
-            </h2>
-            <Badge
-              variant="outline"
-              className="border-orange-500/30 bg-orange-500/10 text-orange-500 text-[10px] font-mono font-bold"
-            >
-              EXPLORE
-            </Badge>
-          </div>
-          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-            Discover, inspect, and fork complete linguistic models, phonological rule sets, and seed dictionaries.
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/40 pb-4">
+        <div className="space-y-1">
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Community Packs
+          </h2>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Discover, inspect, and fork community conlang models, phonological rule sets, and seed dictionaries.
           </p>
         </div>
 
@@ -328,9 +323,9 @@ export function LanguagePacksSection({
 
                   <Button
                     type="button"
-                    onClick={() => handleFork(activePack as any)}
+                    onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="w-full bg-[#0091ff] hover:bg-[#33a7ff] text-white font-bold h-9 rounded-xl shadow-md"
+                    className="w-full bg-[#0091ff] hover:bg-[#33a7ff] text-white font-bold h-9 rounded-xl shadow-md cursor-pointer active:scale-[0.97] transition-all"
                   >
                     <RiGitForkLine className="h-4 w-4 mr-1.5" />
                     <span>Fork Pack to My Studio</span>
@@ -345,9 +340,12 @@ export function LanguagePacksSection({
                     Seed dictionary vocabulary provided with this language pack:
                   </p>
                   <div className="bg-background/60 border-border/40 max-h-48 overflow-y-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed text-foreground">
-                    {Array.isArray((activePack as any).lexiconSeed) && (activePack as any).lexiconSeed.length > 0
-                      ? (activePack as any).lexiconSeed.join(", ")
-                      : "Lexicon seed words bundled in package."}
+                    {(() => {
+                      const packObj = activePack as { lexiconSeed?: unknown };
+                      return Array.isArray(packObj.lexiconSeed) && packObj.lexiconSeed.length > 0
+                        ? (packObj.lexiconSeed as string[]).join(", ")
+                        : "Lexicon seed words bundled in package.";
+                    })()}
                   </div>
                 </div>
               )}

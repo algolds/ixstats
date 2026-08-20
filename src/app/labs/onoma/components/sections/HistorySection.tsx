@@ -1,23 +1,41 @@
 "use client";
 
-// src/app/labs/onoma/components/sections/HistorySection.tsx
-// Onoma — Generation History & Favorites Timeline
-
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, ChevronDown, BarChart3, RefreshCw, Copy, Check } from "lucide-react";
+import {
+  Clock,
+  Star,
+  ChevronDown,
+  BarChart3,
+  RefreshCw,
+  Copy,
+  Check,
+  Hash,
+  Wrench,
+  BookmarkPlus,
+  Search,
+} from "lucide-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
+import { useNameBank } from "~/hooks/useNameBank";
+import { useNotify } from "~/hooks/useNotify";
 
 type HistoryEvent = {
   id: string;
+  sessionId?: string | null;
   createdAt: Date;
   category: string;
   culturalProfile: string | null;
   count: number;
   names: string[];
   favorites: Array<{ name: string }>;
+  parameters?: Record<string, unknown> | null;
 };
+
+interface HistorySectionProps {
+  hideHeader?: boolean;
+  onLoadToStudio?: (words: string[], title: string) => void;
+}
 
 /** Group events by human-readable date strings. */
 function groupByDate(events: HistoryEvent[]): Map<string, HistoryEvent[]> {
@@ -36,7 +54,12 @@ function groupByDate(events: HistoryEvent[]): Map<string, HistoryEvent[]> {
   return groups;
 }
 
-export default function HistorySection({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+export default function HistorySection({
+  hideHeader = false,
+  onLoadToStudio,
+}: HistorySectionProps = {}) {
+  const notify = useNotify();
+  const bank = useNameBank();
   const {
     events,
     stats,
@@ -54,9 +77,21 @@ export default function HistorySection({ hideHeader = false }: { hideHeader?: bo
 
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const [copiedName, setCopiedName] = useState<string | null>(null);
+  const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [hashFilter, setHashFilter] = useState("");
 
-  const grouped = useMemo(() => groupByDate(events as HistoryEvent[]), [events]);
+  const filteredEvents = useMemo(() => {
+    if (!hashFilter.trim()) return events as HistoryEvent[];
+    const q = hashFilter.toLowerCase().trim();
+    return (events as HistoryEvent[]).filter(
+      (e) =>
+        (e.sessionId && e.sessionId.toLowerCase().includes(q)) ||
+        e.names?.some((n) => n.toLowerCase().includes(q))
+    );
+  }, [events, hashFilter]);
+
+  const grouped = useMemo(() => groupByDate(filteredEvents), [filteredEvents]);
 
   const handleCopy = (name: string) => {
     void navigator.clipboard.writeText(name);
@@ -165,47 +200,65 @@ export default function HistorySection({ hideHeader = false }: { hideHeader?: bo
         )}
       </AnimatePresence>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={category ?? ""}
-          onChange={(e) => setCategory(e.target.value || undefined)}
-          className="border-border/40 bg-secondary/20 text-foreground rounded-lg border px-3 py-1.5 text-xs"
-        >
-          <option value="">All Categories</option>
-          <option value="country">Country</option>
-          <option value="city">City</option>
-          <option value="province">Province</option>
-          <option value="person">Person</option>
-          <option value="dynasty">Dynasty</option>
-          <option value="military">Military</option>
-          <option value="organization">Organization</option>
-          <option value="geography">Geography</option>
-          <option value="culture">Culture</option>
-          <option value="ship">Ship</option>
-        </select>
-        <button
-          onClick={() => setFavoritesOnly(!favoritesOnly)}
-          className={`flex cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
-            favoritesOnly
-              ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-              : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-amber-500/30 hover:text-amber-600"
-          }`}
-        >
-          <Star className={`h-3 w-3 ${favoritesOnly ? "fill-amber-500" : ""}`} />
-          Favorites
-        </button>
+      {/* Search & Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="relative w-full sm:w-64">
+          <Search className="text-muted-foreground absolute top-2.5 left-3 h-3.5 w-3.5" />
+          <input
+            type="text"
+            placeholder="Search run hash or name..."
+            value={hashFilter}
+            onChange={(e) => setHashFilter(e.target.value)}
+            className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={category ?? ""}
+            onChange={(e) => setCategory(e.target.value || undefined)}
+            className="border-border/40 bg-secondary/20 text-foreground rounded-lg border px-3 py-1.5 text-xs"
+          >
+            <option value="">All Categories</option>
+            <option value="country">Country</option>
+            <option value="city">City</option>
+            <option value="province">Province</option>
+            <option value="person">Person</option>
+            <option value="dynasty">Dynasty</option>
+            <option value="military">Military</option>
+            <option value="organization">Organization</option>
+            <option value="geography">Geography</option>
+            <option value="culture">Culture</option>
+            <option value="ship">Ship</option>
+            <option value="sandbox">Sandbox</option>
+          </select>
+          <button
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+            className={`flex cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+              favoritesOnly
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-amber-500/30 hover:text-amber-600"
+            }`}
+          >
+            <Star className={`h-3 w-3 ${favoritesOnly ? "fill-amber-500" : ""}`} />
+            Favorites
+          </button>
+        </div>
       </div>
 
       {/* Timeline */}
-      {events.length === 0 ? (
-        <FacetMaterial material="satin" className="border-border/20 border p-8 text-center">
-          <Clock className="text-muted-foreground mx-auto mb-3 h-10 w-10 opacity-40" />
-          <p className="text-muted-foreground text-sm">
-            {favoritesOnly
-              ? "No favorited names yet. Star names you love to find them here."
-              : "No generation history yet. Generate some names and they'll appear here."}
-          </p>
+      {filteredEvents.length === 0 ? (
+        <FacetMaterial material="satin" className="border-border/20 border">
+          <div className="flex flex-col items-center justify-center p-8 text-center space-y-2">
+            <Clock className="text-muted-foreground mb-1 h-10 w-10 opacity-40" />
+            <p className="text-muted-foreground text-sm max-w-sm">
+              {hashFilter
+                ? "No generation events match your search query."
+                : favoritesOnly
+                  ? "No favorited names yet. Star names you love to find them here."
+                  : "No generation history yet. Generate some names and they'll appear here."}
+            </p>
+          </div>
         </FacetMaterial>
       ) : (
         <div className="space-y-6">
@@ -231,10 +284,30 @@ export default function HistorySection({ hideHeader = false }: { hideHeader?: bo
                         onClick={() => toggleExpanded(event.id)}
                         className="flex w-full cursor-pointer items-center justify-between p-3 text-left"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <div className="bg-secondary/40 rounded-md px-2 py-0.5 text-xs font-semibold capitalize">
                             {event.category}
                           </div>
+                          {event.sessionId && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void navigator.clipboard.writeText(event.sessionId!);
+                                setCopiedHash(event.sessionId!);
+                                setTimeout(() => setCopiedHash(null), 1500);
+                              }}
+                              className="flex items-center gap-1 font-mono text-[10px] bg-[#0091ff]/10 text-[#0091ff] hover:bg-[#0091ff]/20 px-2 py-0.5 rounded transition-colors"
+                              title="Click to copy unique run hash"
+                            >
+                              <Hash className="h-2.5 w-2.5" />
+                              <span>{event.sessionId}</span>
+                              {copiedHash === event.sessionId ? (
+                                <Check className="h-2.5 w-2.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-2.5 w-2.5 opacity-60" />
+                              )}
+                            </span>
+                          )}
                           {event.culturalProfile && (
                             <span className="text-muted-foreground text-xs capitalize">
                               {event.culturalProfile}
@@ -263,7 +336,7 @@ export default function HistorySection({ hideHeader = false }: { hideHeader?: bo
                         </div>
                       </button>
 
-                      {/* Expanded Names List */}
+                      {/* Expanded Names List & Batch Actions */}
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.div
@@ -272,7 +345,65 @@ export default function HistorySection({ hideHeader = false }: { hideHeader?: bo
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-border/20 border-t px-3 pt-2 pb-3">
+                            <div className="border-border/20 border-t px-3 pt-2.5 pb-3.5 space-y-3">
+                              {/* Batch Actions Bar */}
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/10 pb-2">
+                                <div className="text-[11px] text-muted-foreground">
+                                  Run payload ({names.length} names)
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {onLoadToStudio && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        onLoadToStudio(
+                                          names,
+                                          event.sessionId ? `Run ${event.sessionId}` : `${event.category} batch`
+                                        )
+                                      }
+                                      className="flex cursor-pointer items-center gap-1 rounded bg-[#0091ff]/10 px-2 py-1 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 active:scale-95 transition-all"
+                                      title="Load entire run into Studio Workshop"
+                                    >
+                                      <Wrench className="h-3 w-3" />
+                                      <span>Load to Studio</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      const title = event.sessionId
+                                        ? `Run ${event.sessionId}`
+                                        : `${event.category.toUpperCase()} Run`;
+                                      await bank.saveEntry({
+                                        type: "dictionary",
+                                        title,
+                                        values: names,
+                                        category: event.category as any,
+                                      });
+                                      notify.success(`Saved run as dictionary "${title}"!`);
+                                    }}
+                                    className="flex cursor-pointer items-center gap-1 rounded bg-indigo-500/10 px-2 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 active:scale-95 transition-all"
+                                    title="Save entire run as custom Stash Dictionary"
+                                  >
+                                    <BookmarkPlus className="h-3 w-3" />
+                                    <span>Save as Dictionary</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void navigator.clipboard.writeText(names.join(", "));
+                                      notify.success("Copied all names to clipboard.");
+                                    }}
+                                    className="flex cursor-pointer items-center gap-1 rounded bg-secondary/30 px-2 py-1 text-[11px] font-medium text-foreground hover:bg-secondary/60 active:scale-95 transition-all"
+                                    title="Copy all names comma-separated"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                    <span>Copy All</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Badges Grid */}
                               <div className="flex flex-wrap gap-1.5">
                                 {names.map((name, idx) => {
                                   const isFav = favoriteNames.has(name);

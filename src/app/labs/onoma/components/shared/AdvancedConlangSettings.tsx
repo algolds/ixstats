@@ -4,6 +4,7 @@
 // Onoma Custom Studio Workshop — Advanced Generator Settings Component
 
 import { AppleSwitch } from "~/components/ui/apple-switch";
+import { PatternDepthControl } from "./PatternDepthControl";
 import {
   Select,
   SelectContent,
@@ -181,7 +182,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
       {(category === "organization" || category === "country" || category === "province") && (
         <div className="border-border/40 space-y-1.5 border-b pb-3">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
             Name Suffix
           </label>
           <Select
@@ -267,7 +268,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
               placeholder="e.g. Guild"
               value={gen.customSuffix}
               onChange={(e) => gen.setCustomSuffix(e.target.value)}
-              className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 text-xs duration-150 focus:outline-none"
+              className="border-border/60 bg-background text-foreground animate-in slide-in-from-top-1 mt-1 w-full rounded-lg border px-2.5 py-1 text-xs duration-150 focus:outline-none font-mono"
             />
           )}
         </div>
@@ -275,7 +276,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
             Min Length
           </label>
           <input
@@ -289,11 +290,11 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                 minLength: parseInt(e.target.value) || 0,
               })
             }
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
             Max Length
           </label>
           <input
@@ -307,7 +308,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                 maxLength: parseInt(e.target.value) || 0,
               })
             }
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
           />
         </div>
       </div>
@@ -315,58 +316,49 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       {/* Substring constraint filters */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Starts With
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+            Starts With <span className="font-mono text-[10px] text-muted-foreground/75">(#_)</span>
           </label>
           <input
             type="text"
             placeholder="e.g. Ae"
             value={gen.options.startsWith || ""}
             onChange={(e) => gen.setOptions({ ...gen.options, startsWith: e.target.value })}
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">Ends With</label>
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
+            Ends With <span className="font-mono text-[10px] text-muted-foreground/75">(_#)</span>
+          </label>
           <input
             type="text"
             placeholder="e.g. th"
             value={gen.options.endsWith || ""}
             onChange={(e) => gen.setOptions({ ...gen.options, endsWith: e.target.value })}
-            className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+            className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
           />
         </div>
       </div>
 
-      {/* Markov Order Look-back */}
-      <div className="space-y-1 pb-1">
-        <div className="flex justify-between">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Markov Order (Depth)
-          </label>
-          <span className="text-[10px] font-bold text-[#0091ff]">{gen.order} char</span>
-        </div>
-        <input
-          type="range"
-          min={1}
-          max={4}
-          step={1}
-          value={gen.order}
-          onChange={(e) => gen.setOrder(parseInt(e.target.value))}
-          className="bg-secondary/80 h-1.5 w-full cursor-pointer rounded-lg accent-[#0091ff]"
-        />
-      </div>
+      {/* Pattern Depth Control */}
+      <PatternDepthControl
+        value={gen.order}
+        onChange={(val) => gen.setOrder(val)}
+        variant="inspector"
+        className="pb-1"
+      />
 
       {/* Advanced conlang & phonotactics */}
       <div className="border-border/20 space-y-3.5 border-t pt-3.5">
-        <h5 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-          Advanced conlang & phonotactics
+        <h5 className="text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold tracking-tight uppercase">
+          Advanced Conlang & Phonotactics
         </h5>
 
         {/* Syllable Counts */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+            <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
               Min Syllables
             </label>
             <input
@@ -380,11 +372,11 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                   minSyllables: parseInt(e.target.value) || 0,
                 })
               }
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+              className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
+            <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
               Max Syllables
             </label>
             <input
@@ -403,14 +395,14 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
                   maxSyllables: e.target.value === "" ? -1 : parseInt(e.target.value) || -1,
                 })
               }
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+              className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
             />
           </div>
         </div>
 
         {/* CV Template Input */}
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
+          <label className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight block">
             Strict CV Template
           </label>
           <input
@@ -431,7 +423,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
         <div className="grid gap-3 sm:grid-cols-2">
           {/* Must End With Vowel */}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[10px] font-semibold">
+            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
               Must End With Vowel
             </span>
             <AppleSwitch
@@ -449,7 +441,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* Must End With Consonant */}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[10px] font-semibold">
+            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
               Must End With Consonant
             </span>
             <AppleSwitch
@@ -467,8 +459,8 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* No Initial Clusters */}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[10px] font-semibold">
-              No Initial CC Clusters
+            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+              No Initial Clusters (e.g. "str-")
             </span>
             <AppleSwitch
               checked={gen.options.noInitialClusters || false}
@@ -484,8 +476,8 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
           {/* No Final Clusters */}
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[10px] font-semibold">
-              No Final CC Clusters
+            <span className="text-zinc-700 dark:text-zinc-300 text-[11px] font-medium tracking-tight">
+              No Final Clusters (e.g. "-rts")
             </span>
             <AppleSwitch
               checked={gen.options.noFinalClusters || false}

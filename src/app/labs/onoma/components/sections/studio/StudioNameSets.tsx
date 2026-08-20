@@ -6,7 +6,6 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { Info, Plus, Trash2, Users, HelpCircle } from "lucide-react";
-import { NationGameIcon } from "../../nav/onoma-tabs";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -41,7 +40,7 @@ export function StudioNameSets() {
   const [selectedSet, setSelectedSet] = useState<string>("");
   const [separator, setSeparator] = useState(" ");
   const [slots, setSlots] = useState<NameSlot[]>([]);
-  const [batchCount, setBatchCount] = useState(10);
+  const [batchCount, setBatchCount] = useState(15);
   const [names, setNames] = useState<string[]>([]);
   const [presetKey, setPresetKey] = useState<string>("custom");
 
@@ -498,7 +497,7 @@ export function StudioNameSets() {
                             <input
                               value={slot.parentName || ""}
                               onChange={(e) => updateSlot(idx, { parentName: e.target.value })}
-                              placeholder="Leave blank for derived Markov parent"
+                              placeholder="Leave blank for auto-generated parent"
                               className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
                             />
                           </div>
@@ -572,9 +571,9 @@ export function StudioNameSets() {
                 <button
                   onClick={generate}
                   disabled={slots.length === 0}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white hover:bg-[#33a7ff] disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
-                  <NationGameIcon className="h-4 w-4" /> Generate Full Names
+                  <span>Generate Full Names</span>
                 </button>
               </div>
             </>
@@ -589,7 +588,7 @@ export function StudioNameSets() {
             <div className="border-border/40 border-b pb-3">
               <h3 className="text-foreground text-sm font-bold tracking-tight">Full Names</h3>
               <p className="text-muted-foreground mt-0.5 text-[11px]">
-                Each part Markov-generated from the {selectedSet} set.
+                Each slot generated from the {selectedSet} template.
               </p>
             </div>
             <div className="grid max-h-[500px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">

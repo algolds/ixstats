@@ -1,6 +1,9 @@
 // src/lib/onoma/morphology.ts
 // Onoma Lab — Linguistics Engine Morphology Simulator
 
+import { MarkovChain } from "./markov-chain";
+import { isVowel } from "./phonetics-shared";
+
 export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 
 export interface DeclensionCase {
@@ -74,13 +77,7 @@ export function detectGender(word: string, culture: string | null): GrammaticalG
   return "masculine"; // ends in consonant
 }
 
-/**
- * Capitalizes the first letter of a word while preserving case.
- */
-function capitalize(str: string): string {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+
 
 /**
  * Generates Singular & Plural declined forms for all 5 cases.
@@ -301,35 +298,34 @@ export function generateNounDeclension(word: string, culture: string | null): De
     }
   }
 
-  // Return formatted Table
   return {
     nominative: {
-      singular: capitalize(nomS),
-      plural: capitalize(nomP),
+      singular: MarkovChain.capitalize(nomS),
+      plural: MarkovChain.capitalize(nomP),
       descriptionSingular: 'Subject (e.g. "The city is here")',
       descriptionPlural: 'Multiple subjects (e.g. "These cities are here")',
     },
     genitive: {
-      singular: capitalize(genS),
-      plural: capitalize(genP),
+      singular: MarkovChain.capitalize(genS),
+      plural: MarkovChain.capitalize(genP),
       descriptionSingular: 'Possession / Origin (e.g. "Of the city")',
       descriptionPlural: 'Plural possession / Origin (e.g. "Of the cities")',
     },
     accusative: {
-      singular: capitalize(accS),
-      plural: capitalize(accP),
+      singular: MarkovChain.capitalize(accS),
+      plural: MarkovChain.capitalize(accP),
       descriptionSingular: 'Direct Object (e.g. "I found the city")',
       descriptionPlural: 'Plural direct objects (e.g. "I found the cities")',
     },
     dative: {
-      singular: capitalize(datS),
-      plural: capitalize(datP),
+      singular: MarkovChain.capitalize(datS),
+      plural: MarkovChain.capitalize(datP),
       descriptionSingular: 'Recipient (e.g. "Dedicated to/for the city")',
       descriptionPlural: 'Plural recipients (e.g. "Dedicated to/for the cities")',
     },
     ablative: {
-      singular: capitalize(ablS),
-      plural: capitalize(ablP),
+      singular: MarkovChain.capitalize(ablS),
+      plural: MarkovChain.capitalize(ablP),
       descriptionSingular: 'Origin / Instrument (e.g. "From/by the city")',
       descriptionPlural: 'Plural origins / instruments (e.g. "From/by the cities")',
     },

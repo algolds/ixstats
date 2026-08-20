@@ -152,7 +152,7 @@ export function DashboardSidebarLayout({
               onMouseEnter={disableGlobalHover ? undefined : () => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "relative z-30 hidden shrink-0 transition-all duration-300 ease-in-out lg:block",
+                "relative z-30 hidden shrink-0 transition-[width,opacity] duration-300 ease-out lg:block",
                 variant === "rail"
                   ? isCollapsedNow && !isHoverActive
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
@@ -174,7 +174,7 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "sticky top-6 space-y-3.5 transition-all duration-300 ease-in-out",
+                  "sticky top-6 space-y-3.5 transition-[transform,opacity] duration-300 ease-out",
                   variant === "rail"
                     ? "translate-x-0 opacity-100"
                     : isCollapsedNow
@@ -198,7 +198,7 @@ export function DashboardSidebarLayout({
                 {!disableCollapse && variant !== "rail" && (
                   <button
                     onClick={handleToggleSidebar}
-                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[10px] font-medium tracking-tight shadow-sm backdrop-blur-md transition-all duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
+                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-[10px] font-medium tracking-tight shadow-xs backdrop-blur-md transition-all duration-150 active:scale-[0.97]"
                     title="Collapse sidebar"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -214,7 +214,7 @@ export function DashboardSidebarLayout({
               {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
                 <button
                   onClick={handleToggleSidebar}
-                  className="text-muted-foreground hover:text-foreground fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 shadow-xl backdrop-blur-xl transition-all duration-150 hover:scale-105 hover:bg-black/60 active:scale-[0.95]"
+                  className="text-muted-foreground hover:text-foreground border-border bg-card/90 hover:bg-card fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl backdrop-blur-xl transition-all duration-150 hover:scale-105 active:scale-[0.95]"
                   title="Expand sidebar"
                 >
                   <ChevronRight className="h-4 w-4" />

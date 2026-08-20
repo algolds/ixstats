@@ -30,10 +30,13 @@ const ExploreSection = dynamic(() => import("./sections/ExploreSection"), {
   ssr: false,
 });
 
-const MarketplaceSection = dynamic(() => import("./sections/MarketplaceSection"), {
-  loading: SectionLoadingFallback,
-  ssr: false,
-});
+const LanguagePacksSection = dynamic(
+  () => import("./sections/LanguagePacksSection").then((mod) => mod.LanguagePacksSection),
+  {
+    loading: SectionLoadingFallback,
+    ssr: false,
+  }
+);
 
 const StashSection = dynamic(() => import("./sections/StashSection"), {
   loading: SectionLoadingFallback,
@@ -55,6 +58,8 @@ interface OnomaSectionRendererProps {
   studioInitialTitle?: string;
   onClearStudioInitial: () => void;
   onLoadToStudio: (words: string[], title: string) => void;
+  onNavigateExplore?: (tab: ExploreSubTab, words?: string[], title?: string) => void;
+  onNavigateStudio?: (tab: StudioSubTab, words?: string[], title?: string) => void;
 }
 
 export function OnomaSectionRenderer({
@@ -67,6 +72,8 @@ export function OnomaSectionRenderer({
   studioInitialTitle,
   onClearStudioInitial,
   onLoadToStudio,
+  onNavigateExplore,
+  onNavigateStudio,
 }: OnomaSectionRendererProps) {
   switch (activeSection) {
     case "overview":
@@ -80,7 +87,11 @@ export function OnomaSectionRenderer({
     case "culture":
       return <CategoryDomainSection domain="culture" />;
     case "marketplace":
-      return <MarketplaceSection />;
+      return (
+        <LanguagePacksSection
+          onLoadToStudio={(title, words) => onLoadToStudio(words, title)}
+        />
+      );
     case "studio":
       return (
         <StudioSection
@@ -97,10 +108,17 @@ export function OnomaSectionRenderer({
           activeSubTab={activeExploreSubTab}
           setActiveSubTab={setActiveExploreSubTab}
           onLoadToStudio={onLoadToStudio}
+          studioWords={studioInitialWords}
         />
       );
     case "bank":
-      return <StashSection onLoadToStudio={onLoadToStudio} />;
+      return (
+        <StashSection
+          onLoadToStudio={onLoadToStudio}
+          onNavigateExplore={onNavigateExplore}
+          onNavigateStudio={onNavigateStudio}
+        />
+      );
     case "settings":
       return <SettingsSection />;
     default: {

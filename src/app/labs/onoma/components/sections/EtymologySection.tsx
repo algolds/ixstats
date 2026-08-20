@@ -254,15 +254,6 @@ export default function EtymologySection() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-foreground text-xl font-bold tracking-tight">Etymological Web</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Track word roots, prefixes/suffixes, semantic shifts, and construct a morphological
-          derivation tree.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Roots & Creation */}
         <div className="space-y-4 lg:col-span-4">
@@ -273,10 +264,18 @@ export default function EtymologySection() {
             </h3>
 
             {rootsLoading ? (
-              <div className="text-muted-foreground py-4 text-center text-xs">Loading roots...</div>
+              <div className="text-muted-foreground py-8 text-center text-xs">Loading roots...</div>
             ) : roots?.length === 0 ? (
-              <div className="text-muted-foreground py-4 text-center text-xs italic">
-                No roots created yet.
+              <div className="border border-dashed border-border/40 bg-secondary/5 rounded-xl p-5 text-center text-xs space-y-2">
+                <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/10 text-violet-400">
+                  <GitFork className="h-4 w-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-foreground">No Proto-Roots Yet</p>
+                  <p className="text-muted-foreground text-[11px] leading-normal">
+                    Create your first root word below to start branching derivations.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="max-h-60 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
@@ -588,14 +587,28 @@ export default function EtymologySection() {
           ) : (
             <FacetMaterial
               material="satin"
-              className="border-border/20 flex h-full flex-col items-center justify-center border p-12 text-center"
+              className="border-border/20 border min-h-[460px] h-full"
             >
-              <Network className="text-muted-foreground mb-4 h-16 w-16 opacity-20" />
-              <h4 className="text-foreground text-sm font-bold">No Root Selected</h4>
-              <p className="text-muted-foreground mt-1 max-w-sm text-xs">
-                Select an etymology root word from the directory on the left or create a new one to
-                begin building the derivation tree.
-              </p>
+              <div className="flex h-full min-h-[460px] w-full flex-col items-center justify-center p-8 text-center space-y-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 shadow-lg shadow-violet-500/5">
+                  <Network className="h-7 w-7 text-violet-400" />
+                </div>
+                <div className="space-y-1 max-w-sm">
+                  <h4 className="text-foreground text-sm font-bold tracking-tight">Select or Create a Root</h4>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    Pick an etymology root word from the directory on the left to inspect its morphological family tree, or create a new proto-root to begin branching derivations.
+                  </p>
+                </div>
+                {roots && roots.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRootId(roots[0].id)}
+                    className="mt-2 flex cursor-pointer items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-semibold text-violet-400 hover:bg-violet-500/20 active:scale-95 transition-all"
+                  >
+                    <span>Open &quot;{roots[0].root}&quot; Tree</span>
+                  </button>
+                )}
+              </div>
             </FacetMaterial>
           )}
         </div>

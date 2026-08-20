@@ -190,7 +190,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
           ) : (
             <Volume2 className="h-3.5 w-3.5" />
           )}
-          <span>{isPlayingSandbox ? "Speaking..." : "Synthesize Sandbox"}</span>
+          <span>{isPlayingSandbox ? "Speaking..." : "Preview Voice"}</span>
         </button>
       </div>
     </div>

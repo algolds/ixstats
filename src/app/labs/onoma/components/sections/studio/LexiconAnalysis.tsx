@@ -65,22 +65,27 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
         </div>
 
         {/* Stash Folder */}
-        {stashedEntry && (stashedEntry as any).stashName && (
-          <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
-            <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-              Stash Folder
-            </span>
-            <span
-              className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold select-none"
-              style={{
-                backgroundColor: `${(stashedEntry as any).stashColor || "#3b82f6"}20`,
-                color: (stashedEntry as any).stashColor || "#3b82f6",
-              }}
-            >
-              📁 {(stashedEntry as any).stashName}
-            </span>
-          </div>
-        )}
+        {(() => {
+          const entry = stashedEntry as { stashName?: string; stashColor?: string } | undefined;
+          if (!entry?.stashName) return null;
+          const color = entry.stashColor || "#3b82f6";
+          return (
+            <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
+              <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
+                Stash Folder
+              </span>
+              <span
+                className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold select-none"
+                style={{
+                  backgroundColor: `${color}20`,
+                  color: color,
+                }}
+              >
+                📁 {entry.stashName}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Origin / Name Set */}
         {originLabel && (

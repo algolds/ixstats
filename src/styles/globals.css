@@ -36,6 +36,14 @@
   --color-brand-secondary: var(--color-brand-secondary);
   --color-text-secondary: var(--color-text-secondary);
 
+  /* Domain & Brand Tokens */
+  --color-poll: var(--color-poll);
+  --color-discord: var(--color-discord);
+  --color-discord-hover: var(--color-discord-hover);
+  --color-wiki: var(--color-wiki);
+  --color-wiki-hover: var(--color-wiki-hover);
+  --color-map-ocean: var(--color-map-ocean);
+
   /* Gold Theme Colors */
   --color-gold-50: #fffbeb;
   --color-gold-100: #fef3c7;

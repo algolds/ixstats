@@ -12,39 +12,7 @@ export const GOOGLE_FONTS = [
   { id: "Inter", family: "Inter", type: "sans" },
 ];
 
-/**
- * Wraps the brand name "Onoma" inside a string with linguistic flanking notations.
- */
-export function applyFlanking(text: string, style?: string): string {
-  if (!text) return "";
-  const brandWord = "Onoma";
-  if (!text.includes(brandWord)) return text;
 
-  let decorated = brandWord;
-  switch (style) {
-    case "brackets":
-      decorated = `⟨${brandWord}⟩`;
-      break;
-    case "slashes":
-      decorated = `/${brandWord}/`;
-      break;
-    case "brackets-square":
-      decorated = `[${brandWord}]`;
-      break;
-    case "asterisk":
-      decorated = `*${brandWord}`;
-      break;
-    case "ipa":
-      decorated = `${brandWord} [oʊˈnoʊmə]`;
-      break;
-    case "none":
-    default:
-      decorated = brandWord;
-      break;
-  }
-
-  return text.replace(brandWord, decorated);
-}
 
 /**
  * Returns the Google Fonts CSS import link for a given font family name.

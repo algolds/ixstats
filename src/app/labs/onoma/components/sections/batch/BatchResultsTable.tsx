@@ -4,7 +4,8 @@
 // Results data table with sorting, search filtering, audio synthesis, and bulk stash actions
 
 import React, { useState } from "react";
-import { Volume2, Bookmark, FileDown, Copy, Check } from "lucide-react";
+import { Volume2, Bookmark, FileDown, Copy, Check, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import type { BatchNameResult } from "./batch-constants";
 
 interface BatchResultsTableProps {
@@ -66,16 +67,43 @@ export function BatchResultsTable({
             className="border-border/60 bg-background text-foreground rounded-md border px-2.5 py-1 text-xs focus:outline-none"
           />
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>Max Perplexity:</span>
+            <div className="flex items-center gap-1">
+              <span>Max Perplexity:</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground inline-flex cursor-help items-center transition-colors focus:outline-none"
+                    aria-label="What is Perplexity?"
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs space-y-1.5 p-3 text-xs">
+                  <p className="text-foreground font-semibold">Perplexity (Linguistic Surprise)</p>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    Measures how unexpected or unusual a word&apos;s letter transitions are relative
+                    to the training phonology model.
+                  </p>
+                  <div className="border-border/40 grid grid-cols-2 gap-1.5 border-t pt-1 font-mono text-[10px]">
+                    <span className="font-medium text-emerald-500">&lt; 25: Natural & familiar</span>
+                    <span className="font-medium text-amber-500">25–50: Balanced</span>
+                    <span className="col-span-2 font-medium text-rose-500">
+                      &gt; 50: Exotic & unusual transitions
+                    </span>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <input
               type="range"
               min={0}
               max={100}
               value={perplexityFilter}
               onChange={(e) => onPerplexityChange(Number(e.target.value))}
-              className="w-20 accent-[#10b981]"
+              className="w-20 accent-[#0091ff]"
             />
-            <span className="font-mono text-[11px] font-semibold text-[#10b981]">
+            <span className="font-mono text-[11px] font-semibold text-[#0091ff]">
               {perplexityFilter > 0 ? `< ${perplexityFilter}` : "All"}
             </span>
           </div>
@@ -115,29 +143,58 @@ export function BatchResultsTable({
                   type="checkbox"
                   checked={results.length > 0 && selectedNames.size === results.length}
                   onChange={onSelectAll}
-                  className="rounded border-border/60 accent-[#10b981] cursor-pointer"
+                  className="rounded border-border/60 accent-[#0091ff] cursor-pointer"
                 />
               </th>
               <th
                 onClick={() => onSort("name")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#10b981]"
+                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#0091ff]"
               >
                 Name {sorting.column === "name" && (sorting.direction === "asc" ? "↑" : "↓")}
               </th>
               <th className="p-2 font-bold text-foreground">IPA Transcription</th>
               <th
                 onClick={() => onSort("syllables")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#10b981]"
+                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#0091ff]"
               >
                 Syllables{" "}
                 {sorting.column === "syllables" && (sorting.direction === "asc" ? "↑" : "↓")}
               </th>
-              <th
-                onClick={() => onSort("perplexity")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#10b981]"
-              >
-                Perplexity{" "}
-                {sorting.column === "perplexity" && (sorting.direction === "asc" ? "↑" : "↓")}
+              <th className="p-2 font-bold text-foreground">
+                <div className="flex items-center gap-1">
+                  <span
+                    onClick={() => onSort("perplexity")}
+                    className="cursor-pointer hover:text-[#0091ff]"
+                  >
+                    Perplexity{" "}
+                    {sorting.column === "perplexity" && (sorting.direction === "asc" ? "↑" : "↓")}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground inline-flex cursor-help items-center transition-colors focus:outline-none"
+                        aria-label="What is Perplexity?"
+                      >
+                        <HelpCircle className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs space-y-1.5 p-3 text-xs">
+                      <p className="text-foreground font-semibold">Perplexity (Linguistic Surprise)</p>
+                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                        Measures how unexpected or unusual a word&apos;s letter transitions are relative
+                        to the training phonology model.
+                      </p>
+                      <div className="border-border/40 grid grid-cols-2 gap-1.5 border-t pt-1 font-mono text-[10px]">
+                        <span className="font-medium text-emerald-500">&lt; 25: Natural & familiar</span>
+                        <span className="font-medium text-amber-500">25–50: Balanced</span>
+                        <span className="col-span-2 font-medium text-rose-500">
+                          &gt; 50: Exotic & unusual transitions
+                        </span>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </th>
               <th className="p-2 text-right">Actions</th>
             </tr>
@@ -149,7 +206,7 @@ export function BatchResultsTable({
                 <tr
                   key={r.name + i}
                   className={`hover:bg-secondary/20 transition-colors ${
-                    isSelected ? "bg-[#10b981]/5" : ""
+                    isSelected ? "bg-[#0091ff]/5" : ""
                   }`}
                 >
                   <td className="p-2 text-center">
@@ -157,7 +214,7 @@ export function BatchResultsTable({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onSelectName(r.name)}
-                      className="rounded border-border/60 accent-[#10b981] cursor-pointer"
+                      className="rounded border-border/60 accent-[#0091ff] cursor-pointer"
                     />
                   </td>
                   <td className="p-2 font-semibold text-foreground">{r.name}</td>
@@ -181,7 +238,7 @@ export function BatchResultsTable({
                       <button
                         onClick={() => onPlayName(r.name, r.ipa)}
                         title="Listen to pronunciation"
-                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-[#10b981] transition-colors cursor-pointer"
+                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-[#0091ff] transition-colors cursor-pointer"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
                       </button>

@@ -31,6 +31,7 @@ import {
   generateMercenaryBandName,
 } from "./group-generator";
 import { generateTavernName } from "./tavern-generator";
+import { pickRandom } from "./template-resolver";
 
 /**
  * Generates a name by concatenating syllables from the original Onoma database
@@ -44,8 +45,6 @@ export function generateFantasySyllableName(): string {
   const twos = FANTASY_SYLLABLES[1];
   const threes = FANTASY_SYLLABLES[2];
   const multis = FANTASY_SYLLABLES[3];
-
-  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
   if (d20 < 3) {
     // 10% — One syllable

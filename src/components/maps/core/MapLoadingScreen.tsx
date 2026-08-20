@@ -56,7 +56,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
 
   return (
     <div
-      className={`absolute inset-0 z-50 flex items-center justify-center bg-[#0a1628] transition-opacity duration-500 ${
+      className={`bg-map-ocean absolute inset-0 z-50 flex items-center justify-center transition-opacity duration-500 ${
         fadeOut ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >

@@ -5,33 +5,56 @@
 
 import { useState, useMemo } from "react";
 import { GitCompare, Volume2, AlertCircle } from "lucide-react";
-import { ScienceGameIcon } from "../nav/onoma-tabs";
 import { FacetMaterial } from "~/components/ui/facet";
-import { compareProfiles, getAllProfileSeeds, type ComparisonResult } from "~/lib/onoma/comparator";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { api } from "~/trpc/react";
-import type { CulturalProfile } from "~/lib/onoma/types";
+import { useNameBank } from "~/hooks/useNameBank";
+import { CorpusSelector } from "../shared/CorpusSelector";
+import {
+  resolveCorpusWords,
+  compareDynamicWordLists,
+  type DynamicComparisonResult,
+} from "~/lib/onoma/data-bridge";
 
-const PROFILES = [
-  { value: "latin", label: "Latin / Roman" },
-  { value: "germanic", label: "Germanic / Norse" },
-  { value: "celtic", label: "Celtic / Gaelic" },
-  { value: "slavic", label: "Slavic / Eastern European" },
-  { value: "arabic", label: "Arabic / Near Eastern" },
-  { value: "east-asian", label: "East Asian" },
-  { value: "austronesian", label: "Austronesian" },
-  { value: "persian", label: "Persian" },
-  { value: "turkic", label: "Turkic" },
-  { value: "african", label: "African" },
-  { value: "indic", label: "Indic" },
-  { value: "uralic", label: "Uralic" },
-];
+interface ComparatorSectionProps {
+  hideHeader?: boolean;
+  studioWords?: string[];
+}
 
-export default function ComparatorSection() {
-  const [profileA, setProfileA] = useState<CulturalProfile>("latin");
-  const [profileB, setProfileB] = useState<CulturalProfile>("germanic");
+export default function ComparatorSection({
+  hideHeader = false,
+  studioWords = [],
+}: ComparatorSectionProps = {}) {
+  const [profileA, setProfileA] = useState<string>("latin");
+  const [profileB, setProfileB] = useState<string>("germanic");
+
+  const bank = useNameBank();
+  const customDicts = useMemo(() => {
+    return bank.nameBank?.filter((d) => d.type === "dictionary" && d.values?.length > 0) || [];
+  }, [bank.nameBank]);
+
+  // Resolve active corpus data for A and B
+  const corpusA = useMemo(() => {
+    return resolveCorpusWords(profileA, customDicts, studioWords);
+  }, [profileA, customDicts, studioWords]);
+
+  const corpusB = useMemo(() => {
+    return resolveCorpusWords(profileB, customDicts, studioWords);
+  }, [profileB, customDicts, studioWords]);
+
+  // Dynamic phonetic & entropy comparison
+  const comparison = useMemo<DynamicComparisonResult>(() => {
+    return compareDynamicWordLists(
+      corpusA.words,
+      corpusA.label,
+      corpusA.fallbackCulture,
+      corpusB.words,
+      corpusB.label,
+      corpusB.fallbackCulture
+    );
+  }, [corpusA, corpusB]);
 
   // Blend Preview state
   const [hybridNames, setHybridNames] = useState<Array<{ name: string; ipa: string }>>([]);
@@ -40,40 +63,31 @@ export default function ComparatorSection() {
     staleTime: 600000,
   });
 
-  const comparison = useMemo<ComparisonResult>(() => {
-    return compareProfiles(profileA, profileB);
-  }, [profileA, profileB]);
-
-  // Generate 10 sample names for A and B
+  // Generate 10 sample names for A and B dynamically
   const samplesA = useMemo(() => {
-    const seeds = getAllProfileSeeds(profileA);
     const chain = new MarkovChain(2, "character");
-    chain.addWords(seeds);
+    chain.addWords(corpusA.words);
     const list: string[] = [];
     for (let i = 0; i < 10; i++) {
-      const name = chain.generate({ minLength: 4, maxLength: 10 }) || "Alcius";
+      const name = chain.generate({ minLength: 4, maxLength: 10 }) || corpusA.words[0] || "Alcius";
       list.push(name);
     }
-    return list.map((name) => ({ name, ipa: translateToIPA(name, profileA) }));
-  }, [profileA]);
+    return list.map((name) => ({ name, ipa: translateToIPA(name, corpusA.fallbackCulture) }));
+  }, [corpusA]);
 
   const samplesB = useMemo(() => {
-    const seeds = getAllProfileSeeds(profileB);
     const chain = new MarkovChain(2, "character");
-    chain.addWords(seeds);
+    chain.addWords(corpusB.words);
     const list: string[] = [];
     for (let i = 0; i < 10; i++) {
-      const name = chain.generate({ minLength: 4, maxLength: 10 }) || "Alcius";
+      const name = chain.generate({ minLength: 4, maxLength: 10 }) || corpusB.words[0] || "Alcius";
       list.push(name);
     }
-    return list.map((name) => ({ name, ipa: translateToIPA(name, profileB) }));
-  }, [profileB]);
+    return list.map((name) => ({ name, ipa: translateToIPA(name, corpusB.fallbackCulture) }));
+  }, [corpusB]);
 
   const handleBlendPreview = () => {
-    const seedsA = getAllProfileSeeds(profileA);
-    const seedsB = getAllProfileSeeds(profileB);
-    const combinedSeeds = [...seedsA, ...seedsB];
-
+    const combinedSeeds = [...corpusA.words, ...corpusB.words];
     const chain = new MarkovChain(2, "character");
     chain.addWords(combinedSeeds);
 
@@ -93,7 +107,7 @@ export default function ComparatorSection() {
     setHybridNames(
       list.map((name) => ({
         name,
-        ipa: translateToIPA(name, `${profileA}+${profileB}`),
+        ipa: translateToIPA(name, `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`),
       }))
     );
   };
@@ -105,66 +119,49 @@ export default function ComparatorSection() {
       culture,
       kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
       voice: undefined,
-      defaultVoice: speechConfig?.kokoro?.voice,
-      forceDefaultVoice: false,
     });
   };
 
-  const getDistanceColor = (distance: number) => {
-    if (distance >= 75) return "text-red-500 border-red-500/20 bg-red-500/5";
-    if (distance >= 45) return "text-amber-500 border-amber-500/20 bg-amber-500/5";
-    return "text-emerald-500 border-emerald-500/20 bg-emerald-500/5";
+  const getDistanceColor = (dist: number) => {
+    if (dist <= 30) return "border-emerald-500/30 bg-emerald-500/5 text-emerald-500";
+    if (dist <= 60) return "border-amber-500/30 bg-amber-500/5 text-amber-500";
+    return "border-rose-500/30 bg-rose-500/5 text-rose-500";
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-foreground text-xl font-bold tracking-tight">
-          Linguistic Profile Comparator
-        </h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Compare phonemes, bigram frequencies, entropy, and linguistic distance between profiles.
-        </p>
-      </div>
+      {!hideHeader && (
+        <div className="border-border/40 space-y-1 border-b pb-4">
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Linguistic Comparison
+          </h2>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between natural cultures and custom conlangs.
+          </p>
+        </div>
+      )}
 
-      {/* Selectors grid */}
+      {/* Selectors grid with Universal Corpus Selectors */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1">
-          <label className="text-muted-foreground text-xs font-semibold">Language Profile A</label>
-          <select
-            value={profileA}
-            onChange={(e) => {
-              setProfileA(e.target.value as CulturalProfile);
-              setHybridNames([]);
-            }}
-            className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
-          >
-            {PROFILES.map((prof) => (
-              <option key={prof.value} value={prof.value} disabled={prof.value === profileB}>
-                {prof.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-muted-foreground text-xs font-semibold">Language Profile B</label>
-          <select
-            value={profileB}
-            onChange={(e) => {
-              setProfileB(e.target.value as CulturalProfile);
-              setHybridNames([]);
-            }}
-            className="bg-background/50 border-border/40 text-foreground w-full rounded-lg border px-3 py-2 text-sm"
-          >
-            {PROFILES.map((prof) => (
-              <option key={prof.value} value={prof.value} disabled={prof.value === profileA}>
-                {prof.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CorpusSelector
+          label="Corpus / Language Profile A"
+          value={profileA}
+          onChange={(val) => {
+            setProfileA(val);
+            setHybridNames([]);
+          }}
+          studioWords={studioWords}
+        />
+        <CorpusSelector
+          label="Corpus / Language Profile B"
+          value={profileB}
+          onChange={(val) => {
+            setProfileB(val);
+            setHybridNames([]);
+          }}
+          studioWords={studioWords}
+        />
       </div>
 
       {/* Linguistic Distance Dashboard */}
@@ -194,7 +191,6 @@ export default function ComparatorSection() {
 
         {/* Phoneme overlap card */}
         <FacetMaterial material="satin" className="border-border/20 border p-4 text-center">
-          <ScienceGameIcon className="mx-auto mb-2 h-6 w-6 text-[#0091ff] opacity-80" />
           <span className="text-foreground font-mono text-3xl font-extrabold tracking-tight">
             {comparison.phonemeOverlap}%
           </span>
@@ -251,8 +247,7 @@ export default function ComparatorSection() {
             {/* Unique to A */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold text-[#0091ff] capitalize">
-                Unique to {PROFILES.find((p) => p.value === profileA)?.label} (
-                {comparison.uniqueToA.length})
+                Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {comparison.uniqueToA.map((ph) => (
@@ -272,8 +267,7 @@ export default function ComparatorSection() {
             {/* Unique to B */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold text-purple-500 capitalize">
-                Unique to {PROFILES.find((p) => p.value === profileB)?.label} (
-                {comparison.uniqueToB.length})
+                Unique to {corpusB.label} ({comparison.uniqueToB.length})
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {comparison.uniqueToB.map((ph) => (
@@ -311,7 +305,7 @@ export default function ComparatorSection() {
               <div>
                 <div className="mb-1 flex justify-between text-[11px]">
                   <span className="text-foreground capitalize">
-                    {PROFILES.find((p) => p.value === profileA)?.label}
+                    {corpusA.label}
                   </span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyA.toFixed(3)} bits
@@ -320,7 +314,7 @@ export default function ComparatorSection() {
                 <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
                   <div
                     className="h-full rounded-full bg-[#0091ff]"
-                    style={{ width: `${(comparison.entropyA / 4.7) * 100}%` }}
+                    style={{ width: `${Math.min(100, (comparison.entropyA / 4.7) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -328,7 +322,7 @@ export default function ComparatorSection() {
               <div>
                 <div className="mb-1 flex justify-between text-[11px]">
                   <span className="text-foreground capitalize">
-                    {PROFILES.find((p) => p.value === profileB)?.label}
+                    {corpusB.label}
                   </span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyB.toFixed(3)} bits
@@ -337,7 +331,7 @@ export default function ComparatorSection() {
                 <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
                   <div
                     className="h-full rounded-full bg-purple-500"
-                    style={{ width: `${(comparison.entropyB / 4.7) * 100}%` }}
+                    style={{ width: `${Math.min(100, (comparison.entropyB / 4.7) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -350,7 +344,7 @@ export default function ComparatorSection() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <h3 className="text-muted-foreground text-xs font-bold tracking-wider capitalize uppercase">
-            {PROFILES.find((p) => p.value === profileA)?.label} Sample Names
+            {corpusA.label} Sample Names
           </h3>
           <div className="border-border/20 divide-border/10 bg-background/35 divide-y overflow-hidden rounded-lg border">
             {samplesA.map((item, idx) => (
@@ -363,7 +357,7 @@ export default function ComparatorSection() {
                   <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <button
-                  onClick={() => playName(item.name, item.ipa, profileA)}
+                  onClick={() => playName(item.name, item.ipa, corpusA.fallbackCulture)}
                   className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
@@ -375,7 +369,7 @@ export default function ComparatorSection() {
 
         <div className="space-y-3">
           <h3 className="text-muted-foreground text-xs font-bold tracking-wider capitalize uppercase">
-            {PROFILES.find((p) => p.value === profileB)?.label} Sample Names
+            {corpusB.label} Sample Names
           </h3>
           <div className="border-border/20 divide-border/10 bg-background/35 divide-y overflow-hidden rounded-lg border">
             {samplesB.map((item, idx) => (
@@ -388,7 +382,7 @@ export default function ComparatorSection() {
                   <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <button
-                  onClick={() => playName(item.name, item.ipa, profileB)}
+                  onClick={() => playName(item.name, item.ipa, corpusB.fallbackCulture)}
                   className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
@@ -407,9 +401,8 @@ export default function ComparatorSection() {
           </h3>
           <button
             onClick={handleBlendPreview}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-amber-600 active:scale-95"
+            className="flex cursor-pointer items-center justify-center rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-amber-600 active:scale-95 shadow-xs"
           >
-            <ScienceGameIcon className="h-3.5 w-3.5" />
             Blend Profiles
           </button>
         </div>
@@ -426,7 +419,7 @@ export default function ComparatorSection() {
                   <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <button
-                  onClick={() => playName(item.name, item.ipa, `${profileA}+${profileB}`)}
+                  onClick={() => playName(item.name, item.ipa, `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`)}
                   className="hover:bg-secondary/45 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
@@ -437,7 +430,7 @@ export default function ComparatorSection() {
         ) : (
           <div className="border-border/10 text-muted-foreground bg-secondary/5 rounded-lg border p-6 text-center text-xs">
             <AlertCircle className="text-muted-foreground mx-auto mb-2 h-5 w-5 opacity-60" />
-            Click &quot;Blend Profiles&quot; to synthesize hybrid names trained on 50/50 combined
+            Click &quot;Blend Profiles&quot; to generate hybrid names trained on 50/50 combined
             linguistic inputs.
           </div>
         )}

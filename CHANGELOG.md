@@ -48,13 +48,32 @@ capability integer. Each release entry below lists which components advanced and
   - Decomposed 1,204-line `SettingsSection.tsx` into `VoicePreferencesPanel.tsx`, `VoiceSandboxPanel.tsx`, and `ConlangDataManagerPanel.tsx`.
   - Modularized `BatchSection.tsx` (747 lines → 399 lines) and `SyntaxSection.tsx` (729 lines → 329 lines).
 
-- **Server tRPC Architecture Guard Compliance (`src/server/api/routers/onoma/`)**:
-  - Resolved `audit:arch` god-file violation by splitting 1,032-line `core.ts` into [`namebank.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank.ts) (594 lines) and [`speech.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/speech.ts) (446 lines), recombined via `mergeRouters` in `index.ts`. All 9 domain routers strictly satisfy the ≤700 architecture ceiling.
+- **Universal Cross-System Linguistic Data Bridge & Bidirectional Pipeline (`src/lib/onoma/data-bridge.ts`, `CorpusSelector.tsx`)**:
+  - Implemented real-time bidirectional corpus pipeline connecting **Create**, **Studio**, **Explore**, and **Stash**.
+  - Built `extractPhonemeInventory` for dynamic IPA vowel/consonant distribution extraction from arbitrary custom wordlists.
+  - Built `computeShannonEntropy` ($H = -\sum p_i \log_2 p_i$) and `compareDynamicWordLists` calculating Jaccard phoneme overlap, bigram cosine similarity, and composite linguistic distance $[0, 100]$ between any two conlangs or natural cultures.
+  - Created universal Apple SF-styled [`CorpusSelector.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/CorpusSelector.tsx) aggregating Natural Cultures, Lineages, Stash Dictionaries, and Active Studio Lexicon.
+  - Integrated `CorpusSelector` across [`ComparatorSection.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/ComparatorSection.tsx), [`StudioSoundShifts.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioSoundShifts.tsx), [`StudioVisualizer.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioVisualizer.tsx), and [`OrthographySandbox.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/writing/OrthographySandbox.tsx).
+  - Added 1-click **"Send To..."** action buttons in [`SavedDictionaryCard.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/stash/SavedDictionaryCard.tsx) for instant routing to Acoustics Comparison, Sound Shifts, Script Forge, or Studio Workshop.
 
-- **Shared Pattern Engine & Massive Dataset Compaction**:
-  - Introduced [`template-resolver.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/template-resolver.ts) deduplicating template tag regex parsing across conlang generators.
-  - Compacted multi-line arrays across `fantasy-names-data.ts` (9,271 lines → 787 lines), `cultural-profiles.ts` (2,291 lines → 363 lines), `species-data.ts` (2,469 lines → 316 lines), `default-dictionaries.ts` (1,474 lines → 238 lines), and `group-data.ts` (568 lines → 126 lines), saving over **15,480 net lines** and ~104KB of memory/bundle overhead.
-  - Added `visibilitychange` listener in `AcousticFormantVisualizer.tsx` to automatically halt 60fps canvas waveform render loops when the browser tab is hidden.
+- **Ponytail Code Audit, Dead Code Elimination & Surface Unification (~2,200 Net Lines Cut)**:
+  - Deleted unmounted legacy components: `BatchSection.tsx` (395 lines), `CandidateResultsPanel.tsx` (368 lines), `GeneratorPanel.tsx` (151 lines), `OverviewBanner.tsx` (64 lines), and dead `create/` folder.
+  - Unified synthesis results display into the high-performance [`SynthesisResultsGrid.tsx`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/SynthesisResultsGrid.tsx) with adaptive card grid and sortable batch data table.
+  - Extracted 440 lines of static walkthrough guides from `OnomaHelpModal.tsx` into [`onoma-help-data.ts`](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/onoma-help-data.ts), reducing component size from 855 to ~420 lines.
+  - Modularized StashItem serialization and mapping from `namebank.ts` into [`namebank-helpers.ts`](file:///home/jxsig/projects/ixstats/src/server/api/routers/onoma/namebank-helpers.ts), reducing router size from 787 to 455 lines (100% compliant with ≤700 arch ceiling).
+  - Centralized lexicon chunk loaders and phonotactic rules into [`lexicon-loader.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-loader.ts), deduplicating code between `useOnomaGenerator.ts` and `batch.ts`.
+  - Extracted loanword presets to [`loanwords-presets.ts`](file:///home/jxsig/projects/ixstats/src/lib/onoma/loanwords-presets.ts) and removed unused duplicate taxonomies in `batch-constants.ts`.
+  - Deduplicated shared functions: replaced local implementations of `pickRandom`, `isVowel`, and `capitalize` with centralized primitives across `morphology.ts`, `species-generator.ts`, `name-generator.ts`, and `phonetics-shared.ts`.
+
+- **Dual-Layer Onoma Stash Architecture & Database Synchronization (`src/server/api/routers/onoma/namebank.ts`)**:
+  - Independent Standalone Operation: Supported standalone `NameBank` records and local storage drafts for guest sessions without requiring global wiki stash items.
+  - Native IxStates Stash Integration: When authenticated, saved items seamlessly synchronize into user's global Stash folders (`StashItem` with `contentType: "name" | "dictionary"`), preserving cross-platform tagging and dictionary sharing.
+  - Structured Lexicon Definition Sync: Synchronized structured definitions (`partOfSpeech`, `root`, `meaning`, `origin`) across `useStudioState.ts`, `useNameBank.ts`, and the database.
+
+- **Apple Design & Emil Kowalski Physical Motion Standards**:
+  - Simplified document and layout titles to clean, bracket-free titles (`Onoma — Linguistic Engine`, `Onoma — Places`, `Onoma Studio — Workshop`, `Onoma Explore — Acoustics & IPA`).
+  - Added physical `:active` tactile feedback (`active:scale-[0.97]`) across buttons and cards throughout all sections.
+  - Added unique `runHash` (`#onoma-xxxx`) per generation batch with live search, copy badge, and historical handoffs ("Load to Studio", "Save as Dictionary").
 
 
 - **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:

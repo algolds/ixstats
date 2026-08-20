@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const onomaSyntaxRouter = createTRPCRouter({
@@ -63,7 +64,10 @@ export const onomaSyntaxRouter = createTRPCRouter({
           where: { id: input.id, userId },
         });
         if (!existing) {
-          throw new Error("Profile not found or unauthorized");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Profile not found or unauthorized",
+          });
         }
 
         return ctx.db.grammarProfile.update({
@@ -93,7 +97,10 @@ export const onomaSyntaxRouter = createTRPCRouter({
         where: { id: input.id, userId },
       });
       if (!existing) {
-        throw new Error("Profile not found or unauthorized");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Profile not found or unauthorized",
+        });
       }
 
       return ctx.db.grammarProfile.delete({

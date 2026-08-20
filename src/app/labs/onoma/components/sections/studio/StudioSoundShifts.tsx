@@ -20,8 +20,9 @@ import {
   ArrowUp,
   ArrowDown,
   Bookmark,
+  Globe2,
+  FolderDown,
 } from "lucide-react";
-import { HistoryGameIcon } from "../../nav/onoma-tabs";
 import {
   SOUND_SHIFT_PRESETS,
   applySoundShifts,
@@ -36,6 +37,9 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNameBank } from "~/hooks/useNameBank";
 import { cn } from "~/lib/utils";
+import LoanwordsSection from "../LoanwordsSection";
+import { CorpusSelector } from "../../shared/CorpusSelector";
+import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 
 const QUICK_SYMBOLS = [
   { label: "#_ (Initial)", value: "#_" },
@@ -54,10 +58,19 @@ const QUICK_SYMBOLS = [
   { label: "∅ (Delete)", value: "" },
 ];
 
-export function StudioSoundShifts() {
+interface StudioSoundShiftsProps {
+  studioWords?: string[];
+}
+
+export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps = {}) {
   const notify = useNotify();
-  const { saveEntry } = useNameBank();
+  const bank = useNameBank();
+  const { saveEntry } = bank;
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery();
+
+  const customDicts = useMemo(() => {
+    return bank.nameBank?.filter((d) => d.type === "dictionary" && d.values?.length > 0) || [];
+  }, [bank.nameBank]);
 
   // Selected Preset
   const [selectedPresetId, setSelectedPresetId] = useState<string>("grimms-law");
@@ -70,6 +83,9 @@ export function StudioSoundShifts() {
 
   // Proto-words input state
   const [inputWordsText, setInputWordsText] = useState<string>(() => {
+    if (studioWords && studioWords.length > 0) {
+      return studioWords.join(", ");
+    }
     const preset = SOUND_SHIFT_PRESETS.find((p) => p.id === "grimms-law")!;
     return preset.sampleInput.join("\n");
   });
@@ -237,52 +253,94 @@ export function StudioSoundShifts() {
     }
   };
 
+  const [shiftMode, setShiftMode] = useState<"diachronic" | "loanwords">("diachronic");
+
   return (
     <div className="space-y-6 text-left">
-      {/* Header Banner */}
-      <div className="border-border/40 bg-secondary/5 relative overflow-hidden rounded-2xl border p-5 sm:p-6">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-500/10 text-pink-500">
-                <GitFork className="h-4 w-4" />
-              </div>
-              <h3 className="text-foreground text-lg font-bold">
-                Historical Sound Change & Language Evolution Engine
-              </h3>
-            </div>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across historical
-              epochs to systematically derive daughter languages, sound shifts, and regional dialects
-              from Proto-Lexicons.
-            </p>
-          </div>
+      {/* Top Controls Bar with Segmented Mode Switch */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
+        <div className="space-y-1">
+          <h3 className="text-foreground text-xl font-bold tracking-tight">
+            Sound Shifts & Phonetic Adaptation
+          </h3>
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            Model chronological diachronic sound change or configure interlinguistic borrowing and loanword adaptation.
+          </p>
+        </div>
 
-          {/* Preset Selector */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
-              Presets:
-            </span>
-            {SOUND_SHIFT_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => handleSelectPreset(preset.id)}
-                className={cn(
-                  "cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
-                  selectedPresetId === preset.id
-                    ? "border-pink-500/40 bg-pink-500/10 text-pink-600 shadow-sm dark:text-pink-400"
-                    : "border-border/40 bg-background/50 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/5 hover:text-foreground"
-                )}
-              >
-                {preset.name.split(" ")[0]}
-              </button>
-            ))}
-          </div>
+        {/* Apple-style Segmented Control */}
+        <div className="flex items-center gap-1 rounded-full border border-border/40 bg-secondary/15 p-1 backdrop-blur-md self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setShiftMode("diachronic")}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              shiftMode === "diachronic"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <GitFork className="h-3.5 w-3.5 text-pink-500" />
+            <span>Historical Sound Shifts</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShiftMode("loanwords")}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              shiftMode === "loanwords"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Globe2 className="h-3.5 w-3.5 text-pink-500" />
+            <span>Loanwords & Contact Adaptation</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
+      {shiftMode === "loanwords" ? (
+        <LoanwordsSection />
+      ) : (
+        <>
+          {/* Header Banner */}
+          <div className="border-border/40 bg-secondary/5 relative overflow-hidden rounded-2xl border p-5 sm:p-6">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div className="space-y-1">
+                <h4 className="text-foreground text-sm font-bold">
+                  Diachronic Phonetic Transformation
+                </h4>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across historical
+                  epochs to systematically derive daughter languages and regional dialects from Proto-Lexicons.
+                </p>
+              </div>
+
+              {/* Preset Selector */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                  Presets:
+                </span>
+                {SOUND_SHIFT_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset.id)}
+                    className={cn(
+                      "cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
+                      selectedPresetId === preset.id
+                        ? "border-pink-500/40 bg-pink-500/10 text-pink-600 shadow-sm dark:text-pink-400"
+                        : "border-border/40 bg-background/50 text-muted-foreground hover:border-pink-500/30 hover:bg-pink-500/5 hover:text-foreground"
+                    )}
+                  >
+                    {preset.name.split(" ")[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-12">
         {/* Left Column: Chronological Rule Timeline (7 cols) */}
         <div className="space-y-5 lg:col-span-7">
           <div className="flex items-center justify-between">
@@ -473,13 +531,23 @@ export function StudioSoundShifts() {
         <div className="space-y-5 lg:col-span-5">
           {/* Proto-Lexicon Input */}
           <div className="border-border/40 bg-card/40 space-y-2.5 rounded-xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-foreground text-xs font-bold">
                 Proto-Language Lexicon Input
               </label>
-              <span className="text-muted-foreground text-[10px]">
-                {parsedWords.length} words loaded
-              </span>
+              <div className="w-full sm:w-48">
+                <CorpusSelector
+                  value=""
+                  onChange={(val) => {
+                    const resolved = resolveCorpusWords(val, customDicts, studioWords);
+                    if (resolved.words?.length > 0) {
+                      setInputWordsText(resolved.words.join(", "));
+                      notify.success(`Loaded ${resolved.words.length} words from "${resolved.label}"`);
+                    }
+                  }}
+                  studioWords={studioWords}
+                />
+              </div>
             </div>
             <textarea
               rows={4}
@@ -488,18 +556,38 @@ export function StudioSoundShifts() {
               placeholder="Enter proto-words separated by newlines or commas..."
               className="border-border/40 bg-background/50 text-foreground w-full rounded-lg border p-2.5 font-mono text-xs focus:border-pink-500 focus:outline-none"
             />
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <span>{parsedWords.length} words loaded</span>
+              <span>Loaded from Stash or custom text</span>
+            </div>
           </div>
 
           {/* Evolved Daughter Lexicon Results */}
           <div className="border-border/40 bg-card/40 space-y-3 rounded-xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <HistoryGameIcon className="h-4 w-4 text-pink-500" />
+            <div className="flex items-center justify-between gap-2">
+              <div>
                 <h4 className="text-foreground text-xs font-bold">Evolved Daughter Lexicon</h4>
+                <span className="text-muted-foreground text-[10px]">
+                  {evolutionResults.length} simulated
+                </span>
               </div>
-              <span className="text-muted-foreground text-[10px]">
-                {evolutionResults.length} simulated
-              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const words = evolutionResults.map((r) => r.final);
+                  if (words.length === 0) return;
+                  await saveEntry({
+                    type: "dictionary",
+                    title: `Evolved ${selectedPresetId.replace(/-/g, " ")} Lexicon`,
+                    values: words,
+                  });
+                  notify.success(`Saved ${words.length} evolved words to Stash!`);
+                }}
+                className="border-pink-500/40 bg-pink-500/10 text-pink-600 dark:text-pink-400 hover:bg-pink-500/20 flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95 shadow-xs"
+              >
+                <FolderDown className="h-3.5 w-3.5" />
+                <span>Save to Stash</span>
+              </button>
             </div>
 
             <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
@@ -623,6 +711,8 @@ export function StudioSoundShifts() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

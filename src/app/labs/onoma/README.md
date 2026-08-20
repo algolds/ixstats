@@ -68,10 +68,7 @@ src/app/labs/onoma/
 │   │   ├── OverviewSection.tsx      # Quick Start synthesis surface
 │   │   ├── CategoryDomainSection.tsx # Unified declarative domain panel (Places, People, Orgs, Culture, Military)
 │   │   ├── domain-taxonomies.ts     # Domain category definitions and subtype options
-│   │   ├── BatchSection.tsx         # Batch generation workbench coordinator
-│   │   ├── batch/
-│   │   │   ├── batch-constants.ts   # Taxonomy and parameter constraints
-│   │   │   └── BatchResultsTable.tsx# Sortable, filterable results table with bulk actions
+│   │   ├── OverviewSection.tsx      # Unified CREATE synthesis surface
 │   │   ├── SettingsSection.tsx      # User settings coordinator
 │   │   ├── settings/
 │   │   │   ├── VoicePreferencesPanel.tsx # Kokoro voices, species presets, audio sliders
@@ -82,7 +79,8 @@ src/app/labs/onoma/
 │   │   │   ├── SyntaxSentenceBuilder.tsx # Live translation and inflection preview engine
 │   │   │   └── SyntaxDictionaryEditor.tsx# Vocabulary lookup and word pair manager
 │   │   ├── StashSection.tsx         # User saved names and custom dictionary bank
-│   │   ├── MarketplaceSection.tsx   # Community language pack sharing and discovery
+│   │   ├── LanguagePacksSection.tsx # Community language pack sharing and discovery
+│   │   ├── LoanwordsSection.tsx     # Contact channels and phonological adaptation
 │   │   └── studio/
 │   │       ├── StudioWorkshop.tsx   # Model training workspace & transition graph
 │   │       ├── StudioPhonology.tsx  # Phonotactic templates & IPA rule editor
@@ -94,7 +92,8 @@ src/app/labs/onoma/
 │   └── shared/
 │       ├── OnomaBrandLogo.tsx       # Canonical vector brand asset
 │       ├── OnomaHelpModal.tsx       # Guided walkthrough modal
-│       ├── GeneratorPanel.tsx       # Primary procedural generation interface
+│       ├── onoma-help-data.ts       # Structured help walkthroughs and guides
+│       ├── SynthesisResultsGrid.tsx # Unified adaptive card grid & table results surface
 │       └── NameResultCard.tsx       # Name card with Kokoro audio, IPA, and morphology
 ├── hooks/
 │   ├── useOnomaRouter.ts            # Navigation state, URL sync, speech attractor

@@ -6,7 +6,7 @@
 // (localStorage) via ~/lib/onoma/ipa-overrides.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Volume2, Save, RotateCcw, AudioLines, X } from "lucide-react";
+import { Plus, Trash2, Volume2, Save, RotateCcw, AudioLines, X, GitCompare } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/phonology";
@@ -14,6 +14,7 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { ipaToKokoroPhonemes, KOKORO_VALID_TOKENS } from "~/lib/onoma/kokoro-phonemes";
 import { cn } from "~/lib/utils";
 import { AcousticFormantVisualizer } from "./AcousticFormantVisualizer";
+import ComparatorSection from "../ComparatorSection";
 import {
   Select,
   SelectContent,
@@ -30,94 +31,20 @@ import {
   type NameOverride,
 } from "~/lib/onoma/ipa-overrides";
 import { getAllTemplateLinguisticProfiles } from "~/lib/onoma/template-phonetics";
-
-const CULTURES = [
-  "latin",
-  "germanic",
-  "celtic",
-  "slavic",
-  "arabic",
-  "persian",
-  "turkic",
-  "indic",
-  "east-asian",
-  "austronesian",
-  "african",
-  "uralic",
-  "constructed",
-];
+import {
+  IPA_VOWELS,
+  IPA_CONSONANTS,
+  IPA_DIPHTHONGS,
+  STANDARD_CULTURES as CULTURES,
+} from "~/lib/onoma/phonetics-shared";
 
 const ACCENT = "#8b5cf6";
 
-const IPA_VOWELS = [
-  "i",
-  "ɪ",
-  "e",
-  "ɛ",
-  "æ",
-  "a",
-  "ɑ",
-  "ɒ",
-  "ɔ",
-  "o",
-  "ʊ",
-  "u",
-  "ʌ",
-  "ə",
-  "ø",
-  "y",
-  "œ",
-];
-const IPA_CONSONANTS = [
-  "p",
-  "b",
-  "t",
-  "d",
-  "k",
-  "ɡ",
-  "f",
-  "v",
-  "θ",
-  "ð",
-  "s",
-  "z",
-  "ʃ",
-  "ʒ",
-  "h",
-  "x",
-  "ɣ",
-  "ɬ",
-  "ɮ",
-  "m",
-  "n",
-  "ŋ",
-  "l",
-  "ɹ",
-  "j",
-  "w",
-  "r",
-  "ɾ",
-  "tʃ",
-  "dʒ",
-  "ts",
-];
-const IPA_DIPHTHONGS = [
-  "aɪ",
-  "eɪ",
-  "aʊ",
-  "ɔɪ",
-  "oʊ",
-  "əʊ",
-  "iː",
-  "uː",
-  "ɑː",
-  "ɔː",
-  "ɜː",
-  "əː",
-  "ː",
-];
+interface StudioPhonologyProps {
+  studioWords?: string[];
+}
 
-export function StudioPhonology() {
+export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {}) {
   const notify = useNotify();
   const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
@@ -125,7 +52,7 @@ export function StudioPhonology() {
 
   const [culture, setCulture] = useState("latin");
   const [rows, setRows] = useState<[string, string][]>([]);
-  const [previewText, setPreviewText] = useState("Imperia");
+  const [previewText, setPreviewText] = useState(studioWords[0] || "Imperia");
   const [nameOverrides, setNameOverrides] = useState<Record<string, NameOverride>>({});
   const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
   const [soundboardTab, setSoundboardTab] = useState<"vowels" | "consonants" | "diphthongs">(
@@ -242,19 +169,57 @@ export function StudioPhonology() {
     setActiveSegmentIndex(null);
   };
 
+  const [activeMode, setActiveMode] = useState<"matrix" | "comparison">("matrix");
+
   const overrideNames = Object.keys(nameOverrides);
 
   return (
-    <div className="space-y-5">
-      <div className="border-border/40 space-y-1 border-b pb-3">
-        <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-          <AudioLines className="h-4 w-4" style={{ color: ACCENT }} /> IPA Studio
-        </h3>
-        <p className="text-muted-foreground text-sm">
-          Tune how letters map to sounds. Edits drive the pronunciation badges and the Read
-          Naturally voice. Everything here is saved to this browser.
-        </p>
+    <div className="space-y-6">
+      <div className="border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+        <div className="space-y-1">
+          <h2 className="text-foreground text-xl font-bold tracking-tight">
+            Acoustics & IPA
+          </h2>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Configure grapheme-to-phoneme mapping rules, inspect acoustic formant spectra, and compare cross-language phonology.
+          </p>
+        </div>
+
+        {/* Apple-style Segmented Control */}
+        <div className="flex items-center gap-1 rounded-full border border-border/40 bg-secondary/15 p-1 backdrop-blur-md self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setActiveMode("matrix")}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              activeMode === "matrix"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <AudioLines className="h-3.5 w-3.5 text-[#8b5cf6]" />
+            <span>IPA Matrix & Formants</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveMode("comparison")}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer select-none",
+              activeMode === "comparison"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <GitCompare className="h-3.5 w-3.5 text-[#8b5cf6]" />
+            <span>Profile Comparison</span>
+          </button>
+        </div>
       </div>
+
+      {activeMode === "comparison" ? (
+        <ComparatorSection hideHeader studioWords={studioWords} />
+      ) : (
+        <>
 
       {/* Live preview */}
       <div className="border-border/40 bg-secondary/5 space-y-2 rounded-xl border p-4">
@@ -600,6 +565,8 @@ export function StudioPhonology() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -10,52 +10,12 @@ import { translateToIPA } from "~/lib/onoma/phonology";
 import { generateFantasySyllableName, generatePresetName } from "~/lib/onoma/name-generator";
 import type { NameCategory, CulturalProfile } from "~/lib/onoma/types";
 
-const FAMILY_PHONOTACTICS: Record<string, any> = {
-  austronesian: { maxConsonantCluster: 1 },
-  "east-asian": { maxConsonantCluster: 1 },
-  arabic: { maxConsonantCluster: 2 },
-  persian: { maxConsonantCluster: 2 },
-  turkic: { maxConsonantCluster: 2 },
-  indic: { maxConsonantCluster: 2 },
-  african: { maxConsonantCluster: 2 },
-  uralic: { maxConsonantCluster: 2 },
-  germanic: { maxConsonantCluster: 3 },
-  slavic: { maxConsonantCluster: 4 },
-};
-
-function mapCategoryForTraining(cat: NameCategory): "country" | "city" | "province" | "person" {
-  if (cat === "city" || cat === "geography") return "city";
-  if (cat === "province") return "province";
-  if (cat === "military" || cat === "organization" || cat === "person" || cat === "dynasty")
-    return "person";
-  return "country";
-}
-
-function mapCategoryForLexicon(cat: NameCategory, subType?: string): string {
-  if (cat === "culture") {
-    if (subType === "sports") return "culture_sports";
-    if (subType === "cuisine") return "culture_cuisine";
-    return "culture_generic";
-  }
-  if (cat === "geography" && subType === "architecture") return "culture_architecture";
-  if (cat === "city" || cat === "geography") return "city";
-  if (cat === "province") return "province";
-  if (cat === "person" || cat === "dynasty") return "person";
-  if (cat === "organization" || cat === "military") return "organization";
-  return "country";
-}
-
-const LEXICON_LOADERS: Record<string, () => Promise<{ default: Record<string, string[]> }>> = {
-  country: () => import("~/lib/onoma/data/lexicon/country.json"),
-  city: () => import("~/lib/onoma/data/lexicon/city.json"),
-  province: () => import("~/lib/onoma/data/lexicon/province.json"),
-  person: () => import("~/lib/onoma/data/lexicon/person.json"),
-  organization: () => import("~/lib/onoma/data/lexicon/organization.json"),
-  culture_generic: () => import("~/lib/onoma/data/lexicon/culture_generic.json"),
-  culture_sports: () => import("~/lib/onoma/data/lexicon/culture_sports.json"),
-  culture_cuisine: () => import("~/lib/onoma/data/lexicon/culture_cuisine.json"),
-  culture_architecture: () => import("~/lib/onoma/data/lexicon/culture_architecture.json"),
-};
+import {
+  LEXICON_LOADERS,
+  mapCategoryForTraining,
+  mapCategoryForLexicon,
+  FAMILY_PHONOTACTICS,
+} from "~/lib/onoma/lexicon-loader";
 
 export const onomaBatchRouter = createTRPCRouter({
   /**

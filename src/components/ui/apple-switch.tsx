@@ -43,9 +43,9 @@ const switchTones = {
   },
   discord: {
     off: "color-mix(in srgb, var(--muted) 82%, transparent)",
-    on: "#5865F2",
+    on: "var(--color-discord, #5865F2)",
     thumb: "#ffffff",
-    glow: "color-mix(in srgb, #5865F2 32%, transparent)",
+    glow: "color-mix(in srgb, var(--color-discord, #5865F2) 32%, transparent)",
   },
 } as const;
 
