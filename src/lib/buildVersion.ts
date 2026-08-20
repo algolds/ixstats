@@ -27,10 +27,10 @@ export type ReleaseChannel = "Developer" | "Alpha" | "Beta" | "Release Candidate
 export const VERSIONS = {
   platform: {
     major: 1,
-    minor: 3,
+    minor: 4,
     patch: 0,
     release: "Ogma",
-    channel: "Beta" as ReleaseChannel,
+    channel: "Release Candidate" as ReleaseChannel,
   },
 
   // Apps — own brand, ship/break independently.

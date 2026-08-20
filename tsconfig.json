@@ -34,8 +34,10 @@
     "tsBuildInfoFile": ".next/cache/tsbuildinfo",
     "importHelpers": true,
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
+      "*": [
+        "./*"
+      ],
       "~/*": [
         "./src/*"
       ],

@@ -11,7 +11,7 @@ set -e
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 
-# ANSI Color Palette (Apple / Facet Design System)
+# ANSI Color Palette 
 ESC="\033"
 RESET="${ESC}[0m"
 BOLD="${ESC}[1m"
@@ -53,11 +53,11 @@ fi
 # Determine development port
 if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
     DEVELOPMENT_PORT="${PORT:-3003}"
-    APP_MODE="IxWorld Maps Standalone"
+    APP_MODE="IxMaps"
     BASE_PATH_LABEL="/maps (redirected root)"
 else
     DEVELOPMENT_PORT="${PORT:-3000}"
-    APP_MODE="IxStates Platform"
+    APP_MODE="IxStates "
     BASE_PATH_LABEL="/ (root)"
 fi
 
@@ -74,14 +74,14 @@ try {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     const cleanVer = (v, fb) => (v || fb || "").replace(/^[\^~]/, "");
 
-    let platform = "v1.3.0 \"Ogma\" (Beta)";
+    let platform = "v1.4.0 \"Ogma\" (Release Candidate)";
     if (fs.existsSync("./src/lib/buildVersion.ts")) {
         const bv = fs.readFileSync("./src/lib/buildVersion.ts", "utf8");
         const major = bv.match(/major:\s*(\d+)/)?.[1] || "1";
-        const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "3";
+        const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "4";
         const patch = bv.match(/patch:\s*(\d+)/)?.[1] || "0";
         const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Ogma";
-        const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Beta";
+        const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Release Candidate";
         platform = `v${major}.${minor}.${patch} "${release}" (${channel})`;
     }
 
@@ -101,9 +101,9 @@ try {
     console.log("TRPC_VER=\"11.18.0\"");
     console.log("C15T_VER=\"2.2.0\"");
     console.log("TS_VER=\"7.0.0\"");
-    console.log("PLATFORM_INFO=\"v1.3.0 \\\"Ogma\\\" (Beta)\"");
+    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Ogma\\\" (Release Candidate)\"");
 }
-' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.3.0 \"Ogma\""')"
+' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.4.0 \"Ogma\""')"
 
 BUN_VER=$(bun --version 2>/dev/null || echo "1.4.0")
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")

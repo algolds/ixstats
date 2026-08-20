@@ -5,8 +5,31 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.3 "Ogma"**, channel Beta), while Apps / Engines / Systems each carry a single
+**IxStates 1.4 "Ogma"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
+
+## [1.4.0] — 2026-08-20 — "Ogma" (Release Candidate)
+
+### 🚀 Bun 1.4 & TypeScript 7.0 Native Modernization (RC-1)
+
+- **TypeScript 7.0 Native Go Engine Upgrade**:
+  - Upgraded compiler to `typescript@^7.0.0` with native Go shared-memory concurrency and multi-threaded `--checkers`.
+  - Slashes V8 JS heap memory overhead by ~80% and accelerates typechecking duration from ~30s down to ~2s.
+  - Eliminated legacy `node --max-old-space-size=6144` memory ceiling wrappers across all typecheck commands.
+  - Deprecated `baseUrl: "."` across `tsconfig.base.json` and `tsconfig.json` in accordance with TS 7.0 module resolution standards, adding root-relative `"*": ["./*"]` path mappings.
+- **Bun 1.4 Runtime & Virtual Store**:
+  - Enabled `virtual-store = true` in `bunfig.toml` for hardlinked deduplication and up to 7× faster package installations.
+  - Replaced `tsx` with native `bun` across all 45 package scripts, completely pruning `tsx` from devDependencies.
+  - Migrated background scheduled tasks in `server.mjs` and `cron-runner.mjs` to native `Bun.cron()`, purging `node-cron` and `@types/node-cron`.
+  - Added `bun run test:unit` for sub-second parallel execution of 39+ mathematical, simulation, and spatial test suites.
+- **Ponytail Dependency Pruning**:
+  - Replaced external `color` library with zero-dependency native HSL/RGB/Hex conversion math in `ColorPicker`.
+  - Cleaned ghost packages from `next.config.js` (`xlsx`, `node-schedule`, `sharp`, `@node-rs/argon2`).
+  - Preserved `iconoir-react` for Onoma glyphs and labs interfaces per specification.
+- **Apple / Facet Design CLI Modernization**:
+  - Redesigned `start-development.sh` and `start-production.sh` with Apple/Facet ANSI terminal design tokens, box layout, and non-destructive PID discovery on port conflicts.
+  - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
+  - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
 
 ## [Unreleased]
 

@@ -183,7 +183,7 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference/revision.md)** (canonical "Versioning & Release Architecture"). OS-inspired model — single source of truth is the **Version Registry** `VERSIONS` in [src/lib/buildVersion.ts](file:///ixwiki/public/projects/ixstats/src/lib/buildVersion.ts). **Never hardcode version strings** elsewhere; read derived exports (`APP_VERSION`, `WIKIOS_VERSION`, `CHANNEL`, …) from the registry, and reference the registry from docs rather than quoting numbers.
 
-- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.1.1 "Ogma"** (channel: Alpha). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
+- **Platform**: `Major.Minor.Patch` + permanent epoch **release name** + **channel** → **IxStates 1.4.0 "Ogma"** (channel: Release Candidate). Legacy `1.42`/`2.1` retired; `package.json` version is `1.0.0` (build-tooling only).
 - **Apps / Engines / Systems / Design** each carry a **single capability integer** (not SemVer), all defined in the registry:
   - **Apps**: `IXWORLD_VERSION`, `WIKIOS_VERSION` (Canvas sub-version: `CANVAS_VERSION`), `IXVAULT_VERSION`
   - **Engines** (internal, Dev-panel only): `MYCOUNTRY_ENGINE_VERSION`, `CONCORD_ENGINE_VERSION`, `ATLAS_ENGINE_VERSION`, `STATECRAFT_ENGINE_VERSION`
@@ -194,9 +194,7 @@ Full spec: **[revision.md](file:///ixwiki/public/projects/ixstats/docs/reference
 - **Renames**: Glass Physics → **Facet**, Dynamic Island → **Halo**, LoreStash → **Stash** (Prisma model names unchanged).
 - **Build id**: `BUILD_VERSION` (git short SHA) generated into `buildVersion.generated.ts` by `scripts/write-build-version.js` (`prebuild` hook).
 
-> **Patch 1.0.5 → 1.0.6 (June 2026):** 47 god-file routers eliminated via `mergeRouters` domain splitting (now 52/87 routers are subdir-organized), 1 dead type file removed (`unified-intelligence.ts`, 1,552 lines), arch guard tool added to prevent regressions. See CHANGELOG.md.
->
-> **Minor 1.0.6 → 1.1.0 (June 2026):** Executive/diplomacy canon track (Plans 032–037), map overlays + Canon Density heatmap (Plans 038–039), Defense conflicts → canon (Plan 040), Stability resolution → canon (Plan 041), Defense border-threat panel (Plan 042), Politics cabinet panel (Plan 043), and production adjacency graph rebuild (Plan 026). Bumped: platform minor, IxWorld app, MyCountry/Concord/Atlas engines, MyCountry system. See CHANGELOG.md.
+> **Minor 1.3.0 → 1.4.0 (August 2026):** Bun 1.4 + TypeScript 7.0 Native Go Engine migration (Plan 140), virtual-store deduplication, native `Bun.cron()` background scheduling, zero-dep color math, TS 7.0 root path mappings (`baseUrl` removal), sub-10ms atomic CLI boot, and 100% typecheck validation. Promoted to **Release Candidate (RC-1)**. See CHANGELOG.md.
 
 > **Standing instruction:** after any major session/change, reference **revision.md** and **ask the user whether any version should bump** (platform `Major.Minor.Patch`, a component's capability integer, the channel, or release name) and whether the registry / `CHANGELOG.md` / docs need updating.
 

@@ -86,14 +86,14 @@ try {
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     const cleanVer = (v, fb) => (v || fb || "").replace(/^[\^~]/, "");
 
-    let platform = "v1.3.0 \"Ogma\" (Beta)";
+    let platform = "v1.4.0 \"Ogma\" (Release Candidate)";
     if (fs.existsSync("./src/lib/buildVersion.ts")) {
         const bv = fs.readFileSync("./src/lib/buildVersion.ts", "utf8");
         const major = bv.match(/major:\s*(\d+)/)?.[1] || "1";
-        const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "3";
+        const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "4";
         const patch = bv.match(/patch:\s*(\d+)/)?.[1] || "0";
         const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Ogma";
-        const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Beta";
+        const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Release Candidate";
         platform = `v${major}.${minor}.${patch} "${release}" (${channel})`;
     }
 
@@ -101,9 +101,9 @@ try {
     console.log(`PLATFORM_INFO="${platform}"`);
 } catch (e) {
     console.log("NEXT_VER=\"16.3.0\"");
-    console.log("PLATFORM_INFO=\"v1.3.0 \\\"Ogma\\\" (Beta)\"");
+    console.log("PLATFORM_INFO=\"v1.4.0 \\\"Ogma\\\" (Release Candidate)\"");
 }
-' 2>/dev/null || echo 'NEXT_VER="16.3.0" PLATFORM_INFO="v1.3.0 \"Ogma\""')"
+' 2>/dev/null || echo 'NEXT_VER="16.3.0" PLATFORM_INFO="v1.4.0 \"Ogma\""')"
 
 # ------------------------------------------------------------------------------
 # 3. Header Presentation

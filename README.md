@@ -2,8 +2,8 @@
 
 ### The Operating System for Worldbuilding.
 
-[![Version](https://img.shields.io/badge/version-1.3.0%20%22Ogma%22-sky.svg?style=flat-square)](src/lib/buildVersion.ts)
-[![Release Channel](https://img.shields.io/badge/channel-Beta-38bdf8.svg?style=flat-square)](src/lib/buildVersion.ts)
+[![Version](https://img.shields.io/badge/version-1.4.0%20%22Ogma%22-teal.svg?style=flat-square)](src/lib/buildVersion.ts)
+[![Release Channel](https://img.shields.io/badge/channel-Release%20Candidate-14b8a6.svg?style=flat-square)](src/lib/buildVersion.ts)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black.svg?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61dafb.svg?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
