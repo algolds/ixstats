@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [v2, master, main]
+    branches: [master, development, main]
 
 jobs:
   verify:

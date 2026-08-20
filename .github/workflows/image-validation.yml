@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -44,7 +44,7 @@ jobs:
       - name: Run image validation
         id: validate
         run: |
-          bunx tsx scripts/validate-military-equipment-images.ts | tee validation-output.txt
+          bun scripts/validate-military-equipment-images.ts | tee validation-output.txt
           echo "validation_exit_code=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
 
