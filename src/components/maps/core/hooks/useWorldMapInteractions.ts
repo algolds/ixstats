@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useEffect, useCallback, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
@@ -121,15 +119,23 @@ export function useWorldMapInteractions({
     };
 
     labelFeaturesRef.current = updated;
-    source.setData(updated);
+    (source as any).setData(updated);
   }, [map, topCountryNames, labelFeaturesRef]);
 
-  // Check if a screen point is outside the visible globe disc (globe projection only)
-  const isOutsideGlobe = useCallback(
+  // Check if a screen point is on the visible globe or map surface
+  const isPointOnGlobeOrMap = useCallback(
     (pt: { x: number; y: number }): boolean => {
       if (!map) return false;
-      if (map.getZoom() >= 4) return false; // fully mercator
+      try {
+        if (map.transform && typeof (map.transform as any).isPointOnMapSurface === "function") {
+          return (map.transform as any).isPointOnMapSurface(pt);
+        }
+      } catch (_) {}
+
+      // Fallback for flat projection / high zoom or missing transform method
+      if (map.getZoom() >= 4.5) return true;
       const canvas = map.getCanvas();
+      if (!canvas) return true;
       const cx = canvas.clientWidth / 2;
       const cy = canvas.clientHeight / 2;
       const dx = pt.x - cx;
@@ -143,15 +149,26 @@ export function useWorldMapInteractions({
       const rx = edgeScreen.x - cx;
       const ry = edgeScreen.y - cy;
       const radiusSq = rx * rx + ry * ry;
-      return radiusSq > 0 && cursorDistSq > radiusSq;
+      return radiusSq > 0 ? cursorDistSq <= radiusSq : true;
     },
     [map]
   );
 
+  // Check if a screen point is outside the visible globe disc (globe projection only)
+  const isOutsideGlobe = useCallback(
+    (pt: { x: number; y: number }): boolean => {
+      return !isPointOnGlobeOrMap(pt);
+    },
+    [isPointOnGlobeOrMap]
+  );
+
+  const isDraggingRef = useRef(false);
+
   // Handle country hover + overlay feature tooltips
   const handleMouseMove = useCallback(
     (e: any) => {
-      if (!map || !map.getLayer("fill-political")) return;
+      if (!map || isDraggingRef.current) return;
+      if (!map.getLayer("fill-political")) return;
 
       if (isOutsideGlobe(e.point)) {
         if (hoveredFeatureIdRef.current !== null && map.getSource("source-political")) {
@@ -176,7 +193,7 @@ export function useWorldMapInteractions({
           );
           hoveredSubdivisionIdRef.current = null;
         }
-        if (!isMeasuring) map.getCanvas().style.cursor = "";
+        if (!isMeasuring) map.getCanvas().style.cursor = "default";
         return;
       }
 
@@ -420,12 +437,106 @@ export function useWorldMapInteractions({
     [map, isOutsideGlobe, tooltipPopupRef]
   );
 
-  // Bind mouse move and clicks
+  // Bind mouse move, drag, clicks, and capture interceptors to constrain controls to the globe surface
   useEffect(() => {
     if (!map || !isLoaded) return;
 
+    const canvasContainer = map.getCanvasContainer();
+    const canvas = map.getCanvas();
+    if (!canvasContainer || !canvas) return;
+
+    const handleDragStart = () => {
+      isDraggingRef.current = true;
+      canvas.style.cursor = "grabbing";
+    };
+
+    const handleDragEnd = () => {
+      isDraggingRef.current = false;
+      if (!isMeasuring) {
+        canvas.style.cursor = "grab";
+      }
+    };
+
     map.on("mousemove", handleMouseMove);
     map.on("click", handleClick);
+    map.on("dragstart", handleDragStart);
+    map.on("dragend", handleDragEnd);
+
+    // Coordinate conversion from client viewport to canvas
+    const getCanvasPoint = (clientX: number, clientY: number) => {
+      const rect = canvas.getBoundingClientRect();
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    };
+
+    // Capture & stop mouse/pointer events that originate outside the globe disc
+    const handleCaptureMouseDown = (e: MouseEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const pt = getCanvasPoint(e.clientX, e.clientY);
+      if (!isPointOnGlobeOrMap(pt)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleCapturePointerDown = (e: PointerEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const pt = getCanvasPoint(e.clientX, e.clientY);
+      if (!isPointOnGlobeOrMap(pt)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleCaptureTouchStart = (e: TouchEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const touches = Array.from(e.touches || []);
+      const anyTouchOnGlobe =
+        touches.length > 0 &&
+        touches.some((t) => {
+          const pt = getCanvasPoint(t.clientX, t.clientY);
+          return isPointOnGlobeOrMap(pt);
+        });
+      if (!anyTouchOnGlobe) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleCaptureDblClick = (e: MouseEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const pt = getCanvasPoint(e.clientX, e.clientY);
+      if (!isPointOnGlobeOrMap(pt)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleCaptureWheel = (e: WheelEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const pt = getCanvasPoint(e.clientX, e.clientY);
+      if (!isPointOnGlobeOrMap(pt)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleCaptureContextMenu = (e: MouseEvent) => {
+      if (e.target !== canvas && e.target !== canvasContainer) return;
+      const pt = getCanvasPoint(e.clientX, e.clientY);
+      if (!isPointOnGlobeOrMap(pt)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const captureOpts: AddEventListenerOptions = { capture: true, passive: false };
+
+    canvasContainer.addEventListener("mousedown", handleCaptureMouseDown, captureOpts);
+    canvasContainer.addEventListener("pointerdown", handleCapturePointerDown, captureOpts);
+    canvasContainer.addEventListener("touchstart", handleCaptureTouchStart, captureOpts);
+    canvasContainer.addEventListener("dblclick", handleCaptureDblClick, captureOpts);
+    canvasContainer.addEventListener("wheel", handleCaptureWheel, captureOpts);
+    canvasContainer.addEventListener("contextmenu", handleCaptureContextMenu, captureOpts);
 
     const handleMouseLeave = () => {
       tooltipPopupRef.current?.remove();
@@ -447,15 +558,26 @@ export function useWorldMapInteractions({
         );
       }
       hoveredFeatureIdRef.current = null;
+      canvas.style.cursor = "default";
     };
-    map.getCanvas().addEventListener("mouseleave", handleMouseLeave);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       map.off("mousemove", handleMouseMove);
       map.off("click", handleClick);
-      map.getCanvas()?.removeEventListener("mouseleave", handleMouseLeave);
+      map.off("dragstart", handleDragStart);
+      map.off("dragend", handleDragEnd);
+
+      canvasContainer.removeEventListener("mousedown", handleCaptureMouseDown, captureOpts);
+      canvasContainer.removeEventListener("pointerdown", handleCapturePointerDown, captureOpts);
+      canvasContainer.removeEventListener("touchstart", handleCaptureTouchStart, captureOpts);
+      canvasContainer.removeEventListener("dblclick", handleCaptureDblClick, captureOpts);
+      canvasContainer.removeEventListener("wheel", handleCaptureWheel, captureOpts);
+      canvasContainer.removeEventListener("contextmenu", handleCaptureContextMenu, captureOpts);
+
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [map, isLoaded, handleMouseMove, handleClick, tooltipPopupRef]);
+  }, [map, isLoaded, handleMouseMove, handleClick, isPointOnGlobeOrMap, isMeasuring, tooltipPopupRef]);
 
   // Bind move/zoom end labels distance fade
   useEffect(() => {
@@ -550,7 +672,7 @@ export function useWorldMapInteractions({
 
       if (selectedCountryId) {
         const idx = political.data.features.findIndex(
-          (f) =>
+          (f: any) =>
             (f.properties?._id || f.properties?.id) === selectedCountryId ||
             (f.properties?._countryId || f.properties?.countryId) === selectedCountryId
         );

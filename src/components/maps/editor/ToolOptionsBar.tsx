@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -54,324 +52,22 @@ import {
   ColorPickerFormat,
 } from "~/components/ui/color-picker";
 
-function CityScatterPopover({
-  onScatter,
-  defaultPrefix = "City",
-}: {
-  onScatter: (count: number, type: string, prefix: string) => void;
-  defaultPrefix?: string;
-}) {
-  const [count, setCount] = useState(5);
-  const [type, setType] = useState("city");
-  const [prefix, setPrefix] = useState(defaultPrefix);
-
-  return (
-    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-3 p-3">
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Scatter Count
-        </Label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={1}
-            max={50}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
-          />
-          <span className="w-8 text-right text-[11px] font-semibold">{count}</span>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          City Type
-        </Label>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
-        >
-          {CITY_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Name Prefix
-        </Label>
-        <input
-          type="text"
-          value={prefix}
-          onChange={(e) => setPrefix(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
-        />
-      </div>
-      <button
-        onClick={() => onScatter(count, type, prefix)}
-        className="bg-primary hover:bg-primary/90 flex h-7 w-full items-center justify-center gap-1 rounded text-[11px] font-medium text-white transition-colors"
-      >
-        <Sparkles className="h-3 w-3" /> Scatter Cities
-      </button>
-    </PopoverContent>
-  );
-}
-
-function TransformGeometryPopover({
-  onApply,
-}: {
-  onApply: (type: "simplify" | "smooth" | "rotate" | "scale", value: number) => void;
-}) {
-  const [simplifyVal, setSimplifyVal] = useState(0.001);
-  const [rotateVal, setRotateVal] = useState(0);
-  const [scaleVal, setScaleVal] = useState(1);
-
-  return (
-    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Simplify Tolerance
-        </Label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0.0001}
-            max={0.01}
-            step={0.0001}
-            value={simplifyVal}
-            onChange={(e) => setSimplifyVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
-          />
-          <button
-            onClick={() => onApply("simplify", simplifyVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
-          >
-            Apply
-          </button>
-        </div>
-        <div className="text-muted-foreground text-[9px]">Tolerance: {simplifyVal.toFixed(4)}</div>
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Bezier Smoothing
-        </Label>
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[9px]">Apply Bezier Spline</span>
-          <button
-            onClick={() => onApply("smooth", 1)}
-            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
-          >
-            Smooth Region
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Rotate (Degrees)
-        </Label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={-180}
-            max={180}
-            value={rotateVal}
-            onChange={(e) => setRotateVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
-          />
-          <button
-            onClick={() => onApply("rotate", rotateVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
-          >
-            Apply
-          </button>
-        </div>
-        <div className="text-muted-foreground text-[9px]">Angle: {rotateVal}°</div>
-      </div>
-
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Scale Factor
-        </Label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0.5}
-            max={2.0}
-            step={0.1}
-            value={scaleVal}
-            onChange={(e) => setScaleVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
-          />
-          <button
-            onClick={() => onApply("scale", scaleVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
-          >
-            Apply
-          </button>
-        </div>
-        <div className="text-muted-foreground text-[9px]">Factor: {scaleVal.toFixed(1)}x</div>
-      </div>
-    </PopoverContent>
-  );
-}
-
-function CityTransformationsPopover({
-  selectedCitiesCount,
-  onScalePopulation,
-  onRotateCities,
-}: {
-  selectedCitiesCount: number;
-  onScalePopulation: (factor: number) => void;
-  onRotateCities: (angle: number) => void;
-}) {
-  const [scaleVal, setScaleVal] = useState(1);
-  const [rotateVal, setRotateVal] = useState(0);
-
-  return (
-    <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
-      <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-          Scale Population
-        </Label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min={0.5}
-            max={2.0}
-            step={0.1}
-            value={scaleVal}
-            onChange={(e) => setScaleVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
-          />
-          <button
-            onClick={() => onScalePopulation(scaleVal)}
-            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
-          >
-            Apply
-          </button>
-        </div>
-        <div className="text-muted-foreground text-[9px]">Factor: {scaleVal.toFixed(1)}x</div>
-      </div>
-
-      {selectedCitiesCount > 1 && (
-        <div className="space-y-1">
-          <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-            Rotate Group (Degrees)
-          </Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={-180}
-              max={180}
-              value={rotateVal}
-              onChange={(e) => setRotateVal(Number(e.target.value))}
-              className="accent-primary h-4 flex-1"
-            />
-            <button
-              onClick={() => onRotateCities(rotateVal)}
-              className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
-            >
-              Apply
-            </button>
-          </div>
-          <div className="text-muted-foreground text-[9px]">Angle: {rotateVal}°</div>
-        </div>
-      )}
-    </PopoverContent>
-  );
-}
-
-function CoordinateSnappingControls({
-  coords,
-  onCoordsChange,
-  onSnapBorder,
-  onSnapCoast,
-  isPickingLocation,
-  onTogglePickingLocation,
-}: {
-  coords?: [number, number];
-  onCoordsChange?: (coords: [number, number]) => void;
-  onSnapBorder?: () => void;
-  onSnapCoast?: () => void;
-  isPickingLocation?: boolean;
-  onTogglePickingLocation?: () => void;
-}) {
-  const [lng, setLng] = useState(coords ? coords[0].toString() : "");
-  const [lat, setLat] = useState(coords ? coords[1].toString() : "");
-
-  React.useEffect(() => {
-    if (coords) {
-      setLng(coords[0].toString());
-      setLat(coords[1].toString());
-    }
-  }, [coords]);
-
-  const handleApply = () => {
-    const lngN = parseFloat(lng);
-    const latN = parseFloat(lat);
-    if (!isNaN(lngN) && !isNaN(latN) && onCoordsChange) {
-      onCoordsChange([lngN, latN]);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={labelClass}>Coord</span>
-      <input
-        type="text"
-        placeholder="Lng"
-        value={lng}
-        onChange={(e) => setLng(e.target.value)}
-        onBlur={handleApply}
-        className={`${selectClass} w-16 text-[10px]`}
-      />
-      <input
-        type="text"
-        placeholder="Lat"
-        value={lat}
-        onChange={(e) => setLat(e.target.value)}
-        onBlur={handleApply}
-        className={`${selectClass} w-16 text-[10px]`}
-      />
-
-      {onTogglePickingLocation && (
-        <button
-          onClick={onTogglePickingLocation}
-          className={isPickingLocation ? activeBtnClass : btnClass}
-          title="Reposition with crosshair teleport tool"
-        >
-          <Crosshair className="h-3 w-3" />
-          Teleport
-        </button>
-      )}
-
-      {onSnapBorder && (
-        <button
-          onClick={onSnapBorder}
-          className={btnClass}
-          title="Snap to CONTAINING region border"
-        >
-          Snap to Border
-        </button>
-      )}
-
-      {onSnapCoast && (
-        <button
-          onClick={onSnapCoast}
-          className={btnClass}
-          title="Snap to nearest coastline/lake water boundary"
-        >
-          Snap to Coast
-        </button>
-      )}
-    </div>
-  );
-}
+import {
+  CityScatterPopover,
+  TransformGeometryPopover,
+  CityTransformationsPopover,
+} from "./toolbars/options/ScatterToolOptions";
+import {
+  CoordinateSnappingControls,
+  MoveToCoordsInput,
+  ToolLabel,
+  btnClass,
+  activeBtnClass,
+  dangerBtnClass,
+  labelClass,
+  dividerClass,
+  selectClass,
+} from "./toolbars/options/CoordinateSnappingControls";
 
 interface ToolOptionsBarProps {
   mode: EditorMode;
@@ -520,60 +216,6 @@ const SUGGESTED_LABEL_COLORS = [
   { name: "Red", hex: "#b91c1c" },
 ];
 
-const selectClass =
-  "h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-primary/50";
-const btnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
-const activeBtnClass =
-  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-[11px] text-primary";
-const dangerBtnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-red-500 transition-colors hover:bg-red-500/10";
-const labelClass = "text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
-const dividerClass = "bg-border h-4 w-px";
-
-function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
-  return (
-    <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
-      <Icon className="text-muted-foreground h-3.5 w-3.5" />
-      <span className="text-foreground text-[11px] font-semibold">{label}</span>
-    </div>
-  );
-}
-
-/** Inline lng/lat input pair for "Move to coordinates" affordance */
-function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: number) => void }) {
-  const [lng, setLng] = useState("");
-  const [lat, setLat] = useState("");
-  const handle = () => {
-    const lngN = parseFloat(lng);
-    const latN = parseFloat(lat);
-    if (!isNaN(lngN) && !isNaN(latN)) onMove(lngN, latN);
-  };
-  return (
-    <div className="flex items-center gap-1">
-      <span className={labelClass}>Move to</span>
-      <input
-        type="number"
-        placeholder="Lng"
-        value={lng}
-        onChange={(e) => setLng(e.target.value)}
-        className={`${selectClass} w-16`}
-        step="any"
-      />
-      <input
-        type="number"
-        placeholder="Lat"
-        value={lat}
-        onChange={(e) => setLat(e.target.value)}
-        className={`${selectClass} w-16`}
-        step="any"
-      />
-      <button onClick={handle} className={btnClass} title="Go">
-        <Navigation className="h-3 w-3" />
-      </button>
-    </div>
-  );
-}
 
 export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBarProps) {
   const { mode } = props;
@@ -584,7 +226,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   if (mode === "split-subdivision") {
     return (
-      <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
+      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
         <ToolLabel icon={Scissors} label="Split Subdivision" />
         <span className="text-muted-foreground text-[11px]">
           Click on the map to draw a split-line slicing through the subdivision.
@@ -610,7 +252,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   }
 
   return (
-    <div className="border-border bg-card/80 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-sm">
+    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
       {/* ── Auto-Create Cities button when gaps/empty highlighting is active ── */}
       {props.showGaps &&
         props.emptyRegionsCount! > 0 &&
@@ -808,10 +450,8 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                       </button>
                     </PopoverTrigger>
                     <CityScatterPopover
-                      onScatter={(count, type, prefix) => {
-                        if (props.selectedFeature?.id) {
-                          props.onScatterCities!(props.selectedFeature.id, count, type, prefix);
-                        }
+                      onScatter={(count: number, type: string, prefix: string) => {
+                        props.onScatterCities!(count, type, prefix);
                       }}
                       defaultPrefix={`${props.selectedFeature?.name || "City"}`}
                     />

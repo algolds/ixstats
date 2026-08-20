@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import { useState } from "react";
 import {
   Image as ImageIcon,
@@ -34,7 +32,7 @@ interface CountryInformationCardProps {
   flagUploadMode: boolean;
   isEditingCountry: boolean;
   newCountryName: string;
-  updateCountryNameMutation: unknown;
+  updateCountryNameMutation: { isPending: boolean };
   onEditCountry: () => void;
   onUpdateCountryName: () => void;
   onCancelEdit: () => void;
@@ -44,7 +42,7 @@ interface CountryInformationCardProps {
   onFlagSave: () => void;
   onCancelFlagUpload: () => void;
   isUploadingFlag: boolean;
-  updateCountryFlagMutation: unknown;
+  updateCountryFlagMutation: { isPending: boolean };
   membershipTier?: string;
   role?: {
     name: string;

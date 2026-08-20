@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Ruler } from "lucide-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 

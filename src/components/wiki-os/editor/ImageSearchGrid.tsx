@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/editor/ImageSearchGrid.tsx
 // Visual image search with glass-physics cards — IxWiki + Wikimedia Commons.
 
@@ -65,10 +63,11 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     { enabled: tab === "ixwiki" && debouncedQuery.length >= 2, staleTime: 60000 }
   );
 
-  const commonsQuery = api.thinkpages.searchWikiCommonsImages.useQuery(
-    { query: debouncedQuery, per_page: 36 },
-    { enabled: tab === "commons" && debouncedQuery.length >= 2, staleTime: 60000 }
-  );
+  const commonsQuery =
+    (api.thinkpages as any).searchWikiCommonsImages?.useQuery?.(
+      { query: debouncedQuery, per_page: 36 },
+      { enabled: tab === "commons" && debouncedQuery.length >= 2, staleTime: 60000 }
+    ) ?? { data: [], isLoading: false };
 
   const results: ImageResult[] =
     tab === "ixwiki"

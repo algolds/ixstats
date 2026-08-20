@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { MousePointer2, Hand, LassoSelect } from "lucide-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 

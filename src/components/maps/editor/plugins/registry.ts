@@ -1,8 +1,6 @@
-// @ts-nocheck
 import type { MapEditorPlugin } from "./types";
 import { SelectPlugin } from "./SelectPlugin";
 import { SubdivisionDrawPlugin } from "./SubdivisionDrawPlugin";
-import { VertexEditPlugin } from "./VertexEditPlugin";
 import { RouteEditPlugin } from "./RouteEditPlugin";
 import { PointPlacementPlugin } from "./PointPlacementPlugin";
 import { EyedropperMagicWandPlugin } from "./EyedropperMagicWandPlugin";
@@ -12,7 +10,6 @@ import { PaintFillPlugin } from "./PaintFillPlugin";
 const PLUGINS: MapEditorPlugin[] = [
   SelectPlugin,
   SubdivisionDrawPlugin,
-  VertexEditPlugin,
   RouteEditPlugin,
   PointPlacementPlugin,
   EyedropperMagicWandPlugin,

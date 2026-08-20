@@ -1,9 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronUp, Globe, RotateCcw, Eye, X } from "lucide-react";
+import { ChevronUp, Globe, RotateCcw, Eye, X, ChevronDown, AlertTriangle } from "lucide-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -46,9 +44,10 @@ export function DevCountryViewToolbar() {
     { enabled: !!actualCountryId && canUseDevView }
   );
 
-  const countries = useMemo(() => {
-    if (!countriesData?.items) return [];
-    return countriesData.items.map((c) => ({
+  const countries = useMemo<{ id: string; name: string }[]>(() => {
+    if (!countriesData) return [];
+    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    return list.map((c: any) => ({
       id: c.id,
       name: c.name,
     }));
@@ -61,7 +60,7 @@ export function DevCountryViewToolbar() {
 
   const handleViewCountry = () => {
     if (!selectedCountryId) return;
-    const country = countries.find((c) => c.id === selectedCountryId);
+    const country = countries.find((c: { id: string; name: string }) => c.id === selectedCountryId);
     setViewCountry(selectedCountryId, country?.name);
     setSelectedCountryId("");
   };
@@ -75,15 +74,18 @@ export function DevCountryViewToolbar() {
           "fixed right-4 bottom-4 z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
-          "transition-all duration-200 hover:scale-105",
-          isViewingOtherCountry ? "bg-amber-500 text-amber-950" : "bg-slate-800 text-slate-200"
+          "border backdrop-blur-md transition-all hover:scale-105",
+          isViewingOtherCountry
+            ? "border-amber-500 bg-amber-500/20 text-amber-300"
+            : "border-blue-500 bg-blue-500/20 text-blue-300"
         )}
+        title="Developer Country View"
       >
         <Eye className="h-4 w-4" />
-        <span className="text-xs font-semibold">
-          {isViewingOtherCountry ? viewCountryName || "Other" : "DEV"}
-        </span>
-        <ChevronUp className="h-3 w-3" />
+        <span className="text-xs font-semibold">DEV</span>
+        {isViewingOtherCountry && (
+          <span className="max-w-[100px] truncate text-xs">{viewCountryName}</span>
+        )}
       </button>
     );
   }
@@ -92,63 +94,61 @@ export function DevCountryViewToolbar() {
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-50",
-        "w-80 rounded-2xl shadow-2xl",
-        "dark:bg-popover/95 bg-white/95",
-        "backdrop-blur-xl",
-        "dark:border-border border border-slate-200 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]",
-        "transition-all duration-300 ease-out"
+        "fixed right-4 bottom-4 z-50 w-80",
+        "rounded-xl p-4 shadow-2xl",
+        "border backdrop-blur-xl transition-all",
+        isViewingOtherCountry
+          ? "border-amber-500/50 bg-slate-900/95"
+          : "border-blue-500/30 bg-slate-900/95"
       )}
     >
       {/* Header */}
-      <div className="dark:border-border flex items-center justify-between border-b border-slate-200 px-4 py-3">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Globe className="h-4 w-4 text-blue-500" />
-          <span className="text-sm font-semibold text-slate-900 dark:text-white">
-            Country View Mode
-          </span>
+          <Eye
+            className={cn("h-5 w-5", isViewingOtherCountry ? "text-amber-400" : "text-blue-400")}
+          />
+          <span className="text-sm font-bold text-white">Dev Country View</span>
         </div>
         <button
           onClick={() => setToolbarExpanded(false)}
-          className="rounded-full p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="text-slate-400 hover:text-white"
         >
-          <X className="h-4 w-4 text-slate-500" />
+          <ChevronDown className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Content */}
-      <div className="space-y-4 p-4">
-        {/* Current view status */}
-        <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Currently viewing:
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            {isViewingOtherCountry ? (
-              <>
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                  Other
-                </span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {viewCountryName || viewCountryId}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                  Own
-                </span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {actualCountry?.name || "Your Country"}
-                </span>
-              </>
-            )}
-          </div>
+      {/* Current status */}
+      <div className="mb-3 rounded-lg bg-slate-800/80 p-2 text-xs">
+        <div className="text-slate-400">Current View:</div>
+        <div className="font-semibold text-white">
+          {isViewingOtherCountry ? (
+            <span className="text-amber-400">
+              {viewCountryName || viewCountryId} (Dev Override)
+            </span>
+          ) : (
+            <span className="text-blue-400">
+              {actualCountry?.name || "Your Own Country"} (Default)
+            </span>
+          )}
         </div>
+      </div>
 
-        {/* Country selector */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+      {/* Warning banner when viewing other country */}
+      {isViewingOtherCountry && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            You are viewing data as <strong>{viewCountryName}</strong>. Mutations will still affect
+            your account.
+          </span>
+        </div>
+      )}
+
+      {/* Country selector */}
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-300">
             Switch to:
           </label>
           <Select
@@ -160,7 +160,7 @@ export function DevCountryViewToolbar() {
               <SelectValue placeholder={countriesLoading ? "Loading..." : "Select a country"} />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {countries.map((country) => (
+              {countries.map((country: { id: string; name: string }) => (
                 <SelectItem key={country.id} value={country.id}>
                   {country.name}
                   {country.id === actualCountryId && (

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -29,6 +27,7 @@ import { ToolOptionsBar } from "~/components/maps/editor/ToolOptionsBar";
 import { ProvincePreviewLayer } from "~/components/maps/editor/province-importer";
 import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
+import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { haversineDistance } from "~/components/maps/editor/utils/map-helpers";
 import { EditorWorkspaceLayout } from "./components/EditorWorkspaceLayout";
 import { MapEditorSidebarPanels } from "./components/MapEditorSidebarPanels";
@@ -75,6 +74,7 @@ interface MapEditorOverlayProps {
   onExit: () => void;
   isWorldMode?: boolean;
   historicalYear?: number | null;
+  mapInstance?: import("maplibre-gl").Map | null;
 }
 
 export default function MapEditorOverlay({
@@ -82,6 +82,7 @@ export default function MapEditorOverlay({
   onExit,
   isWorldMode = false,
   historicalYear,
+  mapInstance: initialMapInstance,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
 
@@ -90,7 +91,9 @@ export default function MapEditorOverlay({
   const [brushTargetId, setBrushTargetId] = useState<string | null>(null);
   // Shared world-map instance — stays mounted across view ↔ border_edit so the
   // border editor attaches to it rather than spinning up a second map.
-  const [sharedWorldMap, setSharedWorldMap] = useState<import("maplibre-gl").Map | null>(null);
+  const [sharedWorldMap, setSharedWorldMap] = useState<import("maplibre-gl").Map | null>(
+    () => initialMapInstance ?? null
+  );
 
   const state = useMapEditorOverlayState({
     countryId,
@@ -206,12 +209,12 @@ export default function MapEditorOverlay({
       setPanelConfigs={setPanelConfigs}
       activeSidebarTab={activeSidebarTab}
       setActiveSidebarTab={setActiveSidebarTab}
-      handleMoveTab={handleMoveTab}
+      handleMoveTab={handleMoveTab as any}
       handleChangePanelPlacement={handleChangePanelPlacement}
       layerStates={layerStates}
       setLayerStates={setLayerStates}
       editorVisibleLayers={editorVisibleLayers}
-      toggleEditorLayer={toggleEditorLayer}
+      toggleEditorLayer={toggleEditorLayer as any}
       featureCounts={featureCounts}
       brushTargetId={brushTargetId}
       setBrushTargetId={setBrushTargetId}
@@ -224,7 +227,7 @@ export default function MapEditorOverlay({
     <MapEditorPluginProvider state={state}>
       <div className="bg-background absolute inset-0 z-30 flex flex-col">
         {/* Loading splash — fades out when data is ready */}
-        {showLoadingScreen && <EditorLoadingScreen countryName={countryInfo?.name} />}
+        {showLoadingScreen && <EditorLoadingScreen countryName={(countryInfo as any)?.name} />}
 
         {/* Editor Header */}
         <EditorHeader
@@ -238,7 +241,7 @@ export default function MapEditorOverlay({
           mapRef={mapRef}
           isAdmin={isAdmin}
           editorVisibleLayers={editorVisibleLayers}
-          toggleEditorLayer={toggleEditorLayer}
+          toggleEditorLayer={toggleEditorLayer as any}
           generateTransport={generateTransport}
           recalculateGeo={recalculateGeo}
           simplifyAll={simplifyAll}
@@ -308,8 +311,10 @@ export default function MapEditorOverlay({
                     }
                   : editor.selectedFeature
                     ? async () => {
-                        if (!confirm(`Delete "${editor.selectedFeature.name}"?`)) return;
-                        await editor.handleDeleteFeature(editor.selectedFeature);
+                        const sel = editor.selectedFeature;
+                        if (!sel) return;
+                        if (!confirm(`Delete "${sel.name}"?`)) return;
+                        await editor.handleDeleteFeature(sel);
                       }
                     : undefined
               }
@@ -317,7 +322,7 @@ export default function MapEditorOverlay({
               onUndoWaypoint={editor.undoLastWaypoint}
               onReverseRoute={
                 editor.routeWaypoints.length >= 2
-                  ? () => editor.setRouteWaypoints([...editor.routeWaypoints].reverse())
+                  ? () => (editor as any).setRouteWaypoints?.([...editor.routeWaypoints].reverse())
                   : undefined
               }
               isSnapEnabled={editor.isSnapEnabled}
@@ -326,15 +331,19 @@ export default function MapEditorOverlay({
               emptyRegionsCount={emptyRegionsCount}
               onCreateCentroidCities={editor.createCentroidCities}
               // City actions / scatter / snapping
-              onScatterCities={editor.scatterCities}
+              onScatterCities={(count, type, prefix) => {
+                if (editor.selectedFeature) {
+                  editor.scatterCities(editor.selectedFeature.id, count, type, prefix);
+                }
+              }}
               onSnapCityToSubdivisionBorder={
                 editor.selectedFeature
-                  ? () => editor.snapCityToSubdivisionBorder(editor.selectedFeature.id)
+                  ? () => editor.snapCityToSubdivisionBorder(editor.selectedFeature!.id)
                   : undefined
               }
               onSnapCityToCoastline={
                 editor.selectedFeature
-                  ? () => editor.snapCityToCoastline(editor.selectedFeature.id)
+                  ? () => editor.snapCityToCoastline(editor.selectedFeature!.id)
                   : undefined
               }
               cityCoordinates={editor.selectedFeature?.coordinates}
@@ -342,8 +351,8 @@ export default function MapEditorOverlay({
                 editor.selectedFeature
                   ? (coords) =>
                       editor.updatePointCoordinates(
-                        editor.selectedFeature.id,
-                        editor.selectedFeature.type,
+                        editor.selectedFeature!.id,
+                        editor.selectedFeature!.type as any,
                         coords
                       )
                   : undefined
@@ -629,7 +638,7 @@ export default function MapEditorOverlay({
                       {i === 4 && <div className="bg-border my-0.5 h-px w-5 animate-none" />}
                       <div className="group relative flex items-center">
                         <button
-                          onClick={() => borderActions.setMode(tool.id)}
+                          onClick={() => borderActions.setMode(tool.id as any)}
                           className={`group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
                             isActive
                               ? "bg-primary text-primary-foreground"
@@ -656,7 +665,7 @@ export default function MapEditorOverlay({
                 mode={editor.mode}
                 onModeChange={editor.setMode}
                 disabled={isWorldMode ? false : toolsDisabled}
-                disabledTools={disabledTools}
+                disabledTools={disabledTools as any}
               />
             )}
           </div>
@@ -706,20 +715,19 @@ export default function MapEditorOverlay({
                   disableCountrySelect={activeEditorMode === "border_edit"}
                   forceFlatProjection={true}
                   controlledVisibleLayers={editorVisibleLayers}
-                  onToggleLayer={toggleEditorLayer}
+                  onToggleLayer={toggleEditorLayer as any}
                   hideEditButtons={true}
                   onMapReady={setSharedWorldMap}
                 />
               ) : (
                 <EditorMap
                   ref={mapRef}
-                  countryGeometry={editor.countryGeo?.geometry ?? null}
+                  countryGeometry={(editor.countryGeo?.geometry as any) ?? null}
                   countryCentroid={editor.countryGeo?.centroid ?? null}
                   countryBbox={editor.countryGeo?.bbox ?? null}
                   features={editor.allFeatures ?? []}
                   mode={editor.mode}
                   pendingCoordinates={editor.pendingCoordinates}
-                  pendingGeometry={editor.pendingGeometry}
                   selectedFeature={editor.selectedFeature}
                   selectedIds={editor.selectedIds}
                   onToggleSelect={editor.toggleSelectId}
@@ -828,7 +836,7 @@ export default function MapEditorOverlay({
             mode={editor.mode}
             onModeChange={editor.setMode}
             disabled={isWorldMode ? false : toolsDisabled}
-            disabledTools={disabledTools}
+            disabledTools={disabledTools as any}
             horizontal
           />
         </div>
@@ -843,10 +851,10 @@ export default function MapEditorOverlay({
                   elevation: cursorTerrainInfo.elevation?.zoneName ?? null,
                   climate: cursorTerrainInfo.climate?.climateName ?? null,
                 }
-              : editor.pointInfo
+              : (editor as any).pointInfo
                 ? {
-                    elevation: editor.pointInfo.elevation?.zoneName ?? null,
-                    climate: editor.pointInfo.climate?.climateName ?? null,
+                    elevation: (editor as any).pointInfo.elevation?.zoneName ?? null,
+                    climate: (editor as any).pointInfo.climate?.climateName ?? null,
                   }
                 : null
           }

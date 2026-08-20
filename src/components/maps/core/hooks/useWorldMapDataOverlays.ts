@@ -1,7 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useEffect } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { MapOverlayFeatures, OverlayVisibility } from "../IxWorldMap";
 import { registerStoryPinIcons } from "~/lib/maps/story-pin-icons";
 import type { MapTheme } from "~/lib/map-styles/registry";
@@ -32,14 +30,14 @@ export function useWorldMapDataOverlays({
     const spSource = "source-story-pins";
 
     const updateStoryPins = () => {
-      const source = map.getSource(spSource);
+      const source = map.getSource(spSource) as GeoJSONSource | undefined;
       if (!source) return;
 
       const currentZoom = map.getZoom();
       const hasFocus =
         selectedCountryId !== null && selectedCountryId !== undefined && selectedCountryId !== "";
 
-      const rawFeatures = overlayFeatures.storyPins.features || [];
+      const rawFeatures = overlayFeatures?.storyPins?.features || [];
       const filteredFeatures = rawFeatures.filter((f: any) => {
         if (currentZoom >= 4.0) return true;
         return (

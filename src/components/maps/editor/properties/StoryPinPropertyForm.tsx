@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
@@ -463,14 +461,16 @@ function WikiAutoPopulate({
     try {
       const [intro, images] = await Promise.all([
         utils.wiki.getIntro.fetch({ title: wikiTitle }),
-        utils.wiki.getPageImages.fetch({ title: wikiTitle, limit: 6 }),
+        utils.wiki.getPageImages.fetch({ title: wikiTitle } as any),
       ]);
 
       const result: { content?: string; thumbnailUrl?: string; photos?: string[] } = {};
-      if (intro) result.content = intro;
+      if (intro) {
+        result.content = typeof intro === "string" ? intro : intro.intro || intro.text || "";
+      }
       if (images && images.length > 0) {
-        result.thumbnailUrl = images[0].thumbUrl || images[0].url;
-        result.photos = images.slice(0, 6).map((img) => img.url);
+        result.thumbnailUrl = (images[0] as any)?.thumbUrl || (images[0] as any)?.url;
+        result.photos = images.slice(0, 6).map((img: any) => img.url);
       }
       onPopulate(result);
     } catch {

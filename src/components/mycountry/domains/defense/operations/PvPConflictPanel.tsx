@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
@@ -218,7 +216,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
             <div key={c.id} className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-sm font-medium">{c.initiator.name}</span>
+                  <span className="text-sm font-medium">{c.initiator?.name ?? "Unknown"}</span>
                   <span className="text-muted-foreground ml-2 text-xs">challenges you</span>
                   {c.reason && (
                     <p className="text-muted-foreground mt-1 text-xs">&quot;{c.reason}&quot;</p>
@@ -264,7 +262,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   <div className="flex items-center gap-2">
                     <Swords className="h-3 w-3 text-red-500" />
                     <span>
-                      vs <span className="font-medium">{opponent.name}</span>
+                      vs <span className="font-medium">{opponent?.name ?? "Unknown"}</span>
                     </span>
                     <Badge variant="outline" className="text-[10px]">
                       {c.type.toUpperCase()}
@@ -300,7 +298,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                     ) : (
                       <Skull className="h-3 w-3 text-red-500" />
                     )}
-                    <span>vs {opponent.name}</span>
+                    <span>vs {opponent?.name ?? "Unknown"}</span>
                     <Badge
                       variant="outline"
                       className={`text-[10px] ${

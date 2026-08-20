@@ -75,7 +75,12 @@ export function TimelineScrubber({ value, onChange, hidden }: TimelineScrubberPr
   if (effectivelyHidden) return null;
 
   return (
-    <div className="absolute right-4 bottom-20 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-black/60 p-4 shadow-2xl backdrop-blur-xl">
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      className="absolute right-4 bottom-20 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-black/60 p-4 shadow-2xl backdrop-blur-xl"
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-medium tracking-wide text-white/70 uppercase">
           Historical Timeline

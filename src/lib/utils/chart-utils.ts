@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
-// src/lib/chart-utils.ts
+// src/lib/utils/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
 import { formatPopulation, formatCurrency, formatPercentage, formatNumber } from "./format-utils";

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useCallback, useRef, useEffect } from "react";
@@ -93,8 +91,8 @@ export function PreviewSection() {
         zoom: 1.8,
         minZoom: 0.5,
         maxZoom: 6,
-        projection: { type: "globe" } as unknown as maplibregl.ProjectionSpecification,
-      });
+        projection: { type: "globe" } as any,
+      } as any);
 
       mapRef.current = map;
 

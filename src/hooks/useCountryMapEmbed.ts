@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -32,7 +30,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
 
   return useMemo(() => {
     const cities = bundle?.cities ?? [];
-    const capital = cities.find((c) => c.isNationalCapital) ?? null;
+    const capital = (cities as any[]).find((c: any) => c.isNationalCapital) ?? null;
     const rawBBox = bundle?.boundingBox as number[] | null;
     const bbox =
       rawBBox && rawBBox.length === 4
@@ -46,7 +44,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
         ? ({
             type: "FeatureCollection",
             features: bundle.neighbors,
-          } as import("geojson").FeatureCollection)
+          } as unknown as import("geojson").FeatureCollection)
         : undefined);
 
     return {

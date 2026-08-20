@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -93,7 +91,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
     {
       ...MAP_QUERY_OPTIONS,
       // Use IndexedDB data as placeholder until server responds
-      placeholderData: (idbData as typeof layerData) ?? undefined,
+      placeholderData: (idbData as any) ?? undefined,
     }
   );
 

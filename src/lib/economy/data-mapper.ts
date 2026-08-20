@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
-// src/lib/economy-data-mapper.ts
+// src/lib/economy/data-mapper.ts
 // ═══════════════════════════════════════════════════════════════════════════
 // MAPPER — Patch system: starts from schema-valid base, applies DB patches.
 // ❌ Never imports generateCountryEconomicData or templates.

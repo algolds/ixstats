@@ -1,7 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Position } from "geojson";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,

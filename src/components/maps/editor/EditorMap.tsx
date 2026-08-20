@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -206,7 +204,6 @@ const EditorMap = memo(
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [mapStateRev, setMapStateRev] = useState(0);
     const [activeDragGuide, setActiveDragGuide] = useState<{
       type: "h" | "v";
       currentVal: number;
@@ -242,23 +239,6 @@ const EditorMap = memo(
       },
       [context]
     );
-
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-
-      const onMapChange = () => {
-        setMapStateRev((prev) => prev + 1);
-      };
-      map.on("zoom", onMapChange);
-      map.on("move", onMapChange);
-      map.on("resize", onMapChange);
-      return () => {
-        map.off("zoom", onMapChange);
-        map.off("move", onMapChange);
-        map.off("resize", onMapChange);
-      };
-    }, [isLoaded]);
 
     useEffect(() => {
       if (!activeDragGuide) return;
@@ -491,7 +471,7 @@ const EditorMap = memo(
       isLoaded,
       mode,
       features,
-      countryGeometry,
+      countryGeometry: countryGeometry as any,
       onDrawComplete,
       worldMapLayers,
       editorVisibleLayers,
@@ -514,7 +494,7 @@ const EditorMap = memo(
       mode,
       selectedFeature,
       features,
-      countryGeometry,
+      countryGeometry: countryGeometry as any,
       onGeometryUpdate,
       worldMapLayers,
       editorVisibleLayers,
@@ -530,7 +510,7 @@ const EditorMap = memo(
       isLoaded,
       mode,
       routeWaypoints,
-      editingRouteId,
+      editingRouteId: editingRouteId ?? null,
       editingRouteVertices,
       onRouteVerticesUpdate,
       onRouteEditCommit,
@@ -892,7 +872,7 @@ const EditorMap = memo(
               const canvasRect = map.getCanvas().getBoundingClientRect();
               const virtualFeature: EditorFeature = {
                 id: "gap",
-                type: "gap",
+                type: "gap" as any,
                 name: "Negative Space",
                 coordinates: [e.lngLat.lng, e.lngLat.lat],
                 geometry: hit.feature.geometry,
@@ -1100,12 +1080,12 @@ const EditorMap = memo(
 
         if (isRect) {
           const geom = buildRectGeometry([e.lngLat.lng, e.lngLat.lat]);
-          if (geom) setLassoGeometry(geom);
+          if (geom) setLassoGeometry?.(geom);
           return;
         }
 
         pts.push([e.lngLat.lng, e.lngLat.lat]);
-        setLassoGeometry({
+        setLassoGeometry?.({
           type: "Polygon" as const,
           coordinates: [[...pts, pts[0]]],
         });
@@ -1136,7 +1116,7 @@ const EditorMap = memo(
         } else if (pts.length >= 3 && onApplyLassoSelection) {
           onApplyLassoSelection(pts, mode);
         }
-        setLassoGeometry(null);
+        setLassoGeometry?.(null);
       };
 
       map.on("mousedown", onMouseDown);
@@ -1371,13 +1351,14 @@ const EditorMap = memo(
                         className="pointer-events-auto cursor-col-resize stroke-cyan-500/80 dark:stroke-cyan-400/80"
                         strokeWidth={1.5}
                         strokeDasharray="4,4"
-                        title="Double-click to delete guide"
                         onDoubleClick={() => {
                           if (setGuides) {
                             setGuides((prev) => prev.filter((g) => g.id !== guide.id));
                           }
                         }}
-                      />
+                      >
+                        <title>Double-click to delete guide</title>
+                      </line>
                     );
                   } else {
                     const proj = map.project([map.getCenter().lng, guide.value]);
@@ -1393,13 +1374,14 @@ const EditorMap = memo(
                         className="pointer-events-auto cursor-row-resize stroke-cyan-500/80 dark:stroke-cyan-400/80"
                         strokeWidth={1.5}
                         strokeDasharray="4,4"
-                        title="Double-click to delete guide"
                         onDoubleClick={() => {
                           if (setGuides) {
                             setGuides((prev) => prev.filter((g) => g.id !== guide.id));
                           }
                         }}
-                      />
+                      >
+                        <title>Double-click to delete guide</title>
+                      </line>
                     );
                   }
                 })}

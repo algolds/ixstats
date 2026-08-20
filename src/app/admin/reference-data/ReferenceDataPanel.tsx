@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/admin/reference-data/page.tsx
 // Unified reference data hub with grouped categories and live record counts
 "use client";
@@ -240,7 +238,10 @@ export default function ReferenceDataPage() {
     "economic-archetypes": archetypes.data?.pagination?.total,
   };
 
-  const totalRecords = Object.values(counts).reduce((sum, c) => (c != null ? sum + c : sum), 0);
+  const totalRecords = Object.values(counts).reduce(
+    (sum: number, c) => (c != null ? sum + c : sum),
+    0
+  );
 
   return (
     <div className="space-y-6">

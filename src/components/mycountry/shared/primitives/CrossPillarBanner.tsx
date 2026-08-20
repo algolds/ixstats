@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useMemo } from "react";
@@ -17,7 +15,7 @@ import {
   type LegislatureData,
   type SeatSummary,
 } from "~/lib/statecraft/cross-pillar-engine";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
+import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 
 interface CrossPillarBannerProps {
   section: "executive" | "diplomacy" | "politics";

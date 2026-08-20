@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -26,7 +24,7 @@ interface UseMapEditorOverlayStateProps {
   countryId?: string;
   onExit: () => void;
   isWorldMode?: boolean;
-  mapRef: React.RefObject<EditorMapRef>;
+  mapRef: React.RefObject<EditorMapRef | null>;
 }
 
 export function useMapEditorOverlayState({
@@ -49,7 +47,7 @@ export function useMapEditorOverlayState({
     { skipLinkageGate: isWorldMode }
   );
   const importer = useProvinceImporter(
-    !isWorldMode || activeCountryId ? activeCountryId || undefined : "__none__"
+    (!isWorldMode || activeCountryId ? activeCountryId : undefined) ?? "__none__"
   );
 
   const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
@@ -948,7 +946,7 @@ export function useMapEditorOverlayState({
   // Keep border editor trace mode in sync with the latest river/coast layer data
   const setTraceLayerSource = borderActions.setTraceLayerSource;
   useEffect(() => {
-    setTraceLayerSource(worldMapLayers, editorVisibleLayers);
+    setTraceLayerSource(worldMapLayers as any, editorVisibleLayers);
   }, [worldMapLayers, editorVisibleLayers, setTraceLayerSource]);
 
   const { data: transportRouteData } = api.transport.getCountryRoutes.useQuery(

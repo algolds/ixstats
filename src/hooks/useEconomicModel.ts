@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * useEconomicModel Hook
  *
@@ -182,7 +180,7 @@ export function useEconomicModel(
   const updateEconomicModelMutation = api.economics.updateEconomicProfile.useMutation({
     onSuccess: (data) => {
       notify.success("Economic model updated successfully!");
-      if (data.success && onModelUpdate) {
+      if (data && onModelUpdate) {
         void utils.countries.getByIdWithEconomicData.invalidate({ id: country.id });
       }
       setIsLoading(false);

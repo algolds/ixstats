@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * Clone-or-seed subsystem handlers for the Demo Seed system.
  *
@@ -814,7 +812,7 @@ export async function cloneOrSeedMeetings(
     const data = stripRecord(meeting, demoCountryId, {
       transforms: { userId: () => userId },
     });
-    const newMeeting = await prisma.cabinetMeeting.create({ data });
+    const newMeeting = await prisma.cabinetMeeting.create({ data: data as any });
     count++;
 
     // Clone child records for this meeting
@@ -944,7 +942,7 @@ export async function cloneOrSeedElections(
       where: { legislatureId: sourceLeg.id },
     });
     for (const seat of sourceSeats) {
-      const newPartyId = partyIdMap.get(seat.partyId);
+      const newPartyId = seat.partyId ? partyIdMap.get(seat.partyId) : undefined;
       if (!newPartyId) continue;
       const data = stripRecord(seat, "", {
         countryField: "___skip___",
@@ -1050,7 +1048,7 @@ export async function cloneOrSeedDefense(
         transforms: { branchId: () => newBranch.id },
       });
       delete unitData["___skip___"];
-      await prisma.militaryUnit.create({ data: unitData });
+      await prisma.militaryUnit.create({ data: unitData as any });
       count++;
     }
   }
@@ -1096,7 +1094,7 @@ export async function cloneOrSeedIntelligence(
   });
   for (const briefing of sourceBriefings) {
     const data = stripRecord(briefing, demoCountryId);
-    const newBriefing = await prisma.intelligenceBriefing.create({ data });
+    const newBriefing = await prisma.intelligenceBriefing.create({ data: data as any });
     count++;
 
     // IntelligenceRecommendation
@@ -1107,7 +1105,7 @@ export async function cloneOrSeedIntelligence(
       const recData = stripRecord(rec, demoCountryId, {
         transforms: { briefingId: () => newBriefing.id },
       });
-      await prisma.intelligenceRecommendation.create({ data: recData });
+      await prisma.intelligenceRecommendation.create({ data: recData as any });
       count++;
     }
   }
@@ -1173,7 +1171,7 @@ export async function cloneOrSeedNationalIssues(
         transforms: { issueId: () => newIssue.id },
       });
       delete consData["___skip___"];
-      await prisma.nationalIssueConsequence.create({ data: consData });
+      await prisma.nationalIssueConsequence.create({ data: consData as any });
       count++;
     }
   }
@@ -1220,7 +1218,7 @@ export async function cloneOrSeedDiplomacy(
     if (rel.country2 === sourceCountryId) {
       data.country2 = demoCountryId;
     }
-    await prisma.diplomaticRelation.create({ data });
+    await prisma.diplomaticRelation.create({ data: data as any });
     count++;
   }
 
@@ -1237,7 +1235,7 @@ export async function cloneOrSeedDiplomacy(
     if (embassy.guestCountryId === sourceCountryId) {
       data.guestCountryId = demoCountryId;
     }
-    const newEmbassy = await prisma.embassy.create({ data });
+    const newEmbassy = await prisma.embassy.create({ data: data as any });
     count++;
 
     // EmbassyMission
@@ -1250,7 +1248,7 @@ export async function cloneOrSeedDiplomacy(
         transforms: { embassyId: () => newEmbassy.id },
       });
       delete missionData["___skip___"];
-      await prisma.embassyMission.create({ data: missionData });
+      await prisma.embassyMission.create({ data: missionData as any });
       count++;
     }
   }
@@ -1294,7 +1292,7 @@ export async function cloneOrSeedSocial(
           username: (val: string) => `${val}_demo_${Date.now()}`,
         },
       });
-      const newAccount = await prisma.thinkpagesAccount.create({ data });
+      const newAccount = await prisma.thinkpagesAccount.create({ data: data as any });
       count++;
 
       const sourcePosts: any[] = await prisma.thinkpagesPost.findMany({
@@ -1306,7 +1304,7 @@ export async function cloneOrSeedSocial(
           transforms: { accountId: () => newAccount.id },
         });
         delete postData["___skip___"];
-        await prisma.thinkpagesPost.create({ data: postData });
+        await prisma.thinkpagesPost.create({ data: postData as any });
         count++;
       }
     }

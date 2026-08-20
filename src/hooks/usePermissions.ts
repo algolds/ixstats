@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 import { useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -52,7 +50,7 @@ export function usePermissions(): UserPermissionData {
   }, [userData]);
 
   return {
-    user: userData?.user || null,
+    user: (userData?.user as any) || null,
     permissions,
     isLoading: isLoading || !isLoaded,
     error: error?.message || null,

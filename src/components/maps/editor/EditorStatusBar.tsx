@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -11,9 +9,10 @@
 
 import { Mountain } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 
 interface EditorStatusBarProps {
-  /** Live cursor coordinates [lng, lat] from map mousemove */
+  /** Optional override cursor coordinates [lng, lat] */
   cursorCoords?: [number, number] | null;
   /** Current editor mode */
   mode: EditorMode;
@@ -28,7 +27,7 @@ interface EditorStatusBarProps {
   featureCount?: number;
 }
 
-const MODE_LABELS: Record<EditorMode, { label: string; hint: string }> = {
+const MODE_LABELS: Partial<Record<EditorMode, { label: string; hint: string }>> = {
   view: { label: "Select", hint: "Click a feature to edit" },
   "add-city": { label: "Add City", hint: "Click map to place" },
   "add-subdivision": { label: "Draw Region", hint: "Click to add vertices, double-click to close" },
@@ -37,7 +36,9 @@ const MODE_LABELS: Record<EditorMode, { label: string; hint: string }> = {
   "edit-subdivision": { label: "Edit Region", hint: "Drag vertices to reshape" },
   "edit-poi": { label: "Edit POI", hint: "Modify properties in the panel" },
   "import-provinces": { label: "Import", hint: "Follow the import wizard" },
+  "import-cities": { label: "Import Cities", hint: "Follow the import wizard" },
   "add-route": { label: "Route", hint: "Generate or draw transport routes" },
+  "edit-route": { label: "Edit Route", hint: "Modify route waypoints" },
   paint: { label: "Paint", hint: "Click regions to view stats, use panel to switch map modes" },
   "add-story-pin": { label: "Add Story Pin", hint: "Click map to place story pin" },
   "edit-story-pin": { label: "Edit Story Pin", hint: "Modify story pin properties in the panel" },
@@ -49,6 +50,12 @@ const MODE_LABELS: Record<EditorMode, { label: string; hint: string }> = {
   "edit-river": { label: "Edit River", hint: "Modify river properties in the panel" },
   "add-lake": { label: "Draw Lake", hint: "Click to draw lake polygon, double-click to close" },
   "edit-lake": { label: "Edit Lake", hint: "Modify lake properties in the panel" },
+  "split-subdivision": { label: "Split Region", hint: "Draw line across region to split" },
+  "lasso-select": { label: "Lasso Select", hint: "Draw lasso loop to select features" },
+  ruler: { label: "Ruler", hint: "Click two points to measure distance" },
+  "paint-fill": { label: "Paint Fill", hint: "Click region to apply color" },
+  eyedropper: { label: "Eyedropper", hint: "Click region to sample properties" },
+  "magic-wand": { label: "Magic Wand", hint: "Click to select similar regions" },
 };
 
 function formatCoord(value: number, posLabel: string, negLabel: string): string {
@@ -58,23 +65,25 @@ function formatCoord(value: number, posLabel: string, negLabel: string): string 
 }
 
 export function EditorStatusBar({
-  cursorCoords,
+  cursorCoords: propCoords,
   mode,
   terrainInfo,
   zoom,
   featureCount,
 }: EditorStatusBarProps) {
-  const modeInfo = MODE_LABELS[mode] ?? MODE_LABELS.view;
+  const transientCoords = useTransientMapStore((s) => s.cursorCoords);
+  const activeCoords = propCoords ?? transientCoords;
+  const modeInfo = MODE_LABELS[mode] ?? { label: "Edit", hint: "Select or edit map features" };
 
   return (
     <div className="border-border bg-card text-muted-foreground flex h-7 items-center border-t px-2 text-[11px]">
       {/* Coordinates */}
       <div className="flex min-w-[140px] items-center gap-1 font-mono">
-        {cursorCoords ? (
+        {activeCoords ? (
           <>
-            <span>{formatCoord(cursorCoords[1], "N", "S")}</span>
+            <span>{formatCoord(activeCoords[1], "N", "S")}</span>
             <span className="text-border">,</span>
-            <span>{formatCoord(cursorCoords[0], "E", "W")}</span>
+            <span>{formatCoord(activeCoords[0], "E", "W")}</span>
           </>
         ) : (
           <span className="text-muted-foreground/50">— , —</span>

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/reader/AnnotationOverlay.tsx
 // Annotation system for stashed wiki pages.
 // Renders highlights over article text + floating toolbar on text selection.
@@ -406,12 +404,15 @@ function buildSelector(node: Node, container: HTMLElement): string {
   const parts: string[] = [];
   let current: HTMLElement | null = el;
   while (current && current !== container) {
-    const parent = current.parentElement;
-    if (!parent) break;
-    const siblings = Array.from(parent.children).filter((c) => c.tagName === current!.tagName);
+    const parentNode: HTMLElement | null = current.parentElement;
+    if (!parentNode) break;
+    const currentTagName = current.tagName;
+    const siblings = Array.from(parentNode.children).filter(
+      (c: Element) => c.tagName === currentTagName
+    );
     const idx = siblings.indexOf(current);
     parts.unshift(`${current.tagName.toLowerCase()}:nth-of-type(${idx + 1})`);
-    current = parent;
+    current = parentNode;
   }
   return parts.join(" > ") || "body";
 }

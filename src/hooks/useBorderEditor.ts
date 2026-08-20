@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -212,7 +210,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         { featureId },
         {
           onSuccess: (data) => {
-            const geom = data.feature.geometry as Polygon | MultiPolygon;
+            const geom = data.feature.geometry as unknown as Polygon | MultiPolygon;
             const neighborGeoms: Record<string, Polygon | MultiPolygon> = {};
             const rawNeighbors = data.neighbors as Array<{
               featureId: string;
@@ -306,16 +304,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         const nearestEdge = findNearestEdge(s.geometry, point);
         if (nearestEdge && nearestEdge.distance < 0.3) {
           const newGeom = addVertex(s.geometry, nearestEdge.ref, point);
-          const newStack = pushUndo(
-            s.undoStackState,
-            {
-              type: "add_vertex",
-              edge: nearestEdge.ref,
-              at: point,
-            },
-            s.geometry,
-            newGeom
-          );
+          const newStack = pushUndo(s.undoStackState, "add_vertex", s.geometry, newGeom);
           return {
             ...s,
             geometry: newGeom,
@@ -379,12 +368,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
           }
         }
 
-        const newStack = pushUndo(
-          s.undoStackState,
-          { type: "replace_geometry", geometry: newGeom },
-          s.geometry,
-          newGeom
-        );
+        const newStack = pushUndo(s.undoStackState, "snap", s.geometry, newGeom);
         return {
           ...s,
           geometry: newGeom,
@@ -465,16 +449,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!beforeDrag || !s.geometry) return s;
       // Don't push if geometry didn't actually change
       if (beforeDrag === s.geometry) return s;
-      const newStack = pushUndo(
-        s.undoStackState,
-        {
-          type: "move_vertex",
-          ref: s.selectedVertex ?? { ringIndex: 0, vertexIndex: 0, coord: [0, 0] },
-          to: s.selectedVertex?.coord ?? [0, 0],
-        },
-        beforeDrag,
-        s.geometry
-      );
+      const newStack = pushUndo(s.undoStackState, "move_vertex", beforeDrag, s.geometry);
       return { ...s, undoStackState: newStack };
     });
   }, []);
@@ -553,7 +528,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       }
 
       const neighborUpdates = Object.entries(state.dirtyNeighbors).map(
-        ([nFeatureId, geometry]) => ({ featureId: nFeatureId, geometry })
+        ([nFeatureId, geometry]) => ({
+          featureId: nFeatureId,
+          geometry: geometry as unknown as Record<string, unknown>,
+        })
       );
 
       const result = await submitBorderEdit.mutateAsync({
@@ -659,12 +637,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     const repaired = res.geometry as Polygon | MultiPolygon;
     setState((s) => {
       if (!s.geometry) return s;
-      const stack = pushUndo(
-        s.undoStackState,
-        { type: "replace_geometry", geometry: repaired },
-        s.geometry,
-        repaired
-      );
+      const stack = pushUndo(s.undoStackState, "snap", s.geometry, repaired);
       return {
         ...s,
         geometry: repaired,
@@ -679,12 +652,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     setState((s) => {
       if (!s.geometry) return s;
       const newGeom = smoothGeometry(s.geometry, 1);
-      const stack = pushUndo(
-        s.undoStackState,
-        { type: "replace_geometry", geometry: newGeom },
-        s.geometry,
-        newGeom
-      );
+      const stack = pushUndo(s.undoStackState, "smooth", s.geometry, newGeom);
       return {
         ...s,
         geometry: newGeom,
@@ -700,12 +668,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!s.geometry) return s;
       const seed = Date.now() & 0xffff;
       const newGeom = naturalizeGeometry(s.geometry, 0.01, seed);
-      const stack = pushUndo(
-        s.undoStackState,
-        { type: "replace_geometry", geometry: newGeom },
-        s.geometry,
-        newGeom
-      );
+      const stack = pushUndo(s.undoStackState, "naturalize", s.geometry, newGeom);
       return {
         ...s,
         geometry: newGeom,
@@ -731,12 +694,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     setState((s) => {
       if (!s.geometry) return s;
       const newGeom = simplifyGeometry(s.geometry, 0.01);
-      const stack = pushUndo(
-        s.undoStackState,
-        { type: "replace_geometry", geometry: newGeom },
-        s.geometry,
-        newGeom
-      );
+      const stack = pushUndo(s.undoStackState, "simplify", s.geometry, newGeom);
       return {
         ...s,
         geometry: newGeom,
@@ -768,16 +726,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
           if (fid !== targetFeatureId) newDirty[fid] = s.dirtyNeighbors[fid]!;
         }
 
-        const newStack = pushUndo(
-          s.undoStackState,
-          {
-            type: "move_vertex",
-            ref: { ringIndex: 0, vertexIndex: 0, coord: [0, 0] },
-            to: [0, 0],
-          },
-          s.geometry,
-          result.source
-        );
+        const newStack = pushUndo(s.undoStackState, "brush", s.geometry, result.source);
 
         brushResultRef.current = true;
 

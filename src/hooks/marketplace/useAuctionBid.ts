@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/hooks/marketplace/useAuctionBid.ts
 // Hook for placing bids and buyouts on auctions via tRPC
 

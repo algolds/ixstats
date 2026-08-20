@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * useAnalyticsDashboard Hook
  *
@@ -267,7 +265,7 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         ? economicChartData[economicChartData.length - 1]!.gdpPerCapita
         : 50000;
 
-    return calculateProjectionData(predictiveModels, dateRange, selectedScenarios, baseValue);
+    return calculateProjectionData(predictiveModels as any, dateRange, selectedScenarios, baseValue);
   }, [predictiveModels, dateRange, selectedScenarios, economicChartData]);
 
   const diplomaticInfluenceData = useMemo(

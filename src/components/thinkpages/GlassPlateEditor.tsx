@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, {
@@ -191,18 +189,18 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
     useImperativeHandle(ref, () => ({
       insertText: (text: string) => {
         try {
-          ReactEditor.focus(editor);
-          Transforms.insertText(editor, text);
-        } catch (err) {
+          ReactEditor.focus(editor as any);
+          Transforms.insertText(editor as any, text);
+        } catch (_err) {
           const lastNodePath = [editor.children.length - 1];
-          Transforms.insertText(editor, text, { at: lastNodePath });
+          Transforms.insertText(editor as any, text, { at: lastNodePath });
         }
         handleEditorChange();
       },
       clear: () => {
         editor.children = [{ type: "p", children: [{ text: "" }] }];
         editor.selection = null;
-        editor.onChange();
+        (editor as any).onChange?.();
         handleEditorChange();
       },
     }));
@@ -324,7 +322,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
                     </Label>
                     <Input
                       id="link-url"
-                      size="sm"
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
                       placeholder="https://example.com"
@@ -340,7 +337,6 @@ export const GlassPlateEditor = forwardRef<any, GlassPlateEditorProps>(
                     </Label>
                     <Input
                       id="link-text"
-                      size="sm"
                       value={linkText}
                       onChange={(e) => setLinkText(e.target.value)}
                       placeholder="Click here"

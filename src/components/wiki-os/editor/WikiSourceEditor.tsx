@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/editor/WikiSourceEditor.tsx
 // Wikitext source editor — VS Code + Google Docs hybrid.
 // CodeMirror 6 with wikitext toolbar, word count, save panel.
@@ -684,6 +682,7 @@ export function WikiSourceEditor({
       }, 100);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [title, initialWikitext]);
 
   // Wikitext formatting helpers

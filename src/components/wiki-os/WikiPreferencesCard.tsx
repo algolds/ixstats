@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/profile/WikiPreferencesCard.tsx
 // Wiki & lore preferences card for user profile page
 "use client";
@@ -13,22 +11,22 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
-type WikiSource = "ixwiki_first" | "iiwiki_first" | "both";
-type LoreDisplayMode = "inline" | "sidebar" | "hidden";
+type WikiSource = "ixwiki" | "iiwiki" | "both";
+type WikiDisplayMode = "inline" | "sidebar" | "hidden";
 
 interface WikiPreferences {
   wikiAutoScan: boolean;
   wikiSourcePriority: WikiSource;
-  loreDisplayMode: LoreDisplayMode;
+  wikiDisplayMode: WikiDisplayMode;
 }
 
 const SOURCE_OPTIONS: { value: WikiSource; label: string; description: string }[] = [
-  { value: "ixwiki_first", label: "IxWiki first", description: "Prefer IxWiki articles" },
-  { value: "iiwiki_first", label: "IIWiki first", description: "Prefer IIWiki articles" },
+  { value: "ixwiki", label: "IxWiki first", description: "Prefer IxWiki articles" },
+  { value: "iiwiki", label: "IIWiki first", description: "Prefer IIWiki articles" },
   { value: "both", label: "Both", description: "Show results from both wikis" },
 ];
 
-const DISPLAY_OPTIONS: { value: LoreDisplayMode; label: string; description: string }[] = [
+const DISPLAY_OPTIONS: { value: WikiDisplayMode; label: string; description: string }[] = [
   {
     value: "inline",
     label: "Inline with stats",
@@ -53,8 +51,8 @@ export function WikiPreferencesCard() {
 
   const [localPrefs, setLocalPrefs] = useState<WikiPreferences>({
     wikiAutoScan: true,
-    wikiSourcePriority: "ixwiki_first",
-    loreDisplayMode: "inline",
+    wikiSourcePriority: "ixwiki",
+    wikiDisplayMode: "inline",
   });
 
   // Sync from server when loaded
@@ -62,8 +60,8 @@ export function WikiPreferencesCard() {
     if (preferences) {
       setLocalPrefs({
         wikiAutoScan: preferences.wikiAutoScan ?? true,
-        wikiSourcePriority: (preferences.wikiSourcePriority as WikiSource) ?? "ixwiki_first",
-        loreDisplayMode: (preferences.loreDisplayMode as LoreDisplayMode) ?? "inline",
+        wikiSourcePriority: (preferences.wikiSourcePriority as WikiSource) ?? "ixwiki",
+        wikiDisplayMode: (preferences.wikiDisplayMode as WikiDisplayMode) ?? "inline",
       });
     }
   }, [preferences]);
@@ -167,11 +165,11 @@ export function WikiPreferencesCard() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => handleUpdate({ loreDisplayMode: option.value })}
+                  onClick={() => handleUpdate({ wikiDisplayMode: option.value })}
                   disabled={updateMutation.isPending}
                   className={cn(
                     "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
-                    localPrefs.loreDisplayMode === option.value
+                    localPrefs.wikiDisplayMode === option.value
                       ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
                       : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
                   )}

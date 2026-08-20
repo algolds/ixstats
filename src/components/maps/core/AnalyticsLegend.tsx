@@ -25,7 +25,12 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
   const legend: OverlayLegend = active.legend;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8">
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8"
+    >
       <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
         {legend.title}
       </div>

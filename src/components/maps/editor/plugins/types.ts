@@ -54,6 +54,7 @@ export interface MapEditorPlugin {
 
   /** Map canvas interaction event handlers */
   mapEvents?: {
+    [key: string]: ((e: any, context: MapEditorContextType) => void) | undefined;
     onClick?: (e: any, context: MapEditorContextType) => void;
     onMouseMove?: (e: any, context: MapEditorContextType) => void;
     onMouseDown?: (e: any, context: MapEditorContextType) => void;

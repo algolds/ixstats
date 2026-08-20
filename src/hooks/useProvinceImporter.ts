@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -255,9 +253,9 @@ export function useProvinceImporter(countryId: string) {
           uploadId: uploadData.id,
         });
 
-        setRawProvinces(result.provinces as ProvinceFeature[]);
+        setRawProvinces(result.provinces as unknown as ProvinceFeature[]);
         if (result.countryBorder) {
-          setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
+          setCountryBorder(result.countryBorder as unknown as Polygon | MultiPolygon);
         }
         if (result.log) setParseLog(result.log as string[]);
         if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
@@ -300,9 +298,9 @@ export function useProvinceImporter(countryId: string) {
           svgContent,
         });
 
-        setRawProvinces(result.provinces as ProvinceFeature[]);
+        setRawProvinces(result.provinces as unknown as ProvinceFeature[]);
         if (result.countryBorder) {
-          setCountryBorder(result.countryBorder as Polygon | MultiPolygon);
+          setCountryBorder(result.countryBorder as unknown as Polygon | MultiPolygon);
         }
         if (result.log) setParseLog(result.log as string[]);
         if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
@@ -398,8 +396,8 @@ export function useProvinceImporter(countryId: string) {
     const provinces = rawProvinces.filter((p) => p.included);
     if (provinces.length === 0) {
       if (rawCityPoints.length === 0) return;
-      const cx = rawCityPoints.reduce((s, p) => s + p.x, 0) / rawCityPoints.length;
-      const cy = rawCityPoints.reduce((s, p) => s + p.y, 0) / rawCityPoints.length;
+      const cx = rawCityPoints.reduce((s, p) => s + p.svgX, 0) / rawCityPoints.length;
+      const cy = rawCityPoints.reduce((s, p) => s + p.svgY, 0) / rawCityPoints.length;
       const matrix = manualTransformToMatrix(manualTransform, [cx, cy]);
       setTransform(matrix);
       return;

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -1172,7 +1170,7 @@ export default function MyClubTeamDetailPage() {
                 teamId={team.id}
                 teamName={team.name}
                 teamColor={team.color}
-                players={team.players ?? []}
+                players={(team.players as any) ?? []}
                 presets={SPORT_PRESETS}
                 sportPreset={team.league?.sportPreset ?? ""}
                 currentLineup={team.lineup as any}
@@ -1384,8 +1382,7 @@ export default function MyClubTeamDetailPage() {
                         firstName: squadComparePlayer.firstName,
                         lastName: squadComparePlayer.lastName,
                         position: squadComparePlayer.position,
-                        number: squadComparePlayer.number,
-                        overallRating: squadComparePlayer.ratings?.overall ?? 50,
+                        overallRating: (squadComparePlayer.ratings as any)?.overall ?? 50,
                         teamColor: team.color ?? "#3b82f6",
                         ratings: (squadComparePlayer.ratings as Record<string, number>) ?? {},
                       }}
@@ -1394,8 +1391,7 @@ export default function MyClubTeamDetailPage() {
                         firstName: comparePlayer.firstName,
                         lastName: comparePlayer.lastName,
                         position: comparePlayer.position,
-                        number: comparePlayer.number,
-                        overallRating: comparePlayer.ratings?.overall ?? 50,
+                        overallRating: (comparePlayer.ratings as any)?.overall ?? 50,
                         teamColor: comparePlayer.team?.color ?? "#ef4444",
                         ratings: (comparePlayer.ratings as Record<string, number>) ?? {},
                       }}
@@ -1520,7 +1516,7 @@ export default function MyClubTeamDetailPage() {
               stadiumCapacity={team.stadiumCapacity ?? 5000}
               ticketPrice={team.ticketPrice ?? 15}
               popularity={team.popularity ?? 50}
-              sponsor={team.sponsor}
+              sponsor={team.sponsor as any}
               onCollected={refetchOverview}
               teamColor={team.color}
             />
@@ -1622,13 +1618,13 @@ export default function MyClubTeamDetailPage() {
                     {team.city}
                   </Badge>
                 )}
-                {team.nation && (
+                {(team as any).nation && (
                   <Badge
                     variant="outline"
                     className="border-border text-muted-foreground flex items-center gap-1"
                   >
                     <Flag className="h-2.5 w-2.5" />
-                    {(team.nation as Record<string, string>).name}
+                    {((team as any).nation as Record<string, string>).name}
                   </Badge>
                 )}
                 <Badge

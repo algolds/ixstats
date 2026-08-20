@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Geometry, Position, Feature, Polygon, MultiPolygon } from "geojson";
 import { intersect } from "@turf/intersect";

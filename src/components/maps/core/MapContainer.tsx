@@ -407,10 +407,6 @@ export function MapContainer({
           onProjectionChange={forceFlatProjection ? () => {} : setProjectionMode}
           onSearchResult={handleSearchResult}
           onOpenWelcome={() => setIsWelcomeOpen(true)}
-          visibleLayers={controlledVisibleLayers ?? visibleLayers}
-          onToggleLayer={onToggleLayer ?? toggleLayer}
-          overlayVisibility={overlayVisibility}
-          onToggleOverlay={toggleOverlay}
         />
       )}
 
@@ -515,6 +511,7 @@ export function MapContainer({
           mapLayers={mapLayers}
           onExit={handleExitEditor}
           historicalYear={historicalYear}
+          mapInstance={mapRef.current?.getMap() ?? null}
         />
       )}
 
@@ -525,6 +522,7 @@ export function MapContainer({
           mapLayers={mapLayers}
           onExit={() => setIsWorldEditing(false)}
           historicalYear={historicalYear}
+          mapInstance={mapRef.current?.getMap() ?? null}
         />
       )}
 

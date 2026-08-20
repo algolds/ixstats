@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -109,7 +107,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
   const typeMeta = TYPE_META[route.routeType] ?? TYPE_META.road!;
   const TypeIcon = typeMeta.icon;
   const statusClass = STATUS_COLORS[route.status] ?? STATUS_COLORS.operational!;
-  const props = (route.properties ?? {}) as Record<string, unknown>;
+  const props = (route.properties ?? {}) as Record<string, any>;
 
   const handleStartEdit = () => {
     setEditName(route.name ?? "");
@@ -133,7 +131,12 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
   };
 
   return (
-    <div className="border-border bg-card animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 rounded-xl border shadow-xl duration-200">
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      className="border-border bg-card animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 rounded-xl border shadow-xl duration-200"
+    >
       {/* Header */}
       <div className="border-border flex items-start gap-2 border-b px-4 py-3">
         <div
@@ -222,14 +225,14 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
           </div>
         )}
 
-        {props.speed_kmh && (
+        {Boolean(props.speed_kmh) && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Speed</span>
             <span className="font-medium tabular-nums">{String(props.speed_kmh)} km/h</span>
           </div>
         )}
 
-        {route.builtYear && (
+        {Boolean(route.builtYear) && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> Built
@@ -238,7 +241,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
           </div>
         )}
 
-        {route.isInternational && (
+        {Boolean(route.isInternational) && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">International</span>
             <span className="font-medium text-blue-500">Yes</span>
@@ -254,9 +257,9 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       </div>
 
       {/* Cost breakdown */}
-      {(props.costBillion || props.maintenanceCost) && (
+      {Boolean(props.costBillion || props.maintenanceCost) && (
         <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
-          {props.costBillion && (
+          {Boolean(props.costBillion) && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground flex items-center gap-1.5">
                 <Coins className="h-3 w-3" /> Build Cost
@@ -266,7 +269,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
               </span>
             </div>
           )}
-          {props.maintenanceCost && (
+          {Boolean(props.maintenanceCost) && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Annual Maint.</span>
               <span className="font-medium tabular-nums">
@@ -278,7 +281,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       )}
 
       {/* Stops */}
-      {route.stopsResolved && route.stopsResolved.length > 0 && (
+      {Boolean(route.stopsResolved && route.stopsResolved.length > 0) && (
         <div className="border-border border-t px-4 py-3">
           <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
             Stops ({route.stopsResolved.length})
@@ -290,7 +293,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
                 <span className="flex-1 truncate">
                   {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
                 </span>
-                {stop.cityPopulation && (
+                {Boolean(stop.cityPopulation) && (
                   <span className="text-muted-foreground text-[10px] tabular-nums">
                     {Number(stop.cityPopulation).toLocaleString()}
                   </span>
@@ -302,7 +305,7 @@ export function RouteInfoPanel({ routeId, onClose, canEdit, onEditPath }: RouteI
       )}
 
       {/* Actions */}
-      {canEdit && route.countryId && (
+      {Boolean(canEdit && route.countryId) && (
         <div className="border-border flex items-center gap-1 border-t px-4 py-2">
           {editing ? (
             <>

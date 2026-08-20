@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
@@ -483,7 +481,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
                             </div>
                           </div>
                         )}
-                        {props.costBillion && (
+                        {Boolean(props.costBillion) && (
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Cost</span>
                             <span className="font-medium tabular-nums">
@@ -798,7 +796,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
               try {
                 await generateRoutes.mutateAsync({
                   countryId,
-                  routeTypes: generatable,
+                  routeTypes: generatable as any,
                   clearExisting,
                 });
               } catch {

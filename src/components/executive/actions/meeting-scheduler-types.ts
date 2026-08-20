@@ -7,6 +7,7 @@ export interface AgendaItem {
   presenter: string;
   linkedIssueId?: string;
   linkedPolicyId?: string;
+  linkedIntentId?: string;
 }
 
 export interface MeetingSchedulerProps {

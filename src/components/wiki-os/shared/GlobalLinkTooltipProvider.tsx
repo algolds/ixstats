@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -105,8 +103,8 @@ function clampX(rect: DOMRect): number {
 
 export function GlobalLinkTooltipProvider({ children }: { children: React.ReactNode }) {
   const [activeLink, setActiveLink] = useState<DetectedLink | null>(null);
-  const showTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeElementRef = useRef<HTMLElement | null>(null);
 
   const show = useCallback((link: DetectedLink, el: HTMLElement) => {

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
@@ -255,7 +253,7 @@ export function useMapState({
         const politicalLayer = mapLayers.find((l) => l.type === "political");
         if (politicalLayer?.data) {
           const match = politicalLayer.data.features.find(
-            (f) =>
+            (f: any) =>
               f.properties?._id === neighbor.featureId ||
               f.properties?._displayName === neighbor.displayName
           );

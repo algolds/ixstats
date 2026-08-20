@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -228,10 +226,14 @@ export const WikiArchivesPanel = memo(function WikiArchivesPanel({
   }
 
   // Classify and optionally filter sections
-  const classified = (sections as Array<{ title: string; level: number }>).map((s) => ({
-    ...s,
-    type: classifySection(s.title),
-  }));
+  const classified = sections.map((s) => {
+    const title = (s as any).line ?? (s as any).title ?? "";
+    return {
+      ...s,
+      title,
+      type: classifySection(title),
+    };
+  });
 
   const filtered = filter ? classified.filter((s) => s.type.label === filter) : classified;
 

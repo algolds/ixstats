@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * Live Notifications Hook
  * Provides real-time notification updates with page title badge
@@ -253,8 +251,10 @@ export function useLiveNotifications(
 
           if (!oldData) {
             return {
-              notifications: [normalized],
+              notifications: [normalized as any],
+              totalCount: 1,
               unreadCount: normalized.read || normalized.dismissed ? 0 : 1,
+              hasMore: false,
             };
           }
 
@@ -263,9 +263,9 @@ export function useLiveNotifications(
           );
           let nextNotifications = [...oldData.notifications];
           if (existingIndex !== -1) {
-            nextNotifications[existingIndex] = normalized;
+            nextNotifications[existingIndex] = normalized as any;
           } else {
-            nextNotifications = [normalized, ...oldData.notifications].slice(0, 50);
+            nextNotifications = [normalized as any, ...oldData.notifications].slice(0, 50);
           }
 
           return {

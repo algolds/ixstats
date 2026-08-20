@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -84,7 +82,7 @@ const FeatureRowItem = React.memo(
   }: FeatureRowItemProps) {
     const Icon = TYPE_ICONS[feature.type as FeatureType] || MapPin;
     const colorClass = TYPE_COLORS[feature.type as FeatureType] || "text-slate-500";
-    const isCapital = feature.properties?.isNationalCapital;
+    const isCapital = Boolean(feature.properties?.isNationalCapital);
     const wikiTitle = feature.properties?.wikiPageTitle as string | undefined;
 
     const row = (

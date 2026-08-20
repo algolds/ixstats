@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -26,6 +24,12 @@ import { transformScale } from "@turf/transform-scale";
 import { api } from "~/trpc/react";
 import { clampToGeometry, pointInGeometry } from "~/lib/maps/border-editor";
 import { buildRouteGeometry } from "~/lib/maps/route-geometry";
+
+function cleanNulls<T extends Record<string, any>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null)
+  ) as T;
+}
 
 // ── Pure duplicate transform (exported for unit testing) ──
 
@@ -212,7 +216,7 @@ export interface EditorFeature {
   name: string;
   coordinates?: [number, number];
   geometry?: object;
-  properties: Record<string, unknown>;
+  properties: Record<string, any>;
 }
 
 export interface CityFormData {
@@ -466,7 +470,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [lakeForm, setLakeForm] = useState<NamedLakeFormData>(DEFAULT_LAKE);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const lastSavedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const lastSavedTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // ── Route Drawing State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
@@ -1217,7 +1221,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           old
             ? {
                 ...old,
-                subdivisions: old.subdivisions.map((s) =>
+                subdivisions: old.subdivisions.map((s: any) =>
                   s.id === saved.id
                     ? { ...s, geometry: saved.geometry, areaSqKm: saved.areaSqKm }
                     : s
@@ -1799,7 +1803,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     (lng: number, lat: number) => {
       let point: [number, number] = [lng, lat];
       if (countryGeo?.geometry) {
-        point = clampToGeometry(point, countryGeo.geometry) as [number, number];
+        point = clampToGeometry(point, countryGeo.geometry as any) as [number, number];
       }
 
       if (isPickingLocation) {
@@ -1856,7 +1860,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           const outerRing = (geometry as any).coordinates?.[0] as [number, number][] | undefined;
           if (outerRing && outerRing.length > 0) {
             const anyInside = outerRing.some((pt: [number, number]) =>
-              pointInGeometry(pt, countryGeo.geometry)
+              pointInGeometry(pt, countryGeo.geometry as any)
             );
             if (!anyInside) {
               alert("Region must be inside the country boundary.");
@@ -1874,7 +1878,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           const outerRing = (geometry as any).coordinates?.[0] as [number, number][] | undefined;
           if (outerRing && outerRing.length > 0) {
             const anyInside = outerRing.some((pt: [number, number]) =>
-              pointInGeometry(pt, countryGeo.geometry)
+              pointInGeometry(pt, countryGeo.geometry as any)
             );
             if (!anyInside) {
               alert("Lake must be inside the country boundary.");
@@ -1927,7 +1931,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       name: subdivisionForm.name.trim(),
       type: subdivisionForm.type,
       level: subdivisionForm.level,
-      geometry: pendingGeometry,
+      geometry: pendingGeometry as unknown as Record<string, unknown>,
       population: subdivisionForm.population,
       areaSqKm: subdivisionForm.areaSqKm,
       color: subdivisionForm.color,
@@ -2341,7 +2345,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         await updateSubdivisionGeom.mutateAsync({
           countryId,
           id: featureId,
-          geometry,
+          geometry: geometry as unknown as Record<string, unknown>,
         });
       } catch (err) {
         // The vertex-edit handlers call this fire-and-forget; swallow here so the
@@ -2410,8 +2414,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           await deleteLake.mutateAsync({ countryId, lakeId: feature.id });
           break;
       }
+      setSelectedFeature(null);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       countryId,
       deleteCity,
@@ -2420,109 +2424,116 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       deleteStoryPin,
       deleteMapLabel,
       deletePeak,
+      deleteRoute,
       deleteRiver,
       deleteLake,
       pushAction,
     ]
   );
 
-  // Combined feature list for display
-  const allFeatures: EditorFeature[] = useMemo(() => {
+  // All features compiled into flat list
+  const allFeatures = useMemo<EditorFeature[]>(() => {
     if (!features) return [];
     const list: EditorFeature[] = [];
 
-    for (const city of features.cities ?? []) {
+    for (const c of features.cities ?? []) {
       list.push({
-        id: city.id,
+        id: c.id,
         type: "city",
-        name: city.name,
-        coordinates: city.coordinates as [number, number] | undefined,
+        name: c.name,
+        coordinates: c.coordinates as [number, number] | undefined,
         properties: {
-          cityType: city.type,
-          population: city.population,
-          isNationalCapital: city.isNationalCapital,
-          isSubdivisionCapital: city.isSubdivisionCapital,
-          wikiPageTitle: city.wikiPageTitle,
-          subdivisionId: city.subdivisionId,
-          elevation: city.elevation,
-          foundedYear: city.foundedYear,
+          cityType: c.type,
+          population: c.population,
+          elevation: c.elevation,
+          foundedYear: c.foundedYear,
+          isNationalCapital: c.isNationalCapital,
+          isSubdivisionCapital: c.isSubdivisionCapital,
+          subdivisionId: c.subdivisionId,
+          wikiPageTitle: c.wikiPageTitle,
+          status: c.status,
+          establishedDate: (c as any).establishedDate,
         },
       });
     }
 
-    for (const sub of features.subdivisions ?? []) {
+    for (const s of features.subdivisions ?? []) {
       list.push({
-        id: sub.id,
+        id: s.id,
         type: "subdivision",
-        name: sub.name,
-        geometry: sub.geometry as object | undefined,
+        name: s.name,
+        geometry: s.geometry as object | undefined,
         properties: {
-          type: sub.type,
-          level: sub.level,
-          capital: sub.capital,
-          population: sub.population,
-          areaSqKm: sub.areaSqKm,
-          color: sub.color,
+          type: s.type,
+          level: s.level,
+          population: s.population,
+          areaSqKm: s.areaSqKm,
+          color: s.color,
+          capital: s.capital,
+          postalCode: (s as any).postalCode,
+          code: (s as any).code,
         },
       });
     }
 
-    for (const poi of features.pois ?? []) {
+    for (const p of features.pois ?? []) {
       list.push({
-        id: poi.id,
+        id: p.id,
         type: "poi",
-        name: poi.name,
-        coordinates: poi.coordinates as [number, number] | undefined,
+        name: p.name,
+        coordinates: p.coordinates as [number, number] | undefined,
         properties: {
-          category: poi.category,
-          description: poi.description,
-          icon: poi.icon,
-          wikiPageTitle: poi.wikiPageTitle,
+          category: p.category,
+          importance: (p as any).importance,
+          description: p.description,
+          icon: p.icon,
+          wikiPageTitle: p.wikiPageTitle,
+          historicYear: (p as any).historicYear,
         },
       });
     }
 
-    for (const pin of (features as any).storyPins ?? []) {
+    for (const sp of features.storyPins ?? []) {
       list.push({
-        id: pin.id,
+        id: sp.id,
         type: "storyPin",
-        name: pin.title,
-        coordinates: pin.coordinates as [number, number] | undefined,
+        name: sp.title,
+        coordinates: sp.coordinates as [number, number] | undefined,
         properties: {
-          content: pin.content,
-          category: pin.category,
-          ixTimeYear: pin.ixTimeYear,
-          eraLabel: pin.eraLabel,
-          wikiPageTitle: pin.wikiPageTitle,
-          photos: pin.photos,
-          icon: pin.icon,
+          content: sp.content,
+          contentFormat: sp.contentFormat,
+          category: sp.category,
+          importance: (sp as any).importance,
+          authorName: (sp as any).authorName,
+          era: (sp as any).era,
+          year: (sp as any).year,
         },
       });
     }
 
-    for (const label of (features as any).mapLabels ?? []) {
+    for (const l of features.mapLabels ?? []) {
       list.push({
-        id: label.id,
+        id: l.id,
         type: "mapLabel",
-        name: label.text,
-        coordinates: label.coordinates as [number, number] | undefined,
+        name: l.text,
+        coordinates: l.coordinates as [number, number] | undefined,
         properties: {
-          labelType: label.labelType,
-          fontSize: label.fontSize,
-          color: label.color,
-          rotation: label.rotation,
-          letterSpacing: label.letterSpacing,
-          fontWeight: label.fontWeight,
-          opacity: label.opacity,
-          minZoom: label.minZoom,
-          maxZoom: label.maxZoom,
-          wikiPageTitle: label.wikiPageTitle,
+          labelType: l.labelType,
+          fontSize: l.fontSize,
+          color: l.color,
+          rotation: l.rotation,
+          letterSpacing: l.letterSpacing,
+          fontWeight: l.fontWeight,
+          opacity: l.opacity,
+          minZoom: l.minZoom,
+          maxZoom: l.maxZoom,
+          wikiPageTitle: l.wikiPageTitle,
         },
       });
     }
 
     for (const r of countryRoutes?.features ?? []) {
-      const props = r.properties ?? {};
+      const props = (r.properties as Record<string, any>) ?? {};
       list.push({
         id: props.id,
         type: "route",
@@ -2533,7 +2544,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           lengthKm: props.lengthKm,
           status: props.status,
           builtYear: props.builtYear,
-          capacity: props.capacity,
+          capacity: props.capacity as number,
           properties: props,
         },
       });
@@ -2633,6 +2644,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           letterSpacing: (feature.properties.letterSpacing as number) ?? 0,
           fontWeight: (feature.properties.fontWeight as string) ?? "normal",
           opacity: (feature.properties.opacity as number) ?? 1,
+          minZoom: (feature.properties.minZoom as number) ?? 2,
+          maxZoom: (feature.properties.maxZoom as number) ?? 18,
         });
       }
 
@@ -2708,7 +2721,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       const primary = selectedSubdivisions[0]!;
       if (!primary.geometry) return;
 
-      let currentGeom = primary.geometry;
+      let currentGeom: object | null = primary.geometry;
       const deletedFeatures: typeof selectedSubdivisions = [];
 
       for (let i = 1; i < selectedSubdivisions.length; i++) {
@@ -2793,7 +2806,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         await updateSubdivisionGeom.mutateAsync({
           countryId,
           id: primary.id,
-          geometry: currentGeom,
+          geometry: currentGeom as unknown as Record<string, unknown>,
         });
       } else {
         await deleteSubdivision.mutateAsync({
@@ -3017,7 +3030,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
             name: input.name as string,
             type: (input.type as string) ?? "province",
             level: (input.level as number) ?? 1,
-            geometry: input.geometry as object | undefined,
+            geometry: input.geometry as unknown as Record<string, unknown>,
             color: input.color as string | undefined,
             population: input.population as number | undefined,
             areaSqKm: input.areaSqKm as number | undefined,
@@ -3260,7 +3273,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       if (!sub || !sub.geometry) return;
 
       const subGeom = sub.geometry;
-      const bounds = bbox(subGeom);
+      const bounds = bbox(subGeom as any);
       const minLng = bounds[0]!;
       const minLat = bounds[1]!;
       const maxLng = bounds[2]!;
@@ -3273,19 +3286,21 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         const lng = minLng + Math.random() * (maxLng - minLng);
         const lat = minLat + Math.random() * (maxLat - minLat);
         const pt = point([lng, lat]);
-        if (booleanPointInPolygon(pt, subGeom as any)) {
-          points.push([lng, lat]);
+        try {
+          if (booleanPointInPolygon(pt, subGeom as any)) {
+            points.push([lng, lat]);
+          }
+        } catch {
+          // Ignore polygon error
         }
       }
 
       for (let i = 0; i < points.length; i++) {
-        const coords = points[i]!;
-        const cityName = `${namePrefix} ${i + 1}`;
         await createCity.mutateAsync({
           countryId,
-          name: cityName,
+          name: `${namePrefix} ${i + 1}`,
           type: cityType,
-          coordinates: coords,
+          coordinates: points[i]!,
           subdivisionId,
         });
       }
@@ -3296,17 +3311,16 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [countryId, allFeatures, createCity, invalidateAllMapData, debouncedRefetch]
   );
 
-  // ── City Snapping ──
+  // ── Snap City to Border / Coastline ──
   const snapCityToSubdivisionBorder = useCallback(
     async (cityId: string) => {
       if (!countryId) return;
       const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
       if (!city || !city.coordinates) return;
 
-      const subId = city.properties.subdivisionId as string | undefined;
-      if (!subId) return;
-
-      const sub = allFeatures.find((f) => f.id === subId && f.type === "subdivision");
+      const sub = allFeatures.find(
+        (f) => f.id === city.properties.subdivisionId && f.type === "subdivision"
+      );
       if (!sub || !sub.geometry) return;
 
       const nearestCoords = getNearestPointOnGeometryBoundary(city.coordinates, sub.geometry);
@@ -3317,7 +3331,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
         name: city.name,
         type: city.properties.cityType as string,
         coordinates: nearestCoords,
-        subdivisionId: subId,
+        subdivisionId: city.properties.subdivisionId as string | undefined,
       });
 
       invalidateAllMapData();
@@ -3332,8 +3346,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       const city = allFeatures.find((f) => f.id === cityId && f.type === "city");
       if (!city || !city.coordinates) return;
 
-      let nearestCoords = city.coordinates;
       let minDistance = Infinity;
+      let nearestCoords: [number, number] = city.coordinates;
 
       if (countryGeo?.geometry) {
         const pt = getNearestPointOnGeometryBoundary(city.coordinates, countryGeo.geometry);
@@ -3346,7 +3360,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
       if (worldMapLayers) {
         for (const layer of worldMapLayers) {
-          if (layer.type === "water" || layer.type === "lakes" || layer.type === "rivers") {
+          if ((layer.type as string) === "water" || layer.type === "lakes" || layer.type === "rivers") {
             const data = layer.data as any;
             if (data?.features) {
               for (const feat of data.features) {
@@ -3476,7 +3490,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           const cleanedMerged = cleanPolygonGeometry(merged.geometry);
           if (cleanedMerged) {
             unionFeature = {
-              ...merged,
+              ...(merged as any),
               geometry: cleanedMerged,
             };
           }
@@ -3525,7 +3539,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       const subGeom = selectedFeature.geometry;
       if (!subGeom) return;
 
-      const feat = {
+      const feat: any = {
         type: "Feature" as const,
         geometry: subGeom,
         properties: {},
@@ -3538,7 +3552,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           const result = simplify(feat, { tolerance: value, highQuality: false });
           newGeom = result?.geometry;
         } else if (type === "smooth") {
-          const result = bezierSpline(feat, { resolution: 10000, sharpAngle: 120 });
+          const result = bezierSpline(feat, { resolution: 10000, sharpness: 0.85 });
           newGeom = result?.geometry;
         } else if (type === "rotate") {
           const result = transformRotate(feat, value);
@@ -3583,6 +3597,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // ── Empty subdivisions / Auto-centroid state & detection ──
   const [emptyRegionsFeatures, setEmptyRegionsFeatures] = useState<any>(null);
+  const [showEmptyRegions, setShowEmptyRegions] = useState(false);
 
   useEffect(() => {
     if (!showGaps || !features?.subdivisions) {
@@ -3598,7 +3613,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
       const hasCity = cities.some((city) => {
         if (!city.coordinates) return false;
-        const pt = point(city.coordinates);
+        const pt = point(city.coordinates as [number, number]);
         try {
           return booleanPointInPolygon(pt, sub.geometry as any);
         } catch {
@@ -3628,7 +3643,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
       if (!sub.geometry) return false;
       const hasCity = cities.some((city) => {
         if (!city.coordinates) return false;
-        const pt = point(city.coordinates);
+        const pt = point(city.coordinates as [number, number]);
         try {
           return booleanPointInPolygon(pt, sub.geometry as any);
         } catch {
@@ -3873,7 +3888,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
           }
         } else if (feature.geometry) {
           try {
-            if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+            if ((feature.geometry as any).type === "Polygon" || (feature.geometry as any).type === "MultiPolygon") {
               if (booleanIntersects(selectionFeature, feature.geometry as any)) {
                 hits.add(feature.id);
               }
@@ -4179,6 +4194,8 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
     // Empty regions
     emptyRegionsFeatures,
+    showEmptyRegions,
+    setShowEmptyRegions,
     createCentroidCities,
 
     // Subdivision geometry split/merge/transforms

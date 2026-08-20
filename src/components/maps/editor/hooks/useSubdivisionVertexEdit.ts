@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position } from "geojson";
@@ -23,7 +21,12 @@ import {
   snapGeometryToBorder,
 } from "~/lib/maps/province-importer/alignment";
 import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
-import { buildTopologyIndex, cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
+import {
+  buildTopologyIndex,
+  cascadeMoveVertex,
+  vkey,
+  type TopologyIndex,
+} from "~/lib/maps/topology-engine";
 import {
   getGeoJSONSource,
   updateSnapGuide,
@@ -78,8 +81,8 @@ export function useSubdivisionVertexEdit({
   const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
 
   // Topology engine: spatial-hash index + neighbor geometry cache for cascade editing
-  const topologyIndexRef = useRef(null);
-  const neighborGeometriesRef = useRef(new Map());
+  const topologyIndexRef = useRef<TopologyIndex | null>(null);
+  const neighborGeometriesRef = useRef<Map<string, Polygon | MultiPolygon>>(new Map());
 
   const throttledUpdateRef = useRef<any>(null);
   const lastUpdateRef = useRef(0);
@@ -350,12 +353,14 @@ export function useSubdivisionVertexEdit({
       };
 
       // Build topology index from all subdivision features for cascade editing
-      const subdivisionFeatures = [];
+      const subdivisionFeatures: { id: string; geometry: Polygon | MultiPolygon }[] = [];
       for (const feat of featuresRef.current) {
         if (feat.type === "subdivision" && feat.geometry) {
           subdivisionFeatures.push({
             id: feat.id,
-            geometry: feat.id === selectedFeature.id ? geo : feat.geometry,
+            geometry: (feat.id === selectedFeature.id ? geo : feat.geometry) as
+              | Polygon
+              | MultiPolygon,
           });
         }
       }
@@ -490,11 +495,11 @@ export function useSubdivisionVertexEdit({
             neighborGeometriesRef.current.set(fid, updatedGeom);
             // Update the neighbor's visual on the map subdivisions source
             try {
-              const src = map?.getSource("editor-subdivisions");
+              const src = map?.getSource("editor-subdivisions") as any;
               if (src && typeof src.serialize === "function") {
                 const data = src._data || src._options?.data;
                 if (data?.features) {
-                  const idx = data.features.findIndex((f) => f.properties?.id === fid);
+                  const idx = data.features.findIndex((f: any) => f.properties?.id === fid);
                   if (idx >= 0) {
                     data.features[idx].geometry = updatedGeom;
                     src.setData(data);

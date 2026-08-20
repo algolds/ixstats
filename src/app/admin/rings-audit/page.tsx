@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useMemo } from "react";
@@ -119,10 +117,11 @@ function CountryRingsCard({
                 ) : (
                   <div className="grid grid-cols-4 gap-2">
                     {RING_META.map((ring) => {
-                      const valA = activityData?.[ring.key as keyof typeof activityData] ?? 0;
-                      const valD =
-                        (dashboardData as any)?.[ring.key as keyof typeof dashboardData] ?? 0;
-                      const currentVal = data?.[ring.key as keyof typeof data] ?? 0;
+                      const valA = Number(activityData?.[ring.key as keyof typeof activityData] ?? 0);
+                      const valD = Number(
+                        (dashboardData as any)?.[ring.key as keyof typeof dashboardData] ?? 0
+                      );
+                      const currentVal = Number(data?.[ring.key as keyof typeof data] ?? 0);
                       const diff =
                         ep.id === "getActivityRingsData" ? null : Math.abs(valA - currentVal);
 
@@ -162,8 +161,8 @@ function CountryRingsCard({
         <div className="border-border/40 bg-muted/10 border-t px-4 py-2">
           <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-[9px]">
             {RING_META.map((ring) => {
-              const valA = activityData[ring.key as keyof typeof activityData] ?? 0;
-              const valD = (dashboardData as any)?.[ring.key] ?? 0;
+              const valA = Number(activityData[ring.key as keyof typeof activityData] ?? 0);
+              const valD = Number((dashboardData as any)?.[ring.key] ?? 0);
               const diff = Math.abs(valA - valD);
               const match = diff < 1;
               return (

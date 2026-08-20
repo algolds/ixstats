@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/components/wiki-os/reader/LinkPreview.tsx
 // Hover preview popup for wiki links in articles.
 // Shows article intro on hover, handles redirects, uses client-side navigation.
@@ -29,8 +27,8 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
     y: number;
   } | null>(null);
 
-  const hideTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const showTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const showTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const clearTimers = useCallback(() => {
     if (hideTimeout.current) clearTimeout(hideTimeout.current);

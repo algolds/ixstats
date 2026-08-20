@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -33,7 +31,7 @@ interface ChamberItem {
   name: string;
   seats: number;
   electoralSystem: "proportional" | "fptp" | "mixed";
-  selectionMethod: SelectionMethod;
+  selectionMethod?: SelectionMethod;
 }
 
 function parseChambersClient(
@@ -45,14 +43,13 @@ function parseChambersClient(
   if (chamberType && chamberType.includes("|")) {
     const [, serialized] = chamberType.split("|");
     if (serialized) {
-      const parts = serialized.split(";").filter(Boolean);
-      return parts.map((part) => {
+      return serialized.split(";").filter(Boolean).map((part) => {
         const [name, seatsStr, system, selection] = part.split(":");
         return {
           name: name || "Chamber",
           seats: Number(seatsStr) || 100,
           electoralSystem: (system || globalElectoralSystem || "proportional") as any,
-          selectionMethod: (selection || "elected") as SelectionMethod,
+          selectionMethod: (selection as SelectionMethod) || "elected",
         };
       });
     }
@@ -63,13 +60,23 @@ function parseChambersClient(
     const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
     const houseSeats = Math.max(10, totalSeats - senateSeats);
     return [
-      { name: "House of Representatives", seats: houseSeats, electoralSystem: system },
-      { name: "Senate", seats: senateSeats, electoralSystem: system },
+      {
+        name: "House of Representatives",
+        seats: houseSeats,
+        electoralSystem: system,
+        selectionMethod: "elected",
+      },
+      { name: "Senate", seats: senateSeats, electoralSystem: system, selectionMethod: "elected" },
     ];
   }
 
   return [
-    { name: legislatureName || "National Assembly", seats: totalSeats, electoralSystem: system },
+    {
+      name: legislatureName || "National Assembly",
+      seats: totalSeats,
+      electoralSystem: system,
+      selectionMethod: "elected",
+    },
   ];
 }
 
@@ -196,10 +203,10 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   }
 
   function updateChamber(index: number, field: keyof ChamberItem, value: any) {
-    const updated = chambers.map((c, idx) => {
+    const updated: ChamberItem[] = chambers.map((c, idx) => {
       if (idx === index) {
         if (field === "seats") {
-          const val = value === "" ? "" : Number(value);
+          const val = Number(value) || 0;
           return { ...c, [field]: val };
         }
         return { ...c, [field]: value };
@@ -314,7 +321,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    totalSeats: e.target.value === "" ? "" : Number(e.target.value),
+                    totalSeats: Number(e.target.value) || 0,
                   })
                 }
                 onBlur={(e) => {
@@ -357,7 +364,9 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 min={1}
                 max={10}
                 value={formData.termLength}
-                onChange={(e) => setFormData({ ...formData, termLength: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, termLength: Number(e.target.value) || 1 })
+                }
               />
             </div>
             <div>

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { PaintBucket } from "lucide-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React from "react";
@@ -262,7 +260,7 @@ export function GlassCanvasComposer({
                 setContent(htmlContent);
                 setPlainText(rawText);
               }}
-              placeholder={resolvedPlaceholder}
+              placeholder={resolvedPlaceholder ?? undefined}
               italicPlaceholder={resolvedPlaceholder !== placeholder}
               onFocus={() => setIsEditorFocused(true)}
               onBlur={() => setIsEditorFocused(false)}

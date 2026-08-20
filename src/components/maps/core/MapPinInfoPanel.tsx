@@ -204,7 +204,12 @@ export default function MapPinInfoPanel({
   return (
     <>
       {/* Desktop: top-right card */}
-      <div className="border-border bg-card/95 absolute top-3 right-3 z-20 hidden w-72 rounded-xl border shadow-lg backdrop-blur-sm sm:block">
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        className="border-border bg-card/95 absolute top-3 right-3 z-20 hidden w-72 rounded-xl border shadow-lg backdrop-blur-sm sm:block"
+      >
         {panelContent}
       </div>
 

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useMemo } from "react";
@@ -486,7 +484,7 @@ export function LaborDetailsModal({
 
     const labor = economyData?.labor;
     const employmentRate = labor?.employmentRate || 0;
-    const globalAvgEmployment = globalStats?.averageGdpPerCapita ? 93 : 90;
+    const globalAvgEmployment = globalStats?.avgGdpPerCapita ? 93 : 90;
 
     const comparisonData = [
       {
@@ -525,7 +523,7 @@ export function LaborDetailsModal({
                   <BarChart data={comparisonData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.03)" />
                     <XAxis dataKey="name" stroke="rgba(255, 255, 255, 0.3)" tickLine={false} />
-                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} suffix="%" />
+                    <YAxis stroke="rgba(255, 255, 255, 0.3)" tickLine={false} unit="%" />
                     <Tooltip
                       contentStyle={{
                         background: "rgba(18, 20, 24, 0.8)",

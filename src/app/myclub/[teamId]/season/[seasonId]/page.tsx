@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -234,8 +232,8 @@ export default function MyClubSeasonDetailPage() {
   ) as Record<string, number> | undefined;
 
   const standingIndex = season.standings
-    ? (season.standings as unknown[]).findIndex(
-        (s: Record<string, unknown>) => (s.team as Record<string, string>)?.id === teamId
+    ? (season.standings as Record<string, any>[]).findIndex(
+        (s) => (s.team as Record<string, string>)?.id === teamId
       )
     : -1;
   const finishPosition = standingIndex >= 0 ? standingIndex + 1 : null;
@@ -443,10 +441,9 @@ export default function MyClubSeasonDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(season.standings as unknown[]).map(
-                      (s: Record<string, unknown>, i: number) => (
-                        <TableRow
-                          key={(s.team as Record<string, string>).id}
+                    {(season.standings as Record<string, any>[]).map((s, i: number) => (
+                      <TableRow
+                        key={(s.team as Record<string, string>).id}
                           className={cn(
                             (s.team as Record<string, string>).id === teamId && "bg-muted/50"
                           )}

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/admin/storyteller/_components/StorytellerHistory.tsx
 // Audit log of admin storyteller actions
 "use client";
@@ -62,22 +60,16 @@ export function StorytellerHistory() {
 
       <ScrollArea className="h-[500px]">
         <div className="space-y-2">
-          {logs.map(
-            (log: {
-              id: string;
-              action: string;
-              adminName: string;
-              details: string | null;
-              timestamp: Date;
-            }) => {
-              const colorClass =
-                ACTION_COLORS[log.action] ?? "border-gray-500/30 bg-gray-500/10 text-gray-600";
-              let details: Record<string, unknown> | null = null;
-              try {
-                details = log.details ? JSON.parse(log.details) : null;
-              } catch {
-                // ignore parse errors
-              }
+          {logs.map((log: any) => {
+            const colorClass =
+              ACTION_COLORS[log.action] ?? "border-gray-500/30 bg-gray-500/10 text-gray-600";
+            let details: Record<string, unknown> | null = null;
+            try {
+              const raw = log.details ?? log.changes;
+              details = raw ? JSON.parse(raw) : null;
+            } catch {
+              // ignore parse errors
+            }
 
               return (
                 <div

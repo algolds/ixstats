@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
@@ -10,6 +8,7 @@ import { api } from "~/trpc/react";
 interface CategoryGroup {
   label: string;
   categories: string[];
+  counts?: Record<string, number>;
 }
 
 const CATEGORY_GROUPS: CategoryGroup[] = [

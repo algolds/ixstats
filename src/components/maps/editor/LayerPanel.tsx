@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
@@ -128,11 +126,14 @@ export const LayerPanel = React.memo(function LayerPanel({
   }, [features]);
 
   const renderFeatureRow = (feature: any) => {
-    const Icon = TYPE_ICONS[feature.type] || MapPin;
-    const colorClass = TYPE_COLORS[feature.type] || "text-neutral-500";
+    const featureType = feature.type as keyof typeof TYPE_ICONS;
+    const Icon = (featureType in TYPE_ICONS ? TYPE_ICONS[featureType] : null) || MapPin;
+    const colorClass =
+      (featureType in TYPE_COLORS ? TYPE_COLORS[featureType as keyof typeof TYPE_COLORS] : null) ||
+      "text-neutral-500";
     const isSelected = selectedFeature?.id === feature.id;
     const isMultiSelected = selectedIds?.has(feature.id) ?? false;
-    const isCapital = feature.properties?.isNationalCapital;
+    const isCapital = Boolean(feature.properties?.isNationalCapital);
     const wikiTitle = feature.properties?.wikiPageTitle;
 
     const row = (

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useMemo } from "react";
@@ -39,9 +37,10 @@ export function DevCountryViewSelect() {
     { enabled: canUseDevView }
   );
 
-  const countries = useMemo(() => {
-    if (!countriesData?.items) return [];
-    return countriesData.items.map((c) => ({
+  const countries = useMemo<{ id: string; name: string }[]>(() => {
+    if (!countriesData) return [];
+    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    return list.map((c: any) => ({
       id: c.id,
       name: c.name,
     }));
@@ -65,7 +64,7 @@ export function DevCountryViewSelect() {
       clearViewCountry();
       return;
     }
-    const country = countries.find((c) => c.id === countryId);
+    const country = countries.find((c: { id: string; name: string }) => c.id === countryId);
     setViewCountry(countryId, country?.name);
   };
 
@@ -106,7 +105,7 @@ export function DevCountryViewSelect() {
             </span>
           </SelectItem>
           <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
-          {countries.map((country) => (
+          {countries.map((country: { id: string; name: string }) => (
             <SelectItem key={country.id} value={country.id} className="text-xs">
               {country.name}
               {country.id === actualCountryId && (

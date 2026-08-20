@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 /**
@@ -64,7 +62,7 @@ export function CoordinatesMapEmbed({
   );
 
   const worldPolitical = useMemo(() => {
-    return (worldMap as Record<string, unknown>)?.political;
+    return (worldMap as any)?.political as any;
   }, [worldMap]);
 
   // Viewport detection
@@ -97,7 +95,7 @@ export function CoordinatesMapEmbed({
       mapRef.current = null;
     }
 
-    const baseStyle = buildBaseStyle();
+    const baseStyle: any = buildBaseStyle();
     // Force Mercator projection for embeds
     delete baseStyle.projection;
 
@@ -198,6 +196,7 @@ export function CoordinatesMapEmbed({
         }
       };
     }
+    return undefined;
   }, [initMap, isInViewport]);
 
   // Resize map when container dimensions change

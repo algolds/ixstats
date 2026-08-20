@@ -63,6 +63,9 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
 
   const desktopContent = (
     <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
       className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >

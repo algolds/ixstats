@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } from "geojson";
@@ -145,7 +143,9 @@ export function useMapLayers({
                         1.8,
                         9,
                         3.2,
-                      ] as [string, ...unknown[]])
+                        12,
+                        6.0,
+                      ] as any)
                     : ([
                         "interpolate",
                         ["linear"],
@@ -267,7 +267,7 @@ export function useMapLayers({
     const fillId = "editor-country-fill";
     const strokeId = "editor-country-stroke";
 
-    const geojson = {
+    const geojson: any = {
       type: "FeatureCollection" as const,
       features: [
         {

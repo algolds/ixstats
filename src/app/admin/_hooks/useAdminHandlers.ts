@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 // src/app/admin/_hooks/useAdminHandlers.ts
 // Handler functions for admin panel actions
 
@@ -68,7 +66,7 @@ export function useAdminHandlers({
   const handleForceCalculation = useCallback(async () => {
     setActionState((prev) => ({ ...prev, calculationPending: true }));
     try {
-      await forceCalculationMutation.mutateAsync({});
+      await forceCalculationMutation.mutateAsync();
       await refetchStatus();
     } catch (error) {
       console.error("Failed to force calculation:", error);

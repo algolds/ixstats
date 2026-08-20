@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
 /**
  * useCountryGovernment - Shared hook for country government data queries
  *
@@ -88,7 +86,7 @@ export function useCountryGovernment({
 
   // Extract data with safe defaults
   const departments = useMemo(() => {
-    return (structureQuery.data?.departments as GovernmentDepartment[]) || [];
+    return (structureQuery.data?.departments as unknown as GovernmentDepartment[]) || [];
   }, [structureQuery.data?.departments]);
 
   const budgetAllocations = useMemo(() => {
@@ -101,7 +99,10 @@ export function useCountryGovernment({
 
   // Computed values
   const totalBudget = useMemo(() => {
-    return budgetAllocations.reduce((sum, alloc) => sum + (alloc.amount || 0), 0);
+    return budgetAllocations.reduce(
+      (sum, alloc) => sum + ((alloc as any).allocatedAmount ?? (alloc as any).amount ?? 0),
+      0
+    );
   }, [budgetAllocations]);
 
   const departmentCount = departments.length;

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
@@ -458,13 +456,13 @@ function MessagesRouterInner() {
         participantId === currentUserId ? [currentUserId] : [currentUserId, participantId];
 
       // Source based on active folder
-      const source = activeFolder === "diplomatic" ? "diplomatic" : "thinkshare";
+      const source = (activeFolder as string) === "diplomatic" ? "diplomatic" : "thinkshare";
 
       try {
         const result = await createConversation.mutateAsync({
           participantIds,
           source: source as any,
-          conversationType: activeFolder === "diplomatic" ? "diplomatic" : undefined,
+          conversationType: (activeFolder as string) === "diplomatic" ? "diplomatic" : undefined,
         });
         setSelectedConversationId(result.id);
         setShowNewConversation(false);
@@ -613,7 +611,7 @@ function MessagesRouterInner() {
               conversation={selectedConversation}
               currentUserId={currentUserId}
               activeFolder={activeFolder}
-              clientState={clientState}
+              clientState={clientState as any}
               sendTypingIndicator={sendTypingIndicator}
               isSidebarCollapsed={isSidebarCollapsed}
               onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}

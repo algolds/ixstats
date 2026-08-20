@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import React, { useMemo } from "react";
@@ -578,7 +576,7 @@ export function PopulationDetailsModal({
                         borderColor: "rgba(255, 255, 255, 0.1)",
                         borderRadius: "8px",
                       }}
-                      formatter={(value: any, name: string) => {
+                      formatter={(value: any, name: any) => {
                         if (name === "population") {
                           return [formatPopulation(value), "Population"];
                         }
@@ -625,7 +623,7 @@ export function PopulationDetailsModal({
               </span>
               <span className="text-xl font-bold text-cyan-400">
                 {chartData.length > 0
-                  ? formatPopulation(Math.max(...chartData.map((d) => d.population)))
+                  ? formatPopulation(Math.max(...chartData.map((d: any) => d.population)))
                   : "N/A"}
               </span>
             </div>

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 "use client";
 
 import { useState } from "react";
@@ -191,7 +189,7 @@ export function AllianceDashboard({
           <p className="text-muted-foreground text-xs">Combined GDP</p>
         </div>
         <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation, 0)}</p>
+          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation)}</p>
           <p className="text-muted-foreground text-xs">Total Pop.</p>
         </div>
       </div>
@@ -232,7 +230,7 @@ export function AllianceDashboard({
         </span>
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" />
-          {alliance._count?.documents ?? 0} documents
+          {(alliance as any)._count?.documents ?? 0} documents
         </span>
       </div>
     </div>

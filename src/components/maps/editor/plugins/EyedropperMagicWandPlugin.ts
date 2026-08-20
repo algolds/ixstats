@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Pipette, Wand2 } from "lucide-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
