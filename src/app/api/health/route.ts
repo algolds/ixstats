@@ -10,7 +10,7 @@ export async function GET() {
 
   // Database check
   try {
-    await db.$queryRawUnsafe("SELECT 1");
+    await db.$queryRaw`SELECT 1`;
     checks.db = "ok";
   } catch (err) {
     checks.db = "error";

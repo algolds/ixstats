@@ -37,7 +37,10 @@ const TRUSTED_DOMAINS = [
 function isTrustedDomain(url: string): boolean {
   try {
     const urlObj = new URL(url);
-    return TRUSTED_DOMAINS.some((domain) => urlObj.hostname.includes(domain));
+    if (!["http:", "https:"].includes(urlObj.protocol)) {
+      return false;
+    }
+    return TRUSTED_DOMAINS.some((domain) => urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain));
   } catch {
     return false;
   }

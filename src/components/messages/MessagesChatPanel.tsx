@@ -12,6 +12,7 @@ import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thin
 import type { MessageFolder } from "~/types/messages";
 import { Crown, Shield, TrendingUp, Newspaper, Trash2, Loader2, X } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
 import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
 
@@ -223,7 +224,7 @@ function NotificationCard({
         <div
           className="text-xs leading-relaxed text-slate-300 [&>a]:text-blue-400 [&>a]:underline [&>a]:hover:text-blue-300 [&>p]:mb-0"
           dangerouslySetInnerHTML={{
-            __html: notification.description || notification.message || "",
+            __html: sanitizeUserContent(notification.description || notification.message || ""),
           }}
         />
       </div>

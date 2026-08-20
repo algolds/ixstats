@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
 import type { MessagesSettings } from "./MessagesFolderNav";
 
@@ -215,7 +216,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               ...(bubbleWidth ? { width: bubbleWidth } : {}),
             }}
           >
-            <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: highlightedContent }} />
+            <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: sanitizeUserContent(highlightedContent) }} />
 
             <div
               className={cn(
