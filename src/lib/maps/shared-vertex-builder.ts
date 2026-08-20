@@ -10,12 +10,9 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
+import { toVertexKey, type TopologyRef, type VertexKey } from "./topology-engine";
 
-export interface FeatureVertexRef {
-  featureId: string;
-  ringIndex: number;
-  vertexIndex: number;
-}
+export type FeatureVertexRef = TopologyRef;
 
 export interface SharedVertexData {
   lng: number;
@@ -100,114 +97,86 @@ export function buildSharedVertexIndex(
   const sharedVertices: SharedVertexData[] = [];
 
   for (const feature of features) {
-    const coords = featureCoords.get(feature.featureId)!;
-    for (const [refKey, coord] of coords) {
-      const globalKey = `${feature.featureId}:${refKey}`;
-      if (processed.has(globalKey)) continue;
+    const coordMap = featureCoords.get(feature.featureId)!;
+    const rings = getAllRings(feature.geometry);
 
-      const [riStr, viStr] = refKey.split("-");
-      const group: FeatureVertexRef[] = [
-        {
-          featureId: feature.featureId,
-          ringIndex: parseInt(riStr!, 10),
-          vertexIndex: parseInt(viStr!, 10),
-        },
-      ];
-      processed.add(globalKey);
+    for (let ri = 0; ri < rings.length; ri++) {
+      const ring = rings[ri]!;
+      const len =
+        ring.length > 1 &&
+        ring[0]![0] === ring[ring.length - 1]![0] &&
+        ring[0]![1] === ring[ring.length - 1]![1]
+          ? ring.length - 1
+          : ring.length;
 
-      // Search all other features for matching vertices
-      for (const otherFeature of features) {
-        if (otherFeature.featureId === feature.featureId) continue;
-        const otherCoords = featureCoords.get(otherFeature.featureId)!;
+      for (let vi = 0; vi < len; vi++) {
+        const refKey = `${feature.featureId}:${ri}:${vi}`;
+        if (processed.has(refKey)) continue;
 
-        for (const [otherRefKey, otherCoord] of otherCoords) {
-          const otherGlobalKey = `${otherFeature.featureId}:${otherRefKey}`;
-          if (processed.has(otherGlobalKey)) continue;
+        const coord = coordMap.get(`${ri}-${vi}`)!;
+        const matchedRefs: FeatureVertexRef[] = [
+          { featureId: feature.featureId, ringIndex: ri, vertexIndex: vi },
+        ];
+        processed.add(refKey);
 
-          const dist = Math.sqrt(
-            Math.pow(coord[0] - otherCoord[0], 2) + Math.pow(coord[1] - otherCoord[1], 2)
-          );
+        // Search neighboring grid cells
+        const gx = Math.floor(coord[0] / gridSize);
+        const gy = Math.floor(coord[1] / gridSize);
 
-          if (dist <= tolerance) {
-            const [oRi, oVi] = otherRefKey.split("-");
-            group.push({
-              featureId: otherFeature.featureId,
-              ringIndex: parseInt(oRi!, 10),
-              vertexIndex: parseInt(oVi!, 10),
-            });
-            processed.add(otherGlobalKey);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const neighborKey = `${gx + dx},${gy + dy}`;
+            const candidates = grid.get(neighborKey) || [];
+
+            for (const cand of candidates) {
+              if (cand.featureId === feature.featureId) continue;
+              const candKey = `${cand.featureId}:${cand.ringIndex}:${cand.vertexIndex}`;
+              if (processed.has(candKey)) continue;
+
+              const candCoords = featureCoords.get(cand.featureId);
+              if (!candCoords) continue;
+              const candCoord = candCoords.get(
+                `${cand.ringIndex}-${cand.vertexIndex}`
+              );
+              if (!candCoord) continue;
+
+              const dLng = coord[0] - candCoord[0];
+              const dLat = coord[1] - candCoord[1];
+              const dist = Math.sqrt(dLng * dLng + dLat * dLat);
+
+              if (dist <= tolerance) {
+                matchedRefs.push(cand);
+                processed.add(candKey);
+              }
+            }
           }
         }
-      }
 
-      // Only record if shared by 2+ features
-      if (group.length >= 2) {
-        // Use the first vertex's coordinate as the canonical position
-        sharedVertices.push({
-          lng: coord[0],
-          lat: coord[1],
-          featureRefs: group,
-        });
+        // Only save if shared by 2+ different features
+        const uniqueFeatures = new Set(matchedRefs.map((r) => r.featureId));
+        if (uniqueFeatures.size >= 2) {
+          // Average the coordinates of matched vertices
+          let avgLng = 0;
+          let avgLat = 0;
+          for (const ref of matchedRefs) {
+            const c = featureCoords
+              .get(ref.featureId)!
+              .get(`${ref.ringIndex}-${ref.vertexIndex}`)!;
+            avgLng += c[0];
+            avgLat += c[1];
+          }
+          avgLng /= matchedRefs.length;
+          avgLat /= matchedRefs.length;
+
+          sharedVertices.push({
+            lng: Math.round(avgLng * 100000) / 100000,
+            lat: Math.round(avgLat * 100000) / 100000,
+            featureRefs: matchedRefs,
+          });
+        }
       }
     }
   }
 
   return sharedVertices;
-}
-
-/**
- * Move a shared vertex, returning updated geometries for ALL affected features.
- */
-export function moveSharedVertex(
-  sharedVertex: SharedVertexData,
-  to: Position,
-  featureGeometries: Map<string, Polygon | MultiPolygon>
-): Map<string, Polygon | MultiPolygon> {
-  const updated = new Map<string, Polygon | MultiPolygon>();
-
-  for (const ref of sharedVertex.featureRefs) {
-    const geometry = featureGeometries.get(ref.featureId);
-    if (!geometry) continue;
-
-    const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c] as Position)]);
-    const ring = rings[ref.ringIndex];
-    if (!ring) continue;
-
-    ring[ref.vertexIndex] = [...to];
-
-    // Update ring closure if needed
-    if (
-      ref.vertexIndex === 0 &&
-      ring.length > 1 &&
-      ring[0]![0] === ring[ring.length - 1]![0] &&
-      ring[0]![1] === ring[ring.length - 1]![1]
-    ) {
-      ring[ring.length - 1] = [...to];
-    }
-
-    // Rebuild geometry preserving type
-    if (geometry.type === "Polygon") {
-      updated.set(ref.featureId, { type: "Polygon", coordinates: rings });
-    } else {
-      // Reconstruct MultiPolygon
-      const result: Position[][][] = [];
-      let ringIdx = 0;
-      for (const polygon of geometry.coordinates) {
-        const polyRings: Position[][] = [];
-        for (let r = 0; r < polygon.length; r++) {
-          if (ringIdx < rings.length) {
-            polyRings.push(rings[ringIdx]!);
-            ringIdx++;
-          }
-        }
-        if (polyRings.length > 0) result.push(polyRings);
-      }
-      updated.set(ref.featureId, {
-        type: "MultiPolygon",
-        coordinates: result,
-      });
-    }
-  }
-
-  return updated;
 }

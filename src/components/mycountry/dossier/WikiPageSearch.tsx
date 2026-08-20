@@ -44,13 +44,13 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
       setShowResults(true);
 
       try {
-        const data = await utils.wiki.searchPages.fetch({
+        const data = await utils.wikios.searchPages.fetch({
           query,
           limit: 10,
           wiki: "ixwiki",
         });
 
-        setSearchResults(data.map((r) => ({ title: r.title, snippet: "" })));
+        setSearchResults(data.map((r: { title: string }) => ({ title: r.title, snippet: "" })));
       } catch (error) {
         console.error("[WikiPageSearch] Search error:", error);
         setSearchResults([]);

@@ -1,55 +1,50 @@
-# Social & Collaboration System
+# ThinkPages Social & Collaboration System
 
-**Last updated:** February 2026
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta) — ThinkPages v2  
+**Hierarchy:** Core Feature System (`THINKPAGES_VERSION = 2` in Version Registry). ThinkShare (messaging) is an integrated sub-system.
 
-**Hierarchy:** ThinkPages is the Core System. ThinkShare (messaging/DMs) and IxTwitter (Discord auto-poster) are sub-systems of ThinkPages.
+ThinkPages is the collaborative storytelling, social feed, and communication backbone of IxStates. It provides activity feeds, ThinkTank research groups, post authoring, polling, and the **ThinkShare** unified messaging platform.
 
-IxStates (IxStats) provides collaborative storytelling tools through ThinkPages, ThinkShare, activity feeds, and research hubs.
+---
 
-## Router Architecture (February 2026)
+## Architecture & Versioning
 
-ThinkPages uses `ThinkPagesRouter` (`src/components/thinkpages/ThinkPagesRouter.tsx`) with a sidebar layout:
-- `ThinkPagesSidebarNav` (`src/components/thinkpages/ThinkPagesSidebarNav.tsx`) – Section navigation
-- `ThinkPagesSidebarLayout` (`src/components/thinkpages/ThinkPagesSidebarLayout.tsx`) – Grid layout
-- `ThinkPagesHeader` / `ThinkPagesFooter` / `ThinkPagesIcon` – UI components
-- `ThinkPagesStatusWidget` – Status display widget
-- Sections: Feed, ThinkTanks, ThinkShare (messages — sub-system of ThinkPages)
-- Dynamically imports heavy components (ThinktankGroups, ThinkshareMessages)
-- Account management modals (AccountCreationModal, AccountSettingsModal)
+ThinkPages v2 introduces full component modularization (<700 lines/file), domain sub-component suites, and centralized caching primitives.
 
-## User Experience
-- `src/app/thinkpages` – Main ThinkPages exploration and content creation flows
-- `src/components/thinkpages` – Feed cards, editors, research timelines
-- `src/components/thinkshare` – Sharing widgets, reactions, threaded conversations
-- `LiveEventsFeed.tsx` – Real-time event ticker for think tanks and social updates
+### UI Surfaces
+- `src/app/thinkpages/page.tsx` – Main exploration feed and post creation stream
+- `src/app/messages/page.tsx` – ThinkShare unified messaging hub
+- `src/components/thinkpages/` – Feed cards, authoring composers, hashtag explorers, and reaction trays
+- `src/components/thinkshare/` – Threaded messaging, encryption indicators, and classification badges
+- `src/components/polls/` – Interactive national polling widgets
 
-## Backend Routers
-- `thinkpages.ts` – CRUD for pages, posts, comments, reactions, subscriptions
-- `activities.ts` – Aggregated global/user feeds, engagement metrics, comment APIs
-- `notifications.ts` – Social notifications and unread management
+### Backend Routers
+- `src/server/api/routers/thinkpages/` (`index.ts`, `feed.ts`, `posts.ts`, `comments.ts`, `reactions.ts`, `groups.ts`) – Core social CRUD
+- `src/server/api/routers/messages/` – ThinkShare messaging, conversations, and threads
+- `src/server/api/routers/activities/` (`index.ts`, `feed.ts`, `metrics.ts`) – Global activity log
+- `src/server/api/routers/polls/` – Polling creation, voting, and real-time result tallying
 
-## Data Models
-- `ThinkPage`, `ThinkPost`, `ThinkComment`, `ThinkReaction`, `Activity`, `ActivityEngagement`
-- Social metrics feed into achievements and leaderboards
+---
 
-## Integration Points
-- Collaboration hooks into achievements (e.g., milestone unlocks) and notifications for mentions or comments
-- ThinkPages surfaces appear inside MyCountry analytics for context-rich insights
+## ThinkShare Unified Messaging
 
-## Authoring & Moderation
-- Inline moderation controls via policy/quick action components
-- Activity feed endpoints support pagination, filters, and rate-limited posting
+All messaging across the platform (personal DMs, diplomatic exchanges, group chats) runs on the unified ThinkShare infrastructure:
+- **Classification Levels**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`
+- **Priority Tiers**: `LOW`, `NORMAL`, `HIGH`, `URGENT`, `CRITICAL`
+- **Security**: Digital signatures (`signature`), end-to-end encryption (`encryptedContent`), and audit logging.
 
-## Caching & Performance (May 2026)
+---
 
-ThinkPages feeds utilize the unified `globalCache` system ([advanced-cache-system.ts](file:///ixwiki/public/projects/ixstats/src/lib/advanced-cache-system.ts)) to scale feed retrieval under high concurrent traffic:
-- **Optimization**: The `getFeed` procedure uses the cache to serve feeds in **~1.41ms** (a **1,668x speedup** from the raw database query time of **~2,352ms**).
-- **Targeted Cache Eviction**: Creating a new post triggers a pattern-based cache invalidation: `globalCache.deleteByPattern("thinkpages_feed:*")`. This invalidates all cached feeds for ThinkPages, guaranteeing immediate visibility of the new post on the next request.
-- **Robustness**: If Redis is offline, the cache system transparently falls back to an in-memory cache, ensuring uninterrupted service.
+## Caching Performance (`globalCache`)
 
-## Documentation Requirements
-- Update `/help/social/*` whenever the content editor, sharing mechanics, or feed logic change
-- Ensure new social features include tests or audits in `tests/` or `scripts/audit`
+- **Feed Retrieval**: Served via `globalCache` in **~1.4ms** (compared to ~2,350ms raw DB query time).
+- **Targeted Cache Invalidation**: Creating a new post or reaction triggers pattern invalidation (`thinkpages_feed:*`), guaranteeing immediate visibility on subsequent queries.
 
-This guide should evolve as new collaboration mechanics, moderation tools, or integrations go live.
+---
 
+## Related Documentation
+
+- [Diplomacy System Guide](./diplomacy.md)
+- [Forum Integration](./forum.md)
+- [API Reference: ThinkPages & Messages](../reference/api-complete.md#thinkpages-router)

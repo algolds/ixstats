@@ -55,6 +55,15 @@ export const StashNoteMetadataSchema = z.object({
     .optional(),
 });
 
+export interface DefaultDictionaryPreset {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  culturalProfile?: string;
+  values: string[];
+}
+
 export interface GrammarProfileData {
   id?: string;
   userId?: string;

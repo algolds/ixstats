@@ -34,32 +34,23 @@ export interface ExportedLayers {
   icecaps: FeatureCollection;
 }
 
-import {
-  generateMarchingSquaresAltitudes,
-  generateMarchingSquaresBackground,
-  generateMarchingSquaresPolitical,
-} from "./marching-squares";
-
 /**
  * Export the PackedGraph to 7-layer GeoJSON matching IxWorldMap format.
  */
 export function exportToGeoJSON(graph: PackedGraph): Record<string, FeatureCollection> {
   const layers: Record<string, FeatureCollection> = {};
 
-  // Background: Marching Squares continuous landmass base polygon (zero voxels)
-  const msBackground = generateMarchingSquaresBackground(graph);
-  layers.background = msBackground.features.length > 0 ? msBackground : exportBackground(graph);
+  // Background: continuous landmass base polygon
+  layers.background = exportBackground(graph);
 
-  // Altitudes: Marching Squares continuous 9-zone isoline contours (zero voxels, 100% aligned with background)
-  const msAltitudes = generateMarchingSquaresAltitudes(graph);
-  layers.altitudes = msAltitudes.features.length > 0 ? msAltitudes : exportAltitudes(graph);
+  // Altitudes: continuous 9-zone isoline contours
+  layers.altitudes = exportAltitudes(graph);
 
-  // Climate: cells grouped by biome type (100% aligned and smoothed)
+  // Climate: cells grouped by biome type
   layers.climate = exportClimate(graph);
 
-  // Political: Marching Squares continuous country territory claim overlays (linked to heightfield, zero voxels)
-  const msPolitical = generateMarchingSquaresPolitical(graph);
-  layers.political = msPolitical.features.length > 0 ? msPolitical : exportPolitical(graph);
+  // Political: country territory claim overlays
+  layers.political = exportPolitical(graph);
 
   // Rivers: LineString per river
   layers.rivers = exportRivers(graph);

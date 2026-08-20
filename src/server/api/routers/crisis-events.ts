@@ -48,6 +48,50 @@ const CrisisEventSchema = z.object({
   timestamp: z.date().optional(),
 });
 
+export type CrisisSeverity = "low" | "medium" | "high" | "critical";
+
+export const CRISIS_CONFIG = {
+  rewards: {
+    low: 50,
+    medium: 100,
+    high: 250,
+    critical: 500,
+  },
+  thresholds: {
+    criticalCasualties: 10000,
+    highCasualties: 1000,
+    mediumCasualties: 100,
+    criticalEconomicImpactB: 100,
+    highEconomicImpactB: 25,
+    mediumEconomicImpactB: 5,
+  },
+} as const;
+
+export function calculateCrisisSeverity(
+  casualties: number = 0,
+  economicImpact: number = 0
+): CrisisSeverity {
+  if (
+    casualties >= CRISIS_CONFIG.thresholds.criticalCasualties ||
+    economicImpact >= CRISIS_CONFIG.thresholds.criticalEconomicImpactB
+  ) {
+    return "critical";
+  }
+  if (
+    casualties >= CRISIS_CONFIG.thresholds.highCasualties ||
+    economicImpact >= CRISIS_CONFIG.thresholds.highEconomicImpactB
+  ) {
+    return "high";
+  }
+  if (
+    casualties >= CRISIS_CONFIG.thresholds.mediumCasualties ||
+    economicImpact >= CRISIS_CONFIG.thresholds.mediumEconomicImpactB
+  ) {
+    return "medium";
+  }
+  return "low";
+}
+
 const CreateCrisisEventSchema = CrisisEventSchema;
 const UpdateCrisisEventSchema = CrisisEventSchema.partial().extend({
   id: z.string(),

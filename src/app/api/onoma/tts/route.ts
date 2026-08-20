@@ -34,10 +34,29 @@ export function splitIntoSentences(text: string): string[] {
   return sentences.map((s) => s.trim()).filter(Boolean);
 }
 
+/** Creates a minimal standard 44-byte silent WAV header */
+export function createSilentWavBuffer(): Buffer {
+  const buf = Buffer.alloc(44);
+  buf.write("RIFF", 0);
+  buf.writeUInt32LE(36, 4);
+  buf.write("WAVE", 8);
+  buf.write("fmt ", 12);
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22); // mono
+  buf.writeUInt32LE(24000, 24); // 24kHz
+  buf.writeUInt32LE(48000, 28); // byte rate
+  buf.writeUInt16LE(2, 32); // block align
+  buf.writeUInt16LE(16, 34); // bits per sample
+  buf.write("data", 36);
+  buf.writeUInt32LE(0, 40);
+  return buf;
+}
+
 /** Merges multiple WAV buffers by combining PCM data and updating the main RIFF header */
 export function mergeWavBuffers(buffers: Buffer[]): Buffer {
-  if (buffers.length === 0) return Buffer.alloc(0);
-  if (buffers.length === 1) return buffers[0];
+  if (buffers.length === 0) return createSilentWavBuffer();
+  if (buffers.length === 1) return buffers[0] ?? createSilentWavBuffer();
 
   let totalDataSize = 0;
   buffers.forEach((buf) => {

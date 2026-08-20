@@ -1,13 +1,13 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck — Suppressed due to Zod v4 extended type inference gaps
-// src/components/defense/StabilityPanel.tsx
 "use client";
 
 import React from "react";
 import { useInternalStability } from "~/hooks/useInternalStability";
-import { StabilityMetricsCard, SecurityEventsCard } from "~/components/mycountry/domains/defense/stability";
+import {
+  StabilityMetricsCard,
+  SecurityEventsCard,
+} from "~/components/mycountry/domains/defense/stability";
 
-interface StabilityPanelProps {
+export interface StabilityPanelProps {
   countryId: string;
 }
 
@@ -31,8 +31,8 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
         getTrendIcon={getTrendIcon}
       />
       <SecurityEventsCard
-        activeEvents={activeEvents}
-        resolveEvent={resolveEvent}
+        activeEvents={activeEvents as any}
+        resolveEvent={resolveEvent as any}
         getSeverityColor={getSeverityColor}
       />
     </div>

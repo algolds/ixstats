@@ -11,6 +11,8 @@ import { getAllRings } from "./border-editor";
 
 // ── Types ──
 
+export type VertexKey = string & { readonly __brand: "VertexKey" };
+
 export interface TopologyRef {
   featureId: string;
   ringIndex: number;
@@ -21,17 +23,20 @@ export interface TopologyRef {
  * Spatial hash: quantized coordinate key → list of feature/ring/vertex refs
  * that share that coordinate.
  */
-export type TopologyIndex = Map<string, TopologyRef[]>;
+export type TopologyIndex = Map<VertexKey, TopologyRef[]>;
 
-// ── Coordinate quantization ──
+// ── Coordinate quantization & Branded keys ──
 
 /**
- * Quantize a coordinate to 5 decimal places (~1.1 m precision) for
- * spatial-hash bucketing. Two coordinates that are within ~1.1 m of each
- * other will hash to the same key.
+ * Quantize a coordinate to given decimal places (~1.1 m precision at 5 decimals) for
+ * spatial-hash bucketing.
  */
-export function vkey(coord: Position): string {
-  return `${coord[0]!.toFixed(5)},${coord[1]!.toFixed(5)}`;
+export function toVertexKey(coord: Position, precision = 5): VertexKey {
+  return `${coord[0]!.toFixed(precision)},${coord[1]!.toFixed(precision)}` as VertexKey;
+}
+
+export function vkey(coord: Position): VertexKey {
+  return toVertexKey(coord, 5);
 }
 
 // ── Index building ──
@@ -76,6 +81,42 @@ export function buildTopologyIndex(
   return index;
 }
 
+// ── Snap assistance ──
+
+/**
+ * Snap a point to the nearest indexed vertex if within tolerance (degrees).
+ * Prevents micro-slivers and border tearing during province boundary alignment.
+ */
+export function snapToNearestVertex(
+  coord: Position,
+  index: TopologyIndex,
+  tolerance = 0.001
+): Position {
+  let closestKey: VertexKey | null = null;
+  let minDistanceSq = tolerance * tolerance;
+
+  for (const key of index.keys()) {
+    const [kLngStr, kLatStr] = (key as string).split(",");
+    const kLng = parseFloat(kLngStr ?? "0");
+    const kLat = parseFloat(kLatStr ?? "0");
+    const dLng = coord[0]! - kLng;
+    const dLat = coord[1]! - kLat;
+    const distSq = dLng * dLng + dLat * dLat;
+
+    if (distSq < minDistanceSq) {
+      minDistanceSq = distSq;
+      closestKey = key;
+    }
+  }
+
+  if (closestKey) {
+    const [lngStr, latStr] = (closestKey as string).split(",");
+    return [parseFloat(lngStr ?? "0"), parseFloat(latStr ?? "0")];
+  }
+
+  return coord;
+}
+
 // ── Cascade moves ──
 
 /**
@@ -89,10 +130,11 @@ export function buildTopologyIndex(
 export function cascadeMoveVertex(
   index: TopologyIndex,
   geometries: Map<string, Polygon | MultiPolygon>,
-  oldKey: string,
+  oldKey: VertexKey | string,
   newCoord: Position
 ): Map<string, Polygon | MultiPolygon> {
-  const refs = index.get(oldKey);
+  const vKey = oldKey as VertexKey;
+  const refs = index.get(vKey);
   const updated = new Map<string, Polygon | MultiPolygon>();
   if (!refs || refs.length === 0) return updated;
 
@@ -149,9 +191,9 @@ export function cascadeMoveVertex(
 
   // Update the index: migrate refs from oldKey to newKey
   const newKey = vkey(newCoord);
-  if (oldKey !== newKey) {
-    const movedRefs = index.get(oldKey) || [];
-    index.delete(oldKey);
+  if (vKey !== newKey) {
+    const movedRefs = index.get(vKey) || [];
+    index.delete(vKey);
     const existing = index.get(newKey) || [];
     index.set(newKey, [...existing, ...movedRefs]);
   }

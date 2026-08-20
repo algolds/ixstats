@@ -1,39 +1,67 @@
-# Defense System
+# Defense & Security System
 
-**Last updated:** June 2026
-**Hierarchy:** Part of MyCountry core system — grouped under Military & Security.
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta)  
+**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Military & Security domain group.
 
-Defense capabilities model national readiness, crisis response, military operations, and strategic defense initiative (SDI) modules.
+Defense capabilities model national readiness, crisis response, military operations, equipment procurement, and strategic defense initiative (SDI) postures.
 
-## UI Surfaces
-- `src/app/mycountry/defense/page.tsx` – Core defense page (readiness scores, crisis response panels)
-- `src/components/defense` – Modular widgets for threat levels, asset readiness, doctrine sliders
-- `src/components/defense/OperationsPanel.tsx` – Operations management panel
-- `src/components/defense/operations/` – ActiveOperations, DeploymentWizard, PvPConflictPanel
-- Compliance overlays in `MyCountryComplianceModal.tsx` highlight unresolved defense tasks
+---
 
-## Routers & Data
-- SDI router (`sdi.ts`) was dissolved; its functionality (module configs, readiness, upgrade paths) was migrated into the intelligence routers (`intelligence.ts`, `security.ts`)
-- `security.ts` – National security posture, threat detection hooks
-- `militaryEquipment.ts` – Equipment catalog management
-- `smallArmsEquipment.ts` – Infantry weapons and small arms
-- `crisis-events.ts` – Dynamic crisis event management
-- `intelligence.ts` – Security metrics integrated with broader intelligence dashboards
-- `notifications.ts` – Alerts for defense incidents and required actions
+## Architecture & Surface Integration
+
+Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense is integrated as a first-class domain mode:
+
+### UI Surfaces
+- `src/components/mycountry/DomainSurface.tsx` (Defense Domain) – Executive readiness view, operational posture, branch allocations, and threat level indicators
+- `src/components/mycountry/DrillSheets.tsx` – Slide-over defense inspection and policy tuning sheet
+- `src/components/defense/` – Defense modules, equipment inventory, readiness cards
+- `src/components/defense/OperationsPanel.tsx` – Military operations management
+- `src/components/defense/operations/` – `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
+
+### Backend Routers
+- `src/server/api/routers/security/` (`index.ts`, `overview.ts`, `threats.ts`) – National security posture, threat detection hooks, SDI defense module configs
+- `src/server/api/routers/militaryEquipment/` – Military hardware and equipment catalog (aircraft, naval, armor)
+- `src/server/api/routers/smallArmsEquipment/` – Infantry weapons and manufacturer catalogs
+- `src/server/api/routers/crisis-events.ts` – Dynamic crisis and security incident management
+- `src/server/api/routers/intelligence/` – Security feeds and threat assessment overlays
+
+---
 
 ## Data Models
-- `DefenseModule`, `DefenseReadiness`, `DefenseIncident`, `CrisisScenario`
-- Linked to countries via `countryId` for quick aggregation in dashboards
 
-## Workflow Summary
-1. Configure modules and posture via intelligence router mutations
-2. Monitor readiness and incidents in MyCountry defense tab
-3. When incidents occur, alerts route through notifications and compliance monitors
-4. Crisis playbooks (stored under `src/app/mycountry/defense`) provide decision support UI
+Defined in `prisma/schema/military.prisma` and `prisma/schema/core.prisma`:
+- `DefenseModule`: Installed defense infrastructure, radar, and SDI assets
+- `DefenseReadiness`: Readiness score (0–100), alert level, branch readiness splits
+- `DefenseIncident`: Active/historical border clashes, security breaches, and incursions
+- `MilitaryEquipment` / `SmallArmsEquipment`: Comprehensive equipment catalogs with stats, unit costs, and maintenance upkeep
 
-## Future Enhancements
-- Expand WebSocket updates to push live incident data in development mode
-- Add regression tests for defense readiness calculators and scores
-- Integrate defense metrics into achievements and leaderboards for cross-domain tracking
+---
 
-Ensure defense-related changes are reflected in `/help/defense/*` and link to relevant compliance tasks.
+## Core Workflows
+
+```mermaid
+graph TD
+    A[Threat / Incident Detected] --> B[Security Alert Triggered]
+    B --> C[Defense Domain on Command Surface]
+    C --> D{Player Action}
+    D -->|Adjust Readiness| E[Update Defense Posture]
+    D -->|Deploy Forces| F[Launch Operation Wizard]
+    D -->|Procure Hardware| G[Equipment Catalog Order]
+    E & F & G --> H[Logged to Country Event Spine]
+    H --> I[Narrator / ThinkPages News Broadcast]
+```
+
+1. **Posture & Readiness**: Players tune readiness posture across branches (Army, Navy, Air Force, Cyber, SDI), consuming budget allocation.
+2. **Operations & Deployments**: Players plan deployments or peacekeeping missions with automated success probability factoring equipment and readiness.
+3. **Equipment Management**: Procurement from domestic and international catalogs directly modifies military strength ratings on Nation Cards.
+4. **Crisis Response**: Security incidents trigger alerts in the Command Surface briefing rail, with decisions logged via the `CountryEventSpine`.
+
+---
+
+## Related Documentation
+
+- [MyCountry Command Suite](./mycountry.md)
+- [Intelligence System](./intelligence.md)
+- [Crisis Events Guide](./crisis-events.md)
+- [API Reference: Security & Military Routers](../reference/api-complete.md#security-router)

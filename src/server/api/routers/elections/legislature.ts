@@ -14,11 +14,18 @@ import { notificationAPI } from "~/lib/notifications/api";
 export type SelectionMethod =
   "elected" | "appointed" | "sortition" | "hereditary" | "ex-officio" | "corporatist";
 
+export type ElectoralSystem = "proportional" | "fptp" | "mixed";
+
 export interface ChamberConfig {
   name: string;
   seats: number;
-  electoralSystem: "proportional" | "fptp" | "mixed";
+  electoralSystem: ElectoralSystem;
   selectionMethod: SelectionMethod;
+}
+
+export function toElectoralSystem(val?: string): ElectoralSystem {
+  if (val === "fptp" || val === "mixed" || val === "proportional") return val;
+  return "proportional";
 }
 
 export function parseChambers(
@@ -36,7 +43,7 @@ export function parseChambers(
         return {
           name: name || "Chamber",
           seats: Number(seatsStr) || 100,
-          electoralSystem: (system || globalElectoralSystem || "proportional") as any,
+          electoralSystem: toElectoralSystem(system || globalElectoralSystem),
           selectionMethod: (selection || "elected") as SelectionMethod,
         };
       });
@@ -44,7 +51,7 @@ export function parseChambers(
   }
 
   // Fallbacks
-  const system = (globalElectoralSystem || "proportional") as any;
+  const system = toElectoralSystem(globalElectoralSystem);
   if (chamberType === "bicameral") {
     const senateSeats = Math.max(10, Math.floor(totalSeats * 0.4));
     const houseSeats = Math.max(10, totalSeats - senateSeats);

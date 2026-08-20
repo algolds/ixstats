@@ -108,8 +108,22 @@ export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
       return "https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php";
     }
   }
-  const wikiConfig = WIKI_SOURCES[source];
+  const wikiConfig = WIKI_SOURCES[source] ?? WIKI_SOURCES.ixwiki;
   return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
+}
+
+/**
+ * Builds a full MediaWiki API URL with query parameters.
+ */
+export function buildApiUrl(baseUrl: string, params: Record<string, string | number | boolean>): string {
+  const cleanBase = baseUrl.endsWith("/api.php") ? baseUrl : `${baseUrl.replace(/\/+$/, "")}/api.php`;
+  const url = new URL(cleanBase);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  return url.toString();
 }
 
 export { type CachedArticleData } from "./types";

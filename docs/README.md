@@ -4,11 +4,12 @@ The single index for all IxStates documentation. Guides are grouped by purpose s
 engineers, storytellers, and operators land in the right place. Version info comes from
 the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Last refreshed June 2026 — **IxStates 1.1.1 "Ogma"** (Alpha). Treat this structure as the source of truth.
+> Last refreshed August 2026 — **IxStates 1.3.0 "Ogma"** (Beta). Treat this structure as the source of truth.  
 > Working plans/PRDs/audits live in the gitignored root `plans/`; completed/historical docs live in [`archive/`](archive/).
 
 ## Quick Links
 
+- **System Status & Going Gold Audit** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
 - **Product overview** — [overview/platform.md](overview/platform.md)
 - **Versioning & releases** — [reference/revision.md](reference/revision.md)
 - **API catalog** — [reference/api-complete.md](reference/api-complete.md)
@@ -17,6 +18,7 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 - **Deployment** — [operations/deployment.md](operations/deployment.md)
 - **Design system (Facet)** — [reference/facet-design-system.md](reference/facet-design-system.md)
 - **Maps system** — [systems/maps.md](systems/maps.md)
+- **WikiOS platform** — [systems/wikios.md](systems/wikios.md)
 
 ## Overview
 
@@ -37,39 +39,47 @@ the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release
 
 > Root-level [`arch.md`](../arch.md) is the agent-facing condensed version of the TS-graph architecture rules (referenced by `CLAUDE.md`).
 
-## Systems
+## Systems & Launch Status
 
-| Document | Summary |
-| --- | --- |
-| [systems/mycountry.md](systems/mycountry.md) | Executive command suite, compliance tooling, analytics |
-| [systems/builder.md](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
-| [systems/economy.md](systems/economy.md) | Economic indicators, projections, builder integration |
-| [systems/calculations.md](systems/calculations.md) | Economic formulas with step-by-step examples |
-| [systems/intelligence.md](systems/intelligence.md) | Live briefing feeds, diplomatic intelligence, forecasting |
-| [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, relationship scoring |
-| [systems/defense.md](systems/defense.md) | Defense posture, SDI modules, readiness, crisis playbooks |
-| [systems/elections.md](systems/elections.md) | Elections, political parties, legislature (D'Hondt/FPTP) |
-| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
-| [systems/crisis-events.md](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
-| [systems/social.md](systems/social.md) | ThinkPages, ThinkShare, activity feeds, collaborative research |
-| [systems/achievements.md](systems/achievements.md) | Achievement unlocks, leaderboards, notifications |
-| [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, CMS architecture, RBAC |
-| [systems/help.md](systems/help.md) | In-app help center architecture and authoring workflow |
-| [systems/forum.md](systems/forum.md) | XenForo forum integration, widget embedding |
-| [systems/maps.md](systems/maps.md) | IxWorld & IxMaps system: UPG v2 engine, MapLibre GL, Realms platform, overlay registry, MyCountry integration |
-| [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo** (formerly Dynamic Island) plugin-driven system |
-| [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports management |
-| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro) developer integration & testing guide |
+| Document | Summary | Launch Status |
+| --- | --- | :---: |
+| [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md) | **Master System Status & Public Launch Readiness Audit ("Going Gold")** | 📀 **Target: 1.0.0 GM** |
+| [systems/mycountry.md](systems/mycountry.md) | Executive command suite (Command Surface v5, Statecraft Engine v4, Directives) | 🥈 Release Candidate |
+| [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 🥈 Release Candidate |
+| [systems/mycountry-v2-command-surface-plan.md](systems/mycountry-v2-command-surface-plan.md) | Command Surface transition record and single production surface reference | ✅ Completed |
+| [systems/community-feedback-audit.md](systems/community-feedback-audit.md) | Co-design audit (Urcea, Keaor, Burg, Heku) establishing the Statecraft Loop | 🥈 Release Candidate |
+| [systems/builder.md](systems/builder.md) | Nation creation wizard (Builder v3), atomic components, wiki cache | 🥈 Release Candidate |
+| [systems/economy.md](systems/economy.md) | Economic indicators, projections, tax system components, growth tiers | 🥈 Release Candidate |
+| [systems/calculations.md](systems/calculations.md) | Mathematical formulas for economic modeling, ERI, PII, and synergies | 🥈 Release Candidate |
+| [systems/intelligence.md](systems/intelligence.md) | Intelligence feeds, vitality dashboard, threat forecasts, globalCache | 🥈 Release Candidate |
+| [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, ThinkShare messaging, Concord v2 | 🥈 Release Candidate |
+| [systems/defense.md](systems/defense.md) | Defense posture, readiness scoring, military operations, equipment catalogs | 🥈 Release Candidate |
+| [systems/elections.md](systems/elections.md) | Elections, political parties, legislature, D'Hondt/FPTP simulation, hemicycle | 🥈 Release Candidate |
+| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 🥈 Release Candidate |
+| [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 🥈 Release Candidate |
+| [systems/social.md](systems/social.md) | ThinkPages v2, ThinkShare unified messaging, activity feeds, polls | 🥈 Release Candidate |
+| [systems/wikios.md](systems/wikios.md) | **WikiOS v1 Knowledge Platform** (PlateJS editor, Canvas v1, Parsoid, Narrator) | 🥈 Release Candidate |
+| [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon awards, LoreWards, leaderboards | 🥈 Release Candidate |
+| [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic CMS reference data, RBAC, audit logging | 📀 **Gold Master** |
+| [systems/help.md](systems/help.md) | In-app help center architecture, 10 categories, authoring workflow | 📀 **Gold Master** |
+| [systems/forum.md](systems/forum.md) | XenForo forum integration (IxForum v1.3), BBCode transformation, IxnayID | 🥉 Beta |
+| [systems/maps.md](systems/maps.md) | IxWorld 1.2 & Atlas Engine v4: UPG v2 100k mesh, MapLibre GL, Realms platform | 🥈 Release Candidate |
+| [systems/dynamic-island.md](systems/dynamic-island.md) | **Halo v4** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
+| [systems/myleague.md](systems/myleague.md) | MyLeague & MyClub sports simulation engine (7 sports, tactics, transfers) | 🥉 Beta |
+| [systems/myleague-lore-integration.md](systems/myleague-lore-integration.md) | MyLeague sports lore audit, canonical competition mapping, and gap analysis | 🥉 Beta |
+| [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) | Onoma v4 brand guide, linguistic engine philosophy, Pattern Depth abstraction | 🥈 Release Candidate |
+| [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) | Onoma v4 glyph system specification, 6 semantic domains, `<OnomaGlyph />` | 🥈 Release Candidate |
+| [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Onoma Voice (Kokoro TTS double-engine) developer integration & testing guide | 🥈 Release Candidate |
 
 ### IxVault
 
-| Document | Summary |
-| --- | --- |
-| [systems/cards.md](systems/cards.md) | IxCards — card types, rarity, ownership tracking |
-| [systems/myvault.md](systems/myvault.md) | MyVault economy, vault progression |
-| [systems/ixcredits.md](systems/ixcredits.md) | IxCredits economy and premium features |
-| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import |
-| [PREMIUM_FEATURES.md](PREMIUM_FEATURES.md) | Premium features matrix |
+| Document | Summary | Launch Status |
+| --- | --- | :---: |
+| [systems/cards.md](systems/cards.md) | IxCards v2 — card types, dynamic rarity, pack opening, crafting, junking | 🥈 Release Candidate |
+| [systems/myvault.md](systems/myvault.md) | MyVault v2 UI & economy hub, VaultRouter, level progression, config | 🥈 Release Candidate |
+| [systems/ixcredits.md](systems/ixcredits.md) | IxCredits virtual currency engine, passive dividends, daily caps, sinks | 🥈 Release Candidate |
+| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown | 🥈 Release Candidate |
+| [PREMIUM_FEATURES.md](PREMIUM_FEATURES.md) | Premium features matrix | 🥈 Release Candidate |
 
 ## Operations
 

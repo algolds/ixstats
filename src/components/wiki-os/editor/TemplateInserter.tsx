@@ -44,13 +44,13 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
 
   // Get template data when one is selected
   const templateData = api.wikios.getTemplateData.useQuery(
-    { name: selectedTemplate! },
+    { title: selectedTemplate! },
     { enabled: !!selectedTemplate }
   );
 
   // Preview
   const previewQuery = api.wikios.getTemplatePreview.useQuery(
-    { name: selectedTemplate!, params: paramValues },
+    { template: selectedTemplate!, params: paramValues },
     { enabled: !!selectedTemplate && showPreview }
   );
 
@@ -183,7 +183,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
           {showPreview && previewQuery.data && (
             <div
               className="wikios-ti-preview"
-              dangerouslySetInnerHTML={{ __html: previewQuery.data.html }}
+              dangerouslySetInnerHTML={{ __html: previewQuery.data }}
             />
           )}
 

@@ -234,3 +234,29 @@ export async function clearCachedDraft(title: string): Promise<void> {
     }
   });
 }
+
+/**
+ * Pre-warms the cache with an array of article data objects (e.g. for featured,
+ * trending, or portal navigation).
+ */
+export async function warmFeaturedArticlesCache(
+  articles: Array<{
+    title: string;
+    contentHtml: string;
+    infoboxHtml?: string | null;
+    noticesHtml?: string | null;
+    categories?: string[];
+  }>
+): Promise<void> {
+  for (const art of articles) {
+    await setCachedArticle(art.title, {
+      title: art.title,
+      contentHtml: art.contentHtml,
+      infoboxHtml: art.infoboxHtml ?? null,
+      noticesHtml: art.noticesHtml ?? null,
+      toc: [],
+      categories: art.categories ?? [],
+      lastModified: null,
+    });
+  }
+}

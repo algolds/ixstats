@@ -9,7 +9,6 @@ export * from "./cultures";
 export * from "./features";
 export * from "./heightmap";
 export * from "./ixworld-template";
-export * from "./marching-squares";
 export * from "./rivers";
 export * from "./rng";
 export * from "./settlements";

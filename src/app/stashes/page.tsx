@@ -835,7 +835,7 @@ function StashedImageModal({
       } catch (directErr) {
         console.warn("Direct fetch failed, falling back to server download:", directErr);
         const cleanName = image.title.replace(/^File:/, "");
-        const res = await utils.wiki.downloadFile.fetch({ filename: cleanName });
+        const res = await utils.wikios.downloadFile.fetch({ filename: cleanName });
         if (!res || !res.content) {
           throw new Error("Failed to download image from server");
         }

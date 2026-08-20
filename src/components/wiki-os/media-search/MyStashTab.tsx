@@ -57,11 +57,11 @@ export function MyStashTab({
       try {
         const promises = stashItems.map(async (item, idx) => {
           try {
-            const images = await utils.client.wiki.getPageImages.query({
+            const images = await utils.wikios.getPageImages.fetch({
               title: item.pageTitle,
             });
             if (!isMounted) return [];
-            return (images ?? []).map((img, imgIdx) => {
+            return (images ?? []).map((img: { title?: string; thumbUrl?: string; url?: string; width?: number; height?: number }, imgIdx: number) => {
               const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
               const guessedMime =
                 ext === "svg"
@@ -95,8 +95,8 @@ export function MyStashTab({
         if (isMounted) {
           const flat = results.flat();
           // Deduplicate by URL
-          const seen = new Set();
-          const unique = flat.filter((img) => {
+          const seen = new Set<string>();
+          const unique = flat.filter((img: { url: string }) => {
             if (seen.has(img.url)) return false;
             seen.add(img.url);
             return true;

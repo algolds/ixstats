@@ -252,6 +252,7 @@ export const appRouter = createTRPCRouter({
 
   // ─── Wiki & WikiOS ─────────────────────────────────────────────────────────
   wikios: safeRouter("wikios", () => wikiosRouter),
+  wiki: safeRouter("wiki", () => wikiosRouter),
   wikiCache: safeRouter("wikiCache", () => wikiCacheRouter),
   wikiImporter: safeRouter("wikiImporter", () => wikiImporterRouter),
   lorewards: safeRouter("lorewards", () => lorewardsRouter),

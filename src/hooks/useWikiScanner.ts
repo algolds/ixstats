@@ -131,7 +131,7 @@ export function useWikiScanner(params: {
       const batch = unlinked.slice(i, i + 3);
       const batchPromises = batch.map(async (feature) => {
         try {
-          const searchResults = await utils.wiki.searchPages.fetch({
+          const searchResults = await utils.wikios.searchPages.fetch({
             query: feature.name,
             limit: 5,
             wiki: "ixwiki",
@@ -198,7 +198,7 @@ export function useWikiScanner(params: {
         const conflictPromises = batch.map(async (feature) => {
           const wikiTitle = feature.properties.wikiPageTitle as string;
           try {
-            const infobox = await utils.wiki.getInfobox.fetch({
+            const infobox = await utils.wikios.getInfobox.fetch({
               title: wikiTitle,
               wiki: "ixwiki",
             });

@@ -1,31 +1,49 @@
-# Help System
+# In-App Help System
 
-**Last updated:** May 2026
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta)  
+**Hierarchy:** Platform Support & Documentation Suite.
 
-The help system delivers contextual documentation directly inside the app at `/help`. It mirrors the Markdown guides in this repository so in-app content stays consistent with developer references.
+The in-app help system delivers rich, interactive, and contextual documentation directly inside the application at `/help`. It mirrors the technical and gameplay specifications in this repository so player-facing guidance remains 100% consistent with developer references.
 
-## Architecture
-- `src/app/help/page.tsx` – Main help center hub with search, filters, and links to individual articles
-- `src/app/help/_components/ArticleLayout.tsx` – Shared layout for article pages (title, metadata, navigation)
-- Article routes live under `src/app/help/<category>/<slug>/page.tsx`
+---
 
-## Content Authoring
-1. Draft or update the relevant Markdown guide under `docs/`
-2. Create or update the matching help article page using `ArticleLayout`
-3. Keep metadata (title, description, tags) aligned between the hub configuration (`helpSections` array) and the article page
-4. When archiving content, move Markdown to `docs/archive/...` and remove the matching help route
+## Architecture & Routing
 
-## Categories
-- Getting Started, Economy (MyCountry → Economy & Resources), Government (MyCountry → Governance & Politics), Defense (MyCountry → Military & Security), Intelligence (MyCountry → Intelligence & Diplomacy), Diplomacy (MyCountry → Intelligence & Diplomacy), Social, Technical
-- Each category maps to a folder under `src/app/help/` and a section in the hub configuration
+- `src/app/help/page.tsx` – Main help center hub with full-text search, category filters, and quick links
+- `src/app/help/_components/ArticleLayout.tsx` – Shared presentation layout (table of contents, breadcrumbs, related links, feedback widget)
+- Article routes follow the canonical directory structure: `src/app/help/<category>/<slug>/page.tsx`
 
-## Tooling & Localization
-- Articles are implemented as React components to allow rich content, callouts, and component reuse
-- For purely textual content, wrap Markdown-style text in `<ArticleLayout>` (see new articles created in this refresh)
-- Localization is not yet implemented; plan for translation by avoiding hard-coded copy duplication across docs
+---
 
-## Testing
-- Smoke test navigation by visiting `/help`
-- Add unit tests or Playwright specs when introducing critical interactive help flows
+## Category Taxonomy
 
-Ensure every major feature ships with an accompanying help article and that both the repo and in-app versions stay synchronised.
+| Category | Coverage & Scope | Key System Guide |
+| :--- | :--- | :--- |
+| **Getting Started** | Account setup, first nation creation, Builder walkthrough | [`systems/builder.md`](./builder.md) |
+| **Executive & Statecraft** | Directives, Civil Capacity (CivCap), Issues inbox, Cabinet meetings | [`systems/mycountry.md`](./mycountry.md) |
+| **Economy & Resources** | GDP tiers, taxes, budget allocations, passive income dividends | [`systems/economy.md`](./economy.md) |
+| **Governance & Politics** | Atomic government components, legislature, elections | [`systems/elections.md`](./elections.md) |
+| **Defense & Security** | Readiness posture, military operations, equipment catalogs | [`systems/defense.md`](./defense.md) |
+| **Diplomacy & Intelligence** | Embassies, missions, treaties, classified briefings | [`systems/diplomacy.md`](./diplomacy.md) |
+| **IxVault & Cards** | Trading cards, pack opening, crafting, marketplace | [`systems/cards.md`](./cards.md) |
+| **IxWorld Maps** | MapLibre navigation, layer controls, territory editor | [`systems/maps.md`](./maps.md) |
+| **Social & Community** | ThinkPages, ThinkShare messaging, Forum, Stashes | [`systems/social.md`](./social.md) |
+| **Linguistics (Onoma)** | Name generation, conlang studio, Kokoro voice narration | [`systems/onoma-brand-guide.md`](./onoma-brand-guide.md) |
+
+---
+
+## Authoring Workflow
+
+1. **Update System Guide**: Maintain or update the primary Markdown specification under `docs/systems/`.
+2. **Author In-App Article**: Create or update the corresponding React page under `src/app/help/<category>/<slug>/page.tsx` using `<ArticleLayout>`.
+3. **Register in Hub Config**: Update the `helpSections` array in `src/app/help/config.ts` with metadata (title, description, icon, keywords).
+4. **Contextual Tooltips**: Wire in-app question mark icons (`<HelpTooltip topic="..." />`) directly to the relevant help slug.
+
+---
+
+## Related Documentation
+
+- [Documentation Hub](../README.md)
+- [Platform Overview](../overview/platform.md)
+- [API Reference](../reference/api-complete.md)

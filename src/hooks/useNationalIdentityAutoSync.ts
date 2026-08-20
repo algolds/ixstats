@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { useGenericAutoSync } from "~/hooks/useGenericAutoSync";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
-interface AutoSyncOptions {
+export interface AutoSyncOptions {
   enabled?: boolean;
   debounceMs?: number;
   showConflictWarnings?: boolean;
@@ -13,21 +14,6 @@ interface AutoSyncOptions {
   onConflictDetected?: (conflicts: string[]) => void;
 }
 
-interface AutoSyncState {
-  isSyncing: boolean;
-  lastSyncTime: Date | null;
-  pendingChanges: boolean;
-  conflictWarnings: string[];
-  syncError: string | null;
-  optimistic?: boolean; // Flag for optimistic state (unconfirmed by server)
-}
-
-/**
- * Auto-sync hook for National Identity data
- *
- * Provides debounced autosave functionality for national identity fields
- * with conflict detection and error handling.
- */
 export function useNationalIdentityAutoSync(
   countryId: string | undefined,
   nationalIdentity: NationalIdentityData,
@@ -35,159 +21,41 @@ export function useNationalIdentityAutoSync(
 ) {
   const {
     enabled = true,
-    debounceMs = 15000, // 15 seconds
-    showConflictWarnings = true,
+    debounceMs = 15000,
     onSyncSuccess,
     onSyncError,
-    onConflictDetected,
   } = options;
 
-  const [syncState, setSyncState] = useState<AutoSyncState>({
-    isSyncing: false,
-    lastSyncTime: null,
-    pendingChanges: false,
-    conflictWarnings: [],
-    syncError: null,
-  });
-
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const previousDataRef = useRef<NationalIdentityData>(nationalIdentity);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const updateMutation = api.nationalIdentity.update.useMutation();
 
-  // API mutations
-  const autosaveMutation = api.nationalIdentity.autosave.useMutation({
-    // Optimistic update - show "Saved" immediately before server confirmation
-    onMutate: async (newData) => {
-      setSyncState((prev) => ({
-        ...prev,
-        isSyncing: false,
-        lastSyncTime: new Date(),
-        pendingChanges: false,
-        syncError: null,
-        optimistic: true, // Flag as optimistic (unconfirmed)
-      }));
-
-      // Return context for potential rollback
-      return { previousState: { ...syncState } };
-    },
-
-    // Server confirmation - mark as confirmed
-    onSuccess: () => {
-      setSyncState((prev) => ({
-        ...prev,
-        isSyncing: false,
-        lastSyncTime: new Date(),
-        pendingChanges: false,
-        syncError: null,
-        optimistic: false, // Confirmed by server
-      }));
+  const sync = useGenericAutoSync(nationalIdentity, {
+    enabled: enabled && !!countryId,
+    debounceMs,
+    syncFn: async (data) => {
+      if (!countryId) return;
+      const res = await updateMutation.mutateAsync({ countryId, data });
       setShowSuccessAnimation(true);
-      setTimeout(() => setShowSuccessAnimation(false), 2000); // 2 second checkmark
-      onSyncSuccess?.();
+      setTimeout(() => setShowSuccessAnimation(false), 2000);
+      return res;
     },
-
-    // Error - rollback optimistic state
-    onError: (error) => {
-      setSyncState((prev) => ({
-        ...prev,
-        isSyncing: false,
-        pendingChanges: true, // Mark as having unsaved changes
-        syncError: error.message,
-        optimistic: false,
-      }));
-      onSyncError?.(error.message);
-    },
+    onSyncSuccess: () => onSyncSuccess?.(),
+    onSyncError: (err) => onSyncError?.(err.message),
   });
 
-  // Track changes and trigger debounced save
-  useEffect(() => {
-    if (!enabled || !countryId) return;
-
-    const hasChanges = JSON.stringify(nationalIdentity) !== JSON.stringify(previousDataRef.current);
-
-    if (hasChanges) {
-      setSyncState((prev) => ({ ...prev, pendingChanges: true }));
-
-      // Clear existing timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-
-      // Set new timer
-      debounceTimerRef.current = setTimeout(() => {
-        handleAutoSync();
-      }, debounceMs);
-    }
-
-    // Update previous data reference
-    previousDataRef.current = nationalIdentity;
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nationalIdentity, enabled, countryId, debounceMs]);
-
-  // Auto-sync handler
-  const handleAutoSync = useCallback(async () => {
-    if (!countryId || !enabled) return;
-
-    setSyncState((prev) => ({ ...prev, isSyncing: true }));
-
-    try {
-      await autosaveMutation.mutateAsync({
-        countryId,
-        data: nationalIdentity,
-      });
-    } catch (error) {
-      // Error handling is done in the mutation's onError callback
-      console.warn("National identity autosave failed:", error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countryId, enabled, nationalIdentity]);
-
-  // Manual sync function
-  const syncNow = useCallback(async () => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    await handleAutoSync();
-  }, [handleAutoSync]);
-
-  // Clear conflicts
-  const clearConflicts = useCallback(() => {
-    setSyncState((prev) => ({
-      ...prev,
-      conflictWarnings: [],
-      syncError: null,
-    }));
-  }, []);
-
-  // Reset sync state
-  const resetSyncState = useCallback(() => {
-    setSyncState({
-      isSyncing: false,
-      lastSyncTime: null,
-      pendingChanges: false,
-      conflictWarnings: [],
-      syncError: null,
-    });
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
+  const clearConflicts = useCallback(() => {}, []);
+  const resetSyncState = useCallback(() => {}, []);
 
   return {
-    syncState,
-    syncNow,
+    syncState: {
+      isSyncing: sync.isSyncing,
+      lastSyncTime: sync.lastSyncTime,
+      pendingChanges: sync.pendingChanges,
+      conflictWarnings: [] as string[],
+      syncError: sync.syncError?.message ?? null,
+      optimistic: sync.status === "saved",
+    },
+    syncNow: sync.forceSync,
     clearConflicts,
     resetSyncState,
     isEnabled: enabled,

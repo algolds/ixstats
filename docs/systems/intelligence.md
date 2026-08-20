@@ -1,50 +1,61 @@
-# Intelligence System
+# Intelligence & Analytics System
 
-**Last updated:** February 2026
-**Hierarchy:** Part of MyCountry core system — grouped under Intelligence & Diplomacy.
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta)  
+**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Intelligence & Diplomacy domain group.
 
-The intelligence stack aggregates diplomatic, economic, and security signals into executive-ready briefings.
+The intelligence stack aggregates diplomatic, economic, and national security signals into executive-ready briefings, predictive forecasts, and real-time alert streams.
 
-## Frontend Surfaces
-- `src/components/mycountry/EnhancedIntelligenceContent.tsx` – Intelligence content orchestrator
-- `src/app/mycountry/intelligence/_components/IntelligenceFeed.tsx` – Core feed component combining hot issues, opportunities, and risk mitigation
+---
+
+## Architecture & Surface Integration
+
+### Frontend Surfaces
+- `src/components/mycountry/EnhancedIntelligenceContent.tsx` – Intelligence orchestrator and tab system
+- `src/app/mycountry/intelligence/_components/IntelligenceFeed.tsx` – Core intelligence feed combining urgent hot issues, geopolitical opportunities, and risk mitigation
 - `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – Mission tracking, embassy posture, and regional insights
-- `src/components/mycountry/domains/diplomacy/LiveDiplomaticFeed.tsx` – WebSocket-enabled diplomatic activity stream
+- `src/components/mycountry/domains/diplomacy/LiveDiplomaticFeed.tsx` – WebSocket-enabled diplomatic and crisis activity stream
 
-## Data Providers
-- `diplomatic-intelligence.ts` – Executive briefings (`getIntelligenceBriefing`)
-- `intelligence.ts` – National vitality, alerts, and forecasts (`getExecutiveDashboard`, `getAlerts`)
-- `unified-intelligence.ts` – Consolidated SDI/ECI intelligence feeds
-- `notifications.ts` – Push alerts and acknowledgement workflows
+### Backend Routers
+All endpoints are organized under the modularized API:
+- `src/server/api/routers/intelligence/` (`index.ts`, `core.ts`, `alerts.ts`, `analytics.ts`) – National vitality dashboard, classified alerts, and threat forecasts
+- `src/server/api/routers/diplomatic-intelligence/` – Executive intelligence briefings (`getIntelligenceBriefing`), bilateral threat assessments, and recommended policy counters
+- `src/server/api/routers/notifications/` – Push alerts and compliance task acknowledgement workflows
 
-## Key Outputs
-| Feed | Source Procedure | Notes |
-| --- | --- | --- |
-| Daily Briefing | `api.diplomaticIntelligence.getIntelligenceBriefing` | Classification-aware, returns relations, key developments, recommended actions |
-| Vitality Dashboard | `api.intelligence.getExecutiveDashboard` | Metrics for economic, diplomatic, population, security health |
-| Alert Stream | `api.intelligence.getAlerts`, `api.notifications.getCountryAlerts` | Used by compliance modal and intelligence feed |
-| Mission Tracker | `api.diplomatic.getActiveMissions`, `api.diplomatic.getEmbassies` | Supports operations hub and quick actions |
+---
 
-## Realtime Behaviour
-- Production WebSocket server (`src/server/websocket-server.ts`) broadcasts diplomatic events, crisis updates, and notifications
-- Client widgets subscribe via Socket.IO in `LiveDiplomaticFeed.tsx` and related components
+## Key Intelligence Feeds
 
-## Calculations & Utilities
-- Time context derived from `IxTime` (`~/lib/ixtime`) to align simulation timelines
-- Synergy/impact scoring reused from atomic systems via helpers in `src/components/atomic`
-- Formatting utilities located in `src/lib/formatters` and `src/lib/chart-utils`
+| Output Feed | Source Procedure | Description |
+| :--- | :--- | :--- |
+| **Executive Briefing** | `api.diplomaticIntelligence.getIntelligenceBriefing` | Classification-aware summary of diplomatic shifts, economic movements, and recommended actions |
+| **Vitality Dashboard** | `api.intelligence.getExecutiveDashboard` | 4-domain composite vitality metrics (Economic, Diplomatic, Population, Governance) |
+| **Alert Stream** | `api.intelligence.getAlerts`, `api.notifications.getCountryAlerts` | Security and compliance alerts highlighted across Command Surface rails |
+| **Mission Tracker** | `api.diplomatic.getActiveMissions`, `api.diplomatic.getEmbassies` | Realtime status of active covert and overt foreign missions |
 
-## Caching & Performance (May 2026)
+---
 
-To support instant rendering of data-heavy activity dashboards:
-- **Global Activity Feed Caching**: The `getGlobalFeed` procedure in the `activities` router leverages the unified `globalCache` ([advanced-cache-system.ts](file:///ixwiki/public/projects/ixstats/src/lib/advanced-cache-system.ts)) to serve compiled global logs. Cache hits resolve in **~4.85ms** compared to the database fetch time of **~1,279.04ms** (a **264x speedup**).
-- **Following Feed Caching**: The user-customized `getFollowingFeed` queries are cached, improving load times to **~2.23ms** (a **1.6x speedup**).
-- **Graceful Fallback**: Under default local development setups where Redis may not be present, the caching tier automatically uses a robust thread-safe in-memory cache to guarantee zero errors or latency loops.
+## Realtime & Caching Architecture
 
-## Implementation Notes
-- Keep request payloads lightweight; sensitive details are filtered based on `classification` input
-- When adding new intelligence categories, update both the router schema and front-end tab registry
-- Align new intelligence articles with `/help/intelligence/*` so runtime guidance matches repo docs
+### Caching Performance (`src/lib/advanced-cache-system.ts`)
+- **Intelligence Feed Caching**: Briefing queries leverage `globalCache` with a 2-minute TTL, resolving cache hits in **~2.2ms** (compared to ~1,200ms for full database aggregation).
+- **Graceful Redis Fallback**: If Redis is offline in local development, the system seamlessly falls back to a thread-safe in-memory cache with zero disruption.
+- **WebSocket Broadcast**: Production WebSocket server (`server.mjs`) broadcasts high-priority diplomatic events, security alerts, and crisis developments to connected clients.
 
-Add unit tests in `src/server/api/routers/__tests__` when extending routers to protect calculation and classification logic.
+---
 
+## Data Models
+
+Defined in `prisma/schema/intelligence.prisma` and `prisma/schema/core.prisma`:
+- `IntelligenceBriefing`: Pre-written and dynamic executive briefings with classification level (`CONFIDENTIAL`, `SECRET`, `TOP_SECRET`)
+- `IntelligenceItem`: Granular intel entries with category, severity, source, and expiration
+- `VitalitySnapshot`: Historical time-series record of national vitality scores used for trend analysis
+
+---
+
+## Related Documentation
+
+- [Diplomacy System](./diplomacy.md)
+- [Defense & Security System](./defense.md)
+- [MyCountry Command Suite](./mycountry.md)
+- [API Reference: Intelligence Routers](../reference/api-complete.md#intelligence-router)

@@ -6,17 +6,28 @@ import type { PackType, CardRarity } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault";
 import { grantCardXp } from "./xp-utils";
 
-/**
- * Pack odds validation - ensures all rarity odds sum to 100%
- */
-export function validatePackOdds(odds: {
+export interface PackOdds {
   commonOdds: number;
   uncommonOdds: number;
   rareOdds: number;
   ultraRareOdds: number;
   epicOdds: number;
   legendaryOdds: number;
-}): boolean {
+}
+
+const RARITY_DISTRIBUTION: readonly [CardRarity, keyof PackOdds][] = [
+  ["COMMON", "commonOdds"],
+  ["UNCOMMON", "uncommonOdds"],
+  ["RARE", "rareOdds"],
+  ["ULTRA_RARE", "ultraRareOdds"],
+  ["EPIC", "epicOdds"],
+  ["LEGENDARY", "legendaryOdds"],
+] as const;
+
+/**
+ * Pack odds validation - ensures all rarity odds sum to 100%
+ */
+export function validatePackOdds(odds: PackOdds): boolean {
   const total =
     odds.commonOdds +
     odds.uncommonOdds +
@@ -32,35 +43,16 @@ export function validatePackOdds(odds: {
 /**
  * Weighted random selection based on rarity odds
  */
-export function selectRarityByOdds(odds: {
-  commonOdds: number;
-  uncommonOdds: number;
-  rareOdds: number;
-  ultraRareOdds: number;
-  epicOdds: number;
-  legendaryOdds: number;
-}): CardRarity {
+export function selectRarityByOdds(odds: PackOdds): CardRarity {
   const random = Math.random() * 100;
   let cumulative = 0;
 
-  // Build cumulative distribution
-  cumulative += odds.commonOdds;
-  if (random < cumulative) return "COMMON";
+  for (const [rarity, key] of RARITY_DISTRIBUTION) {
+    cumulative += odds[key] ?? 0;
+    if (random < cumulative) return rarity;
+  }
 
-  cumulative += odds.uncommonOdds;
-  if (random < cumulative) return "UNCOMMON";
-
-  cumulative += odds.rareOdds;
-  if (random < cumulative) return "RARE";
-
-  cumulative += odds.ultraRareOdds;
-  if (random < cumulative) return "ULTRA_RARE";
-
-  cumulative += odds.epicOdds;
-  if (random < cumulative) return "EPIC";
-
-  // Fallback to legendary (should match remaining odds)
-  return "LEGENDARY";
+  return "COMMON";
 }
 
 /**

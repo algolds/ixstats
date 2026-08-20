@@ -16,6 +16,8 @@ import {
   getPageProps,
   getPageProtection,
   getPageLog,
+  getInfobox,
+  getImageMeta,
 } from "~/lib/wiki-os/bridge";
 import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/html-transformer";
@@ -653,6 +655,46 @@ export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
   // Category Tree (Phase 1)
   // ---------------------------------------------------------------------------
+
+  /**
+   * Get parsed infobox for a wiki page.
+   */
+  getInfobox: publicProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(500),
+        wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+      })
+    )
+    .query(async ({ input }) => {
+      return getInfobox(input.title, input.wiki);
+    }),
+
+  /**
+   * Download a media file from the wiki as base64.
+   */
+  downloadFile: publicProcedure
+    .input(
+      z.object({
+        filename: z.string().min(1).max(500),
+      })
+    )
+    .query(async ({ input }) => {
+      const cleanFilename = input.filename.replace(/^File:/i, "");
+      const meta = await getImageMeta(cleanFilename);
+      if (!meta?.url) return null;
+
+      try {
+        const res = await fetch(meta.url);
+        if (!res.ok) return null;
+        const arrayBuffer = await res.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        return { content: base64, mime: meta.mimeType || "image/png" };
+      } catch (err) {
+        console.error("[WikiOS] Failed to download media file:", err);
+        return null;
+      }
+    }),
 
   /**
    * Sync recent changes from MediaWiki into local shadow store.

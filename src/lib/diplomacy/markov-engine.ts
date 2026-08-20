@@ -268,9 +268,10 @@ export class MarkovDiplomacyEngine {
       totalProbability += probability;
     }
 
-    // Normalize probabilities to sum to 1.0
+    // Safely normalize probabilities to sum to 1.0
+    const safeTotal = totalProbability > 0 ? totalProbability : 1;
     transitionProbabilities.forEach((tp) => {
-      tp.probability = tp.probability / totalProbability;
+      tp.probability = Math.max(0, Math.min(1, tp.probability / safeTotal));
     });
 
     // Find most likely state (highest probability)

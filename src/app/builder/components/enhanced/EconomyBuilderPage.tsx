@@ -567,7 +567,9 @@ export function EconomyBuilderPage({
   // Register autosync with BuilderContext (if available)
   useEffect(() => {
     if (builderContext && countryId) {
-      builderContext.registerAutoSync("economy", syncNow);
+      builderContext.registerAutoSync("economy", async () => {
+        await syncNow();
+      });
       console.log("[EconomyBuilder] Registered autosync with BuilderContext");
       return () => {
         builderContext.unregisterAutoSync("economy");

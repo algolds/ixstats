@@ -18,7 +18,16 @@ const invalidateFeeds = async () => {
   }
 };
 
-const hydratePostDates = (post: any) => {
+interface PostDateFields {
+  createdAt?: string | Date | null;
+  ixTimeTimestamp?: string | Date | null;
+  parentPost?: PostDateFields | null;
+  repostOf?: PostDateFields | null;
+  reactions?: Array<{ createdAt?: string | Date | null; [key: string]: unknown }> | null;
+  [key: string]: unknown;
+}
+
+export function hydratePostDates<T extends PostDateFields | null | undefined>(post: T): T {
   if (!post) return post;
   return {
     ...post,
@@ -43,13 +52,13 @@ const hydratePostDates = (post: any) => {
         }
       : undefined,
     reactions: post.reactions
-      ? post.reactions.map((r: any) => ({
+      ? post.reactions.map((r) => ({
           ...r,
           createdAt: r.createdAt ? new Date(r.createdAt) : undefined,
         }))
       : undefined,
-  };
-};
+  } as T;
+}
 
 const SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
@@ -772,25 +781,4 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         };
       }
     }),
-
-  // Pin/unpin a post
-
-  // Bookmark/unbookmark a post
-  // Get user's bookmarked posts
-
-  // Check if a post is bookmarked by user
-
-  // Bookmark or unbookmark a post
-
-  // Get all flagged posts (admin only)
-
-  // Check if a post is flagged by user
-
-  // Flag a post for moderation
-
-  // Remove a flag (unflag post)
-
-  // Create a conversation between two countries' official accounts
-
-  // Get post reactions with account details
 });

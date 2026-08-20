@@ -41,13 +41,13 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
       setLoading(true);
 
       try {
-        const results = await utils.wiki.searchPages.fetch({
+        const results = await utils.wikios.searchPages.fetch({
           query,
           limit: 10,
           wiki: wikiSource,
         });
 
-        setSuggestions(results.map((r) => ({ title: r.title, snippet: "" })));
+        setSuggestions(results.map((r: { title: string }) => ({ title: r.title, snippet: "" })));
       } catch (error) {
         console.error("Article search error:", error);
         setSuggestions([]);

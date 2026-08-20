@@ -1449,11 +1449,11 @@ function TemplateEditorDialog({
   const [showPreview, setShowPreview] = useState(false);
 
   const tdQuery = api.wikios.getTemplateData.useQuery(
-    { name: templateName },
+    { title: templateName },
     { staleTime: 300000 }
   );
   const previewQuery = api.wikios.getTemplatePreview.useQuery(
-    { name: templateName, params: values },
+    { template: templateName, params: values },
     { enabled: showPreview, staleTime: 0 }
   );
 
@@ -1505,7 +1505,7 @@ function TemplateEditorDialog({
           {showPreview && previewQuery.data && (
             <div
               className="wikios-ti-preview"
-              dangerouslySetInnerHTML={{ __html: previewQuery.data.html }}
+              dangerouslySetInnerHTML={{ __html: previewQuery.data }}
             />
           )}
         </div>

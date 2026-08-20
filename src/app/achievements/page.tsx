@@ -85,8 +85,11 @@ export default function AchievementsPage() {
   const globalRank = rankIndex !== undefined && rankIndex !== -1 ? rankIndex + 1 : 0;
 
   const { flagUrl: simpleFlagUrl } = useSimpleFlag(userProfile?.country?.name);
+  const country = userProfile?.country;
   const countryFlagUrl =
-    (userProfile?.country as any)?.flagUrl || (userProfile?.country as any)?.flag || simpleFlagUrl;
+    (country && "flagUrl" in country && typeof country.flagUrl === "string" ? country.flagUrl : null) ??
+    (country && "flag" in country && typeof country.flag === "string" ? country.flag : null) ??
+    simpleFlagUrl;
 
   return (
     <VaultSidebarLayout activeSection="achievements">

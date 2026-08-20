@@ -1,46 +1,73 @@
-# MyCountry Builder
+# MyCountry Builder System
 
-**Last updated:** May 2026
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta) — Builder v3  
+**Hierarchy:** Standalone Core Feature System (`BUILDER_VERSION = 3` in Version Registry).
 
-**Hierarchy:** MyCountry Builder is a standalone Core System (separate from MyCountry's executive command suite).
+The builder lets players establish and configure a new nation from scratch: national identity, government structure, economic baseline, demographics, and fiscal policy. It combines wiki ingestion, atomic component libraries, and template archetypes to accelerate onboarding.
 
-The builder lets new nations establish identity, government, economics, demographics, and fiscal posture. It pulls from wiki sources and atomic component libraries to accelerate onboarding.
+---
 
-## Routes & Components
-- `src/app/builder` – Primary builder wizard
-- `src/app/builder/README.md` – Feature-level notes (kept in sync with this document)
-- `src/components/builders` – Step components for identity, government, economy, demographics, fiscal policy
-- `src/components/atomic` – Atomic component selectors (`UnifiedAtomicComponentSelector`, atomic themes)
+## Architecture & Versioning
 
-## Data Sources & Routers
-- `atomicGovernment.ts`, `atomicEconomic.ts`, `atomicTax.ts` – Component catalogs, synergies, conflicts
-- `wikiImporter.ts`, `wikiCache.ts` – Wiki ingestion, caching, image retrieval
-- `countries.ts` – Persists builder selections; `mycountry.ts` ensures MyCountry surfaces pick up results
+Builder v3 features unified statecraft and tax builder subsystems, template pre-population, and persistent Redis/DB caching for external wiki data.
 
-## Workflow Summary
-1. **Identity & Media** – Users configure coats of arms, flags (flag service + wiki fetch via `useUnifiedFlags`)
-2. **Government** – Select atomic components and traditional structures
-3. **Economy & Demographics** – Set baseline GDP, population, sector distributions
-4. **Fiscal & Policy** – Configure revenue sources, spending, tax systems
-5. **Review & Commit** – Persist via builder mutations; synced instantly with MyCountry analytics
+### Routes & Components
+- `src/app/builder/page.tsx` – Primary multi-step nation creation wizard
+- `src/app/builder/components/` – Step panels:
+  - `IdentityStep`: Country name, official title, motto, leader name, flag selector, coat of arms
+  - `GovernmentStep`: Atomic government components, political system, head of state type
+  - `EconomyStep`: Baseline GDP, growth, economic tier, sector distribution
+  - `DemographicsStep`: Population, urbanization, life expectancy, healthcare/education baselines
+  - `FiscalStep`: Tax rates, revenue sources, budget allocations, passive income projections
+  - `ReviewStep`: Final summary, compliance verification, persistence trigger
+- `src/components/atomic/` – Atomic component selectors (`UnifiedAtomicComponentSelector`, atomic theme badges)
 
-## Utilities & Scripts
-- `scripts/migrations/create-national-identity-records.ts` – Migration helper for identity data
-- Builders rely on validation utilities under `src/app/mycountry/utils` and `src/lib`
+### Backend Routers
+- `src/server/api/routers/builderDraft.ts` – Draft persistence (autosaving wizard progress so users can leave and resume)
+- `src/server/api/routers/atomicGovernment.ts` – Government component catalog, synergy matrix, and conflict rules
+- `src/server/api/routers/atomicEconomic.ts` – Economic policy component catalog and impact modifiers
+- `src/server/api/routers/atomicTax.ts` & `src/server/api/routers/taxSystem/` – Tax system components and revenue models
+- `src/server/api/routers/wikiImporter/` & `src/server/api/routers/wikiCache.ts` – Wiki infobox parsing, image retrieval, and 24-hour caching
+- `src/server/api/routers/countries/` (`createCountry`, `updateCountry`) – Final nation record persistence
 
-## Optimizations & Performance (May 2026)
+---
 
-The builder system underwent several major visual and performance updates:
-- **Template & Archetype Contexts**: Implemented `selectedTemplate` state tracking in the `BuilderFilterState` context to automatically populate context-aware government structure defaults during step transitions.
-- **Adaptive UI Badging**: Archetype cards use a color-coded glass badge system indicating complexity levels, and adapt cleanly between light and dark modes.
-- **Dynamic Right Sidebar Margins**: Employs a `ResizeObserver` on the left sidebar's preview widget to dynamically adjust the top margin of the right side selector options, preventing overlapping elements.
-- **Preventing React Feedback Loops**: Fixed infinite update loops (`Maximum update depth exceeded`) by using mutable React refs to store callbacks and replacing `JSON.stringify` dependency comparisons with Lodash `isEqual` in hooks.
-- **Persistent Wiki Cache**: The wiki parser checks persistent Redis and database caches before executing external API requests, storing parsed infoboxes for 24 hours to prevent throttling.
-- **Stability Fixes**: Resolved a null-pointer crash on undefined structure fields when entering the Government step with a fresh template.
+## Wizard Workflow
 
-## Help & Documentation
-- `/help/getting-started/*` guides new users through the builder
-- Update this document and help content when adding steps or fields
+```mermaid
+graph LR
+    A[1. Identity & Flags] --> B[2. Government]
+    B --> C[3. Economy & Sectors]
+    C --> D[4. Demographics]
+    D --> E[5. Fiscal & Tax]
+    E --> F[6. Review & Commit]
+    F --> G[MyCountry Command Suite]
+```
 
-Keep builder data models backward compatible; migrations should include seed/backfill logic when adding required fields.
+1. **Identity & Media**: Configures name, flag (via `useUnifiedFlags` or MediaWiki asset fetch), and national symbols.
+2. **Government**: Selects atomic government components with live synergy score calculation and conflict warnings.
+3. **Economy & Sectors**: Sets baseline GDP per capita and sector splits (Agriculture, Industry, Services, Tech).
+4. **Demographics**: Defines population, growth expectations, and demographic distribution.
+5. **Fiscal & Policy**: Configures tax brackets, budget allocations, and models daily dividend projections.
+6. **Review & Commit**: Persists records via `$transaction`, seeds historical data points, initializes `MyVault`, and transitions to `/mycountry`.
 
+---
+
+## Key Optimizations & Stability Guardrails
+
+- **Wiki API Compliance**: All MediaWiki infobox imports strictly use the centralized user-agent `IxStats-Builder` (`src/lib/wiki/config.ts`). Never make ad-hoc fetch calls.
+- **Persistent Wiki Cache**: Parsed infoboxes are cached in Redis / database for 24 hours to prevent upstream MediaWiki rate limiting.
+- **Draft Autosaving**: `builderDraftRouter` automatically syncs step state so browser refreshes do not lose configuration.
+- **Archetype Context**: Selecting a government or economic archetype dynamically populates context-aware defaults for subsequent steps.
+- **Safe Comparison Hooks**: Uses Lodash `isEqual` comparisons in React hooks to prevent `Maximum update depth exceeded` re-render loops.
+
+---
+
+## Related Documentation
+
+- [Economic Calculations Guide](./calculations.md)
+- [Government Components & Synergies](../SYNERGY_REFERENCE.md)
+- [Tax System Guide](./economy.md)
+- [MyCountry Command Suite](./mycountry.md)
+- [Help: Getting Started](/help/getting-started)

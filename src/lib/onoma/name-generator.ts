@@ -30,7 +30,6 @@ import {
   generateReligiousOrderName,
   generateMercenaryBandName,
 } from "./group-generator";
-import { generateTavernName } from "./tavern-generator";
 import { pickRandom } from "./template-resolver";
 
 /**
@@ -170,7 +169,6 @@ export function generatePresetName(ctx: PresetGenerationContext): string | null 
     if (subType === "mystic-order") return generateMysticOrderName(characterChain, options);
     if (subType === "military-unit") return generateMilitaryUnitName(characterChain, options);
     if (subType === "covert-org") return generateCovertOrgName(characterChain, options);
-    if (subType === "tavern") return generateTavernName(options);
     if (subType === "business-company")
       return generateBusinessCompanyName(characterChain, options);
     if (subType === "academic-institution")

@@ -20,7 +20,7 @@ export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPr
   // Prefetch intro for instant tooltip via global provider
   const utils = api.useUtils();
   useEffect(() => {
-    if (title) void utils.wiki.getIntro.prefetch({ title, wiki });
+    if (title) void utils.wikios.getIntro.prefetch({ title, wiki });
   }, [title, wiki, utils]);
 
   // Just render children — global provider handles the tooltip
@@ -40,7 +40,7 @@ export function ForumLinkPreview({ threadId, children }: ForumLinkPreviewProps) 
   // Prefetch thread data for instant tooltip via global provider
   const utils = api.useUtils();
   useEffect(() => {
-    if (threadId > 0) void utils.wiki.getForumThreadPreview.prefetch({ threadId });
+    if (threadId > 0) void utils.wikios.getForumThreadPreview.prefetch({ threadId });
   }, [threadId, utils]);
 
   return <>{children}</>;

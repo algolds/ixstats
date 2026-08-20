@@ -1,78 +1,66 @@
 # Halo Plugin System
 
-> **Naming:** **Halo** is the UI/Feature System formerly called "Dynamic Island". The code identifiers keep the `DI` / `DynamicIsland` prefix (directory `src/components/halo/`, hooks `useDIPlugin`, types `DIPlugin`/`DIAction`/`DIBadge`) pending a separate mechanical rename.
+**Last updated:** August 2026  
+**Status:** Production Ready (Beta) — Halo v4  
+**Hierarchy:** Core Feature System (`HALO_VERSION = 4` in Version Registry). Global contextual overlay and wayfinding suite.
 
-**Hierarchy:** Halo is a Core System within IxStates (IxStats) — a global UI overlay with plugin architecture (independently versioned: `HALO_VERSION` in the Version Registry).
+> **Naming & Identifiers:** **Halo** is the canonical brand name (formerly "Dynamic Island"). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
-Halo (code-prefixed `DI`) is the central, interactive user interface element for the IxStates (IxStats) platform. To support multiple application contexts (such as WikiOS, Forums, and MyCountry) without bloating the core codebase with path-specific conditional checks, the system implements a **plugin-driven architecture**.
+Halo is the central interactive overlay element for IxStates. To support diverse application contexts (WikiOS, Forum, MyCountry, Onoma Lab) without hardcoded route branching, the system employs a **plugin-driven external store architecture**.
 
 ---
 
 ## Architecture Overview
 
-Instead of checking the current pathname or using hardcoded switches internally, the Halo reads its layout, actions, expanded views, and custom styling from a centralized plugin context. Pages or layouts register their plugins on mount, and the DI dynamically resolves to the active plugin with the highest priority.
+Pages or layouts register their custom plugins on mount. Halo uses `useSyncExternalStore` in `src/components/halo/plugin-context.tsx` to ensure thread-safe concurrent reactivity across React 19 rendering paths, resolving dynamically to the active plugin with the highest priority.
 
 ```mermaid
 graph TD
-    subgraph Pages/Layouts
-        LayoutA[Wiki Layout] -- Registers --> PluginA[Wiki DI Plugin]
-        LayoutB[Forum Layout] -- Registers --> PluginB[Forum DI Plugin]
+    subgraph Pages / Layouts
+        Wiki[WikiOS Layout] -- Registers --> PluginW[Wiki DI Plugin]
+        Forum[Forum Layout] -- Registers --> PluginF[Forum DI Plugin]
+        Narrator[WikiOS Narrator] -- Registers --> PluginN[Audio Narrator Plugin]
     end
 
-    subgraph DI Plugin System
-        PluginA -- useDIPlugin --> Registry[DIPluginRegistry]
-        PluginB -- useDIPlugin --> Registry
-        Registry -- Resolves active plugin --> ActiveHook[useActiveDIPlugin]
+    subgraph Halo Plugin Engine
+        PluginW & PluginF & PluginN -- useDIPlugin --> Registry[DIPluginRegistry]
+        Registry -- Resolves active plugin --> Hook[useActiveDIPlugin]
     end
 
-    subgraph Halo UI
-        ActiveHook --> CompactView[CompactView]
-        ActiveHook --> ExpandedView[ExpandedView]
+    subgraph Halo Visual Presentation
+        Hook --> CompactPill[Compact Material Pill]
+        Hook --> ExpandedModal[Expanded Contextual Modal]
     end
 ```
 
 ---
 
-## Core Interfaces
-
-The core interfaces are defined in [types.ts](file:///ixwiki/public/projects/ixstats/src/components/halo/types.ts).
+## Core Interfaces (`src/components/halo/types.ts`)
 
 ### `DIPlugin`
-
-A plugin registration object contains optional configurations to override or inject content into the DI.
-
 ```typescript
 export interface DIPlugin {
-  id: string;                                                      // Unique plugin ID (e.g. "wiki", "forum", "mycountry")
-  priority?: number;                                               // Priority value (higher priority wins if multiple are registered)
-  center?: React.ReactNode;                                        // Renders in place of the default clock/greeting
-  actions?: DIAction[];                                            // Extra action buttons on the pill's right-hand side
-  expandedViews?: Record<string, React.ComponentType<DIViewProps>>;  // Custom expanded modal views
-  badge?: DIBadge;                                                 // Dot indicator badge on the pill
-  accentColor?: string;                                            // Underline accent border color (visible when sticky)
-  stickyLabel?: string;                                            // Wayfinding text label shown in sticky mode
+  id: string;                                                        // Unique identifier (e.g. "wiki", "forum", "narrator")
+  priority?: number;                                                 // Priority weight (highest priority active plugin renders)
+  center?: React.ReactNode;                                          // Custom component replacing the default clock/greeting
+  actions?: DIAction[];                                              // Action buttons on the pill's right rail
+  expandedViews?: Record<string, React.ComponentType<DIViewProps>>;    // Modal components rendered when expanded
+  badge?: DIBadge;                                                   // Colored status dot or pulsing activity badge
+  accentColor?: string;                                              // Underline accent border color
+  stickyLabel?: string;                                              // Wayfinding label shown when sticky
 }
 ```
 
-### `DIAction`
-
-Represents a button that will be rendered on the right side of the compact pill next to the default Search and Bell buttons.
-
+### `DIAction` & `DIBadge`
 ```typescript
 export interface DIAction {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
-  badge?: number;                                                  // Numerical notification count badge on the button
+  badge?: number; // Notification count badge
 }
-```
 
-### `DIBadge`
-
-Displays a small colored dot on the pill itself (often pulsing to denote real-time activity).
-
-```typescript
 export interface DIBadge {
   color: string;
   pulse?: boolean;
@@ -81,98 +69,32 @@ export interface DIBadge {
 
 ---
 
-## State Management and Lifecycle
+## Active Reference Plugins (`src/components/halo/plugins/`)
 
-The DI plugin state is managed in [plugin-context.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugin-context.tsx) using an external store pattern (`useSyncExternalStore`) to guarantee thread safety and reactivity across React 19's concurrent rendering paths.
+### 1. WikiDIPlugin (`WikiDIPlugin.tsx`)
+- **Article Mode**: Displays current wiki breadcrumbs, article word count, and enables click-to-expand to open the rich `WikiView` modal.
+- **Root/Special Mode**: Renders `WikiProfileButton` which pops open user contribution stats and recent edit history.
 
-### 1. Registration
+### 2. ForumDIPlugin (`ForumDIPlugin.tsx`)
+- Displays current thread/category breadcrumbs.
+- Activates an animated orange pulsing badge (`#f97316`) when unread forum alerts are detected.
 
-Any page or layout can hook into the Halo using the `useDIPlugin` hook.
-
-```typescript
-import { useDIPlugin } from "~/components/DynamicIsland/plugin-context";
-import { MyCustomView } from "./MyCustomView";
-
-export function MyPageLayout({ children }) {
-  useDIPlugin({
-    id: "my-plugin",
-    priority: 10,
-    center: <span className="text-xs">My Context Title</span>,
-    expandedViews: { main: MyCustomView },
-    accentColor: "#10b981", // emerald
-    stickyLabel: "My Page",
-  });
-
-  return <>{children}</>;
-}
-```
-
-### 2. Active Plugin Resolution
-
-The `useActiveDIPlugin` hook retrieves all registered plugins and selects the one with the highest `priority`. If multiple plugins are active, the highest priority plugin wins. If no plugin is registered, the Halo falls back to the default platform state (clock, greeting popover, and standard search).
+### 3. Audio Narrator Plugin (Onoma / WikiOS)
+- **Pill-Center Equalizer**: Renders a live bouncing waveform visualizer during Kokoro TTS playback.
+- **Scrubber & Controls**: In expanded view, provides interactive playhead seeking, skip/pause triggers, and section-by-section heading jumps.
 
 ---
 
-## Interactive Elements and Nesting Safety
+## Nesting Safety & HTML Compliance
 
-When designing a plugin's `center` component, be mindful of HTML validation rules:
-- **Clickable Plugins**: If a plugin defines `expandedViews`, the DI automatically wraps the `center` component in a click-to-expand `<button>`. Clicking the center of the pill will switch the view mode to `plugin:<firstViewKey>` (e.g. `plugin:wiki`).
-- **Interactive Centers**: If a plugin's `center` itself contains interactive elements (such as `WikiProfileButton` which triggers a `<Popover>`), the plugin should **not** provide `expandedViews`. When `expandedViews` is undefined or empty, the DI renders the `center` directly without wrapping it in a `<button>`, avoiding illegal nested interactive elements in the DOM.
+- **Click-to-Expand Containers**: If a plugin supplies `expandedViews`, Halo automatically wraps the center component in a click-to-expand `<button>`.
+- **Interactive Centers**: If a plugin's `center` contains its own interactive buttons or popover triggers (e.g. `WikiProfileButton`), `expandedViews` must be omitted (`undefined`), allowing Halo to render `center` directly without generating invalid nested `<button>` elements in the DOM.
 
 ---
 
-## Reference Implementations
+## Related Documentation
 
-### 1. WikiDIPlugin
-
-Located in [WikiDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugins/WikiDIPlugin.tsx). The Wiki plugin adapts dynamically to whether the user is viewing a specific article:
-
-- **Article view**: Displays the article breadcrumbs and enables click-to-expand to open the custom `WikiView` expanded modal.
-- **Root/Special view**: Displays a custom `WikiProfileButton` which pops open the wiki user profile stats and recent article history, and disables the expanded modal.
-
-```typescript
-export function WikiDIPlugin() {
-  const { articleTitle } = useWikiContext();
-
-  const plugin = useMemo(
-    () => ({
-      id: "wiki",
-      priority: 10,
-      center: articleTitle ? <WikiBreadcrumb /> : <WikiProfileButton />,
-      expandedViews: articleTitle ? { wiki: WikiView } : undefined,
-      accentColor: "#3b82f6",
-      stickyLabel: "Wiki",
-    }),
-    [articleTitle]
-  );
-
-  useDIPlugin(plugin);
-  return null;
-}
-```
-
-### 2. ForumDIPlugin
-
-Located in [ForumDIPlugin.tsx](file:///ixwiki/public/projects/ixstats/src/components/halo/plugins/ForumDIPlugin.tsx). The Forum plugin displays the thread or forum room breadcrumbs and activates a pulsing orange badge whenever there are unread forum alerts.
-
-```typescript
-export function ForumDIPlugin() {
-  const { unreadAlerts } = useForumContext();
-
-  const plugin = useMemo(
-    () => ({
-      id: "forum",
-      priority: 10,
-      center: <ForumBreadcrumb />,
-      expandedViews: { forum: ForumView },
-      accentColor: "#f97316",
-      stickyLabel: "Forum",
-      badge: unreadAlerts > 0 ? { color: "#f97316", pulse: true } : undefined,
-    }),
-    [unreadAlerts]
-  );
-
-  useDIPlugin(plugin);
-  return null;
-}
-```
+- [WikiOS System Guide](./wikios.md)
+- [Onoma Voice & Speech Guide](./onoma-voice-guide.md)
+- [Forum Integration](./forum.md)
+- [Facet Design System](../reference/facet-design-system.md)
