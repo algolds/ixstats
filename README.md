@@ -2,249 +2,179 @@
 
 ### Build a nation. Shape history.
 
-IxStates is a nation simulation and worldbuilding platform — a persistent world where every country's economy, military, diplomacy, and borders are live and interconnected.
+IxStates is a next-generation nation simulation and worldbuilding platform — a persistent, living world where every country's economy, military, diplomacy, geography, and culture are live and interconnected.
 
-[IxStates 1.1.1 "Ogma" (Alpha) · 90 routers · 1,450+ procedures · 296 data models · 750+ components]
-
----
-
-### IxWorld
-
-A handmade world with full topography, water systems, and climate modeling. Dynamic borders, live-updating territory, story pins that chart history, and a border editor. Every nation mapped with precision.
-
-### MyCountry Suite
-
-Unified command across defense, diplomacy, intelligence, economy, and politics. Includes the step-by-step Nation Builder for creating countries from scratch.
-
-### IxVault
-
-Trading cards, crafting recipes, auctions, and peer-to-peer trading. NationStates collection import. Real-time card marketplace.
-
-### ThinkPages
-
-Feed, direct messaging, group discussions, and lore sharing across all systems. Posts sync to Discord. The social backbone of the platform.
-
-### WikiOS
-
-A living wiki with a visual canvas editor and integrated media repository. Every nation, battle, and treaty documented. Powered by the community.
+[**IxStates 1.3.0 "Ogma"** (Beta) · 90 routers · 1,450+ procedures · 296 data models · 750+ components · 151 test suites]
 
 ---
 
-## Under the hood
+### 🌍 IxWorld
+A procedural and handmade world powered by the UPG v2 100,000-cell Voronoi spatial mesh with Catmull-Rom spline subdivision, coastal hypsometry, dynamic border editors, and live-updating territory.
 
-Next.js 16 · React 19 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.17 Tailwind CSS 4.3 · MapLibre GL · PostgreSQL + PostGIS · Socket.IO · Redis
+### 🏛️ MyCountry Suite
+Unified executive command across Defense & Security, Governance & Politics, Economy & Resources, and Intelligence & Diplomacy. Includes the step-by-step Nation & Economy Builder.
+
+### 🎴 IxVault
+Trading cards, crafting recipes, live auctions, peer-to-peer trading, and NationStates collection imports powered by an atomic credit ledger.
+
+### 💬 ThinkPages & ThinkShare
+Real-time social knowledge sharing, direct messaging, ThinkTanks, and cross-platform Discord synchronization.
+
+### ⟨ONOMA⟩ Linguistic Studio
+Procedural phonological linguistics, Markov name synthesis, formant acoustic visualizers, and custom dictionary sound shifts.
+
+### 🏆 MyLeague
+Multi-sport league simulation, team club management, tactical fixtures, and season standings.
+
+### 📖 WikiOS
+Next-generation living wiki with a visual canvas editor, dual-pane markdown authoring, and integrated media repository.
+
+---
+
+## Under the Hood
+
+Next.js 16.3 (Turbopack) · React 19.2 · TypeScript 5.9 · Prisma 6.19 · tRPC 11.18 · Tailwind CSS 4.3 · MapLibre GL · PostgreSQL (PostGIS) · Socket.IO · Redis · Jest 30
 
 ---
 
 ## Platform Overview
 
-- Next.js 16.2 App Router — 210+ routes across `src/app`
-- React 19.2 + TypeScript 5.9 — 750+ components in `src/components`
-- tRPC 11.17 API layer — **90 routers** (domain-split into subdirs + flat files), **1,450+ typed procedures**
-- Prisma 6.19 ORM — **296 models** on PostgreSQL
-- Custom server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
-- **Architecture guard** (`scripts/audit/audit-arch.ts`) enforces ≤700-line file ceiling and zero cross-router imports
-- In-app help center at `/help` and documentation hub in `docs/`
+- **App Router Architecture**: Next.js 16.3 App Router with 210+ routes across `src/app/`
+- **Design System**: **Facet** design system with 4-tier depth hierarchy and native light/dark themes
+- **API Surface**: **90 tRPC routers** (domain-split into modular subdirectories via `mergeRouters`), **1,450+ typed procedures**
+- **Data Layer**: Prisma 6.19 ORM with **296 models** split across 15 domain schemas on PostgreSQL + PostGIS
+- **Architecture Guard**: `bun run audit:arch` enforces a ≤700-line file ceiling, baseline ratcheting, and blocks cross-router coupling
+- **Centralized Test Suite**: 151 test suites (1,329+ unit/integration tests) located under `src/tests/`
+- **Documentation Bible**: Comprehensive developer documentation hub organized across 9 domains in `docs/`
 
-## Feature Pillars
+---
 
-Each tier carries an independent version where noted — see the **[Versioning & Release Architecture](docs/reference/revision.md)** (`docs/reference/revision.md`).
+## Feature Pillars & Systems
 
-| Tier | Systems |
-|------|---------|
-| **Apps** *(independent version)* | IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software — powers the IxWiki content; Canvas editor sub-system), IxVault (wallet + trading cards + IxCredits + crafting/trading/marketplace/packs/lore cards/NS import) |
-| **Engines** *(internal sim cores, independent version)* | MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld) |
-| **Core Systems** *(independent version)* | MyCountry ★ (flagship executive command suite — Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (nation creation wizard), ThinkPages (social knowledge sharing — ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS (50+ interfaces) |
-> Current release **1.1.1 "Ogma"** (Alpha). See [CHANGELOG.md](CHANGELOG.md) for full version history. |
-| **Design System** *(independent version)* | Facet (glass / refraction / depth) |
-| **Platform Utilities** | IxTime (game clock), IxnayID (cross-platform identity) |
-| **Inherits platform version** | IxForum (community), Experimental Labs |
-| **Infrastructure** | Notifications, Help, c15t (consent manager), Flag Service, WebSocket, Cron, Cache/RateLimit/Auth |
-| **Navigation Hubs** | Dashboard, Explore/Countries, Feed |
+Each tier carries an independent capability version — see the **[Versioning & Release Architecture](docs/reference/revision.md)** (`docs/reference/revision.md`) and the central Version Registry in [`src/lib/buildVersion.ts`](src/lib/buildVersion.ts).
+
+| Tier | Capability | Systems |
+|---|:---:|---|
+| **Apps** | v1–v2 | **IxWorld** (maps; standalone: IxMaps), **WikiOS** (living wiki & canvas editor), **IxVault** (cards, packs, marketplace, atomic credits) |
+| **Engines** | v2–v4 | **MyCountry** (nation sim core & intent engine), **Concord** (living-world clock, crises & NPCs), **Atlas** (UPG v2 spatial mesh & worldgen) |
+| **Core Systems** | v1–v5 | **MyCountry** (flagship executive desk), **Builder** (statecraft & tax wizard), **ThinkPages** (social feed & ThinkShare), **Achievements** (progression & LoreWards), **Halo** (contextual notification bar), **Onoma** (linguistic laboratory) |
+| **Design System** | v2 | **Facet** (glass refraction, specular lighting, and physical spring depth) |
+| **Platform Utilities** | — | **IxTime** (universal game clock), **IxnayID** (cross-platform identity & SSO) |
+| **Navigation Hubs** | — | **Dashboard** (`/dashboard`), **Explore Nations** (`/countries`), **Global Feed** (`/feed`) |
+
+---
+
+## Experimental Labs
+
+Prototypes and specialized worldbuilding studios accessible under `/labs`:
+
+| Lab | Path | Description |
+|---|---|---|
+| **⟨ONOMA⟩** | `/labs/onoma` | Procedural phonological linguistics, Markov name synthesis, formant acoustic visualizers, and lexicon dictionaries |
+| **Vexel** | `/labs/vexel` | Vector heraldry studio, vexillological flag generator, and SVG coat of arms composer |
+| **Strata** | `/labs/strata` | Planetary tectonics simulator, hypsometric relief renderer, and elevation matrix generator |
+| **Dynas** | `/labs/dynas` | Royal genealogy tracker, dynastic succession trees, and noble house political alliances |
+| **Nomora** | `/labs/nomora` | Cultural jurisprudence generator, civic custom codification, and legal precedent engine |
+
+---
 
 ## Technology Stack
 
-| Area | Details |
-|------|---------|
-| Runtime | Node.js >= 18.17, bun >= 1.2 |
-| Framework | Next.js 16.2.6, React 19.2.6 |
-| Language | TypeScript 5.9.3 |
-| API Layer | tRPC 11.17 with SuperJSON + Clerk auth context |
-| Database | Prisma 6.19.3, PostgreSQL (port 5433) |
-| Styling | Tailwind CSS 4.3, custom **Facet** design system (glass/refraction/depth), Lucide icons |
-| Mapping | MapLibre GL JS with globe/mercator projection, PostGIS spatial queries |
-| Realtime | Socket.IO via `server.mjs` and `src/server/websocket-server.ts` |
+| Area | Technologies |
+|---|---|
+| **Runtime & Tooling** | Node.js ≥ 20, Bun ≥ 1.2 (`bun.lock`), Jest 30 |
+| **Framework** | Next.js 16.3.0, React 19.2.8, React DOM 19.2.8 |
+| **Type System** | TypeScript 5.9.3 with isolated module safety and strict schemas |
+| **API & Contracts** | tRPC 11.18.0 with SuperJSON serialization and Clerk auth context |
+| **Database & GIS** | Prisma 6.19.3, PostgreSQL 16 + PostGIS (port `5433`) |
+| **Styling & Motion** | Tailwind CSS 4.3 (`@theme`), Facet design tokens, Motion / Lucide icons |
+| **Mapping & Geospatial** | MapLibre GL JS (Globe & Mercator), Turf.js, Voronoi mesh graphs |
+| **Realtime & State** | Socket.IO, Redis (rate limiting & cache), Zustand |
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.17+ and bun 1.2+
-- PostgreSQL database (port 5433, database `ixstats`)
-- Optional: Clerk credentials for authentication (demo mode works without)
+- [Bun](https://bun.sh/) (strictly required package manager)
+- Docker & Docker Compose (for PostgreSQL + PostGIS & Redis)
+- Node.js 20+
 
-### Installation (Standard / Manual)
+### Standard Development Setup
 
 ```bash
+# 1. Install dependencies (auto-generates Prisma client via postinstall)
 bun install
-bun run db:setup       # prisma generate + db push + seed
-bun run dev            # launches Next.js on http://localhost:3000
+
+# 2. Start dev server on http://localhost:3000 (Turbopack)
+bun run dev
 ```
 
-### Installation (WSL2 / Local Development Automation)
+### Environment Configuration
 
-For a detailed step-by-step walkthrough on setting up your local WSL2 environment from scratch (including keys, SSH configuration, and environment overrides), see the setup guide in [plans/local-dev-windows-setup.md](file:///ixwiki/public/projects/ixstats/plans/local-dev-windows-setup.md).
-
-If you are developing locally inside WSL2 and syncing from the production VPS (e.g. `ixwiki`), you can boot the entire local stack—including Docker database/Redis, background SSH tunnels, production database dump restoration, schema synchronization, and the Next.js development server—with a single command:
-
-```bash
-bun run dev:local
-```
-
-This script will automatically:
-1. Establish SSH tunnels to the production VPS (Discord-bot on `13001`, DB inspector on `15433`, MediaWiki DB on `13306`).
-2. Spin up local Docker containers (`ixstats-postgres` on port `5433` and `ixstats-redis-cache` on port `6379`).
-3. Restore the latest production database dump to your local Postgres container.
-4. Synchronize the database schema with your active branch's Prisma definitions (`db:push:force`).
-5. Start the Next.js development server on `http://localhost:3000` (Turbopack).
-
-To safely push and deploy your changes to the VPS:
-```bash
-bun run deploy:local
-```
-This runs Prettier, ESLint, and Jest unit tests locally, pushes your active branch to GitHub, and triggers the remote VPS deployment script over SSH.
-
-### WSL2 Environment Configuration & Database Modes
-
-The application dev server determines its database access mode based on which environment file it loads:
-
-1. **Read-Only Mode (Production Replica Inspection):**
-   If `.env.local.dev` is loaded and contains `DATABASE_READONLY="true"`, the application will start in **Read-Only Mode**. All database write operations, schema updates, user creation, and audit logging are blocked.
-
-2. **Read-Write Mode (Local Development & Testing - Recommended):**
-   To enable writing to your local database (e.g., managing your sports clubs, editing countries, or saving stashes):
-   - Modify `.env.local.dev` (or create/edit `.env.local` to override it) and change the variables to:
-     ```ini
-     DATABASE_READONLY="false"
-     DATABASE_URL="postgresql://postgres:kxslIz4cICVDon%2FqwP2yrUzOKjtsryQDt9d28hmMjlk%3D@localhost:5433/ixstats?connection_limit=5"
-     ```
-     *(Note: The URL-encoded password matches the local Docker Postgres container superuser credentials)*
-   - When `DATABASE_READONLY` is set to `false`, startup scripts will automatically sync any codebase schema changes (like `v2` additions) to your local DB.
-
-> [!TIP]
-> **SSH Tunnel Port Conflicts:** If you see `bind [127.0.0.1]:13001: Address already in use` warnings on startup, it means background SSH tunnels are already active on those ports (either from another WSL terminal or a Windows SSH client like PuTTY). The local development server will still run successfully and leverage the existing active tunnels.
-
-
-
-The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
+Create a `.env.local.dev` or `.env.local` file in the root directory:
 
 ```dotenv
 DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."   # optional
-CLERK_SECRET_KEY="sk_test_..."                    # optional
-IXTIME_BOT_URL="http://localhost:3001"            # optional
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."   # optional in dev (demo mode active)
+CLERK_SECRET_KEY="sk_test_..."                    # optional in dev
+IXTIME_BOT_URL="http://localhost:3001"            # optional in dev
 ```
 
-### Database
+For comprehensive instructions on WSL2 automation, SSH VPS tunneling, and database replication, see [`docs/operations/local-dev-setup.md`](docs/operations/local-dev-setup.md).
 
-- Prisma migrations: `prisma/migrations/`
-- Initialize: `bun run db:setup`
-- Prisma Studio: `bun run db:studio` (dev) or `bun run db:studio:prod` (production)
+---
 
-## Build & Quality
+## Developer Commands & Quality Gates
 
-| Command | Purpose |
-|---------|---------|
-| `bun run build` | Production build |
-| `bun run start:prod` | Production server (port 3550) |
-| `bun run lint` | ESLint with cache |
-| `bun run dev` | Development server with incremental type checking |
-| `bun run typecheck` | Full typecheck across all sub-projects (ui, server, trpc, db) |
-| `bun run audit:arch` | Architecture guard — enforces file-size ceiling, ratchets baseline, blocks cross-router imports |
-| `bun run scripts/split-router-template.ts --help` | Split a router into a subdir (see header comment for usage) |
+### Testing & Verification
 
-## Project Structure
-
-```
-├── Integrated Products
-│   ├── src/app/maps/               # IxWorld map viewer (standalone: IxMaps at maps.ixwiki.com)
-│   ├── src/app/(forum)/forum/      # IxForum community (XenForo bridge)
-│   ├── src/app/vault/              # IxVault — cards, collections, marketplace, crafting, packs, NS import
-│   └── src/app/(wiki-os)/          # IxWiki — wiki reader, dual editor, special pages at /wiki/* (powered by WikiOS)
-│
-├── Core Systems
-│   ├── src/app/mycountry/          # MyCountry ★ — executive command suite
-│   ├── src/app/builder/            # MyCountry Builder — nation creation wizard
-│   ├── src/app/thinkpages/         # ThinkPages — feed, ThinkShare messages, ThinkTanks
-│   ├── src/app/achievements/       # Achievements & Awards — quest paths, LoreWards
-│   ├── src/app/stashes/            # Stash — save-for-later with annotations
-│   ├── src/app/blurbs/             # Blurbs — "Topic Tuesday" community lore prompts & responses
-│   └── src/app/admin/              # Admin CMS — 50+ management interfaces
-│
-├── Infrastructure
-│   ├── src/components/             # UI components (750+ across 40+ directories)
-│   ├── src/hooks/                  # Custom React hooks (90+)
-│   ├── src/server/api/routers/     # tRPC routers (90 — domain-split into subdirs via mergeRouters + flat)
-│   ├── src/lib/                    # Utilities, rate limiter, game clock, cron, WebSocket
-│   ├── src/server/shared/          # Cross-router shared primitives (e.g. `layer-cache.ts`)
-│   ├── src/styles/                 # Facet design system (glass/refraction/depth), themes, forum CSS
-│   ├── prisma/                     # Schema (296 models across 15 files) + migrations
-│   ├── scripts/audit/              # Architecture guard (ratchet baseline; fails on new god files / growth)
-│   └── server.mjs                  # Custom Node server (Socket.IO + cron)
-│
-└── Navigation Hubs
-    ├── src/app/dashboard/          # Signed-in dashboard
-    ├── src/app/countries/          # Explore / public nation profiles
-    └── src/app/feed/               # Activity feed
+```bash
+bun run test                   # Run all 151 Jest test suites across the repository
+bun run test -- <pattern>      # Run single test (e.g. bun run test -- onoma)
+bun run test:watch             # Jest interactive watch mode
 ```
 
-## Experimental Labs
+### Typecheck & Architecture Guard
 
-Early-stage prototype systems under the Labs dropdown.
+```bash
+bun run typecheck              # Sequentially runs all 4 sub-project typechecks
+bun run typecheck:ui           # Frontend App Router, components, and hooks (6GB heap)
+bun run typecheck:server       # Backend tRPC routers, services, and libraries (6GB heap)
+bun run typecheck:trpc         # Core tRPC types and router definitions (4GB heap)
+bun run typecheck:db           # Prisma client connections and database helpers (4GB heap)
+bun run audit:arch             # Architecture guard: validates ≤700L ceilings & modular splits
+```
 
-| Lab | Description |
-|-----|-------------|
-| **Vexel** | — |
-| **Onoma** | — |
-| **Strata** | — |
-| **Dynas** | — |
-| **Nomora** | — |
+### Database & Tooling
 
-## Design System
+```bash
+bun run db:studio              # Open Prisma Studio GUI
+bun run db:sync                # Sync production database snapshot to local dev
+bun run format:write           # Format all TypeScript, TSX, and CSS files with Prettier
+bun run lint                   # ESLint check with cache
+```
 
-The platform is built on **Facet**  — a custom design system built around depth with hierarchy, dynamic refraction, and native light/dark theme intergration. See `src/styles/glass-refraction.css` and `src/styles/themes.css`. *(CSS classes/tokens remain `glass-*` / `--glass-*` pending a separate mechanical rename.)*
+---
 
-- **Icons**: Lucide React (primary), React Icons (Font Awesome, Game Icons, Remix), 36 custom animated icons (`src/components/ui/icons/`)
-- **Brand colors**: Indigo primary (`#6366f1`), with per-system accent colors mapped in `docs/reference/branding.md`
-- **Tailwind CSS 4.3** with CSS-first `@theme` configuration
+## Documentation Bible
 
-## API & Data Access
+The repository maintains an overhauled, single-source-of-truth documentation system in the [`docs/`](docs/) directory:
 
-- tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
-- Router index: `src/server/api/root.ts` (90 domain routers)
-- Database: Prisma client in `src/server/db.ts`
-- Realtime: Socket.IO events from `src/server/websocket-server.ts`
-- **Architecture guard:** `bun run audit:arch` — fails on new god files, file growth past ratcheted baseline, or new cross-router imports. Single canonical splitter: `scripts/split-router-template.ts`
+- **[Master Index](docs/README.md)** — Central documentation hub and navigation map
+- **[Architecture](docs/architecture/)** — App Router patterns, Facet design system, caching, autosave, and tRPC routing
+- **[Systems](docs/systems/)** — Detailed architectural specifications for all 16 platform systems (100% Gold Master status)
+- **[Operations](docs/operations/)** — Local environment setup, PM2 process management, and VPS deployment workflows
+- **[Processes](docs/processes/)** — Modular refactoring guide, testing standards, and git branching protocols
+- **[Reference](docs/reference/)** — Revision & versioning specifications, complete tRPC API catalog, and brand design tokens
 
-## Observability
-
-- Rate limiting: `src/lib/rate-limiter` (Redis-based with in-memory fallback)
-- Error logging: `src/lib/error-logger` with optional Discord webhooks
-- Middleware: `src/proxy.ts` (Clerk auth + CSP + security headers)
-
-## Documentation
-
-- `docs/README.md` — documentation hub and navigation
-- `docs/reference/api-complete.md` — full tRPC API catalog
-- `docs/reference/branding.md` — complete brand catalog: all systems, icons, colors, visual identity tokens
-- `docs/systems/` — system-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
-- `docs/reference/revision.md` — **Versioning & Release Architecture** (platform/app/engine/system versioning, release names, channels, the Version Registry)
-- `CHANGELOG.md` — version history
+---
 
 ## Contributing
 
-1. Branch from `v2`
-2. `bun install && bun run db:setup`
-3. Keep linting clean: `bun run lint`
-4. Update relevant docs when adding or changing features
+1. Work branch is `v2`
+2. Follow the 4-layer refactoring architecture (`src/lib` logic, `src/hooks` state, `src/components` UI, `src/server` tRPC)
+3. Keep all files strictly $\le 700$ lines to satisfy `bun run audit:arch`
+4. Verify all tests pass with `bun run test` before opening pull requests
