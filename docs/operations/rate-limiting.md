@@ -603,7 +603,7 @@ testRateLimit().catch(console.error);
 Run the test:
 
 ```bash
-npx tsx scripts/test-rate-limit.ts
+bun scripts/test-rate-limit.ts
 ```
 
 #### 3. Test with cURL

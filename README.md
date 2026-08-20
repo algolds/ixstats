@@ -6,7 +6,8 @@
 [![Release Channel](https://img.shields.io/badge/channel-Beta-38bdf8.svg?style=flat-square)](src/lib/buildVersion.ts)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black.svg?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61dafb.svg?style=flat-square&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.4-FBF0DF.svg?style=flat-square&logo=bun)](https://bun.sh/)
 [![tRPC](https://img.shields.io/badge/tRPC-11.18-blueviolet.svg?style=flat-square&logo=trpc)](https://trpc.io/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748.svg?style=flat-square&logo=prisma)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.3-38bdf8.svg?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
@@ -204,7 +205,7 @@ Tooling:    Bun 1.2+ · TypeScript 5.9 · Jest 30 · ESLint 10 · Prettier
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) $\ge 1.2$ (strictly required package manager)
+- [Bun](https://bun.sh/) $\ge 1.4$ (strictly required runtime & package manager)
 - Docker & Docker Compose (for PostgreSQL + PostGIS & Redis)
 - Node.js $\ge 20$
 
@@ -243,18 +244,19 @@ For comprehensive instructions on WSL2 automation, SSH VPS tunneling, and databa
 
 ```bash
 bun run test                   # Execute all 153 Jest test suites across the repository
+bun run test:unit              # Fast sub-second parallel unit tests (Bun 1.4 native runner)
 bun run test -- <pattern>      # Run tests matching a specific pattern (e.g., bun run test -- ixtime)
 bun run test:watch             # Interactive Jest watch mode
 ```
 
-### Sub-Project Typechecking & Architecture Guard
+### Sub-Project Typechecking & Architecture Guard (TypeScript 7.0 Native Engine)
 
 ```bash
-bun run typecheck              # Sequentially runs all sub-project typechecks with safe heap bounds
-bun run typecheck:ui           # Typecheck UI pages, components, and hooks (6GB heap limit)
-bun run typecheck:server       # Typecheck backend tRPC routers and services (6GB heap limit)
-bun run typecheck:trpc         # Typecheck tRPC router contracts (4GB heap limit)
-bun run typecheck:db           # Typecheck Prisma client models and queries (4GB heap limit)
+bun run typecheck              # Sequentially runs all sub-project typechecks via native TS 7.0 engine
+bun run typecheck:ui           # Typecheck UI pages, components, and hooks
+bun run typecheck:server       # Typecheck backend tRPC routers and services
+bun run typecheck:trpc         # Typecheck tRPC router contracts
+bun run typecheck:db           # Typecheck Prisma client models and queries
 bun run audit:arch             # Architecture guard: enforces ≤700L ceilings & modular boundaries
 ```
 

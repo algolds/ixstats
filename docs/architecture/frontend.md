@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-**Framework**: Next.js 16.3.0 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 5.9.3  
+**Framework**: Next.js 16.3.0 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.0  
 **Design System**: **Facet** (Refraction, Depth Hierarchy, Tactile Feedback)  
 **Location**: `src/app/` (210+ routes) · `src/components/` (750+ UI components) · `src/hooks/` (90+ custom hooks)
 

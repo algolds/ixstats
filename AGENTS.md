@@ -2,8 +2,9 @@
 
 ## Critical Constraints
 
-- **Package manager**: `bun` (never npm/yarn/pnpm). Lockfile: `bun.lock`.
-- **Global typechecking is split into sub-projects.** Use `bun run typecheck` to sequentially run all checks, or check individual sub-projects like `typecheck:ui` or `typecheck:server`. The scripts run with predefined safe heap bounds (`--max-old-space-size=6144` or `4096`) to prevent OOM on 8GB host servers.
+- **Package manager**: `bun` (never npm/yarn/pnpm). Lockfile: `bun.lock`. Runtime: Bun 1.4+.
+- **TypeScript 7.0 Native Go Engine**: The project uses TypeScript 7.0 with native Go-based shared-memory concurrency and `--checkers` multi-threading, cutting memory by ~80% and typecheck times to ~2s.
+- **Sub-project Typechecking**: Use `bun run typecheck` to sequentially run all checks, or check individual sub-projects like `typecheck:ui` or `typecheck:server`.
 - **Database write commands are blocked**: `db:migrate`, `db:push`, `db:reset` exit with error to protect 82 nations of production data. Use `db:migrate:force` or `db:push:force` only when explicitly intended.
 - **Active branch**: `v2`.
 
@@ -21,6 +22,7 @@ bun run db:studio              # Prisma Studio GUI
 bun run db:sync                # sync production DB to dev
 bun run redis:start            # start Redis cache (rate limiting)
 bun run test                   # Jest 30
+bun run test:unit              # Fast parallel unit tests (Bun 1.4 native runner)
 bun run test:watch             # Jest watch mode
 ```
 
@@ -34,12 +36,12 @@ bun run test -- <path-or-pattern>   # e.g. bun run test -- src/lib/foo.test.ts
 
 ```bash
 bun run typecheck                       # sequentially checks ui, server, trpc, and db sub-projects
-bun run typecheck:ui                    # frontend client-side pages, hooks, components (6144MB heap)
-bun run typecheck:server                # backend routers, databases, libs (6144MB heap)
-bun run typecheck:trpc                  # core tRPC types and router definitions (4096MB heap)
-bun run typecheck:db                    # Prisma client connections and database helpers (4096MB heap)
-bun run typecheck:file path/to/file.ts  # single file typecheck using safe defaults (6144MB heap)
-bun run typecheck:diag                  # run diagnostics on global tsconfig (6144MB heap)
+bun run typecheck:ui                    # frontend client-side pages, hooks, components
+bun run typecheck:server                # backend routers, databases, libs
+bun run typecheck:trpc                  # core tRPC types and router definitions
+bun run typecheck:db                    # Prisma client connections and database helpers
+bun run typecheck:file path/to/file.ts  # single file typecheck
+bun run typecheck:diag                  # run diagnostics on global tsconfig
 ```
 
 ### TypeScript Performance & Profiling
@@ -168,7 +170,7 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 | ------------ | -------------------- |
 | Next.js      | 16.3.0               |
 | React        | 19.2.8               |
-| TypeScript   | 5.9.3                |
+| TypeScript   | 7.0.0                |
 | Prisma       | 6.19.3               |
 | tRPC         | 11.18.0              |
 | Zod          | 4.4.3 (NOT v3)       |

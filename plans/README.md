@@ -24,6 +24,11 @@ canonical documentation and specs live in [`docs/`](../docs/).
 | [113-ixworld-worker-overlay-filtering.md](113-ixworld-worker-overlay-filtering.md) | P2 | Web Worker Overlay Culling during Rapid Map Zoom | ACTIVE (planning) |
 | [119-map-editor-overhaul-revised.md](119-map-editor-overhaul-revised.md) | P2 | Measurement-First Map Editor Overhaul (Response Truncation Shipped) | ACTIVE |
 
+### Runtime Modernization & Dependency Optimization (Bun 1.4)
+| Plan | Priority | Scope | Status |
+|------|:--------:|-------|--------|
+| [140-bun-1-4-modernization-and-typescript-audit.md](140-bun-1-4-modernization-and-typescript-audit.md) | P1 | Bun 1.4 Native Capabilities, Ponytail Pruning & TS Acceleration | ACTIVE (planning) |
+
 ---
 
 ## Future Feature Proposals (proposed, not started)

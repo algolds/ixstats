@@ -1,6 +1,6 @@
 # Backend Architecture
 
-**Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Express 5.2.1 · TypeScript 5.9.3  
+**Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Express 5.2.1 · TypeScript 7.0.0  
 **Location**: `src/server/api/` (90 routers, 1,450+ procedures) · `src/server/db.ts` · `src/server/shared/`
 
 ---

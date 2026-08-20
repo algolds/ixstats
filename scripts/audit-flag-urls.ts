@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 /**
  * Flag URL Production Audit Script
  *
@@ -6,8 +6,8 @@
  * Tests flag service URLs, metadata loading, and path resolution
  *
  * Usage:
- *   bunx tsx scripts/audit-flag-urls.ts
- *   BASE_PATH=/projects/ixstats bunx tsx scripts/audit-flag-urls.ts
+ *   bun scripts/audit-flag-urls.ts
+ *   BASE_PATH=/projects/ixstates bun scripts/audit-flag-urls.ts
  */
 
 import * as fs from "fs";

@@ -1,6 +1,5 @@
 "use client";
 
-import Color from "color";
 import { PipetteIcon } from "lucide-react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import {
@@ -28,6 +27,177 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
+// ─── Color Math Helpers (Zero External Dependency) ───────────────────────────
+
+export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h = ((h % 360) + 360) % 360;
+  const sNorm = Math.max(0, Math.min(100, s)) / 100;
+  const lNorm = Math.max(0, Math.min(100, l)) / 100;
+
+  const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = lNorm - c / 2;
+
+  let rPrime = 0;
+  let gPrime = 0;
+  let bPrime = 0;
+
+  if (h < 60) {
+    rPrime = c;
+    gPrime = x;
+    bPrime = 0;
+  } else if (h < 120) {
+    rPrime = x;
+    gPrime = c;
+    bPrime = 0;
+  } else if (h < 180) {
+    rPrime = 0;
+    gPrime = c;
+    bPrime = x;
+  } else if (h < 240) {
+    rPrime = 0;
+    gPrime = x;
+    bPrime = c;
+  } else if (h < 300) {
+    rPrime = x;
+    gPrime = 0;
+    bPrime = c;
+  } else {
+    rPrime = c;
+    gPrime = 0;
+    bPrime = x;
+  }
+
+  return [
+    Math.round((rPrime + m) * 255),
+    Math.round((gPrime + m) * 255),
+    Math.round((bPrime + m) * 255),
+  ];
+}
+
+export function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const rNorm = Math.max(0, Math.min(255, r)) / 255;
+  const gNorm = Math.max(0, Math.min(255, g)) / 255;
+  const bNorm = Math.max(0, Math.min(255, b)) / 255;
+
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  const delta = max - min;
+
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (delta !== 0) {
+    s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+    if (max === rNorm) {
+      h = ((gNorm - bNorm) / delta + (gNorm < bNorm ? 6 : 0)) * 60;
+    } else if (max === gNorm) {
+      h = ((bNorm - rNorm) / delta + 2) * 60;
+    } else {
+      h = ((rNorm - gNorm) / delta + 4) * 60;
+    }
+  }
+
+  return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  const [r, g, b] = hslToRgb(h, s, l);
+  const rHex = r.toString(16).padStart(2, "0");
+  const gHex = g.toString(16).padStart(2, "0");
+  const bHex = b.toString(16).padStart(2, "0");
+  return `#${rHex}${gHex}${bHex}`.toLowerCase();
+}
+
+export function parseColorToHsl(input: any): { h: number; s: number; l: number; a: number } {
+  if (!input) {
+    return { h: 0, s: 0, l: 0, a: 1 };
+  }
+
+  if (typeof input === "string") {
+    const str = input.trim().toLowerCase();
+    // Hex formats (#rgb, #rgba, #rrggbb, #rrggbbaa)
+    if (str.startsWith("#")) {
+      const hex = str.slice(1);
+      if (hex.length === 3 || hex.length === 4) {
+        const r = parseInt(hex[0] + hex[0], 16) || 0;
+        const g = parseInt(hex[1] + hex[1], 16) || 0;
+        const b = parseInt(hex[2] + hex[2], 16) || 0;
+        const a = hex.length === 4 ? (parseInt(hex[3] + hex[3], 16) || 255) / 255 : 1;
+        const [h, s, l] = rgbToHsl(r, g, b);
+        return { h, s, l, a };
+      } else if (hex.length === 6 || hex.length === 8) {
+        const r = parseInt(hex.slice(0, 2), 16) || 0;
+        const g = parseInt(hex.slice(2, 4), 16) || 0;
+        const b = parseInt(hex.slice(4, 6), 16) || 0;
+        const a = hex.length === 8 ? (parseInt(hex.slice(6, 8), 16) || 255) / 255 : 1;
+        const [h, s, l] = rgbToHsl(r, g, b);
+        return { h, s, l, a };
+      }
+    }
+
+    // rgb/rgba format
+    const rgbMatch = str.match(
+      /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.%]+))?\s*\)/
+    );
+    if (rgbMatch) {
+      const r = parseFloat(rgbMatch[1] ?? "0") || 0;
+      const g = parseFloat(rgbMatch[2] ?? "0") || 0;
+      const b = parseFloat(rgbMatch[3] ?? "0") || 0;
+      let a = 1;
+      if (rgbMatch[4] !== undefined) {
+        if (rgbMatch[4].endsWith("%")) {
+          a = (parseFloat(rgbMatch[4]) || 100) / 100;
+        } else {
+          a = parseFloat(rgbMatch[4]) || 1;
+        }
+      }
+      const [h, s, l] = rgbToHsl(r, g, b);
+      return { h, s, l, a };
+    }
+
+    // hsl/hsla format
+    const hslMatch = str.match(
+      /hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.%]+))?\s*\)/
+    );
+    if (hslMatch) {
+      const h = parseFloat(hslMatch[1] ?? "0") || 0;
+      const s = parseFloat(hslMatch[2] ?? "0") || 0;
+      const l = parseFloat(hslMatch[3] ?? "0") || 0;
+      let a = 1;
+      if (hslMatch[4] !== undefined) {
+        if (hslMatch[4].endsWith("%")) {
+          a = (parseFloat(hslMatch[4]) || 100) / 100;
+        } else {
+          a = parseFloat(hslMatch[4]) || 1;
+        }
+      }
+      return { h, s, l, a };
+    }
+  }
+
+  if (Array.isArray(input)) {
+    const [r, g, b, a = 1] = input;
+    const [h, s, l] = rgbToHsl(r || 0, g || 0, b || 0);
+    return { h, s, l, a };
+  }
+
+  if (typeof input === "object") {
+    if ("h" in input && "s" in input && "l" in input) {
+      return { h: input.h || 0, s: input.s || 0, l: input.l || 0, a: input.a ?? 1 };
+    }
+    if ("r" in input && "g" in input && "b" in input) {
+      const [h, s, l] = rgbToHsl(input.r || 0, input.g || 0, input.b || 0);
+      return { h, s, l, a: input.a ?? 1 };
+    }
+  }
+
+  return { h: 0, s: 0, l: 0, a: 1 };
+}
+
+// ─── ColorPicker Context & Components ─────────────────────────────────────────
+
 type ColorPickerContextValue = {
   hue: number;
   saturation: number;
@@ -54,8 +224,8 @@ export const useColorPicker = () => {
 };
 
 export type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
-  value?: Parameters<typeof Color>[0];
-  defaultValue?: Parameters<typeof Color>[0];
+  value?: any;
+  defaultValue?: any;
   onChange?: (value: [number, number, number, number]) => void;
 };
 
@@ -66,74 +236,43 @@ export const ColorPicker = ({
   className,
   ...props
 }: ColorPickerProps) => {
-  const getSafeColor = (val: any) => {
-    try {
-      return Color(val);
-    } catch {
-      try {
-        return Color(defaultValue);
-      } catch {
-        return Color("#000000");
-      }
-    }
-  };
+  const parsed = parseColorToHsl(value || defaultValue);
 
-  const selectedColor = getSafeColor(value);
-  const defaultColor = getSafeColor(defaultValue);
-
-  const [hue, setHue] = useState(selectedColor.hue() || defaultColor.hue() || 0);
-  const [saturation, setSaturation] = useState(
-    selectedColor.saturationl() || defaultColor.saturationl() || 100
-  );
-  const [lightness, setLightness] = useState(
-    selectedColor.lightness() || defaultColor.lightness() || 50
-  );
-  const [alpha, setAlpha] = useState(selectedColor.alpha() * 100 || defaultColor.alpha() * 100);
+  const [hue, setHue] = useState(parsed.h);
+  const [saturation, setSaturation] = useState(parsed.s);
+  const [lightness, setLightness] = useState(parsed.l);
+  const [alpha, setAlpha] = useState(parsed.a * 100);
   const [mode, setMode] = useState("hex");
 
   const lastValueRef = useRef(value);
 
-  // Keep latest onChange in a ref to avoid infinite rendering loop when parent onChange is not memoized
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;
-  }); // runs on every render to keep ref updated
+  });
 
   // Update color when controlled value changes
   useEffect(() => {
     if (value !== lastValueRef.current) {
       lastValueRef.current = value;
       if (value) {
-        try {
-          const color = Color(value);
+        const next = parseColorToHsl(value);
+        const currentRgb = hslToRgb(hue, saturation, lightness);
+        const incomingRgb = hslToRgb(next.h, next.s, next.l);
 
-          // Compare rounded RGB and alpha values to prevent infinite precision feedback loops
-          const currentStateColor = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
-          const currentRgb = currentStateColor.rgb().array().map(Math.round);
-          const incomingRgb = color.rgb().array().map(Math.round);
-
-          if (
-            currentRgb[0] === incomingRgb[0] &&
-            currentRgb[1] === incomingRgb[1] &&
-            currentRgb[2] === incomingRgb[2] &&
-            Math.abs(color.alpha() - currentStateColor.alpha()) < 0.01
-          ) {
-            return;
-          }
-
-          const hsl = color.hsl().object();
-          const nextHue = hsl.h || 0;
-          const nextSat = hsl.s || 0;
-          const nextLt = hsl.l || 0;
-          const nextAlpha = color.alpha() * 100;
-
-          setHue(nextHue);
-          setSaturation(nextSat);
-          setLightness(nextLt);
-          setAlpha(nextAlpha);
-        } catch (err) {
-          console.error("Invalid color value passed to ColorPicker:", value, err);
+        if (
+          currentRgb[0] === incomingRgb[0] &&
+          currentRgb[1] === incomingRgb[1] &&
+          currentRgb[2] === incomingRgb[2] &&
+          Math.abs(next.a - alpha / 100) < 0.01
+        ) {
+          return;
         }
+
+        setHue(next.h);
+        setSaturation(next.s);
+        setLightness(next.l);
+        setAlpha(next.a * 100);
       }
     }
   }, [value, hue, saturation, lightness, alpha]);
@@ -144,22 +283,18 @@ export const ColorPicker = ({
   useEffect(() => {
     if (isMountedRef.current) {
       if (onChangeRef.current) {
-        const color = Color.hsl(hue, saturation, lightness).alpha(alpha / 100);
-        const rgba = color.rgb().array();
+        const [r, g, b] = hslToRgb(hue, saturation, lightness);
+        const a = alpha / 100;
 
-        // Convert HSL back to color string format to update lastValueRef
         let colorStr = "#000000";
         if (alpha < 100) {
-          colorStr = `rgba(${Math.round(rgba[0])}, ${Math.round(rgba[1])}, ${Math.round(rgba[2])}, ${alpha / 100})`;
+          colorStr = `rgba(${r}, ${g}, ${b}, ${a})`;
         } else {
-          const r = Math.round(rgba[0]).toString(16).padStart(2, "0");
-          const g = Math.round(rgba[1]).toString(16).padStart(2, "0");
-          const b = Math.round(rgba[2]).toString(16).padStart(2, "0");
-          colorStr = `#${r}${g}${b}`;
+          colorStr = hslToHex(hue, saturation, lightness);
         }
 
         lastValueRef.current = colorStr;
-        onChangeRef.current([rgba[0], rgba[1], rgba[2], alpha / 100]);
+        onChangeRef.current([r, g, b, a]);
       }
     } else {
       isMountedRef.current = true;
@@ -195,7 +330,6 @@ export const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSe
   const [positionY, setPositionY] = useState(0);
   const { hue, saturation, lightness, setSaturation, setLightness } = useColorPicker();
 
-  // Sync pointer position when saturation or lightness change externally
   useEffect(() => {
     if (!isDragging) {
       const x = saturation / 100;
@@ -224,9 +358,9 @@ export const ColorPickerSelection = memo(({ className, ...props }: ColorPickerSe
       setPositionY(y);
       setSaturation(x * 100);
       const topLightness = x < 0.01 ? 100 : 50 + 50 * (1 - x);
-      const lightness = topLightness * (1 - y);
+      const calculatedLightness = topLightness * (1 - y);
 
-      setLightness(lightness);
+      setLightness(calculatedLightness);
     },
     [isDragging, setSaturation, setLightness]
   );
@@ -328,12 +462,11 @@ export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDro
       // @ts-expect-error - EyeDropper API is experimental
       const eyeDropper = new EyeDropper();
       const result = await eyeDropper.open();
-      const color = Color(result.sRGBHex);
-      const [h, s, l] = color.hsl().array();
+      const parsed = parseColorToHsl(result.sRGBHex);
 
-      setHue(h);
-      setSaturation(s);
-      setLightness(l);
+      setHue(parsed.h);
+      setSaturation(parsed.s);
+      setLightness(parsed.l);
       setAlpha(100);
     } catch (error) {
       console.error("EyeDropper failed:", error);
@@ -402,10 +535,9 @@ export type ColorPickerFormatProps = HTMLAttributes<HTMLDivElement>;
 
 export const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProps) => {
   const { hue, saturation, lightness, alpha, mode } = useColorPicker();
-  const color = Color.hsl(hue, saturation, lightness, alpha / 100);
 
   if (mode === "hex") {
-    const hex = color.hex();
+    const hex = hslToHex(hue, saturation, lightness);
 
     return (
       <div
@@ -427,10 +559,7 @@ export const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProp
   }
 
   if (mode === "rgb") {
-    const rgb = color
-      .rgb()
-      .array()
-      .map((value) => Math.round(value));
+    const rgb = hslToRgb(hue, saturation, lightness);
 
     return (
       <div
@@ -456,10 +585,7 @@ export const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProp
   }
 
   if (mode === "css") {
-    const rgb = color
-      .rgb()
-      .array()
-      .map((value) => Math.round(value));
+    const rgb = hslToRgb(hue, saturation, lightness);
 
     return (
       <div className={cn("w-full rounded-md shadow-sm", className)} {...props}>
@@ -475,10 +601,7 @@ export const ColorPickerFormat = ({ className, ...props }: ColorPickerFormatProp
   }
 
   if (mode === "hsl") {
-    const hsl = color
-      .hsl()
-      .array()
-      .map((value) => Math.round(value));
+    const hsl = [Math.round(hue), Math.round(saturation), Math.round(lightness)];
 
     return (
       <div

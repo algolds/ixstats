@@ -1,220 +1,205 @@
 #!/bin/bash
 
-# IxStates Development Server Startup Script
-# Optimized Next.js 16.3 development server with environment & schema validation
+# ==============================================================================
+#  IxStates (IxStats) Development Engine
+#  Optimized Next.js App Router + Turbopack Development Server
+# ==============================================================================
 
 set -e
 
-# Navigate to project directory
+# Navigate to project root
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 
-echo "🔧 IxStates Development Server (Next.js 16.3)"
-echo "=============================================="
+# ANSI Color Palette (Apple / Facet Design System)
+ESC="\033"
+RESET="${ESC}[0m"
+BOLD="${ESC}[1m"
+DIM="${ESC}[2m"
+CYAN="${ESC}[38;2;6;182;212m"       # Cyan 500
+EMERALD="${ESC}[38;2;16;185;129m"   # Emerald 500
+AMBER="${ESC}[38;2;245;158;11m"     # Amber 500
+PURPLE="${ESC}[38;2;168;85;247m"    # Purple 500
+RED="${ESC}[38;2;239;68;68m"        # Red 500
+SLATE="${ESC}[38;2;148;163;184m"    # Slate 400
+LINE="${ESC}[38;2;51;65;85m"        # Slate 700
 
-# Ensure build version is generated for development
-node ./scripts/write-build-version.js >/dev/null 2>&1 || true
+# ------------------------------------------------------------------------------
+# 1. Environment Loading & Normalization
+# ------------------------------------------------------------------------------
+export NODE_ENV="development"
 
-# Helper function to dynamically extract version from package.json without hardcoding
-get_pkg_version() {
-    local pkg_name="$1"
-    local fallback="$2"
-    node -p "
-        try {
-            const pkg = require('./package.json');
-            const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-            const ver = (deps['$pkg_name'] || '$fallback');
-            ver.replace(/^[\^~]/, '');
-        } catch (e) {
-            '$fallback';
-        }
-    " 2>/dev/null || echo "$fallback"
-}
-
-# Helper function to extract platform release info from buildVersion.ts
-get_platform_info() {
-    node -p "
-        try {
-            const fs = require('fs');
-            const content = fs.readFileSync('./src/lib/buildVersion.ts', 'utf8');
-            const major = content.match(/major:\s*(\d+)/)?.[1] || '1';
-            const minor = content.match(/minor:\s*(\d+)/)?.[1] || '2';
-            const patch = content.match(/patch:\s*(\d+)/)?.[1] || '7';
-            const release = content.match(/release:\s*\"([^\"]+)\"/)?.[1] || 'Ogma';
-            const channel = content.match(/channel:\s*\"([^\"]+)\"/)?.[1] || 'Beta';
-            \`v\${major}.\${minor}.\${patch} \"\${release}\" (\${channel})\`;
-        } catch (e) {
-            'v1.2.7 \"Ogma\" (Beta)';
-        }
-    " 2>/dev/null || echo "v1.2.7 \"Ogma\" (Beta)"
-}
-
-# Load development environment variables
+ENV_SOURCE="defaults"
 if [ -f ".env.local.dev" ]; then
-    echo "📄 Loading development environment variables from .env.local.dev..."
-    export NODE_ENV=development
+    ENV_SOURCE=".env.local.dev"
     set -a
+    # shellcheck disable=SC1091
     source .env.local.dev 2>/dev/null || true
     set +a
 elif [ -f ".env.local" ]; then
-    echo "📄 Loading development environment variables from .env.local..."
-    export NODE_ENV=development
+    ENV_SOURCE=".env.local"
     set -a
+    # shellcheck disable=SC1091
     source .env.local 2>/dev/null || true
     set +a
-else
-    echo "⚠️  Warning: Neither .env.local.dev nor .env.local file found, using defaults"
-    export NODE_ENV=development
+elif [ -f ".env" ]; then
+    ENV_SOURCE=".env"
+    set -a
+    # shellcheck disable=SC1091
+    source .env 2>/dev/null || true
+    set +a
 fi
 
-# Display read-only mode banner if DATABASE_READONLY is set
-if [ "$DATABASE_READONLY" = "true" ]; then
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════════╗"
-    echo "║                   🔒 READ-ONLY DATABASE MODE                      ║"
-    echo "╠══════════════════════════════════════════════════════════════════╣"
-    echo "║  Connected to production data (82 nations) in read-only mode     ║"
-    echo "║  • All database write operations are BLOCKED                     ║"
-    echo "║  • User creation disabled (login as existing user)               ║"
-    echo "║  • Audit logging to database disabled                            ║"
-    echo "║  • db:push, db:migrate, db:reset commands blocked                ║"
-    echo "╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-fi
-
-# Set port based on standalone maps mode
+# Determine development port
 if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
-    # Default to 3003 for maps dev (3002 is production maps)
-    DEVELOPMENT_PORT=${PORT:-3003}
+    DEVELOPMENT_PORT="${PORT:-3003}"
+    APP_MODE="IxWorld Maps Standalone"
+    BASE_PATH_LABEL="/maps (redirected root)"
 else
-    # Default to 3000 for regular dev
-    DEVELOPMENT_PORT=${PORT:-3000}
+    DEVELOPMENT_PORT="${PORT:-3000}"
+    APP_MODE="IxStates Platform"
+    BASE_PATH_LABEL="/ (root)"
 fi
 
-# Dynamically resolve stack versions
+# Ensure build version is generated for development
+bun ./scripts/write-build-version.js >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------------------------
+# 2. Dynamic Platform & Package Metadata Resolution (Single Batch Sub-10ms)
+# ------------------------------------------------------------------------------
+eval "$(bun -e '
+const fs = require("fs");
+try {
+    const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const cleanVer = (v, fb) => (v || fb || "").replace(/^[\^~]/, "");
+
+    let platform = "v1.3.0 \"Ogma\" (Beta)";
+    if (fs.existsSync("./src/lib/buildVersion.ts")) {
+        const bv = fs.readFileSync("./src/lib/buildVersion.ts", "utf8");
+        const major = bv.match(/major:\s*(\d+)/)?.[1] || "1";
+        const minor = bv.match(/minor:\s*(\d+)/)?.[1] || "3";
+        const patch = bv.match(/patch:\s*(\d+)/)?.[1] || "0";
+        const release = bv.match(/release:\s*"([^"]+)"/)?.[1] || "Ogma";
+        const channel = bv.match(/channel:\s*"([^"]+)"/)?.[1] || "Beta";
+        platform = `v${major}.${minor}.${patch} "${release}" (${channel})`;
+    }
+
+    console.log(`NEXT_VER="${cleanVer(deps["next"], "16.3.0")}"`);
+    console.log(`REACT_VER="${cleanVer(deps["react"], "19.2.8")}"`);
+    console.log(`TAILWIND_VER="${cleanVer(deps["tailwindcss"], "4.3.3")}"`);
+    console.log(`PRISMA_VER="${cleanVer(deps["prisma"], "6.19.3")}"`);
+    console.log(`TRPC_VER="${cleanVer(deps["@trpc/server"], "11.18.0")}"`);
+    console.log(`C15T_VER="${cleanVer(deps["@c15t/backend"], "2.2.0")}"`);
+    console.log(`TS_VER="${cleanVer(deps["typescript"], "7.0.0")}"`);
+    console.log(`PLATFORM_INFO="${platform}"`);
+} catch (e) {
+    console.log("NEXT_VER=\"16.3.0\"");
+    console.log("REACT_VER=\"19.2.8\"");
+    console.log("TAILWIND_VER=\"4.3.3\"");
+    console.log("PRISMA_VER=\"6.19.3\"");
+    console.log("TRPC_VER=\"11.18.0\"");
+    console.log("C15T_VER=\"2.2.0\"");
+    console.log("TS_VER=\"7.0.0\"");
+    console.log("PLATFORM_INFO=\"v1.3.0 \\\"Ogma\\\" (Beta)\"");
+}
+' 2>/dev/null || echo 'NEXT_VER="16.3.0" REACT_VER="19.2.8" TS_VER="7.0.0" PLATFORM_INFO="v1.3.0 \"Ogma\""')"
+
+BUN_VER=$(bun --version 2>/dev/null || echo "1.4.0")
 GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "v2")
-PLATFORM_INFO=$(get_platform_info)
-NEXT_VER=$(get_pkg_version "next" "16.3.0")
-REACT_VER=$(get_pkg_version "react" "19.2.8")
-TAILWIND_VER=$(get_pkg_version "tailwindcss" "4.3.3")
-PRISMA_VER=$(get_pkg_version "prisma" "6.19.3")
-TRPC_VER=$(get_pkg_version "@trpc/server" "11.18.0")
-C15T_VER=$(get_pkg_version "@c15t/backend" "2.2.0")
-TS_VER=$(get_pkg_version "typescript" "5.9.3")
+GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "HEAD")
 
-echo "🔍 Development Environment Summary:"
-echo "   NODE_ENV: $NODE_ENV"
-if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
-    echo "   Mode:     🗺️  IxWorld Standalone Maps Mode (maps-only)"
-else
-    echo "   Mode:     Full Application (IxStates)"
-fi
-if [ "$DATABASE_READONLY" = "true" ]; then
-    echo "   Database: 🔒 READ-ONLY (production data: 82 nations)"
-else
-    echo "   Database: Full access (development mode)"
-fi
-echo "   Port: $DEVELOPMENT_PORT"
-if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
-    echo "   Base Path: /maps (redirected root)"
-else
-    echo "   Base Path: / (root)"
-fi
-echo "   MediaWiki URL: ${NEXT_PUBLIC_MEDIAWIKI_URL:-https://ixwiki.com/}"
-echo "   IxTime Bot URL: ${IXTIME_BOT_URL:-http://localhost:3001}"
-
-# Check authentication configuration
-if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_test_ ]]; then
-    echo "   Authentication: ✅ Clerk (Development)"
-elif [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_live_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_live_ ]]; then
-    echo "   Authentication: ⚠️  Clerk (Production keys in development)"
-elif [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] || [ -n "$CLERK_SECRET_KEY" ]; then
-    echo "   Authentication: ❌ Clerk (Invalid key format)"
-else
-    echo "   Authentication: 🎭 Demo Mode (No Clerk keys)"
-fi
-
-echo "📦 Platform Stack & Dynamic Versions:"
-echo "   Active Branch:   $GIT_BRANCH"
-echo "   Platform:        $PLATFORM_INFO"
-echo "   Next.js:         v$NEXT_VER (Turbopack, App Router)"
-echo "   React:           v$REACT_VER (Server Components)"
-echo "   Tailwind CSS:    v$TAILWIND_VER"
-echo "   Prisma Client:   v$PRISMA_VER"
-echo "   tRPC API:        v$TRPC_VER"
-echo "   c15t Backend:    v$C15T_VER"
-echo "   TypeScript:      v$TS_VER"
-
+# ------------------------------------------------------------------------------
+# 3. Header Presentation
+# ------------------------------------------------------------------------------
+echo ""
+echo -e "${CYAN}${BOLD}┌──────────────────────────────────────────────────────────────────────────┐${RESET}"
+echo -e "${CYAN}${BOLD}│${RESET}  ${BOLD}IxStates Development Engine${RESET}  ${DIM}·${RESET}  ${SLATE}Next.js ${NEXT_VER} (Turbopack)${RESET}              ${CYAN}${BOLD}│${RESET}"
+echo -e "${CYAN}${BOLD}│${RESET}  ${DIM}Platform:${RESET} ${EMERALD}${PLATFORM_INFO}${RESET} ${DIM}[${GIT_BRANCH}@${GIT_HASH}]${RESET}                              ${CYAN}${BOLD}│${RESET}"
+echo -e "${CYAN}${BOLD}└──────────────────────────────────────────────────────────────────────────┘${RESET}"
 echo ""
 
-# Check if port is available
-if ss -tln | grep -q ":$DEVELOPMENT_PORT "; then
-    echo "❌ Error: Port $DEVELOPMENT_PORT is already in use"
-    echo "   To stop existing service: kill \$(lsof -ti:$DEVELOPMENT_PORT)"
+# Read-Only Database Mode Alert
+if [ "$DATABASE_READONLY" = "true" ]; then
+    echo -e "${AMBER}╔══════════════════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${AMBER}║${RESET}  ${BOLD}🔒 READ-ONLY DATABASE MODE ACTIVE${RESET}                                       ${AMBER}║${RESET}"
+    echo -e "${AMBER}║${RESET}  ${SLATE}• Connected to production data (82 nations) in read-only mode${RESET}          ${AMBER}║${RESET}"
+    echo -e "${AMBER}║${RESET}  ${SLATE}• All database mutations, user creation, and audit writes are blocked${RESET}   ${AMBER}║${RESET}"
+    echo -e "${AMBER}╚══════════════════════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+fi
+
+# ------------------------------------------------------------------------------
+# 4. Port Availability & Dependency Checks
+# ------------------------------------------------------------------------------
+if [ ! -d "node_modules" ]; then
+    echo -e "${RED}❌ Error: Dependencies not installed.${RESET} Run ${CYAN}bun install${RESET} first."
     exit 1
 fi
 
-echo "✅ Port $DEVELOPMENT_PORT is available"
+# Check port conflict with intelligent diagnostics
+if ss -tln 2>/dev/null | grep -q ":${DEVELOPMENT_PORT} "; then
+    OCCUPIER_PID=$(lsof -ti:"${DEVELOPMENT_PORT}" 2>/dev/null | head -n 1 || echo "")
+    OCCUPIER_CMD=""
+    if [ -n "$OCCUPIER_PID" ]; then
+        OCCUPIER_CMD=$(ps -p "$OCCUPIER_PID" -o comm= 2>/dev/null || echo "")
+    fi
 
-# Check PostgreSQL database connection
+    echo -e "${RED}❌ Error: Port ${DEVELOPMENT_PORT} is already in use.${RESET}"
+    if [ -n "$OCCUPIER_PID" ]; then
+        echo -e "   Occupied by: ${AMBER}${OCCUPIER_CMD:-process} (PID: ${OCCUPIER_PID})${RESET}"
+        echo -e "   To free this port: ${CYAN}kill -9 ${OCCUPIER_PID}${RESET}"
+    fi
+    exit 1
+fi
+
+# ------------------------------------------------------------------------------
+# 5. Database & Service Diagnostics
+# ------------------------------------------------------------------------------
+# Parse PostgreSQL connection details
 if [[ "$DATABASE_URL" =~ postgresql://([^:]+):([^@]+)@([^:/]+):?([0-9]*)/([^?]+) ]]; then
+    DB_USER="${BASH_REMATCH[1]}"
     DB_HOST="${BASH_REMATCH[3]}"
     DB_PORT="${BASH_REMATCH[4]:-5432}"
     DB_NAME="${BASH_REMATCH[5]}"
-    echo "✅ PostgreSQL database configured ($DB_NAME @ $DB_HOST:$DB_PORT with PostGIS)"
-    (docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT 1;" > /dev/null 2>&1 && \
-        echo "   Database connection verified ✓") &
-    DB_CHECK_PID=$!
+    DB_STATUS_LABEL="${DB_NAME} @ ${DB_HOST}:${DB_PORT} (User: ${DB_USER})"
 elif [[ "$DATABASE_URL" == postgresql://* ]]; then
-    echo "✅ PostgreSQL database configured (with PostGIS support)"
-    (docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT 1;" > /dev/null 2>&1 && \
-        echo "   Database connection verified ✓") &
-    DB_CHECK_PID=$!
+    DB_STATUS_LABEL="PostgreSQL + PostGIS (${DATABASE_URL%%\?*})"
 else
-    echo "⚠️  Warning: DATABASE_URL is not configured for PostgreSQL"
-    echo "   Current: $DATABASE_URL"
+    DB_STATUS_LABEL="Custom / Unknown (${DATABASE_URL:-not set})"
 fi
 
-echo ""
+# Start Redis cache in background
+./scripts/setup-redis.sh start > /dev/null 2>&1 &
 
-# Check if dependencies are installed
-if [ ! -d "node_modules" ]; then
-    echo "❌ Error: Dependencies not installed. Run 'bun install' first."
-    exit 1
+# Resolve Auth Status
+if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_test_ ]]; then
+    AUTH_LABEL="${EMERALD}Clerk (Development Test Keys)${RESET}"
+elif [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_live_ ]] && [[ "$CLERK_SECRET_KEY" =~ ^sk_live_ ]]; then
+    AUTH_LABEL="${AMBER}Clerk (⚠️ Production Keys in Dev)${RESET}"
+elif [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] || [ -n "$CLERK_SECRET_KEY" ]; then
+    AUTH_LABEL="${RED}Clerk (Invalid Key Configuration)${RESET}"
+else
+    AUTH_LABEL="${SLATE}🎭 Demo Mode (Auth Bypassed)${RESET}"
 fi
 
-echo "✅ Dependencies installed"
-echo ""
-
-# Clean stale production build artifacts from .next/ (prevents conflicts with dev server)
-# Optimized cleanup: removes all except cache to preserve incremental compilation
+# ------------------------------------------------------------------------------
+# 6. Cache Hygiene & Stale Build Artifacts Purge
+# ------------------------------------------------------------------------------
+# Clean stale production build artifacts from .next/ while preserving incremental compiler cache
 if [ -d ".next" ]; then
-    echo "🧹 Cleaning stale production build artifacts from .next/..."
-    find .next -mindepth 1 -maxdepth 1 ! -name 'cache' -exec rm -rf {} +
-    echo "   Stale artifacts removed ✓"
+    find .next -mindepth 1 -maxdepth 1 ! -name 'cache' -exec rm -rf {} + 2>/dev/null || true
 fi
 
-# Restore uploaded images from backup in development
+# Restore uploaded demo images if backup exists
 if [ -d "public/images/uploads_backup" ]; then
-    echo "🖼️  Restoring uploaded images from backup to public/images/uploads/..."
     mkdir -p public/images/uploads
     cp -n public/images/uploads_backup/* public/images/uploads/ 2>/dev/null || true
-    echo "   Uploaded images restored ✓"
 fi
 
-# Start Redis cache in background to avoid blocking
-echo "💾 Starting Redis cache server (background)..."
-./scripts/setup-redis.sh start > /dev/null 2>&1 &
-REDIS_PID=$!
-echo ""
-
-# Wait for DB check to finish before proceeding
-if [ -n "$DB_CHECK_PID" ]; then
-    wait $DB_CHECK_PID || echo "   ⚠️  Warning: Database connection verification failed"
-fi
-
-# Smart DB Schema Sync Optimization
-# Only run db:push:force if schema files are newer than our push timestamp stamp file
+# ------------------------------------------------------------------------------
+# 7. Smart Prisma Schema Synchronization
+# ------------------------------------------------------------------------------
 if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [ "${SKIP_DB_PUSH:-}" != "true" ]; then
     STAMP_FILE=".prisma/.schema-push-stamp"
     mkdir -p .prisma
@@ -235,74 +220,42 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
     fi
 
     if [ "$NEWEST_SCHEMA_TS" -gt "$STAMP_TS" ]; then
-        echo "🔄 Schema changes detected. Syncing database schema with codebase..."
-        if [ -f ".env.local.dev" ]; then
-            set -a
-            source .env.local.dev 2>/dev/null || true
-            set +a
-        elif [ -f ".env.local" ]; then
-            set -a
-            source .env.local 2>/dev/null || true
-            set +a
-        elif [ -f ".env" ]; then
-            set -a
-            source .env 2>/dev/null || true
-            set +a
-        fi
+        echo -e "${CYAN}🔄 Schema modification detected.${RESET} Syncing database schema..."
         if bun run db:push:force; then
             touch "$STAMP_FILE"
-            echo "   Schema push complete ✓"
+            echo -e "   ${EMERALD}✓ Schema synchronized successfully${RESET}"
         fi
-    else
-        echo "⚡ Schema unchanged since last push — skipping db:push:force (fast boot)"
-    fi
-else
-    if [ "${SKIP_DB_PUSH:-}" = "1" ] || [ "${SKIP_DB_PUSH:-}" = "true" ]; then
-        echo "⚡ Database schema push skipped via SKIP_DB_PUSH"
     fi
 fi
 
-# Start the development server
+# ------------------------------------------------------------------------------
+# 8. Executive Environment Dashboard
+# ------------------------------------------------------------------------------
+echo -e "${SLATE}${BOLD}  ENVIRONMENT & SERVICES${RESET}"
+echo -e "  ${DIM}├─${RESET} Mode:           ${BOLD}${APP_MODE}${RESET}"
+echo -e "  ${DIM}├─${RESET} Config File:    ${CYAN}${ENV_SOURCE}${RESET}"
+echo -e "  ${DIM}├─${RESET} Local URL:      ${CYAN}${BOLD}http://localhost:${DEVELOPMENT_PORT}${RESET}"
+echo -e "  ${DIM}├─${RESET} Routing:        ${SLATE}${BASE_PATH_LABEL}${RESET}"
+echo -e "  ${DIM}├─${RESET} Database:       ${SLATE}${DB_STATUS_LABEL}${RESET}"
+echo -e "  ${DIM}├─${RESET} Authentication: ${AUTH_LABEL}"
+echo -e "  ${DIM}└─${RESET} MediaWiki:      ${SLATE}${NEXT_PUBLIC_MEDIAWIKI_URL:-https://ixwiki.com/}${RESET}"
 echo ""
-echo "🌐 Starting Next.js 16.3 development server..."
-if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
-    echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/ (redirects to /maps)"
-else
-    echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/"
-fi
-echo "   API Endpoints:   http://localhost:$DEVELOPMENT_PORT/api/*"
-echo "   tRPC API:        http://localhost:$DEVELOPMENT_PORT/api/trpc/*"
+echo -e "${SLATE}${BOLD}  PLATFORM CAPABILITY STACK${RESET}"
+echo -e "  ${DIM}├─${RESET} Next.js:        ${BOLD}v${NEXT_VER}${RESET} ${DIM}(Turbopack Engine)${RESET}"
+echo -e "  ${DIM}├─${RESET} React:          ${BOLD}v${REACT_VER}${RESET} ${DIM}(Server Components)${RESET}"
+echo -e "  ${DIM}├─${RESET} TypeScript:     ${EMERALD}${BOLD}v${TS_VER}${RESET} ${DIM}(Native Go Engine)${RESET}"
+echo -e "  ${DIM}├─${RESET} Runtime:        ${PURPLE}${BOLD}Bun v${BUN_VER}${RESET} ${DIM}(Virtual Store)${RESET}"
+echo -e "  ${DIM}├─${RESET} API Layer:      ${BOLD}tRPC v${TRPC_VER}${RESET} ${DIM}(90 Routers)${RESET}"
+echo -e "  ${DIM}├─${RESET} Database ORM:   ${BOLD}Prisma v${PRISMA_VER}${RESET} ${DIM}(296 Models)${RESET}"
+echo -e "  ${DIM}└─${RESET} Styling:        ${BOLD}Tailwind CSS v${TAILWIND_VER}${RESET}"
 echo ""
-echo "   Features:"
-echo "   • Next.js 16.3 Turbopack HMR enabled"
-if [ "$NEXT_PUBLIC_IXWORLD_STANDALONE" = "true" ]; then
-    echo "   • Standalone Maps Mode active (empty basePath)"
-else
-    echo "   • Root path routing (no basePath)"
-fi
-echo "   • Development database"
-if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]]; then
-    echo "   • Clerk authentication (test environment)"
-elif [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
-    echo "   • Demo mode (no authentication required)"
-else
-    echo "   • Clerk authentication (check configuration)"
-fi
-echo "   • c15t Self-Hosted Consent Engine (active at /api/c15t)"
-echo ""
-echo "   Press Ctrl+C to stop the server"
-echo "   Run 'bun run auth:check:dev' to verify auth configuration"
+echo -e "${EMERALD}⚡ Booting Turbopack HMR...${RESET} ${DIM}(Press Ctrl+C to gracefully terminate)${RESET}"
+echo -e "${LINE}────────────────────────────────────────────────────────────────────────────${RESET}"
 echo ""
 
-# Memory optimization for development server (7.2GB total server RAM)
+# ------------------------------------------------------------------------------
+# 9. Server Launch with Memory Safeguards
+# ------------------------------------------------------------------------------
 export NODE_OPTIONS="--max-old-space-size=4096 --expose-gc"
 
-echo "   Memory config:"
-echo "   • Heap limit: 4GB (--max-old-space-size=4096, Next.js restarts at 80% = 3.2GB)"
-echo "   • Proactive GC: enabled (--expose-gc)"
-echo "   • Cache sizes: reduced for dev"
-echo ""
-
-# Start Next.js development server with Turbopack
-# Use 'bun run next' instead of 'bunx next' to avoid overhead
 exec bun run next dev --port "$DEVELOPMENT_PORT"

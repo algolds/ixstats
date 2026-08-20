@@ -656,4 +656,4 @@ Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Bra
 | **MapLibre GL**        | Map rendering                         | `src/components/maps/core/`                   |
 | **Redis (ioredis)**    | Rate limiting, caching                | `rate-limiter.ts`                             |
 | **Socket.IO**          | WebSocket transport                   | `server.mjs`                                  |
-| **node-cron**          | Scheduled jobs                        | `server.mjs`                                  |
+| **Bun.cron**           | Scheduled jobs (native runtime)       | `server.mjs`, `cron-runner.mjs`               |

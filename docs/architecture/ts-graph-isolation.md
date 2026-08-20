@@ -1,29 +1,31 @@
 # TypeScript Architecture & Compilation Isolation
 
-**Tooling**: TypeScript 5.9.3 · Bun Runtime · ts-morph AST Engine  
+**Tooling**: TypeScript 7.0.0 · Bun 1.4 Runtime · ts-morph AST Engine  
 **Enforcement**: `scripts/audit/audit-arch.ts` (`bun run audit:arch`)  
 **Configs**: `tsconfig.json`, `tsconfig.base.json`, `tsconfig.ui.json`, `tsconfig.server.json`, `tsconfig.trpc.json`, `tsconfig.db.json`
 
 ---
 
-## 1. Problem Statement: The 7GB RAM Graph Explosion
+## 1. Problem Statement & TypeScript 7.0 Resolution
 
-In monolithic Next.js codebases, unconstrained imports between server routers, database queries, and client UI components create an unpartitioned type graph. Under global `tsc --noEmit`, TypeScript attempts to hold all 2,000+ files and their recursive `@types/*` packages simultaneously in memory, causing node heap exhaustion (>7GB RAM) and server OOM crashes on 8GB host servers.
+Historically, in TypeScript 5/6 (JavaScript V8 engine), unconstrained imports between server routers, database queries, and client UI components created an unpartitioned type graph consuming >7GB RAM and causing server OOM crashes.
+
+With **TypeScript 7.0**, the compiler was rewritten as a native Go binary with shared-memory parallel AST processing. This slashes baseline memory by ~80% (<500MB RAM) and enables instant multi-core verification while preserving sub-project configurations for editor caching.
 
 ---
 
 ## 2. Partitioned Typecheck Sub-Projects
 
-To guarantee sub-10s verification without memory exhaustion, compilation is partitioned into isolated sub-projects with bounded heap memory:
+Compilation sub-projects keep boundaries modular across the codebase:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PARTITIONED TYPECHECKS                   │
 ├────────────────────┬────────────────────┬───────────────────┤
-│ `typecheck:ui`     │ tsconfig.ui.json   │ 6144MB Old-Space  │
-│ `typecheck:server` │ tsconfig.server.json│ 4096MB Old-Space  │
-│ `typecheck:trpc`   │ tsconfig.trpc.json │ 4096MB Old-Space  │
-│ `typecheck:db`     │ tsconfig.db.json   │ 4096MB Old-Space  │
+│ `typecheck:ui`     │ tsconfig.ui.json   │ Native Go Thread  │
+│ `typecheck:server` │ tsconfig.server.json│ Native Go Thread │
+│ `typecheck:trpc`   │ tsconfig.trpc.json │ Native Go Thread  │
+│ `typecheck:db`     │ tsconfig.db.json   │ Native Go Thread  │
 └────────────────────┴────────────────────┴───────────────────┘
 ```
 

@@ -1,12 +1,12 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 /**
  * Production URL Audit Script
  *
  * Validates all URLs and navigation paths work correctly in production with BASE_PATH
  *
  * Usage:
- *   npx tsx scripts/audit-production-urls.ts
- *   BASE_PATH=/projects/ixstats npx tsx scripts/audit-production-urls.ts
+ *   bun scripts/audit-production-urls.ts
+ *   BASE_PATH=/projects/ixstates bun scripts/audit-production-urls.ts
  */
 
 import * as fs from "fs";

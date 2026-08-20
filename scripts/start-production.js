@@ -82,7 +82,7 @@ async function startProduction() {
   // Start the application
   const appPath = path.join(__dirname, "..");
 
-  const nextStart = spawn("bun", ["start"], {
+  const nextStart = spawn("bun", ["run", "start:prod"], {
     cwd: appPath,
     stdio: "inherit",
     env: {

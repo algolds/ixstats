@@ -63,7 +63,7 @@ trap 'restore_next' EXIT
 restore_next
 
 # 1. Check dependencies
-for cmd in bun bunx pm2 rsync flock curl; do
+for cmd in bun pm2 rsync flock curl; do
     if ! command -v "$cmd" &> /dev/null; then
         log "ERROR: Required command '$cmd' not found."
         exit 1
@@ -121,7 +121,7 @@ export NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=""
 export NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=""
 export NODE_ENV=production
 
-if ! bunx next build; then
+if ! bun run next build; then
     log "ERROR: Build failed! IxStats .next will be restored on exit."
     exit 1
 fi

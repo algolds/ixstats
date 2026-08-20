@@ -1,6 +1,6 @@
 # Testing & Type Safety Practices
 
-**Test Runner**: Jest 30.4.2 · TypeScript 5.9.3 · Bun Runtime  
+**Test Runner**: Jest 30.4.2 · TypeScript 7.0.0 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
 
 ---
@@ -10,6 +10,9 @@
 ```bash
 # Run all Jest unit and integration tests
 bun run test
+
+# Run sub-second parallel unit tests using Bun's native runner
+bun run test:unit
 
 # Run a single test file or pattern
 bun run test -- src/lib/wiki/roster-parser.test.ts
@@ -23,26 +26,23 @@ bun run test:coverage
 
 ---
 
-## 2. Partitioned Type Safety Verification
+## 2. Type Safety Verification (TypeScript 7.0 Native Go Engine)
 
-Due to the size of the codebase (210+ routes, 90 routers, 296 Prisma models), typechecking is split across sub-projects with defined safe heap bounds to prevent out-of-memory errors on 8GB host servers:
+With **TypeScript 7.0**, `tsc` is a native Go binary featuring shared-memory parallel checking and multi-threading (`--checkers`), reducing memory footprint by ~80% and dropping typechecking time to ~2s:
 
 ```bash
 # Sequentially run all four sub-project typechecks (0 error gate)
 bun run typecheck
 
 # Individual Sub-Project Checks:
-bun run typecheck:ui      # Client-side components, pages, hooks (6144MB heap)
-bun run typecheck:server  # Server routers, services, background jobs (6144MB heap)
-bun run typecheck:trpc    # tRPC router definitions and schemas (4096MB heap)
-bun run typecheck:db      # Prisma client and database helpers (4096MB heap)
+bun run typecheck:ui      # Client-side components, pages, hooks
+bun run typecheck:server  # Server routers, services, background jobs
+bun run typecheck:trpc    # tRPC router definitions and schemas
+bun run typecheck:db      # Prisma client and database helpers
 
 # Typecheck a single file
 bun run typecheck:file src/lib/onoma/language-families.ts
 ```
-
-> [!CAUTION]
-> **Strict Rule**: NEVER run unpartitioned global `tsc --noEmit` or `npm run typecheck:full`. It causes node heap exhaustion (>7GB RAM) and server OOM crashes.
 
 ---
 

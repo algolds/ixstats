@@ -8,7 +8,7 @@ echo "🧹 Running Prettier check..."
 bun run format:check
 
 echo "🔍 Running ESLint..."
-bunx eslint src --cache
+bun run lint
 
 echo "🧪 Running unit tests..."
 bun run test

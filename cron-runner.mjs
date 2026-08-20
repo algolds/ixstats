@@ -54,10 +54,50 @@ function loadEnvVariables() {
   }
 }
 
+function matchCronField(field, value) {
+  if (field === "*") return true;
+  if (field.includes("/")) {
+    const [range, stepStr] = field.split("/");
+    const step = parseInt(stepStr, 10);
+    if (isNaN(step) || step <= 0) return false;
+    let min = 0;
+    if (range !== "*") {
+      min = parseInt(range, 10) || 0;
+    }
+    return (value - min) % step === 0 && value >= min;
+  }
+  if (field.includes(",")) {
+    return field.split(",").some((f) => matchCronField(f.trim(), value));
+  }
+  if (field.includes("-")) {
+    const [start, end] = field.split("-").map((v) => parseInt(v, 10));
+    return value >= start && value <= end;
+  }
+  return parseInt(field, 10) === value;
+}
+
+function matchesCron(pattern, date = new Date()) {
+  const parts = pattern.trim().split(/\s+/);
+  if (parts.length !== 5) return false;
+  const [m, h, dom, mon, dow] = parts;
+
+  const minute = date.getUTCMinutes();
+  const hour = date.getUTCHours();
+  const dayOfMonth = date.getUTCDate();
+  const month = date.getUTCMonth() + 1;
+  const dayOfWeek = date.getUTCDay();
+
+  return (
+    matchCronField(m, minute) &&
+    matchCronField(h, hour) &&
+    matchCronField(dom, dayOfMonth) &&
+    matchCronField(mon, month) &&
+    matchCronField(dow, dayOfWeek)
+  );
+}
+
 async function main() {
   loadEnvVariables();
-
-  const cron = await import("node-cron");
 
   // Schedules (overridable via SystemConfig, matching server.mjs)
   let cronSchedule_lorewardsScoring = "0 6 * * *";
@@ -90,10 +130,25 @@ async function main() {
     console.warn("[Cron] Failed to fetch custom schedules, using defaults:", error.message);
   }
 
+  const isBun = typeof Bun !== "undefined" && typeof Bun.cron === "function";
+
   const scheduleCron = (name, schedule, handler) => {
     try {
-      cron.default.schedule(schedule, handler, { timezone: "UTC" });
-      console.log(`[Cron] ✓ ${name} (${schedule})`);
+      if (isBun) {
+        Bun.cron({
+          pattern: schedule,
+          run: handler,
+        });
+        console.log(`[Cron:Bun] ✓ ${name} (${schedule})`);
+      } else {
+        // Zero-dependency minute polling for fallback Node runtime
+        setInterval(() => {
+          if (matchesCron(schedule)) {
+            handler();
+          }
+        }, 60000);
+        console.log(`[Cron:Native] ✓ ${name} (${schedule})`);
+      }
     } catch (error) {
       console.error(`[Cron] ✗ Failed to schedule ${name} (${schedule}):`, error.message);
     }

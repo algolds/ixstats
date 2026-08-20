@@ -27,19 +27,20 @@ fi
 echo "🧹 Cleaning previous build..."
 rm -rf .next
 
-# Run production build
+# Run production build (uses with-base-path.sh wrapper and postbuild standalone asset copy)
 echo "🔨 Running production build..."
-bun run build:prod
+bun run build
 
 echo ""
 echo "✅ Production build completed successfully!"
 echo ""
 echo "📁 Build artifacts:"
-echo "   Static assets: .next/static/"
-echo "   Server files: .next/server/"
+echo "   Static assets:     .next/static/"
+echo "   Server files:      .next/server/"
+echo "   Standalone build:  .next/standalone/"
 echo ""
 echo "🌐 Deployment URLs:"
-echo "   App URL: https://ixwiki.com/projects/ixstates"
-echo "   Static assets: https://ixwiki.com/projects/ixstates/_next/static/"
+echo "   App URL:        https://ixwiki.com/projects/ixstates"
+echo "   Static assets:  https://ixwiki.com/projects/ixstates/_next/static/"
 echo ""
 echo "🚀 Ready for deployment!"

@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 
 /**
  * IxStats Log and Report Cleanup Script
@@ -9,7 +9,7 @@
  * 3. Removes duplicate or redundant audit reports
  * 4. Cleans up temporary files and node_modules logs
  *
- * Usage: npm run cleanup:logs
+ * Usage: bun run cleanup:logs
  */
 
 import { execSync } from "child_process";

@@ -133,71 +133,119 @@ app
     }
 
     // ──────────────────────────────────────────────
-    // Cron jobs (individually isolated)
+    // Cron jobs (Bun.cron native with zero-dependency fallback)
     // ──────────────────────────────────────────────
-    let cron = null;
     let cronJobsScheduled = 0;
     let cronJobsFailed = 0;
 
-    try {
-      cron = await import("node-cron");
-    } catch (error) {
-      console.error("[Cron] ✗ Failed to import node-cron:", error.message);
-      console.warn("[Cron] Continuing without scheduled jobs");
+    function matchCronField(field, value) {
+      if (field === "*") return true;
+      if (field.includes("/")) {
+        const [range, stepStr] = field.split("/");
+        const step = parseInt(stepStr, 10);
+        if (isNaN(step) || step <= 0) return false;
+        let min = 0;
+        if (range !== "*") {
+          min = parseInt(range, 10) || 0;
+        }
+        return (value - min) % step === 0 && value >= min;
+      }
+      if (field.includes(",")) {
+        return field.split(",").some((f) => matchCronField(f.trim(), value));
+      }
+      if (field.includes("-")) {
+        const [start, end] = field.split("-").map((v) => parseInt(v, 10));
+        return value >= start && value <= end;
+      }
+      return parseInt(field, 10) === value;
     }
 
-    if (cron) {
-      // Fetch cron schedules from database
-      let cronSchedule_lorewardsScoring = "0 6 * * *";
-      let cronSchedule_passiveIncome = "0 0 * * *";
-      let cronSchedule_cardValue = "0 */6 * * *";
-      let cronSchedule_wikiRecentChanges = "*/10 * * * *";
+    function matchesCron(pattern, date = new Date()) {
+      const parts = pattern.trim().split(/\s+/);
+      if (parts.length !== 5) return false;
+      const [m, h, dom, mon, dow] = parts;
 
-      try {
-        const { PrismaClient } = await import("@prisma/client");
-        const dbInstance = new PrismaClient();
-        const configs = await dbInstance.systemConfig.findMany({
-          where: {
-            key: {
-              in: [
-                "cronSchedule_lorewardsScoring",
-                "cronSchedule_passiveIncome",
-                "cronSchedule_cardValue",
-                "cronSchedule_wikiRecentChanges",
-              ],
-            },
+      const minute = date.getUTCMinutes();
+      const hour = date.getUTCHours();
+      const dayOfMonth = date.getUTCDate();
+      const month = date.getUTCMonth() + 1;
+      const dayOfWeek = date.getUTCDay();
+
+      return (
+        matchCronField(m, minute) &&
+        matchCronField(h, hour) &&
+        matchCronField(dom, dayOfMonth) &&
+        matchCronField(mon, month) &&
+        matchCronField(dow, dayOfWeek)
+      );
+    }
+
+    // Fetch cron schedules from database
+    let cronSchedule_lorewardsScoring = "0 6 * * *";
+    let cronSchedule_passiveIncome = "0 0 * * *";
+    let cronSchedule_cardValue = "0 */6 * * *";
+    let cronSchedule_wikiRecentChanges = "*/10 * * * *";
+
+    try {
+      const { PrismaClient } = await import("@prisma/client");
+      const dbInstance = new PrismaClient();
+      const configs = await dbInstance.systemConfig.findMany({
+        where: {
+          key: {
+            in: [
+              "cronSchedule_lorewardsScoring",
+              "cronSchedule_passiveIncome",
+              "cronSchedule_cardValue",
+              "cronSchedule_wikiRecentChanges",
+            ],
           },
-        });
-        for (const config of configs) {
-          if (config.key === "cronSchedule_lorewardsScoring" && config.value) {
-            cronSchedule_lorewardsScoring = config.value.trim();
-          } else if (config.key === "cronSchedule_passiveIncome" && config.value) {
-            cronSchedule_passiveIncome = config.value.trim();
-          } else if (config.key === "cronSchedule_cardValue" && config.value) {
-            cronSchedule_cardValue = config.value.trim();
-          } else if (config.key === "cronSchedule_wikiRecentChanges" && config.value) {
-            cronSchedule_wikiRecentChanges = config.value.trim();
-          }
+        },
+      });
+      for (const config of configs) {
+        if (config.key === "cronSchedule_lorewardsScoring" && config.value) {
+          cronSchedule_lorewardsScoring = config.value.trim();
+        } else if (config.key === "cronSchedule_passiveIncome" && config.value) {
+          cronSchedule_passiveIncome = config.value.trim();
+        } else if (config.key === "cronSchedule_cardValue" && config.value) {
+          cronSchedule_cardValue = config.value.trim();
+        } else if (config.key === "cronSchedule_wikiRecentChanges" && config.value) {
+          cronSchedule_wikiRecentChanges = config.value.trim();
         }
-        await dbInstance.$disconnect();
-      } catch (error) {
-        console.warn(
-          "[Cron] Failed to fetch custom cron schedules from database, using defaults:",
-          error.message
-        );
       }
+      await dbInstance.$disconnect();
+    } catch (error) {
+      console.warn(
+        "[Cron] Failed to fetch custom cron schedules from database, using defaults:",
+        error.message
+      );
+    }
 
-      // Helper: schedule a cron job with isolated error handling
-      const scheduleCron = (name, schedule, handler) => {
-        try {
-          cron.default.schedule(schedule, handler, { timezone: "UTC" });
+    const isBun = typeof Bun !== "undefined" && typeof Bun.cron === "function";
+
+    // Helper: schedule a cron job with isolated error handling
+    const scheduleCron = (name, schedule, handler) => {
+      try {
+        if (isBun) {
+          Bun.cron({
+            pattern: schedule,
+            run: handler,
+          });
           cronJobsScheduled++;
-          console.log(`[Cron] ✓ ${name} (${schedule})`);
-        } catch (error) {
-          cronJobsFailed++;
-          console.error(`[Cron] ✗ Failed to schedule ${name} (${schedule}):`, error.message);
+          console.log(`[Cron:Bun] ✓ ${name} (${schedule})`);
+        } else {
+          setInterval(() => {
+            if (matchesCron(schedule)) {
+              handler();
+            }
+          }, 60000);
+          cronJobsScheduled++;
+          console.log(`[Cron:Native] ✓ ${name} (${schedule})`);
         }
-      };
+      } catch (error) {
+        cronJobsFailed++;
+        console.error(`[Cron] ✗ Failed to schedule ${name} (${schedule}):`, error.message);
+      }
+    };
 
       // 1. Auction completion (every minute)
       scheduleCron("Auction completion", "* * * * *", async () => {

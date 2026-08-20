@@ -19,7 +19,7 @@ AVAILABLE_PORT=$(find_port)
 
 if [ $? -eq 0 ]; then
     echo "Starting server on port $AVAILABLE_PORT"
-    exec next start -p $AVAILABLE_PORT
+    exec bun run next start -p "$AVAILABLE_PORT"
 else
     echo "Failed to find available port"
     exit 1
