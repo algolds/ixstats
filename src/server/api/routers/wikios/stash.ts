@@ -13,26 +13,6 @@ import { db } from "~/server/db";
 import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";
 
 export const wikiosStashRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
   /** Get all stashes for the current user with item counts. */
   getStashes: protectedProcedure.query(async ({ ctx }) => {
     const userId = requireWikiUserId(ctx);
@@ -48,7 +28,7 @@ export const wikiosStashRouter = createTRPCRouter({
       icon: s.icon,
       isDefault: s.isDefault,
       order: s.order,
-      itemCount: (s as unknown as { _count?: { items?: number } })._count?.items ?? 0,
+      itemCount: s._count?.items ?? 0,
     }));
   }),
 

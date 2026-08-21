@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
-import { getCachedArticle } from "~/lib/wiki-os/wikios-cache";
 
 const PREFETCH_DEBOUNCE_MS = 50;
 const prefetchedSet = new Set<string>();
@@ -29,15 +28,11 @@ export function useWikiPrefetch() {
       prefetchedSet.add(cacheKey);
 
       try {
-        // Check local IndexedDB/memory cache first
-        const cached = await getCachedArticle(title);
-        if (!cached) {
-          // Warm up tRPC / React Query cache
-          await utils.wikios.getArticleHtml.prefetch(
-            { title },
-            { staleTime: 10 * 60 * 1000 }
-          );
-        }
+        // Warm up tRPC / React Query cache directly
+        await utils.wikios.getArticleHtml.prefetch(
+          { title },
+          { staleTime: 10 * 60 * 1000 }
+        );
 
         if (prefetchWikitext) {
           await utils.wikios.getWikitext.prefetch(

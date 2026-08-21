@@ -21,14 +21,6 @@ import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-
 import { updateRevisionActor } from "~/lib/wiki-os/wiki-write-service";
 
 export const wikiosUserTalkRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
   /**
    * Get pages that link to the given page (backlinks / "What Links Here").
    */

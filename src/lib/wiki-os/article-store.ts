@@ -317,12 +317,7 @@ export async function getArticleHtmlShadow(
   source: WikiSource = "ixwiki"
 ): Promise<{ html: string; revid: number | null; timestamp: string | null } | null> {
   const norm = normalize(title);
-  const row = (await shadowGet(source, norm)) as unknown as {
-    htmlContent?: string | null;
-    htmlSyncedAt?: Date | null;
-    revisionId: number | null;
-    revTimestamp: string | null;
-  } | null;
+  const row = await shadowGet(source, norm);
 
   if (row && row.htmlContent) {
     const isFresh =
@@ -348,7 +343,7 @@ export async function saveArticleHtmlShadow(
 ): Promise<void> {
   const norm = normalize(title);
   try {
-    await (db.wikiArticle.updateMany as Function)({
+    await db.wikiArticle.updateMany({
       where: { source, title: norm },
       data: { htmlContent: html, htmlSyncedAt: new Date() },
     });

@@ -38,6 +38,7 @@ import {
   wrapSelectionCM,
 } from "./utils/codemirror-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
+import { getDraft, saveDraft, clearDraft } from "~/lib/wiki-os/draft-store";
 import { WikiSourceToolbar } from "./components/WikiSourceToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
@@ -310,7 +311,7 @@ export function WikiSourceEditor({
     const isSession = state.saveActionType === "session";
     try {
       await onSave(wikitext, state.summary, state.minor, isSession);
-      localStorage.removeItem(`wikios-draft-${title}`);
+      clearDraft(title, "ixwiki");
       state.setIsDirty(false);
       state.setShowSavePanel(false);
       state.notify.success(
@@ -329,7 +330,7 @@ export function WikiSourceEditor({
   const handleSaveDraft = useCallback(() => {
     const wikitext = viewRef.current?.state.doc.toString() ?? "";
     try {
-      localStorage.setItem(`wikios-draft-${title}`, wikitext);
+      saveDraft({ title, source: "ixwiki", wikitext, mode: "source" });
       state.setIsDirty(false);
       state.notify.success("Draft Saved", "Your draft has been saved locally.");
     } catch (err) {
@@ -340,8 +341,9 @@ export function WikiSourceEditor({
 
   // Local draft restore on mount
   useEffect(() => {
-    const draft = localStorage.getItem(`wikios-draft-${title}`);
-    if (draft && draft !== initialWikitext) {
+    const existingDraft = getDraft(title, "ixwiki");
+    const draftContent = existingDraft?.wikitext;
+    if (draftContent && draftContent !== initialWikitext) {
       const timer = setTimeout(() => {
         const restore = window.confirm(
           `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
@@ -349,7 +351,7 @@ export function WikiSourceEditor({
         if (restore && viewRef.current) {
           const docLength = viewRef.current.state.doc.length;
           viewRef.current.dispatch({
-            changes: { from: 0, to: docLength, insert: draft },
+            changes: { from: 0, to: docLength, insert: draftContent },
           });
           state.setIsDirty(true);
         }

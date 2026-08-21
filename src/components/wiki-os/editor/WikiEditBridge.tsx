@@ -4,11 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import {
-  getCachedDraft,
-  setCachedDraft,
-  clearCachedDraft,
-} from "~/lib/wiki-os/wikios-cache";
-import {
   saveDraft,
   getDraft,
   clearDraft,
@@ -77,29 +72,19 @@ export function WikiEditBridge({
   const saveArticle = api.wikios.saveArticle.useMutation();
   const saveWikitext = api.wikios.saveWikitext.useMutation();
 
-  // Restore draft from draft store or IndexedDB
+  // Restore draft from canonical draft store
   useEffect(() => {
-    async function checkDraft() {
-      const localDraft = getDraft(title);
-      if (localDraft && !draftRestored) {
-        if (localDraft.mode === "visual" && localDraft.html) {
-          setActiveHtml(localDraft.html);
-          setMode("visual");
-        } else if (localDraft.wikitext) {
-          setActiveWikitext(localDraft.wikitext);
-          setMode("source");
-        }
-        setDraftRestored(true);
-        return;
+    const localDraft = getDraft(title);
+    if (localDraft && !draftRestored) {
+      if (localDraft.mode === "visual" && localDraft.html) {
+        setActiveHtml(localDraft.html);
+        setMode("visual");
+      } else if (localDraft.wikitext) {
+        setActiveWikitext(localDraft.wikitext);
+        setMode("source");
       }
-
-      const draft = await getCachedDraft(title);
-      if (draft && !draftRestored) {
-        setActiveWikitext(draft);
-        setDraftRestored(true);
-      }
+      setDraftRestored(true);
     }
-    void checkDraft();
   }, [title, draftRestored]);
 
   const handleModeSwitch = useCallback(
@@ -133,7 +118,6 @@ export function WikiEditBridge({
               mode: "source",
               wikitext: res.wikitext,
             });
-            await setCachedDraft(title, res.wikitext);
           }
           setMode(newMode);
         } catch (err) {
@@ -167,7 +151,6 @@ export function WikiEditBridge({
         }
 
         clearDraft(title);
-        await clearCachedDraft(title);
 
         if (keepEditing) {
           const res = await refetchEditorHtml();
@@ -206,7 +189,6 @@ export function WikiEditBridge({
         }
 
         clearDraft(title);
-        await clearCachedDraft(title);
 
         if (keepEditing) {
           const res = await refetchWikitext();

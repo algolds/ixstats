@@ -3,7 +3,7 @@
  * Used to create themed UI effects based on flag colors
  */
 
-interface FlagColors {
+export interface FlagColors {
   primary: string;
   secondary: string;
   accent: string;

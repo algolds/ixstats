@@ -31,6 +31,7 @@ import {
   injectPlaceholderElements,
   CoordsPill,
   DynamicStatSpan,
+  type DynamicStatData,
 } from "./ArticlePlaceholders";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
@@ -85,7 +86,24 @@ const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
 };
 
  
-const EMPTY_STATS_DATA: Record<string, any> = {};
+const EMPTY_STATS_DATA: Record<string, DynamicStatData> = {};
+
+type PortalTarget =
+  | {
+      element: Element;
+      type: "coords";
+      data: { lat: number; lng: number; zoom: number; label: string };
+    }
+  | {
+      element: Element;
+      type: "map-embed";
+      data: { lat: number; lng: number; zoom: number; options: string };
+    }
+  | {
+      element: Element;
+      type: "stat";
+      data: { key: string };
+    };
 
 export function ArticleRenderer({
   title,
@@ -176,12 +194,6 @@ export function ArticleRenderer({
     [infoboxHtml]
   );
 
-  interface PortalTarget {
-    element: Element;
-    type: "coords" | "map-embed" | "stat";
-     
-    data: any;
-  }
   const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
 
   useEffect(() => {

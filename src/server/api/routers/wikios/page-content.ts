@@ -128,8 +128,27 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       // Default ixwiki flow — direct Parsoid/MySQL
       const resolvedTitle = await resolveRedirect(input.title);
-      const article = await getArticleHtml(resolvedTitle);
 
+      // Fast-path: Check Postgres shadow HTML cache (<3ms)
+      const shadowHtml = await getArticleHtmlShadow(resolvedTitle, "ixwiki");
+      if (shadowHtml) {
+        const transformed = transformArticleHtml(shadowHtml.html, "", "ixwiki");
+        return {
+          contentHtml: transformed.contentHtml,
+          infoboxHtml: transformed.infoboxHtml,
+          noticesHtml: transformed.noticesHtml,
+          toc: transformed.toc,
+          title: resolvedTitle.replace(/_/g, " "),
+          categories: [] as string[],
+          lastModified: shadowHtml.timestamp,
+          isRedirect: false,
+          redirectTarget: null,
+          resolvedFrom: resolvedTitle !== input.title ? input.title : null,
+          wikiSource: "ixwiki" as const,
+        };
+      }
+
+      const article = await getArticleHtml(resolvedTitle);
       const transformed = transformArticleHtml(stripConflictingStyles(article.html), "", "ixwiki");
 
       // Pre-resolve custom templates (CountryData, BusinessData) server-side
@@ -308,9 +327,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      const keys = input.placeholders ?? [];
-      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
-      return resolved;
+      return resolveWikiPlaceholdersInternal(input.placeholders ?? [], ctx, input.countryId);
     }),
 
   /**
@@ -325,9 +342,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      const keys = input.placeholders ?? [];
-      const resolved = await resolveWikiPlaceholdersInternal(keys, ctx, input.countryId);
-      return resolved;
+      return resolveWikiPlaceholdersInternal(input.placeholders ?? [], ctx, input.countryId);
     }),
 
   /**
@@ -647,14 +662,6 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return { entries: await getPageLog(input.title, input.limit) };
     }),
-
-  // ---------------------------------------------------------------------------
-  // Advanced Search (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Category Tree (Phase 1)
-  // ---------------------------------------------------------------------------
 
   /**
    * Get parsed infobox for a wiki page.

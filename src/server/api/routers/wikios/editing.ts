@@ -23,18 +23,6 @@ import {
 } from "~/lib/wiki-os/wiki-write-service";
 
 export const wikiosEditingRouter = createTRPCRouter({
-  // ---------------------------------------------------------------------------
-  // Reader endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // History & Diff endpoints (Phase 3)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Editor endpoints (Phase 2)
-  // ---------------------------------------------------------------------------
-
   /**
    * Preview wikitext by converting it to HTML via Parsoid.
    */
@@ -195,14 +183,6 @@ export const wikiosEditingRouter = createTRPCRouter({
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
       return saveToMediaWiki(input.title, oldContent.wikitext, summary, false, ctx);
     }),
-
-  // ---------------------------------------------------------------------------
-  // Talk / Discussion Pages
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // File Upload
-  // ---------------------------------------------------------------------------
 
   /**
    * Upload a file to MediaWiki.

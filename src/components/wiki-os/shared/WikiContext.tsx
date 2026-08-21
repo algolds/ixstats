@@ -197,16 +197,18 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
 
         try {
           const stored = localStorage.getItem("wikios:pausedSessions");
-          let sessions = stored ? JSON.parse(stored) : [];
+          let sessions: Array<{ title: string; scrollPercent: number; updatedAt: number }> = stored
+            ? JSON.parse(stored)
+            : [];
           if (!Array.isArray(sessions)) sessions = [];
 
-          const existingIndex = sessions.findIndex((s: any) => s.title === articleTitle);
+          const existingIndex = sessions.findIndex((s) => s.title === articleTitle);
 
-          if (existingIndex !== -1) {
+          if (existingIndex !== -1 && sessions[existingIndex]) {
             if (sessions[existingIndex].scrollPercent !== roundedPct) {
               sessions[existingIndex].scrollPercent = roundedPct;
               sessions[existingIndex].updatedAt = Date.now();
-              sessions.sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+              sessions.sort((a, b) => b.updatedAt - a.updatedAt);
               localStorage.setItem("wikios:pausedSessions", JSON.stringify(sessions));
             }
           } else {
@@ -218,7 +220,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
             sessions = sessions.slice(0, 5);
             localStorage.setItem("wikios:pausedSessions", JSON.stringify(sessions));
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       }, 250);
@@ -238,8 +240,9 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem("wikios:pausedSessions");
       if (stored) {
-        const sessions = JSON.parse(stored);
-        const session = sessions.find((s: any) => s.title === articleTitle);
+        const sessions: Array<{ title: string; scrollPercent: number; updatedAt: number }> =
+          JSON.parse(stored);
+        const session = sessions.find((s) => s.title === articleTitle);
         // Only auto-restore progress if it's substantial (between 2% and 98%)
         if (session && session.scrollPercent > 2 && session.scrollPercent < 98) {
           const timer = setTimeout(() => {

@@ -15,16 +15,27 @@ import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
+import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
+import type { FlagColors } from "~/lib/flags/flag-color-extractor";
+
+export type ArticleThemeColors =
+  | FlagColors
+  | {
+      primary: string;
+      secondary: string;
+      accent?: string;
+      glow?: string;
+      text?: string;
+      rgbPrimary?: { r: number; g: number; b: number };
+    };
 
 export interface ArticleHeaderProps {
   title: string;
   lastModified: string | null;
   wikiSource?: string;
-   
-  countryData?: any;
+  countryData?: ActiveCountryData | Record<string, unknown> | null;
   featuredImageUrl?: string | null;
-   
-  themeColors: any;
+  themeColors?: ArticleThemeColors | null;
   awardsData?: {
     hasAwards: boolean;
     hasLoreward: boolean;
@@ -53,7 +64,12 @@ export function WikiOSHeader({
   _tocLength,
   _onTocClick,
 }: ArticleHeaderProps & { _tocLength?: number; _onTocClick?: () => void }) {
-  const rawBackdropUrl = countryData?.flagUrl || featuredImageUrl;
+  const rawBackdropUrl: string | null =
+    typeof countryData?.flagUrl === "string"
+      ? countryData.flagUrl
+      : typeof featuredImageUrl === "string"
+        ? featuredImageUrl
+        : null;
 
   const backdropUrl = useMemo(() => {
     if (!rawBackdropUrl) return null;

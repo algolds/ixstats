@@ -11,8 +11,23 @@ import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayou
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 
+export interface ActiveCountryData {
+  id?: string;
+  name?: string;
+  flagUrl?: string | null;
+  flagEmoji?: string | null;
+  continent?: string | null;
+  currentPopulation?: number | null;
+  currentGdpPerCapita?: number | null;
+  currentTotalGdp?: number | null;
+  population?: number | null;
+  gdp?: number | null;
+  vitalityIndex?: number | null;
+  [key: string]: unknown;
+}
+
 interface ActiveCountryUnifiedWidgetProps {
-  country: any;
+  country: ActiveCountryData | null | undefined;
   transitionStyle?: React.CSSProperties;
   isLocalHoverExpanded?: boolean;
 }
@@ -62,6 +77,48 @@ export function ActiveCountryUnifiedWidget({
 
   const viewerCountryId = userProfile?.countryId ?? undefined;
   const isOwnCountry = myCountry?.id === activeCountry.id;
+  const countryName = activeCountry.name ?? "Active Country";
+
+  const popVal =
+    "currentPopulation" in activeCountry && activeCountry.currentPopulation != null
+      ? Number(activeCountry.currentPopulation)
+      : "calculatedStats" in activeCountry &&
+          (activeCountry as { calculatedStats?: { currentPopulation?: number } }).calculatedStats
+            ?.currentPopulation != null
+        ? Number(
+            (activeCountry as { calculatedStats?: { currentPopulation?: number } }).calculatedStats
+              ?.currentPopulation
+          )
+        : "population" in activeCountry &&
+            (activeCountry as { population?: number }).population != null
+          ? Number((activeCountry as { population?: number }).population)
+          : null;
+
+  const gdpCapVal =
+    "currentGdpPerCapita" in activeCountry && activeCountry.currentGdpPerCapita != null
+      ? Number(activeCountry.currentGdpPerCapita)
+      : "calculatedStats" in activeCountry &&
+          (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
+            ?.currentGdpPerCapita != null
+        ? Number(
+            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
+              ?.currentGdpPerCapita
+          )
+        : null;
+
+  const totalGdpVal =
+    "currentTotalGdp" in activeCountry && activeCountry.currentTotalGdp != null
+      ? Number(activeCountry.currentTotalGdp)
+      : "calculatedStats" in activeCountry &&
+          (activeCountry as { calculatedStats?: { currentTotalGdp?: number } }).calculatedStats
+            ?.currentTotalGdp != null
+        ? Number(
+            (activeCountry as { calculatedStats?: { currentTotalGdp?: number } }).calculatedStats
+              ?.currentTotalGdp
+          )
+        : "gdp" in activeCountry && (activeCountry as { gdp?: number }).gdp != null
+          ? Number((activeCountry as { gdp?: number }).gdp)
+          : null;
 
   return (
     <div className="relative w-full" ref={popoverRef}>
@@ -82,15 +139,13 @@ export function ActiveCountryUnifiedWidget({
             }
           }}
           className={cn(
-            "wikios-sidebar-icon-box flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-md transition-all active:scale-95",
-            popoverOpen
-              ? "rail-glow-gold border-amber-500/40 bg-amber-500/10 text-amber-400"
-              : "rail-glow-gold border-amber-500/20 bg-amber-500/5 text-amber-400"
+            "wikios-sidebar-icon-box relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-md transition-all active:scale-95",
+            popoverOpen ? "border-amber-500/50 bg-amber-500/15" : "hover:border-amber-500/30"
           )}
-          title={`Country Context: ${activeCountry.name} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
+          title={`Country Context: ${countryName} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
           type="button"
         >
-          <UnifiedCountryFlag countryName={activeCountry.name} size="sm" showTooltip={false} />
+          <UnifiedCountryFlag countryName={countryName} size="sm" showTooltip={false} />
         </button>
 
         <button
@@ -103,7 +158,7 @@ export function ActiveCountryUnifiedWidget({
           type="button"
         >
           <span className="block truncate text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]">
-            {activeCountry.name}
+            {countryName}
           </span>
           <span className="block text-[9px] leading-tight text-[var(--wikios-text-dim)]">
             {isOwnCountry ? "MyCountry" : "MyCountry Actions"}
@@ -116,14 +171,15 @@ export function ActiveCountryUnifiedWidget({
           {/* Header */}
           <div className="mb-2.5 flex items-center gap-2.5 border-b border-white/5 pb-2.5">
             <div className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm">
-              <UnifiedCountryFlag countryName={activeCountry.name} size="sm" showTooltip={false} />
+              <UnifiedCountryFlag countryName={countryName} size="sm" showTooltip={false} />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="text-foreground truncate text-xs leading-tight font-bold">
-                {activeCountry.name}
+                {countryName}
               </h4>
               <p className="text-muted-foreground text-[9px] leading-tight">
-                {activeCountry.continent} {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
+                {activeCountry.continent ? String(activeCountry.continent) : ""}{" "}
+                {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
               </p>
             </div>
           </div>
@@ -133,19 +189,19 @@ export function ActiveCountryUnifiedWidget({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Population:</span>
               <span className="text-foreground font-semibold">
-                {Math.round(activeCountry.currentPopulation).toLocaleString()}
+                {popVal != null ? Math.round(popVal).toLocaleString() : "..."}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">GDP per Capita:</span>
               <span className="text-foreground font-semibold">
-                ${Math.round(activeCountry.currentGdpPerCapita).toLocaleString()}
+                {gdpCapVal != null ? `$${Math.round(gdpCapVal).toLocaleString()}` : "..."}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total GDP:</span>
               <span className="text-foreground font-semibold">
-                ${formatGdp(activeCountry.currentTotalGdp)}
+                {totalGdpVal != null ? `$${formatGdp(totalGdpVal)}` : "..."}
               </span>
             </div>
 
@@ -218,8 +274,8 @@ export function ActiveCountryUnifiedWidget({
       )}
 
       <CountryActionsMenu
-        targetCountryId={activeCountry.id}
-        targetCountryName={activeCountry.name}
+        targetCountryId={activeCountry.id ?? ""}
+        targetCountryName={countryName}
         viewerCountryId={viewerCountryId}
         isOpen={actionsMenuOpen}
         onClose={() => setActionsMenuOpen(false)}

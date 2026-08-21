@@ -198,12 +198,31 @@ export function CoordsPill({
   );
 }
 
+import type { WikiPlaceholderMetadata } from "~/server/shared/wiki-placeholders";
+
+export type DynamicStatMetadata =
+  | WikiPlaceholderMetadata
+  | {
+      label?: string;
+      comparisonRank?: string;
+      countryName?: string;
+      companyName?: string;
+      lastCalculated?: string | number | Date;
+      detailsUrl?: string;
+      [key: string]: unknown;
+    };
+
+export interface DynamicStatData {
+  value: string;
+  rawVal?: unknown;
+  metadata?: DynamicStatMetadata;
+}
+
 export function DynamicStatSpan({
   data,
 }: {
   placeholderKey: string;
-   
-  data?: { value: string; rawVal: any; metadata?: any } | null;
+  data?: DynamicStatData | null;
 }) {
   if (!data) {
     return <span className="font-mono text-xs text-zinc-500">Loading...</span>;

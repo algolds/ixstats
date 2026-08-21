@@ -13,3 +13,4 @@ export { WikiContextProvider, useWikiContext } from "./WikiContext";
 export { LorewardsIcon } from "./LorewardsIcon";
 export { WikiOSWordmark } from "./WikiOSWordmark";
 export { WikiOSBrandLockup } from "./WikiOSBrandLockup";
+export { FisheyeRailItem } from "./FisheyeRailItem";

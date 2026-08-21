@@ -7,6 +7,7 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { fixEditorImageUrls } from "~/lib/wiki-os/fix-editor-images";
+import { getDraft, saveDraft, clearDraft } from "~/lib/wiki-os/draft-store";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
@@ -53,14 +54,15 @@ export function WikiVisualEditor({
       fmt.protectTemplatesAndImages(editableRef.current);
       state.setWordCount(editableRef.current.innerText.split(/\s+/).filter(Boolean).length);
 
-      const draft = localStorage.getItem(`wikios-draft-html-${title}`);
-      if (draft && draft !== fixed) {
+      const existingDraft = getDraft(title, "ixwiki");
+      const draftContent = existingDraft?.html;
+      if (draftContent && draftContent !== fixed) {
         timer = setTimeout(() => {
           const restore = window.confirm(
             `An unsaved local draft from a previous session was found for "${title}". Would you like to restore it?`
           );
           if (restore && editableRef.current) {
-            editableRef.current.innerHTML = draft;
+            editableRef.current.innerHTML = draftContent;
             fmt.protectTemplatesAndImages(editableRef.current);
             state.setIsDirty(true);
           }
@@ -95,7 +97,7 @@ export function WikiVisualEditor({
     const isSession = state.saveActionType === "session";
     try {
       await onSave(html, state.summary, state.minor, isSession);
-      localStorage.removeItem(`wikios-draft-html-${title}`);
+      clearDraft(title, "ixwiki");
       state.setIsDirty(false);
       state.setShowSavePanel(false);
       state.notify.success(
@@ -114,7 +116,7 @@ export function WikiVisualEditor({
   const handleSaveDraft = useCallback(() => {
     const html = editableRef.current?.innerHTML ?? "";
     try {
-      localStorage.setItem(`wikios-draft-html-${title}`, html);
+      saveDraft({ title, source: "ixwiki", html, mode: "visual" });
       state.setIsDirty(false);
       state.notify.success("Draft Saved", "Your draft has been saved locally.");
     } catch (err) {

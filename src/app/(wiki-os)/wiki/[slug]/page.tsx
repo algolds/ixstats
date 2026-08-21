@@ -11,8 +11,7 @@ import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { useLinkPreviews } from "~/components/wiki-os/reader/LinkPreview";
 import { withBasePath } from "~/lib/base-path";
-import { getCachedArticle, setCachedArticle } from "~/lib/wiki-os/wikios-cache";
-import type { CachedArticleData, ArticleMode } from "~/lib/wiki/types";
+import type { ArticleMode } from "~/lib/wiki/types";
 
 export default function WikiOSArticlePage() {
   const params = useParams<{ slug: string }>();
@@ -28,7 +27,6 @@ export default function WikiOSArticlePage() {
   // Check URL search param for edit mode (e.g. ?action=edit)
   const isEditAction = searchParams.get("action") === "edit";
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
-  const [cachedData, setCachedData] = useState<CachedArticleData | null>(null);
 
   // Sync mode with URL
   useEffect(() => {
@@ -36,22 +34,6 @@ export default function WikiOSArticlePage() {
       setMode("source");
     }
   }, [isEditAction, mode]);
-
-  // Attempt instant retrieval from IndexedDB/memory cache on mount
-  useEffect(() => {
-    if (isMainPage || !title) return;
-    let isMounted = true;
-    async function loadCache() {
-      const hit = await getCachedArticle(title);
-      if (hit && isMounted) {
-        setCachedData(hit);
-      }
-    }
-    void loadCache();
-    return () => {
-      isMounted = false;
-    };
-  }, [title, isMainPage]);
 
   // Redirect Category: pages to the category browser
   useEffect(() => {
@@ -72,20 +54,9 @@ export default function WikiOSArticlePage() {
     }
   );
 
-  // Store freshly fetched data into persistent client cache & trigger idle wikitext warmup
+  // Background idle wikitext warmup so clicking Edit is 0ms
   useEffect(() => {
     if (data && !isMainPage) {
-      void setCachedArticle(title, {
-        title: data.title,
-        contentHtml: data.contentHtml,
-        infoboxHtml: data.infoboxHtml,
-        noticesHtml: data.noticesHtml,
-        toc: data.toc,
-        categories: data.categories,
-        lastModified: data.lastModified ?? null,
-      });
-
-      // Background idle wikitext warmup so clicking Edit is 0ms
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
@@ -94,15 +65,12 @@ export default function WikiOSArticlePage() {
     }
   }, [data, title, isMainPage, utils]);
 
-  // Use either freshly fetched data or cached data
-  const displayData = data ?? cachedData;
-
   // Canonical link and page title
   useEffect(() => {
     if (isMainPage) {
       document.title = "IxWiki — WikiOS";
-    } else if (displayData?.title) {
-      const prefix = mode !== "reading" ? `Editing ${displayData.title}` : displayData.title;
+    } else if (data?.title) {
+      const prefix = mode !== "reading" ? `Editing ${data.title}` : data.title;
       document.title = `${prefix} — IxWiki`;
       let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
       if (!canonical) {
@@ -110,9 +78,9 @@ export default function WikiOSArticlePage() {
         canonical.rel = "canonical";
         document.head.appendChild(canonical);
       }
-      canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(displayData.title.replace(/ /g, "_"))}`;
+      canonical.href = `https://ixwiki.com/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`;
     }
-  }, [displayData?.title, isMainPage, mode]);
+  }, [data?.title, isMainPage, mode]);
 
   // Link hover previews
   const previewPortal = useLinkPreviews(articleRef);
@@ -155,13 +123,13 @@ export default function WikiOSArticlePage() {
           />
         ) : (
           <>
-            {isLoading && !displayData && (
+            {isLoading && !data && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
                 <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
               </div>
             )}
-            {error && !displayData && (
+            {error && !data && (
               <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
                 <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
                 <p className="text-sm text-zinc-400">
@@ -178,15 +146,15 @@ export default function WikiOSArticlePage() {
                 </div>
               </div>
             )}
-            {displayData && (
+            {data && (
               <ArticleRenderer
-                title={displayData.title}
-                contentHtml={displayData.contentHtml}
-                infoboxHtml={displayData.infoboxHtml}
-                noticesHtml={displayData.noticesHtml}
-                toc={displayData.toc}
-                categories={displayData.categories}
-                lastModified={displayData.lastModified ?? null}
+                title={data.title}
+                contentHtml={data.contentHtml}
+                infoboxHtml={data.infoboxHtml}
+                noticesHtml={data.noticesHtml}
+                toc={data.toc}
+                categories={data.categories}
+                lastModified={data.lastModified ?? null}
               />
             )}
           </>
