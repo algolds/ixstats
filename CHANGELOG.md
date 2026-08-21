@@ -35,22 +35,34 @@ capability integer. Each release entry below lists which components advanced and
 
 ### 🌌 Halo System Modular Decomposition & Command Palette Modernization (Halo v5)
 
-- **Views Directory Reorganization & Modular Decomposition**:
-  - Reorganized all Halo views into a dedicated directory under `src/components/halo/views/` (`CompactView.tsx`, `ExpandedView.tsx`, `SearchView.tsx`, `NotificationsView.tsx`, `SettingsView.tsx`, `MyCountryView.tsx`, `MyCountryActionsView.tsx`, `ForumView.tsx`, `WikiView.tsx`, `WikiProfileView.tsx`, `NavTray.tsx`, `builder/`, `tray/`, `index.ts`).
-  - Separated contextual host integrations into `src/components/halo/plugins/` (`BuilderDIPlugin.tsx`, `ForumDIPlugin.tsx`, `MyCountryDIPlugin.tsx`, `WikiDIPlugin.tsx`).
-  - Deleted legacy redundant view monoliths and dead components (`MapsProfileDropdown.tsx`, `WikiProfileButton.tsx`, `useCommandItems`).
-  - Reduced `hooks.ts` from 1,099 lines to 549 lines and `BuilderView.tsx` from 758 lines to 430 lines, bringing every file in `src/components/halo/` under the strict 700-line ceiling.
+- **Base Views Isolation & Directory Restructuring**:
+  - Isolated core system presentation views in `src/components/halo/views/` (`CompactView.tsx`, `ExpandedView.tsx`, `SearchView.tsx`, `NotificationsView.tsx`, `SettingsView.tsx`, `NavTray.tsx`, `tray/`, `index.ts`).
+  - Purged domain-specific overlays from `src/components/halo/views/`, moving them into dedicated domain plugin packages under `src/components/halo/plugins/`.
+  - Memoized all base views (`React.memo`) to eliminate cascading re-renders on scroll position changes (`scrollY`) or background notification updates.
+- **`<Name>Halo` Plugin Architecture & Starter Boilerplate**:
+  - Re-architected plugins into modular self-contained domain directories:
+    - `src/components/halo/plugins/mycountry/` (`MyCountryHalo.tsx`, `views/MyCountryView.tsx`, `views/MyCountryActionsView.tsx`)
+    - `src/components/halo/plugins/forum/` (`ForumHalo.tsx`, `views/ForumView.tsx`)
+    - `src/components/halo/plugins/wiki/` (`WikiHalo.tsx`, `types.ts`, `components/`, `views/WikiView.tsx`, `views/WikiProfileView.tsx`)
+    - `src/components/halo/plugins/builder/` (`BuilderHalo.tsx`, `views/BuilderView.tsx`, `views/BuilderProgressView.tsx`)
+    - `src/components/halo/plugins/sports/` (`SportsLiveHalo.tsx`)
+    - `src/components/halo/plugins/_template/` (`TemplateHalo.tsx`, `views/TemplateView.tsx`) — developer starter template for creating new Halo extensions.
+  - Standardized component naming to `<Name>Halo` (`WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`) while exporting backwards-compatible aliases (`*DIPlugin`).
+- **Decoupled Ancillary Components & Ponytail Audit Cuts**:
+  - Moved `PlayPauseMorph.tsx` into `src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx` (used exclusively by the Wiki Narrator player).
+  - Relocated `ToastBanner.tsx` into `src/components/ui/ToastBanner.tsx` and updated `src/stores/toastQueueStore.tsx`, decoupling global Sonner toasts from the Halo capsule.
+  - Pruned dead `devLog` code and unused `countriesData` prop passing in `SearchView`.
+  - Consolidated dual-effect plugin registration in `plugin-context.tsx` into a single, clean effect.
+- **TypeScript 7.0 Generic Rigor**:
+  - Enhanced `DIPlugin<F = unknown, C = unknown>` and `DIViewProps<F = unknown, C = unknown>` to support strictly typed context/filter states without requiring `as any` casts.
+  - Fixed Wiki stash status checks and mutations to use canonical `api.wikios.isStashed`, `stashPage`, and `unstashPage`.
 - **Comprehensive Command & Feature Registry**:
-  - Expanded `src/components/halo/halo-registry.ts` with complete coverage across eight platform domains: Statecraft (Command Center, Directives, Policy Studio, Diplomacy, Defense, Intelligence, Economy, Politics, Map Editor), Vault (Trading Cards, Packs, Marketplace, Crafting, Lore Gallery, NS Deck), Geography (Interactive Map, Countries, Leaderboards, Builder), Knowledge (Wiki Main Page, Recent Changes, Random Wiki, Create Article, Stashes), Community (Messages, ThinkPages Feed, ThinkTanks, Forum, New Thread, Achievements), Sports (MyLeague, MyClub), Labs (Onoma, Vexel, Map Pipeline, Sandbox, Design Bible), and System.
-  - Implemented keyword indexing with aliases and synonym matching in `hooks.ts`, allowing search queries like "military", "army", "war", "booster", "unbox", "sfx", and "dark mode" to find relevant commands directly.
-- **In-Palette System Action Execution**:
-  - Added direct trigger actions for built-in client capabilities (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `random-country`), executing state changes immediately without full page reloads.
-  - Rendered domain category badges (`Statecraft`, `Vault`, `Geography`, `Knowledge`, `Community`, `Sports`, `Labs`, `System`) on each search result with category-specific color tokens.
-- **Iconography Standards & Zero Sparkles**:
-  - Standardized all Halo icons on a mix of `iconoir-react` and `react-icons/gi`.
-  - Removed all generic sparkle icons across Halo views in favor of domain-accurate iconography (`Crown`, `GiWaxSeal`, `EditPencil`, `GiShieldBash`, `GiCoins`, `GiCapitol`).
-- **Apple Motion Physics**:
+  - Expanded `src/components/halo/halo-registry.ts` with complete coverage across eight platform domains: Statecraft, Vault, Geography, Knowledge, Community, Sports, Labs, and System.
+  - Implemented keyword indexing with aliases and synonym matching in `hooks.ts` ("military", "army", "war", "booster", "unbox", "sfx", "dark mode").
+  - In-palette instant system execution (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `random-country`).
+- **Apple Motion Physics & Icon Standards**:
   - Standardized spring physics across capsule expansions, tray reveals, and modal transforms (`stiffness: 420, damping: 38, mass: 0.8`).
+  - Standardized iconography on `iconoir-react` and `react-icons/gi`, eliminating all generic sparkle icons.
 
 ### 📖 WikiOS Full Architecture Modernization, Performance Acceleration & Ponytail Audit
 

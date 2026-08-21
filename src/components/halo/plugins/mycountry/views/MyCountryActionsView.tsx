@@ -6,7 +6,7 @@ import { withBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl, cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
-import type { DIViewProps } from "../types";
+import type { DIViewProps } from "~/components/halo/types";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 export function MyCountryActionsView({ onClose }: DIViewProps) {

@@ -28,12 +28,7 @@ import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as LucideIcons from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-
-interface PausedSession {
-  title: string;
-  scrollPercent: number;
-  updatedAt: number;
-}
+import type { PausedSession } from "../types";
 
 export interface WikiProfileViewProps {
   onClose: () => void;

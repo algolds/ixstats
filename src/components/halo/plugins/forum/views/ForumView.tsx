@@ -19,7 +19,7 @@ import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { PreText } from "~/components/ui/pretext";
-import type { DIViewProps, ViewMode } from "../types";
+import type { DIViewProps, ViewMode } from "~/components/halo/types";
 
 export interface ForumViewProps extends DIViewProps {}
 

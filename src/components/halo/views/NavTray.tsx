@@ -76,7 +76,7 @@ export interface NavTrayProps {
   onClose: () => void;
 }
 
-export function NavTray({ isOpen, onClose }: NavTrayProps) {
+function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
   const pathname = usePathname();
   const normalized = stripBasePath(pathname || "/");
 
@@ -214,3 +214,5 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
     </AnimatePresence>
   );
 }
+
+export const NavTray = React.memo(NavTrayComponent);

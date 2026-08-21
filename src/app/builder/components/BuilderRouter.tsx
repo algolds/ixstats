@@ -15,9 +15,7 @@ import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { MyCountryDIPlugin } from "~/components/halo/plugins/MyCountryDIPlugin";
-import { BuilderDIPlugin } from "~/components/halo/plugins/BuilderDIPlugin";
+import { BuilderHalo } from "~/components/halo/plugins";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 // eslint-disable-next-line unused-imports/no-unused-imports
@@ -508,7 +506,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Always use sidebar layout now (no welcome screen)
   return (
     <BuilderFilterProvider onNavigate={handleNavigate}>
-      <BuilderDIPlugin />
+      <BuilderHalo />
       <WelcomeModalWrapper />
       <div className="relative min-h-screen w-full">
         {/* Page-wide Background Flag Watermark */}

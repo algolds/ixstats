@@ -1,21 +1,19 @@
 "use client";
 
 /**
- * BuilderDIPlugin — registers a DI plugin for the nation builder page.
+ * BuilderHalo — Halo overlay plugin for the Nation Builder.
  *
- * Implements Option A (Morphing Dynamic Island) UX:
- * - Auto-expands to a large search/naming view on load.
- * - Collapses/docks once a country template is confirmed or when scrolled down.
+ * Provides real-time step tracking, validation error counts,
+ * manual save action trigger, and expanded builder modal views.
  */
 
 import React, { useMemo } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import { BuilderView } from "../views";
-import type { DIViewProps } from "../types";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
+import type { RealCountryData } from "~/app/builder/lib/economy-data-service";
+import { BuilderView } from "./views";
+import type { DIViewProps } from "~/components/halo/types";
 import { PreText } from "~/components/ui/pretext";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { notifyFromStore } from "~/hooks/useNotify";
@@ -34,12 +32,12 @@ function BuilderCompactLabel() {
   );
 }
 
-interface BuilderDIPluginInnerProps {
+interface BuilderHaloInnerProps {
   filter: ReturnType<typeof useBuilderFilter>;
   context: ReturnType<typeof useBuilderContext>;
 }
 
-function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
+function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
   React.useEffect(() => {
     if (context.builderState.step === "foundation") {
       return;
@@ -62,7 +60,7 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
           continent: context.builderState.economicInputs.geography?.continent || "",
           region: context.builderState.economicInputs.geography?.region || "",
           flag: context.builderState.economicInputs.flagUrl || "",
-        } as any);
+        } as unknown as RealCountryData);
       }
     } else {
       if (filter.selectedTemplate !== null) {
@@ -160,9 +158,12 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
   return null;
 }
 
-export function BuilderDIPlugin() {
+export function BuilderHalo() {
   const filter = useBuilderFilter();
   const context = useBuilderContext();
 
-  return <BuilderDIPluginInner filter={filter} context={context} />;
+  return <BuilderHaloInner filter={filter} context={context} />;
 }
+
+// Backwards compatibility alias
+export const BuilderDIPlugin = BuilderHalo;

@@ -1,19 +1,17 @@
 "use client";
 
 /**
- * MyCountryDIPlugin — registers a DI plugin for /mycountry pages.
+ * MyCountryHalo — Halo overlay plugin for /mycountry routes.
  *
- * Provides accent color, sticky label, and a center badge for the
- * standard DI pill. Note: MyCountryCompactView is a full pill
- * replacement used when the user toggles into "mycountry DI mode".
- * This plugin handles the *default* DI behavior on mycountry pages.
+ * Provides national executive indicators, alert status, and expanded
+ * quick actions for domestic and foreign policy, diplomacy, and defense.
  */
 
 import React, { useMemo } from "react";
 import { Crown } from "lucide-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import { MyCountryActionsView } from "../views";
+import { MyCountryActionsView, MyCountryView } from "./views";
 
 function MyCountryLabel() {
   return (
@@ -26,13 +24,16 @@ function MyCountryLabel() {
   );
 }
 
-export function MyCountryDIPlugin() {
+export function MyCountryHalo() {
   const plugin = useMemo(
     () => ({
       id: "mycountry",
-      priority: 5, // lower than wiki/forum so context-specific plugins win
+      priority: 5,
       center: <MyCountryLabel />,
-      expandedViews: { mycountry: MyCountryActionsView },
+      expandedViews: {
+        mycountry: MyCountryActionsView,
+        mycountry_stats: MyCountryView,
+      },
       accentColor: "#f59e0b",
       stickyLabel: "MyCountry",
     }),
@@ -42,3 +43,6 @@ export function MyCountryDIPlugin() {
   useDIPlugin(plugin);
   return null;
 }
+
+// Backwards compatibility alias
+export const MyCountryDIPlugin = MyCountryHalo;

@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * ForumDIPlugin — registers a DI plugin for forum pages.
+ * ForumHalo — Halo overlay plugin for forum pages.
  *
- * Shows the current forum/thread breadcrumb in the pill center
+ * Shows the current forum/thread breadcrumb in the capsule center
  * and exposes ForumView as the "forum" expanded view.
  */
 
@@ -11,7 +11,7 @@ import React, { useMemo } from "react";
 import { MessageSquare } from "lucide-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import { ForumView } from "../views";
+import { ForumView } from "./views";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
 import { PreText } from "~/components/ui/pretext";
 
@@ -44,7 +44,7 @@ function ForumBreadcrumb() {
   );
 }
 
-export function ForumDIPlugin() {
+export function ForumHalo() {
   const { unreadAlerts } = useForumContext();
 
   const plugin = useMemo(
@@ -63,3 +63,6 @@ export function ForumDIPlugin() {
   useDIPlugin(plugin);
   return null;
 }
+
+// Backwards compatibility alias
+export const ForumDIPlugin = ForumHalo;

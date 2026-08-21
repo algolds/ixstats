@@ -1,4 +1,4 @@
-// src/components/halo/wiki/WikiWorkspaceTab.tsx
+// src/components/halo/plugins/wiki/components/WikiWorkspaceTab.tsx
 // Quick actions, drafts manager, paused reading sessions, and recent changes feed for Halo Wiki mode.
 
 "use client";
@@ -17,7 +17,7 @@ import {
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
-import { formatTimeAgo, type LocalDraft, type PausedSession } from "./types";
+import { formatTimeAgo, type LocalDraft, type PausedSession } from "../types";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;

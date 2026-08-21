@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Book, Globe, HomeSimple, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -9,19 +9,12 @@ import { useNotificationStore } from "~/stores/notificationStore";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { usePathname } from "next/navigation";
-import type { ViewMode, SearchFilter, SearchResult } from "./types";
+import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { CORE_COMMANDS, CORE_FEATURES } from "./halo-registry";
 
 export { CORE_COMMANDS as commands, CORE_FEATURES as features } from "./halo-registry";
-
-// Development-only logger
-const devLog = (...args: unknown[]) => {
-  if (process.env.NODE_ENV !== "production") {
-    console.log(...args);
-  }
-};
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -211,7 +204,7 @@ export function useDynamicIslandState() {
   );
 
   const countryIndex = useMemo(() => {
-    const list = extractCountriesList(countriesData as any);
+    const list = extractCountriesList(countriesData as CountriesData | undefined);
     return list.map((c) => ({ ...c, _lower: c.name.toLowerCase() }));
   }, [countriesData]);
 
@@ -299,7 +292,7 @@ export function useDynamicIslandState() {
             metadata: {
               countryName: country.name,
               category: "Country",
-              flagUrl: (country as any).flagUrl || (country as any).flag || undefined,
+              flagUrl: country.flagUrl || country.flag || undefined,
               economicTier: country.economicTier,
             },
             action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
@@ -398,6 +391,7 @@ export function useDynamicIslandState() {
     soundSettings,
     toggleCompactMode,
     markAllNotificationsAsRead,
+    notify,
   ]);
 
   // Plugin view sync

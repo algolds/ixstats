@@ -456,7 +456,6 @@ function CommandPaletteContent({
                   setSearchFilter={setSearchFilter}
                   debouncedSearchQuery={debouncedSearchQuery}
                   searchResults={searchResults}
-                  countriesData={countriesData}
                   activePlugin={activePlugin}
                 />
               </div>

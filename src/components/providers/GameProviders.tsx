@@ -3,7 +3,7 @@
 import React from "react";
 import { NotificationBadgeProvider } from "~/components/navigation/NotificationBadgeProvider";
 import { DIPluginProvider } from "~/components/halo";
-import { SportsLiveDIPlugin } from "~/components/halo/plugins/SportsLiveDIPlugin";
+import { SportsLiveHalo } from "~/components/halo/plugins/sports";
 
 /**
  * Live game activity & notification plugins.
@@ -13,7 +13,7 @@ export function GameProviders({ children }: { children: React.ReactNode }) {
   return (
     <NotificationBadgeProvider>
       <DIPluginProvider>
-        <SportsLiveDIPlugin />
+        <SportsLiveHalo />
         {children}
       </DIPluginProvider>
     </NotificationBadgeProvider>

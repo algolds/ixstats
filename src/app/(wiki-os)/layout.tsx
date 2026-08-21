@@ -1,9 +1,9 @@
-import { WikiDIPlugin } from "~/components/halo/plugins/WikiDIPlugin";
+import { WikiHalo } from "~/components/halo/plugins";
 
 export default function WikiosLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <WikiDIPlugin />
+      <WikiHalo />
       {children}
     </>
   );

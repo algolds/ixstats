@@ -1,7 +1,6 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import React, { createContext, useContext, useCallback, useRef, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
 import type { DIPlugin, DIViewProps } from "./types";
 
 // ── Plugin Registry (external store for React 19 concurrency safety) ──
@@ -85,24 +84,13 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
 export function useDIPlugin(plugin: DIPlugin) {
   const ctx = useContext(DIPluginContext);
   const registry = ctx?.registry;
-  const pluginRef = useRef(plugin);
-  pluginRef.current = plugin;
 
-  // Register on mount, unregister on unmount
-  // Re-register when id changes (stable identity)
-  React.useEffect(() => {
-    if (!registry) return;
-    registry.register(pluginRef.current);
-    return () => {
-      registry.unregister(pluginRef.current.id);
-    };
-    // Only re-run if the plugin ID changes
-  }, [registry, plugin.id]);
-
-  // Re-register when plugin content changes (center, actions, etc.)
   React.useEffect(() => {
     if (!registry) return;
     registry.register(plugin);
+    return () => {
+      registry.unregister(plugin.id);
+    };
   }, [registry, plugin]);
 }
 

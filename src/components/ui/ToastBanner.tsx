@@ -2,7 +2,7 @@
  * ToastBanner - iOS-style notification banner designed for Sonner.
  *
  * Features:
- * - Glass morphism matching DI aesthetic
+ * - Glass morphism matching the Facet aesthetic
  * - Category-colored left accent bar
  * - Action buttons
  * - Auto-dismiss progress bar countdown

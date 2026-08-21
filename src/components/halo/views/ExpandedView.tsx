@@ -4,10 +4,10 @@ import { DynamicContainer } from "~/components/ui/dynamic-island";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
-import { MyCountryView } from "./MyCountryView";
+import { MyCountryView } from "../plugins/mycountry";
 import type { ExpandedViewProps, DIPlugin } from "../types";
 
-export function ExpandedView({
+function ExpandedViewComponent({
   mode,
   onClose,
   onSwitchMode,
@@ -17,7 +17,6 @@ export function ExpandedView({
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
-  countriesData,
   activePlugin,
 }: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
   const [isImpersonating, setIsImpersonating] = useState(false);
@@ -75,7 +74,6 @@ export function ExpandedView({
               setSearchFilter={setSearchFilter}
               debouncedSearchQuery={debouncedSearchQuery}
               searchResults={searchResults}
-              countriesData={countriesData}
               closeDropdown={onClose}
             />
           </DynamicContainer>
@@ -118,3 +116,5 @@ export function ExpandedView({
     </div>
   );
 }
+
+export const ExpandedView = React.memo(ExpandedViewComponent);

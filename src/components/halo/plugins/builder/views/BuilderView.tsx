@@ -19,7 +19,7 @@ import {
   getArchetypesByConsolidatedCategory,
 } from "~/app/builder/utils/country-archetypes";
 import { BuilderProgressView } from "./BuilderProgressView";
-import type { ViewMode } from "../../types";
+import type { ViewMode } from "~/components/halo/types";
 
 /**
  * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
@@ -56,9 +56,9 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const activeTemplate =
-    filter.selectedTemplate ||
-    context.builderState?.selectedCountry ||
-    (context.builderState?.economicInputs?.countryName
+    filter?.selectedTemplate ||
+    context?.builderState?.selectedCountry ||
+    (context?.builderState?.economicInputs?.countryName
       ? {
           name: context.builderState.economicInputs.countryName,
           flag: context.builderState.economicInputs.flagUrl || "",
@@ -68,14 +68,14 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
   const rawFlagUrl =
     activeTemplate?.flag ||
     activeTemplate?.flagUrl ||
-    filter.softSelectedCountry?.flag ||
-    filter.softSelectedCountry?.flagUrl;
+    filter?.softSelectedCountry?.flag ||
+    filter?.softSelectedCountry?.flagUrl;
   const flagUrl = getHighResFlagUrl(rawFlagUrl);
 
   // Focus naming input when soft-selected country is present
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
-    if (filter.softSelectedCountry) {
+    if (filter?.softSelectedCountry) {
       timer = setTimeout(() => {
         if (namingInputRef.current) {
           namingInputRef.current.focus();
@@ -86,14 +86,14 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [filter.softSelectedCountry]);
+  }, [filter?.softSelectedCountry]);
 
   // Focus search input on mount if no soft selection
   useEffect(() => {
-    if (!filter.softSelectedCountry && searchInputRef.current) {
+    if (!filter?.softSelectedCountry && searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, [filter.softSelectedCountry]);
+  }, [filter?.softSelectedCountry]);
 
   return (
     <div className="relative flex w-full flex-col p-4 text-left text-zinc-100 select-none sm:p-5">
@@ -139,14 +139,16 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
               </button>
             </>
           )}
-          <button
-            onClick={() => filter.setWelcomeModalOpen(true)}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
-            title="Open Welcome Guide"
-            type="button"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </button>
+          {filter && (
+            <button
+              onClick={() => filter.setWelcomeModalOpen(true)}
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
+              title="Open Welcome Guide"
+              type="button"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
@@ -158,7 +160,7 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
         </div>
       </div>
 
-      {filter.softSelectedCountry ? (
+      {filter?.softSelectedCountry ? (
         /* Naming Mode */
         <motion.div
           initial={{ opacity: 0, y: 5 }}
@@ -186,8 +188,8 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
               onChange={(e) => filter.setNewCountryName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && filter.newCountryName.trim()) {
-                  filter.confirmHandlerRef.current?.();
-                  if (context.builderState.step === "foundation") {
+                  filter.confirmHandlerRef?.current?.();
+                  if (context?.builderState?.step === "foundation") {
                     const finalCountry = {
                       ...(filter.softSelectedCountry ?? {}),
                       name: filter.newCountryName.trim(),
@@ -205,7 +207,7 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
               <button
                 onClick={() => {
                   filter.clearSelection();
-                  context.setFoundationPreviewCountry(null);
+                  context?.setFoundationPreviewCountry?.(null);
                 }}
                 className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-lg border border-black/15 bg-white/90 px-4 text-xs font-bold text-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md transition-all hover:border-red-500/30 hover:bg-red-500/15 hover:text-red-600 sm:flex-none dark:border-white/15 dark:bg-black/70 dark:text-zinc-100 dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)] dark:hover:border-red-500/40 dark:hover:bg-red-500/20 dark:hover:text-red-400"
               >
@@ -213,8 +215,8 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
               </button>
               <button
                 onClick={() => {
-                  filter.confirmHandlerRef.current?.();
-                  if (context.builderState.step === "foundation") {
+                  filter.confirmHandlerRef?.current?.();
+                  if (context?.builderState?.step === "foundation") {
                     const finalCountry = {
                       ...(filter.softSelectedCountry ?? {}),
                       name: filter.newCountryName.trim(),
@@ -235,7 +237,7 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
       ) : activeTemplate ? (
         /* Progress / Status Mode */
         <BuilderProgressView filter={filter} context={context} onClose={onClose} />
-      ) : (
+      ) : filter ? (
         /* Template Search & Filters Mode */
         <div className="relative z-10 space-y-4">
           <div className="flex flex-col items-center py-2 text-center">
@@ -420,7 +422,7 @@ export function BuilderView({ onClose, onSwitchMode, filter, context }: BuilderV
             )}
           </AnimatePresence>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

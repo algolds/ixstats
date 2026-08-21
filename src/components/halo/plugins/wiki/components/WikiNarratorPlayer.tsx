@@ -1,4 +1,4 @@
-// src/components/halo/wiki/WikiNarratorPlayer.tsx
+// src/components/halo/plugins/wiki/components/WikiNarratorPlayer.tsx
 // Kokoro TTS voice narrator player & article reading progress track.
 
 "use client";
@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { PlayPauseMorph } from "~/components/halo/PlayPauseMorph";
+import { PlayPauseMorph } from "./PlayPauseMorph";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -21,7 +21,7 @@ import {
   NARRATOR_ACCENT,
   NARRATOR_SPEEDS,
   NARRATOR_VOICE_LABELS,
-} from "./types";
+} from "../types";
 
 interface TOCEntry {
   id: string;

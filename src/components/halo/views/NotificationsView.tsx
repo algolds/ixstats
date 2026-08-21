@@ -36,7 +36,7 @@ import {
 } from "./tray/types";
 import { soundEffects } from "~/lib/sound/cuelume";
 
-export function NotificationsView({ onClose }: NotificationsViewProps) {
+function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
   const { user } = useUser();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -495,3 +495,5 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     </div>
   );
 }
+
+export const NotificationsView = React.memo(NotificationsViewComponent);

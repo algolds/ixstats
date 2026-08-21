@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * WikiDIPlugin — registers a DI plugin for wiki pages.
+ * WikiHalo — Halo overlay plugin for wiki pages.
  *
- * Renders the wiki breadcrumb/profile popover in the pill center
- * and exposes WikiView as the "wiki" expanded view.
+ * Renders the wiki breadcrumb and narrator player state in the capsule center
+ * and exposes WikiView and WikiProfileView as expanded views.
  */
 
 import React, { useMemo, useState } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { PlayPauseMorph } from "~/components/halo/PlayPauseMorph";
+import { PlayPauseMorph } from "./components";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
-import { WikiView, WikiProfileView } from "../views";
+import { WikiView, WikiProfileView } from "./views";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -183,7 +183,7 @@ function WikiBreadcrumb() {
   );
 }
 
-export function WikiDIPlugin() {
+export function WikiHalo() {
   const { articleTitle } = useWikiContext();
 
   const plugin = useMemo(
@@ -204,3 +204,6 @@ export function WikiDIPlugin() {
   useDIPlugin(plugin);
   return null;
 }
+
+// Backwards compatibility alias
+export const WikiDIPlugin = WikiHalo;

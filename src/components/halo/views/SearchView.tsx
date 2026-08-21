@@ -26,14 +26,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   Wiki: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
 };
 
-export function SearchView({
+function SearchViewComponent({
   searchQuery,
   setSearchQuery,
   searchFilter,
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
-  countriesData,
   closeDropdown,
 }: SearchViewProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -68,135 +67,121 @@ export function SearchView({
             }}
             className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/30 focus:outline-none"
             data-command-palette-search="true"
-            autoFocus
           />
-          <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 items-center gap-1.5">
-            <kbd className="bg-muted/60 text-muted-foreground/60 hidden rounded px-1.5 py-0.5 text-[10px] font-medium md:inline">
-              ⌘K
-            </kbd>
-          </div>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery?.("")}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 p-1"
+            >
+              <Xmark className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        {/* Close */}
-        <button
-          onClick={() => {
-            soundEffects.droplet();
-            closeDropdown();
-          }}
-          data-cuelume-press="droplet"
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
-          aria-label="Close search"
-        >
-          <Xmark className="h-4 w-4" />
-        </button>
       </div>
 
-      {/* ── Filter pills ──────────────────────────────────────────── */}
-      <div className="mb-3 flex items-center gap-1">
-        {FILTERS.map(({ value, label }) => (
+      {/* Filter pills */}
+      <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1">
+        {FILTERS.map((f) => (
           <button
-            key={value}
-            data-cuelume-press="page"
-            data-cuelume-hover="tick"
-            onClick={() => setSearchFilter?.(value)}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
-              searchFilter === value
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+            key={f.value}
+            onClick={() => {
+              soundEffects.tick();
+              setSearchFilter?.(f.value);
+            }}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+              searchFilter === f.value
+                ? "bg-foreground text-background shadow-xs"
+                : "bg-accent/10 text-muted-foreground hover:bg-accent/20 hover:text-foreground"
             }`}
           >
-            <PreText className="text-inherit" whiteSpace="nowrap">
-              {label}
-            </PreText>
+            {f.label}
           </button>
         ))}
       </div>
 
-      {/* ── Results ───────────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1">
-        {searchResults && searchResults.length > 0 ? (
-          <div className="space-y-0.5">
-            {searchResults.map((result) => {
-              const categoryLabel = result.metadata?.category
-                ? String(result.metadata.category)
-                : result.type;
-              const badgeClass =
-                CATEGORY_COLORS[categoryLabel] ??
-                "bg-accent/10 text-muted-foreground border border-accent/20";
+      {/* Results list */}
+      <div
+        className="max-h-[380px] space-y-1 overflow-y-auto"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {searchResults.length > 0 ? (
+          searchResults.map((result) => {
+            const Icon = result.icon;
+            const cat =
+              (result.metadata?.category as string) ||
+              (result.type === "country" ? "Country" : "Command");
+            const badgeStyle =
+              CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
 
-              return (
-                <button
-                  key={result.id}
-                  onClick={result.action}
-                  className="hover:bg-accent/10 group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
-                >
-                  {/* Icon */}
-                  <div className="bg-accent/10 group-hover:bg-accent/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors">
-                    {result.type === "country" && result.metadata?.countryName ? (
-                      <UnifiedCountryFlag
-                        showTooltip={false}
-                        countryName={String(result.metadata.countryName)}
-                        flagUrl={
-                          result.metadata?.flagUrl
-                            ? String(result.metadata.flagUrl)
-                            : undefined
-                        }
-                        className="h-3.5 w-5 rounded-sm object-cover"
-                        showPlaceholder={true}
-                      />
-                    ) : (
-                      result.icon && <result.icon className="h-4 w-4" />
-                    )}
+            return (
+              <button
+                key={result.id}
+                onClick={() => {
+                  soundEffects.press();
+                  result.action();
+                  closeDropdown();
+                }}
+                className="hover:bg-accent/15 group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all"
+              >
+                {/* Icon or Flag */}
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">
+                  {result.type === "country" && result.metadata?.flagUrl ? (
+                    <UnifiedCountryFlag
+                      flagUrl={result.metadata.flagUrl as string}
+                      countryName={result.title}
+                      className="h-5 w-7 rounded object-cover shadow-xs"
+                    />
+                  ) : Icon ? (
+                    <Icon className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />
+                  ) : (
+                    <Search className="text-muted-foreground/60 h-4 w-4" />
+                  )}
+                </div>
+
+                {/* Title + description */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <PreText
+                      className="text-foreground group-hover:text-blue-500 dark:group-hover:text-blue-400 block truncate text-sm font-medium transition-colors"
+                      whiteSpace="nowrap"
+                    >
+                      {result.title}
+                    </PreText>
+                    <span
+                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeStyle}`}
+                    >
+                      {cat}
+                    </span>
                   </div>
+                  {result.description && (
+                    <PreText
+                      className="text-muted-foreground block truncate text-xs"
+                      whiteSpace="nowrap"
+                    >
+                      {result.description}
+                    </PreText>
+                  )}
+                </div>
 
-                  {/* Content */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <PreText
-                        className="text-foreground truncate text-sm font-medium"
-                        whiteSpace="nowrap"
-                      >
-                        {result.title}
-                      </PreText>
-                      <PreText
-                        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize ${badgeClass}`}
-                        whiteSpace="nowrap"
-                      >
-                        {categoryLabel}
-                      </PreText>
-                    </div>
-                    {result.description && (
-                      <PreText
-                        className="text-foreground/70 block truncate text-xs"
-                        whiteSpace="nowrap"
-                      >
-                        {result.description}
-                      </PreText>
-                    )}
-                  </div>
-
-                  {/* Arrow */}
-                  <NavArrowRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-4 w-4 shrink-0 transition-colors" />
-                </button>
-              );
-            })}
-          </div>
+                {/* Arrow */}
+                <NavArrowRight className="text-muted-foreground/30 group-hover:text-muted-foreground/80 h-4 w-4 shrink-0 transition-colors" />
+              </button>
+            );
+          })
         ) : debouncedSearchQuery ? (
           /* ── No results ─────────────────────────────────────────── */
-          <div className="py-10 text-center">
-            <Search className="text-muted-foreground/30 mx-auto mb-3 h-8 w-8" />
-            <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
-              No results
-            </PreText>
-            <div className="text-muted-foreground/80 mt-1 flex flex-wrap items-center justify-center gap-1 text-xs">
-              <PreText className="inline-block w-auto" whiteSpace="nowrap">
+          <div className="py-8 text-center">
+            <Search className="text-muted-foreground/40 mx-auto mb-2 h-8 w-8" />
+            <div className="text-muted-foreground/80 text-sm">
+              <PreText className="inline" whiteSpace="nowrap">
                 {`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
               </PreText>
               {searchFilter !== "all" && (
                 <button
                   onClick={() => setSearchFilter?.("all")}
-                  className="text-primary inline-block hover:underline"
+                  className="text-primary hover:underline ml-1 font-medium"
                 >
-                  <PreText className="inline-block w-auto text-inherit" whiteSpace="nowrap">
+                  <PreText className="inline" whiteSpace="nowrap">
                     Search all
                   </PreText>
                 </button>
@@ -237,3 +222,5 @@ export function SearchView({
     </div>
   );
 }
+
+export const SearchView = React.memo(SearchViewComponent);

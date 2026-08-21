@@ -1,5 +1,5 @@
-// src/components/halo/wiki/types.ts
-// Shared types, constants, and utilities for the Halo WikiView suite.
+// src/components/halo/plugins/wiki/types.ts
+// Shared types, constants, and utilities for the Halo Wiki plugin.
 
 export const NARRATOR_ACCENT = "#3b82f6";
 

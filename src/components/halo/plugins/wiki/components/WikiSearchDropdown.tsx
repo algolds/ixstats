@@ -1,4 +1,4 @@
-// src/components/halo/wiki/WikiSearchDropdown.tsx
+// src/components/halo/plugins/wiki/components/WikiSearchDropdown.tsx
 // Full-text wiki article search input & results dropdown with snippet highlights.
 
 "use client";

@@ -27,7 +27,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/comp
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
 import { motion } from "motion/react";
-import type { ViewMode } from "../types";
+import type { ViewMode } from "~/components/halo/types";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;

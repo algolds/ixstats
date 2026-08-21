@@ -78,7 +78,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export function SettingsView({ onClose }: SettingsViewProps) {
+function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled, previewSound } = useSoundSettings();
@@ -452,3 +452,5 @@ function SettingsRow({
     </div>
   );
 }
+
+export const SettingsView = React.memo(SettingsViewComponent);

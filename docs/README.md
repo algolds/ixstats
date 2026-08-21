@@ -70,7 +70,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | **Forum** | [systems/forum.md](systems/forum.md) | XenForo forum integration (IxForum v1.3), BBCode transformation, IxnayID | 🥉 Beta |
 | **Maps** | [systems/maps.md](systems/maps.md) | IxWorld 1.2 & Atlas Engine v4: UPG v2 100k mesh, MapLibre GL, Realms platform | 🥈 Release Candidate |
 | **Map Editor** | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | Map editor architecture overview, performance and topology features | 🥈 Release Candidate |
-| **Halo** | [systems/halo.md](systems/halo.md) | **Halo v4** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
+| **Halo** | [systems/halo.md](systems/halo.md) | **Halo v5** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
 | **MyLeague** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, lore competitions) | 🥉 Beta |
 | **Onoma** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) · [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🥈 Release Candidate |
 | **IxTime** | [systems/ixtime.md](systems/ixtime.md) | **IxTime: Temporal Engine & Sync v2** — Continuous world simulation clock, speed dilation, bot sync, Statecraft temporal feeds | 📀 **Gold Master** |

@@ -4,7 +4,7 @@
 **Status:** Production Ready — Halo v5  
 **Hierarchy:** Core Feature System (`HALO_VERSION = 5` in Version Registry). Global contextual overlay, wayfinding suite, and executive command palette.
 
-> **Naming & Identifiers:** **Halo** is the canonical brand name (formerly "Dynamic Island"). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+> **Naming & Identifiers:** **Halo** is the canonical brand name (formerly "Dynamic Island"). Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
 Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Forum, Vault, Labs, and Builder).
 
@@ -12,43 +12,85 @@ Halo is the central interactive overlay element and command center for IxStates.
 
 ## Directory & Views Architecture
 
-All presentation views are organized under `src/components/halo/views/`, while contextual integrations are registered under `src/components/halo/plugins/`. All files strictly adhere to the `≤700` line architecture ceiling.
+All core system views are strictly isolated under `src/components/halo/views/`, while domain-specific overlays live in isolated plugin modules under `src/components/halo/plugins/<plugin-name>/`. All files strictly adhere to the `≤700` line architecture ceiling.
 
 ```
 src/components/halo/
-├── index.tsx                 # Root Halo shell, gesture handling, and public exports
-├── halo-registry.ts          # Canonical platform command & feature catalog
-├── hooks.ts                  # State management, keyboard shortcuts, and search engine
-├── plugin-context.tsx        # React 19 concurrent external store for plugins
-├── types.ts                  # DIPlugin, DIAction, DIBadge, SearchResult interfaces
-├── HaloTourContext.tsx       # Onboarding and visual wayfinding guide
-├── HaloTourTooltip.tsx       # Tooltip callouts for Halo controls
-├── plugins/                  # Contextual domain plugins
-│   ├── BuilderDIPlugin.tsx   # Nation builder progress and validation tracker
-│   ├── ForumDIPlugin.tsx     # Thread breadcrumbs and unread discussion badges
-│   ├── MyCountryDIPlugin.tsx # Executive stats, alert pulses, and quick action grid
-│   └── WikiDIPlugin.tsx      # Reading progress, TOC navigation, and user profile
-└── views/                    # Modular Halo expanded and modal views
-    ├── index.ts              # Barrel export for all views
-    ├── CompactView.tsx       # Primary collapsed capsule with action rail & badge
-    ├── ExpandedView.tsx      # View mode switcher and modal container
-    ├── SearchView.tsx        # Command palette search and entity lookup
-    ├── NotificationsView.tsx # Unified Alert Center and direct message tray
-    ├── SettingsView.tsx      # Theme, audio, and platform preferences
-    ├── MyCountryView.tsx     # National executive vitality KPIs
-    ├── MyCountryActionsView.tsx # 1-click executive decision shortcuts
-    ├── ForumView.tsx         # Category navigation and thread stash
-    ├── WikiView.tsx          # Article outline, reading tools, narrator player
-    ├── WikiProfileView.tsx   # User profile, contribution stats, scratchpad
-    ├── NavTray.tsx           # Mobile-optimized bottom navigation tray
-    ├── builder/              # Nation builder specific modals
-    │   ├── BuilderView.tsx
-    │   └── BuilderProgressView.tsx
-    └── tray/                 # Alert Center sub-components
-        ├── types.ts
-        ├── NotificationRow.tsx
-        └── MessageTrayItem.tsx
+├── index.tsx                     # Root Halo shell, gesture handling, and public exports
+├── halo-registry.ts              # Canonical platform command & feature catalog
+├── hooks.ts                      # State management, keyboard shortcuts, and search engine
+├── plugin-context.tsx            # React 19 concurrent external store for plugins
+├── types.ts                      # DIPlugin, DIAction, DIBadge, SearchResult interfaces
+├── HaloTourContext.tsx           # Onboarding and visual wayfinding guide
+├── HaloTourTooltip.tsx           # Tooltip callouts for Halo controls
+├── views/                        # Core Halo system views ONLY
+│   ├── index.ts                  # Barrel export for base views
+│   ├── CompactView.tsx           # Primary collapsed capsule with action rail & badge (React.memo)
+│   ├── ExpandedView.tsx          # View mode switcher and modal container (React.memo)
+│   ├── SearchView.tsx            # Command palette search and entity lookup (React.memo)
+│   ├── NotificationsView.tsx     # Unified Alert Center and direct message tray (React.memo)
+│   ├── SettingsView.tsx          # Theme, audio, and platform preferences (React.memo)
+│   ├── NavTray.tsx               # Mobile-optimized bottom navigation tray (React.memo)
+│   └── tray/                     # Alert Center sub-components
+│       ├── types.ts
+│       ├── NotificationRow.tsx
+│       └── MessageTrayItem.tsx
+└── plugins/                      # Domain-specific Halo plugins
+    ├── index.ts                  # Unified barrel export for all plugins
+    ├── _template/                # Developer starter template for new plugins
+    │   ├── TemplateHalo.tsx      # Plugin registration component
+    │   ├── index.ts              # Plugin barrel export
+    │   └── views/                # Modal views
+    │       ├── index.ts
+    │       └── TemplateView.tsx
+    ├── mycountry/                # MyCountry executive plugin
+    │   ├── MyCountryHalo.tsx     # Executive KPIs & quick actions registration
+    │   ├── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       ├── MyCountryView.tsx
+    │       └── MyCountryActionsView.tsx
+    ├── forum/                    # Forum discussion plugin
+    │   ├── ForumHalo.tsx         # Thread breadcrumbs & alert count registration
+    │   ├── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       └── ForumView.tsx
+    ├── wiki/                     # WikiOS encyclopedia plugin
+    │   ├── WikiHalo.tsx          # Reading progress & narrator player registration
+    │   ├── types.ts              # Voice labels, reading sessions, local drafts
+    │   ├── index.ts
+    │   ├── components/           # WikiNarratorPlayer, WikiWorkspaceTab, WikiSearchDropdown, PlayPauseMorph
+    │   │   └── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       ├── WikiView.tsx
+    │       └── WikiProfileView.tsx
+    ├── builder/                  # Nation Builder plugin
+    │   ├── BuilderHalo.tsx       # Step tracker & manual save registration
+    │   ├── index.ts
+    │   └── views/
+    │       ├── index.ts
+    │       ├── BuilderView.tsx
+    │       └── BuilderProgressView.tsx
+    └── sports/                   # Live match activity plugin
+        ├── SportsLiveHalo.tsx    # Deterministic IxTime live match scoreboard
+        └── index.ts
 ```
+
+---
+
+## Standard Plugin Template
+
+Every Halo plugin is a self-contained module in `src/components/halo/plugins/<feature>/`:
+
+1. **`<Name>Halo.tsx`**: Calls `useDIPlugin(pluginConfig)` to mount capsule center content, action buttons, accent color, and custom modal views.
+2. **`views/`**: Contains modal expanded components (e.g. `MyCountryView.tsx`, `ForumView.tsx`, `WikiView.tsx`).
+3. **`components/`** (optional): Contains sub-widgets (e.g. narrator player, search dropdown, morph toggles).
+4. **`types.ts`** (optional): Contains domain-specific types.
+5. **`index.ts`**: Clean barrel export exporting `<Name>Halo`, views, and backwards-compatible aliases (`*DIPlugin`).
+
+To create a new plugin, developers copy `src/components/halo/plugins/_template/` into their feature directory and mount `<FeatureHalo />` in their route layout.
 
 ---
 
@@ -111,10 +153,10 @@ Pages and layouts register their custom plugins on mount. Halo uses `useSyncExte
 ```mermaid
 graph TD
     subgraph Pages & Layouts
-        Wiki[WikiOS Layout] -- Registers --> PluginW[Wiki DI Plugin]
-        Forum[Forum Layout] -- Registers --> PluginF[Forum DI Plugin]
-        Builder[Builder Layout] -- Registers --> PluginB[Builder DI Plugin]
-        Country[MyCountry Hub] -- Registers --> PluginC[MyCountry DI Plugin]
+        Wiki[WikiOS Layout] -- Registers --> PluginW[WikiHalo]
+        Forum[Forum Layout] -- Registers --> PluginF[ForumHalo]
+        Builder[Builder Layout] -- Registers --> PluginB[BuilderHalo]
+        Country[MyCountry Layout] -- Registers --> PluginC[MyCountryHalo]
     end
 
     subgraph Halo Engine
@@ -123,7 +165,7 @@ graph TD
     end
 
     subgraph Halo Presentation
-        Hook --> CompactPill[Compact Material Pill]
+        Hook --> CompactPill[Compact Material Capsule]
         Hook --> ExpandedModal[Expanded Contextual Modal]
         Hook --> SearchView[Search & Command Palette]
     end
@@ -133,17 +175,26 @@ graph TD
 
 ## Core Interfaces (`src/components/halo/types.ts`)
 
-### `DIPlugin`
+### `DIPlugin` & `DIViewProps`
 ```typescript
-export interface DIPlugin {
+export interface DIPlugin<F = unknown, C = unknown> {
   id: string;                                                        // Unique identifier (e.g. "wiki", "forum", "mycountry")
   priority?: number;                                                 // Priority weight (highest priority active plugin renders)
   center?: React.ReactNode;                                          // Custom component replacing the default clock/greeting
   actions?: DIAction[];                                              // Action buttons on the pill's right rail
-  expandedViews?: Record<string, React.ComponentType<DIViewProps>>;    // Modal components rendered when expanded
+  expandedViews?: Record<string, React.ComponentType<DIViewProps<F, C>>>; // Modal components rendered when expanded
   badge?: DIBadge;                                                   // Colored status dot or pulsing activity badge
   accentColor?: string;                                              // Underline accent border color
   stickyLabel?: string;                                              // Wayfinding label shown when sticky
+  filter?: F;                                                        // Context filter state (e.g. BuilderFilterState)
+  context?: C;                                                       // Domain context (e.g. Live match trace)
+}
+
+export interface DIViewProps<F = unknown, C = unknown> {
+  onClose: () => void;
+  onSwitchMode?: (mode: ViewMode) => void;
+  filter?: F;
+  context?: C;
 }
 ```
 
@@ -162,6 +213,14 @@ export interface DIBadge {
   pulse?: boolean;
 }
 ```
+
+---
+
+## Decoupled Global Components
+
+Under clean modular boundaries:
+- **`ToastBanner`** lives in `src/components/ui/ToastBanner.tsx` and is consumed by `src/stores/toastQueueStore.tsx`, removing notification toast styling out of the Halo capsule component tree.
+- **`PlayPauseMorph`** lives in `src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx` as a private subcomponent of the Wiki Narrator player.
 
 ---
 

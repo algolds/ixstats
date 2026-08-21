@@ -6,7 +6,7 @@ import { DevCountryViewProvider } from "~/context/DevCountryViewContext";
 import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { AlertTriangle } from "lucide-react";
-import { MyCountryDIPlugin } from "~/components/halo/plugins/MyCountryDIPlugin";
+import { MyCountryHalo } from "~/components/halo/plugins";
 
 interface MyCountryLayoutProps {
   children: ReactNode;
@@ -29,7 +29,7 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
-          <MyCountryDIPlugin />
+          <MyCountryHalo />
           <DemoModeBanner />
           <ViewingAsBanner />
           {children}

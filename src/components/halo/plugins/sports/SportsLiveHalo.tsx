@@ -1,12 +1,11 @@
 "use client";
 
 /**
- * SportsLiveDIPlugin — a Halo "Live Activity" for the signed-in user's clubs.
+ * SportsLiveHalo — Halo "Live Activity" plugin for match tracking.
  *
  * Mounted globally. When one of the user's clubs has a match resolving inside its
- * IxTime broadcast window, it registers a high-priority DI plugin that takes over
- * the pill with a live, ticking scoreboard — replayed deterministically from the
- * match trace on the shared IxTime clock (no WebSocket, no server ticks).
+ * IxTime broadcast window, it registers a high-priority Halo plugin that takes over
+ * the capsule with a live ticking scoreboard replayed deterministically from the match trace.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -141,7 +140,7 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
 }
 
 /** Registers the plugin for as long as it's mounted (i.e. while a match is live). */
-function ActiveSportsLivePlugin({ match }: { match: LiveActivityMatch }) {
+function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
   const plugin = useMemo(
     () => ({
       id: "sports-live",
@@ -159,7 +158,7 @@ function ActiveSportsLivePlugin({ match }: { match: LiveActivityMatch }) {
   return null;
 }
 
-export function SportsLiveDIPlugin() {
+export function SportsLiveHalo() {
   const { isSignedIn } = useUser();
   const refetchInterval = useVisibleRefetch(30_000);
   const { data } = api.sports.getLiveActivities.useQuery(undefined, {
@@ -171,5 +170,8 @@ export function SportsLiveDIPlugin() {
   const match = data && data.length > 0 ? data[0]! : null;
   // No live match → render nothing, register nothing (no side effect on the pill).
   if (!match) return null;
-  return <ActiveSportsLivePlugin match={match} />;
+  return <ActiveSportsLiveHalo match={match} />;
 }
+
+// Backwards compatibility alias
+export const SportsLiveDIPlugin = SportsLiveHalo;

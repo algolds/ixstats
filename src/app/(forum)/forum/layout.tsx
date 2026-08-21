@@ -4,7 +4,7 @@
 import "~/styles/forum.css";
 import { type Metadata } from "next";
 import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
-import { ForumDIPlugin } from "~/components/halo/plugins/ForumDIPlugin";
+import { ForumHalo } from "~/components/halo/plugins";
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function ForumRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ForumContextProvider>
-      <ForumDIPlugin />
+      <ForumHalo />
       <div className="forum-root min-h-screen">{children}</div>
     </ForumContextProvider>
   );
