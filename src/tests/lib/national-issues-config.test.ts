@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, jest } from "@jest/globals";
 
 jest.mock("fs", () => ({
   existsSync: () => false,
@@ -15,7 +15,7 @@ import {
   completeNationalIssuesConfig,
   getNationalIssuesConfig,
   type NationalIssuesConfig,
-} from "~/lib/national-issues/config";
+} from "../../lib/national-issues/config";
 
 describe("national-issues-config spawnMode", () => {
   it("defaults spawnMode to probability", () => {

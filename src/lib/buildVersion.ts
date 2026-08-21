@@ -35,7 +35,7 @@ export const VERSIONS = {
 
   // Apps — own brand, ship/break independently.
   apps: {
-    ixworld: 1.2,
+    ixworld: 2, // v2: Modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
     ixvault: 2, // v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
@@ -44,7 +44,7 @@ export const VERSIONS = {
   engines: {
     mycountry: 4, // nation-scoped deterministic sim; v4: grounded (real-data) issue generator + intent↔issues resistance rhythm
     concord: 2, // living-world sim (time, diplomacy, crises, NPCs)
-    atlas: 4, // spatial foundation (worldgen, geo, maps) — powers IxWorld; v4: UPG v2 100K RBF Spline Vector Engine
+    atlas: 5, // spatial foundation (worldgen, geo, maps) — powers IxWorld; v5: Copy-on-Write polygon snapping, TS 7.0 nominal types, zero-leak WebGL lifecycle, and Great-Circle distance primitives
   },
 
   // UI / feature systems — independent, user-facing.
@@ -91,6 +91,7 @@ export type ChannelStatus = "developer" | "alpha" | "beta" | "rc" | "stable";
 
 export interface ChannelTheme {
   name: ReleaseChannel;
+  shortName: string;
   status: ChannelStatus;
   dotColor: string;
   textColor: string;
@@ -102,6 +103,7 @@ export interface ChannelTheme {
 export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
   Developer: {
     name: "Developer",
+    shortName: "Dev",
     status: "developer",
     dotColor: "bg-purple-500",
     textColor: "text-purple-700 dark:text-purple-400",
@@ -111,6 +113,7 @@ export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
   },
   Alpha: {
     name: "Alpha",
+    shortName: "Alpha",
     status: "alpha",
     dotColor: "bg-amber-500",
     textColor: "text-amber-700 dark:text-amber-400",
@@ -120,6 +123,7 @@ export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
   },
   Beta: {
     name: "Beta",
+    shortName: "Beta",
     status: "beta",
     dotColor: "bg-sky-500",
     textColor: "text-sky-700 dark:text-sky-400",
@@ -129,6 +133,7 @@ export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
   },
   "Release Candidate": {
     name: "Release Candidate",
+    shortName: "RC",
     status: "rc",
     dotColor: "bg-teal-500",
     textColor: "text-teal-700 dark:text-teal-400",
@@ -138,6 +143,7 @@ export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
   },
   Stable: {
     name: "Stable",
+    shortName: "Stable",
     status: "stable",
     dotColor: "bg-emerald-500",
     textColor: "text-emerald-700 dark:text-emerald-400",
@@ -146,6 +152,9 @@ export const CHANNEL_CONFIG: Record<ReleaseChannel, ChannelTheme> = {
     badgeClass: "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   },
 };
+
+/** Short release channel name, e.g. "RC" | "Beta" | "Alpha". */
+export const CHANNEL_SHORT = CHANNEL_CONFIG[CHANNEL]?.shortName ?? CHANNEL;
 
 export function getChannelStatus(channel: ReleaseChannel): ChannelStatus {
   return CHANNEL_CONFIG[channel]?.status ?? "beta";

@@ -37,6 +37,7 @@ import { useMapEditorOverlayState } from "~/components/maps/editor/hooks/useMapE
 import { useBorderEditorLayers } from "~/components/maps/editor/hooks/useBorderEditorLayers";
 import { EditorHeader } from "~/components/maps/editor/components/EditorHeader";
 import { RegionHoverTooltip } from "~/components/maps/editor/components/RegionHoverTooltip";
+import { HypsometricElevationHUD } from "~/components/maps/editor/components/HypsometricElevationHUD";
 import { MapEditorPluginProvider } from "~/components/maps/editor/plugins/context";
 import {
   EditorLoadingScreen,
@@ -801,6 +802,15 @@ export default function MapEditorOverlay({
 
               {/* Region stats tooltip */}
               <RegionHoverTooltip hoveredFeature={hoveredFeature} editorMode={editor.mode} />
+
+              {/* Hypsometric Cross-Section Elevation HUD */}
+              {(editor.mode === "ruler" || (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
+                <HypsometricElevationHUD
+                  rulerPoints={editor.rulerPoints}
+                  totalDistanceKm={rulerDistance}
+                  onClose={editor.clearRuler}
+                />
+              )}
 
               {/* Province import preview overlay */}
               {editor.mode === "import-provinces" &&

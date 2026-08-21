@@ -5,12 +5,12 @@ import { env } from "~/env";
 import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats";
 
 export class IxTime {
-  // Real-world epoch: October 4, 2020
-  private static readonly REAL_WORLD_EPOCH = new Date(2020, 9, 4, 0, 0, 0, 0).getTime();
+  // Real-world epoch: October 4, 2020 UTC
+  private static readonly REAL_WORLD_EPOCH = Date.UTC(2020, 9, 4, 0, 0, 0, 0);
 
-  // In-game epoch: January 1, 2028 (this is when roster data represents)
+  // In-game epoch: January 1, 2028 UTC (this is when roster data represents)
   // This is the "in-game year zero" baseline
-  private static readonly IN_GAME_EPOCH = new Date(2028, 0, 1, 0, 0, 0, 0).getTime();
+  private static readonly IN_GAME_EPOCH = Date.UTC(2028, 0, 1, 0, 0, 0, 0);
 
   private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time (before speed change)
   private static readonly POST_SPEED_CHANGE_MULTIPLIER = 2.0; // 2x faster after 7/27/25

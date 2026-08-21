@@ -24,7 +24,9 @@ function mockFetch() {
 
 describe("wiki-search-service base path handling", () => {
   beforeEach(() => {
-    jest.resetModules();
+    if (typeof jest !== "undefined" && typeof jest.resetModules === "function") {
+      jest.resetModules();
+    }
     process.env = { ...ORIGINAL_ENV };
     globalWithWindow.window = ORIGINAL_WINDOW as any;
     delete (global as any).__TEST_IS_SERVER;
@@ -35,7 +37,9 @@ describe("wiki-search-service base path handling", () => {
     process.env = ORIGINAL_ENV;
     globalWithWindow.window = ORIGINAL_WINDOW as any;
     delete (global as any).__TEST_IS_SERVER;
-    jest.restoreAllMocks();
+    if (typeof jest !== "undefined" && typeof jest.restoreAllMocks === "function") {
+      jest.restoreAllMocks();
+    }
   });
 
   it("prefixes API proxy calls with base path on the server", async () => {
@@ -46,7 +50,7 @@ describe("wiki-search-service base path handling", () => {
     (global as any).__TEST_IS_SERVER = true;
     globalWithWindow.window = undefined as any;
 
-    const { searchWiki } = await import("~/lib/wiki/search-service");
+    const { searchWiki } = await import("../../lib/wiki/search-service");
     await searchWiki("Caphiria", "ixwiki");
 
     // Restore window / server simulation
@@ -69,7 +73,7 @@ describe("wiki-search-service base path handling", () => {
     globalWithWindow.window = {} as any;
     delete (global as any).__TEST_IS_SERVER;
 
-    const { searchWiki } = await import("~/lib/wiki/search-service");
+    const { searchWiki } = await import("../../lib/wiki/search-service");
     await searchWiki("Caphiria", "ixwiki");
 
     const fetchCalls = (global.fetch as any).mock.calls as any[][];
@@ -86,7 +90,7 @@ describe("wiki-search-service base path handling", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
 
-    const { searchWiki } = await import("~/lib/wiki/search-service");
+    const { searchWiki } = await import("../../lib/wiki/search-service");
 
     await searchWiki("Caphiria", "ixwiki");
     await searchWiki("Caphiria", "iiwiki");
@@ -117,7 +121,7 @@ describe("wiki-search-service base path handling", () => {
     (global as any).__TEST_IS_SERVER = true;
     globalWithWindow.window = undefined as any;
 
-    const { searchWiki } = await import("~/lib/wiki/search-service");
+    const { searchWiki } = await import("../../lib/wiki/search-service");
     await searchWiki("Caphiria", "ixwiki");
 
     // Restore window / server simulation

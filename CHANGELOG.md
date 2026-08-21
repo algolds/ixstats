@@ -33,6 +33,31 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🗺️ Map & World Editor: Architecture Overhaul, Modularization, Performance Optimization & Ponytail Deduplication (Plans 143–147)
+
+- **Domain Boundary Separation & Code Deduplication**:
+  - Enforced strict architectural boundaries: `src/components/maps/core/` (global viewers, MapLibre primitives, controls, and drawers), `src/components/maps/editor/` (authoring tools only), and `src/components/maps/shared/` (reusable visual presentation atoms).
+  - Consolidated `MapControlsFAB.tsx` into a single responsive `<MapControls variant="desktop" | "mobile" | "auto" />`, eliminating 260 lines of duplicate control logic.
+  - Deleted redundant 366-line `FeatureList.tsx` and consolidated all grouped feature tree rendering into `<LayerPanel minimal={true} />`.
+  - Net code reduction of **~2,400+ lines** across the maps ecosystem.
+- **Monolith Deconstruction & Modular Architecture**:
+  - **`ToolOptionsBar.tsx`** (878 $\to$ ~220 lines): Extracted sub-toolbars to `src/components/maps/editor/toolbars/options/` (`SubdivisionOptions`, `RouteOptions`, `MagicWandOptions`, `RulerOptions`).
+  - **`TransportPropertyForm.tsx`** (981 $\to$ ~220 lines): Extracted sub-systems to `src/components/maps/editor/properties/transport/` (`ProceduralRouteGenerator`, `RouteWaypointList`, `RouteFilterList`).
+  - **`EditorMap.tsx`**: Modularized click/hover/plugin event routing into `useEditorMapEvents.ts` and guide/cursor logic into `useEditorSnapGuide.ts`.
+  - **`useMapEditorOverlayState.ts`**: Extracted dual dock layout management into `useEditorDockLayout.ts` and modal state into `useEditorModalState.ts`.
+  - **Slice Form Hooks**: Centralized entity form data types in `editor-types.ts` and created domain slice hooks (`usePointFeatureEditor`, `useSubdivisionEditor`, `useHydroRouteEditor`).
+- **High-Performance Spatial Engine & Pure Geometry Primitives**:
+  - **Copy-on-Write Polygon Snapping**: Implemented `cloneRingsWithTarget` in `border-editor.ts` to eliminate memory leaks and GC pauses during 60fps live dragging.
+  - **Branded Nominal Coordinate Types**: Added TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`, `BoundingBox`) in `editor-types.ts` to prevent coordinate axis inversion bugs at compile time.
+  - **Centralized Distance Math**: Extracted pure Great-Circle calculations (`calculateHaversineDistance`, `calculatePolylineDistance`) and unit metrics (`formatDistanceMetrics`) to `src/lib/maps/geo-analytics.ts`.
+  - **Shared MapLibre Lifecycle & GeoJSON Helpers**: Created `useMapLibreInstance.ts` (surface acquisition, ResizeObserver, WebGL context restore) and `geojson-layer-helpers.ts` (`setOrUpdateGeoJSONSource`, `ensureMapLayer`, `removeLayerAndSource`).
+- **Shared Presentation Atoms & Design System**:
+  - Created [`TimelineEraBadge.tsx`](file:///home/jxsig/projects/ixstats/src/components/maps/shared/TimelineEraBadge.tsx) for historical AT/BT IxTime dates.
+  - Created [`StoryPinDetailCard.tsx`](file:///home/jxsig/projects/ixstats/src/components/maps/shared/StoryPinDetailCard.tsx) for rich lore chronicles and event pin cards.
+  - Created [`FacetOnboardingDialog.tsx`](file:///home/jxsig/projects/ixstats/src/components/maps/shared/FacetOnboardingDialog.tsx) for keyboard-navigable glassmorphic onboarding carousels.
+- **Server Waterfalls Eliminated**:
+  - Refactored `getCountryGeoBundle` in `src/server/api/routers/country-geo.ts` from 5 sequential database awaits into a single parallel `Promise.all` across 7 spatial entities.
+
 ### ⏱️ IxTime: Temporal Engine Architecture, System Docs & Ponytail Optimizations
 
 - **Canonical System Documentation ([`docs/systems/ixtime.md`](file:///home/jxsig/projects/ixstats/docs/systems/ixtime.md))**:

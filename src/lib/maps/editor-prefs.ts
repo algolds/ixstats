@@ -12,25 +12,31 @@ const TOLERANCE_KEY = "ixeditor-snap-tolerance";
 const DEFAULT_ENABLED = true;
 const DEFAULT_TOLERANCE = 0.015; // ~1.7 km at equator
 
-const isBrowser = (): boolean => typeof window !== "undefined";
+const memoryStore: Record<string, string> = {};
 
 // --- Snap enabled ---
 
 export function getSnapEnabled(): boolean {
-  if (!isBrowser()) return DEFAULT_ENABLED;
   try {
-    const raw = localStorage.getItem(PREFS_KEY);
-    if (raw === null) return DEFAULT_ENABLED;
-    return raw !== "false"; // treat "true" / missing as true
+    if (typeof localStorage !== "undefined") {
+      const raw = localStorage.getItem(PREFS_KEY);
+      if (raw === null) return DEFAULT_ENABLED;
+      return raw !== "false";
+    }
+    const mem = memoryStore[PREFS_KEY];
+    if (mem === undefined) return DEFAULT_ENABLED;
+    return mem !== "false";
   } catch {
     return DEFAULT_ENABLED;
   }
 }
 
 export function setSnapEnabled(enabled: boolean): void {
-  if (!isBrowser()) return;
   try {
-    localStorage.setItem(PREFS_KEY, String(enabled));
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(PREFS_KEY, String(enabled));
+    }
+    memoryStore[PREFS_KEY] = String(enabled);
   } catch {
     /* quota / private-browsing — silently ignore */
   }
@@ -39,11 +45,17 @@ export function setSnapEnabled(enabled: boolean): void {
 // --- Snap tolerance (degrees) ---
 
 export function getSnapTolerance(): number {
-  if (!isBrowser()) return DEFAULT_TOLERANCE;
   try {
-    const raw = localStorage.getItem(TOLERANCE_KEY);
-    if (raw === null) return DEFAULT_TOLERANCE;
-    const n = parseFloat(raw);
+    if (typeof localStorage !== "undefined") {
+      const raw = localStorage.getItem(TOLERANCE_KEY);
+      if (raw === null) return DEFAULT_TOLERANCE;
+      const n = parseFloat(raw);
+      if (isNaN(n) || n <= 0) return DEFAULT_TOLERANCE;
+      return n;
+    }
+    const mem = memoryStore[TOLERANCE_KEY];
+    if (mem === undefined) return DEFAULT_TOLERANCE;
+    const n = parseFloat(mem);
     if (isNaN(n) || n <= 0) return DEFAULT_TOLERANCE;
     return n;
   } catch {
@@ -52,9 +64,11 @@ export function getSnapTolerance(): number {
 }
 
 export function setSnapTolerance(tolerance: number): void {
-  if (!isBrowser()) return;
   try {
-    localStorage.setItem(TOLERANCE_KEY, String(tolerance));
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(TOLERANCE_KEY, String(tolerance));
+    }
+    memoryStore[TOLERANCE_KEY] = String(tolerance);
   } catch {
     /* quota / private-browsing — silently ignore */
   }

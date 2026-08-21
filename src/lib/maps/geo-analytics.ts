@@ -810,3 +810,55 @@ export function buildGeoProfile(raw: {
     totalLakeAreaSqKm: raw.totalLakeAreaSqKm,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Centralized Measurement Math & Distance Formatting (Plan 146)
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Calculates Great-Circle distance between two [lng, lat] coordinates in kilometers using Haversine formula.
+ */
+export function calculateHaversineDistance(
+  coord1: [number, number],
+  coord2: [number, number]
+): number {
+  const R = 6371; // Earth's mean radius in km
+  const dLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
+  const dLon = ((coord2[0] - coord1[0]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((coord1[1] * Math.PI) / 180) *
+      Math.cos((coord2[1] * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Calculates total cumulative distance for a series of polyline coordinates in kilometers.
+ */
+export function calculatePolylineDistance(points: [number, number][]): number {
+  if (!points || points.length < 2) return 0;
+  let totalKm = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    totalKm += calculateHaversineDistance(points[i]!, points[i + 1]!);
+  }
+  return totalKm;
+}
+
+/**
+ * Formats a distance in kilometers into metric, imperial, and nautical strings.
+ */
+export function formatDistanceMetrics(distanceKm: number): {
+  km: string;
+  mi: string;
+  nm: string;
+} {
+  return {
+    km: distanceKm.toFixed(1),
+    mi: (distanceKm * 0.621371).toFixed(1),
+    nm: (distanceKm * 0.539957).toFixed(1),
+  };
+}
+

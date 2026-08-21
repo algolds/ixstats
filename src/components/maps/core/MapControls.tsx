@@ -15,7 +15,7 @@ import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/m
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import type { OverlayVisibility } from "./IxWorldMap";
 
-interface MapControlsProps {
+export interface MapControlsProps {
   visibleLayers: Set<MapLayerType>;
   onToggleLayer: (layer: MapLayerType) => void;
   overlayVisibility?: OverlayVisibility;
@@ -38,6 +38,8 @@ interface MapControlsProps {
   showWorldEditor?: boolean;
   /** Route/callback to open world editor */
   onOpenWorldEditor?: () => void;
+  /** Responsive layout variant: desktop horizontal bar, mobile FAB, or auto */
+  variant?: "desktop" | "mobile" | "auto";
 }
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];

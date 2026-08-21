@@ -23,6 +23,21 @@ export const PointPlacementPlugin: MapEditorPlugin = {
   ],
 
   onKeyDown(e: KeyboardEvent, context: MapEditorContextType) {
+    const activeEl = document.activeElement;
+    const inInput =
+      activeEl &&
+      (activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.tagName === "SELECT" ||
+        activeEl.getAttribute("contenteditable") === "true");
+    if (inInput) return false;
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+
+    // In border edit mode, let border editor handle its own shortcuts (e.g. P for pencil/vertex_edit)
+    if (context.state.activeEditorMode === "border_edit") {
+      return false;
+    }
+
     const key = e.key.toLowerCase();
     if (key === "c") {
       context.onModeChange("add-city");

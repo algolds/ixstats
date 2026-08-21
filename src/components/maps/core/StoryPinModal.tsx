@@ -26,6 +26,7 @@ import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
 
 import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
+import { TimelineEraBadge } from "~/components/maps/shared/TimelineEraBadge";
 
 // Extracted Subcomponents, Hooks, and Helpers
 import { useStoryPinModalState } from "~/components/maps/core/hooks/useStoryPinModalState";
@@ -158,15 +159,11 @@ export const StoryPinModal = memo(function StoryPinModal({
                       {pin.country.name}
                     </span>
                     {(pin.ixTimeYear != null || pin.eraLabel) && (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
-                        style={{ backgroundColor: `${color}15`, color }}
-                      >
-                        <Calendar className="h-3 w-3" />
-                        {pin.ixTimeYear != null && `Year ${pin.ixTimeYear}`}
-                        {pin.ixTimeYear != null && pin.eraLabel && " · "}
-                        {pin.eraLabel}
-                      </span>
+                      <TimelineEraBadge
+                        eraLabel={pin.eraLabel ?? undefined}
+                        ixTimeYear={pin.ixTimeYear ?? undefined}
+                        category={category}
+                      />
                     )}
                   </div>
                   {/* Storyline breadcrumb */}

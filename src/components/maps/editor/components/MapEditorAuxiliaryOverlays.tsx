@@ -1,18 +1,38 @@
 "use client";
 
 import React from "react";
-import { MobileEditorSheet } from "~/components/maps/editor/MobileEditorSheet";
+import dynamic from "next/dynamic";
 import { BatchActionsBar } from "~/components/maps/editor/BatchActionsBar";
-import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
-import {
-  FloatingImportPanel,
-  ProvinceImportWizard,
-} from "~/components/maps/editor/province-importer";
 import { EditorDialogs } from "./EditorDialogs";
-import { MapEditorWelcomeModal } from "./MapEditorWelcomeModal";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
-import { FeatureList } from "~/components/maps/editor/FeatureList";
+import { LayerPanel } from "~/components/maps/editor/LayerPanel";
+import type { EditorFeature } from "~/hooks/useMapEditor";
+
+const MobileEditorSheet = dynamic(
+  () => import("~/components/maps/editor/MobileEditorSheet").then((m) => m.MobileEditorSheet),
+  { ssr: false }
+);
+
+const KeyboardShortcutSheet = dynamic(
+  () => import("~/components/maps/editor/KeyboardShortcutSheet").then((m) => m.KeyboardShortcutSheet),
+  { ssr: false }
+);
+
+const FloatingImportPanel = dynamic(
+  () => import("~/components/maps/editor/province-importer").then((m) => m.FloatingImportPanel),
+  { ssr: false }
+);
+
+const ProvinceImportWizard = dynamic(
+  () => import("~/components/maps/editor/province-importer").then((m) => m.ProvinceImportWizard),
+  { ssr: false }
+);
+
+const MapEditorWelcomeModal = dynamic(
+  () => import("./MapEditorWelcomeModal").then((m) => m.MapEditorWelcomeModal),
+  { ssr: false }
+);
 
 interface MapEditorAuxiliaryOverlaysProps {
   state: any;
@@ -69,13 +89,16 @@ export function MapEditorAuxiliaryOverlays({
             title="Properties"
             isEditMode={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
             featureListContent={
-              <FeatureList
+              <LayerPanel
+                minimal
                 features={editor.allFeatures}
                 selectedFeature={editor.selectedFeature}
                 onSelectFeature={handleSelectFeature}
                 onEditFeature={handleEditFeature}
                 onDeleteFeature={handleDeleteFeature}
                 isLoading={editor.featuresLoading}
+                selectedIds={editor.selectedIds}
+                onToggleSelect={editor.toggleSelectId}
               />
             }
           >

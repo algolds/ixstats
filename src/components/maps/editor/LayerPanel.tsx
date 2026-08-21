@@ -32,7 +32,7 @@ export interface LayerState {
 }
 
 interface LayerPanelProps {
-  layers: LayerState[];
+  layers?: LayerState[];
   features?: any[];
   selectedFeature?: any;
   onSelectFeature?: (feature: any) => void;
@@ -40,8 +40,8 @@ interface LayerPanelProps {
   onDeleteFeature?: (feature: any) => void;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
-  onToggleVisibility: (layerId: string) => void;
-  onToggleLock: (layerId: string) => void;
+  onToggleVisibility?: (layerId: string) => void;
+  onToggleLock?: (layerId: string) => void;
   onOpacityChange?: (layerId: string, opacity: number) => void;
   featureCounts?: Record<string, number>;
   guides?: { id: string; type: "h" | "v"; value: number }[];
@@ -49,6 +49,9 @@ interface LayerPanelProps {
   showGuides?: boolean;
   onToggleGuidesVisibility?: (visible: boolean) => void;
   onDeleteGuide?: (id: string) => void;
+  /** When true, renders a clean feature list without layer visibility/lock controls */
+  minimal?: boolean;
+  isLoading?: boolean;
 }
 
 const TYPE_ICONS = {
@@ -70,7 +73,7 @@ const TYPE_COLORS = {
 } as const;
 
 export const LayerPanel = React.memo(function LayerPanel({
-  layers,
+  layers = [],
   features = [],
   selectedFeature,
   onSelectFeature,
@@ -87,6 +90,8 @@ export const LayerPanel = React.memo(function LayerPanel({
   showGuides = true,
   onToggleGuidesVisibility,
   onDeleteGuide,
+  minimal = false,
+  isLoading = false,
 }: LayerPanelProps) {
   // Pre-expand regions and cities by default
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(
@@ -139,9 +144,9 @@ export const LayerPanel = React.memo(function LayerPanel({
     const row = (
       <div
         key={feature.id}
-        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-colors ${
+        className={`group flex items-center gap-1.5 rounded px-2 py-1.5 pl-8 transition-all duration-100 ease-out active:scale-[0.99] select-none ${
           isSelected
-            ? "bg-primary/10 ring-primary/30 font-semibold ring-1"
+            ? "bg-primary/10 ring-primary/30 font-semibold ring-1 shadow-xs"
             : isMultiSelected
               ? "bg-indigo-500/10 ring-1 ring-indigo-500/30"
               : "hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
@@ -176,7 +181,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onEditFeature(feature);
               }}
-              className="rounded p-0.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
+              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-blue-600 dark:hover:bg-neutral-700 dark:hover:text-blue-400"
               title="Edit"
             >
               <Pencil className="h-3 w-3" />
@@ -188,7 +193,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 e.stopPropagation();
                 onDeleteFeature(feature);
               }}
-              className="hover:text-red-650 rounded p-0.5 text-neutral-500 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-red-400"
+              className="rounded p-0.5 text-neutral-500 transition-all duration-100 active:scale-90 hover:bg-neutral-200 hover:text-red-500 dark:hover:bg-neutral-700 dark:hover:text-red-400"
               title="Delete"
             >
               <Trash2 className="h-3 w-3" />
@@ -206,6 +211,55 @@ export const LayerPanel = React.memo(function LayerPanel({
       row
     );
   };
+
+  if (minimal || layers.length === 0) {
+    const defaultFeatureGroups = [
+      { id: "regions", name: "Regions & Subdivisions", icon: Hexagon },
+      { id: "cities", name: "Cities & Settlements", icon: MapPin },
+      { id: "pois", name: "Points of Interest", icon: Landmark },
+      { id: "storyPins", name: "Story Pins", icon: BookMarked },
+      { id: "mapLabels", name: "Map Labels", icon: Type },
+      { id: "routes", name: "Transport Routes", icon: Route },
+    ];
+
+    return (
+      <div className="flex flex-col text-xs text-foreground select-none">
+        <div className="flex flex-col">
+          {defaultFeatureGroups.map((group) => {
+            const Icon = group.icon;
+            const groupFeats = (groupedFeatures as any)[group.id] ?? [];
+            if (groupFeats.length === 0 && !featureCounts[group.id]) return null;
+            const isExpanded = expandedLayers.has(group.id);
+
+            return (
+              <div key={group.id} className="border-b border-border/40">
+                <button
+                  onClick={() => toggleLayerExpanded(group.id)}
+                  className="flex h-8 w-full items-center gap-1.5 px-2 hover:bg-accent/50 text-left transition-colors"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex-1 truncate font-medium text-[11px]">{group.name}</span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                    {groupFeats.length}
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="flex flex-col gap-0.5 pb-1 px-1">
+                    {groupFeats.map((feat: any) => renderFeatureRow(feat))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-white text-xs text-neutral-800 select-none dark:bg-neutral-900 dark:text-neutral-200">
@@ -248,7 +302,7 @@ export const LayerPanel = React.memo(function LayerPanel({
 
                 {/* Visibility Toggle */}
                 <button
-                  onClick={() => onToggleVisibility(layer.id)}
+                  onClick={() => onToggleVisibility?.(layer.id)}
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
                   title={layer.visible ? "Hide layer" : "Show layer"}
                 >
@@ -264,7 +318,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                 layer.id !== "country-border" &&
                 layer.id !== "climate" ? (
                   <button
-                    onClick={() => onToggleLock(layer.id)}
+                    onClick={() => onToggleLock?.(layer.id)}
                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     title={layer.locked ? "Unlock layer" : "Lock layer"}
                   >

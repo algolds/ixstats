@@ -123,7 +123,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         <div className="border-border/30 space-y-2 border-t pt-2">
           <StatusIndicator
             status={getChannelStatus(CHANNEL)}
-            label={`v${PLATFORM_VERSION} ${CHANNEL} · Build ${BUILD_VERSION}`}
+            label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
             size="sm"
             className={cn(
               "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-colors",

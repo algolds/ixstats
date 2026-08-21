@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
-import { FeatureList } from "~/components/maps/editor/FeatureList";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
@@ -21,23 +20,37 @@ import { HistoryPanel } from "./HistoryPanel";
 import { EditQueuePanel } from "~/app/admin/maps/_components/EditQueuePanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 
+export type PanelPlacement = "left" | "right" | "bottom";
+
+export interface PanelConfig {
+  placement: PanelPlacement;
+  collapsed: boolean;
+  tabs: TabId[];
+}
+
+export interface LayerStateRecord {
+  visible: boolean;
+  opacity: number;
+  locked?: boolean;
+}
+
 interface MapEditorSidebarPanelsProps {
   panelId: "panelA" | "panelB";
   state: any; // The state object returned by useMapEditorOverlayState
   panelConfigs: {
-    panelA: { placement: "left" | "right" | "bottom"; collapsed: boolean; tabs: TabId[] };
-    panelB: { placement: "left" | "right" | "bottom"; collapsed: boolean; tabs: TabId[] };
+    panelA: PanelConfig;
+    panelB: PanelConfig;
   };
-  setPanelConfigs: React.Dispatch<React.SetStateAction<any>>;
+  setPanelConfigs: React.Dispatch<React.SetStateAction<{ panelA: PanelConfig; panelB: PanelConfig }>>;
   activeSidebarTab: TabId;
-  setActiveSidebarTab: (tab: any) => void;
+  setActiveSidebarTab: (tab: TabId) => void;
   handleMoveTab: (tabId: string, panelId: "panelA" | "panelB") => void;
-  handleChangePanelPlacement: (panelId: "panelA" | "panelB", placement: any) => void;
-  layerStates: any;
-  setLayerStates: React.Dispatch<React.SetStateAction<any>>;
+  handleChangePanelPlacement: (panelId: "panelA" | "panelB", placement: PanelPlacement) => void;
+  layerStates: Record<string, LayerStateRecord>;
+  setLayerStates: React.Dispatch<React.SetStateAction<Record<string, LayerStateRecord>>>;
   editorVisibleLayers: Set<string>;
   toggleEditorLayer: (layerId: string) => void;
-  featureCounts: any;
+  featureCounts: Record<string, number>;
   brushTargetId: string | null;
   setBrushTargetId: (id: string | null) => void;
 }
@@ -245,7 +258,8 @@ export function MapEditorSidebarPanels({
       featureCount={editor.allFeatures.length}
       featuresLoading={editor.featuresLoading}
       featureListContent={
-        <FeatureList
+        <LayerPanel
+          minimal
           features={editor.allFeatures}
           selectedFeature={editor.selectedFeature}
           onSelectFeature={handleSelectFeature}
@@ -254,7 +268,6 @@ export function MapEditorSidebarPanels({
           isLoading={editor.featuresLoading}
           selectedIds={editor.selectedIds}
           onToggleSelect={editor.toggleSelectId}
-          collapseAll={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")}
         />
       }
       layersContent={renderLayersElement()}

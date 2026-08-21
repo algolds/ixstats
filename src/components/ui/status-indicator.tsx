@@ -69,7 +69,7 @@ const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }
     text: "text-sky-700 dark:text-sky-400",
   },
   rc: {
-    label: "Release Candidate",
+    label: "RC",
     dot: "bg-teal-500",
     text: "text-teal-700 dark:text-teal-400",
   },

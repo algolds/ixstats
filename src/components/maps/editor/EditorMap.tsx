@@ -33,6 +33,8 @@ import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
 import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
 import { useRouteEdit } from "./hooks/useRouteEdit";
 import { usePointDrag } from "./hooks/usePointDrag";
+import { useEditorMapEvents } from "./map/useEditorMapEvents";
+import { useEditorSnapGuide } from "./map/useEditorSnapGuide";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
@@ -52,6 +54,18 @@ export interface EditorMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void;
   getMap: () => MapLibreMap | null;
 }
+
+const INTERACTIVE_LAYERS = [
+  "editor-subdivisions-fill",
+  "editor-points-capital",
+  "editor-points-city",
+  "editor-points-poi",
+  "editor-points-story-pin",
+  "editor-points-map-label",
+  "editor-points-labels",
+  "editor-map-labels",
+  "editor-gaps-fill",
+] as const;
 
 interface EditorMapProps {
   /** Country boundary GeoJSON geometry */
@@ -317,19 +331,6 @@ const EditorMap = memo(
     const spacebarPanActiveRef = useRef(false);
     spacebarPanActiveRef.current = spacebarPanActive;
 
-    /** Layers that participate in selection hit-testing (Plan 120 P1). */
-    const interactiveLayers = [
-      "editor-subdivisions-fill",
-      "editor-points-capital",
-      "editor-points-city",
-      "editor-points-poi",
-      "editor-points-story-pin",
-      "editor-points-map-label",
-      "editor-points-labels",
-      "editor-map-labels",
-      "editor-gaps-fill",
-    ];
-
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.code === "Space" || e.key === " ") {
@@ -426,8 +427,8 @@ const EditorMap = memo(
     /** Last hovered feature id, to avoid redundant setFilter/setFeatureState (Plan 120 P7). */
     const lastHoveredIdRef = useRef<string | null>(null);
     /** Cached interactive-layer list excluding locked layers (Plan 120 P1/P5). */
-    const interactiveLayersRef = useRef<string[]>([]);
-    interactiveLayersRef.current = interactiveLayers;
+    const interactiveLayersRef = useRef<string[]>(INTERACTIVE_LAYERS as unknown as string[]);
+    interactiveLayersRef.current = INTERACTIVE_LAYERS as unknown as string[];
     const lassoToolRef = useRef(lassoTool);
     lassoToolRef.current = lassoTool;
 

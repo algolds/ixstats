@@ -98,13 +98,23 @@ export function getVertices(geometry: Polygon | MultiPolygon): VertexRef[] {
   return vertices;
 }
 
+/** Helper to shallow-clone rings array and copy only the target ring for mutation (Copy-on-Write) */
+function cloneRingsWithTarget(geometry: Polygon | MultiPolygon, targetRingIndex: number): Position[][] | null {
+  const allRings = getAllRings(geometry);
+  if (targetRingIndex < 0 || targetRingIndex >= allRings.length) return null;
+  const rings = [...allRings];
+  rings[targetRingIndex] = allRings[targetRingIndex]!.map((c) => [...c]);
+  return rings;
+}
+
 /** Move a vertex to a new position, returning new geometry. */
 export function moveVertex(
   geometry: Polygon | MultiPolygon,
   ref: VertexRef,
   to: Position
 ): Polygon | MultiPolygon {
-  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  const rings = cloneRingsWithTarget(geometry, ref.ringIndex);
+  if (!rings) return geometry;
   const ring = rings[ref.ringIndex];
   if (!ring) return geometry;
 
@@ -128,7 +138,8 @@ export function addVertex(
   edge: EdgeRef,
   at: Position
 ): Polygon | MultiPolygon {
-  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  const rings = cloneRingsWithTarget(geometry, edge.ringIndex);
+  if (!rings) return geometry;
   const ring = rings[edge.ringIndex];
   if (!ring) return geometry;
 
@@ -143,7 +154,8 @@ export function removeVertex(
   geometry: Polygon | MultiPolygon,
   ref: VertexRef
 ): Polygon | MultiPolygon | null {
-  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  const rings = cloneRingsWithTarget(geometry, ref.ringIndex);
+  if (!rings) return geometry;
   const ring = rings[ref.ringIndex];
   if (!ring) return geometry;
 
@@ -153,7 +165,7 @@ export function removeVertex(
   ring.splice(ref.vertexIndex, 1);
 
   // Re-close ring if needed
-  if (isRingClosed(rings[ref.ringIndex]!) && ring.length > 0) {
+  if (isRingClosed(ring) && ring.length > 0) {
     // After splice, ensure closure
     if (ref.vertexIndex === 0) {
       // Removed first vertex — update closing vertex to new first

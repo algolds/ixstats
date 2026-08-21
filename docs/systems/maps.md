@@ -2,7 +2,7 @@
 
 **Last updated:** August 2026  
 **Status:** Production Ready (Beta)  
-**Hierarchy:** Top-level App **IxWorld** (`IXWORLD_VERSION = 1.2`), powered by the **Atlas Spatial Engine** (`ATLAS_ENGINE_VERSION = 4`). Canvas sub-version `CANVAS_VERSION = 1`.
+**Hierarchy:** Top-level App **IxWorld** (`IXWORLD_VERSION = 2`), powered by the **Atlas Spatial Engine** (`ATLAS_ENGINE_VERSION = 5`). Canvas sub-version `CANVAS_VERSION = 1`.
 
 ---
 
@@ -72,31 +72,51 @@ MapLibre GL JS renders 7 primary vector GeoJSON layers. Hydrological layers stri
 
 ---
 
-## Component Architecture
+## Component Architecture & Domain Boundaries
 
-### Viewer Components (`src/components/maps/core/`)
+The cartographic frontend is strictly divided into three distinct modules with shared foundational atoms:
+
+```
+src/components/maps/
+├── core/         # ALL Generic/Global MapLibre Primitives, Viewers, Info Panels & Controls
+├── editor/       # Strictly Authoring & Editing Tools, Panels, Forms & Draw Pipelines
+├── shared/       # Shared Visual Presentation Atoms & Lifecycle Hooks
+└── overlays/     # Global Data Layers (Choropleths, Geopolitical lines, Heatmaps, Transport)
+```
+
+### 1. Viewer Components (`src/components/maps/core/`)
 - `IxWorldMap.tsx` – Core MapLibre GL JS renderer with WebGL projection switching (Globe, Mercator, Dynamic), label distance fade, and layer styling
 - `MapContainer.tsx` – SSR-safe data loading wrapper with two-tier cache resolution (React Query + IndexedDB)
-- `MapControls.tsx` – Floating layer toggles, projection switcher, coordinate readout, and legends
-- `CountryInfoPanel.tsx` – Right-side nation dossier drawer with MediaWiki extract, flag, and neighbor lists
+- `MapControls.tsx` – Responsive control system: floating bottom-right dock on desktop ($\ge 768\text{px}$) and compact expandable FAB on mobile ($< 768\text{px}$) via `variant?: "desktop" | "mobile" | "auto"`
+- `CountryInfoPanel.tsx` – Right-side nation dossier drawer with MediaWiki extract, economic stat modals, flag, and neighbor lists
 - `MapPinInfoPanel.tsx` – Coordinate inspection drawer with Turf.js + PostGIS point lookup data
+- `StoryPinModal.tsx` – Deep reading modal for historical lore chronicles with photo carousels and wiki links
 
-### Editor Components (`src/components/maps/editor/`)
-- `MapEditorOverlay.tsx` – Full-screen editor canvas with tool rail, property panel, and status bar
-- `EditorMap.tsx` – Interactive MapLibre editor map with vertex dragging, snap guides, coordinate grid, and province painter
-- `MapEditorToolbar.tsx` – Tool rail: Select (V), City (C), Region (R), POI (P), Route (T), Import (I), Paint (B)
-- `FeaturePropertyPanel.tsx` – Attribute forms + Province Painter map modes (Population, Development, Resources, Wiki Coverage)
+### 2. Editor Components (`src/components/maps/editor/`)
+- `MapEditorOverlay.tsx` – Full-screen authoring canvas with tool rail, property panel, and status bar
+- `EditorMap.tsx` – Specialized MapLibre authoring map integrating `useEditorMapEvents` (hit testing & context menus) and `useEditorSnapGuide` (guide lines & cursors)
+- `ToolOptionsBar.tsx` – Declarative contextual switcher delegating to dedicated sub-toolbars under `toolbars/options/` (`SubdivisionOptions`, `RouteOptions`, `MagicWandOptions`, `RulerOptions`)
+- `TransportPropertyForm.tsx` – Modular route property form delegating to `ProceduralRouteGenerator`, `RouteWaypointList`, and `RouteFilterList` under `properties/transport/`
+- `LayerPanel.tsx` – Dual-mode layer manager supporting full layer controls or `<LayerPanel minimal />` for grouped feature lists
 
-### Editor Selection & Hit-Testing Model
+### 3. Shared Primitives (`src/components/maps/shared/` & `src/hooks/`)
+- `useMapLibreInstance.ts` – Standardized hook for MapLibre container mounting, WebGL surface acquisition (`acquireSurface`), resize observation, and cleanup
+- `geojson-layer-helpers.ts` – Type-safe MapLibre source & layer utilities (`setOrUpdateGeoJSONSource`, `ensureMapLayer`, `removeLayerAndSource`)
+- `TimelineEraBadge.tsx` – Unified category-colored badge for historical AT/BT IxTime dates
+- `StoryPinDetailCard.tsx` – Unified lore presentation card for chronicles and event pins
+- `FacetOnboardingDialog.tsx` – Glassmorphic multi-step carousel onboarding modal with keyboard navigation and persistence
+
+### 4. Editor Selection & Hit-Testing Model
 - **Deterministic Hit-Testing (`hit-test.ts`)**: Two-phase spatial query (exact point wins, polygon containment second, grab-assist over empty space only).
 - **Transient Pointer State (`transientStore.ts`)**: `useSyncExternalStore` store for cursor movement, eliminating re-render cascades across React components.
-- **GeoJSON Source Diffing (`geoJsonPatcher.ts`)**: Targeted `UPDATE_FEATURE` patches and `setFeatureState` GPU toggles.
+- **Copy-on-Write Polygon Snapping (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
+- **Branded Nominal Coordinates (`editor-types.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`, `BoundingBox`) prevent axis inversion bugs at compile-time.
 
 ---
 
 ## Pluggable Overlay Framework (`OVERLAY_REGISTRY`)
 
-The overlay architecture (`src/lib/overlay-registry.ts`) enables declarative, pluggable map overlays:
+The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarative, pluggable map overlays powered by `geojson-layer-helpers.ts`:
 1. **Fill Overlays** (Mutually Exclusive): Recolor political boundaries (`ChoroplethOverlay`, `RiskHeatmapOverlay`).
 2. **Feature Overlays** (Combinable): Interactive vector elements (`TransportOverlay`, `TradeRouteOverlay`).
 3. **Analytics Overlays** (Combinable): Geopolitical analysis (`GeopoliticalOverlay` showing alliances, embassies, conflict hotspots).
@@ -112,14 +132,13 @@ Geography serves as the foundational data source across the platform:
 
 ---
 
-## Geo API Routers (`src/server/api/routers/geo/`)
+## Geo API Routers (`src/server/api/routers/`)
 
-- `geo/core.ts` – World map geometry, country bounds, point lookups, and cache management
-- `geo/features.ts` – Cities, subdivisions, POIs, and story pins with geometry precision truncation
-- `geo/editor.ts` – Border editing mutations and spatial submission review
-- `geo/admin.ts` & `geo/admin/cities.ts` – Admin province and city management
-- `geo/sovereignty.ts` – Territorial claims and sovereignty chain tracking
-- `geo/realms-pipeline.ts` – Procedural realm generation pipeline triggers
+- `countryGeo.ts` – Country boundaries, settlement upserts (`upsertCity`, `upsertSubdivision`, `upsertPoi`), and geo bundles
+- `geoFeatures.ts` – Settlement deletions, natural superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
+- `geoCore.ts` – World map geometry, country bounds, point lookups, and cache management
+- `geoEditor.ts` – Border editing mutations and spatial submission review
+- `transport.ts` – Friction-based transit corridor generation and route management
 
 ---
 
@@ -129,3 +148,4 @@ Geography serves as the foundational data source across the platform:
 - [Autosave Architecture](../AUTOSAVE_ARCHITECTURE.md)
 - [Framework Specification (Realms)](../FRAMEWORK_SPEC.md)
 - [API Reference: Geo Routers](../reference/api-complete.md#geo-routers)
+

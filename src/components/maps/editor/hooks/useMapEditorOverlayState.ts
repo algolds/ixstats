@@ -15,10 +15,13 @@ import {
   getSnapTolerance,
   setSnapTolerance as persistSnapTolerance,
 } from "~/lib/maps/editor-prefs";
+import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
+import { useEditorDockLayout } from "./useEditorDockLayout";
+import { useEditorModalState } from "./useEditorModalState";
 
 interface UseMapEditorOverlayStateProps {
   countryId?: string;
@@ -970,19 +973,42 @@ export function useMapEditorOverlayState({
   );
 
   const [debouncedCoords, setDebouncedCoords] = useState<[number, number] | null>(null);
+
   useEffect(() => {
-    if (!cursorCoords) {
-      setDebouncedCoords(null);
-      return;
-    }
-    const timer = setTimeout(() => setDebouncedCoords(cursorCoords), 300);
-    return () => clearTimeout(timer);
-  }, [cursorCoords]);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = transientMapStore.subscribe(() => {
+      const coords = transientMapStore.getSnapshot().cursorCoords;
+      if (timer) clearTimeout(timer);
+      if (!coords) {
+        setDebouncedCoords(null);
+        return;
+      }
+      timer = setTimeout(() => {
+        setDebouncedCoords(coords);
+      }, 250);
+    });
+
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   const { data: cursorTerrainInfo } = api.geoCore.getPointInfo.useQuery(
     { lng: debouncedCoords?.[0] ?? 0, lat: debouncedCoords?.[1] ?? 0 },
     { enabled: !!debouncedCoords, staleTime: 30_000, gcTime: 60_000 }
   );
+
+  useEffect(() => {
+    if (cursorTerrainInfo) {
+      transientMapStore.setTerrainInfo({
+        elevation: cursorTerrainInfo.elevation?.zoneName ?? null,
+        elevationMeters: (cursorTerrainInfo.elevation as any)?.elevationMeters ?? null,
+        climate: cursorTerrainInfo.climate?.climateName ?? null,
+        biomeColor: (cursorTerrainInfo.climate as any)?.color ?? null,
+      });
+    }
+  }, [cursorTerrainInfo]);
 
   const handleSelectFeature = useCallback(
     (feature: any) => {

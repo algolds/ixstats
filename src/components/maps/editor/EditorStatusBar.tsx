@@ -72,7 +72,9 @@ export function EditorStatusBar({
   featureCount,
 }: EditorStatusBarProps) {
   const transientCoords = useTransientMapStore((s) => s.cursorCoords);
+  const transientTerrain = useTransientMapStore((s) => s.terrainInfo);
   const activeCoords = propCoords ?? transientCoords;
+  const activeTerrain = terrainInfo?.elevation ? terrainInfo : transientTerrain;
   const modeInfo = MODE_LABELS[mode] ?? { label: "Edit", hint: "Select or edit map features" };
 
   return (
@@ -96,15 +98,15 @@ export function EditorStatusBar({
       {/* Altitude + Climate */}
       <div className="hidden min-w-[120px] items-center gap-1.5 sm:flex">
         <Mountain className="text-muted-foreground/60 h-3 w-3 shrink-0" />
-        {terrainInfo?.elevation ? (
-          <span className="truncate">{terrainInfo.elevation}</span>
+        {activeTerrain?.elevation ? (
+          <span className="truncate">{activeTerrain.elevation}</span>
         ) : (
           <span className="text-muted-foreground/50">—</span>
         )}
-        {terrainInfo?.climate && (
+        {activeTerrain?.climate && (
           <>
             <span className="text-border">·</span>
-            <span className="truncate">{terrainInfo.climate}</span>
+            <span className="truncate">{activeTerrain.climate}</span>
           </>
         )}
       </div>

@@ -12,6 +12,11 @@
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import {
+  setOrUpdateGeoJSONSource,
+  ensureMapLayer,
+  removeLayerAndSource,
+} from "~/lib/maps/geojson-layer-helpers";
 
 const POLITICAL_LAYER_ID = "fill-political";
 const ORIGINAL_FILL_COLOR = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
@@ -73,7 +78,6 @@ export function RiskHeatmapOverlay({
         map.setPaintProperty(POLITICAL_LAYER_ID, "fill-color", ORIGINAL_FILL_COLOR as any);
         activeRef.current = false;
       }
-      // Hide crisis markers
       if (map.getLayer(CRISIS_LAYER)) {
         map.setLayoutProperty(CRISIS_LAYER, "visibility", "none");
       }
@@ -97,28 +101,20 @@ export function RiskHeatmapOverlay({
       activeRef.current = true;
     }
 
-    // Crisis event point markers (separate source — no banding issue for points)
-    const crisisSource = map.getSource(CRISIS_SOURCE);
-    if (crisisSource && "setData" in crisisSource) {
-      (crisisSource as any).setData(crisisEvents);
-    } else if (!crisisSource) {
-      map.addSource(CRISIS_SOURCE, { type: "geojson", data: crisisEvents });
-    }
-
-    if (!map.getLayer(CRISIS_LAYER)) {
-      map.addLayer({
-        id: CRISIS_LAYER,
-        type: "circle",
-        source: CRISIS_SOURCE,
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "severity"], 1, 5, 5, 10, 10, 16],
-          "circle-color": "#ef4444",
-          "circle-opacity": 0.85,
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5,
-        },
-      });
-    }
+    // Crisis event point markers
+    setOrUpdateGeoJSONSource(map, CRISIS_SOURCE, crisisEvents);
+    ensureMapLayer(map, {
+      id: CRISIS_LAYER,
+      type: "circle",
+      source: CRISIS_SOURCE,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["get", "severity"], 1, 5, 5, 10, 10, 16],
+        "circle-color": "#ef4444",
+        "circle-opacity": 0.85,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
+    });
 
     map.setLayoutProperty(CRISIS_LAYER, "visibility", "visible");
   }, [map, riskData, crisisEvents, visible]);
@@ -127,15 +123,12 @@ export function RiskHeatmapOverlay({
   useEffect(() => {
     return () => {
       if (!map) return;
-      try {
-        if (activeRef.current && map.getLayer(POLITICAL_LAYER_ID)) {
+      if (activeRef.current && map.getLayer(POLITICAL_LAYER_ID)) {
+        try {
           map.setPaintProperty(POLITICAL_LAYER_ID, "fill-color", ORIGINAL_FILL_COLOR as any);
-        }
-        if (map.getLayer(CRISIS_LAYER)) map.removeLayer(CRISIS_LAYER);
-        if (map.getSource(CRISIS_SOURCE)) map.removeSource(CRISIS_SOURCE);
-      } catch {
-        /* map may be destroyed */
+        } catch (_e) {}
       }
+      removeLayerAndSource(map, CRISIS_LAYER, CRISIS_SOURCE);
       activeRef.current = false;
     };
   }, [map]);

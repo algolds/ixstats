@@ -3,11 +3,14 @@
  * Ensures all internal links respect the BASE_PATH environment variable
  */
 
-// Get the base path from environment or use empty string for root deployment
-export const BASE_PATH =
-  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true"
+// Get the base path dynamically from environment or use empty string for root deployment
+export function getBasePath(): string {
+  return process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true"
     ? ""
     : process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+}
+
+export const BASE_PATH = getBasePath();
 
 /**
  * Prepends the BASE_PATH to a given path
@@ -15,9 +18,11 @@ export const BASE_PATH =
  * @returns The full path with BASE_PATH (e.g., "/projects/ixstats/dashboard")
  */
 export function withBasePath(path: string): string {
+  const basePath = getBasePath();
+
   // Handle root path
   if (path === "/") {
-    return BASE_PATH || "/";
+    return basePath || "/";
   }
 
   // Handle external URLs
@@ -29,13 +34,13 @@ export function withBasePath(path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
   // Don't double-prefix if already has base path
-  if (BASE_PATH && normalizedPath.startsWith(BASE_PATH)) {
+  if (basePath && normalizedPath.startsWith(basePath)) {
     return normalizedPath;
   }
 
   // If we're in the browser, check if the app is actually mounted at BASE_PATH
   // In dev, sometimes NEXT_PUBLIC_BASE_PATH is in .env but the dev server runs at root
-  if (typeof window !== "undefined" && BASE_PATH) {
+  if (typeof window !== "undefined" && basePath) {
     // If the current host looks like the standalone maps domain (eg. maps.example.com),
     // prefer root links so links like `/blurbs/...` point to the maps host.
     try {
@@ -45,12 +50,12 @@ export function withBasePath(path: string): string {
       }
     } catch {}
 
-    if (!window.location.pathname.startsWith(BASE_PATH)) {
+    if (!window.location.pathname.startsWith(basePath)) {
       return normalizedPath; // App is running at root, don't prepend
     }
   }
 
-  return `${BASE_PATH}${normalizedPath}`;
+  return `${basePath}${normalizedPath}`;
 }
 
 /**

@@ -57,6 +57,10 @@ import {
   TransformGeometryPopover,
   CityTransformationsPopover,
 } from "./toolbars/options/ScatterToolOptions";
+import { SubdivisionOptions } from "./toolbars/options/SubdivisionOptions";
+import { RouteOptions } from "./toolbars/options/RouteOptions";
+import { MagicWandOptions } from "./toolbars/options/MagicWandOptions";
+import { RulerOptions } from "./toolbars/options/RulerOptions";
 import {
   CoordinateSnappingControls,
   MoveToCoordsInput,
@@ -414,89 +418,23 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
       {/* ── Region mode ── */}
       {(mode === "add-subdivision" || mode === "edit-subdivision") && (
-        <>
-          <ToolLabel icon={Hexagon} label="Region" />
-          <span className={labelClass}>Type</span>
-          <select
-            value={props.subdivisionType ?? "province"}
-            onChange={(e) => props.onSubdivisionTypeChange?.(e.target.value)}
-            className={selectClass}
-          >
-            {SUBDIVISION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <span className={labelClass}>Level</span>
-          <input
-            type="number"
-            min={1}
-            max={5}
-            value={props.subdivisionLevel ?? 1}
-            onChange={(e) => props.onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
-            className={`${selectClass} w-12 text-center`}
-          />
-
-          {mode === "edit-subdivision" && (
-            <>
-              {props.onScatterCities && (
-                <>
-                  <div className={dividerClass} />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className={btnClass} title="Scatter cities inside this region">
-                        <Sparkles className="h-3 w-3" /> Scatter Cities...
-                      </button>
-                    </PopoverTrigger>
-                    <CityScatterPopover
-                      onScatter={(count: number, type: string, prefix: string) => {
-                        props.onScatterCities!(count, type, prefix);
-                      }}
-                      defaultPrefix={`${props.selectedFeature?.name || "City"}`}
-                    />
-                  </Popover>
-                </>
-              )}
-
-              {props.onStartSplitSubdivision && (
-                <>
-                  <div className={dividerClass} />
-                  <button
-                    onClick={props.onStartSplitSubdivision}
-                    className={btnClass}
-                    title="Split region with a drawn line"
-                  >
-                    <Scissors className="h-3 w-3" /> Split Region
-                  </button>
-                </>
-              )}
-
-              {props.onApplyGeometryTransformation && (
-                <>
-                  <div className={dividerClass} />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        className={btnClass}
-                        title="Simplify, Smooth, Rotate, or Scale geometry"
-                      >
-                        <Sliders className="h-3 w-3" /> Transform Geometry...
-                      </button>
-                    </PopoverTrigger>
-                    <TransformGeometryPopover onApply={props.onApplyGeometryTransformation} />
-                  </Popover>
-                </>
-              )}
-            </>
-          )}
-        </>
+        <SubdivisionOptions
+          isEditMode={mode === "edit-subdivision"}
+          subdivisionType={props.subdivisionType}
+          onSubdivisionTypeChange={props.onSubdivisionTypeChange}
+          subdivisionLevel={props.subdivisionLevel}
+          onSubdivisionLevelChange={props.onSubdivisionLevelChange}
+          onDuplicate={props.onDuplicate}
+          onStartSplitSubdivision={props.onStartSplitSubdivision}
+          onScatterCities={props.onScatterCities}
+          onApplyGeometryTransformation={props.onApplyGeometryTransformation}
+        />
       )}
 
       {/* ── POI mode ── */}
       {(mode === "add-poi" || mode === "edit-poi") && (
         <>
-          <ToolLabel icon={Landmark} label="POI" />
+          <ToolLabel icon={Landmark} label="Point of Interest" />
           <span className={labelClass}>Category</span>
           <select
             value={props.poiCategory ?? "landmark"}
@@ -523,22 +461,6 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                 </button>
               )}
               {props.onMoveToCoords && <MoveToCoordsInput onMove={props.onMoveToCoords} />}
-              {(props.cityCoordinates ||
-                props.onCityCoordinatesChange ||
-                props.onSnapCityToSubdivisionBorder ||
-                props.onSnapCityToCoastline) && (
-                <>
-                  <div className={dividerClass} />
-                  <CoordinateSnappingControls
-                    coords={props.cityCoordinates}
-                    onCoordsChange={props.onCityCoordinatesChange}
-                    onSnapBorder={props.onSnapCityToSubdivisionBorder}
-                    onSnapCoast={props.onSnapCityToCoastline}
-                    isPickingLocation={props.isPickingLocation}
-                    onTogglePickingLocation={props.onTogglePickingLocation}
-                  />
-                </>
-              )}
             </>
           )}
         </>
@@ -649,76 +571,15 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
       {/* ── Route mode ── */}
       {mode === "add-route" && (
-        <>
-          <ToolLabel icon={Route} label="Route" />
-          <span className={labelClass}>Types</span>
-          {["rail", "highway", "shipping", "air"].map((t) => {
-            const active = props.routeTypes?.includes(t);
-            return (
-              <button
-                key={t}
-                onClick={() => {
-                  const current = props.routeTypes ?? [];
-                  props.onRouteTypesChange?.(
-                    active ? current.filter((x) => x !== t) : [...current, t]
-                  );
-                }}
-                className={active ? activeBtnClass : btnClass}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            );
-          })}
-          {(props.onFinishRoute ||
-            props.onUndoWaypoint ||
-            props.onReverseRoute ||
-            props.onSnapToggle) && (
-            <>
-              <div className={dividerClass} />
-              {props.onFinishRoute && (
-                <button
-                  onClick={props.onFinishRoute}
-                  className={activeBtnClass}
-                  title="Finish route"
-                >
-                  <Check className="h-3 w-3" /> Finish
-                </button>
-              )}
-              {props.onUndoWaypoint && (
-                <button
-                  onClick={props.onUndoWaypoint}
-                  className={btnClass}
-                  title="Undo last waypoint"
-                >
-                  <Undo2 className="h-3 w-3" /> Undo
-                </button>
-              )}
-              {props.onReverseRoute && (
-                <button
-                  onClick={props.onReverseRoute}
-                  className={btnClass}
-                  title="Reverse route direction"
-                >
-                  <ArrowLeftRight className="h-3 w-3" /> Reverse
-                </button>
-              )}
-              {props.onSnapToggle && (
-                <button
-                  onClick={props.onSnapToggle}
-                  className={props.isSnapEnabled ? activeBtnClass : btnClass}
-                  title={
-                    props.isSnapEnabled
-                      ? "Snap to cities ON — click to disable"
-                      : "Snap to cities OFF — click to enable"
-                  }
-                >
-                  <Magnet className="h-3 w-3" />
-                  {props.isSnapEnabled ? "Snap On" : "Snap Off"}
-                </button>
-              )}
-            </>
-          )}
-        </>
+        <RouteOptions
+          routeTypes={props.routeTypes}
+          onRouteTypesChange={props.onRouteTypesChange}
+          onFinishRoute={props.onFinishRoute}
+          onUndoWaypoint={props.onUndoWaypoint}
+          onReverseRoute={props.onReverseRoute}
+          isSnapEnabled={props.isSnapEnabled}
+          onSnapToggle={props.onSnapToggle}
+        />
       )}
 
       {/* ── Hand / Pan mode ── */}
@@ -769,71 +630,23 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
       {/* ── Magic Wand mode ── */}
       {mode === "magic-wand" && (
-        <>
-          <ToolLabel icon={Wand2} label="Magic Wand" />
-          <span className="text-muted-foreground mr-2 text-[11px]">Match:</span>
-          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              checked={props.wandMatchColor ?? true}
-              onChange={(e) => props.onWandMatchColorChange?.(e.target.checked)}
-              className="border-border h-3 w-3 rounded bg-transparent"
-            />
-            <span className="text-[11px]">Same Color</span>
-          </label>
-          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              checked={props.wandMatchLevel ?? false}
-              onChange={(e) => props.onWandMatchLevelChange?.(e.target.checked)}
-              className="border-border h-3 w-3 rounded bg-transparent"
-            />
-            <span className="text-[11px]">Same Level/Category</span>
-          </label>
-          <label className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              checked={props.wandMatchParent ?? false}
-              onChange={(e) => props.onWandMatchParentChange?.(e.target.checked)}
-              className="border-border h-3 w-3 rounded bg-transparent"
-            />
-            <span className="text-[11px]">Same Parent Entity</span>
-          </label>
-          <div className={dividerClass} />
-          <span className="text-muted-foreground text-[10px]">
-            Shift-click: Add to selection | Alt-click: Subtract from selection
-          </span>
-        </>
+        <MagicWandOptions
+          wandMatchColor={props.wandMatchColor}
+          onWandMatchColorChange={props.onWandMatchColorChange}
+          wandMatchLevel={props.wandMatchLevel}
+          onWandMatchLevelChange={props.onWandMatchLevelChange}
+          wandMatchParent={props.wandMatchParent}
+          onWandMatchParentChange={props.onWandMatchParentChange}
+        />
       )}
 
       {/* ── Ruler mode ── */}
       {mode === "ruler" && (
-        <>
-          <ToolLabel icon={Ruler} label="Ruler" />
-          <span className="text-muted-foreground mr-2 text-[11px]">
-            Click multiple spots on the map to measure distance.
-          </span>
-          {props.rulerPoints && props.rulerPoints.length > 0 && (
-            <>
-              <div className={dividerClass} />
-              <span className="text-foreground text-[11px] font-semibold">
-                Total: {props.rulerDistance ? props.rulerDistance.toFixed(1) : "0.0"} km
-              </span>
-              <span className="text-muted-foreground text-[10px]">
-                ({props.rulerPoints.length} points)
-              </span>
-              {props.onClearRuler && (
-                <button
-                  onClick={props.onClearRuler}
-                  className="flex h-6 items-center gap-1 rounded bg-red-500/10 px-1.5 text-[11px] text-red-500 hover:bg-red-500/20"
-                  title="Clear ruler path"
-                >
-                  Clear Ruler
-                </button>
-              )}
-            </>
-          )}
-        </>
+        <RulerOptions
+          rulerPoints={props.rulerPoints}
+          rulerDistance={props.rulerDistance}
+          onClearRuler={props.onClearRuler}
+        />
       )}
 
       {/* ── Paint Fill mode ── */}

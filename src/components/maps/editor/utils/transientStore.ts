@@ -8,10 +8,18 @@
 
 import { useSyncExternalStore } from "react";
 
+export interface LiveTerrainInfo {
+  elevation?: string | null;
+  elevationMeters?: number | null;
+  climate?: string | null;
+  biomeColor?: string | null;
+}
+
 export interface TransientEditorState {
   hoveredFeatureId: string | null;
   cursorCoords: [number, number] | null;
   activeVertexIndex: number | null;
+  terrainInfo: LiveTerrainInfo | null;
 }
 
 class TransientStore {
@@ -19,6 +27,7 @@ class TransientStore {
     hoveredFeatureId: null,
     cursorCoords: null,
     activeVertexIndex: null,
+    terrainInfo: null,
   };
 
   private listeners = new Set<() => void>();
@@ -48,6 +57,12 @@ class TransientStore {
       return;
     }
     this.state = { ...this.state, cursorCoords: coords };
+    this.emitChange();
+  };
+
+  public setTerrainInfo = (info: LiveTerrainInfo | null): void => {
+    if (this.state.terrainInfo === info) return;
+    this.state = { ...this.state, terrainInfo: info };
     this.emitChange();
   };
 

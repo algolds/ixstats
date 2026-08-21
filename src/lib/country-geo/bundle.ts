@@ -6,36 +6,68 @@ import { featureIdToDisplayName } from "~/lib/maps/map-utils";
  * and ensuring attribute and spatial data are fetched together.
  */
 export async function getCountryGeoBundle(db: any, countryId: string) {
-  // 1. Fetch Country base information
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      currentPopulation: true,
-      currentTotalGdp: true,
-      geoRollupMode: true,
-      geometry: true,
-      centroid: true,
-      boundingBox: true,
-      landArea: true,
-      areaSqMi: true,
-    },
-  });
+  // 1. Fetch all independent country entities concurrently in a single round-trip
+  const [
+    country,
+    mapLayer,
+    subdivisions,
+    cities,
+    pois,
+    storyPins,
+    mapLabels,
+    geoProfile,
+  ] = await Promise.all([
+    db.country.findUnique({
+      where: { id: countryId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        currentPopulation: true,
+        currentTotalGdp: true,
+        geoRollupMode: true,
+        geometry: true,
+        centroid: true,
+        boundingBox: true,
+        landArea: true,
+        areaSqMi: true,
+      },
+    }),
+    db.mapLayer.findFirst({
+      where: {
+        layerType: "political",
+        countryId,
+        isActive: true,
+      },
+    }),
+    db.subdivision.findMany({
+      where: { countryId, status: "approved" },
+      orderBy: { name: "asc" },
+    }),
+    db.city.findMany({
+      where: { countryId, status: "approved" },
+      orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
+    }),
+    db.pointOfInterest.findMany({
+      where: { countryId, status: "approved" },
+      orderBy: { name: "asc" },
+    }),
+    db.storyPin.findMany({
+      where: { countryId, status: "approved" },
+      orderBy: { ixTimeYear: "asc" },
+    }),
+    db.mapLabel.findMany({
+      where: { countryId, status: "approved" },
+      orderBy: { text: "asc" },
+    }),
+    db.countryGeoProfile.findUnique({
+      where: { countryId },
+    }),
+  ]);
 
   if (!country) {
     throw new Error(`Country not found: ${countryId}`);
   }
-
-  // 2. Fetch the active political MapLayer for this country
-  const mapLayer = await db.mapLayer.findFirst({
-    where: {
-      layerType: "political",
-      countryId,
-      isActive: true,
-    },
-  });
 
   // Derive geometry details, falling back to cached country columns
   const geometry = (mapLayer?.geometry || country.geometry) ?? null;
@@ -62,7 +94,7 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
     };
   }
 
-  // 3. Fetch neighboring countries via PostGIS spatial query if possible
+  // 2. Fetch neighboring countries via PostGIS spatial query if map layer has spatial geometry
   let neighbors: Array<{
     featureId: string;
     displayName: string;
@@ -105,35 +137,6 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
       console.warn(`[getCountryGeoBundle] Failed to calculate neighbors via PostGIS:`, err);
     }
   }
-
-  // 4. Fetch subdivisions, cities, points of interest, story pins, and map labels in parallel
-  const [subdivisions, cities, pois, storyPins, mapLabels] = await Promise.all([
-    db.subdivision.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.city.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: [{ isNationalCapital: "desc" }, { population: "desc" }],
-    }),
-    db.pointOfInterest.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { name: "asc" },
-    }),
-    db.storyPin.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { ixTimeYear: "asc" },
-    }),
-    db.mapLabel.findMany({
-      where: { countryId, status: "approved" },
-      orderBy: { text: "asc" },
-    }),
-  ]);
-
-  // 5. Fetch country geographic profile
-  const geoProfile = await db.countryGeoProfile.findUnique({
-    where: { countryId },
-  });
 
   // 6. Compute rollups & coverage ratios (Phase P-D preparation)
   const cityPopulationSum = cities.reduce((sum: number, c: any) => sum + (c.population ?? 0), 0);

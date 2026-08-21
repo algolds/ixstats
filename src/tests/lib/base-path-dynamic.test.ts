@@ -1,12 +1,12 @@
-/**
- * @jest-environment node
- */
+import { getBasePath, withBasePath } from "../../lib/base-path";
 
 describe("Dynamic Base Path Resolution", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
-    jest.resetModules();
+    if (typeof jest !== "undefined" && typeof jest.resetModules === "function") {
+      jest.resetModules();
+    }
     // Restore process.env to its original state
     for (const key in process.env) {
       if (!(key in originalEnv)) {
@@ -39,10 +39,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     process.env.BASE_PATH = "/projects/ixstates";
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BASE_PATH, withBasePath } = require("~/lib/base-path");
-
-    expect(BASE_PATH).toBe("");
+    expect(getBasePath()).toBe("");
     expect(withBasePath("/vault/marketplace")).toBe("/vault/marketplace");
   });
 
@@ -51,10 +48,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     process.env.BASE_PATH = "/projects/ixstates";
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BASE_PATH, withBasePath } = require("~/lib/base-path");
-
-    expect(BASE_PATH).toBe("/projects/ixstates");
+    expect(getBasePath()).toBe("/projects/ixstates");
     expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstates/vault/marketplace");
   });
 
@@ -63,10 +57,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstats";
     process.env.BASE_PATH = "/projects/ixstats";
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BASE_PATH, withBasePath } = require("~/lib/base-path");
-
-    expect(BASE_PATH).toBe("/projects/ixstats");
+    expect(getBasePath()).toBe("/projects/ixstats");
     expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstats/vault/marketplace");
   });
 
@@ -83,10 +74,7 @@ describe("Dynamic Base Path Resolution", () => {
       },
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BASE_PATH, withBasePath } = require("~/lib/base-path");
-
-    expect(BASE_PATH).toBe("/projects/ixstates");
+    expect(getBasePath()).toBe("/projects/ixstates");
     expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstates/vault/marketplace");
   });
 
@@ -103,10 +91,7 @@ describe("Dynamic Base Path Resolution", () => {
       },
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { BASE_PATH, withBasePath } = require("~/lib/base-path");
-
-    expect(BASE_PATH).toBe("/projects/ixstates");
+    expect(getBasePath()).toBe("/projects/ixstates");
     expect(withBasePath("/vault/marketplace")).toBe("/vault/marketplace");
   });
 });
