@@ -24,7 +24,7 @@ export async function register() {
     console.log("[Instrumentation] Initializing production optimizations...");
 
     try {
-      const { ProductionStartup } = await import("~/lib/system");
+      const { ProductionStartup } = await import("~/lib/system/server");
 
       // Initialize production optimizations (memory monitoring, slow query analysis)
       await ProductionStartup.initialize();
@@ -67,7 +67,7 @@ export async function register() {
     console.log("[Instrumentation] Development mode - initializing memory monitoring...");
 
     try {
-      const { ProductionStartup } = await import("~/lib/system");
+      const { ProductionStartup } = await import("~/lib/system/server");
 
       // Initialize memory monitoring (cache clearing, GC triggers) in dev mode
       // This enables proactive cache clearing at 65% threshold before Next.js restarts at 80%
