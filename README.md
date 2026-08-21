@@ -181,23 +181,45 @@ Specialized creative toolkits and simulation sandboxes:
 
 IxStates follows an OS-inspired release model where all components read from a central Version Registry ([`src/lib/buildVersion.ts`](src/lib/buildVersion.ts)). See [`docs/reference/revision.md`](docs/reference/revision.md) for full specifications.
 
-| Layer | Capability Tier | Managed Systems & Applications |
-|---|:---:|---|
-| **Platform** | `1.3.0` ("Ogma", Beta) | Core runtime, API gateway, global middleware, unified identity |
-| **Apps** | v1–v2 | **IxWorld** (v1.2), **WikiOS** (v1.0), **IxVault** (v2.0) |
-| **Engines** | v2–v4 | **MyCountry Engine** (v4), **Concord** (v2), **Atlas** (v4) |
-| **Core Systems** | v1–v5 | **MyCountry** (v5), **Builder** (v3), **ThinkPages** (v2), **Achievements** (v2), **Halo** (v4), **Onoma** (v4) |
-| **Design** | v2 | **Facet** (v2.0 design tokens, glass materials, physics springs) |
+<!-- BEGIN_DOCS:VERSION_MATRIX -->
+| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
+| :--- | :--- | :---: | :--- |
+| **Platform** | **IxStates (Ogma)** | **1.4.0 "Ogma"** | **Release Candidate** |
+| **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
+| | WikiOS | v1 | Headless Wiki & Canvas Architecture |
+| | IxVault | v2 | Cards, Credits & Marketplace |
+| **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
+| | Concord Engine | v2 | Living World Simulation & Events |
+| | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
+| **Systems** | MyCountry UI | v5 | 4-Tier Command Architecture |
+| | Nation Builder | v3 | Statecraft & Tax Builder Subsystems |
+| | ThinkPages | v2 | Social Knowledge & Feed Components |
+| | Achievements | v2 | Awards & LoreWards Resync |
+| | Stash | v1 | Article Stashing (was LoreStash) |
+| | Repository | v2 | Commons Media Explorer |
+| | Halo | v4 | Contextual Overlay System |
+| | Onoma | v4 | Conlang & Linguistics Studio |
+| **Design** | Facet | v2 | Refraction / Depth Design System |
+<!-- END_DOCS:VERSION_MATRIX -->
 
 ---
 
 ## Technology Stack
 
-```
-Frontend:   Next.js 16.3 (Turbopack) · React 19.2 · Tailwind CSS 4.3 · MapLibre GL · Motion
-Backend:    tRPC 11.18 · PostgreSQL 16 + PostGIS · Prisma 6.19 · Redis · Socket.IO · Express 5
-Tooling:    Bun 1.2+ · TypeScript 5.9 · Jest 30 · ESLint 10 · Prettier
-```
+<!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
+| Package / Layer | Version | Notes |
+| :--- | :---: | :--- |
+| **Next.js** | 16.3.0 | App Router architecture, Turbopack |
+| **React** | 19.2.8 | React 19 concurrent features |
+| **TypeScript** | 7.0.2 | Native Go Engine concurrency |
+| **Prisma** | 6.19.3 | Multi-file schema partitioning |
+| **tRPC** | 11.18.0 | Domain-split modular routers |
+| **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
+| **Zod** | 4.4.3 | Schema validation |
+| **ESLint** | 10.8.0 | Flat config with architecture guard |
+| **Jest** | 30.4.2 | Unit and characterization suites |
+| **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
+<!-- END_DOCS:FRAMEWORK_MATRIX -->
 
 ---
 

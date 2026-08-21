@@ -1,105 +1,108 @@
 # Complete tRPC API Reference
 
-**Last updated:** June 2026 (patch 1.0.6 — router-refactor)
+The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
-Comprehensive reference for all **90 tRPC routers** with **1,450+ procedures** across the IxStates (IxStats) platform.
+<!-- BEGIN_DOCS:API_INVENTORY -->
+### Live tRPC API Inventory (94 Routers, 1576 Endpoints)
 
-> ⚠️ **Regeneration needed.** The per-router procedure counts and the per-section totals below were captured pre-1.0.6 and reflect the pre-split monoliths. They are out of date by ≈ 5–10% per split router. To regenerate, walk the live `src/server/api/routers/` tree with ts-morph and rebuild the Router Summary Table. (The total procedure count in the header above — 1,382 — and the per-group numbers in the Quick Navigation have been hand-recomputed against the current tree.)
-
-## Quick Navigation
-*(Approximate; regen needed — see warning above.)*
-- [Core Systems](#core-systems) (14 routers, ~212 procedures)
-- [Government & Economics](#government--economics) (16 routers, ~245 procedures)
-- [Intelligence & Diplomacy](#intelligence--diplomacy) (10 routers, ~182 procedures)
-- [Defense & Security](#defense--security) (6 routers, ~112 procedures)
-- [Social & Collaboration](#social--collaboration) (7 routers, ~165 procedures)
-- [Operations](#operations) (10 routers, ~142 procedures)
-- [IxVault (Cards & Credits)](#ixvault-cards--credits) (10 routers, ~147 procedures)
-- [Maps & Geography](#maps--geography) (active January–June 2026)
-
----
-
-## Router Summary Table
-
-| Router | Q | M | Total | Purpose |
-|--------|---|---|-------|---------|
-| **CORE SYSTEMS** | | | | |
-| countries | 28 | 12 | 40 | Country CRUD, stats, projections, global data |
-| users | 9 | 10 | 19 | User profiles, preferences, country assignment |
-| roles | 4 | 6 | 10 | RBAC, permission management |
-| admin | 12 | 21 | 33 | System administration, global stats |
-| cache | 5 | 3 | 8 | Cache management, invalidation |
-| wikiCache | 5 | 6 | 11 | MediaWiki data caching |
-| wikiImporter | 4 | 1 | 5 | Wiki infobox import |
-| optimized-countries | 6 | 0 | 6 | Performance-optimized queries |
-| customTypes | 3 | 2 | 5 | Custom field definitions |
-| user-logging | 8 | 2 | 10 | Activity tracking, analytics |
-| **GOV & ECONOMICS** | | | | |
-| atomicGovernment | 5 | 7 | 12 | Atomic government components |
-| atomicEconomic | 2 | 4 | 6 | Atomic economic components |
-| atomicTax | 2 | 4 | 6 | Atomic tax components |
-| unifiedAtomic | 5 | 1 | 6 | Cross-builder synergy system |
-| government | 6 | 9 | 15 | Government structure, budgets, component effects |
-| governmentComponents | 4 | 8 | 12 | Component library (Phase 4) |
-| economics | 8 | 11 | 19 | Economy builder, economic data |
-| economicComponents | 4 | 7 | 11 | Economic component library (Phase 5) |
-| economicArchetypes | 5 | 5 | 10 | Economic templates (Phase 3) |
-| enhanced-economics | 6 | 0 | 6 | Advanced economic analysis |
-| taxSystem | 3 | 8 | 11 | Tax management, revenue |
-| formulas | 4 | 2 | 6 | Internal calculations, monitoring |
-| **INTEL & DIPLOMACY** | | | | |
-| intelligence | 6 | 5 | 11 | Intelligence briefings |
-| unified-intelligence | 21 | 8 | 29 | SDI/ECI unified system |
-| eci | 12 | 1 | 13 | Executive Command Interface |
-| sdi | 17 | 16 | 33 | Strategic Defense Initiative |
-| diplomatic | 13 | 13 | 26 | Embassies, missions, relations |
-| diplomatic-intelligence | 4 | 1 | 5 | Diplomatic intel overlays |
-| diplomaticPolicies | 6 | 9 | 15 | Foreign policy actions, alliances, blocs |
-| diplomaticScenarios | 6 | 9 | 15 | Dynamic scenario management (Phase 7B) |
-| npcPersonalities | 4 | 6 | 10 | NPC personality system (Phase 8) |
-| archetypes | 5 | 5 | 10 | Country filtering archetypes |
-| **DEFENSE & SECURITY** | | | | |
-| security | 9 | 25 | 34 | Defense system, military branches |
-| militaryEquipment | 8 | 12 | 20 | Equipment catalog, manufacturers (Phase 6) |
-| smallArmsEquipment | 5 | 7 | 12 | Infantry weapons catalog (Phase 9) |
-| crisisEvents | 6 | 9 | 15 | Crisis management system |
-| **SOCIAL & COLLAB** | | | | |
-| thinkpages | 24 | 35 | 59 | Social platform (posts, accounts, groups) |
-| activities | 6 | 4 | 10 | Live activity feed |
-| meetings | 9 | 18 | 27 | Cabinet meetings, officials |
-| policies | 8 | 15 | 23 | Policy management, tracking |
-| achievements | 3 | 1 | 4 | Achievement system |
-| **OPERATIONS** | | | | |
-| mycountry | 6 | 1 | 7 | MyCountry specialized endpoints |
-| notifications | 4 | 2 | 6 | Notification management |
-| quickactions | 8 | 13 | 21 | Quick actions orchestration |
-| scheduledChanges | 3 | 4 | 7 | Delayed impact changes |
-| **MAPS & GEOGRAPHY** | | | | Active January–June 2026 |
-| **CARDS & MYVAULT** | | | | |
-| vault | 5 | 2 | 7 | IxCredits balance, transactions, bonuses |
-| cards | 5 | 1 | 6 | Card browsing, ownership, stats |
-| cardPacks | 4 | 3 | 7 | Pack purchase, opening, management |
-| cardImages | 3 | 2 | 5 | Card background image management |
-| lore-cards | 4 | 4 | 8 | Wiki lore card generation |
-| card-market | 7 | 6 | 13 | Marketplace and auction system |
-| card-analytics | 3 | 2 | 5 | Card economy analytics |
-| crafting | 4 | 4 | 8 | Card crafting/fusion/evolution |
-| trading | 3 | 3 | 6 | P2P card trading |
-| ns-import | 10 | 11 | 21 | NationStates deck import |
-| **ELECTIONS & POLITICS** | | | | |
-| elections | 6 | 7 | 13 | Political parties, elections, legislature |
-| **NATIONAL ISSUES & FORUM** | | | | |
-| nationalIssues | 3 | 4 | 7 | Dynamic national issues engine, consequences |
-| forum | 3 | 2 | 5 | XenForo forum integration, widget embedding |
-| demoMode | 2 | 3 | 5 | Demo country cloning, seed data management |
-| **HISTORICAL** | | | | |
-| historical | 6 | 6 | 12 | Historical time-series data |
-| **AUTOSAVE SYSTEM** | | | | |
-| autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
-| autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
-| **TOTAL** | **—** | **—** | **~1,447** | |
-
-**Legend:** Q = Queries, M = Mutations
+| Router Namespace | Q | M | Sub | Total | Primary Source |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **`api.achievements`** | 6 | 3 | 0 | **9** | `src/server/api/routers/achievements/index.ts` |
+| **`api.activities`** | 14 | 6 | 0 | **20** | `src/server/api/routers/activities/index.ts` |
+| **`api.admin`** | 35 | 49 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
+| **`api.archetypes`** | 7 | 6 | 0 | **13** | `src/server/api/routers/archetypes/index.ts` |
+| **`api.atomicEconomic`** | 2 | 4 | 0 | **6** | `src/server/api/routers/atomicEconomic.ts` |
+| **`api.atomicGovernment`** | 5 | 7 | 0 | **12** | `src/server/api/routers/atomicGovernment.ts` |
+| **`api.atomicTax`** | 2 | 4 | 0 | **6** | `src/server/api/routers/atomicTax.ts` |
+| **`api.autosaveHistory`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveHistory.ts` |
+| **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
+| **`api.blurbs`** | 9 | 7 | 0 | **16** | `src/server/api/routers/blurbs/index.ts` |
+| **`api.builderDraft`** | 1 | 2 | 0 | **3** | `src/server/api/routers/builderDraft.ts` |
+| **`api.cache`** | 3 | 6 | 0 | **9** | `src/server/api/routers/cache.ts` |
+| **`api.cardAnalytics`** | 5 | 0 | 0 | **5** | `src/server/api/routers/card-analytics/index.ts` |
+| **`api.cardImages`** | 2 | 3 | 0 | **5** | `src/server/api/routers/cardImages.ts` |
+| **`api.cardMarket`** | 13 | 9 | 0 | **22** | `src/server/api/routers/card-market/index.ts` |
+| **`api.cardPacks`** | 4 | 6 | 0 | **10** | `src/server/api/routers/card-packs/index.ts` |
+| **`api.cards`** | 21 | 14 | 0 | **35** | `src/server/api/routers/cards/index.ts` |
+| **`api.cardXp`** | 0 | 1 | 0 | **1** | `src/server/api/routers/card-xp.ts` |
+| **`api.commons`** | 7 | 0 | 0 | **7** | `src/server/api/routers/commons.ts` |
+| **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
+| **`api.countryGeo`** | 3 | 10 | 0 | **13** | `src/server/api/routers/countryGeo.ts` |
+| **`api.crafting`** | 5 | 3 | 0 | **8** | `src/server/api/routers/crafting/index.ts` |
+| **`api.crisisEvents`** | 5 | 5 | 0 | **10** | `src/server/api/routers/crisis-events.ts` |
+| **`api.customTypes`** | 3 | 2 | 0 | **5** | `src/server/api/routers/customTypes.ts` |
+| **`api.demoMode`** | 3 | 5 | 0 | **8** | `src/server/api/routers/demo-mode.ts` |
+| **`api.diplomaticCore`** | 9 | 9 | 0 | **18** | `src/server/api/routers/diplomacy/core/index.ts` |
+| **`api.diplomaticCultural`** | 5 | 9 | 0 | **14** | `src/server/api/routers/diplomacy/cultural/index.ts` |
+| **`api.diplomaticEmbassies`** | 6 | 10 | 0 | **16** | `src/server/api/routers/diplomacy/embassies/index.ts` |
+| **`api.diplomaticInbox`** | 1 | 1 | 0 | **2** | `src/server/api/routers/diplomacy/inbox.ts` |
+| **`api.diplomaticIntelligence`** | 4 | 1 | 0 | **5** | `src/server/api/routers/diplomatic-intelligence/index.ts` |
+| **`api.diplomaticPolicies`** | 8 | 9 | 0 | **17** | `src/server/api/routers/diplomacy/policies/index.ts` |
+| **`api.diplomaticScenarios`** | 13 | 9 | 0 | **22** | `src/server/api/routers/diplomaticScenarios/index.ts` |
+| **`api.economicArchetypes`** | 4 | 4 | 0 | **8** | `src/server/api/routers/economicArchetypes/index.ts` |
+| **`api.economicComponents`** | 6 | 6 | 0 | **12** | `src/server/api/routers/economicComponents/index.ts` |
+| **`api.economics`** | 8 | 11 | 0 | **19** | `src/server/api/routers/economics/index.ts` |
+| **`api.elections`** | 6 | 8 | 0 | **14** | `src/server/api/routers/elections/index.ts` |
+| **`api.formulas`** | 4 | 2 | 0 | **6** | `src/server/api/routers/formulas.ts` |
+| **`api.forum`** | 11 | 15 | 0 | **26** | `src/server/api/routers/forum/index.ts` |
+| **`api.geoAdmin`** | 8 | 12 | 0 | **20** | `src/server/api/routers/geo/admin/cities.ts` |
+| **`api.geoCore`** | 0 | 0 | 0 | **0** | `src/server/api/routers/geo/core/index.ts` |
+| **`api.geoEditor`** | 6 | 20 | 0 | **26** | `src/server/api/routers/geo/editor/index.ts` |
+| **`api.geoFeatures`** | 9 | 30 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
+| **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
+| **`api.geoWiki`** | 4 | 0 | 0 | **4** | `src/server/api/routers/geo/wiki.ts` |
+| **`api.government`** | 8 | 10 | 0 | **18** | `src/server/api/routers/government/index.ts` |
+| **`api.governmentComponents`** | 5 | 5 | 0 | **10** | `src/server/api/routers/governmentComponents/index.ts` |
+| **`api.heraldry`** | 10 | 6 | 0 | **16** | `src/server/api/routers/heraldry/index.ts` |
+| **`api.historical`** | 12 | 0 | 0 | **12** | `src/server/api/routers/historical/index.ts` |
+| **`api.intelAlerts`** | 6 | 5 | 0 | **11** | `src/server/api/routers/intelligence/alerts/index.ts` |
+| **`api.intelAnalytics`** | 9 | 3 | 0 | **12** | `src/server/api/routers/intelligence/analytics/index.ts` |
+| **`api.intelCore`** | 8 | 3 | 0 | **11** | `src/server/api/routers/intelligence/core/index.ts` |
+| **`api.intelligence`** | 6 | 6 | 0 | **12** | `src/server/api/routers/intelligence/index.ts` |
+| **`api.intelligenceBriefing`** | 4 | 3 | 0 | **7** | `src/server/api/routers/intelligence/index.ts` |
+| **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
+| **`api.ixnayid`** | 3 | 6 | 0 | **9** | `src/server/api/routers/ixnayid.ts` |
+| **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
+| **`api.loreCards`** | 15 | 9 | 0 | **24** | `src/server/api/routers/lore-cards/index.ts` |
+| **`api.lorewards`** | 16 | 4 | 0 | **20** | `src/server/api/routers/lorewards/index.ts` |
+| **`api.meetings`** | 9 | 20 | 0 | **29** | `src/server/api/routers/meetings/index.ts` |
+| **`api.messages`** | 4 | 11 | 0 | **15** | `src/server/api/routers/messages/index.ts` |
+| **`api.militaryEquipment`** | 9 | 8 | 0 | **17** | `src/server/api/routers/militaryEquipment/index.ts` |
+| **`api.mycountry`** | 10 | 1 | 0 | **11** | `src/server/api/routers/mycountry/index.ts` |
+| **`api.narrator`** | 4 | 3 | 0 | **7** | `src/server/api/routers/narrator/index.ts` |
+| **`api.nationalIdentity`** | 1 | 3 | 0 | **4** | `src/server/api/routers/nationalIdentity.ts` |
+| **`api.nationalIssues`** | 13 | 14 | 0 | **27** | `src/server/api/routers/national-issues/index.ts` |
+| **`api.notifications`** | 8 | 15 | 1 | **24** | `src/server/api/routers/notifications/index.ts` |
+| **`api.npcPersonalities`** | 7 | 5 | 0 | **12** | `src/server/api/routers/npcPersonalities/index.ts` |
+| **`api.nsImport`** | 13 | 16 | 0 | **29** | `src/server/api/routers/ns-import/index.ts` |
+| **`api.onoma`** | 17 | 27 | 0 | **44** | `src/server/api/routers/onoma/index.ts` |
+| **`api.policies`** | 10 | 15 | 0 | **25** | `src/server/api/routers/policies/index.ts` |
+| **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
+| **`api.quickActions`** | 8 | 14 | 0 | **22** | `src/server/api/routers/quickactions/index.ts` |
+| **`api.realmsPipeline`** | 0 | 3 | 0 | **3** | `src/server/api/routers/geo/realms-pipeline.ts` |
+| **`api.resources`** | 3 | 3 | 0 | **6** | `src/server/api/routers/resources.ts` |
+| **`api.roles`** | 4 | 6 | 0 | **10** | `src/server/api/routers/roles/index.ts` |
+| **`api.scheduledChanges`** | 3 | 5 | 0 | **8** | `src/server/api/routers/scheduledChanges.ts` |
+| **`api.security`** | 11 | 30 | 0 | **41** | `src/server/api/routers/security/index.ts` |
+| **`api.smallArmsEquipment`** | 7 | 8 | 0 | **15** | `src/server/api/routers/smallArmsEquipment/index.ts` |
+| **`api.sports`** | 30 | 40 | 0 | **70** | `src/server/api/routers/sports/index.ts` |
+| **`api.studio`** | 8 | 7 | 0 | **15** | `src/server/api/routers/studio/index.ts` |
+| **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
+| **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
+| **`api.taxSystem`** | 3 | 8 | 0 | **11** | `src/server/api/routers/taxSystem/index.ts` |
+| **`api.thinkpages`** | 24 | 36 | 0 | **60** | `src/server/api/routers/thinkpages/index.ts` |
+| **`api.trading`** | 4 | 4 | 0 | **8** | `src/server/api/routers/trading/index.ts` |
+| **`api.transport`** | 6 | 8 | 0 | **14** | `src/server/api/routers/transport/index.ts` |
+| **`api.unifiedAtomic`** | 5 | 1 | 0 | **6** | `src/server/api/routers/unifiedAtomic.ts` |
+| **`api.userLogging`** | 8 | 3 | 0 | **11** | `src/server/api/routers/user-logging.ts` |
+| **`api.users`** | 13 | 11 | 0 | **24** | `src/server/api/routers/users/index.ts` |
+| **`api.vault`** | 29 | 22 | 0 | **51** | `src/server/api/routers/vault/index.ts` |
+| **`api.wiki`** | 55 | 25 | 0 | **80** | `src/server/api/routers/wikios/index.ts` |
+| **`api.wikiCache`** | 6 | 6 | 0 | **12** | `src/server/api/routers/wikiCache.ts` |
+| **`api.wikiImporter`** | 4 | 2 | 0 | **6** | `src/server/api/routers/wikiImporter/index.ts` |
+| **`api.wikios`** | 55 | 25 | 0 | **80** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **788** | **786** | **1** | **1576** | **94 registered namespaces** |
+<!-- END_DOCS:API_INVENTORY -->
 
 ---
 

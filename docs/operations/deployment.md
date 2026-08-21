@@ -22,7 +22,7 @@ IxStats ships as a Next.js app with a custom Node server (`server.mjs`). Product
 - Graceful shutdown handlers respond to `SIGTERM` and `SIGINT`
 
 ## Base Path & Hosting
-- Script `scripts/with-base-path.sh` handles deployments under `/projects/ixstats`
+- Script `scripts/with-base-path.sh` handles deployments under `/projects/ixstates`
 - Update `NEXT_PUBLIC_BASE_PATH` and reverse-proxy settings if hosting path changes
 - Ensure static assets under `public/` are served with the same base path
 

@@ -2,7 +2,7 @@
 
 The authoritative index for all IxStates architecture, systems, operations, specifications, reference, and research. Version information is governed by the [Version Registry](../src/lib/buildVersion.ts) — see [Versioning & Release Architecture](reference/revision.md).
 
-> Last refreshed August 2026 — **IxStates 1.1.1 "Ogma"** (Alpha), branch `v2`. Treat this structure as the source of truth.  
+> Refreshed August 2026 — platform **IxStates 1.4.0 "Ogma"** (Release Candidate), branch `v2`. Treat this structure as the source of truth.  
 > Active implementation plans live in [`plans/`](../plans/); historical completion records live in [`archive/`](archive/) and [`plans/archive/`](../plans/archive/).
 
 ---

@@ -1,9 +1,9 @@
 # Production Deployment Checklist
 
-**Last Updated:** June 2026
-**Version:** IxStates 1.1.1 "Ogma"
+**Last Updated:** August 2026
+**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
 
-Complete checklist for deploying IxStats to production. Follow these steps to ensure a safe, successful deployment.
+Complete checklist for deploying IxStates to production. Follow these steps to ensure a safe, successful deployment.
 
 ## Table of Contents
 - [Pre-Deployment](#pre-deployment)
@@ -25,7 +25,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
   ```bash
   bun run test
   bun run test:critical
-  bun run check  # Lint + typecheck
+  bun run typecheck
   ```
 
 - [ ] **No TypeScript errors**

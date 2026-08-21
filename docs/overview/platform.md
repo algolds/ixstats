@@ -20,23 +20,59 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 | New Player | Guided onboarding, documentation, tutorials | `/help`, `/getting-started`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
-- Platform: **IxStates 1.1.1 "Ogma"** (channel: Alpha) — OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at `src/lib/buildVersion.ts`.
-- Next.js 16.2.9, React 19.2.7, Prisma 6.19.3, tRPC 11.17, Tailwind CSS 4.3
-- 90 tRPC routers, 1,450+ API endpoints, 296 Prisma models, 750+ components
-- Documentation updates must accompany feature work; use this overview and [`docs/README.md`](../README.md) as canonical entry points
-- **After a major change, reference [`revision.md`](../reference/revision.md) and confirm with the team whether any version should bump.**
+
+IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **release name** + **channel**). Apps / Engines / Systems each carry a single capability integer. Full spec: [`revision.md`](../reference/revision.md); single source of truth is the **Version Registry** at [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts).
+
+<!-- BEGIN_DOCS:VERSION_MATRIX -->
+| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
+| :--- | :--- | :---: | :--- |
+| **Platform** | **IxStates (Ogma)** | **1.4.0 "Ogma"** | **Release Candidate** |
+| **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
+| | WikiOS | v1 | Headless Wiki & Canvas Architecture |
+| | IxVault | v2 | Cards, Credits & Marketplace |
+| **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
+| | Concord Engine | v2 | Living World Simulation & Events |
+| | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
+| **Systems** | MyCountry UI | v5 | 4-Tier Command Architecture |
+| | Nation Builder | v3 | Statecraft & Tax Builder Subsystems |
+| | ThinkPages | v2 | Social Knowledge & Feed Components |
+| | Achievements | v2 | Awards & LoreWards Resync |
+| | Stash | v1 | Article Stashing (was LoreStash) |
+| | Repository | v2 | Commons Media Explorer |
+| | Halo | v4 | Contextual Overlay System |
+| | Onoma | v4 | Conlang & Linguistics Studio |
+| **Design** | Facet | v2 | Refraction / Depth Design System |
+<!-- END_DOCS:VERSION_MATRIX -->
+
+### Active Frameworks & Tooling
+
+<!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
+| Package / Layer | Version | Notes |
+| :--- | :---: | :--- |
+| **Next.js** | 16.3.0 | App Router architecture, Turbopack |
+| **React** | 19.2.8 | React 19 concurrent features |
+| **TypeScript** | 7.0.2 | Native Go Engine concurrency |
+| **Prisma** | 6.19.3 | Multi-file schema partitioning |
+| **tRPC** | 11.18.0 | Domain-split modular routers |
+| **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
+| **Zod** | 4.4.3 | Schema validation |
+| **ESLint** | 10.8.0 | Flat config with architecture guard |
+| **Jest** | 30.4.2 | Unit and characterization suites |
+| **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
+<!-- END_DOCS:FRAMEWORK_MATRIX -->
+
+Documentation updates must accompany feature work; use this overview and [`docs/README.md`](../README.md) as canonical entry points. After a major change, reference [`revision.md`](../reference/revision.md) and confirm with the team whether any version should bump.
 
 ## Platform Hierarchy
 
 ```
-IxStates (platform — versioned: 1.1.1 "Ogma", channel Alpha)
-├── Apps (independent version): IxWorld (maps; standalone deployment: IxMaps), WikiOS (wiki software powering the IxWiki content; incl Canvas editor sub-system + Image Repository), IxVault (incl IxCards, IxCredits, Card Crafting/Trading/Marketplace/Packs/Lore Cards/NS Import)
-├── Engines (internal sim cores, independent version): MyCountry (nation sim), Concord (living-world — time/diplomacy/crises/NPCs), Atlas (geo/worldgen — powers IxWorld)
-├── Core Systems (independent version): MyCountry ★ (flagship, with grouped subsystems: Military & Security, Governance & Politics, Economy & Resources, Intelligence & Diplomacy, National Management), MyCountry Builder (standalone core system, not under MyCountry), ThinkPages (incl ThinkShare, ThinkTanks, IxTwitter), Achievements & Awards (incl LoreWards), Stash, Repository, Blurbs, Halo, Admin CMS
-├── Design System (independent version): Facet (glass/refraction/depth)
+IxStates (platform — release: Ogma, channel: Release Candidate)
+├── Apps (capability version): IxWorld, WikiOS (incl Canvas editor + Image Repository), IxVault (Cards/Credits/Packs/Lore)
+├── Engines (sim cores): MyCountry Engine, Concord (living-world/crises/NPCs), Atlas (spatial/worldgen)
+├── Core Systems: MyCountry (command UI), Builder (statecraft/tax), ThinkPages (knowledge/feed), Achievements, Stash, Repository, Halo, Onoma
+├── Design System: Facet (glass/physics)
 ├── Platform Utilities: IxTime, IxnayID
-├── Inherits platform version: IxForum, Experimental Labs (Vexel/Onoma/Strata/Dynas/Nomora)
-├── Infrastructure: Notifications, Help, c15t, Flag Service, WebSocket, Cron, Cache/RateLimit/Auth
+├── Inherits platform version: IxForum, Experimental Labs (Onoma/Vexel/Sandbox)
 └── Navigation Hubs: Dashboard, Explore/Countries, Feed
 ```
 

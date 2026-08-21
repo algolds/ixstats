@@ -106,10 +106,10 @@ export function MyCountryRouter() {
 ### Active Hub Routers:
 | Router | Location | Sub-Sections |
 | :--- | :--- | :--- |
-| **`MyCountryRouter`** | [`src/components/mycountry/MyCountryRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/mycountry/MyCountryRouter.tsx) | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
-| **`VaultRouter`** | [`src/components/vault/VaultRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/vault/VaultRouter.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
-| **`ThinkPagesRouter`**| [`src/components/thinkpages/ThinkPagesRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/thinkpages/ThinkPagesRouter.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
-| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](file:///home/jxsig/projects/ixstats/src/components/dashboard/DashboardRouter.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
+| **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
+| **`VaultRouter`** | [`src/components/vault/VaultRouter.tsx`](../../src/components/vault/VaultRouter.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
+| **`ThinkPagesRouter`**| [`src/components/thinkpages/ThinkPagesRouter.tsx`](../../src/components/thinkpages/ThinkPagesRouter.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
+| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
 
 ---
 

@@ -214,7 +214,7 @@ export function useDiplomaticScenariosAdmin() {
     }
 
     Promise.all(
-      Array.from(selectedIds).map((id) => updateMutation.mutateAsync({ id, status: "archived" }))
+      Array.from(selectedIds).map((id) => updateMutation.mutateAsync({ id, status: "expired" }))
     )
       .then(() => {
         notify.success("Success", `Deactivated ${selectedIds.size} scenarios`);

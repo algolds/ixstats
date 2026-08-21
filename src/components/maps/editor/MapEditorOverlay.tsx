@@ -208,12 +208,12 @@ export default function MapEditorOverlay({
       state={state}
       panelConfigs={panelConfigs}
       setPanelConfigs={setPanelConfigs}
-      activeSidebarTab={activeSidebarTab}
-      setActiveSidebarTab={setActiveSidebarTab}
+      activeSidebarTab={activeSidebarTab as any}
+      setActiveSidebarTab={setActiveSidebarTab as any}
       handleMoveTab={handleMoveTab as any}
       handleChangePanelPlacement={handleChangePanelPlacement}
-      layerStates={layerStates}
-      setLayerStates={setLayerStates}
+      layerStates={layerStates as any}
+      setLayerStates={setLayerStates as any}
       editorVisibleLayers={editorVisibleLayers}
       toggleEditorLayer={toggleEditorLayer as any}
       featureCounts={featureCounts}

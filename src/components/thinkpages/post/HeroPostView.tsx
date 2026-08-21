@@ -145,7 +145,7 @@ export function HeroPostView({
                 <span className="inline-flex items-center gap-1 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-slate-300">
                   {post.account.country.flag && (
                     <img
-                      src={normalizeFlagUrl(post.account.country.flag)}
+                      src={normalizeFlagUrl(post.account.country.flag) ?? undefined}
                       alt=""
                       className="h-2.5 w-3.5 rounded-sm object-cover"
                       onError={(e) => {

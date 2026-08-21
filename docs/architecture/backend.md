@@ -7,7 +7,7 @@
 
 ## 1. Overview & Router Organization
 
-All backend API logic in IxStates is exposed through end-to-end type-safe **tRPC routers**. Routers are declared under `src/server/api/routers/` and composed into the unified `appRouter` in [`src/server/api/root.ts`](file:///home/jxsig/projects/ixstats/src/server/api/root.ts).
+All backend API logic in IxStates is exposed through end-to-end type-safe **tRPC routers**. Routers are declared under `src/server/api/routers/` and composed into the unified `appRouter` in [`src/server/api/root.ts`](../../src/server/api/root.ts).
 
 ```
 src/server/

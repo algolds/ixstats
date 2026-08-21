@@ -68,6 +68,8 @@
     "dev:ixworld": "NEXT_PUBLIC_IXWORLD_STANDALONE=true ./start-development.sh",
     "dev:local": "./scripts/dev-local.sh",
     "dev:server": "node server.mjs",
+    "docs:check": "bun scripts/docs/sync-reference-docs.ts --check",
+    "docs:sync": "bun scripts/docs/sync-reference-docs.ts --write",
     "diagnostics": "./scripts/diagnostics/run-diagnostics.sh",
     "diagnostics:bench": "bun scripts/diagnostics/benchmark.ts",
     "diagnostics:build": "./scripts/diagnostics/build-analysis.sh",

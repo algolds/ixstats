@@ -76,7 +76,7 @@ export default function GovernmentComponentsPage() {
         />
 
         {/* Statistics */}
-        <GovernmentComponentStats stats={admin.stats} />
+        <GovernmentComponentStats stats={admin.stats as any} />
 
         {/* Components Grid */}
         {admin.isLoading ? (

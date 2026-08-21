@@ -155,7 +155,7 @@ export const diplomaticCulturalCompatibilityScoresRouter = createTRPCRouter({
             name: sourceCountry.name,
             economicTier: sourceCountry.economicTier,
             continent: sourceCountry.continent || undefined,
-            flagUrl: normalizeFlagUrl(sourceCountry.flag),
+            flagUrl: normalizeFlagUrl(sourceCountry.flag) ?? undefined,
           };
 
           const country2Info: CountryBasicInfo = {
@@ -163,7 +163,7 @@ export const diplomaticCulturalCompatibilityScoresRouter = createTRPCRouter({
             name: targetCountry.name,
             economicTier: targetCountry.economicTier,
             continent: targetCountry.continent || undefined,
-            flagUrl: normalizeFlagUrl(targetCountry.flag),
+            flagUrl: normalizeFlagUrl(targetCountry.flag) ?? undefined,
           };
 
           const diplomaticRel: DiplomaticRelationship | undefined = relation
@@ -282,7 +282,7 @@ export const diplomaticCulturalCompatibilityScoresRouter = createTRPCRouter({
             name: sourceCountry.name,
             economicTier: sourceCountry.economicTier,
             continent: sourceCountry.continent || undefined,
-            flagUrl: normalizeFlagUrl(sourceCountry.flag),
+            flagUrl: normalizeFlagUrl(sourceCountry.flag) ?? undefined,
           };
 
           const country2Info: CountryBasicInfo = {
@@ -290,7 +290,7 @@ export const diplomaticCulturalCompatibilityScoresRouter = createTRPCRouter({
             name: targetCountry.name,
             economicTier: targetCountry.economicTier,
             continent: targetCountry.continent || undefined,
-            flagUrl: normalizeFlagUrl(targetCountry.flag),
+            flagUrl: normalizeFlagUrl(targetCountry.flag) ?? undefined,
           };
 
           const diplomaticRel: DiplomaticRelationship | undefined = relation
