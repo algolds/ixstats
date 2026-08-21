@@ -1,13 +1,18 @@
 /**
- * Architecture guard (Phase 0) — enforces arch.md without boiling the ocean.
+ * Architecture guard (Phase 0/1) — enforces arch.md without boiling the ocean.
  *
  * Two checks, both designed to FREEZE regressions while the codebase is
  * incrementally split down toward the arch.md ideals:
  *
  *   1. File-size ceiling (the "no god files" rule)
- *      - DEFAULT_MAX (700): most router / type files must split before this.
- *      - RELAXED_MAX (900): files in RELAXED_FILES legitimately stay flat
- *        (data tables, core shared type defs) and get the higher ceiling.
+ *      - Scans active .ts and .tsx files across routers, types, app, components, hooks, and lib.
+ *      - Ceilings:
+ *          • src/server/api/routers: 700
+ *          • src/types: 700 (900 for explicit tables in RELAXED_FILES)
+ *          • src/app: 700
+ *          • src/components: 700
+ *          • src/hooks: 500
+ *          • src/lib: 700
  *      - Ratchet: every file already over its ceiling is recorded in
  *        arch-baseline.json at its current size and may NOT grow. New files
  *        must be under their ceiling. As files are split, re-run with --update
@@ -16,15 +21,16 @@
  *   2. Cross-router imports (the "no cross-router imports" rule)
  *      - A router under routers/<A>/ may not import from routers/<B>/.
  *      - Shared primitives belong in src/server/shared/, not another router.
- *      - Current known violations are listed in CROSS_ROUTER_ALLOWLIST so the
- *        check is green today; remove entries as they are fixed.
+ *      - Uses AST-backed ts-morph analysis for imports, exports, and dynamic imports.
  *
  * Usage:
- *   bun run scripts/audit/audit-arch.ts            # check (exit 1 on violation)
- *   bun run scripts/audit/audit-arch.ts --update   # rewrite the size baseline
+ *   bun run scripts/audit/audit-arch.ts              # check (exit 1 on violation)
+ *   bun run scripts/audit/audit-arch.ts --update     # ratchet down baseline
+ *   bun run scripts/audit/audit-arch.ts --bootstrap  # bootstrap baseline for newly scanned roots
  */
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
 import { Project, SyntaxKind, type StringLiteral } from "ts-morph";
 
 export const DEFAULT_ROOT = process.cwd();
@@ -33,7 +39,22 @@ export const TYPES_DIR = "src/types";
 export const BASELINE_PATH = "scripts/audit/arch-baseline.json";
 
 export const DEFAULT_MAX = 700;
+export const HOOKS_MAX = 500;
 export const RELAXED_MAX = 900;
+
+export interface ScannedRoot {
+  dir: string;
+  max: number;
+}
+
+export const SCANNED_ROOTS: ScannedRoot[] = [
+  { dir: "src/server/api/routers", max: 700 },
+  { dir: "src/types", max: 700 },
+  { dir: "src/app", max: 700 },
+  { dir: "src/components", max: 700 },
+  { dir: "src/hooks", max: 500 },
+  { dir: "src/lib", max: 700 },
+];
 
 /** Files that legitimately stay as a single large file (data tables / core type defs). */
 export const RELAXED_FILES = new Set<string>([
@@ -61,6 +82,19 @@ export interface ImportViolation {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+export function isScannedFile(entryName: string): boolean {
+  if (
+    entryName.endsWith(".test.ts") ||
+    entryName.endsWith(".test.tsx") ||
+    entryName.endsWith(".spec.ts") ||
+    entryName.endsWith(".spec.tsx") ||
+    entryName.endsWith(".d.ts")
+  ) {
+    return false;
+  }
+  return entryName.endsWith(".ts") || entryName.endsWith(".tsx");
+}
+
 export function walk(dir: string, rootDir = DEFAULT_ROOT): string[] {
   const out: string[] = [];
   const abs = path.join(rootDir, dir);
@@ -68,18 +102,29 @@ export function walk(dir: string, rootDir = DEFAULT_ROOT): string[] {
   for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
     const rel = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "__tests__" || entry.name === "node_modules" || entry.name === "fixtures")
+      if (
+        entry.name === "__tests__" ||
+        entry.name === "node_modules" ||
+        entry.name === "fixtures" ||
+        entry.name === ".next" ||
+        entry.name.startsWith(".")
+      ) {
         continue;
+      }
       out.push(...walk(rel, rootDir));
-    } else if (
-      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) &&
-      !entry.name.endsWith(".test.ts") &&
-      !entry.name.endsWith(".test.tsx")
-    ) {
+    } else if (isScannedFile(entry.name)) {
       out.push(rel.split(path.sep).join("/"));
     }
   }
   return out;
+}
+
+export function getAllScannedFiles(rootDir = DEFAULT_ROOT, roots = SCANNED_ROOTS): string[] {
+  const all: string[] = [];
+  for (const root of roots) {
+    all.push(...walk(root.dir, rootDir));
+  }
+  return all;
 }
 
 export function lineCount(relPath: string, rootDir = DEFAULT_ROOT): number {
@@ -91,7 +136,9 @@ export function lineCount(relPath: string, rootDir = DEFAULT_ROOT): number {
 }
 
 export function ceilingFor(relPath: string): number {
-  return RELAXED_FILES.has(relPath) ? RELAXED_MAX : DEFAULT_MAX;
+  if (RELAXED_FILES.has(relPath)) return RELAXED_MAX;
+  if (relPath.startsWith("src/hooks/") || relPath.startsWith("src/hooks")) return HOOKS_MAX;
+  return DEFAULT_MAX;
 }
 
 /** routers/<segment>/... → returns the router-group segment, or file stem for flat files. */
@@ -112,40 +159,144 @@ export function routerGroup(relPath: string, routersDir = ROUTERS_DIR): string |
 
 export type Baseline = Record<string, number>;
 
-export function loadBaseline(rootDir = DEFAULT_ROOT): Baseline {
-  const abs = path.join(rootDir, BASELINE_PATH);
+export function loadBaseline(rootDir = DEFAULT_ROOT, baselinePath = BASELINE_PATH): Baseline {
+  const abs = path.join(rootDir, baselinePath);
   if (!fs.existsSync(abs)) return {};
   return JSON.parse(fs.readFileSync(abs, "utf8")) as Baseline;
 }
 
-export function computeOffenders(rootDir = DEFAULT_ROOT): Baseline {
+export function sortBaseline(baseline: Baseline): Baseline {
+  return Object.fromEntries(
+    Object.entries(baseline).sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    })
+  );
+}
+
+export function computeOffenders(rootDir = DEFAULT_ROOT, roots = SCANNED_ROOTS): Baseline {
   const offenders: Baseline = {};
-  for (const f of [...walk(ROUTERS_DIR, rootDir), ...walk(TYPES_DIR, rootDir)]) {
+  for (const f of getAllScannedFiles(rootDir, roots)) {
     const lines = lineCount(f, rootDir);
     if (lines > ceilingFor(f)) offenders[f] = lines;
   }
   return offenders;
 }
 
-export function updateBaseline(rootDir = DEFAULT_ROOT): void {
+export function updateBaseline(rootDir = DEFAULT_ROOT, baselinePath = BASELINE_PATH): void {
   const current = computeOffenders(rootDir);
-  const prev = loadBaseline(rootDir);
-  // Ratchet down only: keep the smaller of prev/current so the baseline never inflates.
-  const merged: Baseline = {};
+  const prev = loadBaseline(rootDir, baselinePath);
+  const errors: string[] = [];
+
+  // 1. Check for newly introduced over-ceiling files or grown files
   for (const [f, lines] of Object.entries(current)) {
-    merged[f] = f in prev ? Math.min(prev[f]!, lines) : lines;
+    const allowed = prev[f];
+    const ceiling = ceilingFor(f);
+    if (allowed === undefined) {
+      errors.push(
+        `NEW god file cannot be auto-added by --update: ${f} = ${lines} lines (ceiling ${ceiling}). Split it or use --bootstrap if introducing new roots.`
+      );
+    } else if (lines > allowed) {
+      errors.push(
+        `GROWN past baseline: ${f} = ${lines} lines (baseline ${allowed}, ceiling ${ceiling}). Cannot inflate baseline with --update.`
+      );
+    }
   }
-  const sorted = Object.fromEntries(Object.entries(merged).sort((a, b) => b[1] - a[1]));
-  fs.writeFileSync(path.join(rootDir, BASELINE_PATH), JSON.stringify(sorted, null, 2) + "\n");
+
+  if (errors.length > 0) {
+    console.error("✗ Baseline update blocked:\n");
+    for (const e of errors) console.error(`  • ${e}`);
+    process.exit(1);
+  }
+
+  // 2. Ratchet down: keep smaller of prev/current, prune files that dropped <= ceiling
+  const merged: Baseline = {};
+  for (const [f, prevAllowed] of Object.entries(prev)) {
+    const fileAbs = path.join(rootDir, f);
+    if (!fs.existsSync(fileAbs)) {
+      // File deleted: prune from baseline
+      continue;
+    }
+    const currentLines = lineCount(f, rootDir);
+    if (currentLines <= ceilingFor(f)) {
+      // File shrank below ceiling: prune from baseline
+      continue;
+    }
+    merged[f] = Math.min(prevAllowed, currentLines);
+  }
+
+  const sorted = sortBaseline(merged);
+  fs.writeFileSync(path.join(rootDir, baselinePath), JSON.stringify(sorted, null, 2) + "\n");
   console.log(
-    `✓ Baseline updated: ${Object.keys(merged).length} ratcheted files → ${BASELINE_PATH}`
+    `✓ Baseline updated: ${Object.keys(sorted).length} ratcheted files → ${baselinePath}`
   );
 }
 
-export function checkSizes(rootDir = DEFAULT_ROOT): string[] {
-  const baseline = loadBaseline(rootDir);
+export function getDirtyScannedFiles(rootDir = DEFAULT_ROOT): string[] {
+  try {
+    const statusOutput = execSync("git status --porcelain", {
+      cwd: rootDir,
+      encoding: "utf8",
+    });
+    const lines = statusOutput.split("\n").filter(Boolean);
+    const dirtyFiles: string[] = [];
+    for (const line of lines) {
+      const filePath = line.slice(3).trim().split(" -> ").pop()!;
+      for (const root of SCANNED_ROOTS) {
+        if (filePath.startsWith(root.dir) && isScannedFile(filePath)) {
+          dirtyFiles.push(filePath);
+          break;
+        }
+      }
+    }
+    return dirtyFiles;
+  } catch {
+    return [];
+  }
+}
+
+export function bootstrapBaseline(
+  rootDir = DEFAULT_ROOT,
+  baselinePath = BASELINE_PATH,
+  options?: { force?: boolean }
+): void {
+  if (!options?.force) {
+    const dirty = getDirtyScannedFiles(rootDir);
+    if (dirty.length > 0) {
+      console.error(
+        "✗ Bootstrap refused: dirty uncommitted changes found in scanned source roots:\n"
+      );
+      for (const d of dirty) console.error(`  • ${d}`);
+      console.error("\nCommit or stash changes before bootstrapping baseline.");
+      process.exit(1);
+    }
+  }
+
+  const current = computeOffenders(rootDir);
+  const prev = loadBaseline(rootDir, baselinePath);
+  const merged: Baseline = {};
+
+  for (const [f, lines] of Object.entries(current)) {
+    if (f in prev) {
+      // For existing covered files, never inflate allowance
+      merged[f] = Math.min(prev[f]!, lines);
+    } else {
+      // Newly scanned root: bootstrap at exact current count
+      merged[f] = lines;
+    }
+  }
+
+  const sorted = sortBaseline(merged);
+  fs.writeFileSync(path.join(rootDir, baselinePath), JSON.stringify(sorted, null, 2) + "\n");
+  console.log(
+    `✓ Baseline bootstrapped: ${Object.keys(sorted).length} ratcheted files → ${baselinePath}`
+  );
+}
+
+export function checkSizes(rootDir = DEFAULT_ROOT, baselinePath = BASELINE_PATH): string[] {
+  const baseline = loadBaseline(rootDir, baselinePath);
   const errors: string[] = [];
-  for (const f of [...walk(ROUTERS_DIR, rootDir), ...walk(TYPES_DIR, rootDir)]) {
+  for (const f of getAllScannedFiles(rootDir)) {
     const lines = lineCount(f, rootDir);
     const ceiling = ceilingFor(f);
     if (lines <= ceiling) continue;
@@ -337,6 +488,12 @@ export function checkCrossRouter(rootDir = DEFAULT_ROOT): string[] {
 // ─── CLI Entrypoint ───────────────────────────────────────────────────────────
 
 export function runCLI(): void {
+  if (process.argv.includes("--bootstrap")) {
+    const force = process.argv.includes("--force");
+    bootstrapBaseline(DEFAULT_ROOT, BASELINE_PATH, { force });
+    process.exit(0);
+  }
+
   if (process.argv.includes("--update")) {
     updateBaseline();
     process.exit(0);

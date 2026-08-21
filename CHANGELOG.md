@@ -33,6 +33,17 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 📏 Architecture Size Ratchet & Monolith Decomposition (Wave 4: Plan 154)
+
+- **Restored and Broadened Architecture Size Ratchet (Plan 154)**:
+  - Split oversized routers into focused domain subrouters under the 700-line ceiling with exact 1-to-1 AST procedure parity via `mergeRouters`:
+    - `vault/admin/`: `users.ts`, `store.ts`, `items.ts` (pruned monolithic `vault/admin.ts`).
+    - `geo/editor/linkage/`: `assignment.ts`, `validation.ts` (pruned monolithic `geo/editor/linkage.ts`).
+    - `geo/features/subdivisions/`: `crud.ts`, `generation.ts` (pruned monolithic `geo/features/subdivisions.ts`).
+  - Broadened active-source discovery across `.ts` and `.tsx` files in `src/server/api/routers` (700), `src/types` (700/900), `src/app` (700), `src/components` (700), `src/hooks` (500), and `src/lib` (700).
+  - Implemented strict ratchet invariants in `scripts/audit/audit-arch.ts` ensuring `--update` ratchets down only and blocks new or grown god files, with dirty-tree guarded `--bootstrap` for initializing new roots.
+  - Added test suite `src/tests/scripts/audit-arch.test.ts` covering active-source scanning, ceiling rules, exclusions, and ratchet lifecycle transitions.
+
 ### 🛡️ AST-Backed Import Boundary Enforcement (Wave 3: Plan 153)
 
 - **AST-Backed Router Import Boundary Guard (Plan 153)**:
