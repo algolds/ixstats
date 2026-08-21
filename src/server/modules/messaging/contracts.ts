@@ -7,6 +7,8 @@
 
 import type { PrismaClient } from "@prisma/client";
 
+export const DEFAULT_USER_MESSAGE_CAP = 1000;
+
 export type MessageSource = "thinkshare" | "thinktank" | "diplomatic" | "wiki" | "forum" | "system";
 
 export type MessageFolder =

@@ -10,13 +10,13 @@ import { MessagesInputBar } from "./MessagesInputBar";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
-import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
-import { Crown, Shield, ShieldAlert, TrendingUp, Radio, Sparkles, X, ExternalLink, BellRing } from "lucide-react";
+import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
+import { Crown, Shield, ShieldAlert, TrendingUp, Radio, Sparkles, X, ExternalLink, BellRing, BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
 import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
-import { ThinktankDocsModal } from "./ThinktankDocsModal";
+import { LoreBotFeedView } from "./LoreBotFeedView";
 import Link from "next/link";
 
 // Pretext shrinkwrap / time formatting helper
@@ -185,14 +185,11 @@ export function MessagesChatPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddParticipantsOpen, setIsAddParticipantsOpen] = useState(false);
-  const [isDocsOpen, setIsDocsOpen] = useState(false);
 
   const isSystemThread =
     conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
-  const isThinkTank =
-    conversation.source === "thinktank" ||
-    activeFolder === "groups" ||
-    conversation.type === "group";
+  const isLoreBotThread =
+    conversation.id === LOREBOT_CONVERSATION_ID || conversation.source === "lorebot";
 
   const utils = api.useUtils();
 
@@ -220,7 +217,7 @@ export function MessagesChatPanel({
         userId: currentUserId,
       },
       {
-        enabled: !isSystemThread && !!conversation.id && !!currentUserId,
+        enabled: !isSystemThread && !isLoreBotThread && !!conversation.id && !!currentUserId,
         refetchOnWindowFocus: false,
         staleTime: 30000,
       }
@@ -529,7 +526,6 @@ export function MessagesChatPanel({
         isSidebarCollapsed={isSidebarCollapsed}
         onViewDetails={() => setIsDetailsOpen(true)}
         onAddParticipants={() => setIsAddParticipantsOpen(true)}
-        onOpenDocs={isThinkTank ? () => setIsDocsOpen(true) : undefined}
         onMuteToggle={onMuteToggle}
         onArchiveToggle={onArchiveToggle}
         onDeleteConversation={onDeleteConversation}
@@ -568,6 +564,8 @@ export function MessagesChatPanel({
             )}
             <div ref={messagesEndRef} />
           </div>
+        ) : isLoreBotThread ? (
+          <LoreBotFeedView currentUserId={currentUserId} />
         ) : (
           <div className="py-2">
             {messages.map((message: any, index: number, arr: any[]) => {
@@ -597,8 +595,8 @@ export function MessagesChatPanel({
         )}
       </div>
 
-      {/* Footer: Read-only banner for system thread or interactive input bar */}
-      {isSystemThread ? (
+      {/* Footer: Read-only banner for system thread / LoreBot or interactive input bar */}
+      {isSystemThread || isLoreBotThread ? (
         <div className="border-border/40 bg-card/60 text-muted-foreground flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-xs backdrop-blur-md">
           <Shield className="h-3.5 w-3.5 text-amber-500" />
           <span className="text-[11px] font-medium">
@@ -651,17 +649,6 @@ export function MessagesChatPanel({
               await onAddParticipant(userId);
             }
           }}
-        />
-      )}
-
-      {isDocsOpen && (
-        <ThinktankDocsModal
-          isOpen={isDocsOpen}
-          onClose={() => setIsDocsOpen(false)}
-          groupId={conversation.sourceId || conversation.id}
-          groupName={conversation.name || "ThinkTank"}
-          currentUserId={currentUserId}
-          isMember={true}
         />
       )}
     </div>

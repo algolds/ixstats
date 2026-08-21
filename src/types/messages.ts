@@ -10,11 +10,12 @@ import type { ThinkShareConversation } from "./thinkshare";
 
 // ─── Folder System ───────────────────────────────────────────────
 
-export type MessageFolder = "conversations" | "groups";
+export type MessageFolder = "conversations";
 
 export type ChannelFilter = "all" | "diplomatic" | "direct" | "community";
 
 export const SYSTEM_CONVERSATION_ID = "system_messages";
+export const LOREBOT_CONVERSATION_ID = "lorebot_feed";
 
 export interface MessageFolderConfig {
   id: MessageFolder;

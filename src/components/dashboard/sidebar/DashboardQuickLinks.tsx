@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, MessageSquare, Bookmark, Users, Compass } from "lucide-react";
+import { BookOpen, Bookmark, Users, Compass } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import {
@@ -20,6 +20,7 @@ import {
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
 
 const EXTERNAL_LINKS = [
   {
@@ -51,6 +52,25 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
   const [isOpen, setIsOpen] = useState(false);
   const { isSignedIn } = useUser();
   const channelTheme = CHANNEL_CONFIG[CHANNEL];
+
+  const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
+    {},
+    {
+      enabled: !!isSignedIn,
+      staleTime: 30000,
+    }
+  );
+
+  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
+    { limit: 20 },
+    { enabled: !!isSignedIn, staleTime: 30000 }
+  );
+
+  const thinktankUnreadCount =
+    (folderCounts?.thinktank ?? 0) +
+    (notificationsData?.notifications?.filter(
+      (n: any) => (n.source === "thinktank" || n.category === "social") && !n.isRead
+    )?.length ?? 0);
 
   return (
     <CutoutCard
@@ -94,30 +114,26 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
+                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
-                <Icon
-                  className={cn(
-                    "h-3 w-3 shrink-0 transition-transform duration-150 group-hover:scale-110",
-                    link.color
-                  )}
-                />
-                <span>{link.label}</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <Icon
+                    className={cn(
+                      "h-3 w-3 shrink-0 transition-transform duration-150 group-hover:scale-110",
+                      link.color
+                    )}
+                  />
+                  <span className="truncate">{link.label}</span>
+                </div>
+
+                {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[9px] font-bold tracking-tight text-emerald-400 ring-1 ring-emerald-500/30 backdrop-blur-xs shadow-2xs transition-transform group-hover:scale-105">
+                    {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
+                  </span>
+                )}
               </Comp>
             );
           })}
-
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <button className="group text-muted-foreground hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded-xl border-0 bg-transparent px-2 py-1.5 text-left text-[11px] font-normal tracking-normal transition-all duration-150 outline-none hover:bg-white/[0.06] active:scale-[0.97]">
-                <MessageSquare className="h-3 w-3 shrink-0 text-sky-400 transition-transform duration-150 group-hover:scale-110" />
-                <span>Send Feedback</span>
-              </button>
-            </DialogTrigger>
-            <DialogContent className="bg-background/95 border-border/80 z-[100020] max-w-md border p-6 backdrop-blur-xl">
-              <FeedbackModal onClose={() => setIsOpen(false)} />
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="border-border/30 space-y-2 border-t pt-2">
@@ -146,6 +162,17 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               >
                 Privacy Policy
               </Link>
+              <span className="opacity-40">·</span>
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <button className="hover:text-foreground cursor-pointer transition-colors hover:underline">
+                    Feedback
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="bg-background/95 border-border/80 z-[100020] max-w-md border p-6 backdrop-blur-xl">
+                  <FeedbackModal onClose={() => setIsOpen(false)} />
+                </DialogContent>
+              </Dialog>
               <span className="opacity-40">·</span>
               <Link
                 href="/terms"

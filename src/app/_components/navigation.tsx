@@ -30,8 +30,11 @@ export function Navigation() {
 
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
+  const isMessagesPage = normalizedPathname.startsWith("/messages");
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky } = useNavigationScroll();
+  const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
+    autoHideDefault: isMessagesPage,
+  });
 
   const [isWriterMode, setIsWriterMode] = useState(false);
 
@@ -124,9 +127,10 @@ export function Navigation() {
             : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
         style={{
-          opacity: Math.max(0, 1 - morphProgress),
-          pointerEvents: morphProgress > 0.8 ? "none" : "auto",
-          transition: "opacity 0.05s linear",
+          opacity: isNavVisible ? Math.max(0, 1 - morphProgress) : 0,
+          transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
+          pointerEvents: !isNavVisible || morphProgress > 0.8 ? "none" : "auto",
+          transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, background-color 0.3s ease",
         }}
       >
         {!isWikiPage && (

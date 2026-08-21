@@ -596,7 +596,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
             category: "social",
             type: "warning",
             priority: "medium",
-            href: "/messages/groups",
+            href: "/thinktanks",
             source: "thinktank",
             actionable: false,
             metadata: {

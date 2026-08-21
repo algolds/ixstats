@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Plus, Crown, Pin } from "lucide-react";
+import { Search, Plus, Crown, Pin, BookOpen } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { motion } from "motion/react";
@@ -10,7 +10,7 @@ import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
 import { MessagesConversationCard } from "./MessagesConversationCard";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder, ChannelFilter } from "~/types/messages";
-import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
+import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 import { api } from "~/trpc/react";
 
 const CHANNEL_FILTERS: { id: ChannelFilter; label: string }[] = [
@@ -30,7 +30,6 @@ interface MessagesConversationPanelProps {
   onSelectConversation: (id: string) => void;
   currentUserId: string;
   onNewConversation: () => void;
-  onOpenGroupsDirectory?: () => void;
   settings?: any;
   mutedConversations?: string[];
 }
@@ -45,7 +44,6 @@ export function MessagesConversationPanel({
   onSelectConversation,
   currentUserId,
   onNewConversation,
-  onOpenGroupsDirectory,
   settings,
   mutedConversations = [],
 }: MessagesConversationPanelProps) {
@@ -60,15 +58,20 @@ export function MessagesConversationPanel({
 
   const latestSystemNotice = latestNotificationData?.notifications?.[0];
 
-  // Folder-specific dynamic color accents for the search header background
-  const folderBgs: Record<MessageFolder, string> = {
-    conversations: "bg-emerald-500/[0.03] dark:bg-emerald-500/10",
-    groups: "bg-indigo-500/[0.03] dark:bg-indigo-500/10",
-  };
-  const currentBg = folderBgs[activeFolder] || "bg-emerald-500/[0.03]";
+  // Fetch latest wiki activity for LoreBot preview
+  const { data: latestWikiData } = api.wikios.getRecentChanges.useQuery(
+    { limit: 1 },
+    { staleTime: 30000 }
+  );
+  const latestWikiChange = (latestWikiData as any)?.[0];
+
+  const currentBg = "bg-emerald-500/[0.03] dark:bg-emerald-500/10";
 
   // Filter conversations by sub-filter & search query
   const filtered = conversations.filter((c) => {
+    // Exclude thinktanks from main messaging feed
+    if (c.source === "thinktank") return false;
+
     // 1. Channel filter
     if (activeFolder === "conversations") {
       if (activeFilter === "diplomatic") {
@@ -103,6 +106,7 @@ export function MessagesConversationPanel({
   });
 
   const isSystemSelected = selectedConversationId === SYSTEM_CONVERSATION_ID;
+  const isLoreBotSelected = selectedConversationId === LOREBOT_CONVERSATION_ID;
 
   return (
     <div className="flex h-full flex-col">
@@ -222,11 +226,61 @@ export function MessagesConversationPanel({
           </button>
         )}
 
+        {/* Pinned LoreBot Card (Conversations folder only) */}
+        {activeFolder === "conversations" && (activeFilter === "all" || activeFilter === "community" || activeFilter === "direct") && (
+          <button
+            onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
+            className={cn(
+              "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.985] select-none",
+              isLoreBotSelected
+                ? "bg-accent/80 text-accent-foreground shadow-2xs ring-1 ring-border/50"
+                : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+            )}
+          >
+            {/* LoreBot Avatar */}
+            <div className="relative shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-500/10 text-teal-400 ring-1 ring-teal-500/20 shadow-2xs">
+                <BookOpen className="h-4 w-4" />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "truncate text-[13px] tracking-[-0.01em]",
+                      isLoreBotSelected
+                        ? "text-foreground font-semibold"
+                        : "text-foreground/90 font-medium"
+                    )}
+                  >
+                    LoreBot
+                  </span>
+                  <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Pin className="h-3 w-3 text-muted-foreground/50" />
+                </div>
+              </div>
+
+              <div className="mt-0.5 flex items-center justify-between gap-2">
+                <p className="line-clamp-1 text-[12px] leading-normal text-muted-foreground font-normal">
+                  {latestWikiChange
+                    ? `Latest edit on ${latestWikiChange.title}: ${latestWikiChange.comment || `${latestWikiChange.user} updated article`}`
+                    : "WikiOS updates, watchlist activity & lore dispatches"}
+                </p>
+              </div>
+            </div>
+          </button>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
-        ) : filtered.length === 0 && (!activeFolder.includes("conversations") || activeFilter !== "all") ? (
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <p className="text-foreground text-xs font-semibold">
               {folderConfig?.emptyTitle || "No conversations found"}
@@ -236,16 +290,6 @@ export function MessagesConversationPanel({
                 ? `No conversations match "${searchQuery}"`
                 : (folderConfig?.emptyDescription ?? "")}
             </p>
-            {activeFolder === "groups" && onOpenGroupsDirectory && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 text-xs"
-                onClick={onOpenGroupsDirectory}
-              >
-                Browse Groups Directory
-              </Button>
-            )}
           </div>
         ) : (
           filtered.map((conversation) => (

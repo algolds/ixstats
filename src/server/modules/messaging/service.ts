@@ -5,26 +5,27 @@
  * identity binding, collaborator fan-outs, and batch query loading.
  */
 
-import type {
-  MessagingDependencies,
-  UserAccount,
-  GetConversationsByFolderInput,
-  GetConversationsLegacyInput,
-  GetConversationMessagesInput,
-  CreateConversationInput,
-  CreateConversationByCountriesInput,
-  SendMessageInput,
-  EditMessageInput,
-  DeleteMessageInput,
-  MarkMessagesAsReadInput,
-  AddReactionInput,
-  RemoveReactionInput,
-  AddParticipantInput,
-  LeaveConversationInput,
-  SearchUsersInput,
-  UpdatePresenceInput,
-  SendAdminBroadcastInput,
-  SendAdminMessageInput,
+import {
+  DEFAULT_USER_MESSAGE_CAP,
+  type MessagingDependencies,
+  type UserAccount,
+  type GetConversationsByFolderInput,
+  type GetConversationsLegacyInput,
+  type GetConversationMessagesInput,
+  type CreateConversationInput,
+  type CreateConversationByCountriesInput,
+  type SendMessageInput,
+  type EditMessageInput,
+  type DeleteMessageInput,
+  type MarkMessagesAsReadInput,
+  type AddReactionInput,
+  type RemoveReactionInput,
+  type AddParticipantInput,
+  type LeaveConversationInput,
+  type SearchUsersInput,
+  type UpdatePresenceInput,
+  type SendAdminBroadcastInput,
+  type SendAdminMessageInput,
 } from "./contracts";
 import {
   MessagingForbiddenError,
@@ -105,6 +106,7 @@ export class MessagingService {
             isActive: true,
           },
         };
+        where.source = { not: "thinktank" };
         if (folder === "diplomatic") {
           where.source = "diplomatic";
         } else if (folder === "wiki") {
@@ -115,13 +117,13 @@ export class MessagingService {
       }
 
       if (cursor) {
-        where.lastMessageAt = { lt: new Date(cursor) };
+        where.lastActivity = { lt: new Date(cursor) };
       }
 
       const conversations = await this.db.thinkshareConversation.findMany({
         where,
         take: limit + 1,
-        orderBy: { lastMessageAt: "desc" },
+        orderBy: { lastActivity: "desc" },
         include: {
           participants: { where: { isActive: true } },
           thinktankGroup: true,
@@ -135,7 +137,7 @@ export class MessagingService {
       let nextCursor: string | null = null;
       if (conversations.length > limit) {
         const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastMessageAt ? nextItem.lastMessageAt.toISOString() : null;
+        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : null;
       }
 
       const userIdsToResolve: string[] = [actorId];
@@ -398,16 +400,17 @@ export class MessagingService {
         participants: {
           some: { userId: actorId, isActive: true },
         },
+        source: { not: "thinktank" },
       };
 
       if (input.cursor) {
-        where.lastMessageAt = { lt: new Date(input.cursor) };
+        where.lastActivity = { lt: new Date(input.cursor) };
       }
 
       const conversations = await this.db.thinkshareConversation.findMany({
         where,
         take: limit + 1,
-        orderBy: { lastMessageAt: "desc" },
+        orderBy: { lastActivity: "desc" },
         include: {
           participants: { where: { isActive: true } },
           messages: {
@@ -420,7 +423,7 @@ export class MessagingService {
       let nextCursor: string | undefined = undefined;
       if (conversations.length > limit) {
         const nextItem = conversations.pop()!;
-        nextCursor = nextItem.lastMessageAt ? nextItem.lastMessageAt.toISOString() : undefined;
+        nextCursor = nextItem.lastActivity ? nextItem.lastActivity.toISOString() : undefined;
       }
 
       const userIdsToResolve: string[] = [actorId];
@@ -729,6 +732,10 @@ export class MessagingService {
         content: input.content,
       }).catch(() => {});
     }
+
+    // Auto-prune default user messages beyond 1000 cap
+    void this.pruneOldMessagesForUser(actorId, DEFAULT_USER_MESSAGE_CAP).catch(() => {});
+    void this.pruneConversationMessages(targetConvId, DEFAULT_USER_MESSAGE_CAP).catch(() => {});
 
     return message;
   }
@@ -1058,6 +1065,97 @@ export class MessagingService {
     }
 
     return { success: true, conversationId: conversation.id, messageId: message.id };
+  }
+
+  /**
+   * Auto-prune messages for default (non-exempt) users when exceeding artificial cap (1000).
+   * Keeps the newest `cap` messages and removes the oldest excess messages.
+   */
+  public async pruneOldMessagesForUser(
+    userId: string,
+    cap: number = DEFAULT_USER_MESSAGE_CAP
+  ): Promise<number> {
+    try {
+      const user = await this.db.user.findFirst({
+        where: { OR: [{ id: userId }, { clerkUserId: userId }] },
+        include: { role: true },
+      });
+
+      const isExempt =
+        user?.role?.name === "admin" ||
+        user?.role?.name === "system-owner" ||
+        user?.role?.name === "owner" ||
+        user?.role?.name === "staff" ||
+        user?.membershipTier === "premium" ||
+        user?.membershipTier === "pro" ||
+        user?.membershipTier === "vip";
+
+      if (isExempt) return 0;
+
+      const totalCount = await this.db.thinkshareMessage.count({
+        where: { userId },
+      });
+
+      if (totalCount > cap) {
+        const excess = totalCount - cap;
+        const oldestMessages = await this.db.thinkshareMessage.findMany({
+          where: { userId },
+          orderBy: { ixTimeTimestamp: "asc" },
+          take: excess,
+          select: { id: true },
+        });
+
+        if (oldestMessages.length > 0) {
+          const idsToDelete = oldestMessages.map((m: any) => m.id);
+          const deleteResult = await this.db.thinkshareMessage.deleteMany({
+            where: { id: { in: idsToDelete } },
+          });
+          return deleteResult.count;
+        }
+      }
+
+      return 0;
+    } catch (err) {
+      console.error(`[MessagingService] Auto-prune error for user ${userId}:`, err);
+      return 0;
+    }
+  }
+
+  /**
+   * Auto-prune older messages in a conversation when it exceeds the message cap.
+   */
+  public async pruneConversationMessages(
+    conversationId: string,
+    cap: number = DEFAULT_USER_MESSAGE_CAP
+  ): Promise<number> {
+    try {
+      const totalCount = await this.db.thinkshareMessage.count({
+        where: { conversationId },
+      });
+
+      if (totalCount > cap) {
+        const excess = totalCount - cap;
+        const oldestMessages = await this.db.thinkshareMessage.findMany({
+          where: { conversationId },
+          orderBy: { ixTimeTimestamp: "asc" },
+          take: excess,
+          select: { id: true },
+        });
+
+        if (oldestMessages.length > 0) {
+          const idsToDelete = oldestMessages.map((m: any) => m.id);
+          const deleteResult = await this.db.thinkshareMessage.deleteMany({
+            where: { id: { in: idsToDelete } },
+          });
+          return deleteResult.count;
+        }
+      }
+
+      return 0;
+    } catch (err) {
+      console.error(`[MessagingService] Auto-prune error for conversation ${conversationId}:`, err);
+      return 0;
+    }
   }
 }
 

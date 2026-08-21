@@ -187,8 +187,8 @@ export const achievementsProgressRouter = createTRPCRouter({
             for (const r of rows) {
               fiftyKEditsMap.set(String(r.actor_name).toLowerCase(), Number(r.cnt) || 0);
             }
-          } catch (err) {
-            console.error("Error querying 50k edits for all users:", err);
+          } catch (_err) {
+            // MySQL unavailable in development mode — skip 50k edit counts
           }
         }
 

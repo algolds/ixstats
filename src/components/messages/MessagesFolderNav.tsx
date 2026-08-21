@@ -1,12 +1,10 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
 import {
   Settings,
   SoundHigh,
   ChatBubble,
-  Group,
   User,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -35,7 +33,7 @@ export const DEFAULT_MESSAGES_SETTINGS: MessagesSettings = {
 export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
     id: "conversations",
-    icon: ChatBubble,
+    icon: ChatBubble as any,
     title: "Messages",
     description: "Direct, diplomatic, and wiki discussions",
     gradient: "text-emerald-500",
@@ -43,35 +41,21 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
     emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
   },
-  {
-    id: "groups",
-    icon: Group,
-    title: "ThinkTanks",
-    description: "ThinkTank group chats and research rooms",
-    gradient: "text-emerald-500",
-    activeGlow: "bg-emerald-500/10 border-emerald-500/40",
-    emptyTitle: "No ThinkTanks found",
-    emptyDescription: "Join or create a ThinkTank group to start collaborating.",
-  },
 ];
 
-export function getFolderFromPathname(pathname: string): MessageFolder {
-  const cleaned = pathname.replace(/^\/projects\/ixstats/, "");
-  if (cleaned.startsWith("/messages/groups")) return "groups";
+export function getFolderFromPathname(_pathname?: string): MessageFolder {
   return "conversations";
 }
 
 interface MessagesFolderNavProps {
-  activeFolder: MessageFolder;
-  onNavigate: (folder: MessageFolder) => void;
+  activeFolder?: MessageFolder;
+  onNavigate?: (folder: MessageFolder) => void;
   unreadCounts?: Record<MessageFolder, number>;
   settings?: MessagesSettings;
   onSettingsChange?: (settings: MessagesSettings) => void;
 }
 
 export function MessagesFolderNav({
-  activeFolder,
-  onNavigate,
   unreadCounts,
   settings = DEFAULT_MESSAGES_SETTINGS,
   onSettingsChange,
@@ -90,65 +74,26 @@ export function MessagesFolderNav({
     onSettingsChange?.({ ...settings, [key]: nextValue });
   };
 
-  // Folder-specific dynamic color accents for the cutout header background
-  const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
-    conversations: {
-      bg: "bg-emerald-500/[0.04] dark:bg-emerald-500/10",
-      border: "border-b border-emerald-500/20",
-    },
-    groups: {
-      bg: "bg-emerald-500/[0.04] dark:bg-emerald-500/10",
-      border: "border-b border-emerald-500/20",
-    },
-  };
-
-  const currentTheme = folderThemes[activeFolder] || folderThemes.conversations;
+  const totalUnread = unreadCounts?.conversations ?? 0;
 
   return (
     <div
       className={cn(
-        "relative z-20 flex w-full shrink-0 items-center gap-1.5 px-3 pt-3 pb-4 transition-colors duration-500",
-        currentTheme.bg,
-        currentTheme.border
+        "relative z-20 flex w-full shrink-0 items-center justify-between gap-1.5 px-3.5 py-3 border-b border-border/40 bg-emerald-500/[0.04] dark:bg-emerald-500/10 transition-colors duration-500"
       )}
     >
-      <div className="relative z-10 flex flex-1 items-center gap-1 rounded-xl border border-border/40 bg-accent/10 p-1">
-        {MESSAGE_FOLDERS.map((folder) => {
-          const isActive = folder.id === activeFolder;
-          const Icon = folder.icon;
-          const count = unreadCounts?.[folder.id] ?? 0;
-
-          return (
-            <button
-              key={folder.id}
-              onClick={() => onNavigate(folder.id)}
-              className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[11px] font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
-                isActive
-                  ? "text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-              )}
-              aria-label={folder.title}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="messages-folder-tab"
-                  className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
-                  transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Icon className={cn("h-3.5 w-3.5", isActive && folder.gradient)} />
-                <span className="hidden truncate sm:inline">{folder.title}</span>
-                {count > 0 && (
-                  <span className="flex h-3.5 min-w-[14px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[8.5px] leading-none font-bold text-white shadow-2xs tabular-nums">
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
+      <div className="relative z-10 flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-2xs">
+          <ChatBubble className="h-4 w-4" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-bold tracking-tight text-foreground">Messages</span>
+          {totalUnread > 0 && (
+            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] leading-none font-bold text-white shadow-2xs tabular-nums">
+              {totalUnread > 99 ? "99+" : totalUnread}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Settings popover button */}
@@ -220,3 +165,4 @@ export function MessagesFolderNav({
     </div>
   );
 }
+

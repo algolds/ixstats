@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { createAbsoluteUrl } from "~/lib/utils";
 import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 
@@ -14,9 +13,6 @@ import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { withBasePath } from "~/lib/base-path";
-import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -27,7 +23,6 @@ import { MapsProfileDropdown } from "./MapsProfileDropdown";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
 import { PreText } from "~/components/ui/pretext";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
@@ -184,120 +179,6 @@ function CompactViewComponent({
               isSticky ? "px-3 py-1.5" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
-            {/* ── IX Logo ──────────────────────────────────────── */}
-            {(() => {
-              const isWikiActive = activePlugin?.id === "wiki";
-              if (isWikiActive) return null;
-
-              // Hide on root, dashboard, and mycountry pages
-              const isHiddenPage =
-                diPathname === "/" ||
-                diPathname === "/dashboard" ||
-                diPathname.startsWith("/mycountry");
-              if (isHiddenPage) return null;
-              return (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() =>
-                        (window.location.href = createAbsoluteUrl(isStandalone ? "/maps" : "/"))
-                      }
-                      className={cn(
-                        "group relative flex items-center justify-center rounded-xl transition-all duration-300 active:scale-95",
-                        isWikiActive
-                          ? "h-10 w-11 flex-col gap-0.5"
-                          : isSticky
-                            ? "h-7 w-7"
-                            : "h-8 w-8"
-                      )}
-                    >
-                      {isWikiActive ? (
-                        <div className="relative z-10 flex flex-col items-center justify-center gap-0 leading-none">
-                          <motion.div
-                            className="bg-foreground relative z-10 h-5 w-5 opacity-85"
-                            style={{
-                              maskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
-                              WebkitMaskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
-                              maskSize: "contain",
-                              WebkitMaskSize: "contain",
-                              maskRepeat: "no-repeat",
-                              WebkitMaskRepeat: "no-repeat",
-                              maskPosition: "center",
-                              WebkitMaskPosition: "center",
-                            }}
-                            whileHover={{
-                              scale: 1.15,
-                              rotate: 8,
-                              opacity: 1,
-                              backgroundColor: "var(--primary)",
-                            }}
-                            whileTap={{
-                              scale: 0.9,
-                              rotate: -4,
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 15,
-                            }}
-                          />
-                          <span
-                            className="text-foreground mt-0.5 text-[10px] leading-none font-semibold tracking-[0.1em] antialiased"
-                            style={{ fontFamily: "var(--font-playfair)" }}
-                          >
-                            WIKI
-                          </span>
-                        </div>
-                      ) : activePlugin?.id === "builder" ? (
-                        <div className="relative z-10 flex origin-center scale-60 items-center justify-center sm:scale-75">
-                          <MyCountryLogo size="sm" variant="icon-only" animated={false} />
-                        </div>
-                      ) : (
-                        <motion.div
-                          className={cn(
-                            "bg-foreground relative z-10 opacity-85",
-                            isSticky ? "h-5 w-5" : "h-6 w-6"
-                          )}
-                          style={{
-                            maskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
-                            WebkitMaskImage: `url(${withBasePath("/images/ix-logo.svg")})`,
-                            maskSize: "contain",
-                            WebkitMaskSize: "contain",
-                            maskRepeat: "no-repeat",
-                            WebkitMaskRepeat: "no-repeat",
-                            maskPosition: "center",
-                            WebkitMaskPosition: "center",
-                          }}
-                          whileHover={{
-                            scale: 1.15,
-                            rotate: 8,
-                            opacity: 1,
-                            backgroundColor: "var(--primary)",
-                          }}
-                          whileTap={{
-                            scale: 0.9,
-                            rotate: -4,
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 15,
-                          }}
-                        />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {activePlugin?.id === "builder"
-                      ? "Builder Home"
-                      : isWikiActive
-                        ? "Wiki Home"
-                        : "Home"}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })()}
-
             {/* ── Sticky: peek text or wiki breadcrumb ──────────────── */}
             {isSticky && peekText && (
               <AnimatePresence mode="wait">

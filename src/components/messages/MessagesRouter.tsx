@@ -22,17 +22,14 @@ import { MessagesConversationPanel } from "./MessagesConversationPanel";
 import { MessagesChatPanel } from "./MessagesChatPanel";
 import { MessagesEmptyState } from "./MessagesEmptyState";
 import { MessagesNewConversationModal } from "./MessagesNewConversationModal";
-import { MessagesGroupsPanel } from "./MessagesGroupsPanel";
-import { MessagesGroupsListPanel } from "./MessagesGroupsListPanel";
 
 import type { MessageFolder } from "~/types/messages";
-import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
+import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 
 // ─── Section titles ──────────────────────────────────────────────
 
 const SECTION_TITLES: Record<MessageFolder, string> = {
   conversations: "Messages",
-  groups: "ThinkTanks",
 };
 
 // ─── Inner Router ────────────────────────────────────────────────
@@ -55,19 +52,15 @@ function MessagesRouterInner() {
       const convId = params.get("conversation");
       if (convId) return convId;
     }
-    const folder = getFolderFromPathname(pathname);
-    if (folder === "groups") {
-      return "groups_directory";
-    }
     return null;
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Auto-collapse sidebar when a specific conversation is selected, but keep sidebar open when browsing groups directory
+  // Auto-collapse sidebar when a specific conversation is selected
   useEffect(() => {
-    if (selectedConversationId && selectedConversationId !== "groups_directory") {
+    if (selectedConversationId) {
       setIsSidebarCollapsed(true);
     } else {
       setIsSidebarCollapsed(false);
@@ -189,7 +182,6 @@ function MessagesRouterInner() {
     () =>
       (folderCounts as Record<MessageFolder, number> | undefined) ?? {
         conversations: 0,
-        groups: 0,
       },
     [folderCounts]
   );
@@ -197,8 +189,8 @@ function MessagesRouterInner() {
   // ── Selected conversation object with dynamic fallback fetch ──
   const isCustomSpecialId =
     !selectedConversationId ||
-    selectedConversationId === "groups_directory" ||
-    selectedConversationId === SYSTEM_CONVERSATION_ID;
+    selectedConversationId === SYSTEM_CONVERSATION_ID ||
+    selectedConversationId === LOREBOT_CONVERSATION_ID;
 
   const foundInFolder = useMemo(
     () =>
@@ -218,7 +210,6 @@ function MessagesRouterInner() {
     );
 
   const selectedConversation = useMemo(() => {
-    if (selectedConversationId === "groups_directory") return null;
     if (selectedConversationId === SYSTEM_CONVERSATION_ID) {
       return {
         id: SYSTEM_CONVERSATION_ID,
@@ -226,6 +217,22 @@ function MessagesRouterInner() {
         name: "System Messages",
         avatar: null,
         source: "system",
+        conversationType: "official",
+        isActive: true,
+        lastActivity: new Date(),
+        otherParticipants: [],
+        unreadCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+    if (selectedConversationId === LOREBOT_CONVERSATION_ID) {
+      return {
+        id: LOREBOT_CONVERSATION_ID,
+        type: "channel" as const,
+        name: "LoreBot",
+        avatar: null,
+        source: "lorebot",
         conversationType: "official",
         isActive: true,
         lastActivity: new Date(),
@@ -439,12 +446,11 @@ function MessagesRouterInner() {
     (folder: MessageFolder) => {
       if (folder === activeFolder) return;
       setActiveFolder(folder);
-      setSelectedConversationId(folder === "groups" ? "groups_directory" : null);
+      setSelectedConversationId(null);
       setSearchQuery("");
 
-      const href = folder === "conversations" ? "/messages" : `/messages/${folder}`;
-      window.history.pushState(null, "", withBasePath(href));
-      document.title = `${SECTION_TITLES[folder]} - Messages - IxStats`;
+      window.history.pushState(null, "", withBasePath("/messages"));
+      document.title = "Messages - IxStats";
     },
     [activeFolder]
   );
@@ -454,7 +460,7 @@ function MessagesRouterInner() {
     const onPopState = () => {
       const newFolder = getFolderFromPathname(window.location.pathname);
       setActiveFolder(newFolder);
-      setSelectedConversationId(newFolder === "groups" ? "groups_directory" : null);
+      setSelectedConversationId(null);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -598,46 +604,29 @@ function MessagesRouterInner() {
               onSettingsChange={handleSettingsChange}
             />
             <div className="min-h-0 flex-1">
-              {activeFolder === "groups" ? (
-                <MessagesGroupsListPanel
-                  selectedConversationId={selectedConversationId}
-                  onSelectConversation={setSelectedConversationId}
-                  onOpenGroupsDirectory={() => setSelectedConversationId("groups_directory")}
-                />
-              ) : (
-                <MessagesConversationPanel
-                  activeFolder={activeFolder}
-                  conversations={activeFolderConversations}
-                  isLoading={isLoadingConversations}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  selectedConversationId={selectedConversationId}
-                  onSelectConversation={setSelectedConversationId}
-                  currentUserId={currentUserId}
-                  onNewConversation={() => setShowNewConversation(true)}
-                  onOpenGroupsDirectory={() => setSelectedConversationId("groups_directory")}
-                  settings={messagesSettings}
-                  mutedConversations={mutedConversations}
-                />
-              )}
+              <MessagesConversationPanel
+                activeFolder={activeFolder}
+                conversations={activeFolderConversations}
+                isLoading={isLoadingConversations}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={setSelectedConversationId}
+                currentUserId={currentUserId}
+                onNewConversation={() => setShowNewConversation(true)}
+                settings={messagesSettings}
+                mutedConversations={mutedConversations}
+              />
             </div>
           </div>
         }
         chatPanel={
-          selectedConversationId === "groups_directory" ? (
-            <MessagesGroupsPanel
-              onSelectGroup={(convId) => {
-                setSelectedConversationId(convId);
-                void refetchConversations();
-              }}
-              onBack={() => setSelectedConversationId(null)}
-            />
-          ) : isLoadingSingleConversation && selectedConversationId ? (
+          isLoadingSingleConversation && selectedConversationId ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm animate-pulse">
                 <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
               </div>
-              <p className="text-xs font-semibold text-muted-foreground">Connecting to ThinkTank...</p>
+              <p className="text-xs font-semibold text-muted-foreground">Connecting to thread...</p>
             </div>
           ) : selectedConversation ? (
             <MessagesChatPanel
@@ -648,11 +637,7 @@ function MessagesRouterInner() {
               sendTypingIndicator={sendTypingIndicator}
               isSidebarCollapsed={isSidebarCollapsed}
               onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
-              onBack={() =>
-                setSelectedConversationId(
-                  activeFolder === "groups" ? "groups_directory" : null
-                )
-              }
+              onBack={() => setSelectedConversationId(null)}
               settings={messagesSettings}
               isMuted={mutedConversations.includes(selectedConversation.id)}
               isArchived={archivedConversations.includes(selectedConversation.id)}
@@ -660,14 +645,6 @@ function MessagesRouterInner() {
               onArchiveToggle={() => handleArchiveToggle(selectedConversation.id)}
               onDeleteConversation={() => handleDeleteConversation(selectedConversation.id)}
               onAddParticipant={handleAddParticipant}
-            />
-          ) : activeFolder === "groups" ? (
-            <MessagesGroupsPanel
-              onSelectGroup={(convId) => {
-                setSelectedConversationId(convId);
-                void refetchConversations();
-              }}
-              onBack={() => setSelectedConversationId(null)}
             />
           ) : (
             <MessagesEmptyState

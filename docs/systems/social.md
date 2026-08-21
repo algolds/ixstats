@@ -31,9 +31,11 @@ ThinkPages v2 introduces full component modularization, domain sub-component sui
 
 ## ThinkShare Unified Messaging
 
-All messaging across the platform (personal DMs, diplomatic exchanges, group chats) runs on the unified ThinkShare infrastructure:
+All messaging across the platform (personal DMs, diplomatic exchanges, official channels) runs on the unified ThinkShare infrastructure:
+- **Channels**: Personal 1:1 DMs, Diplomatic cables, Community discussions, pinned **System Messages**, and pinned **LoreBot** knowledge stream.
 - **Classification Levels**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`
 - **Priority Tiers**: `LOW`, `NORMAL`, `HIGH`, `URGENT`, `CRITICAL`
+- **Message Retention & Pruning**: Default users have an artificial capacity of **1,000 messages** before oldest messages are auto-pruned. Admins, system owners, and premium tiers are exempt.
 - **Security**: Digital signatures (`signature`), end-to-end encryption (`encryptedContent`), and audit logging.
 
 ---

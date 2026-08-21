@@ -103,88 +103,9 @@ export const wikiTalkBridge: BridgeAdapter = {
 
     if (!user?.wikiUsername) return result;
 
-    // ── 1. Sync watchlist-style notifications ──
-    const changes = await getUserWatchlistChanges(user.wikiUsername);
+    // (Note: Watchlist and wiki activity stream have been promoted to the dedicated pinned LoreBot channel)
 
-    if (changes.length > 0) {
-      // Get or create the wiki alerts conversation
-      const alertsSourceId = `wiki-alerts:${user.wikiUsername}`;
-      let alertsConv = await db.thinkshareConversation.findFirst({
-        where: { source: "wiki", sourceId: alertsSourceId },
-      });
-
-      if (!alertsConv) {
-        alertsConv = await db.thinkshareConversation.create({
-          data: {
-            type: "direct",
-            name: "Wiki Activity",
-            source: "wiki",
-            sourceId: alertsSourceId,
-            isActive: true,
-          },
-        });
-        await db.conversationParticipant.create({
-          data: {
-            conversationId: alertsConv.id,
-            userId,
-            role: "participant",
-            lastReadAt: new Date(0),
-          },
-        });
-        result.conversationsCreated++;
-      }
-
-      // Add recent changes as messages
-      for (const rc of changes) {
-        const msgId = `wiki-rc:${rc.title}:${rc.timestamp}`;
-
-        const existing = await db.thinkshareMessage.findFirst({
-          where: {
-            conversationId: alertsConv.id,
-            source: "wiki",
-            sourceMessageId: msgId,
-          },
-        });
-
-        if (!existing) {
-          const sizeChange = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
-          const sizeStr = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
-          const isNew = rc.type === "new";
-          const comment = rc.comment?.replace(/\/\*.*?\*\/\s*/, "").trim();
-
-          const basePath = process.env.BASE_PATH || "";
-          const wikiUrl = `${basePath}/wiki/${encodeURIComponent(rc.title)}`;
-          const description = isNew
-            ? `<strong>${rc.user}</strong> created <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)`
-            : `<strong>${rc.user}</strong> edited <a href="${wikiUrl}"><strong>${rc.title}</strong></a> (${sizeStr} bytes)${comment ? `: ${comment}` : ""}`;
-
-          await db.thinkshareMessage.create({
-            data: {
-              conversationId: alertsConv.id,
-              userId: `wiki:${rc.user}`, // External wiki user — ensures unread count works
-              content: description,
-              messageType: "text",
-              source: "wiki",
-              sourceMessageId: msgId,
-              isSystem: true,
-              ixTimeTimestamp: new Date(rc.timestamp),
-            },
-          });
-          result.messagesCreated++;
-        }
-      }
-
-      // Update lastActivity
-      if (result.messagesCreated > 0) {
-        await db.thinkshareConversation.update({
-          where: { id: alertsConv.id },
-          data: { lastActivity: new Date() },
-        });
-        result.conversationsUpdated++;
-      }
-    }
-
-    // ── 2. Check user talk page for new messages ──
+    // ── Check user talk page for new messages ──
     const talkPage = await getUserTalkPageMessages(user.wikiUsername);
     if (talkPage.hasMessages && talkPage.content) {
       const talkSourceId = `wiki-talk:${user.wikiUsername}`;

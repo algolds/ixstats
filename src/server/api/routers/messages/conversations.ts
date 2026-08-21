@@ -84,7 +84,7 @@ export const messagesConversationsRouter = createTRPCRouter({
    * Get unread counts per folder for the sidebar badges.
    */
   getFolderCounts: protectedProcedure
-    .input(z.object({ userId: z.string().optional().default("") }))
+    .input(z.object({ userId: z.string().optional().default("") }).optional())
     .query(async ({ ctx }) => {
       const messagingService = createMessagingService({
         db: ctx.db,

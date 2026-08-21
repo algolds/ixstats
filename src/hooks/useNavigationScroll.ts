@@ -5,6 +5,8 @@ import { useState, useEffect, useRef } from "react";
 export interface NavigationScrollOptions {
   /** If true, locks the navigation bar in visible state (e.g. while drawer or modal is open) */
   isLocked?: boolean;
+  /** If true, starts navigation bar in hidden state by default (e.g. on messages / app workspaces) */
+  autoHideDefault?: boolean;
 }
 
 export interface NavigationScrollState {
@@ -20,13 +22,21 @@ export interface NavigationScrollState {
  */
 export function useNavigationScroll(options?: NavigationScrollOptions): NavigationScrollState {
   const isLocked = options?.isLocked ?? false;
+  const autoHideDefault = options?.autoHideDefault ?? false;
+
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
-  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [isNavVisible, setIsNavVisible] = useState(!autoHideDefault);
   const [scrollDirection, setScrollDirection] = useState<"up" | "down" | "idle">("idle");
 
   const isLockedRef = useRef(isLocked);
   isLockedRef.current = isLocked;
+  const autoHideDefaultRef = useRef(autoHideDefault);
+  autoHideDefaultRef.current = autoHideDefault;
+
+  useEffect(() => {
+    setIsNavVisible(!autoHideDefault);
+  }, [autoHideDefault]);
 
   useEffect(() => {
     let rafId: number | undefined;
@@ -68,14 +78,14 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
 
             if (isLockedRef.current) {
               setIsNavVisible(true);
-            } else if (currentScrollY < 50) {
-              // Always visible in top anchor zone
-              setIsNavVisible(true);
-            } else if (newDirection === "down" && accumulatedDelta > 10 && currentScrollY > 50) {
-              // Hide when scrolling down beyond top zone
+            } else if (newDirection === "down" && (accumulatedDelta > 10 || autoHideDefaultRef.current)) {
+              // Hide when scrolling down
               setIsNavVisible(false);
-            } else if (newDirection === "up" && accumulatedDelta > 15) {
+            } else if (newDirection === "up" && accumulatedDelta > 10) {
               // Instantly reveal when scrolling up anywhere
+              setIsNavVisible(true);
+            } else if (currentScrollY < 50 && !autoHideDefaultRef.current) {
+              // Always visible in top anchor zone on regular pages
               setIsNavVisible(true);
             }
           }
@@ -87,9 +97,32 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
       }
     };
 
+    // Wheel and trackpad gesture listener for inner-container and global scroll
+    const handleWheel = (e: WheelEvent) => {
+      if (isLockedRef.current) return;
+      if (e.deltaY < -15) {
+        setIsNavVisible(true);
+      } else if (e.deltaY > 15) {
+        setIsNavVisible(false);
+      }
+    };
+
+    // Top screen edge proximity peek
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isLockedRef.current) return;
+      if (e.clientY <= 16) {
+        setIsNavVisible(true);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("mousemove", handleMouseMove);
       if (rafId) {
         cancelAnimationFrame(rafId);
       }

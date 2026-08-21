@@ -4,6 +4,7 @@
 
 export * from "./user-logger";
 export * from "./error-logger";
+export * from "./feedback-logger";
 export * from "./user-middleware";
 export * from "./user-analytics";
 export * from "./console-capture";

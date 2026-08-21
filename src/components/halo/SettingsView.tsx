@@ -217,8 +217,8 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             )
           }
           iconBg={soundEnabled ? "bg-emerald-500/15" : "bg-muted/15"}
-          label="Sound Effects"
-          description={soundEnabled ? "Tactile synthesized audio" : "Muted"}
+          label="Sound"
+          description={soundEnabled ? "Enabled" : "Muted"}
         >
           <div className="flex items-center gap-2">
             {soundEnabled && (
@@ -229,7 +229,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 title="Preview interaction sound"
                 className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
               >
-                Test
+                Preview
               </button>
             )}
             <ToggleSwitch

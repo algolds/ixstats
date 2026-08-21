@@ -3,6 +3,7 @@
  */
 
 export { MessagingService, createMessagingService } from "./service";
+export { DEFAULT_USER_MESSAGE_CAP } from "./contracts";
 
 export type {
   MessageSource,

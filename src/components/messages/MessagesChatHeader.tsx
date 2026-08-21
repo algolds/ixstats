@@ -9,15 +9,14 @@ import {
   BellOff,
   ArrowLeft,
   Xmark,
-  Crown,
   Shield,
   Refresh,
-  Book,
 } from "iconoir-react";
+import { BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
-import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
+import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
 import { Input } from "~/components/ui/input";
 import {
@@ -43,7 +42,6 @@ interface MessagesChatHeaderProps {
   isSidebarCollapsed?: boolean;
   onViewDetails?: () => void;
   onAddParticipants?: () => void;
-  onOpenDocs?: () => void;
   onMuteToggle?: () => void;
   onArchiveToggle?: () => void;
   onDeleteConversation?: () => void;
@@ -63,7 +61,6 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   isSidebarCollapsed: _isSidebarCollapsed,
   onViewDetails,
   onAddParticipants,
-  onOpenDocs,
   onMuteToggle,
   onArchiveToggle,
   onDeleteConversation,
@@ -76,6 +73,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
 
   const isSystemThread = conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
+  const isLoreBotThread = conversation.id === LOREBOT_CONVERSATION_ID || conversation.source === "lorebot";
   const isDiplomatic = conversation.source === "diplomatic" || conversation.conversationType === "diplomatic";
   const isGroup = conversation.type === "group" || conversation.source === "thinktank";
 
@@ -86,7 +84,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   const memberCount = otherParticipants.length + 1;
 
   const identity =
-    !isGroup && !isSystemThread && primaryOther
+    !isGroup && !isSystemThread && !isLoreBotThread && primaryOther
       ? resolveIdentity(
           primaryOther.displayName || primaryOther.username || "User",
           primaryOther.profileImageUrl || primaryOther.countryFlag || null,
@@ -102,13 +100,15 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
   const displayTitle = isSystemThread
     ? "System Messages"
-    : isGroup
-      ? conversation.name || "ThinkTank"
-      : identity
-        ? identity.displayName
-        : conversation.name || primaryOther?.displayName || primaryOther?.username || "Direct Message";
+    : isLoreBotThread
+      ? "LoreBot"
+      : isGroup
+        ? conversation.name || "ThinkTank"
+        : identity
+          ? identity.displayName
+          : conversation.name || primaryOther?.displayName || primaryOther?.username || "Direct Message";
 
-  const avatarUrl = isSystemThread
+  const avatarUrl = isSystemThread || isLoreBotThread
     ? null
     : isGroup
       ? conversation.avatar
@@ -116,8 +116,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
   const currentStatus = isSystemThread
     ? "Broadcast Channel"
-    : participantStatus ||
-      (isGroup ? `${memberCount} members` : "Active now");
+    : isLoreBotThread
+      ? "WikiOS Activity Feed"
+      : participantStatus ||
+        (isGroup ? `${memberCount} members` : "Active now");
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -141,11 +143,13 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   // Dynamic header styling by thread type
   const headerTheme = isSystemThread
     ? "bg-amber-500/[0.04] dark:bg-amber-500/10 border-b border-amber-500/20"
-    : isDiplomatic
-      ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
-      : isGroup
-        ? "bg-emerald-500/[0.04] border-b border-emerald-500/20 dark:bg-emerald-500/10"
-        : "bg-muted/[0.08] border-b border-border/40";
+    : isLoreBotThread
+      ? "bg-teal-500/[0.04] dark:bg-teal-500/10 border-b border-teal-500/20"
+      : isDiplomatic
+        ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
+        : isGroup
+          ? "bg-emerald-500/[0.04] border-b border-emerald-500/20 dark:bg-emerald-500/10"
+          : "bg-muted/[0.08] border-b border-border/40";
 
   return (
     <header
@@ -188,6 +192,10 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 shadow-inner">
                   <Shield className="h-4.5 w-4.5 text-amber-500" />
                 </div>
+              ) : isLoreBotThread ? (
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-teal-500/30 bg-teal-500/15 shadow-inner">
+                  <BookOpen className="h-4.5 w-4.5 text-teal-400" />
+                </div>
               ) : avatarUrl ? (
                 primaryOther?.countryFlag ? (
                   <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-border/30 bg-background/50 shadow-xs">
@@ -218,7 +226,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               )}
 
               {/* Online status indicator */}
-              {!isSystemThread && !isGroup && (
+              {!isSystemThread && !isLoreBotThread && !isGroup && (
                 <span
                   className={cn(
                     "absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-background",
@@ -233,7 +241,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
-                {isSystemThread ? (
+                {isSystemThread || isLoreBotThread ? (
                   <span className="flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.2 text-[8px] font-bold tracking-wider uppercase text-amber-500">
                     Official
                   </span>
@@ -248,16 +256,18 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 )}
                 {isGroup && (
                   <span className="flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.2 text-[8px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
-                    ThinkTank
+                    Group Chat
                   </span>
                 )}
               </div>
               <p className="text-muted-foreground text-[10.5px]">
                 {isSystemThread
                   ? "Platform broadcasts, simulation digests & system dispatches"
-                  : isGroup
-                    ? `${memberCount || 0} members • ThinkTank`
-                    : currentStatus}
+                  : isLoreBotThread
+                    ? "WikiOS activity stream, watchlist updates & lore dispatches"
+                    : isGroup
+                      ? `${memberCount || 0} members • Group Chat`
+                      : currentStatus}
               </p>
             </div>
           </>
@@ -266,20 +276,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
       {!isSearchVisible && (
         <div className="flex items-center gap-1.5">
-          {onOpenDocs && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenDocs}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-xs font-semibold text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
-              title="Open Collaborative Papers"
-            >
-              <Book className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Papers</span>
-            </Button>
-          )}
-
-          {!isSystemThread && (
+          {!isSystemThread && !isLoreBotThread && (
             <Button variant="ghost" size="icon" onClick={toggleSearch}>
               <Search className="h-4 w-4" />
             </Button>
@@ -341,7 +338,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash className="mr-2 h-4 w-4" />
-                      <span>{isGroup ? "Leave ThinkTank" : "Delete Thread"}</span>
+                      <span>{isGroup ? "Leave Group" : "Delete Thread"}</span>
                     </DropdownMenuItem>
                   )
                 )}

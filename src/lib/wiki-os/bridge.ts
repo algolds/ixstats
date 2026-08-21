@@ -301,8 +301,55 @@ async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSear
   }
 }
 
+async function fetchIxWikiRecentChangesHttp(limit: number = 20): Promise<WikiRecentChange[]> {
+  try {
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com/";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
+    const params = new URLSearchParams({
+      action: "query",
+      list: "recentchanges",
+      rcnamespace: "0",
+      rcprop: "title|timestamp|user|comment|sizes|flags",
+      rclimit: String(limit),
+      format: "json",
+      origin: "*",
+    });
+
+    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
+      headers: { "User-Agent": DEFAULT_USER_AGENT },
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      query?: {
+        recentchanges?: Array<{
+          title: string;
+          user: string;
+          timestamp: string;
+          comment: string;
+          type: string;
+          oldlen: number;
+          newlen: number;
+        }>;
+      };
+    };
+
+    const changes = data?.query?.recentchanges ?? [];
+    return changes.map((rc) => ({
+      title: rc.title.replace(/_/g, " "),
+      user: rc.user || "Wiki Contributor",
+      timestamp: rc.timestamp,
+      comment: rc.comment || "",
+      type: rc.type === "new" ? "new" : "edit",
+      oldLen: rc.oldlen || 0,
+      newLen: rc.newlen || 0,
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
 /**
- * Get recent changes from IxWiki via direct MySQL.
+ * Get recent changes from IxWiki via direct MySQL with HTTP API fallback.
  */
 async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
   const cacheKey = `recentchanges:${limit}`;
@@ -336,8 +383,13 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
 
     cacheSet(cacheKey, results, 60 * 1000); // 1 min cache
     return results;
-  } catch (err) {
-    console.error("[WikiBridge] MySQL recent changes error:", err);
+  } catch (_err) {
+    // MySQL direct connection unavailable (e.g. dev mode) — fall back to MediaWiki HTTP API
+    const httpResults = await fetchIxWikiRecentChangesHttp(limit);
+    if (httpResults.length > 0) {
+      cacheSet(cacheKey, httpResults, 60 * 1000);
+      return httpResults;
+    }
     return [];
   }
 }

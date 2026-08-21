@@ -6,14 +6,13 @@ Unified messaging backbone for IxStats. ThinkShare is a sub-system of ThinkPages
 
 ## Routes
 
-The page is a catch-all (`[[...folder]]`) rendered by `MessagesRouter`, which uses client-side `history.pushState` navigation (no Next.js route transitions). The active folder is derived from the pathname via `getFolderFromPathname`.
+The page is rendered by `MessagesRouter`, which handles unified messaging across direct, diplomatic, community, and system channels.
 
 | Route | Folder | Purpose |
 |---|---|---|
-| `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages thread) |
-| `/messages/groups` | `groups` | ThinkTank group directory + collaborative rooms |
+| `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages & LoreBot WikiOS feed) |
 
-A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL).
+A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL). ThinkTank group collaboration is now hosted in its own dedicated workspace at `/thinktanks`.
 
 ## Key Features
 
@@ -22,25 +21,28 @@ A `?conversation=<id>` query param deep-links a specific conversation (consumed 
 | Direct messages | 1:1 `direct` conversations; existing direct convos are de-duplicated on create |
 | Group chats | `group` type; a direct convo is auto-upgraded to a group when a participant is added |
 | Conversation types | `personal`, `diplomatic`, `official` (with classification, priority, channel type for diplomatic) |
-| Sources | `thinkshare`, `thinktank`, `diplomatic`, `wiki`, `forum`, `system` |
+| System broadcasts | Pinned `System Messages` thread for official platform bulletins and simulation updates |
+| LoreBot feed | Pinned `LoreBot` official account with gold Crown/Official badge for real-time WikiOS recent changes, user watchlist updates & stash dispatches |
+| Storage & auto-pruning | Artificial cap of **1,000 messages** for default users before oldest messages are auto-pruned (admin & premium accounts exempt) |
+| Sources | `thinkshare`, `diplomatic`, `wiki`, `forum`, `system` |
 | Realtime | Socket.IO live message/typing/presence/read updates with optimistic cache patching |
 | Reactions | Add/remove emoji reactions per message |
 | Edit / delete | Messages can be edited and deleted in place |
 | Replies & mentions | `replyToId` threading and `@mention` arrays on send |
 | Attachments | File/image attachments; Stash link attachments via `MessagesStashAttachmentModal` |
 | Per-user state | Mute and archive lists, plus message settings, persisted in `localStorage` |
-| Folder counts | Unread badge counts per folder from the server |
+| Folder counts | Unread badge counts from the server |
 
 ## Architecture
 
 | Component / Hook | Role |
 |------------------|------|
-| `MessagesRouter` (`src/components/messages/`) | Orchestrator: folder/conversation state, mutations, WebSocket wiring; wrapped in `AuthenticationGuard` |
+| `MessagesRouter` (`src/components/messages/`) | Orchestrator: conversation state, mutations, WebSocket wiring; wrapped in `AuthenticationGuard` |
 | `MessagesLayout` | Two-pane (conversation list + chat) shell; collapses list when a conversation is open |
-| `MessagesFolderNav` | Folder tabs + settings; exports `MESSAGE_FOLDERS`, `getFolderFromPathname` |
-| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection |
-| `MessagesGroupsPanel` / `MessagesGroupsListPanel` | ThinkTank groups directory and group list |
+| `MessagesFolderNav` | Header bar + settings; exports `MESSAGE_FOLDERS`, `getFolderFromPathname` |
+| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection, channel filters (All, Diplomatic, Direct, Community) |
 | `MessagesChatPanel` / `MessagesChatHeader` / `MessagesBubble` | Active conversation thread, header, message bubbles |
+| `LoreBotFeedView` | Rich media read-only stream for LoreBot WikiOS updates, watchlist & stash dispatches |
 | `MessagesInputBar` | Composer with Stash attachment hook |
 | `MessagesNewConversationModal` / `MessagesAddParticipantsModal` | Create conversation / add participants |
 | `MessagesStashAttachmentModal` | Attach a Stash link (fed by `api.wikios.getStashes` / `getStashItems`) |
