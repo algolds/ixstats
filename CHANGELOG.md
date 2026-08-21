@@ -33,6 +33,21 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 💬 Messaging & Atomic Architecture Consolidation (Wave 7: Plans 163, 166)
+
+- **Canonical Messaging Module & API Consolidation (Plan 163)**:
+  - Created canonical messaging module in `src/server/modules/messaging/` (`service.ts`, `contracts.ts`, `errors.ts`, `formatters.ts`, `account-resolver.ts`, `telemetry.ts`, `index.ts`).
+  - Unified all messaging operations (conversations, messages, folder filtering, counts, reactions, presence, participants, notifications, bridge syncs) behind `MessagingService`.
+  - Refactored all 6 messaging router files (`src/server/api/routers/messages/{conversations,messaging,participants}.ts` and `src/server/api/routers/thinkpages/messaging/{conversations,messages,presence}.ts`) into thin delegating adapters with 0 direct `ctx.db` operations.
+  - Implemented privacy-safe telemetry logging that strictly avoids logging message bodies, subjects, attachments, participant IDs, conversation IDs, message IDs, or user tokens.
+  - Added API parity and domain service test suites: `src/tests/server/modules/messaging/api-parity.test.ts` (verifying exact 15 current and 8 legacy procedures) and `src/tests/server/modules/messaging/service.test.ts` (23 unit tests).
+- **Atomic Selector Headless State & Presentation Consolidation (Plan 166)**:
+  - Extracted domain-agnostic headless selector state into `src/hooks/useAtomicSelectorState.ts`, managing selection bounds, anti-clobber value synchronization, controlled vs uncontrolled state, category filters, and dialog state without importing domain catalogs.
+  - Extracted slot-based presentation components into `src/components/ui/atomic/shared/` (`AtomicSelectorWorkspace.tsx`, `AtomicSelectorMetrics.tsx`, `AtomicSelectorDialogs.tsx`).
+  - Created domain-specific adapters for Tax, Government, and Economic components (`tax-selector-adapter.ts`, `government-selector-adapter.ts`, `economic-selector-adapter.ts`) retaining 100% of domain formulas, synergy detection, costs, and validation.
+  - Refactored `useAtomicGovernmentBuilder`, `useAtomicEconomicBuilder`, and `UnifiedAtomicComponentSelector` to compose the headless state.
+  - Added unit and characterization test suites: `src/tests/hooks/useAtomicSelectorState.test.tsx`, `src/tests/lib/atomic-selector-adapters.test.ts`, and `src/tests/components/mycountry/atomic-selectors.test.tsx`.
+
 ### 🌐 Module & Flag Ecosystem Consolidation (Wave 6: Plans 158, 164)
 
 - **Canonical Forum Module Boundary & Bridge Consolidation (Plan 158)**:

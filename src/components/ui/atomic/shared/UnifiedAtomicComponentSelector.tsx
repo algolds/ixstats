@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -12,6 +12,7 @@ import { cn } from "~/lib/utils";
 import type { UnifiedAtomicComponentSelectorProps } from "./types";
 import { UnifiedAtomicCard } from "./UnifiedAtomicCard";
 import { getThemeColorClasses } from "./themes";
+import { useAtomicSelectorState } from "~/hooks/useAtomicSelectorState";
 
 export function UnifiedAtomicComponentSelector<T extends string>({
   components,
@@ -27,8 +28,19 @@ export function UnifiedAtomicComponentSelector<T extends string>({
   checkSynergy,
   checkConflict,
 }: UnifiedAtomicComponentSelectorProps<T>) {
-  const [activeCategory, setActiveCategory] = useState<string>(Object.keys(categories)[0] || "");
-  const [searchQuery, setSearchQuery] = useState("");
+  const defaultCategory = Object.keys(categories)[0] || "";
+
+  const state = useAtomicSelectorState<T>({
+    selectedComponents,
+    onSelectionChange: onComponentChange,
+    maxComponents,
+    isReadOnly,
+    defaultCategory,
+  });
+
+  const { activeCategory, setActiveCategory, searchQuery, setSearchQuery, handleToggle } = state;
+
+  const currentCategory = activeCategory || defaultCategory;
 
   const effectiveness = useMemo(
     () => calculateEffectiveness(selectedComponents),
@@ -63,17 +75,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
     return list;
   }, [selectedComponents, components, checkConflict]);
 
-  const themeClasses = getThemeColorClasses(theme, activeCategory);
-
-  const toggleComponent = (componentId: string) => {
-    if (isReadOnly) return;
-
-    if (selectedComponents.includes(componentId as T)) {
-      onComponentChange(selectedComponents.filter((c) => c !== componentId));
-    } else if (selectedComponents.length < maxComponents) {
-      onComponentChange([...selectedComponents, componentId as T]);
-    }
-  };
+  const themeClasses = getThemeColorClasses(theme, currentCategory);
 
   const totalImplementationCost = selectedComponents.reduce(
     (sum, id) => sum + (components[id]?.implementationCost || 0),
@@ -86,7 +88,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
   );
 
   const filteredComponents = useMemo(() => {
-    const categoryComponents = categories[activeCategory] || [];
+    const categoryComponents = categories[currentCategory] || [];
     if (!searchQuery) return categoryComponents;
 
     return categoryComponents.filter((id) => {
@@ -96,7 +98,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
         component?.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     });
-  }, [activeCategory, searchQuery, categories, components]);
+  }, [currentCategory, searchQuery, categories, components]);
 
   return (
     <Card className="glass-card-parent w-full">
@@ -170,7 +172,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
         </div>
 
         {/* Category Tabs */}
-        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+        <Tabs value={currentCategory} onValueChange={(val) => setActiveCategory(val)}>
           <TabsList className="bg-muted/50 grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {Object.keys(categories).map((category) => (
               <TabsTrigger
@@ -206,7 +208,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                         key={componentId}
                         component={component}
                         isSelected={isSelected}
-                        onToggle={() => toggleComponent(componentId)}
+                        onToggle={() => handleToggle(componentId as T)}
                         isDisabled={isDisabled}
                         hasConflict={hasConflict}
                         hasSynergy={hasSynergy}
@@ -247,7 +249,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleComponent(componentId);
+                          handleToggle(componentId as T);
                         }}
                         className="ml-1 rounded-full p-0.5 transition-colors hover:bg-red-500"
                       >
@@ -302,7 +304,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
               `dark:bg-${themeClasses.selectedBgDark}`
             )}
           >
-            <Info className={cn("h-4 w-4", `text-${themeClasses.primary}`)} />
+            <Info className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-2">
                 <p className="text-foreground font-medium">System Analysis:</p>

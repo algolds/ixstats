@@ -282,19 +282,10 @@
     "incrementUsageSchema"
   ],
   "src/server/api/routers/forum/account.ts": [
-    "normalizeNode",
-    "xfFetch"
-  ],
-  "src/server/api/routers/forum/reading.ts": [
-    "requireForumUser"
-  ],
-  "src/server/api/routers/forum/stash.ts": [
-    "requireForumUser",
-    "xfFetch"
+    "normalizeNode"
   ],
   "src/server/api/routers/forum/writing.ts": [
-    "normalizeNode",
-    "xfFetch"
+    "normalizeNode"
   ],
   "src/server/api/routers/geo/features/storylines.ts": [
     "coordinatesSchema"
@@ -384,14 +375,6 @@
   ],
   "src/server/api/routers/lore-cards/gallery.ts": [
     "_LORE_CARD_REQUEST_COST"
-  ],
-  "src/server/api/routers/messages/messaging.ts": [
-    "_MessageFolderSchema",
-    "_MessageSourceSchema"
-  ],
-  "src/server/api/routers/messages/participants.ts": [
-    "_MessageFolderSchema",
-    "_MessageSourceSchema"
   ],
   "src/server/api/routers/national-issues/engine.ts": [
     "ResponseOptionSchema",
@@ -535,39 +518,6 @@
     "SearchUnsplashImagesSchema",
     "UpdateAccountSchema",
     "invalidateFeeds"
-  ],
-  "src/server/api/routers/thinkpages/messaging/conversations.ts": [
-    "AddReactionSchema",
-    "CreateAccountSchema",
-    "CreatePostSchema",
-    "GetFeedSchema",
-    "SearchUnsplashImagesSchema",
-    "UpdateAccountSchema",
-    "hydratePostDates",
-    "invalidateFeeds",
-    "pollInclude"
-  ],
-  "src/server/api/routers/thinkpages/messaging/messages.ts": [
-    "AddReactionSchema",
-    "CreateAccountSchema",
-    "CreatePostSchema",
-    "GetFeedSchema",
-    "SearchUnsplashImagesSchema",
-    "UpdateAccountSchema",
-    "hydratePostDates",
-    "invalidateFeeds",
-    "pollInclude"
-  ],
-  "src/server/api/routers/thinkpages/messaging/presence.ts": [
-    "AddReactionSchema",
-    "CreateAccountSchema",
-    "CreatePostSchema",
-    "GetFeedSchema",
-    "SearchUnsplashImagesSchema",
-    "UpdateAccountSchema",
-    "hydratePostDates",
-    "invalidateFeeds",
-    "pollInclude"
   ],
   "src/server/api/routers/thinkpages/posts/bookmarks.ts": [
     "AddReactionSchema",

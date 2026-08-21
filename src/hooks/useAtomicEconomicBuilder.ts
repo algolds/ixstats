@@ -1,22 +1,14 @@
 /**
- * Atomic Economic Builder - State Management Hook
+ * Atomic Economic Builder - State Management Hook (Plan 166)
  *
  * Custom React hook that encapsulates all state management and business logic
  * for the atomic economic component builder system.
- *
- * Features:
- * - Component selection state
- * - Category filtering
- * - Search functionality
- * - Template loading
- * - Synergy detection
- * - Metrics calculation
- * - Performance optimization with useMemo/useCallback
+ * Composes headless useAtomicSelectorState while retaining all economic domain logic.
  */
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback } from "react";
 import {
   type EconomicComponentType,
   type EconomicCategory,
@@ -35,6 +27,7 @@ import {
   type ValidationResult,
 } from "~/lib/economy/atomic-utils";
 import { useEconomicComponentsData } from "./useEconomicComponentsData";
+import { useAtomicSelectorState } from "./useAtomicSelectorState";
 
 /**
  * Hook Props
@@ -93,60 +86,25 @@ export interface UseAtomicEconomicBuilderReturn {
 
 /**
  * Atomic Economic Builder Hook
- *
- * @param props Hook configuration
- * @returns Builder state and actions
  */
 export function useAtomicEconomicBuilder({
-  countryId,
+  countryId: _countryId,
   initialSelection = [],
   maxComponents = 15,
   onSelectionChange,
 }: UseAtomicEconomicBuilderProps = {}): UseAtomicEconomicBuilderReturn {
-  // ============================================================================
   // Database Integration
-  // ============================================================================
+  const { components: dbComponents } = useEconomicComponentsData();
 
-  // Use database hook for component data
-  const {
-    components: dbComponents,
-    isLoading: dbLoading,
-    isUsingFallback,
-  } = useEconomicComponentsData();
+  // Headless state composition
+  const state = useAtomicSelectorState<EconomicComponentType>({
+    initialSelection,
+    maxComponents,
+    onSelectionChange,
+  });
 
-  // ============================================================================
-  // State
-  // ============================================================================
+  const { selectedComponents, selectedIds, searchQuery, activeCategory } = state;
 
-  const [selectedComponents, setSelectedComponents] =
-    useState<EconomicComponentType[]>(initialSelection);
-  const [categoryFilter, setCategoryFilter] = useState<EconomicCategory | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Sync state when initialSelection changes by VALUE (not reference). Callers often pass
-  // a fresh array each render (e.g. default `[]` or a recomputed prop); keying the reset on
-  // reference would clobber the user's live selection on every render. Compare as sets so we
-  // only adopt genuinely new async-loaded data and never revert an in-progress edit.
-  useEffect(() => {
-    setSelectedComponents((prev) => {
-      if (
-        prev.length === initialSelection.length &&
-        prev.every((c) => initialSelection.includes(c))
-      ) {
-        return prev;
-      }
-      return initialSelection;
-    });
-  }, [initialSelection]);
-
-  // ============================================================================
-  // Computed Values (Memoized)
-  // ============================================================================
-
-  /**
-   * All available component types (from database or fallback)
-   * Uses database data when available, falls back to hardcoded data
-   */
   const allComponents = useMemo(() => {
     if (dbComponents.length > 0) {
       return dbComponents.map((comp) => comp.type);
@@ -154,183 +112,78 @@ export function useAtomicEconomicBuilder({
     return getAllComponents();
   }, [dbComponents]);
 
-  /**
-   * Filtered and searched components
-   */
   const availableComponents = useMemo(() => {
-    return filterAndSearchComponents(allComponents, categoryFilter, searchQuery);
-  }, [allComponents, categoryFilter, searchQuery]);
+    return filterAndSearchComponents(
+      allComponents,
+      activeCategory as EconomicCategory | null,
+      searchQuery
+    );
+  }, [allComponents, activeCategory, searchQuery]);
 
-  /**
-   * Set of selected component IDs for quick lookup
-   */
-  const selectedIds = useMemo(() => {
-    return new Set(selectedComponents.map((c) => c.toString()));
-  }, [selectedComponents]);
-
-  /**
-   * Detected synergies between selected components
-   */
   const synergies = useMemo(() => {
     return detectEconomicSynergies(selectedComponents);
   }, [selectedComponents]);
 
-  /**
-   * Detected conflicts between selected components
-   */
   const conflicts = useMemo(() => {
     return detectEconomicConflicts(selectedComponents);
   }, [selectedComponents]);
 
-  /**
-   * Economic metrics for selected components
-   * Uses database component data when available for tax/sector/employment impacts
-   */
   const metrics = useMemo(() => {
-    // If using database components, metrics are already calculated from database data
-    // The getEconomicMetrics function pulls from ATOMIC_ECONOMIC_COMPONENTS by default,
-    // but database components are already merged into that structure via the hook
     return getEconomicMetrics(selectedComponents);
   }, [selectedComponents]);
 
-  /**
-   * Validation result for current selection
-   */
   const validation = useMemo(() => {
     return validateEconomicSelection(selectedComponents, maxComponents);
   }, [selectedComponents, maxComponents]);
 
-  /**
-   * Whether more components can be selected
-   */
-  const canSelect = useMemo(() => {
-    return selectedComponents.length < maxComponents;
-  }, [selectedComponents.length, maxComponents]);
-
-  // ============================================================================
-  // Action Handlers (Memoized)
-  // ============================================================================
-
-  /**
-   * Handle component selection
-   */
-  const handleSelect = useCallback(
-    (component: EconomicComponentType) => {
-      if (selectedComponents.includes(component)) return;
-      if (selectedComponents.length >= maxComponents) return;
-
-      const newSelection = [...selectedComponents, component];
-      setSelectedComponents(newSelection);
-      onSelectionChange?.(newSelection);
-    },
-    [selectedComponents, maxComponents, onSelectionChange]
-  );
-
-  /**
-   * Handle component deselection
-   */
-  const handleDeselect = useCallback(
-    (component: EconomicComponentType) => {
-      const newSelection = selectedComponents.filter((c) => c !== component);
-      setSelectedComponents(newSelection);
-      onSelectionChange?.(newSelection);
-    },
-    [selectedComponents, onSelectionChange]
-  );
-
-  /**
-   * Handle component toggle (select/deselect)
-   */
-  const handleToggle = useCallback(
-    (component: EconomicComponentType) => {
-      if (selectedIds.has(component.toString())) {
-        handleDeselect(component);
-      } else {
-        handleSelect(component);
-      }
-    },
-    [selectedIds, handleSelect, handleDeselect]
-  );
-
-  /**
-   * Clear all selected components
-   */
-  const handleClear = useCallback(() => {
-    setSelectedComponents([]);
-    onSelectionChange?.([]);
-  }, [onSelectionChange]);
-
-  /**
-   * Load economic template
-   */
   const loadTemplate = useCallback(
     (templateId: string) => {
       const template = ECONOMIC_TEMPLATES.find((t) => t.id === templateId);
       if (!template) return;
-
-      setSelectedComponents(template.components);
-      onSelectionChange?.(template.components);
+      state.setSelection(template.components);
     },
-    [onSelectionChange]
+    [state]
   );
 
-  /**
-   * Set category filter
-   */
-  const setCategory = useCallback((category: EconomicCategory | null) => {
-    setCategoryFilter(category);
-  }, []);
-
-  /**
-   * Set search query
-   */
-  const setQuery = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
-
-  // ============================================================================
-  // Return Interface
-  // ============================================================================
+  const setCategory = useCallback(
+    (category: EconomicCategory | null) => {
+      state.setActiveCategory(category);
+    },
+    [state]
+  );
 
   return {
-    // Selection State
     selectedComponents,
     selectedIds,
     availableComponents,
 
-    // Filter State
     categoryFilter: {
-      category: categoryFilter,
+      category: activeCategory as EconomicCategory | null,
       setCategory,
       categories: COMPONENT_CATEGORIES,
     },
 
-    // Search State
     search: {
       query: searchQuery,
-      setQuery,
+      setQuery: state.setSearchQuery,
     },
 
-    // Templates
     templates: {
       available: ECONOMIC_TEMPLATES,
       load: loadTemplate,
     },
 
-    // Computed Data
     synergies,
     conflicts,
     metrics,
     validation,
 
-    // Actions
-    handleSelect,
-    handleDeselect,
-    handleToggle,
-    handleClear,
+    handleSelect: state.handleSelect,
+    handleDeselect: state.handleDeselect,
+    handleToggle: state.handleToggle,
+    handleClear: state.handleClear,
 
-    // Utility
-    canSelect,
+    canSelect: state.canSelectMore,
     maxComponents,
   };
 }

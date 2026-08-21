@@ -1,13 +1,15 @@
 /**
- * Atomic Government Builder Hook
+ * Atomic Government Builder Hook (Plan 166)
  *
- * React hook managing state and logic for government component builder.
- * Encapsulates all state management, computations, and event handlers.
+ * Composes the generic headless useAtomicSelectorState while retaining
+ * all government-specific domain formulas, synergy detection, costs, and capacity metrics.
  *
  * @module useAtomicGovernmentBuilder
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+"use client";
+
+import { useMemo } from "react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/government/atomic-data";
 import {
@@ -22,6 +24,7 @@ import {
   validateSelection,
 } from "~/lib/government/atomic-utils";
 import type { EffectivenessMetrics } from "~/components/ui/atomic/shared/types";
+import { useAtomicSelectorState } from "./useAtomicSelectorState";
 
 export interface UseAtomicGovernmentBuilderProps {
   /** Initially selected components */
@@ -76,37 +79,22 @@ export function useAtomicGovernmentBuilder({
   onChange,
   defaultCategoryFilter = null,
 }: UseAtomicGovernmentBuilderProps = {}): UseAtomicGovernmentBuilderReturn {
-  // State
-  const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>(initialComponents);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(defaultCategoryFilter);
-  const [searchQuery, setSearchQuery] = useState("");
+  const state = useAtomicSelectorState<ComponentType>({
+    initialSelection: initialComponents,
+    maxComponents,
+    isReadOnly,
+    onSelectionChange: onChange,
+    defaultCategory: defaultCategoryFilter,
+  });
 
-  // Sync state when initialComponents changes by VALUE (not reference). Callers often pass
-  // a fresh array each render; keying the reset on reference would clobber the user's live
-  // selection every render. Compare as sets so we only adopt genuinely new loaded data.
-  useEffect(() => {
-    setSelectedComponents((prev) => {
-      if (
-        prev.length === initialComponents.length &&
-        prev.every((c) => initialComponents.includes(c))
-      ) {
-        return prev;
-      }
-      return initialComponents;
-    });
-  }, [initialComponents]);
-
-  // Sync category filter if defaultCategoryFilter changes
-  useEffect(() => {
-    setCategoryFilter(defaultCategoryFilter);
-  }, [defaultCategoryFilter]);
+  const { selectedComponents, activeCategory, searchQuery } = state;
 
   // Filtered components based on search and category
   const filteredComponents = useMemo(() => {
     let filtered = ATOMIC_COMPONENTS;
 
-    if (categoryFilter) {
-      filtered = filterByCategory(filtered, categoryFilter);
+    if (activeCategory) {
+      filtered = filterByCategory(filtered, activeCategory);
     }
 
     if (searchQuery.trim()) {
@@ -114,7 +102,7 @@ export function useAtomicGovernmentBuilder({
     }
 
     return filtered;
-  }, [categoryFilter, searchQuery]);
+  }, [activeCategory, searchQuery]);
 
   // Effectiveness metrics
   const effectiveness = useMemo(
@@ -150,68 +138,10 @@ export function useAtomicGovernmentBuilder({
     [selectedComponents, maxComponents]
   );
 
-  // Can select more components
-  const canSelectMore = useMemo(
-    () => !isReadOnly && selectedComponents.length < maxComponents,
-    [isReadOnly, selectedComponents.length, maxComponents]
-  );
-
-  // Select component
-  const selectComponent = useCallback(
-    (componentType: ComponentType) => {
-      if (isReadOnly) return;
-      if (selectedComponents.includes(componentType)) return;
-      if (selectedComponents.length >= maxComponents) return;
-
-      const newComponents = [...selectedComponents, componentType];
-      setSelectedComponents(newComponents);
-      onChange?.(newComponents);
-    },
-    [isReadOnly, selectedComponents, maxComponents, onChange]
-  );
-
-  // Deselect component
-  const deselectComponent = useCallback(
-    (componentType: ComponentType) => {
-      if (isReadOnly) return;
-
-      const newComponents = selectedComponents.filter((c) => c !== componentType);
-      setSelectedComponents(newComponents);
-      onChange?.(newComponents);
-    },
-    [isReadOnly, selectedComponents, onChange]
-  );
-
-  // Toggle component
-  const toggleComponent = useCallback(
-    (componentType: ComponentType) => {
-      if (selectedComponents.includes(componentType)) {
-        deselectComponent(componentType);
-      } else {
-        selectComponent(componentType);
-      }
-    },
-    [selectedComponents, selectComponent, deselectComponent]
-  );
-
-  // Clear selection
-  const clearSelection = useCallback(() => {
-    if (isReadOnly) return;
-
-    setSelectedComponents([]);
-    onChange?.([]);
-  }, [isReadOnly, onChange]);
-
-  // Check if component is selected
-  const isSelected = useCallback(
-    (componentType: ComponentType) => selectedComponents.includes(componentType),
-    [selectedComponents]
-  );
-
   return {
     // State
     selectedComponents,
-    categoryFilter,
+    categoryFilter: activeCategory,
     searchQuery,
 
     // Computed values
@@ -225,16 +155,16 @@ export function useAtomicGovernmentBuilder({
     validation,
 
     // Actions
-    selectComponent,
-    deselectComponent,
-    toggleComponent,
-    clearSelection,
-    setCategoryFilter,
-    setSearchQuery,
+    selectComponent: state.handleSelect,
+    deselectComponent: state.handleDeselect,
+    toggleComponent: state.handleToggle,
+    clearSelection: state.handleClear,
+    setCategoryFilter: state.setActiveCategory,
+    setSearchQuery: state.setSearchQuery,
 
     // Utilities
-    isSelected,
-    canSelectMore,
+    isSelected: state.isSelected,
+    canSelectMore: state.canSelectMore,
     categories: COMPONENT_CATEGORIES,
   };
 }

@@ -1,171 +1,14 @@
 /**
- * Unified Messages Router (Phase 2 + Phase 3)
- *
- * Provides folder-aware messaging endpoints that work across all message sources
- * (thinkshare, thinktank, diplomatic, wiki, forum).
- *
- * Phase 3: Bridge adapters for wiki talk pages and forum conversations.
+ * Unified Messages Router — Conversations (Plan 163 Adapter)
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createMessagingService } from "~/server/modules/messaging";
 import { notificationAPI } from "~/lib/notifications/api";
-import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { getThinkPagesServer } from "~/server/websocket-server";
 import { forumBridge } from "~/server/modules/forum";
-
-// ─── User Profile Cache (batch lookup) ───────────────────────────
-
-type UserAccount = {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl: string | null;
-  accountType: "country";
-};
-
-/** Batch-resolve userIds to display accounts. Single query instead of N+1. */
-async function batchResolveUsers(userIds: string[], db: any): Promise<Map<string, UserAccount>> {
-  const map = new Map<string, UserAccount>();
-  if (userIds.length === 0) return map;
-
-  const unique = [...new Set(userIds)];
-
-  // Separate bridge-prefixed IDs from real clerkUserIds
-  const realIds: string[] = [];
-  const forumKeys: { key: string; raw: string }[] = []; // raw = part after "forum:"
-  const wikiNames: string[] = [];
-
-  for (const id of unique) {
-    if (id.startsWith("forum:")) {
-      forumKeys.push({ key: id, raw: id.slice(6) });
-    } else if (id.startsWith("wiki:")) {
-      wikiNames.push(id.slice(5));
-    } else {
-      realIds.push(id);
-    }
-  }
-
-  // 1. Resolve real clerkUserIds
-  if (realIds.length > 0) {
-    const users = await db.user.findMany({
-      where: { clerkUserId: { in: realIds } },
-      include: { country: true },
-    });
-    for (const u of users) {
-      map.set(u.clerkUserId, {
-        id: u.clerkUserId,
-        username: u.country?.slug ?? u.clerkUserId,
-        displayName: u.country?.name ?? "Unknown",
-        profileImageUrl: u.country?.flag ?? null,
-        accountType: "country",
-      });
-    }
-
-    // Fallback: unresolved real IDs might be countryIds (diplomatic channels)
-    const unresolvedReal = realIds.filter((id) => !map.has(id));
-    if (unresolvedReal.length > 0) {
-      const countries = await db.country.findMany({
-        where: { id: { in: unresolvedReal } },
-      });
-      for (const c of countries) {
-        map.set(c.id, {
-          id: c.id,
-          username: c.slug,
-          displayName: c.name,
-          profileImageUrl: c.flag ?? null,
-          accountType: "country",
-        });
-      }
-    }
-  }
-
-  // 2. Resolve forum:* IDs — try by forumUserId (numeric) or forumUsername
-  if (forumKeys.length > 0) {
-    const numericIds = forumKeys.map((f) => parseInt(f.raw, 10)).filter((n) => !isNaN(n));
-    const nameKeys = forumKeys.filter((f) => isNaN(parseInt(f.raw, 10)));
-
-    // Try numeric forumUserId lookup
-    if (numericIds.length > 0) {
-      const forumUsers = await db.user.findMany({
-        where: { forumUserId: { in: numericIds } },
-        include: { country: true },
-      });
-      for (const u of forumUsers) {
-        map.set(`forum:${u.forumUserId}`, {
-          id: `forum:${u.forumUserId}`,
-          username: u.forumUsername ?? u.country?.slug ?? `forum-${u.forumUserId}`,
-          displayName: u.forumUsername ?? u.country?.name ?? `Forum User`,
-          profileImageUrl: u.country?.flag ?? null,
-          accountType: "country",
-        });
-      }
-    }
-
-    // Try forumUsername lookup for name-based IDs
-    if (nameKeys.length > 0) {
-      const forumUsersByName = await db.user.findMany({
-        where: { forumUsername: { in: nameKeys.map((f) => f.raw) } },
-        include: { country: true },
-      });
-      for (const u of forumUsersByName) {
-        map.set(`forum:${u.forumUsername}`, {
-          id: `forum:${u.forumUsername}`,
-          username: u.forumUsername ?? u.country?.slug ?? "forum-user",
-          displayName: u.country?.name ?? u.forumUsername ?? "Forum User",
-          profileImageUrl: u.country?.flag ?? null,
-          accountType: "country",
-        });
-      }
-    }
-
-    // Fallback: use the raw value (username or ID) as the display name
-    for (const f of forumKeys) {
-      if (!map.has(f.key)) {
-        map.set(f.key, {
-          id: f.key,
-          username: f.raw,
-          displayName: f.raw,
-          profileImageUrl: null,
-          accountType: "country",
-        });
-      }
-    }
-  }
-
-  // 3. Resolve wiki:Username IDs
-  if (wikiNames.length > 0) {
-    const wikiUsers = await db.user.findMany({
-      where: { wikiUsername: { in: wikiNames } },
-      include: { country: true },
-    });
-    for (const u of wikiUsers) {
-      map.set(`wiki:${u.wikiUsername}`, {
-        id: `wiki:${u.wikiUsername}`,
-        username: u.wikiUsername ?? u.country?.slug ?? "wiki-user",
-        displayName: u.wikiUsername ?? u.country?.name ?? "Wiki User",
-        profileImageUrl: u.country?.flag ?? null,
-        accountType: "country",
-      });
-    }
-    // For unresolved wiki names, use the username directly
-    for (const name of wikiNames) {
-      const key = `wiki:${name}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          id: key,
-          username: name,
-          displayName: name,
-          profileImageUrl: null,
-          accountType: "country",
-        });
-      }
-    }
-  }
-
-  return map;
-}
-
-// ─── Shared Schemas ──────────────────────────────────────────────
+import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 
 const MessageFolderSchema = z.enum([
   "inbox",
@@ -175,6 +18,11 @@ const MessageFolderSchema = z.enum([
   "groups",
   "system",
   "conversations",
+  "archive",
+  "trash",
+  "thinktank",
+  "wiki",
+  "forum",
 ]);
 
 const MessageSourceSchema = z.enum([
@@ -185,8 +33,6 @@ const MessageSourceSchema = z.enum([
   "forum",
   "system",
 ]);
-
-// ─── Router ──────────────────────────────────────────────────────
 
 export const messagesConversationsRouter = createTRPCRouter({
   /**
@@ -202,185 +48,19 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const principalId = ctx.auth.userId;
-      const { folder, limit, cursor } = input;
-
-      // Build where clause based on folder
-      const baseWhere: any = {
-        participants: {
-          some: { userId: principalId, isActive: true },
-        },
-        isActive: true,
-      };
-
-      // Fire-and-forget bridge sync for folders that need it (non-blocking)
-      if (folder === "inbox" || folder === "discussions") {
-        Promise.allSettled([
-          wikiTalkBridge.syncInbound(principalId, ctx.db as any),
-          forumBridge.syncInbound(principalId, ctx.db as any),
-        ]).catch((err: unknown) => {
-          console.error("[Messages] Background op failed:", (err as Error).message);
-        });
-      }
-
-      switch (folder) {
-        case "conversations":
-          baseWhere.source = { not: "system" };
-          break;
-        case "inbox":
-          break;
-        case "personal":
-          baseWhere.source = "thinkshare";
-          baseWhere.type = "direct";
-          baseWhere.OR = [{ conversationType: null }, { conversationType: "personal" }];
-          break;
-        case "diplomatic":
-          baseWhere.OR = [{ source: "diplomatic" }, { conversationType: "diplomatic" }];
-          break;
-        case "discussions":
-          baseWhere.source = { in: ["wiki", "forum"] };
-          break;
-        case "groups":
-          baseWhere.OR = [{ source: "thinktank" }, { type: "group", source: "thinkshare" }];
-          break;
-        case "system":
-          baseWhere.OR = [
-            { source: "system" },
-            {
-              messages: { some: { isSystem: true } },
-            },
-          ];
-          break;
-      }
-
-      const conversations = await ctx.db.thinkshareConversation.findMany({
-        where: baseWhere,
-        take: limit + 1,
-        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-        orderBy: { lastActivity: "desc" },
-        include: {
-          participants: {
-            where: { isActive: true },
-            include: {
-              conversation: false,
-            },
-          },
-          messages: {
-            take: 1,
-            orderBy: { ixTimeTimestamp: "desc" },
-          },
-        },
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
       });
 
-      // ── Batch enrichment (replaces N+1 loops) ──
-      const page = conversations.slice(0, limit);
-
-      // 1. Collect all userIds we need to resolve (participants + last message senders)
-      const allUserIds = new Set<string>();
-      for (const conv of page) {
-        for (const p of conv.participants) allUserIds.add(p.userId);
-        if (conv.messages[0]) allUserIds.add(conv.messages[0].userId);
-      }
-      allUserIds.delete(principalId);
-
-      // 2. Single batch query for all user profiles
-      const userMap = await batchResolveUsers([...allUserIds], ctx.db);
-
-      // 3. Batch unread counts — single query with groupBy
-      const participantReadMap = new Map(
-        page.map((c) => {
-          const p = c.participants.find((pp) => pp.userId === principalId);
-          return [c.id, p?.lastReadAt ?? new Date(0)];
-        })
-      );
-
-      // 3. Batch unread counts in a single query
-      const unreadMap = new Map<string, number>();
-      if (page.length > 0) {
-        const orConditions = page.map((conv) => {
-          const lastRead = participantReadMap.get(conv.id) ?? new Date(0);
-          return {
-            conversationId: conv.id,
-            ixTimeTimestamp: { gt: lastRead },
-          };
-        });
-
-        const unreadMessages = await ctx.db.thinkshareMessage.findMany({
-          where: {
-            OR: orConditions,
-            userId: { not: principalId },
-            deletedAt: null,
-          },
-          select: {
-            conversationId: true,
-          },
-        });
-
-        for (const conv of page) unreadMap.set(conv.id, 0);
-        for (const msg of unreadMessages) {
-          unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
-        }
-      }
-
-      // 4. Build enriched results (no more async per-item)
-      const defaultAccount: UserAccount = {
-        id: "unknown",
-        username: "unknown",
-        displayName: "Unknown",
-        profileImageUrl: null,
-        accountType: "country",
-      };
-
-      const enriched = page.map((conv) => {
-        const otherParticipants = conv.participants
-          .filter((p) => p.userId !== principalId)
-          .map((p) => ({
-            id: p.id,
-            accountId: p.userId,
-            isActive: p.isActive,
-            account: userMap.get(p.userId) ?? { ...defaultAccount, id: p.userId },
-          }));
-
-        const lastMessage = conv.messages[0];
-        const lastMessageAccount = lastMessage
-          ? (userMap.get(lastMessage.userId) ?? { ...defaultAccount, id: lastMessage.userId })
-          : null;
-
-        return {
-          id: conv.id,
-          type: conv.type,
-          name: conv.name,
-          avatar: conv.avatar,
-          isActive: conv.isActive,
-          lastActivity: conv.lastActivity,
-          createdAt: conv.createdAt,
-          updatedAt: conv.updatedAt,
-          source: conv.source,
-          sourceId: conv.sourceId,
-          conversationType: conv.conversationType,
-          diplomaticClassification: conv.diplomaticClassification,
-          unreadCount: unreadMap.get(conv.id) ?? 0,
-          otherParticipants,
-          lastMessage: lastMessage
-            ? {
-                id: lastMessage.id,
-                accountId: lastMessage.userId,
-                account: lastMessageAccount,
-                content: lastMessage.content,
-                ixTimeTimestamp: lastMessage.ixTimeTimestamp,
-                createdAt: lastMessage.ixTimeTimestamp,
-              }
-            : undefined,
-        };
+      return await messagingService.getConversationsByFolder(ctx.auth.userId, {
+        folder: input.folder as any,
+        limit: input.limit,
+        cursor: input.cursor,
       });
-
-      // For inbox folder, filter to only unread
-      const result = folder === "inbox" ? enriched.filter((c) => c.unreadCount > 0) : enriched;
-
-      const hasMore = conversations.length > limit;
-      const nextCursor = hasMore ? conversations[limit - 1]?.id : undefined;
-
-      return { conversations: result, nextCursor };
     }),
 
   /**
@@ -389,89 +69,15 @@ export const messagesConversationsRouter = createTRPCRouter({
   getFolderCounts: protectedProcedure
     .input(z.object({ userId: z.string().optional().default("") }))
     .query(async ({ ctx }) => {
-      const principalId = ctx.auth.userId;
-
-      // Get all conversations this user participates in
-      const participations = await ctx.db.conversationParticipant.findMany({
-        where: { userId: principalId, isActive: true },
-        select: { conversationId: true, lastReadAt: true },
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
       });
 
-      if (participations.length === 0) {
-        return {
-          inbox: 0,
-          personal: 0,
-          diplomatic: 0,
-          discussions: 0,
-          groups: 0,
-          system: 0,
-        };
-      }
-
-      const convIds = participations.map((p) => p.conversationId);
-      const readMap = new Map(participations.map((p) => [p.conversationId, p.lastReadAt]));
-
-      // Fetch all conversations with source info
-      const conversations = await ctx.db.thinkshareConversation.findMany({
-        where: { id: { in: convIds }, isActive: true },
-        select: {
-          id: true,
-          type: true,
-          source: true,
-          conversationType: true,
-        },
-      });
-
-      // Batch unread counts in parallel (Promise.all instead of sequential loop)
-      const unreadResults = await Promise.all(
-        conversations.map(async (conv) => {
-          const lastRead = readMap.get(conv.id) ?? new Date(0);
-          const count = await ctx.db.thinkshareMessage.count({
-            where: {
-              conversationId: conv.id,
-              userId: { not: principalId },
-              ixTimeTimestamp: { gt: lastRead },
-              deletedAt: null,
-            },
-          });
-          return { conv, count };
-        })
-      );
-
-      const counts: Record<string, number> = {
-        inbox: 0,
-        personal: 0,
-        diplomatic: 0,
-        discussions: 0,
-        groups: 0,
-        system: 0,
-        conversations: 0,
-      };
-
-      for (const { conv, count } of unreadResults) {
-        if (count === 0) continue;
-
-        let folder: string;
-        if (conv.source === "diplomatic" || conv.conversationType === "diplomatic") {
-          folder = "diplomatic";
-        } else if (conv.source === "thinktank" || conv.type === "group") {
-          folder = "groups";
-        } else if (conv.source === "wiki" || conv.source === "forum") {
-          folder = "discussions";
-        } else if (conv.source === "system") {
-          folder = "system";
-        } else {
-          folder = "personal";
-        }
-
-        counts[folder]! += count;
-        counts.inbox! += count;
-        if (folder !== "system") {
-          counts.conversations! += count;
-        }
-      }
-
-      return counts;
+      return await messagingService.getFolderCounts(ctx.auth.userId);
     }),
 
   /**
@@ -493,67 +99,19 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const principalId = ctx.auth.userId;
-      const { participantIds, source, ...metadata } = input;
-      const normalizedParticipantIds = Array.from(new Set([principalId, ...participantIds]));
-
-      // Check for existing direct conversation between same participants
-      if (normalizedParticipantIds.length <= 2 && source === "thinkshare") {
-        const existingConvs = await ctx.db.thinkshareConversation.findMany({
-          where: {
-            type: "direct",
-            source: "thinkshare",
-            isActive: true,
-            participants: {
-              every: {
-                userId: { in: normalizedParticipantIds },
-                isActive: true,
-              },
-            },
-          },
-          include: {
-            participants: { where: { isActive: true } },
-          },
-        });
-
-        const existing = existingConvs.find((c) => c.participants.length === normalizedParticipantIds.length);
-        if (existing) return existing;
-      }
-
-      const conversation = await ctx.db.thinkshareConversation.create({
-        data: {
-          type: normalizedParticipantIds.length > 2 ? "group" : "direct",
-          source,
-          ...metadata,
-          participants: {
-            create: normalizedParticipantIds.map((userId) => ({
-              userId,
-              role: "participant",
-            })),
-          },
-        },
-        include: { participants: true },
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
       });
 
-      // Notify participants
-      for (const pid of normalizedParticipantIds) {
-        if (pid !== principalId) {
-          try {
-            await notificationAPI.create({
-              userId: pid,
-              title: "New Conversation",
-              message: "You've been added to a new conversation",
-              type: "info",
-              category: "social",
-              priority: "low",
-            });
-          } catch {
-            // Non-fatal
-          }
-        }
-      }
-
-      return conversation;
+      return await messagingService.createConversation(ctx.auth.userId, {
+        participantIds: input.participantIds,
+        subject: input.name,
+        source: input.source as any,
+      });
     }),
 
   /**
@@ -562,21 +120,14 @@ export const messagesConversationsRouter = createTRPCRouter({
   syncDiscussions: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx }) => {
-      const principalId = ctx.auth.userId;
-      const [wikiResult, forumResult] = await Promise.allSettled([
-        wikiTalkBridge.syncInbound(principalId, ctx.db as any),
-        forumBridge.syncInbound(principalId, ctx.db as any),
-      ]);
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
+      });
 
-      return {
-        wiki:
-          wikiResult.status === "fulfilled"
-            ? wikiResult.value
-            : { conversationsCreated: 0, conversationsUpdated: 0, messagesCreated: 0 },
-        forum:
-          forumResult.status === "fulfilled"
-            ? forumResult.value
-            : { conversationsCreated: 0, conversationsUpdated: 0, messagesCreated: 0 },
-      };
+      return await messagingService.syncDiscussions(ctx.auth.userId);
     }),
 });
