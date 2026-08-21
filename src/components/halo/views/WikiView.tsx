@@ -1,4 +1,4 @@
-// src/components/halo/WikiView.tsx
+// src/components/halo/views/WikiView.tsx
 // Wiki mode for the Dynamic Island / Halo — search, collapsible TOC, narrator player, quick actions.
 
 "use client";
@@ -13,17 +13,17 @@ import { api } from "~/trpc/react";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
-import type { DIViewProps } from "./types";
+import type { DIViewProps } from "../types";
 import {
   WikiNarratorPlayer,
   WikiWorkspaceTab,
   WikiSearchDropdown,
   type LocalDraft,
   type PausedSession,
-} from "./wiki";
+} from "../wiki";
 import { listDrafts } from "~/lib/wiki-os/draft-store";
 
-interface WikiViewProps extends DIViewProps {}
+export interface WikiViewProps extends DIViewProps {}
 
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();

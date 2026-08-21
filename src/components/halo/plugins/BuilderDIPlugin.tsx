@@ -12,7 +12,7 @@ import React, { useMemo } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContext } from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import { BuilderDIView } from "~/components/halo/BuilderDIView";
+import { BuilderView } from "../views";
 import type { DIViewProps } from "../types";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { MyCountryDIPlugin } from "./MyCountryDIPlugin";
@@ -131,7 +131,7 @@ function BuilderDIPluginInner({ filter, context }: BuilderDIPluginInnerProps) {
       id: "builder",
       priority: 20, // High priority to override mycountry/wiki default plugins
       center: <BuilderCompactLabel />,
-      expandedViews: { builder: BuilderDIView as React.ComponentType<DIViewProps> },
+      expandedViews: { builder: BuilderView as React.ComponentType<DIViewProps> },
       accentColor: hasError ? "#ef4444" : "#f59e0b",
       stickyLabel: "Builder",
       badge: hasError ? { color: "#ef4444", pulse: true } : undefined,

@@ -70,7 +70,7 @@ The platform uses the **Canon Platform Readiness Scale** as established in `docs
 
 | Pillar / Overlay | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
 | :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **Halo Wayfinding Suite** | `v4` | Global Overlay | `src/components/halo/` (UI Store) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (Pure external store with `useSyncExternalStore`) | None — Ready to Ship |
+| **Halo Wayfinding Suite** | `v5` | Global Overlay | `src/components/halo/` (UI Store) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (Modular views directory, command palette catalog & keyword indexing) | None — Ready to Ship |
 | **Admin CMS Suite** | Platform CMS | `/admin/*` | `admin/` (audit, countries, health, roles) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (54 modular admin panels live) | None — Full RBAC & audit logging live |
 | **In-App Help Center** | Platform Help | `/help/*` | Static Next.js routes (`src/app/help/`) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (10 complete categories) | None — Ready to Ship |
 | **IxForum (XenForo Bridge)** | `v1.3` | `/(forum)/forum` | `forum/`, `ixnayid.ts` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (Optimized BBCode parser caching & SSO bridge) | None — Ready to Ship |

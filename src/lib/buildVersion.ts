@@ -55,7 +55,7 @@ export const VERSIONS = {
     achievements: 2, // incl. LoreWards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 4, // global contextual overlay (was "Dynamic Island"); v4: canonical Halo brand & architecture transition
+    halo: 5, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 

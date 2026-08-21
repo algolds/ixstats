@@ -1,19 +1,15 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Crown, Briefcase, Globe, Shield, X, Gavel } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
-import { createAbsoluteUrl } from "~/lib/utils";
-import { cn } from "~/lib/utils";
+import { createAbsoluteUrl, cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
-import type { DIViewProps } from "./types";
+import type { DIViewProps } from "../types";
 import { soundEffects } from "~/lib/sound/cuelume";
 
-export function MyCountryCommandPalette({ onClose }: DIViewProps) {
-  const router = useRouter();
-
+export function MyCountryActionsView({ onClose }: DIViewProps) {
   React.useEffect(() => {
     soundEffects.scan();
   }, []);
@@ -35,7 +31,6 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
   const actionButtonClass = (colors: string) =>
     `flex w-full items-center justify-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
 
-  // 1. Quick Actions items
   const quickActions = [
     {
       label: "Meetings",
@@ -80,7 +75,7 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      transition={{ type: "spring", stiffness: 420, damping: 38 }}
       className="flex w-full flex-col p-4 text-left"
     >
       {/* Header */}
@@ -132,3 +127,6 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
     </motion.div>
   );
 }
+
+// Backwards compatibility alias
+export const MyCountryCommandPalette = MyCountryActionsView;

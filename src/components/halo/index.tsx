@@ -10,9 +10,8 @@ import {
   DynamicIslandProvider,
   type SizePresets,
 } from "../ui/dynamic-island";
-import { CompactView } from "./CompactView";
-import { ExpandedView } from "./ExpandedView";
-import { NavTray, getSectionForPath } from "./NavTray";
+import { CompactView, ExpandedView, NavTray } from "./views";
+import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
@@ -406,10 +405,10 @@ function CommandPaletteContent({
                     duration: 2,
                     ease: "easeInOut",
                   },
-                  scale: { type: "spring", stiffness: 500, damping: 20 },
-                  y: { type: "spring", stiffness: 500, damping: 20 },
+                  scale: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
+                  y: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
                 }
-              : { type: "spring", stiffness: 500, damping: 20 }
+              : { type: "spring", stiffness: 420, damping: 38, mass: 0.8 }
           }
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}

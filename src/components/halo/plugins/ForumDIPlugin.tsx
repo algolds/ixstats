@@ -11,7 +11,7 @@ import React, { useMemo } from "react";
 import { MessageSquare } from "lucide-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import { ForumView } from "~/components/halo/ForumView";
+import { ForumView } from "../views";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
 import { PreText } from "~/components/ui/pretext";
 

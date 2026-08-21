@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Search, X, ChevronRight } from "lucide-react";
+import { Search, Xmark, NavArrowRight } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { formatCurrency, formatPopulation } from "~/lib/utils";
-import type { SearchViewProps, SearchFilter } from "./types";
+import type { SearchViewProps, SearchFilter } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 
@@ -15,11 +13,17 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "features", label: "Features" },
 ];
 
-const TYPE_COLORS: Record<string, string> = {
-  country: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  wiki: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-  command: "bg-green-500/10 text-green-600 dark:text-green-400",
-  feature: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+const CATEGORY_COLORS: Record<string, string> = {
+  Statecraft: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+  Vault: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
+  Geography: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+  Knowledge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+  Community: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+  Sports: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+  Labs: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20",
+  System: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20",
+  Country: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+  Wiki: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
 };
 
 export function SearchView({
@@ -82,7 +86,7 @@ export function SearchView({
           className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
           aria-label="Close search"
         >
-          <X className="h-4 w-4" />
+          <Xmark className="h-4 w-4" />
         </button>
       </div>
 
@@ -111,61 +115,70 @@ export function SearchView({
       <div className="min-h-0 flex-1">
         {searchResults && searchResults.length > 0 ? (
           <div className="space-y-0.5">
-            {searchResults.map((result) => (
-              <button
-                key={result.id}
-                onClick={result.action}
-                className="hover:bg-accent/10 group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
-              >
-                {/* Icon */}
-                <div className="bg-accent/10 group-hover:bg-accent/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors">
-                  {result.type === "country" && result.metadata?.countryName ? (
-                    <UnifiedCountryFlag
-                      showTooltip={false}
-                      countryName={String(result.metadata.countryName)}
-                      flagUrl={
-                        result.metadata?.flagUrl
-                          ? String(result.metadata.flagUrl)
-                          : undefined
-                      }
-                      className="h-3.5 w-5 rounded-sm object-cover"
-                      showPlaceholder={true}
-                    />
-                  ) : (
-                    result.icon && <result.icon className="h-4 w-4" />
-                  )}
-                </div>
+            {searchResults.map((result) => {
+              const categoryLabel = result.metadata?.category
+                ? String(result.metadata.category)
+                : result.type;
+              const badgeClass =
+                CATEGORY_COLORS[categoryLabel] ??
+                "bg-accent/10 text-muted-foreground border border-accent/20";
 
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <PreText
-                      className="text-foreground truncate text-sm font-medium"
-                      whiteSpace="nowrap"
-                    >
-                      {result.title}
-                    </PreText>
-                    <PreText
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${TYPE_COLORS[result.type] ?? ""}`}
-                      whiteSpace="nowrap"
-                    >
-                      {result.type}
-                    </PreText>
+              return (
+                <button
+                  key={result.id}
+                  onClick={result.action}
+                  className="hover:bg-accent/10 group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
+                >
+                  {/* Icon */}
+                  <div className="bg-accent/10 group-hover:bg-accent/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors">
+                    {result.type === "country" && result.metadata?.countryName ? (
+                      <UnifiedCountryFlag
+                        showTooltip={false}
+                        countryName={String(result.metadata.countryName)}
+                        flagUrl={
+                          result.metadata?.flagUrl
+                            ? String(result.metadata.flagUrl)
+                            : undefined
+                        }
+                        className="h-3.5 w-5 rounded-sm object-cover"
+                        showPlaceholder={true}
+                      />
+                    ) : (
+                      result.icon && <result.icon className="h-4 w-4" />
+                    )}
                   </div>
-                  {result.description && (
-                    <PreText
-                      className="text-foreground/70 block truncate text-xs"
-                      whiteSpace="nowrap"
-                    >
-                      {result.description}
-                    </PreText>
-                  )}
-                </div>
 
-                {/* Arrow */}
-                <ChevronRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-3.5 w-3.5 shrink-0 transition-colors" />
-              </button>
-            ))}
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <PreText
+                        className="text-foreground truncate text-sm font-medium"
+                        whiteSpace="nowrap"
+                      >
+                        {result.title}
+                      </PreText>
+                      <PreText
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize ${badgeClass}`}
+                        whiteSpace="nowrap"
+                      >
+                        {categoryLabel}
+                      </PreText>
+                    </div>
+                    {result.description && (
+                      <PreText
+                        className="text-foreground/70 block truncate text-xs"
+                        whiteSpace="nowrap"
+                      >
+                        {result.description}
+                      </PreText>
+                    )}
+                  </div>
+
+                  {/* Arrow */}
+                  <NavArrowRight className="text-muted-foreground/30 group-hover:text-muted-foreground/60 h-4 w-4 shrink-0 transition-colors" />
+                </button>
+              );
+            })}
           </div>
         ) : debouncedSearchQuery ? (
           /* ── No results ─────────────────────────────────────────── */

@@ -13,7 +13,7 @@ import React, { useMemo } from "react";
 import { Crown } from "lucide-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import { MyCountryCommandPalette } from "~/components/halo/MyCountryCommandPalette";
+import { MyCountryActionsView } from "../views";
 
 function MyCountryLabel() {
   return (
@@ -32,7 +32,7 @@ export function MyCountryDIPlugin() {
       id: "mycountry",
       priority: 5, // lower than wiki/forum so context-specific plugins win
       center: <MyCountryLabel />,
-      expandedViews: { mycountry: MyCountryCommandPalette },
+      expandedViews: { mycountry: MyCountryActionsView },
       accentColor: "#f59e0b",
       stickyLabel: "MyCountry",
     }),

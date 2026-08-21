@@ -1,4 +1,3 @@
-// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -16,7 +15,6 @@ import {
   Crown,
   History,
   ArrowLeft,
-  Sparkles,
   Building2,
   ScrollText,
   Handshake,
@@ -37,7 +35,7 @@ interface PausedSession {
   updatedAt: number;
 }
 
-interface WikiProfileViewProps {
+export interface WikiProfileViewProps {
   onClose: () => void;
 }
 
@@ -384,7 +382,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 </button>
                 <div className="flex flex-col">
                   <h3 className="text-foreground flex items-center gap-1.5 text-sm font-bold">
-                    <Sparkles className="h-4 w-4 text-blue-400" />
+                    <Crown className="h-4 w-4 text-amber-400" />
                     Country Management
                   </h3>
                   <span className="text-muted-foreground/60 text-[10px] font-semibold">

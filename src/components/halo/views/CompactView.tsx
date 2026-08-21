@@ -1,31 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { DynamicContainer } from "../ui/dynamic-island";
-import { Button } from "../ui/button";
+import { DynamicContainer } from "~/components/ui/dynamic-island";
+import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, MessageCircle, BookOpen, Settings } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
+import { Search, Bell, Settings } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useUser } from "~/context/auth-context";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
-import type { CompactViewProps } from "./types";
-import { useRouter, usePathname } from "next/navigation";
+import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
-// Extracted sub-components
-import { MapsProfileDropdown } from "./MapsProfileDropdown";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
-
-const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -36,8 +28,6 @@ const getGreeting = (ixTime: number): string => {
   if (hour >= 17 && hour < 21) return "Good evening";
   return "Good night";
 };
-
-// LivePillClock removed (static date display only in compact view)
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -57,16 +47,7 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { articleTitle: _articleTitle, activeSectionId, tocEntries } = useWikiContext();
-  const router = useRouter();
-  const diPathname = usePathname();
-  const isOnMapsPage = diPathname?.startsWith("/maps") || false;
-  const isOnOnomaPage = diPathname?.startsWith("/labs/onoma") || false;
-
-  const { data: userProfile, isLoading: _profileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { activeSectionId, tocEntries } = useWikiContext();
 
   const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
   const activeSectionName = activeSectionId
@@ -187,7 +168,7 @@ function CompactViewComponent({
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
                   <Bell className="h-3 w-3 animate-pulse text-amber-400" />
@@ -249,7 +230,7 @@ function CompactViewComponent({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 38 }}
                     className="flex items-center gap-1.5 px-2 py-1"
                   >
                     <Bell className="h-3 w-3 animate-pulse text-amber-400" />
@@ -263,7 +244,7 @@ function CompactViewComponent({
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 6 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 38 }}
                     className="flex items-center gap-1"
                   >
                     {/* Context switcher / Plugin center */}
@@ -305,13 +286,6 @@ function CompactViewComponent({
                           {pluginCenter}
                         </div>
                       )
-                    ) : isOnMapsPage ? (
-                      <MapsProfileDropdown
-                        user={user}
-                        isLoaded={isLoaded}
-                        userProfile={userProfile}
-                        greeting={currentTime.greeting}
-                      />
                     ) : (
                       <button
                         onClick={() => onSwitchMode("mycountry")}

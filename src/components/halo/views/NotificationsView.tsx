@@ -20,7 +20,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import type { NotificationsViewProps } from "./types";
+import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
@@ -126,53 +126,61 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
-  const standardList: NotificationItem[] = (notificationsData?.notifications || [])
-    .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
-    .map((n) => ({
-      ...n,
-      source: "standard",
-    }));
-  const executiveList: NotificationItem[] = (isExecutiveMode ? executiveNotifications || [] : [])
-    .filter((n) => n?.id && !locallyDismissedIds.has(n.id))
-    .map((n) => ({ ...n, source: "executive" }));
-  const enhancedList: NotificationItem[] = (enhancedNotifications || [])
-    .filter((n) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
-    .map((n) => ({ ...n, source: "enhanced" }));
+  const { allAlerts, groups } = useMemo(() => {
+    const standardList: NotificationItem[] = (notificationsData?.notifications || [])
+      .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
+      .map((n) => ({
+        ...n,
+        source: "standard",
+      }));
+    const executiveList: NotificationItem[] = (isExecutiveMode ? executiveNotifications || [] : [])
+      .filter((n) => n?.id && !locallyDismissedIds.has(n.id))
+      .map((n) => ({ ...n, source: "executive" }));
+    const enhancedList: NotificationItem[] = (enhancedNotifications || [])
+      .filter((n) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
+      .map((n) => ({ ...n, source: "enhanced" }));
 
-  const allAlerts: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
-    .filter((n) => n?.id && n?.title)
-    // Deduplicate
-    .reduce((acc: NotificationItem[], n: NotificationItem) => {
-      const key = `${n.source}-${n.id}`;
-      if (!acc.some((x: NotificationItem) => `${x.source}-${x.id}` === key)) acc.push(n);
-      return acc;
-    }, [])
-    .sort((a: NotificationItem, b: NotificationItem) => {
-      const at = new Date(a.timestamp ?? a.createdAt ?? 0).getTime();
-      const bt = new Date(b.timestamp ?? b.createdAt ?? 0).getTime();
-      return bt - at;
-    });
+    const alerts: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
+      .filter((n) => n?.id && n?.title)
+      .reduce((acc: NotificationItem[], n: NotificationItem) => {
+        const key = `${n.source}-${n.id}`;
+        if (!acc.some((x: NotificationItem) => `${x.source}-${x.id}` === key)) acc.push(n);
+        return acc;
+      }, [])
+      .sort((a: NotificationItem, b: NotificationItem) => {
+        const at = new Date(a.timestamp ?? a.createdAt ?? 0).getTime();
+        const bt = new Date(b.timestamp ?? b.createdAt ?? 0).getTime();
+        return bt - at;
+      });
 
-  // Group alerts by time
-  const groups: { label: string; items: NotificationItem[] }[] = [];
-  const buckets = {
-    Recent: [] as NotificationItem[],
-    "Earlier Today": [] as NotificationItem[],
-    "This Week": [] as NotificationItem[],
-    Earlier: [] as NotificationItem[],
-  };
+    const grps: { label: string; items: NotificationItem[] }[] = [];
+    const buckets = {
+      Recent: [] as NotificationItem[],
+      "Earlier Today": [] as NotificationItem[],
+      "This Week": [] as NotificationItem[],
+      Earlier: [] as NotificationItem[],
+    };
 
-  for (const n of allAlerts) {
-    const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
-    if (hrs < 1) buckets.Recent.push(n);
-    else if (hrs < 24) buckets["Earlier Today"].push(n);
-    else if (hrs < 168) buckets["This Week"].push(n);
-    else buckets.Earlier.push(n);
-  }
+    for (const n of alerts) {
+      const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
+      if (hrs < 1) buckets.Recent.push(n);
+      else if (hrs < 24) buckets["Earlier Today"].push(n);
+      else if (hrs < 168) buckets["This Week"].push(n);
+      else buckets.Earlier.push(n);
+    }
 
-  for (const [label, items] of Object.entries(buckets)) {
-    if (items.length > 0) groups.push({ label, items });
-  }
+    for (const [label, items] of Object.entries(buckets)) {
+      if (items.length > 0) grps.push({ label, items });
+    }
+
+    return { allAlerts: alerts, groups: grps };
+  }, [
+    notificationsData?.notifications,
+    locallyDismissedIds,
+    isExecutiveMode,
+    executiveNotifications,
+    enhancedNotifications,
+  ]);
 
   const conversationsList: MessageTrayConversation[] = useMemo(() => {
     return (messagesData?.conversations || []).filter(
@@ -322,7 +330,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 <motion.div
                   layoutId="halo-notif-tab-indicator"
                   className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
-                  transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">

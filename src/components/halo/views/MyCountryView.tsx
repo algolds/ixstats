@@ -9,7 +9,6 @@ import {
   LogOut,
   X,
   Shield,
-  Building2,
   Map,
   MessageSquare,
   Handshake,
@@ -19,24 +18,16 @@ import {
 } from "lucide-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { createAbsoluteUrl } from "~/lib/utils";
-import { getNationUrl } from "~/lib/utils";
-import {
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  formatCompactNumber as _formatCompactNumber,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  formatCompactCurrency as _formatCompactCurrency,
-} from "~/lib/utils";
+import { createAbsoluteUrl, getNationUrl, cn } from "~/lib/utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
-import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
 import { motion } from "motion/react";
+import type { ViewMode } from "../types";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;
@@ -47,30 +38,12 @@ function normalizeGrowth(value: number | null | undefined): number {
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
-const getPremiumDaysRemaining = (createdAt: string | Date | undefined): number => {
-  if (!createdAt) return 30;
-  const createdDate = new Date(createdAt);
-  const now = new Date();
-
-  // Calculate next billing date: same day of next month
-  let nextBillingDate = new Date(now.getFullYear(), now.getMonth(), createdDate.getDate());
-  if (nextBillingDate <= now) {
-    nextBillingDate = new Date(now.getFullYear(), now.getMonth() + 1, createdDate.getDate());
-  }
-
-  const diffTime = nextBillingDate.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-};
-
-import type { ViewMode } from "./types";
-
-interface MyCountryDIViewProps {
+export interface MyCountryViewProps {
   onClose: () => void;
   onSwitchMode?: (mode: ViewMode) => void;
 }
 
-export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
+export function MyCountryView({ onClose }: MyCountryViewProps) {
   const { user, isLoaded } = useUser();
   const [metricView, setMetricView] = useState({
     gdp: "perCapita" as "perCapita" | "total",
@@ -114,7 +87,7 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      transition={{ type: "spring", stiffness: 420, damping: 38 }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
@@ -488,3 +461,6 @@ export function MyCountryDIView({ onClose }: MyCountryDIViewProps) {
     </motion.div>
   );
 }
+
+// Backwards compatibility alias
+export const MyCountryDIView = MyCountryView;

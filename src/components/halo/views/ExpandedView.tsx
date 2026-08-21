@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
-import { DynamicContainer } from "../ui/dynamic-island";
+import { DynamicContainer } from "~/components/ui/dynamic-island";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
-import { MyCountryDIView } from "./MyCountryDIView";
-import type { ExpandedViewProps, DIPlugin } from "./types";
+import { MyCountryView } from "./MyCountryView";
+import type { ExpandedViewProps, DIPlugin } from "../types";
 
 export function ExpandedView({
   mode,
@@ -92,7 +92,7 @@ export function ExpandedView({
         )}
         {mode === "mycountry" && (
           <DynamicContainer key="mycountry" className="w-full">
-            <MyCountryDIView onClose={onClose} />
+            <MyCountryView onClose={onClose} />
           </DynamicContainer>
         )}
 

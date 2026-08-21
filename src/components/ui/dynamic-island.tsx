@@ -12,9 +12,9 @@ import React, {
 } from "react";
 import { AnimatePresence, motion, useWillChange } from "motion/react";
 
-// Spring physics — Apple-style morph: critically damped settle to prevent layout text-jitter
-const stiffness = 400;
-const damping = 36;
+// Spring physics — Apple HIG fluid spring: critically damped settle (damping ratio ~1.0) to prevent layout text-jitter
+const stiffness = 420;
+const damping = 38;
 const mass = 0.8; // lighter mass = faster acceleration into target shape
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
@@ -661,28 +661,6 @@ const DynamicIslandContent = ({
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>
-
-      {/* Global Refraction SVG Filter */}
-      <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
-        <defs>
-          <filter id="fractal-noise-glass">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.05 0.05"
-              numOctaves="2"
-              result="noise"
-            />
-            <feGaussianBlur in="noise" stdDeviation="1.5" result="blurredNoise" />
-            <feDisplacementMap
-              xChannelSelector="R"
-              yChannelSelector="G"
-              scale="15"
-              in="SourceGraphic"
-              in2="blurredNoise"
-            />
-          </filter>
-        </defs>
-      </svg>
     </div>
   );
 };

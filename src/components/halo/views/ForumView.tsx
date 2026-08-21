@@ -1,7 +1,3 @@
-// src/components/DynamicIsland/ForumView.tsx
-// DynamicIsland expanded view for forum pages.
-// Shows current thread info, recent threads, and quick actions.
-
 "use client";
 
 import React, { useState, useCallback } from "react";
@@ -9,8 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   MessageSquare,
   Search,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  Clock,
   ChevronRight,
   Plus,
   Layout,
@@ -25,9 +19,9 @@ import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { PreText } from "~/components/ui/pretext";
-import type { DIViewProps, ViewMode } from "./types";
+import type { DIViewProps, ViewMode } from "../types";
 
-interface ForumViewProps extends DIViewProps {}
+export interface ForumViewProps extends DIViewProps {}
 
 // ─── Section label ───────────────────────────────────────────────────────────
 
@@ -169,7 +163,6 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
   const { isSignedIn } = useUser();
   const [activeTab, setActiveTab] = useState<"recent" | "stash">("recent");
 
-  // Fetch stashed threads if the user is signed in
   const {
     data: stashedThreads,
     isLoading: loadingStashed,

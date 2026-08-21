@@ -1,10 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { usePathname } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -27,12 +23,13 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import type { SettingsViewProps } from "./types";
-import { useActiveDIPlugin } from "./plugin-context";
+import type { SettingsViewProps } from "../types";
+import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
 import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { Switch } from "~/components/ui/switch";
 
 // ─── Local toggle hook ───────────────────────────────────────────────────────
 
@@ -62,8 +59,6 @@ function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => voi
   }, [key]);
   return [value, toggle];
 }
-
-import { Switch } from "~/components/ui/switch";
 
 // ─── Toggle Switch ───────────────────────────────────────────────────────────
 
@@ -145,8 +140,6 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
     : (user?.firstName ?? "");
 
-  // ─── Signed-out state early return removed to ungate settings ───
-
   if (!isLoaded) {
     return (
       <div className="p-4">
@@ -159,8 +152,6 @@ export function SettingsView({ onClose }: SettingsViewProps) {
       </div>
     );
   }
-
-  // ─── Main state ─────────────────────────────────────────────────────
 
   return (
     <div className="p-4">
@@ -313,7 +304,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           </>
         )}
 
-        {/* ── Account section (only for signed-in users) ────────────────── */}
+        {/* ── Account section ────────────────── */}
         {isSignedIn ? (
           <>
             <SectionLabel>Account</SectionLabel>

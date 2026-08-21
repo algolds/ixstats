@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Sparkles,
+  Flame,
   Zap,
   Cpu,
   ShieldCheck,
@@ -85,13 +85,14 @@ const RELEASES: Release[] = [
       {
         id: "v14-halo",
         category: "feature",
-        title: "Halo Navigation & Command Palette (v4)",
+        title: "Halo Navigation & Command Palette (v5)",
         description:
-          "Universal ambient overlay providing instant global search across 80+ nations, MediaWiki archives, executive simulation commands, and active identity management.",
+          "Universal ambient overlay and command palette providing instant multi-domain navigation, keyword synonym search, and in-palette system execution.",
         highlights: [
           "Instant keyboard-driven command navigation with ⌘K activation",
-          "Real-time search across countries, wiki entries, and simulation tools",
-          "Context-aware page plugins and ambient status indicators",
+          "Comprehensive multi-domain coverage across Statecraft, Vault, Geography, Knowledge, Community, Sports, and Labs",
+          "Fast keyword and synonym indexing for seamless discovery",
+          "Direct in-palette system actions for themes, audio effects, and compact mode",
         ],
       },
       {
@@ -214,7 +215,7 @@ const RELEASES: Release[] = [
 
 const CATEGORY_META: Record<
   ReleaseCategory,
-  { label: string; icon: typeof Sparkles; color: string; badgeBg: string }
+  { label: string; icon: typeof Zap; color: string; badgeBg: string }
 > = {
   all: {
     label: "All Updates",
@@ -224,7 +225,7 @@ const CATEGORY_META: Record<
   },
   feature: {
     label: "New Features",
-    icon: Sparkles,
+    icon: Flame,
     color: "text-emerald-500 dark:text-emerald-400",
     badgeBg:
       "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
@@ -314,7 +315,7 @@ export default function ChangelogPage() {
         {/* Hero Header */}
         <div className="mb-12 text-center sm:text-left">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
-            <Sparkles className="h-3.5 w-3.5" />
+            <Flame className="h-3.5 w-3.5" />
             <span>Public Release Notes & Changelog</span>
           </div>
 

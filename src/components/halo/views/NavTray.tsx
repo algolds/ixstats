@@ -11,14 +11,8 @@ import {
   Globe,
   MessageSquare,
   MoreHorizontal,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  BookOpen,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  X,
 } from "lucide-react";
 import { FaWikipediaW } from "react-icons/fa";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { GiCardRandom, GiSoapExperiment } from "react-icons/gi";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 
@@ -77,7 +71,7 @@ const SECONDARY_NAV: { name: string; href: string }[] = [
 
 // ─── NavTray Component ───────────────────────────────────────────────────────
 
-interface NavTrayProps {
+export interface NavTrayProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -114,7 +108,7 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
             initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
           >
             <div
               className="overflow-hidden rounded-2xl border border-white/20 shadow-2xl dark:border-white/10"
@@ -144,9 +138,10 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{
                         type: "spring",
-                        stiffness: 400,
-                        damping: 25,
-                        delay: i * 0.04,
+                        stiffness: 420,
+                        damping: 38,
+                        mass: 0.8,
+                        delay: i * 0.03,
                       }}
                     >
                       <Link

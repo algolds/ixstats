@@ -12,9 +12,7 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { PlayPauseMorph } from "~/components/halo/PlayPauseMorph";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
-import { WikiView } from "~/components/halo/WikiView";
-import { WikiProfileButton } from "~/components/halo/WikiProfileButton";
-import { WikiProfileView } from "~/components/halo/WikiProfileView";
+import { WikiView, WikiProfileView } from "../views";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -192,7 +190,7 @@ export function WikiDIPlugin() {
     () => ({
       id: "wiki",
       priority: 10,
-      center: articleTitle ? <WikiBreadcrumb /> : <WikiProfileButton />,
+      center: <WikiBreadcrumb />,
       expandedViews: (articleTitle ? { wiki: WikiView } : { profile: WikiProfileView }) as Record<
         string,
         React.ComponentType<DIViewProps>
