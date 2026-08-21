@@ -1,11 +1,13 @@
-// Unified Flag Hooks - Consolidates all flag loading approaches
+// Unified Flag Hooks - Consolidates all flag loading approaches (Plan 164)
 // Replaces useFlag, useBulkFlagCache, useBatchFlags, etc.
 
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
+
+const DEFAULT_PLACEHOLDER = "/images/flags/placeholder.svg";
 
 // Single flag hook result
 export interface UseFlagResult {
@@ -35,223 +37,122 @@ export interface UseFlagPreloaderResult {
 
 /**
  * Hook for loading a single flag
- *
- * @param countryName - The name of the country
- * @returns Flag data and loading state
  */
 export function useFlag(countryName?: string): UseFlagResult {
-  // Strip " (Demo)" suffix so demo countries resolve the real flag
-  const cleanName = countryName?.replace(/ \(Demo\)$/, "");
+  const cleanName = countryName?.replace(/ \(Demo\)$/, "").trim();
+  const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
-  const [flagUrl, setFlagUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (!cleanName) {
-      setFlagUrl(null);
-      setIsLoading(false);
-      setError(false);
-      return;
+  const { data: batchResult, isLoading, isError } = api.countries.flags.resolveBatch.useQuery(
+    { countryNames: cleanName ? [cleanName] : [] },
+    {
+      enabled: Boolean(cleanName),
+      staleTime: 1000 * 60 * 60, // 1 hour
+      retry: 1,
     }
+  );
 
-    let mounted = true;
-
-    const loadFlag = async () => {
-      try {
-        setIsLoading(true);
-        setError(false);
-
-        // Try cached first for immediate response
-        const cachedUrl = unifiedFlagService.getCachedFlagUrl(cleanName);
-        if (cachedUrl && mounted) {
-          setFlagUrl(cachedUrl);
-          setIsLoading(false);
-          return;
-        }
-
-        // Fetch if not cached
-        const url = await unifiedFlagService.getFlagUrl(cleanName);
-
-        if (mounted) {
-          setFlagUrl(url);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error(`[useFlag] Error loading flag for ${cleanName}:`, err);
-        if (mounted) {
-          setError(true);
-          setIsLoading(false);
-          setFlagUrl("/placeholder-flag.svg");
-        }
-      }
-    };
-
-    loadFlag();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cleanName]);
-
-  const isLocal = flagUrl ? unifiedFlagService.hasLocalFlag(cleanName || "") : false;
-  const isPlaceholder = flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false;
+  const rawUrl = cleanName && batchResult ? batchResult[cleanName] : null;
+  const isPlaceholder = !rawUrl || rawUrl.includes("placeholder");
+  const flagUrl = isPlaceholder ? placeholderUrl : rawUrl;
 
   return {
-    flagUrl,
-    isLoading,
-    error,
-    isLocal,
+    flagUrl: cleanName ? flagUrl : null,
+    isLoading: Boolean(cleanName) && isLoading,
+    error: isError,
+    isLocal: false,
     isPlaceholder,
   };
 }
 
 /**
  * Hook for loading multiple flags efficiently
- * Uses server-side cache first to avoid 429 rate-limit errors from browser-side Commons API calls.
- *
- * @param countryNames - Array of country names
- * @returns Bulk flag data and loading state
+ * Uses server-side resolver via tRPC and never mutates caller arrays.
  */
 export function useBulkFlags(
-  countryNames: string[],
-  source: "irl" | "wiki" = "wiki"
+  countryNames: readonly string[],
+  _source: "irl" | "wiki" = "wiki"
 ): UseBulkFlagsResult {
-  const [flagUrls, setFlagUrls] = useState<Record<string, string | null>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
-  // Fetch server-side cached flags via tRPC
-  const { data: serverFlags, isLoading: serverLoading } = api.countries.flags.getAll.useQuery(
-    undefined,
-    {
-      staleTime: 1000 * 60 * 60, // 1 hour
-      retry: 1,
-    }
-  );
-
-  // Create a stable key for the country names to prevent unnecessary re-renders
+  // Safe copied sort for dependency key without mutating input
   const countryNamesKey = useMemo(() => {
-    return countryNames.sort().join(",");
+    return [...countryNames].sort().join(",");
   }, [countryNames]);
 
-  // Memoize the country names array to prevent unnecessary re-renders
   const memoizedCountryNames = useMemo(() => {
-    return countryNames.sort();
+    return [...countryNames].sort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryNamesKey]);
 
-  // Main fetch function - uses server cache only, no browser-side Commons API calls
-  const fetchFlags = useCallback(
-    async (forceRefetch = false) => {
-      if (memoizedCountryNames.length === 0) {
-        setFlagUrls({});
-        return;
+  const { data: batchResult, isLoading, error: trpcError, refetch: trpcRefetch } =
+    api.countries.flags.resolveBatch.useQuery(
+      { countryNames: memoizedCountryNames },
+      {
+        enabled: memoizedCountryNames.length > 0,
+        staleTime: 1000 * 60 * 60, // 1 hour
+        retry: 1,
       }
+    );
 
-      setIsLoading(true);
-      setError(null);
+  const flagUrls = useMemo(() => {
+    const result: Record<string, string | null> = {};
+    for (const name of memoizedCountryNames) {
+      const url = batchResult ? batchResult[name] : null;
+      result[name] = url || placeholderUrl;
+    }
+    return result;
+  }, [memoizedCountryNames, batchResult, placeholderUrl]);
 
-      try {
-        // Use server-side cached flags only. No browser-side Commons API calls.
-        // The server warmup (module load) populates the cache on startup.
-        // Uncached flags get placeholders until server resolves them.
-        const resultFlags: Record<string, string | null> = {};
-
-        if (serverFlags && !forceRefetch) {
-          for (const countryName of memoizedCountryNames) {
-            const key = countryName.toLowerCase().trim();
-            const localFlag = unifiedFlagService.getCachedFlagUrl(countryName);
-            resultFlags[countryName] = localFlag || serverFlags[key] || "/placeholder-flag.svg";
-          }
-        } else {
-          for (const countryName of memoizedCountryNames) {
-            resultFlags[countryName] = "/placeholder-flag.svg";
-          }
-        }
-
-        setFlagUrls(resultFlags);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        setError(errorMessage);
-        console.error("[useBulkFlags] Fetch failed:", error);
-
-        const placeholderFlags: Record<string, string | null> = {};
-        memoizedCountryNames.forEach((country) => {
-          placeholderFlags[country] = "/placeholder-flag.svg";
-        });
-        setFlagUrls(placeholderFlags);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [memoizedCountryNames, serverFlags, source]
-  );
-
-  // Initial fetch
-  useEffect(() => {
-    void fetchFlags();
-  }, [fetchFlags]);
-
-  // Refetch function for manual updates
-  const refetch = useCallback(async () => {
-    await fetchFlags(true);
-  }, [fetchFlags]);
-
-  // Calculate statistics
-  const localCount = useMemo(() => {
+  const placeholderCount = useMemo(() => {
     return Object.values(flagUrls).filter(
-      (url) =>
-        url && unifiedFlagService.hasLocalFlag(url.replace("/public/flags", "").split(".")[0] || "")
+      (url) => !url || url.includes("placeholder")
     ).length;
   }, [flagUrls]);
 
-  const placeholderCount = useMemo(() => {
-    return Object.values(flagUrls).filter((url) => url && unifiedFlagService.isPlaceholderFlag(url))
-      .length;
-  }, [flagUrls]);
+  const refetch = useCallback(async () => {
+    await trpcRefetch();
+  }, [trpcRefetch]);
 
   return {
     flagUrls,
-    isLoading: isLoading || serverLoading,
-    error,
-    localCount,
+    isLoading,
+    error: trpcError ? trpcError.message : null,
+    localCount: 0,
     placeholderCount,
     refetch,
   };
 }
 
 /**
+ * Backward compatibility alias for useBulkFlags
+ */
+export const useBulkFlagCache = useBulkFlags;
+export const useBatchFlags = useBulkFlags;
+
+/**
  * Hook for preloading flags in the background
- *
- * @returns Preloader functions and state
  */
 export function useFlagPreloader(): UseFlagPreloaderResult {
+  const utils = api.useUtils();
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadedCount, setPreloadedCount] = useState(0);
 
   const preloadFlags = useCallback(
     async (countryNames: string[]) => {
-      if (countryNames.length === 0 || isPreloading) {
-        return;
-      }
-
+      if (!countryNames.length) return;
       setIsPreloading(true);
-      setPreloadedCount(0);
-
       try {
-        // Initialize the flag service with these countries (will trigger background downloading)
-        unifiedFlagService.prefetchFlags(countryNames);
-
-        setPreloadedCount(countryNames.length);
-      } catch (error) {
-        console.error("[useFlagPreloader] Preloading failed:", error);
+        await utils.countries.flags.resolveBatch.prefetch({
+          countryNames: [...countryNames],
+        });
+        setPreloadedCount((prev) => prev + countryNames.length);
+      } catch (err) {
+        console.warn("[useFlagPreloader] Preload error:", err);
       } finally {
         setIsPreloading(false);
       }
     },
-    [isPreloading]
+    [utils]
   );
 
   return {
@@ -260,40 +161,3 @@ export function useFlagPreloader(): UseFlagPreloaderResult {
     preloadedCount,
   };
 }
-
-/**
- * Hook for getting flag service statistics
- */
-export function useFlagServiceStats() {
-  const [stats, setStats] = useState(() => unifiedFlagService.getStats());
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const refresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      // Small delay to allow for any pending operations
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      setStats(unifiedFlagService.getStats());
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  // Auto-refresh stats periodically
-  useEffect(() => {
-    const interval = setInterval(refresh, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
-  }, [refresh]);
-
-  return {
-    stats,
-    refresh,
-    isRefreshing,
-  };
-}
-
-// Legacy compatibility exports (for easier migration)
-export const useBulkFlagCache = useBulkFlags;
-export const useBatchFlags = useBulkFlags;
-
-export default useFlag;

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { DynamicIslandSearch } from "../../import/_components/DynamicIslandSearch";
 import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";
@@ -93,6 +92,7 @@ export const ImportSection = React.memo(function ImportSection({
   onNavigate,
   onImportComplete,
 }: ImportSectionProps) {
+  const utils = api.useUtils();
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[1]!);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -170,17 +170,21 @@ export const ImportSection = React.memo(function ImportSection({
           categoryFilter.toLowerCase() === "countries" ||
           categoryFilter.toLowerCase() === "nations"
         ) {
-          // Only fetch flag URLs (fast cache/lookup), omitting expensive parallel infobox parsing
-          const resultsWithFlags = await Promise.all(
-            results.map(async (result) => {
-              try {
-                const flagUrl = await unifiedFlagService.getFlagUrl(result.title);
-                return { ...result, flagUrl };
-              } catch {
-                return { ...result, flagUrl: null };
-              }
-            })
-          );
+          // Batch fetch flag URLs via tRPC resolver
+          let flagMap: Record<string, string | null> = {};
+          try {
+            flagMap = await utils.countries.flags.resolveBatch.fetch({
+              countryNames: results.map((r) => r.title),
+              fallbackPolicy: "fictional-wiki",
+            });
+          } catch {
+            // Ignore flag batch failure
+          }
+
+          const resultsWithFlags = results.map((result) => ({
+            ...result,
+            flagUrl: flagMap[result.title] ?? null,
+          }));
 
           if (requestId !== searchRequestIdRef.current) return;
 

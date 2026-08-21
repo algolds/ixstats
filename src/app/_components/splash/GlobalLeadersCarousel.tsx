@@ -36,15 +36,6 @@ export function GlobalLeadersCarousel({ countries }: { countries: Record<string,
     ));
   }, [countries]);
 
-  useEffect(() => {
-    if (countries.length > 0) {
-      const topCountryNames = countries.slice(0, 20).map((c) => String(c.name ?? ""));
-      import("~/lib/flags/unified-flag-service").then(({ unifiedFlagService }) => {
-        unifiedFlagService.prefetchFlags(topCountryNames);
-      });
-    }
-  }, [countries]);
-
   if (carouselCards.length === 0) return null;
 
   return (

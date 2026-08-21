@@ -1,12 +1,12 @@
 /**
- * Forum Bridge — Bidirectional sync between XenForo conversations and ThinkShare.
+ * Forum Bridge — Canonical bidirectional sync between XenForo conversations and ThinkShare.
  *
  * Inbound:  Fetches user's XenForo conversations → creates ThinkShare conversations/messages
  * Outbound: Posts ThinkShare replies → XenForo conversations (as user, via impersonation)
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
+import type { BridgeAdapter, BridgeSyncResult } from "~/server/shared/bridge-types";
 import { xfFetchAsUser, xfPostAsUser } from "./xenforo-service";
 
 // ─── XenForo Response Types ──────────────────────────────────────
@@ -22,7 +22,10 @@ interface XFConversation {
   last_message_user_id: number;
   last_message_username: string;
   is_unread: boolean;
-  recipients?: { user_id: number; username: string }[];
+  recipient_count?: number;
+  recipients?:
+    | Record<string, { user_id: number; username: string }>
+    | { user_id: number; username: string }[];
 }
 
 interface XFConversationMessage {
@@ -68,7 +71,8 @@ export const forumBridge: BridgeAdapter = {
         user.forumUserId
       );
       xfConversations = response?.conversations ?? [];
-    } catch {
+    } catch (err) {
+      console.error("[Forum bridge] Failed to fetch conversations:", err);
       return result;
     }
 
@@ -87,7 +91,7 @@ export const forumBridge: BridgeAdapter = {
           // Create new conversation
           conversation = await db.thinkshareConversation.create({
             data: {
-              type: xfConv.recipients && xfConv.recipients.length > 2 ? "group" : "direct",
+              type: (xfConv.recipient_count ?? 0) > 2 ? "group" : "direct",
               name: xfConv.title,
               source: "forum",
               sourceId,
@@ -103,35 +107,44 @@ export const forumBridge: BridgeAdapter = {
               conversationId: conversation.id,
               userId,
               role: "participant",
+              lastReadAt: new Date(0), // Epoch — so existing messages show as unread
             },
           });
 
           // Add other recipients (resolve forumUserId → clerkUserId)
-          if (xfConv.recipients) {
-            for (const recipient of xfConv.recipients) {
-              if (recipient.user_id === user.forumUserId) continue;
+          // XenForo returns recipients as object keyed by user_id, or array
+          const recipientList = xfConv.recipients
+            ? Array.isArray(xfConv.recipients)
+              ? xfConv.recipients
+              : Object.values(xfConv.recipients)
+            : [];
+          for (const recipient of recipientList) {
+            const recipientUserId =
+              typeof recipient === "object" && recipient !== null
+                ? (recipient as any).user_id
+                : undefined;
+            if (!recipientUserId || recipientUserId === user.forumUserId) continue;
 
-              const otherUser = await db.user.findFirst({
-                where: { forumUserId: recipient.user_id },
-                select: { clerkUserId: true },
-              });
+            const otherUser = await db.user.findFirst({
+              where: { forumUserId: recipientUserId },
+              select: { clerkUserId: true },
+            });
 
-              if (otherUser) {
-                await db.conversationParticipant.upsert({
-                  where: {
-                    conversationId_userId: {
-                      conversationId: conversation.id,
-                      userId: otherUser.clerkUserId,
-                    },
-                  },
-                  update: {},
-                  create: {
+            if (otherUser) {
+              await db.conversationParticipant.upsert({
+                where: {
+                  conversationId_userId: {
                     conversationId: conversation.id,
                     userId: otherUser.clerkUserId,
-                    role: "participant",
                   },
-                });
-              }
+                },
+                update: {},
+                create: {
+                  conversationId: conversation.id,
+                  userId: otherUser.clerkUserId,
+                  role: "participant",
+                },
+              });
             }
           }
         }
@@ -152,7 +165,6 @@ export const forumBridge: BridgeAdapter = {
         for (const xfMsg of xfMessages) {
           const msgExternalId = String(xfMsg.message_id);
 
-          // Check if message already exists
           const existing = await db.thinkshareMessage.findFirst({
             where: {
               conversationId: conversation.id,
@@ -162,16 +174,18 @@ export const forumBridge: BridgeAdapter = {
           });
 
           if (!existing) {
-            // Resolve author: try forumUserId → clerkUserId
-            let authorUserId = userId; // Default to current user
-            if (xfMsg.user_id !== user.forumUserId) {
+            // Resolve author: try to find linked IxStats user
+            let authorUserId: string;
+
+            if (xfMsg.user_id === user.forumUserId) {
+              authorUserId = userId;
+            } else {
               const author = await db.user.findFirst({
                 where: { forumUserId: xfMsg.user_id },
                 select: { clerkUserId: true },
               });
-              if (author) {
-                authorUserId = author.clerkUserId;
-              }
+              // Use resolved clerkUserId, or store as forum:xfUsername for display
+              authorUserId = author?.clerkUserId ?? `forum:${xfMsg.username || xfMsg.user_id}`;
             }
 
             await db.thinkshareMessage.create({
@@ -199,7 +213,7 @@ export const forumBridge: BridgeAdapter = {
         });
         result.conversationsUpdated++;
       } catch (err) {
-        console.error(`Forum bridge: failed to sync conversation "${xfConv.title}":`, err);
+        console.error(`[Forum bridge] Failed to sync conversation "${xfConv.title}":`, err);
       }
     }
 
@@ -212,7 +226,6 @@ export const forumBridge: BridgeAdapter = {
     userId: string,
     db: PrismaClient
   ): Promise<{ success: boolean; error?: string }> {
-    // Get user's forum ID
     const user = await db.user.findFirst({
       where: { clerkUserId: userId },
       select: { forumUserId: true },
@@ -225,24 +238,22 @@ export const forumBridge: BridgeAdapter = {
       };
     }
 
-    const xfConversationId = conversationSourceId;
-
     try {
-      // Strip HTML for plain text message
       const plainContent = content.replace(/<[^>]*>/g, "");
 
       const response = await xfPostAsUser(
-        `/conversations/${xfConversationId}/messages`,
+        `/conversations/${conversationSourceId}/messages`,
         { message_body: plainContent },
         user.forumUserId
       );
 
-      if (response) {
-        return { success: true };
-      }
+      if (response) return { success: true };
       return { success: false, error: "No response from XenForo" };
     } catch (err: any) {
-      return { success: false, error: err.message ?? "Forum bridge error" };
+      return {
+        success: false,
+        error: err.message ?? "Forum bridge error",
+      };
     }
   },
 };

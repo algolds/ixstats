@@ -46,7 +46,7 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

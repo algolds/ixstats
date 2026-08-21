@@ -31,7 +31,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 import { ActivityGenerator } from "~/lib/activity";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";

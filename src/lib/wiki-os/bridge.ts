@@ -2131,6 +2131,162 @@ export async function ixwikiGetCategoryTree(): Promise<
 }
 
 /**
+ * Canonical batch MediaWiki imageinfo resolver for external wikis (Wikimedia Commons, IIWiki, etc.)
+ * Always uses DEFAULT_USER_AGENT ("IxStats-Builder").
+ */
+export async function fetchMediaWikiImageBatch(
+  fileTitles: string[],
+  endpoint: string = "https://commons.wikimedia.org/w/api.php",
+  options?: { thumbWidth?: number; signal?: AbortSignal }
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (!fileTitles.length) return result;
+
+  const chunkSize = 25;
+  for (let i = 0; i < fileTitles.length; i += chunkSize) {
+    const chunk = fileTitles.slice(i, i + chunkSize);
+    const titlesParam = chunk
+      .map((t) => (t.startsWith("File:") ? t : `File:${t}`))
+      .join("|");
+    const thumbParam = options?.thumbWidth ? `&iiurlwidth=${options.thumbWidth}` : "";
+    const url = `${endpoint}?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(titlesParam)}&prop=imageinfo&iiprop=url${thumbParam}`;
+
+    try {
+      const resp = await fetch(url, {
+        signal: options?.signal ?? AbortSignal.timeout(10000),
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+        },
+      });
+
+      if (!resp.ok) continue;
+      const data = (await resp.json()) as {
+        query?: {
+          pages?: Array<{
+            title?: string;
+            missing?: boolean;
+            imageinfo?: Array<{ url?: string; thumburl?: string }>;
+          }>;
+        };
+      };
+
+      const pages = data?.query?.pages ?? [];
+      for (const page of pages) {
+        if (page.missing || !page.imageinfo?.[0]) continue;
+        const imgUrl = page.imageinfo[0].url ?? page.imageinfo[0].thumburl;
+        if (imgUrl && page.title) {
+          result.set(page.title, imgUrl);
+          result.set(page.title.replace(/^File:/i, ""), imgUrl);
+        }
+      }
+    } catch (err) {
+      console.warn("[WikiBridge] Error in fetchMediaWikiImageBatch:", err);
+    }
+  }
+
+  return result;
+}
+
+export interface CommonsCategoryItem {
+  pageId: number;
+  title: string;
+  cleanTitle: string;
+  fileUrl: string;
+  thumbUrl: string;
+  descriptionUrl: string;
+  category: string;
+}
+
+/**
+ * Fetch category members from Wikimedia Commons with central DEFAULT_USER_AGENT.
+ */
+export async function fetchCommonsCategoryMembers(
+  categoryName: string,
+  limit = 100
+): Promise<CommonsCategoryItem[]> {
+  const endpoint = "https://commons.wikimedia.org/w/api.php";
+  let cleaned = categoryName.trim();
+  if (cleaned.includes("/wiki/")) {
+    cleaned = cleaned.split("/wiki/").pop() || cleaned;
+  }
+  cleaned = decodeURIComponent(cleaned).replace(/\s+/g, "_");
+  if (!cleaned.toLowerCase().startsWith("category:")) {
+    cleaned = `Category:${cleaned}`;
+  }
+
+  const params = new URLSearchParams({
+    action: "query",
+    list: "categorymembers",
+    cmtitle: cleaned,
+    cmtype: "file|subcat",
+    cmlimit: String(limit),
+    format: "json",
+    origin: "*",
+  });
+
+  const response = await fetch(`${endpoint}?${params.toString()}`, {
+    headers: {
+      "User-Agent": DEFAULT_USER_AGENT,
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Wikimedia Commons API error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const rawMembers: Array<{ pageid: number; ns: number; title: string }> =
+    data?.query?.categorymembers || [];
+
+  const fileMembers = rawMembers.filter(
+    (m) => m.ns === 6 || m.title.toLowerCase().startsWith("file:")
+  );
+
+  const imageFiles = fileMembers.filter((m) => {
+    const t = m.title.toLowerCase();
+    return (
+      t.endsWith(".svg") ||
+      t.endsWith(".png") ||
+      t.endsWith(".jpg") ||
+      t.endsWith(".jpeg") ||
+      t.endsWith(".webp")
+    );
+  });
+
+  if (imageFiles.length === 0) return [];
+
+  const titles = imageFiles.map((f) => f.title);
+  const imageMap = await fetchMediaWikiImageBatch(titles, endpoint);
+
+  const items: CommonsCategoryItem[] = [];
+  for (const file of imageFiles) {
+    const url = imageMap.get(file.title) || imageMap.get(file.title.replace(/^File:/i, ""));
+    if (!url) continue;
+
+    let cleanTitle = file.title
+      .replace(/^File:/i, "")
+      .replace(/\.(svg|png|jpg|jpeg|webp)$/i, "")
+      .replace(/_/g, " ")
+      .trim();
+
+    cleanTitle = cleanTitle.replace(/^Flag of /i, "Flag of ").replace(/^Flag /i, "Flag ");
+
+    items.push({
+      pageId: file.pageid,
+      title: file.title,
+      cleanTitle,
+      fileUrl: url,
+      thumbUrl: url,
+      descriptionUrl: url,
+      category: cleaned,
+    });
+  }
+
+  return items;
+}
+
+/**
  * Graceful shutdown — close MySQL pool.
  */
 export async function closeWikiBridge(): Promise<void> {

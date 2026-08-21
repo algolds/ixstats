@@ -1,40 +1,57 @@
 import { renderHook } from "@testing-library/react";
-import { useCountryFlag } from "../../hooks/useCountryFlags";
+import { useFlag, useBulkFlags } from "../../hooks/useUnifiedFlags";
 
-// Mock countryFlagService
-jest.mock("~/lib/flags/country-flag-service", () => ({
-  countryFlagService: {
-    getCountryFlag: jest.fn().mockImplementation(async (countryName: string) => {
-      if (countryName === "Aethelgard") {
-        return {
-          countryName: "Aethelgard",
-          flagUrl: "https://example.com/aethelgard.png",
-          source: "server_cache",
-        };
-      }
-      return {
-        countryName,
-        flagUrl: null,
-        source: "placeholder",
-      };
+// Mock tRPC
+jest.mock("~/trpc/react", () => ({
+  api: {
+    countries: {
+      flags: {
+        resolveBatch: {
+          useQuery: jest.fn().mockImplementation(({ countryNames }: { countryNames: string[] }) => {
+            const data: Record<string, string | null> = {};
+            for (const name of countryNames || []) {
+              data[name] = name === "Aethelgard" ? "https://example.com/aethelgard.png" : null;
+            }
+            return {
+              data,
+              isLoading: false,
+              isError: false,
+            };
+          }),
+        },
+      },
+    },
+    useUtils: jest.fn().mockReturnValue({
+      countries: {
+        flags: {
+          resolveBatch: {
+            fetch: jest.fn().mockResolvedValue({}),
+            prefetch: jest.fn().mockResolvedValue({}),
+          },
+        },
+      },
     }),
-    batchGetCountryFlags: jest.fn().mockResolvedValue(new Map()),
-    clearCache: jest.fn(),
-    getCacheStats: jest.fn().mockReturnValue({ total: 0, successful: 0, failed: 0, hitRate: 0 }),
   },
 }));
 
 describe("flags characterization contract", () => {
-  it("resolves country flag via useCountryFlag hook", async () => {
-    const { result } = renderHook(() => useCountryFlag("Aethelgard"));
-    expect(result.current.loading).toBe(true);
+  it("resolves country flag via useFlag hook", () => {
+    const { result } = renderHook(() => useFlag("Aethelgard"));
+    expect(result.current.flagUrl).toBe("https://example.com/aethelgard.png");
+    expect(result.current.isPlaceholder).toBe(false);
   });
 
-  it("handles missing country gracefully with empty or placeholder flag", () => {
-    const { result } = renderHook(() => useCountryFlag("NonexistentCountry"));
-    expect(result.current.loading).toBe(true);
+  it("handles missing country gracefully with placeholder flag", () => {
+    const { result } = renderHook(() => useFlag("NonexistentCountry"));
+    expect(result.current.isPlaceholder).toBe(true);
   });
 
-  // Exactly one planned TODO test for array immutability (Plan 164)
-  it.todo("does not mutate the caller's countryNames array (Plan 164)");
+  it("does not mutate the caller's countryNames array (Plan 164)", () => {
+    const original = ["Eldoria", "Valora", "Krynn"];
+    const frozen = Object.freeze([...original]);
+    const { result } = renderHook(() => useBulkFlags(frozen));
+
+    expect(frozen).toEqual(original);
+    expect(result.current.flagUrls).toBeDefined();
+  });
 });

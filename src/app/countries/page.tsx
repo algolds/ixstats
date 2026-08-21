@@ -5,7 +5,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { CountriesPageModular } from "./_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
-import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
 import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
@@ -37,26 +36,7 @@ export default function CountriesPage() {
     return countriesResult?.countries?.map((c) => c.name) || [];
   }, [countriesResult]);
 
-  // Prefetch flags in the background as soon as we have country names
-  useEffect(() => {
-    if (countryNames.length > 0) {
-      console.log(`[CountriesPage] Starting background prefetch for ${countryNames.length} flags`);
-
-      // First, cache any database flags we have
-      if (countriesResult?.countries) {
-        countriesResult.countries.forEach((country) => {
-          if (country.flag) {
-            unifiedFlagService.cacheDatabaseFlag(country.name, country.flag);
-          }
-        });
-      }
-
-      // Then prefetch the rest
-      unifiedFlagService.prefetchFlags(countryNames);
-    }
-  }, [countryNames, countriesResult]);
-
-  // Bulk fetch flags (will use prefetched cache)
+  // Bulk fetch flags
   const { flagUrls, isLoading: flagsLoading } = useBulkFlagCache(countryNames);
 
   // Process countries data for the focus grid

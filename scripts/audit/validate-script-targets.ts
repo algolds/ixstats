@@ -38,17 +38,25 @@ export function checkBannedPackageManagers(
   field?: string
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const tokens = command.split(/\s+|&&|\|\||;/);
+  // Split by pipeline and command chaining delimiters
+  const subcommands = command.split(/&&|\|\||;|\|/);
 
-  for (const token of tokens) {
-    const clean = token.trim();
-    if ((BANNED_PACKAGE_MANAGERS as readonly string[]).includes(clean)) {
+  for (const rawSub of subcommands) {
+    const trimmed = rawSub.trim();
+    if (!trimmed) continue;
+
+    // First word is the command verb (ignoring env var assignments like FOO=bar)
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    const nonEnvWords = words.filter((w) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(w));
+    const firstCmd = nonEnvWords[0]?.trim();
+
+    if (firstCmd && (BANNED_PACKAGE_MANAGERS as readonly string[]).includes(firstCmd)) {
       issues.push({
         source,
         field,
         command,
         type: "banned_manager",
-        message: `Banned package manager token '${clean}' used in '${source}${field ? ` -> ${field}` : ""}'. Use bun/bunx instead.`,
+        message: `Banned package manager '${firstCmd}' invoked as executable in '${source}${field ? ` -> ${field}` : ""}'. Use bun/bunx instead.`,
       });
     }
   }

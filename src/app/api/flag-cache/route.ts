@@ -1,14 +1,7 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
-import { wikiCacheService } from "~/lib/wiki/cache-service";
-
-// Register persistent L1/L2 server cache for flag resolution
-unifiedFlagService.registerPersistentCache(
-  (country) => wikiCacheService.getCachedFlagUrl(country),
-  (country, url) => wikiCacheService.cacheFlagUrl(country, url)
-);
+import { serverFlagResolver } from "~/lib/flags/server";
 import { api } from "~/trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 
@@ -41,28 +34,34 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get("action");
 
     switch (action) {
-      case "stats":
-        // Get cache statistics
-        const stats = unifiedFlagService.getStats();
+      case "stats": {
+        const stats = serverFlagResolver.stats();
         return NextResponse.json({
           success: true,
-          stats,
+          stats: {
+            totalCountries: stats.memoryCacheSize,
+            cachedFlags: stats.hits,
+            failedFlags: stats.placeholders,
+            localFiles: 0,
+            hitRate: stats.hits + stats.misses > 0 ? stats.hits / (stats.hits + stats.misses) : 0,
+            lastUpdateTime: Date.now(),
+            isUpdating: stats.inFlightRequests > 0,
+          },
           timestamp: Date.now(),
         });
+      }
 
-      case "status":
-        // Get detailed status from unified service
-        const cacheStats = unifiedFlagService.getStats();
-
+      case "status": {
+        const stats = serverFlagResolver.stats();
         return NextResponse.json({
           success: true,
           flagCache: {
-            totalCountries: cacheStats.totalCountries,
-            cachedFlags: cacheStats.cachedFlags,
-            failedFlags: cacheStats.failedFlags,
-            lastUpdateTime: cacheStats.lastUpdateTime,
+            totalCountries: stats.memoryCacheSize,
+            cachedFlags: stats.hits,
+            failedFlags: stats.placeholders,
+            lastUpdateTime: Date.now(),
             nextUpdateTime: null,
-            isUpdating: cacheStats.isUpdating,
+            isUpdating: stats.inFlightRequests > 0,
             updateProgress: {
               current: 0,
               total: 0,
@@ -70,37 +69,36 @@ export async function GET(request: NextRequest) {
             },
           },
           serverFlagCache: {
-            totalCountries: cacheStats.totalCountries,
-            cachedFlags: cacheStats.localFiles,
-            failedFlags: cacheStats.failedFlags,
-            lastUpdateTime: cacheStats.lastUpdateTime,
-            isUpdating: cacheStats.isUpdating,
+            totalCountries: stats.memoryCacheSize,
+            cachedFlags: stats.hits,
+            failedFlags: stats.placeholders,
+            lastUpdateTime: Date.now(),
+            isUpdating: stats.inFlightRequests > 0,
             updateProgress: {
               current: 0,
               total: 0,
               percentage: 0,
             },
             diskUsage: {
-              totalFiles: cacheStats.localFiles,
-              totalSizeBytes: cacheStats.localFiles * 10000, // Estimate
-              totalSizeMB: Math.round((cacheStats.localFiles * 10000) / 1024 / 1024),
+              totalFiles: 0,
+              totalSizeBytes: 0,
+              totalSizeMB: 0,
             },
           },
           mediaWiki: {
-            cacheSize: cacheStats.cachedFlags,
-            hitRate: cacheStats.hitRate,
+            cacheSize: stats.hits,
+            hitRate: stats.hits + stats.misses > 0 ? stats.hits / (stats.hits + stats.misses) : 0,
             lastCleared: null,
           },
           timestamp: Date.now(),
         });
+      }
 
-      case "flags":
-        // Get all cached flag URLs for specified countries
+      case "flags": {
         const countryParam = searchParams.get("countries");
         let countryNames: string[] = [];
 
         if (countryParam) {
-          // Parse comma-separated country names from query parameter
           countryNames = countryParam
             .split(",")
             .map((name) => name.trim())
@@ -108,13 +106,16 @@ export async function GET(request: NextRequest) {
         }
 
         if (countryNames.length === 0) {
-          // If no countries provided, get all countries from the database
           const allCountries = await api.countries.getAll({ limit: 1000 });
           const names = allCountries.countries.map((c: any) => c.name);
           countryNames.push(...names);
         }
 
-        const flagUrls = await unifiedFlagService.batchGetFlags(countryNames);
+        const map = await serverFlagResolver.resolveBatch(countryNames);
+        const flagUrls: Record<string, string | null> = {};
+        for (const [name, res] of map.entries()) {
+          flagUrls[name] = res.isPlaceholder ? null : res.flagUrl;
+        }
 
         return NextResponse.json({
           success: true,
@@ -122,6 +123,7 @@ export async function GET(request: NextRequest) {
           totalCountries: countryNames.length,
           timestamp: Date.now(),
         });
+      }
 
       default:
         return NextResponse.json(
@@ -146,7 +148,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Require admin access for cache modification
     const authCheck = await requireAdminAccess();
     if (!authCheck.authorized) {
       return authCheck.error;
@@ -156,51 +157,38 @@ export async function POST(request: NextRequest) {
     const action = searchParams.get("action");
 
     switch (action) {
-      case "update":
-        // Trigger a manual flag cache update
+      case "update": {
         const body = await request.json();
         const updateCountryNames = body.countries || [];
 
         if (updateCountryNames.length === 0) {
-          // If no countries provided, get all countries from the database
           const allCountries = await api.countries.getAll({ limit: 1000 });
           const names = allCountries.countries.map((c: any) => c.name);
-
-          console.log(
-            `[FlagCache API] Starting prefetch for ${names.length} countries from database`
-          );
-          unifiedFlagService.prefetchFlags(names);
+          serverFlagResolver.prefetch(names);
         } else {
-          console.log(
-            `[FlagCache API] Starting prefetch for ${updateCountryNames.length} specified countries`
-          );
-          unifiedFlagService.prefetchFlags(updateCountryNames);
+          serverFlagResolver.prefetch(updateCountryNames);
         }
 
         return NextResponse.json({
           success: true,
           message: "Flag cache prefetch started (background download)",
-          stats: unifiedFlagService.getStats(),
           timestamp: Date.now(),
         });
+      }
 
-      case "initialize":
-        // Initialize the flag service with all countries
+      case "initialize": {
         const initAllCountries = await api.countries.getAll({ limit: 1000 });
         const initCountryNames = initAllCountries.countries.map((c: any) => c.name);
 
-        console.log(
-          `[FlagCache API] Initializing unified flag service with ${initCountryNames.length} countries`
-        );
-        unifiedFlagService.prefetchFlags(initCountryNames);
+        serverFlagResolver.prefetch(initCountryNames);
 
         return NextResponse.json({
           success: true,
           message: "Unified flag service initialized",
           countryCount: initCountryNames.length,
-          stats: unifiedFlagService.getStats(),
           timestamp: Date.now(),
         });
+      }
 
       default:
         return NextResponse.json(
@@ -225,7 +213,6 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Require admin access for cache deletion
     const authCheck = await requireAdminAccess();
     if (!authCheck.authorized) {
       return authCheck.error;
@@ -236,8 +223,7 @@ export async function DELETE(request: NextRequest) {
 
     switch (action) {
       case "clear":
-        // Clear all caches (including local files)
-        await unifiedFlagService.clearCache();
+        await serverFlagResolver.clear();
 
         return NextResponse.json({
           success: true,

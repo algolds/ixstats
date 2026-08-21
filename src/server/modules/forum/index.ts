@@ -10,6 +10,7 @@ export {
   getForumActivity,
   getForumTrendingThreads,
   searchForumThreads,
+  xfFetch,
   xfFetchAsUser,
   xfPostAsUser,
   xfPost,
@@ -34,6 +35,12 @@ export {
   syncUserToForum,
   linkForumAccount,
 } from "./services/xenforo-user-sync";
+
+export {
+  requireForumUser,
+  getForumUserByClerkId,
+  getForumUserByInternalId,
+} from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
 export type { BridgeAdapter, BridgeSyncResult } from "./services/bridge-types";

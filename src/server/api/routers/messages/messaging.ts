@@ -14,7 +14,7 @@ import { validateNoXSS } from "~/lib/utils";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
-import { forumBridge } from "~/server/bridges/forum-bridge";
+import { forumBridge } from "~/server/modules/forum";
 import { persistMessageTx } from "~/server/modules/messages/services/message-mutations";
 
 // ─── User Profile Cache (batch lookup) ───────────────────────────

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Trophy, TrendingUp, DollarSign, Users, Crown, Medal, Award } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
-import { unifiedFlagService } from "~/lib/flags/unified-flag-service";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 
 // Use a simplified interface for display purposes
 interface LeaderboardCountry {
@@ -133,20 +133,8 @@ const CountryFlag = ({
 
 export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectionProps) {
   const [activeTab, setActiveTab] = useState<LeaderboardType>("gdp");
-  const [flagUrls, setFlagUrls] = useState<Record<string, string | null>>({});
-
-  // Fetch flags for countries when they change
-  useEffect(() => {
-    if (countries.length === 0) return;
-
-    const fetchFlags = async () => {
-      const countryNames = countries.map((c) => c.name);
-      const flags = await unifiedFlagService.batchGetFlags(countryNames);
-      setFlagUrls(flags);
-    };
-
-    void fetchFlags();
-  }, [countries]);
+  const countryNames = React.useMemo(() => countries.map((c) => c.name), [countries]);
+  const { flagUrls } = useBulkFlags(countryNames);
 
   if (isLoading) {
     return (

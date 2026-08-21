@@ -20,75 +20,8 @@ import {
   transformBBCode,
   cachedFetch,
   cacheKey,
+  xfFetch,
 } from "~/server/modules/forum";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Fetch from XenForo API (server-level, no user impersonation) */
-async function xfFetch<T>(endpoint: string): Promise<T | null> {
-  const apiKey = getXfApiKey();
-  if (!apiKey) {
-    console.error("[Forum Router] XENFORO_API_KEY is missing. Forum features will be disabled.");
-    return null;
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(`${getXfApiUrl()}${endpoint}`, {
-      headers: {
-        "XF-Api-Key": apiKey,
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[Forum Router] HTTP ${response.status} for ${endpoint}`);
-      return null;
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[Forum Router] Failed to fetch ${endpoint}:`, error);
-    return null;
-  }
-}
-
-/** Resolve the user's linked XenForo user ID, or throw */
-async function requireForumUser(userId: string): Promise<number> {
-  const { db } = await import("~/server/db");
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { forumUserId: true, forumUsername: true },
-  });
-
-  if (user?.forumUserId) return user.forumUserId;
-
-  // Fallback: if forumUsername is set but forumUserId is missing, look it up and backfill
-  if (user?.forumUsername) {
-    const { lookupForumUser } = await import("~/server/modules/forum");
-    const xfUser = await lookupForumUser(user.forumUsername);
-    if (xfUser) {
-      await db.user.update({
-        where: { id: userId },
-        data: { forumUserId: xfUser.userId },
-      });
-      return xfUser.userId;
-    }
-  }
-
-  throw new TRPCError({
-    code: "PRECONDITION_FAILED",
-    message:
-      "You must link your forum account first. Go to Profile → IxnayID to connect your accounts.",
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Normalized output types

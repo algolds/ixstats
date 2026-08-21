@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { isSystemOwner } from "~/lib/auth";
 import { fetchWikiIntro } from "./utils";
 import { invalidateCache } from "~/lib/cache";

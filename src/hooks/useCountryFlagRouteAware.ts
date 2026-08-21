@@ -1,11 +1,13 @@
-// Route-aware country flag hook that uses appropriate service based on current route
-import { useState, useEffect, useCallback } from "react";
+// Route-aware country flag hook (Plan 164)
+"use client";
+
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import {
-  countryFlagService,
-  countryFlagServiceCommonsOnly,
-  type CountryFlag,
-} from "~/lib/flags/country-flag-service";
+import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
+import type { CountryFlag } from "./useCountryFlags";
+
+export type { CountryFlag };
 
 /**
  * Hook for a single country flag with route-aware service selection
@@ -13,49 +15,49 @@ import {
  * - Uses full service with IIWiki fallback on import page (/builder/import)
  */
 export function useCountryFlagRouteAware(countryName: string) {
-  const [flag, setFlag] = useState<CountryFlag | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const pathname = usePathname();
+  const cleanName = countryName?.trim();
+  const placeholderUrl = useMemo(() => withBasePath("/images/flags/placeholder.svg"), []);
 
-  // Determine which service to use based on current route
-  const getService = useCallback(() => {
-    if (pathname?.includes("/builder/import")) {
-      // Use full service with IIWiki fallback on import page
-      return countryFlagService;
-    } else {
-      // Use Commons-only service on main builder page and other routes
-      return countryFlagServiceCommonsOnly;
-    }
+  const fallbackPolicy = useMemo(() => {
+    return pathname?.includes("/builder/import") ? "fictional-wiki" : "commons-only";
   }, [pathname]);
 
-  const fetchFlag = useCallback(async () => {
-    if (!countryName) return;
+  const { data: batchResult, isLoading, error: trpcError, refetch } =
+    api.countries.flags.resolveBatch.useQuery(
+      {
+        countryNames: cleanName ? [cleanName] : [],
+        fallbackPolicy,
+      },
+      {
+        enabled: Boolean(cleanName),
+        staleTime: 1000 * 60 * 60,
+        retry: 1,
+      }
+    );
 
-    setLoading(true);
-    setError(null);
+  const rawUrl = cleanName && batchResult ? batchResult[cleanName] : null;
+  const isPlaceholder = !rawUrl || rawUrl.includes("placeholder");
 
-    try {
-      const service = getService();
-      const flagResult = await service.getCountryFlag(countryName);
-      setFlag(flagResult);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flag";
-      setError(errorMessage);
-      console.error(`[useCountryFlagRouteAware] Error fetching flag for ${countryName}:`, err);
-    } finally {
-      setLoading(false);
-    }
-  }, [countryName, getService]);
-
-  useEffect(() => {
-    fetchFlag();
-  }, [fetchFlag]);
+  const flag: CountryFlag | null = useMemo(() => {
+    if (!cleanName) return null;
+    return {
+      countryName: cleanName,
+      flagUrl: isPlaceholder ? placeholderUrl : rawUrl,
+      source: isPlaceholder
+        ? "placeholder"
+        : fallbackPolicy === "fictional-wiki"
+        ? "fictional-wiki"
+        : "commons",
+      cached: Boolean(batchResult),
+      isPlaceholder,
+    };
+  }, [cleanName, isPlaceholder, placeholderUrl, rawUrl, batchResult, fallbackPolicy]);
 
   return {
     flag,
-    loading,
-    error,
-    refetch: fetchFlag,
+    loading: Boolean(cleanName) && isLoading,
+    error: trpcError ? trpcError.message : null,
+    refetch,
   };
 }

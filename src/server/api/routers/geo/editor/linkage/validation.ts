@@ -3,7 +3,7 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "../../core";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 

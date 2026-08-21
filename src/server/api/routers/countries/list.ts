@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, cachedPublicProcedure, cachedStaticProcedure } from "~/server/api/trpc";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { TRPCError } from "@trpc/server";
 
 export const listProcedures = {

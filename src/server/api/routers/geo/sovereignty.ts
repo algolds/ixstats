@@ -27,7 +27,7 @@ import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { clearLayerCache } from "./core";
 
 // ──────────────────────────────────────────────

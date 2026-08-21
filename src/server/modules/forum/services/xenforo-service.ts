@@ -250,7 +250,7 @@ function stripBBCode(text: string): string {
   return text.replace(/\[\/?\w+(?:=[^\]]*)?]/g, "").trim();
 }
 
-async function xfFetch<T>(endpoint: string): Promise<T | null> {
+export async function xfFetch<T>(endpoint: string): Promise<T | null> {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 

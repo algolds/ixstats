@@ -33,6 +33,23 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🌐 Module & Flag Ecosystem Consolidation (Wave 6: Plans 158, 164)
+
+- **Canonical Forum Module Boundary & Bridge Consolidation (Plan 158)**:
+  - Made `src/server/modules/forum` the single canonical boundary for all XenForo forum integration logic.
+  - Unified `xfFetch`, `xfFetchAsUser`, and `requireForumUser` with explicit identity namespaces (`clerkUserId` vs internal `User.id` via `src/server/modules/forum/services/linked-user.ts`).
+  - Implemented robust live bridge semantics in `src/server/modules/forum/services/forum-bridge.ts` (handling object/array recipients, multi-recipient conversations `recipient_count > 2`, epoch `lastReadAt: new Date(0)`, and unresolved `forum:<username>` author tags).
+  - Deprecated legacy bridge files in `src/server/bridges/` and re-exported canonical forum module implementations.
+  - Eliminated duplicated local `xfFetch` and `requireForumUser` copies in `src/server/api/routers/forum/{account,writing,reading,stash}.ts`.
+  - Added unit and characterization test suites in `src/tests/server/modules/forum/` and `src/tests/server/api/routers/forum/`.
+- **Flag Stack Consolidation & Pure Immutability (Plan 164)**:
+  - Consolidated 5 competing flag services (`unified-flag-service.ts`, `country-flag-service.ts`, `flag-service.ts`, `server-flag-cache.ts`, `commons-flag-importer.ts`) into `src/lib/flags/server.ts` and `src/lib/flags/client.ts`.
+  - Created server-only `ServerFlagResolver` with in-memory caching, in-flight request coalescing, persistent cache integration, fallback policies (`commons-only` vs `fictional-wiki`), and base-path aware placeholders via `withBasePath`.
+  - Eliminated caller array mutation bug in `src/hooks/useUnifiedFlags.ts` by strictly copying arrays before sorting (`[...countryNames].sort()`), backed by characterization contracts.
+  - Replaced ad-hoc Commons / IIWiki fetch calls and custom user-agents with central MediaWiki primitives (`fetchMediaWikiImageBatch`, `fetchCommonsCategoryMembers`, `DEFAULT_USER_AGENT`).
+  - Deleted legacy flag files (`unified-flag-service.ts`, `country-flag-service.ts`, `flag-service.ts`, `server-flag-cache.ts`, `index.ts`).
+  - Added unit, hook immutability, and API route test suites: `src/tests/lib/flags/flag-resolver.test.ts` (18 tests), `src/tests/hooks/useUnifiedFlags.test.tsx`, `src/tests/app/api/flags-route.test.ts`, and updated `src/tests/hooks/flags-characterization.test.tsx`.
+
 ### 🏛️ Independent Consolidation Workstreams (Wave 5: Plans 156, 157, 159, 160, 161, 162, 167, 168)
 
 - **Transactional Compound Mutations (Plan 156)**:

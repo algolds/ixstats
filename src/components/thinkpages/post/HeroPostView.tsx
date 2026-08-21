@@ -28,7 +28,7 @@ import { PostActions } from "../primitives/PostActions";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { LiveDataCard } from "../LiveDataCard";
-import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
