@@ -33,6 +33,31 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🔒 Security, Authorization & Low-Risk Correctness (Wave 2: Plans 148, 149, 152, 165)
+
+- **Principal-Bound Private Messaging (Plan 148)**:
+  - Protected `getConversationsByFolder`, `getFolderCounts`, and `getConversationMessages` with `protectedProcedure`, binding all participant predicates, unread counters, and bridge syncs strictly to `ctx.auth.userId`.
+  - Normalized participant IDs in `createConversation` to guarantee caller principal inclusion.
+  - Bound `sendMessage`, `editMessage`, `deleteMessage`, `clearAllSystemNotifications`, `addReaction`, and `removeReaction` to `ctx.auth.userId`, enforcing message author ownership for edits/deletions.
+  - Bound `leaveConversation` and `markMessagesAsRead` to `ctx.auth.userId` and verified active participation before writing read state/receipts.
+  - Added security test suite `src/tests/server/api/routers/messages-principal-binding.test.ts`.
+- **Canonical Country-Write Authorization Matrix (Plan 149)**:
+  - Created centralized authorization module `src/server/shared/country-authorization.ts` exporting `COUNTRY_WRITE_ROLES`, `getRoleName`, `isPrivilegedCountryWriter`, and `assertCountryWriteAccess`.
+  - Standardized authorization resolution across all country mutation endpoints: cached direct country owner fast path, cached role check, single fresh DB user fallback, and target country existence validation.
+  - Protected `atomicGovernmentRouter`, `atomicEconomicRouter`, and `atomicTaxRouter` with country write assertions, preventing cross-country data manipulation and ID-only unauthorized mutations.
+  - Enforced dual component country ownership checks for synergy creations (`createSynergy`) rejecting mismatched cross-country pairs.
+  - Migrated economics routers (`builder.ts`, `config.ts`, `fiscal.ts`, `profile.ts`, `sync.ts`), `intent.ts`, `taxSystem/crud.ts`, `policies/integration.ts`, and `countries/management/lifecycle.ts` to canonical authorization.
+  - Completely deleted legacy and duplicated `src/server/api/routers/economics/_ownership.ts`.
+  - Added authorization matrix and atomic router test suites (`country-authorization.test.ts`, `atomic-country-authorization.test.ts`).
+- **Preserve Zero Values in Component Serializers (Plan 152)**:
+  - Created centralized serializers `src/server/api/routers/economicComponents/serializer.ts` and `src/server/api/routers/governmentComponents/serializer.ts` using nullish coalescing (`??`) to preserve valid `0` values (e.g. `effectivenessScore = 0`, zero-cost components) instead of defaulting to integers (`50`, `0`).
+  - Unified catalog, admin, and component routers onto single source-of-truth serializers, removing duplicate local functions.
+  - Added unit test suite `src/tests/server/api/routers/component-serializers.test.ts`.
+- **Remove Unused Atomic Provider Wrapper (Plan 165)**:
+  - Removed unused `AtomicStateProvider` and `AtomicStateProviderWrapper` from `src/components/mycountry/shell/MyCountryRouter.tsx`.
+  - Deleted dead component file `src/components/ui/atomic/AtomicStateProvider.tsx`.
+  - Added regression test `src/tests/components/mycountry/MyCountryRouter.atomic-provider.test.tsx` verifying clean provider mounting and absence of redundant renders.
+
 ### 🛡️ Architecture & Verification Foundations (Wave 1: Plans 150, 151, 155)
 
 - **Database Initialization Cycle Purged (Plan 155)**:

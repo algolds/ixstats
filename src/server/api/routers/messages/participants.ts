@@ -194,11 +194,12 @@ export const messagesParticipantsRouter = createTRPCRouter({
     .input(
       z.object({
         conversationId: z.string(),
-        userId: z.string(),
+        userId: z.string().optional().default(""),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.userId !== ctx.auth.userId) {
+      const principalId = ctx.auth.userId;
+      if (input.userId && input.userId !== principalId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You can only leave conversations on behalf of yourself",
@@ -210,7 +211,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId,
+            userId: principalId,
           },
         },
       });
@@ -227,7 +228,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId,
+            userId: principalId,
           },
         },
         data: {
@@ -237,8 +238,8 @@ export const messagesParticipantsRouter = createTRPCRouter({
       });
 
       // Get user names for the system message
-      const userMap = await batchResolveUsers([ctx.auth.userId], ctx.db);
-      const callerName = userMap.get(ctx.auth.userId)?.displayName ?? "Someone";
+      const userMap = await batchResolveUsers([principalId], ctx.db);
+      const callerName = userMap.get(principalId)?.displayName ?? "Someone";
 
       // Add system message
       await ctx.db.thinkshareMessage.create({
@@ -373,16 +374,34 @@ export const messagesParticipantsRouter = createTRPCRouter({
     .input(
       z.object({
         conversationId: z.string(),
-        userId: z.string(),
+        userId: z.string().optional().default(""),
         messageIds: z.array(z.string()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
+      // Verify active participation
+      const participant = await ctx.db.conversationParticipant.findFirst({
+        where: {
+          conversationId: input.conversationId,
+          userId: principalId,
+          isActive: true,
+        },
+      });
+
+      if (!participant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not an active participant in this conversation",
+        });
+      }
+
       // Update participant lastReadAt
       await ctx.db.conversationParticipant.updateMany({
         where: {
           conversationId: input.conversationId,
-          userId: input.userId,
+          userId: principalId,
         },
         data: { lastReadAt: new Date() },
       });
@@ -393,7 +412,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
         const existing = await ctx.db.messageReadReceipt.findMany({
           where: {
             thinkshareMessageId: { in: input.messageIds },
-            userId: input.userId,
+            userId: principalId,
           },
           select: { thinkshareMessageId: true },
         });
@@ -404,7 +423,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
           await ctx.db.messageReadReceipt.createMany({
             data: newIds.map((msgId) => ({
               thinkshareMessageId: msgId,
-              userId: input.userId,
+              userId: principalId,
               messageType: "thinkshare",
             })),
           });

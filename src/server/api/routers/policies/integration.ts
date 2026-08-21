@@ -7,6 +7,8 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { calculateRealTimePolicyEffects } from "~/lib/policies";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+
 export const policiesIntegrationRouter = createTRPCRouter({
   getPolicyCatalog: publicProcedure.query(async ({ ctx }) => {
     const catalog = await getPolicyDecretals(ctx.db);
@@ -61,20 +63,7 @@ export const policiesIntegrationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Ownership gate: only the country's owner (or an admin/system-owner) may
-      // create policies for it — otherwise any authed user could pollute any
-      // country's policy list via this endpoint.
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: { role: true },
-      });
-      const role = user?.role?.name;
-      if (user?.countryId !== input.countryId && role !== "admin" && role !== "system-owner") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to edit this country's policies.",
-        });
-      }
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const results = [];
 

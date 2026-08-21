@@ -1,4 +1,4 @@
-import { assertCountryAccess } from "../../../server/api/routers/economics/_ownership";
+import { assertCountryWriteAccess as assertCountryAccess } from "../../../server/shared/country-authorization";
 import { createMockRouterContext } from "../../helpers/router-context";
 import { TRPCError } from "@trpc/server";
 

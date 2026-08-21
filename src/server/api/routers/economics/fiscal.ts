@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { assertCountryAccess } from "./_ownership";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
 const economicsFiscalRouter = createTRPCRouter({
@@ -52,7 +52,7 @@ const economicsFiscalRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       return await ctx.db.fiscalSystem.upsert({
         where: { countryId },
@@ -92,7 +92,7 @@ const economicsFiscalRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       return await ctx.db.incomeDistribution.upsert({
         where: { countryId },
@@ -134,7 +134,7 @@ const economicsFiscalRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       return await ctx.db.governmentBudget.upsert({
         where: { countryId },

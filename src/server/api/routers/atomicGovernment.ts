@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { ComponentType } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const atomicGovernmentRouter = createTRPCRouter({
   // Get all government components for a country
@@ -32,6 +34,8 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       // Check if component already exists for this country
       const existing = await ctx.db.governmentComponent.findFirst({
         where: {
@@ -72,6 +76,16 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.governmentComponent.findUnique({
+        where: { id: input.id },
+        select: { id: true, countryId: true },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Government component not found" });
+      }
+
+      await assertCountryWriteAccess(ctx, existing.countryId);
+
       const { id, ...updateData } = input;
 
       return ctx.db.governmentComponent.update({
@@ -84,6 +98,16 @@ export const atomicGovernmentRouter = createTRPCRouter({
   removeComponent: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.governmentComponent.findUnique({
+        where: { id: input.id },
+        select: { id: true, countryId: true },
+      });
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Government component not found" });
+      }
+
+      await assertCountryWriteAccess(ctx, existing.countryId);
+
       return ctx.db.governmentComponent.update({
         where: { id: input.id },
         data: { isActive: false },
@@ -118,6 +142,23 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
+      const comp1 = await ctx.db.governmentComponent.findUnique({
+        where: { id: input.primaryComponentId },
+        select: { countryId: true },
+      });
+      const comp2 = await ctx.db.governmentComponent.findUnique({
+        where: { id: input.secondaryComponentId },
+        select: { countryId: true },
+      });
+      if (!comp1 || !comp2 || comp1.countryId !== input.countryId || comp2.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Both components must belong to the specified country",
+        });
+      }
+
       // Check if synergy already exists
       const existing = await ctx.db.componentSynergy.findFirst({
         where: {
@@ -281,6 +322,8 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const { categories, ...scenarioData } = input;
 
       const scenario = await ctx.db.budgetScenario.create({
@@ -330,6 +373,8 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       return ctx.db.fiscalPolicy.create({
         data: input,
       });
@@ -344,6 +389,16 @@ export const atomicGovernmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const policy = await ctx.db.fiscalPolicy.findUnique({
+        where: { id: input.policyId },
+        select: { id: true, countryId: true },
+      });
+      if (!policy) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Fiscal policy not found" });
+      }
+
+      await assertCountryWriteAccess(ctx, policy.countryId);
+
       return ctx.db.fiscalPolicy.update({
         where: { id: input.policyId },
         data: {

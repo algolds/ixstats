@@ -4,6 +4,8 @@ import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+
 export const managementLifecycleProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
 
@@ -19,17 +21,11 @@ export const managementLifecycleProcedures = {
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
 
-      if (!ctx.auth?.userId) {
-        throw new Error("Not authenticated");
-      }
+      await assertCountryWriteAccess(ctx, id);
 
       const userProfile = await ctx.db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
       });
-
-      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== id)) {
-        throw new Error("You do not have permission to edit this country.");
-      }
 
       try {
         const filteredUpdates = Object.fromEntries(

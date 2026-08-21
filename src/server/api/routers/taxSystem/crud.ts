@@ -12,49 +12,7 @@ import { TaxBuilderStateSchema } from "~/types/tax-system";
 
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { mapIdToTaxComponentType, mapTaxComponentTypeToId } from "~/lib/enums";
-import { isSystemOwner } from "~/lib/auth";
-
-const PRIVILEGED_ROLES = ["admin", "owner", "staff", "system-owner"];
-
-/**
- * Verify the country exists and the caller may edit it before any tax write.
- * Prevents the two error floods seen in production:
- *  - "Foreign key constraint failed on TaxSystem" (countryId pointed at a
- *    country that doesn't exist yet — e.g. create-mode autosave before the
- *    country is persisted);
- *  - silent cross-country writes (create/update had no ownership check at all).
- */
-async function assertTaxAccess(ctx: any, countryId: string): Promise<void> {
-  const country = await ctx.db.country.findUnique({
-    where: { id: countryId },
-    select: { id: true },
-  });
-  if (!country) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Country not found — create the country before saving its tax system.",
-    });
-  }
-
-  const user = ctx.auth?.userId
-    ? await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId },
-        include: { role: true },
-      })
-    : null;
-  const role = user?.role?.name;
-  const allowed =
-    user?.countryId === countryId ||
-    (ctx.auth?.userId && isSystemOwner(ctx.auth.userId)) ||
-    (typeof role === "string" && PRIVILEGED_ROLES.includes(role));
-
-  if (!allowed) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "You do not have permission to edit this country's tax system.",
-    });
-  }
-}
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // Validation helpers for brackets
 function validateBracketsState(
@@ -221,7 +179,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
       const data = input.data as TaxBuilderState;
       const { skipConflictCheck } = input;
 
-      await assertTaxAccess(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Server-side validation for bracket continuity/overlaps
       const bracketValidation = validateBracketsState(data);
@@ -465,7 +423,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
       const data = input.data as TaxBuilderState;
       const { skipConflictCheck } = input;
 
-      await assertTaxAccess(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       // Server-side validation for bracket continuity/overlaps
       const bracketValidation = validateBracketsState(data);
@@ -652,7 +610,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await assertTaxAccess(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
       await ctx.db.taxSystem.delete({
         where: { countryId: input.countryId },
       });

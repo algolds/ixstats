@@ -3,8 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
-import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry/shared/primitives";
-import { AtomicStateProvider } from "~/components/ui/atomic/AtomicStateProvider";
+import { AuthenticationGuard, CountryDataProvider } from "~/components/mycountry/shared/primitives";
 import { MobileOptimized } from "~/app/mycountry/components/MobileOptimizations";
 import { getSectionFromPathname, type MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
@@ -204,25 +203,9 @@ export function MyCountryRouter({ v2: _v2 }: { v2?: boolean } = {}) {
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
       <AuthenticationGuard redirectPath="/mycountry">
         <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
-          <AtomicStateProviderWrapper>
-            <MyCountryRouterInner />
-          </AtomicStateProviderWrapper>
+          <MyCountryRouterInner />
         </CountryDataProvider>
       </AuthenticationGuard>
     </MobileOptimized>
-  );
-}
-
-/** Wraps children in AtomicStateProvider when country data is available */
-function AtomicStateProviderWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  const { country } = useCountryData();
-
-  if (!country?.id) return <>{children}</>;
-
-  return (
-    <AtomicStateProvider countryId={country.id} userId={user?.id}>
-      {children}
-    </AtomicStateProvider>
   );
 }

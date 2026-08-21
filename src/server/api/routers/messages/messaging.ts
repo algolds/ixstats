@@ -195,21 +195,23 @@ export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Get messages for a conversation (source-aware).
    */
-  getConversationMessages: publicProcedure
+  getConversationMessages: protectedProcedure
     .input(
       z.object({
         conversationId: z.string().min(1),
-        userId: z.string().min(1),
+        userId: z.string().optional().default(""),
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
       // Verify participant
       const participant = await ctx.db.conversationParticipant.findFirst({
         where: {
           conversationId: input.conversationId,
-          userId: input.userId,
+          userId: principalId,
           isActive: true,
         },
       });
@@ -280,21 +282,32 @@ export const messagesMessagingRouter = createTRPCRouter({
           account,
           content: msg.content,
           messageType: msg.messageType,
-          ixTimeTimestamp: msg.ixTimeTimestamp,
-          createdAt: msg.ixTimeTimestamp,
+          replyToId: msg.replyToId,
+          replyTo: msg.replyTo
+            ? {
+                id: msg.replyTo.id,
+                accountId: msg.replyTo.userId,
+                content: msg.replyTo.content,
+                ixTimeTimestamp: msg.replyTo.ixTimeTimestamp,
+              }
+            : null,
           reactions,
           mentions,
           attachments,
-          replyTo: msg.replyTo ? { ...msg.replyTo, account: { displayName: "..." } } : undefined,
+          isSystem: msg.isSystem,
+          ixTimeTimestamp: msg.ixTimeTimestamp,
+          createdAt: msg.ixTimeTimestamp,
+          editedAt: msg.editedAt,
+          deletedAt: msg.deletedAt,
+          source: msg.source,
+          classification: msg.classification,
+          priority: msg.priority,
+          subject: msg.subject,
           readReceipts: msg.readReceipts.map((r) => ({
             id: r.id,
             accountId: r.userId,
             readAt: r.readAt,
           })),
-          isSystem: msg.isSystem,
-          editedAt: msg.editedAt,
-          deletedAt: msg.deletedAt,
-          source: msg.source,
         };
       });
 
@@ -311,7 +324,7 @@ export const messagesMessagingRouter = createTRPCRouter({
     .input(
       z.object({
         conversationId: z.string(),
-        userId: z.string(),
+        userId: z.string().optional().default(""),
         content: z.string().min(1),
         messageType: z.enum(["text", "image", "file", "system"]).default("text"),
         replyToId: z.string().optional(),
@@ -335,6 +348,8 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
       // Validate content
       validateNoXSS(input.content);
 
@@ -342,7 +357,7 @@ export const messagesMessagingRouter = createTRPCRouter({
       const participant = await ctx.db.conversationParticipant.findFirst({
         where: {
           conversationId: input.conversationId,
-          userId: input.userId,
+          userId: principalId,
           isActive: true,
         },
       });
@@ -362,7 +377,7 @@ export const messagesMessagingRouter = createTRPCRouter({
       const message = await ctx.db.thinkshareMessage.create({
         data: {
           conversationId: input.conversationId,
-          userId: input.userId,
+          userId: principalId,
           content: input.content,
           messageType: input.messageType,
           replyToId: input.replyToId,
@@ -388,7 +403,7 @@ export const messagesMessagingRouter = createTRPCRouter({
           await wikiTalkBridge.sendOutbound(
             conversation.sourceId,
             input.content,
-            input.userId,
+            principalId,
             ctx.db as any
           );
         } catch (err) {
@@ -399,7 +414,7 @@ export const messagesMessagingRouter = createTRPCRouter({
           await forumBridge.sendOutbound(
             conversation.sourceId,
             input.content,
-            input.userId,
+            principalId,
             ctx.db as any
           );
         } catch (err) {
@@ -415,7 +430,7 @@ export const messagesMessagingRouter = createTRPCRouter({
             type: "message:new",
             conversationId: input.conversationId,
             messageId: message.id,
-            accountId: input.userId,
+            accountId: principalId,
             content: input.content,
             timestamp: Date.now(),
           });
@@ -428,7 +443,7 @@ export const messagesMessagingRouter = createTRPCRouter({
       const otherParticipants = await ctx.db.conversationParticipant.findMany({
         where: {
           conversationId: input.conversationId,
-          userId: { not: input.userId },
+          userId: { not: principalId },
           isActive: true,
         },
       });
@@ -462,7 +477,22 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
       validateNoXSS(input.content);
+
+      const msg = await ctx.db.thinkshareMessage.findUnique({
+        where: { id: input.messageId },
+      });
+      if (!msg) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      }
+      if (msg.userId !== principalId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only edit your own messages",
+        });
+      }
+
       await ctx.db.thinkshareMessage.update({
         where: { id: input.messageId },
         data: {
@@ -479,6 +509,21 @@ export const messagesMessagingRouter = createTRPCRouter({
   deleteMessage: protectedProcedure
     .input(z.object({ messageId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
+      const msg = await ctx.db.thinkshareMessage.findUnique({
+        where: { id: input.messageId },
+      });
+      if (!msg) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      }
+      if (msg.userId !== principalId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only delete your own messages",
+        });
+      }
+
       await ctx.db.thinkshareMessage.update({
         where: { id: input.messageId },
         data: {
@@ -493,12 +538,14 @@ export const messagesMessagingRouter = createTRPCRouter({
    * Clear all system notifications for a user.
    */
   clearAllSystemNotifications: protectedProcedure
-    .input(z.object({ userId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .input(z.object({ userId: z.string().optional().default("") }))
+    .mutation(async ({ ctx }) => {
+      const principalId = ctx.auth.userId;
+
       const conversations = await ctx.db.thinkshareConversation.findMany({
         where: {
           participants: {
-            some: { userId: input.userId, isActive: true },
+            some: { userId: principalId, isActive: true },
           },
           isActive: true,
           OR: [
@@ -536,16 +583,32 @@ export const messagesMessagingRouter = createTRPCRouter({
     .input(
       z.object({
         messageId: z.string(),
-        userId: z.string(),
+        userId: z.string().optional().default(""),
         reaction: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
       const msg = await ctx.db.thinkshareMessage.findUnique({
         where: { id: input.messageId },
       });
       if (!msg) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      }
+
+      const participant = await ctx.db.conversationParticipant.findFirst({
+        where: {
+          conversationId: msg.conversationId,
+          userId: principalId,
+          isActive: true,
+        },
+      });
+      if (!participant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant in this conversation",
+        });
       }
 
       let reactions: Record<string, number> = {};
@@ -571,15 +634,32 @@ export const messagesMessagingRouter = createTRPCRouter({
     .input(
       z.object({
         messageId: z.string(),
+        userId: z.string().optional().default(""),
         reaction: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
+
       const msg = await ctx.db.thinkshareMessage.findUnique({
         where: { id: input.messageId },
       });
       if (!msg) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+      }
+
+      const participant = await ctx.db.conversationParticipant.findFirst({
+        where: {
+          conversationId: msg.conversationId,
+          userId: principalId,
+          isActive: true,
+        },
+      });
+      if (!participant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant in this conversation",
+        });
       }
 
       let reactions: Record<string, number> = {};

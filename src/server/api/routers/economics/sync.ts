@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { assertCountryAccess } from "./_ownership";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const economicsSyncRouter = createTRPCRouter({
@@ -56,7 +56,7 @@ const economicsSyncRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, governmentComponents } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Update country with government components
       const updated = await ctx.db.country.update({
@@ -85,7 +85,7 @@ const economicsSyncRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, taxData } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Update fiscal system with tax data
       const fiscalSystem = await ctx.db.fiscalSystem.upsert({

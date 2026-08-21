@@ -3,7 +3,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { assertCountryAccess } from "./_ownership";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
@@ -43,7 +43,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Get previous values for comparison
       const previous = await ctx.db.economicProfile.findUnique({
@@ -114,7 +114,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       return await ctx.db.laborMarket.upsert({
         where: { countryId },
@@ -175,7 +175,7 @@ const economicsProfileRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...data } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       return await ctx.db.demographics.upsert({
         where: { countryId },

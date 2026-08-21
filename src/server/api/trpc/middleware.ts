@@ -7,6 +7,7 @@ import { t } from "./init";
 import { rateLimiter } from "~/lib/cache";
 import { db, isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
+import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -73,10 +74,8 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
     throw new Error("UNAUTHORIZED: Authentication required");
   }
 
-  const userRole = (ctx.user as any)?.role ?? (ctx.auth as any)?.sessionClaims?.metadata?.role;
-  const isAdmin =
-    isSystemOwner(ctx.auth.userId) ||
-    (typeof userRole === "string" && ["admin", "owner", "staff"].includes(userRole));
+  const userRole = getRoleName(ctx.user, (ctx.auth as any)?.sessionClaims);
+  const isAdmin = isPrivilegedCountryWriter(ctx.auth.userId, userRole);
   if (isAdmin) {
     return next({
       ctx: {

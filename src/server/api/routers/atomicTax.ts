@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TaxComponentType } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const atomicTaxRouter = createTRPCRouter({
   // Get all tax components for a country
@@ -27,6 +29,8 @@ export const atomicTaxRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const component = await ctx.db.taxComponent.create({
         data: {
           ...input,
@@ -66,8 +70,10 @@ export const atomicTaxRouter = createTRPCRouter({
       });
 
       if (!existing) {
-        throw new Error("Tax component not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tax component not found" });
       }
+
+      await assertCountryWriteAccess(ctx, existing.countryId);
 
       const updated = await ctx.db.taxComponent.update({
         where: { id: input.id },
@@ -104,8 +110,10 @@ export const atomicTaxRouter = createTRPCRouter({
       });
 
       if (!existing) {
-        throw new Error("Tax component not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tax component not found" });
       }
+
+      await assertCountryWriteAccess(ctx, existing.countryId);
 
       const updated = await ctx.db.taxComponent.update({
         where: { id: input.id },
@@ -150,6 +158,8 @@ export const atomicTaxRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, components } = input;
 
+      await assertCountryWriteAccess(ctx, countryId);
+
       // Get existing components
       const existing = await ctx.db.taxComponent.findMany({
         where: { countryId },
@@ -162,12 +172,12 @@ export const atomicTaxRouter = createTRPCRouter({
 
       // Process each component
       for (const componentData of components) {
-        const existing = existingMap.get(componentData.componentType);
+        const existingComp = existingMap.get(componentData.componentType);
 
-        if (existing) {
+        if (existingComp) {
           // Update existing component
           const updated = await ctx.db.taxComponent.update({
-            where: { id: existing.id },
+            where: { id: existingComp.id },
             data: {
               effectivenessScore: componentData.effectivenessScore,
               isActive: componentData.isActive,
@@ -183,9 +193,9 @@ export const atomicTaxRouter = createTRPCRouter({
             data: {
               countryId,
               componentType: "TAX",
-              componentId: existing.id,
+              componentId: existingComp.id,
               changeType: "MODIFIED",
-              previousValue: JSON.stringify(existing),
+              previousValue: JSON.stringify(existingComp),
               newValue: JSON.stringify(updated),
               triggeredBy: ctx.auth.userId,
               description: `Updated tax component: ${componentData.componentType}`,
@@ -222,10 +232,10 @@ export const atomicTaxRouter = createTRPCRouter({
 
       // Deactivate components not in the new list
       const newTypes = new Set(components.map((c) => c.componentType));
-      for (const existing of existingMap.values()) {
-        if (!newTypes.has(existing.componentType) && existing.isActive) {
+      for (const existingComp of existingMap.values()) {
+        if (!newTypes.has(existingComp.componentType) && existingComp.isActive) {
           const updated = await ctx.db.taxComponent.update({
-            where: { id: existing.id },
+            where: { id: existingComp.id },
             data: { isActive: false },
           });
 
@@ -234,12 +244,12 @@ export const atomicTaxRouter = createTRPCRouter({
             data: {
               countryId,
               componentType: "TAX",
-              componentId: existing.id,
+              componentId: existingComp.id,
               changeType: "REMOVED",
-              previousValue: JSON.stringify(existing),
+              previousValue: JSON.stringify(existingComp),
               newValue: JSON.stringify(updated),
               triggeredBy: ctx.auth.userId,
-              description: `Removed tax component: ${existing.componentType}`,
+              description: `Removed tax component: ${existingComp.componentType}`,
             },
           });
 

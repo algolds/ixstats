@@ -192,7 +192,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Get conversations filtered by folder — server-side folder classification.
    */
-  getConversationsByFolder: publicProcedure
+  getConversationsByFolder: protectedProcedure
     .input(
       z.object({
         userId: z.string().optional().default(""),
@@ -202,23 +202,22 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      if (!input.userId) return { conversations: [], nextCursor: undefined };
-
+      const principalId = ctx.auth.userId;
       const { folder, limit, cursor } = input;
 
       // Build where clause based on folder
       const baseWhere: any = {
         participants: {
-          some: { userId: input.userId, isActive: true },
+          some: { userId: principalId, isActive: true },
         },
         isActive: true,
       };
 
       // Fire-and-forget bridge sync for folders that need it (non-blocking)
-      if ((folder === "inbox" || folder === "discussions") && input.userId) {
+      if (folder === "inbox" || folder === "discussions") {
         Promise.allSettled([
-          wikiTalkBridge.syncInbound(input.userId, ctx.db as any),
-          forumBridge.syncInbound(input.userId, ctx.db as any),
+          wikiTalkBridge.syncInbound(principalId, ctx.db as any),
+          forumBridge.syncInbound(principalId, ctx.db as any),
         ]).catch((err: unknown) => {
           console.error("[Messages] Background op failed:", (err as Error).message);
         });
@@ -282,7 +281,7 @@ export const messagesConversationsRouter = createTRPCRouter({
         for (const p of conv.participants) allUserIds.add(p.userId);
         if (conv.messages[0]) allUserIds.add(conv.messages[0].userId);
       }
-      allUserIds.delete(input.userId);
+      allUserIds.delete(principalId);
 
       // 2. Single batch query for all user profiles
       const userMap = await batchResolveUsers([...allUserIds], ctx.db);
@@ -290,7 +289,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       // 3. Batch unread counts — single query with groupBy
       const participantReadMap = new Map(
         page.map((c) => {
-          const p = c.participants.find((pp) => pp.userId === input.userId);
+          const p = c.participants.find((pp) => pp.userId === principalId);
           return [c.id, p?.lastReadAt ?? new Date(0)];
         })
       );
@@ -303,7 +302,7 @@ export const messagesConversationsRouter = createTRPCRouter({
           const count = await ctx.db.thinkshareMessage.count({
             where: {
               conversationId: conv.id,
-              userId: { not: input.userId },
+              userId: { not: principalId },
               ixTimeTimestamp: { gt: lastRead },
               deletedAt: null,
             },
@@ -323,7 +322,7 @@ export const messagesConversationsRouter = createTRPCRouter({
 
       const enriched = page.map((conv) => {
         const otherParticipants = conv.participants
-          .filter((p) => p.userId !== input.userId)
+          .filter((p) => p.userId !== principalId)
           .map((p) => ({
             id: p.id,
             accountId: p.userId,
@@ -376,23 +375,14 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Get unread counts per folder for the sidebar badges.
    */
-  getFolderCounts: publicProcedure
+  getFolderCounts: protectedProcedure
     .input(z.object({ userId: z.string().optional().default("") }))
-    .query(async ({ ctx, input }) => {
-      if (!input.userId) {
-        return {
-          inbox: 0,
-          personal: 0,
-          diplomatic: 0,
-          discussions: 0,
-          groups: 0,
-          system: 0,
-        };
-      }
+    .query(async ({ ctx }) => {
+      const principalId = ctx.auth.userId;
 
       // Get all conversations this user participates in
       const participations = await ctx.db.conversationParticipant.findMany({
-        where: { userId: input.userId, isActive: true },
+        where: { userId: principalId, isActive: true },
         select: { conversationId: true, lastReadAt: true },
       });
 
@@ -428,7 +418,7 @@ export const messagesConversationsRouter = createTRPCRouter({
           const count = await ctx.db.thinkshareMessage.count({
             where: {
               conversationId: conv.id,
-              userId: { not: input.userId },
+              userId: { not: principalId },
               ixTimeTimestamp: { gt: lastRead },
               deletedAt: null,
             },
@@ -492,10 +482,12 @@ export const messagesConversationsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const principalId = ctx.auth.userId;
       const { participantIds, source, ...metadata } = input;
+      const normalizedParticipantIds = Array.from(new Set([principalId, ...participantIds]));
 
       // Check for existing direct conversation between same participants
-      if (participantIds.length <= 2 && source === "thinkshare") {
+      if (normalizedParticipantIds.length <= 2 && source === "thinkshare") {
         const existingConvs = await ctx.db.thinkshareConversation.findMany({
           where: {
             type: "direct",
@@ -503,7 +495,7 @@ export const messagesConversationsRouter = createTRPCRouter({
             isActive: true,
             participants: {
               every: {
-                userId: { in: participantIds },
+                userId: { in: normalizedParticipantIds },
                 isActive: true,
               },
             },
@@ -513,17 +505,17 @@ export const messagesConversationsRouter = createTRPCRouter({
           },
         });
 
-        const existing = existingConvs.find((c) => c.participants.length === participantIds.length);
+        const existing = existingConvs.find((c) => c.participants.length === normalizedParticipantIds.length);
         if (existing) return existing;
       }
 
       const conversation = await ctx.db.thinkshareConversation.create({
         data: {
-          type: participantIds.length > 2 ? "group" : "direct",
+          type: normalizedParticipantIds.length > 2 ? "group" : "direct",
           source,
           ...metadata,
           participants: {
-            create: participantIds.map((userId) => ({
+            create: normalizedParticipantIds.map((userId) => ({
               userId,
               role: "participant",
             })),
@@ -533,8 +525,8 @@ export const messagesConversationsRouter = createTRPCRouter({
       });
 
       // Notify participants
-      for (const pid of participantIds) {
-        if (pid !== ctx.auth?.userId) {
+      for (const pid of normalizedParticipantIds) {
+        if (pid !== principalId) {
           try {
             await notificationAPI.create({
               userId: pid,
@@ -558,10 +550,11 @@ export const messagesConversationsRouter = createTRPCRouter({
    */
   syncDiscussions: protectedProcedure
     .input(z.object({ userId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
+      const principalId = ctx.auth.userId;
       const [wikiResult, forumResult] = await Promise.allSettled([
-        wikiTalkBridge.syncInbound(input.userId, ctx.db as any),
-        forumBridge.syncInbound(input.userId, ctx.db as any),
+        wikiTalkBridge.syncInbound(principalId, ctx.db as any),
+        forumBridge.syncInbound(principalId, ctx.db as any),
       ]);
 
       return {

@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { assertCountryAccess } from "./_ownership";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -125,7 +125,7 @@ const economicsBuilderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, economyBuilder } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       // Get previous values for notifications
       const previousCountry = await ctx.db.country.findUnique({
@@ -619,7 +619,7 @@ const economicsBuilderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { countryId, changes } = input;
 
-      await assertCountryAccess(ctx, countryId);
+      await assertCountryWriteAccess(ctx, countryId);
 
       try {
         // Update country with changes

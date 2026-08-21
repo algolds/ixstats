@@ -22,7 +22,7 @@ import {
 } from "~/lib/intent/assemble";
 import { spawnIntentResistance } from "~/lib/intent/resistance";
 import { deriveBrokers, type ActiveBroker } from "~/lib/statecraft/power-brokers";
-import { assertCountryAccess } from "~/server/api/routers/economics/_ownership";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { generateIntentSummationDraft } from "~/lib/intent/intent-summation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -147,7 +147,7 @@ export const intentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const intent = await ctx.db.intent.findUnique({ where: { id: input.id } });
       if (!intent) throw new TRPCError({ code: "NOT_FOUND" });
-      await assertCountryAccess(ctx, intent.countryId);
+      await assertCountryWriteAccess(ctx, intent.countryId);
 
       // Phase 3 gate: an intent with open (pending/viewed) linked resistance
       // issues cannot be completed — the player must resolve them first.
@@ -200,7 +200,7 @@ export const intentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryAccess(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
       return await generateIntentSummationDraft({
         db: ctx.db,
         intentId: input.intentId,
@@ -229,7 +229,7 @@ export const intentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCountryAccess(ctx, input.countryId);
+      await assertCountryWriteAccess(ctx, input.countryId);
 
       const { category, packages } = assemblePackages(input.goal);
       const now = IxTime.getCurrentIxTime();
