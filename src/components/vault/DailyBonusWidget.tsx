@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Coins, Sparkles, Trophy, Flame } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { vaultNotify } from "~/lib/vault";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";

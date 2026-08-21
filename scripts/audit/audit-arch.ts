@@ -485,6 +485,89 @@ export function checkCrossRouter(rootDir = DEFAULT_ROOT): string[] {
   return violations.map((v) => v.message);
 }
 
+export function checkServerBoundary(rootDir = DEFAULT_ROOT): string[] {
+  const serverDir = path.join(rootDir, "src/server");
+  if (!fs.existsSync(serverDir)) return [];
+
+  const files = walk("src/server", rootDir);
+  const errors: string[] = [];
+
+  for (const rel of files) {
+    const abs = path.join(rootDir, rel);
+    const text = fs.readFileSync(abs, "utf8");
+    const lines = text.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      const match = line.match(/(?:from|import\(|require\()\s*["']([^"']+)["']/);
+      if (match && match[1]) {
+        const specifier = match[1];
+        if (
+          specifier.startsWith("~/app") ||
+          specifier.startsWith("@/app") ||
+          specifier.startsWith("~/components") ||
+          specifier.startsWith("@/components") ||
+          specifier.startsWith("~/hooks") ||
+          specifier.startsWith("@/hooks")
+        ) {
+          errors.push(
+            `Server boundary violation in ${rel}:${i + 1}: forbidden import "${specifier}". Move domain contracts to src/lib/ or src/types/.`
+          );
+        } else if (specifier.startsWith("./") || specifier.startsWith("../")) {
+          const resolved = path.resolve(path.dirname(abs), specifier);
+          const relResolved = path.relative(rootDir, resolved).split(path.sep).join("/");
+          if (
+            relResolved.startsWith("src/app/") ||
+            relResolved.startsWith("src/components/") ||
+            relResolved.startsWith("src/hooks/")
+          ) {
+            errors.push(
+              `Server boundary violation in ${rel}:${i + 1}: forbidden relative import "${specifier}" -> ${relResolved}. Move domain contracts to src/lib/ or src/types/.`
+            );
+          }
+        }
+      }
+    }
+  }
+  return errors;
+}
+
+export function checkClientServerEntrypoints(rootDir: string = DEFAULT_ROOT): string[] {
+  const errors: string[] = [];
+  const srcDir = path.join(rootDir, "src");
+  const domains = ["system", "vault", "cards", "wiki"];
+
+  for (const domain of domains) {
+    const indexPath = path.join(srcDir, "lib", domain, "index.ts");
+    if (fs.existsSync(indexPath)) {
+      errors.push(`Barrel index file exists: src/lib/${domain}/index.ts. Barrel roots are prohibited; use direct leaves or /client or /server.`);
+    }
+  }
+
+  const files = walk("src", rootDir);
+  const barrelRegex = /from\s+["'](?:~\/lib\/(system|vault|cards|wiki)|@\/lib\/(system|vault|cards|wiki))["']/;
+
+  for (const rel of files) {
+    const abs = path.join(rootDir, rel);
+    const content = fs.readFileSync(abs, "utf-8");
+    const lines = content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i]!.match(barrelRegex);
+      if (match) {
+        const domain = match[1] || match[2];
+        errors.push(
+          `Barrel import violation in ${rel}:${i + 1}: forbidden import of "~/lib/${domain}". Use direct leaf module or "~/lib/${domain}/client" / "~/lib/${domain}/server".`
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
+import { checkResidue } from "./router-residue";
+
+export { checkResidue };
+
 // ─── CLI Entrypoint ───────────────────────────────────────────────────────────
 
 export function runCLI(): void {
@@ -501,11 +584,14 @@ export function runCLI(): void {
 
   const sizeErrors = checkSizes();
   const crossErrors = checkCrossRouter();
-  const all = [...sizeErrors, ...crossErrors];
+  const serverBoundaryErrors = checkServerBoundary();
+  const residueErrors = checkResidue();
+  const entrypointErrors = checkClientServerEntrypoints();
+  const all = [...sizeErrors, ...crossErrors, ...serverBoundaryErrors, ...residueErrors, ...entrypointErrors];
 
   if (all.length === 0) {
     console.log(
-      "✓ arch guard passed (no new god files, no growth past baseline, no new cross-router imports)."
+      "✓ arch guard passed (no new god files, no growth past baseline, no new cross-router imports, no server boundary leaks, no unratcheted split residue)."
     );
     process.exit(0);
   }

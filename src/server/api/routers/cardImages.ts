@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 // eslint-disable-next-line unused-imports/no-unused-imports
-import { isValidCardType, type CardImageType } from "~/lib/cards";
+import { isValidCardType, type CardImageType } from "~/lib/cards/image-presets";
 
 /**
  * Card Images Router

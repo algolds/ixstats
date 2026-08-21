@@ -6,13 +6,9 @@ import { Globe, PenTool } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
-import {
-  getCategoryTheme,
-  getCategoryLabel,
-  isValidLoreCategory,
-  classifyFromWikitext,
-  type LoreCategory,
-} from "~/lib/cards";
+import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
+import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
+import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { CategoryIcon } from "~/components/cards/icons";
 
 export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: string | null }) {

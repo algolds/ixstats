@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useCountryData } from "~/components/mycountry/primitives";
-import type { CardImageType } from "~/lib/cards";
+import type { CardImageType } from "~/lib/cards/image-presets";
 import { extractCountryImageData } from "~/lib/media";
 import { useMetricDetailsModal } from "~/hooks/useMetricDetailsModal";
 import { getWikiCache, setWikiCache } from "~/lib/wiki/local-cache";

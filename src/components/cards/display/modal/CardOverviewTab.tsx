@@ -5,16 +5,12 @@ import { cn } from "~/lib/utils";
 import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { getOwnerCount } from "~/lib/cards";
+import { getOwnerCount } from "~/lib/cards/display-utils";
 import type { CardInstance, FormattedStats, CardAuthorInfo } from "~/types/cards-display";
 import { CategoryIcon } from "~/components/cards/icons";
-import {
-  getCategoryTheme,
-  getCategoryLabel,
-  isValidLoreCategory,
-  classifyFromWikitext,
-  LoreCategory,
-} from "~/lib/cards";
+import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
+import { isValidLoreCategory, LoreCategory } from "~/lib/cards/category-enums";
+import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { RarityBadge } from "../RarityBadge";
 import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";

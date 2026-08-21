@@ -12,7 +12,7 @@ import { Button } from "~/components/ui/button";
 import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
-import { getCardImagePreset, getFallbackGradient, type CardImageType } from "~/lib/cards";
+import { getCardImagePreset, getFallbackGradient, type CardImageType } from "~/lib/cards/image-presets";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";

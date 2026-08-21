@@ -40,11 +40,11 @@ import {
   LoreCategory,
   ArtworkSource,
   BROWSABLE_CATEGORIES,
-  getCategoryLabel,
   isValidLoreCategory,
-  classifyFromWikitext,
-} from "~/lib/cards";
-import { proxyCardArtwork } from "~/lib/cards";
+} from "~/lib/cards/category-enums";
+import { getCategoryLabel } from "~/lib/cards/category-theme";
+import { classifyFromWikitext } from "~/lib/cards/category-classifier";
+import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardInstance } from "~/types/cards-display";
 
 const PAGE_SIZE = 25;

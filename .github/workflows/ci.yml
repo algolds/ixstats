@@ -39,3 +39,6 @@ jobs:
 
       - name: Typecheck (tRPC)
         run: bun run typecheck:trpc
+
+      - name: Validate script targets
+        run: bun run validate:script-targets

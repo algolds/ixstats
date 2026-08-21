@@ -8,8 +8,8 @@ import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
 
 // Import hardcoded fallback data
-import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
-import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
+import { modernArchetypes } from "~/lib/economy/archetypes/modern";
+import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
 
 /**
  * Parse JSON string fields back to objects

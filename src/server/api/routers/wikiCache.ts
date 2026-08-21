@@ -12,10 +12,10 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki";
-import { extractDataFromWikiSections } from "~/app/builder/lib/wiki-data-extractor";
+import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki/cache-service";
+import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
 import { getArticleWikitext } from "~/lib/wiki/bridge";
-import { withRetrySafe } from "~/lib/system";
+import { withRetrySafe } from "~/lib/system/with-retry";
 import type { WikiSource } from "~/lib/wiki/config";
 
 function getApiBaseUrl(wikiSource: string): string {

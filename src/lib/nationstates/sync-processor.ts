@@ -13,7 +13,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { nsApiClient, type NSCard } from "./api-client";
-import { computeCardValue, getValuationConfig } from "~/lib/cards";
+import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { generateNSImportDescription } from "./import-service";
 
 /**

@@ -20,7 +20,7 @@ import IxLogoV2 from "~/app/_components/ix-logo-v2.svg";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { isStandaloneClient } from "~/lib/system";
+import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
 // Extracted sub-components
 import { MapsProfileDropdown } from "./MapsProfileDropdown";

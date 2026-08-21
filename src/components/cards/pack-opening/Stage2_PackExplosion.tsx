@@ -7,10 +7,10 @@ import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance } from "~/types/pack-opening";
 import type { CardRarity } from "@prisma/client";
-import { getPackOpeningService } from "~/lib/cards";
+import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { getParticleConfig } from "~/lib/themes";
 import { CardHolographicCover } from "../display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/cards";
+import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 
 interface Stage2_PackExplosionProps {
   cards: CardInstance[];

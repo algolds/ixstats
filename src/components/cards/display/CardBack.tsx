@@ -28,10 +28,10 @@ import {
 } from "~/lib/themes";
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 import { CATEGORY_ICONS } from "~/components/cards/icons/icon-paths";
-import { getCategoryTheme } from "~/lib/cards";
+import { getCategoryTheme } from "~/lib/cards/category-theme";
 import type { LoreCategory } from "~/lib/cards/category-enums";
 import type { CardInstance } from "~/types/cards-display";
-import { getCardSerialNumber, getCardEditionLabel } from "~/lib/cards";
+import { getCardSerialNumber, getCardEditionLabel } from "~/lib/cards/display-utils";
 import { withBasePath } from "~/lib/base-path";
 
 export type CardBackVariant = "lattice" | "zodiac" | "runes";

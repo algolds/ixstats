@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault";
+import { vaultService } from "~/lib/vault/vault-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { type VaultTransactionType } from "@prisma/client";
 

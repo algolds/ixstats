@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import { headers } from "next/headers";
-import { isStandaloneRequest } from "~/lib/system";
+import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();

@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { memoryConfig } from "~/lib/system";
+import { memoryConfig } from "~/lib/system/dev-memory-config";
 
 export const smallArmsEquipmentQueryRouter = createTRPCRouter({
   // ===========================

@@ -4,7 +4,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { vaultNotify } from "~/lib/vault";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 interface UseAuctionBidReturn {
   placeBid: (auctionId: string, amount: number) => void;

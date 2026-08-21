@@ -8,7 +8,7 @@ import {
   getFallbackGradient,
   allowsCustomUpload,
   type CardImageType,
-} from "~/lib/cards";
+} from "~/lib/cards/image-presets";
 import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";

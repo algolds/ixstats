@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault";
-import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards";
+import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
+import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards/season";
 
 export const vaultAdminStoreRouter = createTRPCRouter({
   /**

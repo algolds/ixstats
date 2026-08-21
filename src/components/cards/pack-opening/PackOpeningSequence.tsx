@@ -12,7 +12,7 @@ import { Stage1_PackReveal } from "./Stage1_PackReveal";
 import { Stage2_PackExplosion } from "./Stage2_PackExplosion";
 import { Stage3_CardReveal } from "./Stage3_CardReveal";
 import { Stage4_QuickActions } from "./Stage4_QuickActions";
-import { getPackOpeningService } from "~/lib/cards";
+import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 
 interface PackOpeningSequenceProps {
   userPackId: string;

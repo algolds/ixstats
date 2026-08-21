@@ -33,6 +33,36 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🏛️ Independent Consolidation Workstreams (Wave 5: Plans 156, 157, 159, 160, 161, 162, 167, 168)
+
+- **Transactional Compound Mutations (Plan 156)**:
+  - Enforced single atomic `ctx.db.$transaction()` blocks across all multi-table component and scenario mutations (`government/components/assignment.ts`, `economicComponents/assignment.ts`, `diplomaticScenarios/choices.ts`, and `thinkpages/messaging/messages.ts`).
+  - Added transaction rollback & isolation unit test suite `src/tests/lib/transactional-mutations.test.ts`.
+- **Router Split Residue Cleanup (Plan 157)**:
+  - Created AST residue analyzer `scripts/audit/router-residue.ts` and purged 35 unreferenced dead declarations from split subrouters.
+  - Integrated `checkResidue()` directly into `scripts/audit/audit-arch.ts` with test suite `src/tests/scripts/router-residue.test.ts`.
+- **Batch List Query Fan-outs (Plan 159)**:
+  - Replaced N+1 serial query loops with single-trip bounded batch queries (`where: { id: { in: [...] } }`) in `messages/conversations.ts`, `crafting/recipes.ts`, `achievements/country.ts`, and `diplomacy/cultural/npc/responses.ts`.
+  - Added query-count assertion tests in `src/tests/server/batch-list-query-fanouts.test.ts`.
+- **WikiOS Placeholder Resolver Canonicalization (Plan 160)**:
+  - Established `src/server/shared/wiki-placeholders.ts` as the single canonical placeholder substitution engine with characterization tests in `src/tests/server/wiki-placeholders.test.ts`.
+- **Domain Contract Boundary Enforcement (Plan 161)**:
+  - Eliminated all cross-tier imports from backend routers and services into frontend layers (`src/app`, `src/components`, `src/hooks`), establishing `src/lib/domain-contracts.ts` and `src/server/shared/` primitives.
+  - Integrated server-boundary linting and guard enforcement in `scripts/audit/audit-arch.ts` and ESLint configuration.
+- **Client/Server Entrypoint Splitting (Plan 162)**:
+  - Deleted ambiguous root barrels across `src/lib/{system,vault,cards,wiki}/index.ts`, replacing them with explicit `client.ts` and `server.ts` entrypoints protected by `import "server-only"`.
+  - Added barrel import regression prevention rules to `scripts/audit/audit-arch.ts` and tests in `src/tests/architecture/client-server-entrypoints.test.ts`.
+- **Admin Thin Page Decomposition (Plan 167)**:
+  - Decomposed 3 monolithic admin pages into thin orchestrators (under 150 lines) with pure transforms (`src/lib/admin/*-transforms.ts`), custom hooks (`src/hooks/admin/use*Admin.ts`), and focused UI components (`src/components/admin/*/`):
+    - `src/app/admin/economic-components/page.tsx`: 1,754 lines → **134 lines**.
+    - `src/app/admin/government-components/page.tsx`: 1,250 lines → **123 lines**.
+    - `src/app/admin/diplomatic-scenarios/page.tsx`: 1,868 lines → **142 lines**.
+  - Ratcheted down `scripts/audit/arch-baseline.json`, removing all 3 monoliths from exception tracking.
+- **Production Tooling Consolidation (Plan 168)**:
+  - Created static script target validator `scripts/audit/validate-script-targets.ts` and test suite `src/tests/scripts/validate-script-targets.test.ts`.
+  - Added `validate:script-targets` gate to `package.json` and `.github/workflows/ci.yml`.
+  - Pruned dead tsconfig targets (`ts:check:app`, `typecheck:client`), purged `npx` in favor of `bunx`, deleted dead `verify-prodclone.yml` workflow, and documented canonical deployment architecture in `scripts/deployment/README.md`.
+
 ### 📏 Architecture Size Ratchet & Monolith Decomposition (Wave 4: Plan 154)
 
 - **Restored and Broadened Architecture Size Ratchet (Plan 154)**:

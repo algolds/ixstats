@@ -20,21 +20,17 @@ import {
   getCardWidth,
   formatCardStats,
   getCardTypeLabel,
-} from "~/lib/cards";
+} from "~/lib/cards/display-utils";
 import { getPremiumBorderConfig, getFoilStampConfig, getMetallicGradient } from "~/lib/themes";
-import { proxyNSImage } from "~/lib/cards";
+import { proxyNSImage } from "~/lib/cards/ns-image-proxy";
 import { CardHolographicCover } from "./CardHolographicCover";
 import { RARITY_THEMES } from "./CardBack";
 import { NationStatesBadge } from "./NationStatesLogo";
 import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
-import {
-  getCategoryTheme,
-  getCategoryLabel,
-  isValidLoreCategory,
-  classifyFromWikitext,
-  type LoreCategory,
-} from "~/lib/cards";
+import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
+import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
+import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { getHybridRarityMaterial } from "~/lib/cards/rarity-materials";
 import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";

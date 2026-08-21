@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
-import { vaultService } from "~/lib/vault";
+import { vaultService } from "~/lib/vault/vault-service";
 
 /**
  * Diplomatic Scenarios Router

@@ -15,6 +15,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 import { forumBridge } from "~/server/bridges/forum-bridge";
+import { persistMessageTx } from "~/server/modules/messages/services/message-mutations";
 
 // ─── User Profile Cache (batch lookup) ───────────────────────────
 
@@ -353,51 +354,21 @@ export const messagesMessagingRouter = createTRPCRouter({
       // Validate content
       validateNoXSS(input.content);
 
-      // Verify participant
-      const participant = await ctx.db.conversationParticipant.findFirst({
-        where: {
-          conversationId: input.conversationId,
-          userId: principalId,
-          isActive: true,
-        },
+      // Persist message and update conversation atomically
+      const { message, conversation, otherParticipants } = await persistMessageTx(ctx.db, {
+        conversationId: input.conversationId,
+        principalId,
+        content: input.content,
+        messageType: input.messageType,
+        replyToId: input.replyToId,
+        mentions: input.mentions,
+        attachments: input.attachments,
+        classification: input.classification,
+        priority: input.priority,
+        subject: input.subject,
       });
 
-      if (!participant) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not a participant in this conversation",
-        });
-      }
-
-      // Get the conversation to inherit source
-      const conversation = await ctx.db.thinkshareConversation.findUnique({
-        where: { id: input.conversationId },
-      });
-
-      const message = await ctx.db.thinkshareMessage.create({
-        data: {
-          conversationId: input.conversationId,
-          userId: principalId,
-          content: input.content,
-          messageType: input.messageType,
-          replyToId: input.replyToId,
-          reactions: "{}",
-          mentions: input.mentions ? JSON.stringify(input.mentions) : "[]",
-          attachments: input.attachments ? JSON.stringify(input.attachments) : "[]",
-          source: conversation?.source ?? "thinkshare",
-          classification: input.classification,
-          priority: input.priority,
-          subject: input.subject,
-        },
-      });
-
-      // Update conversation lastActivity
-      await ctx.db.thinkshareConversation.update({
-        where: { id: input.conversationId },
-        data: { lastActivity: new Date() },
-      });
-
-      // Route outbound through bridge if external source
+      // Route outbound through bridge if external source (non-fatal)
       if (conversation?.source === "wiki" && conversation.sourceId) {
         try {
           await wikiTalkBridge.sendOutbound(
@@ -422,7 +393,7 @@ export const messagesMessagingRouter = createTRPCRouter({
         }
       }
 
-      // Broadcast via WebSocket
+      // Broadcast via WebSocket (non-fatal)
       try {
         const wsServer = getThinkPagesServer();
         if (wsServer) {
@@ -439,15 +410,7 @@ export const messagesMessagingRouter = createTRPCRouter({
         // WebSocket not available
       }
 
-      // Notify other participants
-      const otherParticipants = await ctx.db.conversationParticipant.findMany({
-        where: {
-          conversationId: input.conversationId,
-          userId: { not: principalId },
-          isActive: true,
-        },
-      });
-
+      // Notify other participants (non-fatal)
       for (const p of otherParticipants) {
         try {
           await notificationAPI.create({

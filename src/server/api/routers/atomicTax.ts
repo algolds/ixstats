@@ -3,6 +3,12 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { TaxComponentType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  createTaxComponentTx,
+  updateTaxComponentTx,
+  removeTaxComponentTx,
+  bulkUpdateTaxComponentsTx,
+} from "~/server/modules/atomic/services/component-mutations";
 
 export const atomicTaxRouter = createTRPCRouter({
   // Get all tax components for a country
@@ -30,28 +36,7 @@ export const atomicTaxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-
-      const component = await ctx.db.taxComponent.create({
-        data: {
-          ...input,
-          implementationDate: new Date(),
-        },
-      });
-
-      // Log the change
-      await ctx.db.componentChangeLog.create({
-        data: {
-          countryId: input.countryId,
-          componentType: "TAX",
-          componentId: component.id,
-          changeType: "ADDED",
-          newValue: JSON.stringify(component),
-          triggeredBy: ctx.auth.userId,
-          description: `Added tax component: ${input.componentType}`,
-        },
-      });
-
-      return component;
+      return await createTaxComponentTx(ctx.db, input, ctx.auth.userId);
     }),
 
   // Update an existing tax component
@@ -74,31 +59,7 @@ export const atomicTaxRouter = createTRPCRouter({
       }
 
       await assertCountryWriteAccess(ctx, existing.countryId);
-
-      const updated = await ctx.db.taxComponent.update({
-        where: { id: input.id },
-        data: {
-          effectivenessScore: input.effectivenessScore,
-          isActive: input.isActive,
-          notes: input.notes,
-        },
-      });
-
-      // Log the change
-      await ctx.db.componentChangeLog.create({
-        data: {
-          countryId: existing.countryId,
-          componentType: "TAX",
-          componentId: input.id,
-          changeType: "MODIFIED",
-          previousValue: JSON.stringify(existing),
-          newValue: JSON.stringify(updated),
-          triggeredBy: ctx.auth.userId,
-          description: `Updated tax component: ${existing.componentType}`,
-        },
-      });
-
-      return updated;
+      return await updateTaxComponentTx(ctx.db, input, existing, ctx.auth.userId);
     }),
 
   // Remove/deactivate a tax component
@@ -114,27 +75,7 @@ export const atomicTaxRouter = createTRPCRouter({
       }
 
       await assertCountryWriteAccess(ctx, existing.countryId);
-
-      const updated = await ctx.db.taxComponent.update({
-        where: { id: input.id },
-        data: { isActive: false },
-      });
-
-      // Log the change
-      await ctx.db.componentChangeLog.create({
-        data: {
-          countryId: existing.countryId,
-          componentType: "TAX",
-          componentId: input.id,
-          changeType: "REMOVED",
-          previousValue: JSON.stringify(existing),
-          newValue: JSON.stringify(updated),
-          triggeredBy: ctx.auth.userId,
-          description: `Removed tax component: ${existing.componentType}`,
-        },
-      });
-
-      return updated;
+      return await removeTaxComponentTx(ctx.db, input.id, existing, ctx.auth.userId);
     }),
 
   // Bulk update multiple components
@@ -157,107 +98,8 @@ export const atomicTaxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { countryId, components } = input;
-
       await assertCountryWriteAccess(ctx, countryId);
-
-      // Get existing components
-      const existing = await ctx.db.taxComponent.findMany({
-        where: { countryId },
-      });
-
-      // Create a map of existing components
-      const existingMap = new Map(existing.map((comp) => [comp.componentType, comp]));
-
-      const results = [];
-
-      // Process each component
-      for (const componentData of components) {
-        const existingComp = existingMap.get(componentData.componentType);
-
-        if (existingComp) {
-          // Update existing component
-          const updated = await ctx.db.taxComponent.update({
-            where: { id: existingComp.id },
-            data: {
-              effectivenessScore: componentData.effectivenessScore,
-              isActive: componentData.isActive,
-              implementationCost: componentData.implementationCost,
-              maintenanceCost: componentData.maintenanceCost,
-              requiredCapacity: componentData.requiredCapacity,
-              notes: componentData.notes,
-            },
-          });
-
-          // Log the change
-          await ctx.db.componentChangeLog.create({
-            data: {
-              countryId,
-              componentType: "TAX",
-              componentId: existingComp.id,
-              changeType: "MODIFIED",
-              previousValue: JSON.stringify(existingComp),
-              newValue: JSON.stringify(updated),
-              triggeredBy: ctx.auth.userId,
-              description: `Updated tax component: ${componentData.componentType}`,
-            },
-          });
-
-          results.push(updated);
-        } else {
-          // Create new component
-          const created = await ctx.db.taxComponent.create({
-            data: {
-              countryId,
-              ...componentData,
-              implementationDate: new Date(),
-            },
-          });
-
-          // Log the change
-          await ctx.db.componentChangeLog.create({
-            data: {
-              countryId,
-              componentType: "TAX",
-              componentId: created.id,
-              changeType: "ADDED",
-              newValue: JSON.stringify(created),
-              triggeredBy: ctx.auth.userId,
-              description: `Added tax component: ${componentData.componentType}`,
-            },
-          });
-
-          results.push(created);
-        }
-      }
-
-      // Deactivate components not in the new list
-      const newTypes = new Set(components.map((c) => c.componentType));
-      for (const existingComp of existingMap.values()) {
-        if (!newTypes.has(existingComp.componentType) && existingComp.isActive) {
-          const updated = await ctx.db.taxComponent.update({
-            where: { id: existingComp.id },
-            data: { isActive: false },
-          });
-
-          // Log the change
-          await ctx.db.componentChangeLog.create({
-            data: {
-              countryId,
-              componentType: "TAX",
-              componentId: existingComp.id,
-              changeType: "REMOVED",
-              previousValue: JSON.stringify(existingComp),
-              newValue: JSON.stringify(updated),
-              triggeredBy: ctx.auth.userId,
-              description: `Removed tax component: ${existingComp.componentType}`,
-            },
-          });
-
-          results.push(updated);
-        }
-      }
-
-      return results;
+      return await bulkUpdateTaxComponentsTx(ctx.db, countryId, components, ctx.auth.userId);
     }),
 
   // Get effectiveness analysis for tax components

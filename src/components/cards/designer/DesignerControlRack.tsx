@@ -30,14 +30,10 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { CategoryIcon } from "~/components/cards/icons";
-import {
-  LoreCategory,
-  BROWSABLE_CATEGORIES,
-  getCategoryLabel,
-  getCategoryTheme,
-  getCategorySubcategories,
-} from "~/lib/cards";
-import { proxyCardArtwork } from "~/lib/cards";
+import { LoreCategory, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
+import { getCategoryLabel, getCategoryTheme } from "~/lib/cards/category-theme";
+import { getCategorySubcategories } from "~/lib/cards/subcategory-registry";
+import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardRarity } from "@prisma/client";
 
 import { type CardDesignState, type CardDesignPreset, RARITY_BASE_VALUES } from "./types";

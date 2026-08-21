@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckSquare, Folder, ShoppingBag, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { vaultNotify } from "~/lib/vault";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

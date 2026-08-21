@@ -16,7 +16,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GovernmentBuilderState } from "~/types/government";
-import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { TaxBuilderState } from "~/types/builder/tax-builder";
 
 // Type for government data without validation state
 export type GovernmentBuilderData = Omit<GovernmentBuilderState, "isValid" | "errors">;

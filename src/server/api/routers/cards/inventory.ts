@@ -4,11 +4,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { getUserCards } from "~/lib/cards";
+import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
-import { getValuationConfig, junkValue } from "~/lib/cards";
-import { LoreCategory } from "~/lib/cards";
+import { getValuationConfig, junkValue } from "~/lib/cards/valuation";
+import { LoreCategory } from "~/lib/cards/category-enums";
 
 /**
  * Cards Inventory & Library router

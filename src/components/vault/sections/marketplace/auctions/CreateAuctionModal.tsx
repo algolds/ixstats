@@ -8,8 +8,8 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/cards";
-import { vaultNotify } from "~/lib/vault";
+import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 import {
   Dialog,
   DialogContent,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { TaxBuilderState } from "~/types/builder/tax-builder";
 import type { GovernmentBuilderState } from "~/types/government";
 import { detectTaxConflicts } from "~/server/services/builderIntegrationService";
 import { TaxBuilderStateSchema } from "~/types/tax-system";

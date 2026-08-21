@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { enhancedArchetypes, archetypeCategories } from "~/app/builder/utils/enhanced-archetypes";
+import { enhancedArchetypes, archetypeCategories } from "~/lib/archetypes/catalog";
 
 // Input validation schemas
 const _archetypeSelectionSchema = z.object({

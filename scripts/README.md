@@ -44,7 +44,8 @@ scripts/
 
 | Script | Purpose & Command |
 | :--- | :--- |
-| [`scripts/audit/audit-arch.ts`](audit/audit-arch.ts) | **Architecture Guard**: Enforces ≤700L ceiling per router file and blocks cross-router imports (`bun run audit:arch`). |
+| [`scripts/audit/audit-arch.ts`](audit/audit-arch.ts) | **Architecture Guard**: Enforces ≤700L ceiling per file, blocks cross-router imports, server boundary leaks, and residue (`bun run audit:arch`). |
+| [`scripts/audit/validate-script-targets.ts`](audit/validate-script-targets.ts) | **Script Target Validator**: Validates script paths, configs, and Bun package-manager usage (`bun run validate:script-targets`). |
 | [`scripts/split-router-template.ts`](split-router-template.ts) | **ts-morph Router Splitter**: AST-based code splitter for refactoring oversized flat routers into `mergeRouters` subdirs. |
 | [`scripts/verify-router-splits.ts`](verify-router-splits.ts) | **AST Parity Verifier**: Validates procedure count parity before and after router domain splits. |
 | [`scripts/audit/audit-trpc-wiring.ts`](audit/audit-trpc-wiring.ts) | Validates that all 1,450+ tRPC procedures are wired to live implementations (`bun run audit:wiring`). |

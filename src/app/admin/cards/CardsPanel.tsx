@@ -25,7 +25,7 @@ import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
-import { LoreCategory } from "~/lib/cards";
+import { LoreCategory } from "~/lib/cards/category-enums";
 import { FacetContainer, FacetCard, FacetNavigation } from "~/components/ui/facet-container";
 import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";

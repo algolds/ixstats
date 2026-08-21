@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { ComponentType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { createBudgetScenarioTx } from "~/server/modules/atomic/services/component-mutations";
 
 export const atomicGovernmentRouter = createTRPCRouter({
   // Get all government components for a country
@@ -323,22 +324,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-
-      const { categories, ...scenarioData } = input;
-
-      const scenario = await ctx.db.budgetScenario.create({
-        data: scenarioData,
-      });
-
-      // Create scenario categories
-      await ctx.db.budgetScenarioCategory.createMany({
-        data: categories.map((category) => ({
-          ...category,
-          scenarioId: scenario.id,
-        })),
-      });
-
-      return scenario;
+      return await createBudgetScenarioTx(ctx.db, input);
     }),
 
   // Get fiscal policies for country

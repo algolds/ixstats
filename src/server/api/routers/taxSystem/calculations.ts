@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { TaxBuilderState } from "~/types/builder/tax-builder";
 
 import {
   getUnifiedTaxEffectiveness,

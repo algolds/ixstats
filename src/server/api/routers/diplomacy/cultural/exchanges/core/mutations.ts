@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
-import { vaultService } from "~/lib/vault";
+import { vaultService } from "~/lib/vault/vault-service";
 
 import { normalizeFlagUrl } from "~/lib/flags/unified-flag-service";
 

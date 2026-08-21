@@ -4,7 +4,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getCard, getCards, calculateCardRarity, getCardMarketValue } from "~/lib/cards";
+import {
+  getCard,
+  getCards,
+  calculateCardRarity,
+  getCardMarketValue,
+} from "~/lib/cards/card-service";
 import { CardRarity, CardType } from "@prisma/client";
 import { searchForumThreads } from "~/server/modules/forum";
 

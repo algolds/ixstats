@@ -15,7 +15,7 @@ import {
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { nsImportService } from "~/lib/nationstates/import-service";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
-import { computeCardValue, getValuationConfig } from "~/lib/cards";
+import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { Prisma } from "@prisma/client";
 
 // ─── Background Processing Functions ──────────────────────────────

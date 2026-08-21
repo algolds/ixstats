@@ -1,0 +1,704 @@
+{
+  "src/server/api/routers/activities/activities.ts": [
+    "activityFilterSchema",
+    "engagementActionSchema"
+  ],
+  "src/server/api/routers/activities/feed/global.ts": [
+    "commentActionSchema",
+    "createActivitySchema",
+    "engagementActionSchema",
+    "getUserEngagementSchema"
+  ],
+  "src/server/api/routers/activities/feed/headlines.ts": [
+    "activityFilterSchema",
+    "commentActionSchema",
+    "createActivitySchema",
+    "engagementActionSchema",
+    "getUserEngagementSchema"
+  ],
+  "src/server/api/routers/activities/feed/personal.ts": [
+    "commentActionSchema",
+    "createActivitySchema",
+    "engagementActionSchema",
+    "getUserEngagementSchema"
+  ],
+  "src/server/api/routers/activities/follows.ts": [
+    "activityFilterSchema",
+    "commentActionSchema",
+    "createActivitySchema",
+    "engagementActionSchema",
+    "getUserEngagementSchema"
+  ],
+  "src/server/api/routers/activities/trending.ts": [
+    "activityFilterSchema",
+    "commentActionSchema",
+    "createActivitySchema",
+    "engagementActionSchema",
+    "getUserEngagementSchema"
+  ],
+  "src/server/api/routers/archetypes/admin.ts": [
+    "_archetypeSelectionSchema"
+  ],
+  "src/server/api/routers/archetypes/queries.ts": [
+    "_archetypeSelectionSchema",
+    "_createArchetypeSchema",
+    "_updateArchetypeSchema"
+  ],
+  "src/server/api/routers/archetypes/selections.ts": [
+    "_createArchetypeSchema",
+    "_updateArchetypeSchema"
+  ],
+  "src/server/api/routers/autosaveMonitoring.ts": [
+    "getGranularityInterval"
+  ],
+  "src/server/api/routers/card-analytics/market.ts": [
+    "calculateCorrelation",
+    "getCardEconomyOverview"
+  ],
+  "src/server/api/routers/crafting/admin.ts": [
+    "checkUnlockRequirements",
+    "materialRequirementSchema",
+    "unlockRequirementSchema"
+  ],
+  "src/server/api/routers/crafting/history.ts": [
+    "calculateCraftingCost",
+    "calculateSuccessRate",
+    "calculateXPReward",
+    "checkUnlockRequirements",
+    "materialRequirementSchema",
+    "recipeTypeEnum",
+    "unlockRequirementSchema"
+  ],
+  "src/server/api/routers/crafting/recipes.ts": [
+    "calculateCraftingCost",
+    "calculateSuccessRate",
+    "calculateXPReward",
+    "checkUnlockRequirements",
+    "materialRequirementSchema",
+    "unlockRequirementSchema"
+  ],
+  "src/server/api/routers/diplomacy/cultural/compatibility/impact.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/cultural/compatibility/scores.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/cultural/exchanges/core/mutations.ts": [
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues"
+  ],
+  "src/server/api/routers/diplomacy/cultural/exchanges/core/queries.ts": [
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues"
+  ],
+  "src/server/api/routers/diplomacy/cultural/exchanges/missions.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/cultural/lifecycle/management.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/cultural/lifecycle/participation.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/budget.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/establish.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData"
+  ],
+  "src/server/api/routers/diplomacy/embassies/lifecycle/severance.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/lifecycle/status.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/missions/execution.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/missions/lifecycle.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomacy/embassies/queries/embassyCalculators.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData"
+  ],
+  "src/server/api/routers/diplomacy/embassies/queries/embassyListings.ts": [
+    "_calculateInfluenceGain",
+    "_calculateMissionCulturalBonus",
+    "_getCulturalExchangeBoostValues",
+    "calculateRelationshipImpact",
+    "calculateSuccessChance",
+    "determineCategoryFromValue",
+    "generateAvailableMissions",
+    "getInfluenceEffects",
+    "getMissionData",
+    "getUpgradeEffects"
+  ],
+  "src/server/api/routers/diplomatic-intelligence/actions.ts": [
+    "activityIntelligenceSchema",
+    "diplomaticRelationSchema",
+    "intelligenceBriefingSchema"
+  ],
+  "src/server/api/routers/diplomatic-intelligence/analysis.ts": [
+    "activityIntelligenceSchema",
+    "diplomaticRelationSchema",
+    "intelligenceBriefingSchema"
+  ],
+  "src/server/api/routers/diplomaticScenarios/analytics.ts": [
+    "generateResponseOptions",
+    "generateScenarioNarrative",
+    "generateScenarioTitle"
+  ],
+  "src/server/api/routers/diplomaticScenarios/choices.ts": [
+    "generateResponseOptions",
+    "generateScenarioNarrative",
+    "generateScenarioTitle"
+  ],
+  "src/server/api/routers/diplomaticScenarios/scenarios.ts": [
+    "generateResponseOptions",
+    "generateScenarioNarrative",
+    "generateScenarioTitle"
+  ],
+  "src/server/api/routers/economicArchetypes/admin.ts": [
+    "getFallbackArchetypes"
+  ],
+  "src/server/api/routers/economicArchetypes/public.ts": [
+    "archetypeInputSchema"
+  ],
+  "src/server/api/routers/economicComponents/admin.ts": [
+    "ensureSeeded",
+    "getAllComponentsSchema",
+    "getComponentByTypeSchema",
+    "getFallbackComponentByType",
+    "incrementUsageSchema"
+  ],
+  "src/server/api/routers/economicComponents/components.ts": [
+    "ensureSeeded",
+    "getAllComponentsSchema",
+    "getComponentByTypeSchema",
+    "getFallbackComponentByType",
+    "incrementUsageSchema"
+  ],
+  "src/server/api/routers/forum/account.ts": [
+    "normalizeNode",
+    "xfFetch"
+  ],
+  "src/server/api/routers/forum/reading.ts": [
+    "requireForumUser"
+  ],
+  "src/server/api/routers/forum/stash.ts": [
+    "requireForumUser",
+    "xfFetch"
+  ],
+  "src/server/api/routers/forum/writing.ts": [
+    "normalizeNode",
+    "xfFetch"
+  ],
+  "src/server/api/routers/geo/features/storylines.ts": [
+    "coordinatesSchema"
+  ],
+  "src/server/api/routers/government/budget.ts": [
+    "budgetAllocationInputSchema",
+    "departmentCreateSchema",
+    "departmentUpdateSchema",
+    "governmentBuilderStateSchema",
+    "governmentStructureInputSchema",
+    "revenueSourceInputSchema"
+  ],
+  "src/server/api/routers/government/components.ts": [
+    "budgetAllocationInputSchema",
+    "departmentCreateSchema",
+    "departmentUpdateSchema",
+    "governmentBuilderStateSchema",
+    "governmentStructureInputSchema",
+    "revenueSourceInputSchema",
+    "subBudgetInputSchema"
+  ],
+  "src/server/api/routers/government/crud.ts": [
+    "budgetAllocationInputSchema",
+    "departmentCreateSchema",
+    "departmentUpdateSchema",
+    "governmentBuilderStateSchema",
+    "governmentStructureInputSchema",
+    "revenueSourceInputSchema",
+    "subBudgetInputSchema"
+  ],
+  "src/server/api/routers/government/lifecycle.ts": [
+    "budgetAllocationInputSchema",
+    "departmentCreateSchema",
+    "departmentUpdateSchema",
+    "governmentBuilderStateSchema",
+    "governmentStructureInputSchema",
+    "revenueSourceInputSchema",
+    "subBudgetInputSchema"
+  ],
+  "src/server/api/routers/governmentComponents/admin.ts": [
+    "getAllComponentsSchema",
+    "getComponentByTypeSchema",
+    "getComponentsByCategory",
+    "getSynergiesSchema",
+    "incrementUsageSchema"
+  ],
+  "src/server/api/routers/governmentComponents/catalog.ts": [
+    "createSynergySchema"
+  ],
+  "src/server/api/routers/intelligence/alerts/actions.ts": [
+    "calculateCorrelations",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/intelligence/alerts/crises.ts": [
+    "calculateCorrelations",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/intelligence/alerts/security.ts": [
+    "calculateCorrelations",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/intelligence/alerts/thresholds.ts": [
+    "calculateCorrelations",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/intelligence/analytics/indicators.ts": [
+    "calculateCorrelations",
+    "calculateRealTimeMetrics",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/intelligence/analytics/policies.ts": [
+    "calculateCorrelations",
+    "calculateRealTimeMetrics",
+    "calculateTrends",
+    "calculateVolatility",
+    "generateAIRecommendations"
+  ],
+  "src/server/api/routers/lore-cards/gallery.ts": [
+    "_LORE_CARD_REQUEST_COST"
+  ],
+  "src/server/api/routers/messages/messaging.ts": [
+    "_MessageFolderSchema",
+    "_MessageSourceSchema"
+  ],
+  "src/server/api/routers/messages/participants.ts": [
+    "_MessageFolderSchema",
+    "_MessageSourceSchema"
+  ],
+  "src/server/api/routers/national-issues/engine.ts": [
+    "ResponseOptionSchema",
+    "TemplateUpdateSchema"
+  ],
+  "src/server/api/routers/national-issues/player.ts": [
+    "ResponseOptionSchema",
+    "TemplateUpdateSchema",
+    "seedSplashShowcaseIssues"
+  ],
+  "src/server/api/routers/national-issues/templates.ts": [
+    "ResponseOptionSchema",
+    "seedSplashShowcaseIssues"
+  ],
+  "src/server/api/routers/notifications/events.ts": [
+    "NotificationCategory",
+    "NotificationLevel",
+    "NotificationType"
+  ],
+  "src/server/api/routers/notifications/preferences.ts": [
+    "NotificationCategory",
+    "NotificationType"
+  ],
+  "src/server/api/routers/npcPersonalities/admin.ts": [
+    "generateGenericResponse",
+    "getFallbackPersonalities"
+  ],
+  "src/server/api/routers/npcPersonalities/diplomacy.ts": [
+    "archetypeEnum",
+    "getFallbackPersonalities",
+    "logAdminAction",
+    "parsePersonalityJSON",
+    "traitSchema"
+  ],
+  "src/server/api/routers/npcPersonalities/query.ts": [
+    "generateGenericResponse",
+    "logAdminAction",
+    "traitSchema"
+  ],
+  "src/server/api/routers/polls/voting.ts": [
+    "_pollTypeSchema"
+  ],
+  "src/server/api/routers/quickactions/activities.ts": [
+    "governmentOfficialCreateSchema",
+    "governmentOfficialUpdateSchema",
+    "meetingInputSchema",
+    "policyCreateSchema",
+    "policyUpdateSchema"
+  ],
+  "src/server/api/routers/quickactions/meetings.ts": [
+    "activityScheduleInputSchema",
+    "governmentOfficialCreateSchema",
+    "governmentOfficialUpdateSchema",
+    "policyCreateSchema",
+    "policyUpdateSchema"
+  ],
+  "src/server/api/routers/quickactions/officials.ts": [
+    "activityScheduleInputSchema",
+    "meetingInputSchema",
+    "policyCreateSchema",
+    "policyUpdateSchema"
+  ],
+  "src/server/api/routers/quickactions/policies.ts": [
+    "activityScheduleInputSchema",
+    "governmentOfficialCreateSchema",
+    "governmentOfficialUpdateSchema",
+    "meetingInputSchema"
+  ],
+  "src/server/api/routers/roles/assignments.ts": [
+    "checkPermission"
+  ],
+  "src/server/api/routers/roles/lookup.ts": [
+    "auditLog",
+    "checkPermission"
+  ],
+  "src/server/api/routers/roles/management.ts": [
+    "checkPermission"
+  ],
+  "src/server/api/routers/security/assessment.ts": [
+    "militaryAssetInputSchema",
+    "militaryBranchCreateSchema",
+    "militaryBranchUpdateSchema",
+    "militaryUnitInputSchema",
+    "neighborThreatInputSchema"
+  ],
+  "src/server/api/routers/security/borders.ts": [
+    "militaryAssetInputSchema",
+    "militaryBranchCreateSchema",
+    "militaryBranchUpdateSchema",
+    "militaryUnitInputSchema",
+    "securityThreatInputSchema"
+  ],
+  "src/server/api/routers/security/defense.ts": [
+    "militaryAssetInputSchema",
+    "militaryBranchCreateSchema",
+    "militaryBranchUpdateSchema",
+    "militaryUnitInputSchema",
+    "neighborThreatInputSchema",
+    "securityThreatInputSchema"
+  ],
+  "src/server/api/routers/security/military.ts": [
+    "neighborThreatInputSchema",
+    "securityThreatInputSchema"
+  ],
+  "src/server/api/routers/security/operations.ts": [
+    "militaryAssetInputSchema",
+    "militaryBranchCreateSchema",
+    "militaryBranchUpdateSchema",
+    "militaryUnitInputSchema",
+    "neighborThreatInputSchema",
+    "securityThreatInputSchema"
+  ],
+  "src/server/api/routers/security/stability.ts": [
+    "militaryAssetInputSchema",
+    "militaryBranchCreateSchema",
+    "militaryBranchUpdateSchema",
+    "militaryUnitInputSchema",
+    "neighborThreatInputSchema",
+    "securityThreatInputSchema"
+  ],
+  "src/server/api/routers/taxSystem/analysis.ts": [
+    "validateBracketsState"
+  ],
+  "src/server/api/routers/taxSystem/calculations.ts": [
+    "validateBracketsState"
+  ],
+  "src/server/api/routers/thinkpages/accounts.ts": [
+    "AddReactionSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/feed.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "invalidateFeeds"
+  ],
+  "src/server/api/routers/thinkpages/messaging/conversations.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/messaging/messages.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/messaging/presence.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/bookmarks.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/flags.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/posts/create.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/posts/modify.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/reactions/mutations.ts": [
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/posts/reactions/queries.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/thinktanks/documents.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/thinktanks/groups.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/thinktanks/membership.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/thinkpages/thinktanks/messages.ts": [
+    "AddReactionSchema",
+    "CreateAccountSchema",
+    "CreatePostSchema",
+    "GetFeedSchema",
+    "SearchUnsplashImagesSchema",
+    "UpdateAccountSchema",
+    "hydratePostDates",
+    "invalidateFeeds",
+    "pollInclude"
+  ],
+  "src/server/api/routers/transport/hubs.ts": [
+    "extractBoundaryCoords"
+  ],
+  "src/server/api/routers/transport/routeQueries.ts": [
+    "extractBoundaryCoords"
+  ],
+  "src/server/api/routers/users/admin.ts": [
+    "hydrateProfileDates"
+  ],
+  "src/server/api/routers/users/country-linking.ts": [
+    "hydrateProfileDates"
+  ],
+  "src/server/api/routers/users/preferences.ts": [
+    "hydrateProfileDates"
+  ],
+  "src/server/api/routers/vault/collections.ts": [
+    "vaultTransactionTypeEnum"
+  ],
+  "src/server/api/routers/vault/daily-claims.ts": [
+    "vaultTransactionTypeEnum"
+  ],
+  "src/server/api/routers/wikiImporter/deep.ts": [
+    "searchAcrossWikis"
+  ],
+  "src/server/api/routers/wikiImporter/mapping.ts": [
+    "searchAcrossWikis"
+  ]
+}

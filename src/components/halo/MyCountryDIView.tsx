@@ -30,7 +30,7 @@ import {
 } from "~/lib/utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { isStandaloneClient } from "~/lib/system";
+import { isStandaloneClient } from "~/lib/system/standalone-detection";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { PreText } from "~/components/ui/pretext";

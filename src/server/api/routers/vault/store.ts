@@ -12,7 +12,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { vaultService, getVaultConfig } from "~/lib/vault";
+import { vaultService, getVaultConfig } from "~/lib/vault/vault-service";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
 

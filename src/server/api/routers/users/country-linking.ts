@@ -16,7 +16,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { isSystemOwner } from "~/lib/auth";
 import type { BaseCountryData } from "~/types/ixstats";
 import { globalCache } from "~/lib/cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault";
+import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 
 // Temporary storage for user-country mappings until we fix the User model
 

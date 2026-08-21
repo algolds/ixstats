@@ -9,8 +9,8 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/cards";
-import type { CardRarity } from "~/lib/cards";
+import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/cards/display-utils";
+import type { CardRarity } from "~/lib/cards/enums";
 
 /**
  * RarityBadge component props

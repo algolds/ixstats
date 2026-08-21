@@ -13,9 +13,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { vaultService, getVaultConfig } from "~/lib/vault";
-import { grantCardXp } from "~/lib/cards";
-import { getCurrentIxCardSeason } from "~/lib/cards";
+import { vaultService, getVaultConfig } from "~/lib/vault/vault-service";
+import { grantCardXp } from "~/lib/cards/xp-utils";
+import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { type CardType } from "@prisma/client";
 
 /**
@@ -167,34 +167,44 @@ export const craftingRecipesRouter = createTRPCRouter({
         orderBy: [{ resultRarity: "desc" }, { name: "asc" }],
       });
 
-      // Check unlock status and completion for each recipe
-      const recipesWithStatus = await Promise.all(
-        recipes.map(async (recipe) => {
-          // Check if user meets minimum level requirement
-          const user = await ctx.db.user.findUnique({
-            where: { id: userId },
-            select: { collectorLevel: true },
-          });
-          const isUnlocked = user ? user.collectorLevel >= recipe.minLevel : false;
+      // Check user collectorLevel once
+      const user = await ctx.db.user.findUnique({
+        where: { id: userId },
+        select: { collectorLevel: true },
+      });
 
-          const completedCount = await ctx.db.craftingHistory.count({
-            where: {
-              userId,
-              recipeId: recipe.id,
-              success: true,
-            },
-          });
+      // Batch completion counts for all recipes
+      const completionCountMap = new Map<string, number>();
+      if (recipes.length > 0) {
+        const historyGroups = await ctx.db.craftingHistory.groupBy({
+          by: ["recipeId"],
+          where: {
+            userId,
+            recipeId: { in: recipes.map((r) => r.id) },
+            success: true,
+          },
+          _count: {
+            _all: true,
+          },
+        });
+        for (const g of historyGroups) {
+          completionCountMap.set(g.recipeId, g._count._all);
+        }
+      }
 
-          const isCompleted = completedCount > 0;
+      // Check unlock status and completion for each recipe synchronously
+      const recipesWithStatus = recipes.map((recipe) => {
+        const isUnlocked = user ? user.collectorLevel >= recipe.minLevel : false;
+        const completedCount = completionCountMap.get(recipe.id) ?? 0;
+        const isCompleted = completedCount > 0;
 
-          return {
-            ...recipe,
-            isUnlocked,
-            isCompleted,
-            completedCount,
-          };
-        })
-      );
+        return {
+          ...recipe,
+          isUnlocked,
+          isCompleted,
+          completedCount,
+        };
+      });
 
       // Apply filter
       const filtered = recipesWithStatus.filter((recipe) => {

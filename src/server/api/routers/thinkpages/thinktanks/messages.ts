@@ -78,38 +78,6 @@ const thinkpagesAccountBaseSchema = z.object({
   profileImageUrl: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
 });
-
-function formatPollForClient(poll: any) {
-  if (!poll) return null;
-  const votes: Record<string, number> = {};
-  let totalVotes = 0;
-  poll.options.forEach((opt: any) => {
-    const count = opt._count?.votes ?? 0;
-    votes[opt.id] = count;
-    totalVotes += count;
-  });
-
-  return {
-    id: poll.id,
-    question: poll.question,
-    description: poll.description,
-    pollType: poll.pollType,
-    multiple: poll.multiple,
-    isActive: poll.isActive,
-    endDate: poll.endDate,
-    countryId: poll.countryId,
-    options: poll.options.map((opt: any) => ({
-      id: opt.id,
-      label: opt.label,
-      description: opt.description,
-    })),
-    votes,
-    totalVotes,
-    hasVoted: false,
-    userVotedOptionIds: [],
-  };
-}
-
 const pollInclude = {
   poll: {
     include: {
@@ -220,47 +188,6 @@ const GetFeedSchema = z.object({
   limit: z.number().min(1).max(50).default(20),
   cursor: z.string().optional(),
 });
-
-async function getWikiCommonsImageInfo(
-  title: string
-): Promise<{ url: string; description: string; photographer: string } | null> {
-  const params = new URLSearchParams({
-    action: "query",
-    titles: title,
-    prop: "imageinfo",
-    iiprop: "url|extmetadata",
-    format: "json",
-    formatversion: "2",
-  });
-
-  const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
-    headers: {
-      "User-Agent": "IxStats-Builder",
-    },
-  });
-
-  if (!response.ok) {
-    console.error(`Failed to fetch image info for ${title}: ${response.statusText}`);
-    return null;
-  }
-
-  const data = (await response.json()) as Record<string, unknown>;
-  const page = (data.query as any)?.pages?.[0];
-
-  if (!page || page.missing || !page.imageinfo?.[0]) {
-    return null;
-  }
-
-  const imageInfo = page.imageinfo[0];
-  const extMetadata = imageInfo.extmetadata;
-
-  return {
-    url: imageInfo.url,
-    description: extMetadata?.ImageDescription?.value || page.title,
-    photographer: extMetadata?.Artist?.value || "Unknown",
-  };
-}
-
 export const thinkpagesThinktanksMessagesRouter = createTRPCRouter({
   // Search Unsplash images
 

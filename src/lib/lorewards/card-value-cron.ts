@@ -28,7 +28,7 @@
  */
 
 import { db } from "~/server/db";
-import { getCardMarketValue } from "~/lib/cards";
+import { getCardMarketValue } from "~/lib/cards/card-service";
 
 /**
  * Result interface for value update operation

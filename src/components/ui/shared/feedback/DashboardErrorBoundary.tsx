@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createUrl } from "~/lib/utils";
-import { logger, LogCategory } from "~/lib/system";
+import { logger, LogCategory } from "~/lib/system/logger";
 
 interface ErrorBoundaryState {
   hasError: boolean;

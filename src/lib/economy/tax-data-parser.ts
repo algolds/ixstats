@@ -16,7 +16,7 @@ import type {
   DepartmentInput,
   RevenueSourceInput,
 } from "~/types/government";
-import type { CoreEconomicIndicators } from "~/app/builder/lib/economy-data-service";
+import type { CoreEconomicIndicators } from "~/types/builder/country-reference";
 import { CALCULATION_METHODS } from "~/types/tax-system";
 
 export interface ParsedTaxData {

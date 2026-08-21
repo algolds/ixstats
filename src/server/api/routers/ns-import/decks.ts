@@ -8,9 +8,9 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
-import { getVaultConfig, vaultService } from "~/lib/vault";
-import { computeCardValue, getValuationConfig } from "~/lib/cards";
-import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault";
+import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
+import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { generateNSImportDescription } from "~/lib/nationstates/import-service";
 
 export const nsImportDecksRouter = createTRPCRouter({

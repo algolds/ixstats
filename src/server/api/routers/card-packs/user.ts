@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { purchasePack, openPack, getUserPacks } from "~/lib/cards";
+import { purchasePack, openPack, getUserPacks } from "~/lib/cards/pack-service";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";

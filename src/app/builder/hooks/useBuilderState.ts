@@ -18,7 +18,7 @@ import type { RealCountryData, EconomicInputs } from "../lib/economy-data-servic
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/system";
+import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-mutex";
 import { useNotify } from "~/hooks/useNotify";
 import type {
   GovernmentDepartment,

@@ -10,7 +10,7 @@ import * as mysql from "mysql2/promise";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { getWikiDbPool } from "~/lib/wiki/bridge";
-import { getBonusConfig, grantBonus } from "~/lib/vault";
+import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 
 // Direct MySQL for namespace 4 (Project/IxWiki) pages
 function getPool(): mysql.Pool {

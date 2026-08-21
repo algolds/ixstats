@@ -266,54 +266,6 @@ function generateAIRecommendations(
 }
 
 /**
- * Generate predictive economic models
- */
-function generatePredictiveModels(
-  country: Record<string, unknown>,
-  historicalData: Record<string, unknown>[],
-  input: Record<string, unknown>
-) {
-  const timeframePeriods = {
-    "6_months": 6,
-    "1_year": 12,
-    "2_years": 24,
-    "5_years": 60,
-  };
-
-  const periods = timeframePeriods[input.timeframe as keyof typeof timeframePeriods] || 12;
-  const baseGrowthRate = (country.adjustedGdpGrowth as number) || 0.03;
-
-  const scenarios = (Array.isArray(input.scenarios) ? input.scenarios : []).map(
-    (scenario: string) => {
-      const multiplier = scenario === "optimistic" ? 1.5 : scenario === "pessimistic" ? 0.5 : 1.0;
-
-      const projectedGdp =
-        (country.currentTotalGdp as number) *
-        Math.pow(1 + baseGrowthRate * multiplier, periods / 12);
-      const projectedPopulation =
-        (country.currentPopulation as number) *
-        Math.pow(1 + ((country.populationGrowthRate as number) || 0.01), periods / 12);
-      const projectedGdpPerCapita = projectedGdp / projectedPopulation;
-
-      return {
-        scenario,
-        projectedGdp,
-        projectedPopulation,
-        projectedGdpPerCapita,
-        confidence: scenario === "realistic" ? 85 : scenario === "optimistic" ? 65 : 70,
-      };
-    }
-  );
-
-  return {
-    timeframe: input.timeframe,
-    scenarios,
-    methodology: "Compound growth model with historical variance analysis",
-    lastUpdated: new Date(),
-  };
-}
-
-/**
  * Calculate real-time country metrics (social, security, political)
  */
 async function calculateRealTimeMetrics(db: any, countryId: string) {

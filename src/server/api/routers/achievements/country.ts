@@ -103,38 +103,58 @@ export const achievementsCountryRouter = createTRPCRouter({
           },
         });
 
-        const leaderboard = await Promise.all(
-          countries.map(async (country) => {
-            const userIds =
-              country.users && country.users.length > 0
-                ? country.users.map((u) => u.clerkUserId)
-                : [];
+        const userToCountryMap = new Map<string, string>();
+        const allUserIds: string[] = [];
+        for (const country of countries) {
+          if (country.users) {
+            for (const u of country.users) {
+              if (u.clerkUserId) {
+                userToCountryMap.set(u.clerkUserId, country.id);
+                allUserIds.push(u.clerkUserId);
+              }
+            }
+          }
+        }
 
-            const achievements = await ctx.db.userAchievement.findMany({
-              where: {
-                userId: { in: userIds },
-                ...(input.category ? { category: input.category } : {}),
-              },
-            });
+        const countryAchievements = new Map<string, { count: number; rare: number }>();
+        if (allUserIds.length > 0) {
+          const allAchievements = await ctx.db.userAchievement.findMany({
+            where: {
+              userId: { in: allUserIds },
+              ...(input.category ? { category: input.category } : {}),
+            },
+            select: {
+              userId: true,
+              rarity: true,
+            },
+          });
 
-            const totalPoints = achievements.length * 10;
-            const achievementCount = achievements.length;
+          for (const a of allAchievements) {
+            const countryId = userToCountryMap.get(a.userId);
+            if (countryId) {
+              const curr = countryAchievements.get(countryId) ?? { count: 0, rare: 0 };
+              curr.count += 1;
+              if (a.rarity === "Rare" || a.rarity === "Epic" || a.rarity === "Legendary") {
+                curr.rare += 1;
+              }
+              countryAchievements.set(countryId, curr);
+            }
+          }
+        }
 
-            return {
-              countryId: country.id,
-              countryName: country.name,
-              flag: country.flag || null,
-              economicTier: country.economicTier || "Developed",
-              populationTier: country.populationTier || "Medium",
-              totalPoints,
-              achievementCount,
-              rareAchievements: achievements.filter(
-                (a: { rarity?: string | null }) =>
-                  a.rarity === "Rare" || a.rarity === "Epic" || a.rarity === "Legendary"
-              ).length,
-            };
-          })
-        );
+        const leaderboard = countries.map((country) => {
+          const agg = countryAchievements.get(country.id) ?? { count: 0, rare: 0 };
+          return {
+            countryId: country.id,
+            countryName: country.name,
+            flag: country.flag || null,
+            economicTier: country.economicTier || "Developed",
+            populationTier: country.populationTier || "Medium",
+            totalPoints: agg.count * 10,
+            achievementCount: agg.count,
+            rareAchievements: agg.rare,
+          };
+        });
 
         return leaderboard
           .filter((entry: { achievementCount: number }) => entry.achievementCount > 0)

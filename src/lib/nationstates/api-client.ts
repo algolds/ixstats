@@ -6,7 +6,7 @@
  * API Documentation: https://www.nationstates.net/pages/api.html
  */
 
-import { withRetry } from "~/lib/system";
+import { withRetry } from "~/lib/system/with-retry";
 
 export interface NSCard {
   id: string;

@@ -12,7 +12,7 @@ import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { isStandaloneClient } from "~/lib/system";
+import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
 import { contextualMenus, getContextKey } from "~/lib/navigation-config";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";

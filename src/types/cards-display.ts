@@ -5,7 +5,7 @@
  */
 
 import type { CardRarity, CardType } from "@prisma/client";
-import type { CardStatDef } from "~/lib/cards";
+import type { CardStatDef } from "~/lib/cards/stat-config";
 
 export type Brand<K, T extends string> = K & { readonly __brand: T };
 export type UserId = Brand<string, "UserId">;

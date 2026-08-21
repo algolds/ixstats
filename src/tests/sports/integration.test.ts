@@ -1,12 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "../../server/api/trpc";
 import { sportsRouter } from "../../server/api/routers/sports";
-import { exchangeService } from "~/lib/vault";
+import { exchangeService } from "../../lib/vault/exchange-service";
 import { transitionSeasonAction } from "~/lib/sports/transition";
 
 // Mock exchangeService
-jest.mock("~/lib/vault", () => {
-  const actual = jest.requireActual("~/lib/vault") as any;
+jest.mock("../../lib/vault/exchange-service", () => {
+  const actual = jest.requireActual("../../lib/vault/exchange-service") as any;
   return {
     ...actual,
     exchangeService: {

@@ -11,7 +11,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SectorBreakdownCard, MetricCardGrid, useCountryData } from "~/components/mycountry/shared/primitives";
-import type { CardImageType } from "~/lib/cards";
+import type { CardImageType } from "~/lib/cards/image-presets";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
 import { InlineHelpIcon } from "~/components/ui/help-icon";

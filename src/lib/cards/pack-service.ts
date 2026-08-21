@@ -3,7 +3,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { PackType, CardRarity } from "@prisma/client";
-import { getVaultConfig, vaultService } from "~/lib/vault";
+import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { grantCardXp } from "./xp-utils";
 
 export interface PackOdds {

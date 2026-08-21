@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { enhancedArchetypes, archetypeCategories } from "~/app/builder/utils/enhanced-archetypes";
+import { enhancedArchetypes, archetypeCategories } from "~/lib/archetypes/catalog";
 
 // Input validation schemas
 const _archetypeSelectionSchema = z.object({
@@ -249,7 +249,7 @@ export const archetypesAdminRouter = createTRPCRouter({
                 name: archetype.name,
                 description: archetype.description,
                 categoryId: category.id,
-                iconName: archetype.icon.name || "Circle",
+                iconName: archetype.iconName || "Circle",
                 color: archetype.color,
                 gradient: archetype.gradient,
                 priority: archetype.priority,

@@ -6,11 +6,11 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
-import { memoryConfig } from "~/lib/system";
+import { memoryConfig } from "~/lib/system/dev-memory-config";
 
 // Import hardcoded fallback data
-import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
-import { historicalArchetypes } from "~/app/builder/data/archetypes/historical";
+import { modernArchetypes } from "~/lib/economy/archetypes/modern";
+import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
 
 /**
  * Parse JSON string fields back to objects

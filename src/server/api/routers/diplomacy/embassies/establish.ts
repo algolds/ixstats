@@ -41,7 +41,7 @@ import {
   // eslint-disable-next-line unused-imports/no-unused-imports
   KEY_ACHIEVEMENTS,
 } from "~/lib/diplomacy/profile-options";
-import { vaultService } from "~/lib/vault";
+import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 

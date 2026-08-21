@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
-import { calculateAuditSummary, type ValidationCategory } from "~/lib/system";
+import { calculateAuditSummary, type ValidationCategory } from "~/lib/system/system-validation";
 
 export function useSystemValidation() {
   const [isRunning, setIsRunning] = useState(false);

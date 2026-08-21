@@ -8,13 +8,13 @@ import {
   recomputeAllCardValues,
   setValuationConfig,
   type CardValuationConfig,
-} from "~/lib/cards";
-import { getBonusConfig, setBonusConfig, type VaultBonusConfig } from "~/lib/vault";
+} from "~/lib/cards/valuation";
+import { getBonusConfig, setBonusConfig, type VaultBonusConfig } from "~/lib/vault/vault-bonus";
 import {
   getGeneralCardSettings,
   setGeneralCardSetting,
   type CardGeneralSettings,
-} from "~/lib/cards";
+} from "~/lib/cards/general-settings";
 
 export const cardsSettingsRouter = createTRPCRouter({
   // ─── Valuation Admin ─────────────────────────────────────────────

@@ -5,15 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { AlertTriangle, Lightbulb } from "lucide-react";
 
-export interface SuggestionItem<T = any> {
-  id: string;
-  title: string;
-  description?: string;
-  severity: "info" | "warning" | "critical";
-  diff?: string;
-  payload?: T;
-  action?: () => void;
-}
+import type { SuggestionItem } from "~/types/builder/suggestions";
+export type { SuggestionItem };
 
 export interface SuggestionsPanelProps<T = any> {
   suggestions: SuggestionItem<T>[];

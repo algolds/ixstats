@@ -21,7 +21,7 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";
-import { formatCardStats, getRarityConfig } from "~/lib/cards";
+import { formatCardStats, getRarityConfig } from "~/lib/cards/display-utils";
 import { NationStatesAttribution } from "./NationStatesAttribution";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
@@ -34,13 +34,9 @@ import { CardCompareTab } from "./modal/CardCompareTab";
 import { CardTakedownVerificationModal } from "./CardTakedownVerificationModal";
 import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
-import {
-  getCategoryTheme,
-  getCategoryLabel,
-  isValidLoreCategory,
-  classifyFromWikitext,
-  type LoreCategory,
-} from "~/lib/cards";
+import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
+import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
+import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 
 export interface CardDetailsModalProps {
   card: CardInstance | null;

@@ -4,12 +4,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, protectedProcedure } from "~/server/api/trpc";
-import { updateCardStats, transferCard } from "~/lib/cards";
+import { updateCardStats, transferCard } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
-import { recomputeAllCardValues } from "~/lib/cards";
+import { recomputeAllCardValues } from "~/lib/cards/valuation";
 import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
-import { LoreCategory, ArtworkSource } from "~/lib/cards";
+import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 
 export const cardsAdminRouter = createTRPCRouter({
   /**

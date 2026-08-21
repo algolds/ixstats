@@ -20,16 +20,8 @@ import type {
 } from "~/types/tax-system";
 import { CALCULATION_METHODS } from "~/types/tax-system";
 
-export interface TaxBuilderState {
-  taxSystem: TaxSystemInput;
-  categories: TaxCategoryInput[];
-  brackets: Record<string, TaxBracketInput[]>; // categoryIndex -> brackets
-  exemptions: TaxExemptionInput[];
-  deductions: Record<string, TaxDeductionInput[]>; // categoryIndex -> deductions
-  selectedAtomicTaxComponents?: string[];
-  isValid: boolean;
-  errors: Record<string, any>;
-}
+import type { TaxBuilderState } from "~/types/builder/tax-builder";
+export type { TaxBuilderState };
 
 interface UseTaxBuilderStateOptions {
   initialData?: Partial<TaxBuilderState>;

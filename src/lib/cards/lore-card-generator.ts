@@ -19,7 +19,7 @@
 
 import { db } from "~/server/db";
 import { CardType, CardRarity, Prisma } from "@prisma/client";
-import { getCurrentIxCardSeason } from "~/lib/cards";
+import { getCurrentIxCardSeason } from "./season";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
 import type {
@@ -28,13 +28,10 @@ import type {
   MediaWikiAllCategoriesItem,
 } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
-import { getValuationConfig, computeCardValue, type CardValuationConfig } from "~/lib/cards";
+import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
-import {
-  LoreCategory,
-  classifyLoreArticle,
-  type LoreCategory as LoreCategoryType,
-} from "~/lib/cards";
+import { LoreCategory, type LoreCategory as LoreCategoryType } from "./category-enums";
+import { classifyLoreArticle } from "./category-classifier";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };

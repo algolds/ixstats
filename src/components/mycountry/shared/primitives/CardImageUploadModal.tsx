@@ -16,7 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { getCardImagePreset, type CardImageType } from "~/lib/cards";
+import { getCardImagePreset, type CardImageType } from "~/lib/cards/image-presets";
 import { cn } from "~/lib/utils";
 
 // Dynamic import for heavy media search modal

@@ -16,7 +16,7 @@ import {
   teamIndexHash,
   type SportPresetKey,
 } from "~/lib/sports";
-import { exchangeService } from "~/lib/vault";
+import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
 
 export const leaguesCrudRouter = createTRPCRouter({

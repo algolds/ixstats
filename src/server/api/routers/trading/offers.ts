@@ -15,8 +15,8 @@ import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
-import { getVaultConfig } from "~/lib/vault";
-import { grantCardXp } from "~/lib/cards";
+import { getVaultConfig } from "~/lib/vault/vault-service";
+import { grantCardXp } from "~/lib/cards/xp-utils";
 import { globalCache } from "~/lib/cache";
 
 /**

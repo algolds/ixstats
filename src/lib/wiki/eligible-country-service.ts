@@ -17,7 +17,7 @@ import * as fsPromises from "fs/promises";
 import * as path from "path";
 import { getArticleWikitext, type WikiSource } from "./bridge";
 import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-parser";
-import { withRetrySafe } from "~/lib/system";
+import { withRetrySafe } from "~/lib/system/with-retry";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki/config";
 import { withBasePath } from "~/lib/base-path";
 

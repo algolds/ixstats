@@ -229,47 +229,6 @@ const GetFeedSchema = z.object({
   limit: z.number().min(1).max(50).default(20),
   cursor: z.string().optional(),
 });
-
-async function getWikiCommonsImageInfo(
-  title: string
-): Promise<{ url: string; description: string; photographer: string } | null> {
-  const params = new URLSearchParams({
-    action: "query",
-    titles: title,
-    prop: "imageinfo",
-    iiprop: "url|extmetadata",
-    format: "json",
-    formatversion: "2",
-  });
-
-  const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
-    headers: {
-      "User-Agent": "IxStats-Builder",
-    },
-  });
-
-  if (!response.ok) {
-    console.error(`Failed to fetch image info for ${title}: ${response.statusText}`);
-    return null;
-  }
-
-  const data = (await response.json()) as Record<string, unknown>;
-  const page = (data.query as any)?.pages?.[0];
-
-  if (!page || page.missing || !page.imageinfo?.[0]) {
-    return null;
-  }
-
-  const imageInfo = page.imageinfo[0];
-  const extMetadata = imageInfo.extmetadata;
-
-  return {
-    url: imageInfo.url,
-    description: extMetadata?.ImageDescription?.value || page.title,
-    photographer: extMetadata?.Artist?.value || "Unknown",
-  };
-}
-
 export const thinkpagesFeedRouter = createTRPCRouter({
   // Search Unsplash images
 

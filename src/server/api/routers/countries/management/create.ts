@@ -5,7 +5,7 @@ import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from
 import { invalidateCache } from "~/lib/cache";
 import { globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault";
+import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,

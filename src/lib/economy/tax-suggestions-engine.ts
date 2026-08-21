@@ -8,9 +8,42 @@
  * - Revenue optimization hints
  */
 
-import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
-import type { SuggestionItem } from "~/components/mycountry/domains/government/builder/SuggestionsPanel";
-import { computeTaxSuggestions as baseComputeTaxSuggestions } from "~/components/mycountry/domains/government/builder/suggestions/utils";
+import type { TaxBuilderState } from "~/types/builder/tax-builder";
+import type { SuggestionItem } from "~/types/builder/suggestions";
+
+function computeBaseTaxSuggestions(state: TaxBuilderState): SuggestionItem[] {
+  const suggestions: SuggestionItem[] = [];
+  const incomeIdx = state.categories.findIndex((c) =>
+    c.categoryType.toLowerCase().includes("income")
+  );
+  const corpIdx = state.categories.findIndex((c) =>
+    c.categoryType.toLowerCase().includes("corporate")
+  );
+  if (state.taxSystem.alternativeMinTax) {
+    if (incomeIdx >= 0) {
+      const rate = state.categories[incomeIdx]?.baseRate || 0;
+      if (rate < 5)
+        suggestions.push({
+          id: "income-amt-nudge",
+          title: "Increase Personal Income base rate",
+          severity: "info",
+          description:
+            "AMT is enabled but personal income base rate is very low (<5%). Consider raising to reduce AMT hits.",
+        });
+    }
+    if (corpIdx >= 0) {
+      const rate = state.categories[corpIdx]?.baseRate || 0;
+      if (rate < 10)
+        suggestions.push({
+          id: "corp-amt-nudge",
+          title: "Increase Corporate base rate",
+          severity: "info",
+          description: "AMT is enabled but corporate base rate is low (<10%). Consider raising.",
+        });
+    }
+  }
+  return suggestions;
+}
 
 /**
  * Compute comprehensive tax suggestions based on builder state
@@ -18,8 +51,8 @@ import { computeTaxSuggestions as baseComputeTaxSuggestions } from "~/components
 export function computeTaxSuggestions(builderState: TaxBuilderState): SuggestionItem[] {
   const suggestions: SuggestionItem[] = [];
 
-  // Get base suggestions from existing utility
-  const baseSuggestions = baseComputeTaxSuggestions(builderState);
+  // Get base suggestions
+  const baseSuggestions = computeBaseTaxSuggestions(builderState);
   suggestions.push(...baseSuggestions);
 
   // Add economic optimization suggestions

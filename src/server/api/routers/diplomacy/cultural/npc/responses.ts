@@ -194,25 +194,41 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
           return [];
         }
 
-        // Generate NPC responses for each participant
-        const responses = await Promise.all(
-          participants.map(async (participant) => {
-            try {
-              // Get relationship data for NPC personality calculation
-              const relationships = await ctx.db.diplomaticRelation.findMany({
-                where: {
-                  OR: [{ country1: participant.countryId }, { country2: participant.countryId }],
-                },
-              });
+        // Collect unique participant country IDs for batch queries
+        const participantCountryIds = [...new Set(participants.map((p: any) => p.countryId))];
 
-              const embassies = await ctx.db.embassy.findMany({
-                where: {
-                  OR: [
-                    { guestCountryId: participant.countryId },
-                    { hostCountryId: participant.countryId },
-                  ],
-                },
-              });
+        // Batch fetch all relationships and embassies for participants
+        const [allRelationships, allEmbassies] = await Promise.all([
+          ctx.db.diplomaticRelation.findMany({
+            where: {
+              OR: [
+                { country1: { in: participantCountryIds } },
+                { country2: { in: participantCountryIds } },
+              ],
+            },
+          }),
+          ctx.db.embassy.findMany({
+            where: {
+              OR: [
+                { guestCountryId: { in: participantCountryIds } },
+                { hostCountryId: { in: participantCountryIds } },
+              ],
+            },
+          }),
+        ]);
+
+        // Generate NPC responses for each participant
+        const responses = participants.map((participant: any) => {
+          try {
+            // Filter relationship and embassy data in memory for this participant
+            const relationships = allRelationships.filter(
+              (r: any) => r.country1 === participant.countryId || r.country2 === participant.countryId
+            );
+
+            const embassies = allEmbassies.filter(
+              (e: any) =>
+                e.guestCountryId === participant.countryId || e.hostCountryId === participant.countryId
+            );
 
               // Build observable data for personality calculation
               const observableData: ObservableData = {
@@ -395,8 +411,7 @@ export const diplomaticCulturalNpcResponsesRouter = createTRPCRouter({
                 },
               };
             }
-          })
-        );
+          });
 
         return responses;
       } catch (error) {

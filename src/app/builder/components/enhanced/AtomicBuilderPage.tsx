@@ -20,7 +20,7 @@ import type {
 import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
-import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system";
+import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-mutex";
 import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { useNotify } from "~/hooks/useNotify";
 import { Checkbox } from "~/components/ui/checkbox";

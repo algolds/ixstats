@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
-import { getAvailablePacks } from "~/lib/cards";
+import { getAvailablePacks } from "~/lib/cards/pack-service";
 
 /**
  * Card Packs Router

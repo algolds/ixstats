@@ -56,7 +56,7 @@ import type { CardRarity } from "@prisma/client";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { IIWikiBadge } from "~/components/cards/display";
 
-import { LoreCategory, CATEGORY_SYNONYMS } from "~/lib/cards";
+import { LoreCategory, CATEGORY_SYNONYMS } from "~/lib/cards/category-enums";
 
 // Canonical Category Preset Crawlers with synonyms and alternate terms
 export const CATEGORY_PRESETS = [

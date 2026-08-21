@@ -1,4 +1,4 @@
-import { VAULT_BONUS_DEFAULTS as B, achievementBonus, nsImportBonus } from "~/lib/vault";
+import { VAULT_BONUS_DEFAULTS as B, achievementBonus, nsImportBonus } from "../../lib/vault/vault-bonus";
 
 describe("vault-bonus", () => {
   test("achievement bonus scales by rarity, case-insensitive", () => {

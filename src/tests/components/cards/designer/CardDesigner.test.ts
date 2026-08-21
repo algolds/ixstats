@@ -1,5 +1,5 @@
 import { DEFAULT_DESIGN_STATE, RARITY_BASE_VALUES } from "~/components/cards/designer/types";
-import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards";
+import { RARITY_MATERIALS, getRarityMaterial } from "../../../../lib/cards/rarity-materials";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 

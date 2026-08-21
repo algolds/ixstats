@@ -30,7 +30,8 @@ import {
 } from "~/lib/themes";
 import { LoreCardHolographicCover } from "./LoreCardHolographicCover";
 import { CategoryIcon } from "~/components/cards/icons";
-import { getCategoryTheme, isValidLoreCategory, type LoreCategory } from "~/lib/cards";
+import { getCategoryTheme } from "~/lib/cards/category-theme";
+import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
 
 import type { ResolvedCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 

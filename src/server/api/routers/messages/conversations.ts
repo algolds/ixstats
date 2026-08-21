@@ -294,22 +294,33 @@ export const messagesConversationsRouter = createTRPCRouter({
         })
       );
 
-      // Batch unread counts: parallel Promise.all instead of sequential loop
+      // 3. Batch unread counts in a single query
       const unreadMap = new Map<string, number>();
-      await Promise.all(
-        page.map(async (conv) => {
+      if (page.length > 0) {
+        const orConditions = page.map((conv) => {
           const lastRead = participantReadMap.get(conv.id) ?? new Date(0);
-          const count = await ctx.db.thinkshareMessage.count({
-            where: {
-              conversationId: conv.id,
-              userId: { not: principalId },
-              ixTimeTimestamp: { gt: lastRead },
-              deletedAt: null,
-            },
-          });
-          unreadMap.set(conv.id, count);
-        })
-      );
+          return {
+            conversationId: conv.id,
+            ixTimeTimestamp: { gt: lastRead },
+          };
+        });
+
+        const unreadMessages = await ctx.db.thinkshareMessage.findMany({
+          where: {
+            OR: orConditions,
+            userId: { not: principalId },
+            deletedAt: null,
+          },
+          select: {
+            conversationId: true,
+          },
+        });
+
+        for (const conv of page) unreadMap.set(conv.id, 0);
+        for (const msg of unreadMessages) {
+          unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
+        }
+      }
 
       // 4. Build enriched results (no more async per-item)
       const defaultAccount: UserAccount = {
