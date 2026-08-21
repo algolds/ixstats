@@ -44,13 +44,15 @@ All components are organized into specialized domain sub-directories:
 
 ---
 
-### 4. Editor Suite (`src/components/thinkpages/editor/`)
-- `EditorPlugins.tsx` (133 lines) — Slate plugins for formatting, embeds, and rich elements.
-- `EditorToolbar.tsx` (154 lines) — Formatting toolbar (Bold, Italic, Lists, Links, Emoji).
-- `WikiAndStashPopovers.tsx` (314 lines) — Popover drawers for inserting Wiki links, Wiki embeds, Stashes assets, and emojis.
-- `MentionMenuPortal.tsx` (94 lines) — Portal dropdown for `@` mention autocomplete (users, leagues, clubs, countries).
-- `SlateSerializer.ts` (242 lines) — Slate-to-HTML serializer, HTML-to-Slate deserializer, and Slate node manipulators.
-- `useGlassPlateEditor.ts` (554 lines) — Custom React hook managing PlateJS editor instance and selection states.
+### 4. Editor Suite (`src/components/shared/editor/`)
+The canonical editor suite has been promoted to `src/components/shared/editor/` to serve ThinkPages, Messages, Forum, and WikiOS:
+- `GlassPlateEditor.tsx` (300 lines) — Universal PlateJS glass composer supporting full and compact modes.
+- `EditorPlugins.tsx` (137 lines) — PlateJS plugins for formatting, embeds, wiki links, and rich elements.
+- `EditorToolbar.tsx` (161 lines) — Formatting toolbar (Bold, Italic, Underline, Lists, Links).
+- `WikiAndStashPopovers.tsx` (369 lines) — Popovers for inserting Wiki links, Wiki embeds, and Lore Stash media.
+- `MentionMenuPortal.tsx` (95 lines) — Portal dropdown for `@` mention autocomplete (citizens, leagues, clubs, wikis).
+- `SlateSerializer.ts` (260 lines) — Bi-directional serializer for Slate AST to HTML, Parsoid HTML, and XenForo BBCode.
+- `useGlassPlateEditor.ts` (541 lines) — React hook managing Plate instance, selection state, and autocompletion.
 
 ---
 

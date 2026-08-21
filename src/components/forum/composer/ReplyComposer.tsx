@@ -1,13 +1,13 @@
 // src/components/forum/composer/ReplyComposer.tsx
-// Inline reply composer at the bottom of a thread view.
-// Starts minimal, expands on focus. Supports BBCode formatting toolbar.
+// Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Bold, Italic, Link2, ImageIcon, Quote, Code, Send, X } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
+import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 interface ReplyComposerProps {
@@ -23,24 +23,16 @@ export function ReplyComposer({
   onClearQuote,
   onPostCreated,
 }: ReplyComposerProps) {
-  const [message, setMessage] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [content, setContent] = useState("");
+  const [plainText, setPlainText] = useState("");
+  const [bbcode, setBbcode] = useState("");
+  const editorRef = useRef<GlassPlateEditorRef>(null);
 
   // Apply initial text (from quoting)
   useEffect(() => {
     if (initialText) {
-      setMessage((prev) => prev + initialText);
-      setIsExpanded(true);
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(
-            textareaRef.current.value.length,
-            textareaRef.current.value.length
-          );
-        }
-      }, 100);
+      editorRef.current?.insertText(`\n${initialText}\n`);
+      editorRef.current?.focus();
       onClearQuote?.();
     }
   }, [initialText, onClearQuote]);
@@ -49,120 +41,81 @@ export function ReplyComposer({
 
   const createPost = api.forum.createPost.useMutation({
     onSuccess: () => {
-      setMessage("");
-      setIsExpanded(false);
+      setContent("");
+      setPlainText("");
+      setBbcode("");
+      editorRef.current?.clear();
       onPostCreated?.();
-      // Invalidate thread cache to refetch posts without page reload
       utils.forum.getThread.invalidate({ threadId });
     },
   });
 
   const handleSubmit = useCallback(() => {
-    if (!message.trim() || createPost.isPending) return;
-    createPost.mutate({ threadId, message: message.trim() });
-  }, [message, threadId, createPost]);
+    const messageToSend = bbcode.trim() || plainText.trim();
+    if (!messageToSend || createPost.isPending) return;
+    createPost.mutate({ threadId, message: messageToSend });
+  }, [bbcode, plainText, threadId, createPost]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Cmd+Enter to submit
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        handleSubmit();
-      }
-    },
-    [handleSubmit]
-  );
+  const handleChange = useCallback((html: string, rawText: string, code: string) => {
+    setContent(html);
+    setPlainText(rawText);
+    setBbcode(code);
+  }, []);
 
-  const insertBBCode = useCallback(
-    (tag: string, placeholder?: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = message.slice(start, end);
-      const content = selected || placeholder || "";
-
-      const before = message.slice(0, start);
-      const after = message.slice(end);
-      const insert = `[${tag}]${content}[/${tag}]`;
-
-      setMessage(before + insert + after);
-
-      // Set cursor position after tag
-      setTimeout(() => {
-        const newPos = start + tag.length + 2 + content.length;
-        textarea.setSelectionRange(newPos, newPos);
-        textarea.focus();
-      }, 0);
-    },
-    [message]
-  );
+  const canSubmit = (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
 
   return (
-    <div className={cn("forum-composer", isExpanded && "forum-composer-expanded")}>
+    <div className="forum-composer rounded-2xl border border-white/10 bg-black/20 p-2 backdrop-blur-xl transition-all">
       {createPost.error && (
-        <div className="mb-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">
+        <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
           {createPost.error.message}
         </div>
       )}
 
-      <textarea
-        ref={textareaRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onFocus={() => setIsExpanded(true)}
-        onKeyDown={handleKeyDown}
-        placeholder="Write a reply..."
-        className="forum-composer-input"
-        rows={isExpanded ? 5 : 1}
-      />
+      <div className="flex flex-col gap-2">
+        <GlassPlateEditor
+          ref={editorRef}
+          value={content}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          submitOnEnter={true}
+          placeholder="Write a reply... (Enter to send, Shift+Enter for newline)"
+          disabled={createPost.isPending}
+          minHeight={64}
+          maxHeight={220}
+          className="border-transparent bg-transparent shadow-none"
+        />
 
-      {isExpanded && (
-        <div className="forum-composer-toolbar">
-          <button onClick={() => insertBBCode("b")} className="forum-action-btn" title="Bold">
-            <Bold className="h-4 w-4" />
-          </button>
-          <button onClick={() => insertBBCode("i")} className="forum-action-btn" title="Italic">
-            <Italic className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => insertBBCode("url", "https://")}
-            className="forum-action-btn"
-            title="Link"
-          >
-            <Link2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => insertBBCode("img", "https://")}
-            className="forum-action-btn"
-            title="Image"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </button>
-          <button onClick={() => insertBBCode("quote")} className="forum-action-btn" title="Quote">
-            <Quote className="h-4 w-4" />
-          </button>
-          <button onClick={() => insertBBCode("code")} className="forum-action-btn" title="Code">
-            <Code className="h-4 w-4" />
-          </button>
+        <div className="flex items-center justify-between border-t border-white/5 pt-2">
+          <span className="text-[11px] text-[var(--forum-text-dim)]">
+            Press <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] text-zinc-300">Enter</kbd> to reply
+          </span>
 
-          <button
+          <Button
+            size="sm"
             onClick={handleSubmit}
-            disabled={!message.trim() || createPost.isPending}
-            className="forum-composer-submit"
+            disabled={!canSubmit}
+            className={cn(
+              "h-8 gap-1.5 rounded-xl px-4 text-xs font-semibold transition-all duration-200 active:scale-95",
+              canSubmit
+                ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
+                : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"
+            )}
           >
-            <Send className="h-3.5 w-3.5" />
-            {createPost.isPending ? "Sending..." : "Reply"}
-          </button>
+            {createPost.isPending ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              <>
+                <Send className="h-3.5 w-3.5" />
+                <span>Reply</span>
+              </>
+            )}
+          </Button>
         </div>
-      )}
-
-      {isExpanded && (
-        <div className="mt-1 text-right text-[10px] text-[var(--forum-text-dim)]">
-          ⌘+Enter to submit
-        </div>
-      )}
+      </div>
     </div>
   );
 }

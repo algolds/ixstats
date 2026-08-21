@@ -1,16 +1,16 @@
 // src/components/forum/composer/ThreadComposer.tsx
-// Full-page new thread composer with title, forum selector, and rich text editor.
+// Full-page new thread composer with title, forum selector, and unified GlassPlateEditor.
 
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Bold, Italic, Link2, ImageIcon, Quote, Code, Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-// eslint-disable-next-line unused-imports/no-unused-imports
+import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 interface ThreadComposerProps {
@@ -21,9 +21,11 @@ interface ThreadComposerProps {
 export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [content, setContent] = useState("");
+  const [plainText, setPlainText] = useState("");
+  const [bbcode, setBbcode] = useState("");
   const [selectedForumId, setSelectedForumId] = useState<number | null>(defaultForumId ?? null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<GlassPlateEditorRef>(null);
 
   const { data: forumsData } = api.forum.getForums.useQuery(undefined, {
     staleTime: 60_000,
@@ -36,58 +38,35 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
   });
 
   const handleSubmit = useCallback(() => {
-    if (!title.trim() || !message.trim() || !selectedForumId || createThread.isPending) return;
+    const messageToSend = bbcode.trim() || plainText.trim();
+    if (!title.trim() || !messageToSend || !selectedForumId || createThread.isPending) return;
     createThread.mutate({
       forumId: selectedForumId,
       title: title.trim(),
-      message: message.trim(),
+      message: messageToSend,
     });
-  }, [title, message, selectedForumId, createThread]);
+  }, [title, bbcode, plainText, selectedForumId, createThread]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        handleSubmit();
-      }
-    },
-    [handleSubmit]
-  );
+  const handleChange = useCallback((html: string, rawText: string, code: string) => {
+    setContent(html);
+    setPlainText(rawText);
+    setBbcode(code);
+  }, []);
 
-  const insertBBCode = useCallback(
-    (tag: string, placeholder?: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = message.slice(start, end);
-      const content = selected || placeholder || "";
-
-      const before = message.slice(0, start);
-      const after = message.slice(end);
-
-      setMessage(before + `[${tag}]${content}[/${tag}]` + after);
-
-      setTimeout(() => {
-        const newPos = start + tag.length + 2 + content.length;
-        textarea.setSelectionRange(newPos, newPos);
-        textarea.focus();
-      }, 0);
-    },
-    [message]
-  );
-
-  // Filter to only forum nodes (not categories)
   const forumNodes = (forumsData?.forums ?? []).filter((f) => f.nodeType === "Forum");
+  const canSubmit =
+    title.trim().length > 0 &&
+    (plainText.trim().length > 0 || bbcode.trim().length > 0) &&
+    !!selectedForumId &&
+    !createThread.isPending;
 
   return (
-    <div>
+    <div className="max-w-4xl">
       {/* Header */}
       <div className="mb-6 flex items-center gap-3">
         <Link
           href={withBasePath("/forum")}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--forum-text-dim)] hover:bg-[var(--forum-surface-hover)] hover:text-[var(--forum-text)]"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--forum-text-dim)] transition-colors hover:bg-[var(--forum-surface-hover)] hover:text-[var(--forum-text)]"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -108,7 +87,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         <select
           value={selectedForumId ?? ""}
           onChange={(e) => setSelectedForumId(e.target.value ? Number(e.target.value) : null)}
-          className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2 text-sm text-[var(--forum-text)] outline-none focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors focus:border-[var(--forum-accent)]"
         >
           <option value="">Select a forum...</option>
           {forumNodes.map((forum) => (
@@ -129,68 +108,54 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter thread title..."
-          className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2 text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
           maxLength={200}
         />
       </div>
 
-      {/* Message */}
+      {/* Message Editor */}
       <div className="mb-4">
         <label className="mb-1.5 block text-xs font-medium text-[var(--forum-text-muted)]">
           Message
         </label>
-        <textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Write your post..."
-          className="forum-composer-input min-h-[200px]"
-          rows={10}
+        <GlassPlateEditor
+          ref={editorRef}
+          value={content}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          placeholder="Compose your thread post..."
+          disabled={createThread.isPending}
+          minHeight={180}
+          maxHeight={450}
+          className="border-[var(--forum-border)] bg-[var(--forum-surface)]"
         />
-      </div>
-
-      {/* Toolbar */}
-      <div className="mb-4 flex items-center gap-1">
-        <button onClick={() => insertBBCode("b")} className="forum-action-btn" title="Bold">
-          <Bold className="h-4 w-4" />
-        </button>
-        <button onClick={() => insertBBCode("i")} className="forum-action-btn" title="Italic">
-          <Italic className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => insertBBCode("url", "https://")}
-          className="forum-action-btn"
-          title="Link"
-        >
-          <Link2 className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => insertBBCode("img", "https://")}
-          className="forum-action-btn"
-          title="Image"
-        >
-          <ImageIcon className="h-4 w-4" />
-        </button>
-        <button onClick={() => insertBBCode("quote")} className="forum-action-btn" title="Quote">
-          <Quote className="h-4 w-4" />
-        </button>
-        <button onClick={() => insertBBCode("code")} className="forum-action-btn" title="Code">
-          <Code className="h-4 w-4" />
-        </button>
       </div>
 
       {/* Submit */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-[var(--forum-text-dim)]">⌘+Enter to submit</span>
-        <button
+        <span className="text-[11px] text-[var(--forum-text-dim)]">⌘+Enter / Ctrl+Enter to submit</span>
+        <Button
           onClick={handleSubmit}
-          disabled={!title.trim() || !message.trim() || !selectedForumId || createThread.isPending}
-          className="forum-composer-submit"
+          disabled={!canSubmit}
+          className={cn(
+            "h-9 gap-1.5 rounded-xl px-5 text-xs font-semibold transition-all duration-200 active:scale-95",
+            canSubmit
+              ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
+              : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"
+          )}
         >
-          <Send className="h-3.5 w-3.5" />
-          {createThread.isPending ? "Creating..." : "Create Thread"}
-        </button>
+          {createThread.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Creating...</span>
+            </>
+          ) : (
+            <>
+              <Send className="h-3.5 w-3.5" />
+              <span>Create Thread</span>
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ This directory (`src/app/thinkpages`) is the App Router surface. As of June 2026
 | Account management | `EnhancedAccountManager.tsx`, `AccountCreationModal.tsx`, `AccountSettingsModal.tsx` |
 | Post card / thread | `ThinkpagesPost.tsx` (used by `post/[postId]/page.tsx`) |
 | Feed container | `ThinkpagesSocialPlatform.tsx` |
-| Composer | `PostComposer.tsx`, `RichTextEditor.tsx` |
+| Composer | `GlassCanvasComposer.tsx`, `GlassPlateEditor.tsx` |
 | Auth gating | `AuthenticationGuard` (from `~/components/mycountry/primitives`) |
 
 The account hub gates on the signed-in user having a configured country (`api.users.getProfile` + `api.countries.getMapSummary`); without one it prompts for `/setup`.
