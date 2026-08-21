@@ -15,7 +15,7 @@ import {
   type RouteType,
 } from "~/lib/economy/transport-generator";
 import { calculateRouteCosts } from "~/lib/economy/transport-costs";
-import { syncResourcePoolModifiers } from "../geo/features";
+import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
 
 export async function syncTransportEconomicModifiers(db: any, countryId: string) {
   const routes = await db.transportRoute.findMany({

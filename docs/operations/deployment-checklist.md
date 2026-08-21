@@ -901,12 +901,13 @@ Use this checklist for every production deployment to ensure:
 
 ## Additional Resources
 
-- **Troubleshooting:** [/docs/TROUBLESHOOTING_v1.2.md](/docs/TROUBLESHOOTING_v1.2.md)
-- **API Reference:** [/docs/reference/api-examples.md](/docs/reference/api-examples.md)
-- **Deployment Guide:** [/docs/operations/deployment.md](/docs/operations/deployment.md)
+- **Testing & Quality:** [`testing.md`](../processes/testing.md)
+- **API Reference:** [`api-complete.md`](../reference/api-complete.md)
+- **Deployment Guide:** [`deployment.md`](deployment.md)
 
 ---
 
-**Last Updated:** June 2026
-**Version:** IxStates 1.1.1 "Ogma"
-**Maintainer:** IxStats Development Team
+**Last Updated:** August 2026
+**Version:** IxStates 1.4.0 "Ogma" (Release Candidate)
+**Maintainer:** IxStates Core Engineering
+

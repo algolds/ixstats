@@ -70,7 +70,7 @@ scripts/
 | [`scripts/setup/backup-db.ts`](setup/backup-db.ts) | Backs up local PostgreSQL database into timestamped JSON/SQL (`bun run db:backup`). |
 | [`scripts/setup/restore-db.ts`](setup/restore-db.ts) | Restores PostgreSQL database from backup (`bun run db:restore`). |
 | [`scripts/setup/seed-sports-standalone.ts`](setup/seed-sports-standalone.ts) | Seeds standalone sports leagues, clubs, and schedules (`bun run db:seed:sports`). |
-| [`scripts/setup/seed-vault-items.ts`](setup/vault-items.ts) | Seeds cards, card packs, and store perks. |
+| [`scripts/setup/seed-vault-items.ts`](setup/seed-vault-items.ts) | Seeds cards, card packs, and store perks. |
 | [`scripts/setup/generate-pack-assets.ts`](setup/generate-pack-assets.ts) | Generates SVG pack art and foil textures for card packs. |
 | [`scripts/setup-redis.sh`](setup-redis.sh) | Docker Redis manager (`bun run redis:start`, `redis:stop`, `redis:stats`). |
 | [`scripts/sync-system-owner-roles.ts`](sync-system-owner-roles.ts) | Synchronizes system-owner privileges across Clerk and Postgres (`bun run sync:owners`). |

@@ -686,7 +686,6 @@ function AppearanceTab({
           ))}
         </div>
       </div>
-
       <div>
         <label className="text-foreground mb-2 block text-sm font-medium">Icon Name</label>
         <Input

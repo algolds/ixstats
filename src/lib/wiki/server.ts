@@ -1,5 +1,8 @@
 import "server-only";
 
+export type { WikiSource } from "./config";
+export type { WikiIntro, WikiSection } from "./bridge";
+
 export * from "./config";
 export * from "./types";
 export * from "./image-url";

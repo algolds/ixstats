@@ -32,9 +32,7 @@ const isArticleTitle = (title: string): boolean => {
   ) {
     return false;
   }
-  if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(title)) {
-    return false;
-  }
+  if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(title)) return false;
   return true;
 };
 

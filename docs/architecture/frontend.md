@@ -103,13 +103,13 @@ export function MyCountryRouter() {
 }
 ```
 
-### Active Hub Routers:
-| Router | Location | Sub-Sections |
+### Active Hub Routers & Shells:
+| Hub | Location | Sub-Sections |
 | :--- | :--- | :--- |
 | **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
-| **`VaultRouter`** | [`src/components/vault/VaultRouter.tsx`](../../src/components/vault/VaultRouter.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
-| **`ThinkPagesRouter`**| [`src/components/thinkpages/ThinkPagesRouter.tsx`](../../src/components/thinkpages/ThinkPagesRouter.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
-| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
+| **`VaultShell`** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
+| **`ThinkPagesHub`**| [`src/components/thinkpages/UnifiedComposerContainer.tsx`](../../src/components/thinkpages/UnifiedComposerContainer.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
+| **`DashboardHub`** | [`src/app/dashboard/page.tsx`](../../src/app/dashboard/page.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
 
 ---
 

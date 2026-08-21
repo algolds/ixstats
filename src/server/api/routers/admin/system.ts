@@ -12,7 +12,7 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
-import { prepareBaseCountryData, getCountryComponentsStatsData } from "../countries/utils";
+import { prepareBaseCountryData, getCountryComponentsStatsData } from "~/server/shared/country-helpers";
 
 export const adminSystemRouter = createTRPCRouter({
   // Internal calculation formulas management
