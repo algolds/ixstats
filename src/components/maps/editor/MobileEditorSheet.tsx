@@ -15,7 +15,6 @@
  */
 
 import { useRef, useCallback, useState } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Settings2, List, BookOpen } from "lucide-react";
 
 type MobileTab = "properties" | "features";

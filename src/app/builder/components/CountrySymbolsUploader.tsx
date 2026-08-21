@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { motion, AnimatePresence } from "motion/react";
 import {
   Flag,
   Shield,
   Image as ImageIcon,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronDown,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
   Upload,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Loader2,
 } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";

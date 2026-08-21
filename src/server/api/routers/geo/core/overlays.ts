@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureCollection, Feature, Geometry } from "geojson";
 import { computeCrisisRiskFactors } from "~/lib/maps/geo-analytics";
 import {

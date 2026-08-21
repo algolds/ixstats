@@ -22,7 +22,6 @@ import {
   Guitar,
   Star,
   Image,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   X,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";

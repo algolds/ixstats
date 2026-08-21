@@ -10,7 +10,6 @@ import type {
   TierFilter,
   PopulationRange,
 } from "../countries/_components/CountriesSearch";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
 import CountriesFilterSidebar from "../countries/_components/CountriesFilterSidebar";
 import CountriesSortBar from "../countries/_components/CountriesSortBar";

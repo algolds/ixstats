@@ -7,7 +7,6 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 

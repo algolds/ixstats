@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { X, ArrowRight } from "lucide-react";
 import { MdBrowserUpdated } from "react-icons/md";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 

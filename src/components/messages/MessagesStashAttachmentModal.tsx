@@ -13,7 +13,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 
 interface MessagesStashAttachmentModalProps {

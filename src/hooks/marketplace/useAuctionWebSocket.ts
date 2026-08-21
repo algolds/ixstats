@@ -6,7 +6,6 @@
 import { useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-client";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { MarketWebSocketMessage } from "~/types/marketplace";
 
 /**

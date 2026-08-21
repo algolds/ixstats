@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { PreText } from "~/components/ui/pretext";
 import {
   Globe,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Sparkles,
   Database,
   Users,
@@ -11,7 +10,6 @@ import {
   MapPin,
   Building,
   Crown,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   CheckCircle2,
   Loader2,
   ArrowRight,

@@ -17,7 +17,6 @@
  */
 
 import { Redis } from "ioredis";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { initTRPC } from "@trpc/server";
 import { createHash } from "crypto";
 import type { createTRPCContext } from "~/server/api/trpc";

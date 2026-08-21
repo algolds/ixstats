@@ -19,7 +19,6 @@ import {
   Languages,
   MessageCircle,
   Menu,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Wallet,
   Package,
   Bell,

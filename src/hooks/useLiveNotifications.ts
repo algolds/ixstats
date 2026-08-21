@@ -5,7 +5,6 @@
 
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useEffect, useState, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";

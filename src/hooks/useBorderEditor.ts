@@ -7,7 +7,6 @@ import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import {
   type UndoStack,
   type VertexRef,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   type EdgeRef,
   type AltitudeSnapResult,
   createUndoStack,
@@ -20,16 +19,12 @@ import {
   redo as redoStack,
   moveVertex,
   addVertex,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   removeVertex,
   findNearestVertex,
   findNearestEdge,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   findNearestAltitudeSnap,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   getVertices,
   calculateArea,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   calculateBBox,
   validateGeometry,
   distanceDeg,
@@ -39,7 +34,6 @@ import {
 } from "~/lib/maps/border-editor";
 import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
 import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { FeatureVertexRef } from "~/lib/maps/shared-vertex-builder";
 import { traceAlongLayer } from "~/lib/maps/border-trace";
 import type { TraceFeature } from "~/lib/maps/border-trace";

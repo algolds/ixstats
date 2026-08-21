@@ -13,7 +13,6 @@
  */
 
 import { makeRng } from "./rng";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { type PackedGraph, type WorldGenParams, type River, WATER_THRESHOLD } from "./types";
 import { isLand, isWater, cellLat } from "./voronoi-mesh";
 

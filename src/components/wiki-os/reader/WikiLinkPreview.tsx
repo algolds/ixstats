@@ -3,7 +3,6 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Tooltip } from "~/components/ui/tooltip-card";
 
 // ──────────────────────────────────────────────

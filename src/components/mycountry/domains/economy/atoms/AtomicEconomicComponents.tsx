@@ -30,7 +30,6 @@ import {
 // Data imports
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
 } from "~/lib/economy/atomic-data";

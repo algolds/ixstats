@@ -29,7 +29,6 @@ import {
   BarChart3,
   Heart,
   Leaf,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Brain,
   Monitor,
   Globe,

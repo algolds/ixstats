@@ -5,7 +5,6 @@ import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,
   updateSnapGuide,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   haversineDistance,
   getFeatureCoords,
   EMPTY_FC,

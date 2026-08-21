@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import type {
-  // eslint-disable-next-line unused-imports/no-unused-imports
   ThinkPagesWebSocketEvent,
   ThinkPagesClientState,
   ThinkPagesWebSocketHookOptions,

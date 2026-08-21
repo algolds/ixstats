@@ -12,7 +12,6 @@ import {
   TrendingDown,
   Minus,
   ChevronDown,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   ChevronUp,
   Info,
   ExternalLink,

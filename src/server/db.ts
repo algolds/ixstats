@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";

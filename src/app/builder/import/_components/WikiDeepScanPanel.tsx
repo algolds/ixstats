@@ -4,7 +4,6 @@ import React from "react";
 import { motion } from "motion/react";
 import {
   Search,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Loader2,
   CheckCircle2,
   ChevronRight,

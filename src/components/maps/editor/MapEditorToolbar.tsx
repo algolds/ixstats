@@ -21,7 +21,6 @@ import {
   MapPin,
   Hexagon,
   Landmark,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   FileUp,
   Route,
   BookMarked,

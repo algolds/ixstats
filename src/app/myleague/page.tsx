@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -17,7 +16,6 @@ import {
   Star,
   Search,
   SlidersHorizontal,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Flame,
   Calendar,
   Layers,

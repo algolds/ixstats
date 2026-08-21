@@ -1,7 +1,6 @@
 // src/app/admin/_components/BotIntegrationCenter.tsx
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";

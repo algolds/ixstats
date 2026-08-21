@@ -4,7 +4,6 @@
 import React from "react";
 import { BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { type BuilderSection } from "../lib/builder-theme";
 import { contextualHelp } from "../data/contextual-help";

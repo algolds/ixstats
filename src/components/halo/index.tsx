@@ -13,7 +13,6 @@ import {
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";

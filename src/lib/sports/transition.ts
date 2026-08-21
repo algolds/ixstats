@@ -1,6 +1,5 @@
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { TRPCError } from "@trpc/server";
 import { getPreset, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";

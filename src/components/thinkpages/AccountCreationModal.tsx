@@ -20,7 +20,6 @@ import {
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { AccountTypeSelector } from "./account/AccountTypeSelector";
 import { AccountDetailsForm } from "./account/AccountDetailsForm";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Activity, DollarSign, Users, Globe, Building, Heart, Shield, Zap } from "lucide-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";

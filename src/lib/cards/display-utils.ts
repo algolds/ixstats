@@ -15,7 +15,6 @@ import type {
 } from "~/types/cards-display";
 import {
   getBaseStatDefs,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   getBaseStatDef,
   getSpecialStatsForType,
   STAT_PROGRESSION,

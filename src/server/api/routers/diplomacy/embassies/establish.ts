@@ -1,51 +1,35 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   publicProcedure,
   protectedProcedure,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   rateLimitedPublicProcedure,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notifications/api";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import {
-  // eslint-disable-next-line unused-imports/no-unused-imports
   calculateCulturalCompatibility,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   type CountryBasicInfo,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   type DiplomaticRelationship,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   type EmbassyConnection,
 } from "~/lib/diplomacy/cultural-compatibility";
 import {
-  // eslint-disable-next-line unused-imports/no-unused-imports
   NPCCulturalParticipation,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   type NPCParticipationContext,
 } from "~/lib/diplomacy/npc-cultural-participation";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
 import {
-  // eslint-disable-next-line unused-imports/no-unused-imports
   STRATEGIC_PRIORITIES,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   PARTNERSHIP_GOALS,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   KEY_ACHIEVEMENTS,
 } from "~/lib/diplomacy/profile-options";
 import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 // Helper functions for cultural exchange <-> embassy mission integration

@@ -1,20 +1,15 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useMemo } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { BarChart3, Users, DollarSign, Activity, Percent } from "lucide-react";
 import { SliderWithDirectInput } from "../primitives/enhanced";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { GlassBarChart } from "~/components/ui/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";

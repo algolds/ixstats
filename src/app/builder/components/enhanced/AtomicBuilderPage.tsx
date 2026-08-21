@@ -35,7 +35,6 @@ import { StepContent } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import type { BuilderStep } from "./builderConfig";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { BuilderStepNav } from "../BuilderStepNav";
 import type { BuilderSection } from "../../lib/builder-theme";
 

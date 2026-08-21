@@ -47,7 +47,7 @@ export function getStoredSoundSettings(): { enabled: boolean; volume: number } {
     const storedEnabled = localStorage.getItem(SOUND_STORAGE_KEYS.ENABLED);
     const storedVolume = localStorage.getItem(SOUND_STORAGE_KEYS.VOLUME);
 
-    let volume = DEFAULT_SOUND_SETTINGS.volume;
+    let volume: number = DEFAULT_SOUND_SETTINGS.volume;
     if (storedVolume !== null) {
       const parsed = parseFloat(storedVolume);
       // Migrate old default of 0.6 to gentle 0.25

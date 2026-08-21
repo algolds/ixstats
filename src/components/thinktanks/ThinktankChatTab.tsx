@@ -122,7 +122,7 @@ export function ThinktankChatTab({
       <MessagesChatPanel
         conversation={conversation as any}
         currentUserId={currentUserId}
-        activeFolder="groups"
+        activeFolder="conversations"
         clientState={clientState as any}
         sendTypingIndicator={sendTypingIndicator}
         isSidebarCollapsed={false}

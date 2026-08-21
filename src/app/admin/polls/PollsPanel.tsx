@@ -2,7 +2,6 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { AdminSidebarLayout } from "../_components/AdminSidebarLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Vote, PlusCircle, Settings } from "lucide-react";

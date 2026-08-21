@@ -16,7 +16,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { cn } from "~/lib/utils";
 import { sanitizeWikiContent } from "~/lib/utils";
 import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";

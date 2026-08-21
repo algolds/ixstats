@@ -49,7 +49,6 @@ import {
   Briefcase,
   TrendingUp,
 } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface SportsLabsInspectorProps {

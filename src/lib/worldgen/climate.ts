@@ -7,9 +7,7 @@
  */
 
 import type { PackedGraph, WorldGenParams } from "./types";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { WATER_THRESHOLD, elevToMeters } from "./types";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { isLand, cellLat, cellAreaKm2 } from "./voronoi-mesh";
 
 // ──────────────────────────────────────────────

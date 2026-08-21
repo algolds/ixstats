@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Badge } from "~/components/ui/badge";
 import {
   Users,
@@ -12,7 +11,6 @@ import {
   GraduationCap,
   Building2,
   UserCheck,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Info,
   Baby,
   MapPin,

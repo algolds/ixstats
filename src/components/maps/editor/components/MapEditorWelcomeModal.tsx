@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   X,
   Map,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Compass,
   Layers,
   Keyboard,
@@ -13,7 +12,6 @@ import {
   ChevronLeft,
   Check,
   Zap,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Globe,
   MapPin,
   Hexagon,

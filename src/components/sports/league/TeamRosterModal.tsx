@@ -31,10 +31,8 @@ import { Label } from "~/components/ui/label";
 import {
   Sheet,
   SheetContent,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   SheetHeader,
   SheetTitle,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   SheetDescription,
 } from "~/components/ui/sheet";
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";

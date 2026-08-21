@@ -9,7 +9,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { StandingsTable } from "~/components/sports/league/StandingsTable";
 import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdown";
 import { ScheduleView } from "~/components/sports/league/ScheduleView";
@@ -34,7 +33,6 @@ import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/pre
 import {
   ArrowLeft,
   Play,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Eye,
   Trophy,
   Users,
@@ -44,7 +42,6 @@ import {
   MapPin,
   Shield,
   Settings,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   ArrowRight,
   Loader2,
   Activity,

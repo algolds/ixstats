@@ -4,7 +4,6 @@
 
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,7 +14,6 @@ import {
   Search,
   Bookmark,
   MessageCircle,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Bell,
   Reply,
   Share2,
@@ -26,7 +24,6 @@ import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { api } from "~/trpc/react";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";
 

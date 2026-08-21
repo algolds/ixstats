@@ -1,6 +1,5 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { ReactNode } from "react";
 import { ConsentDialog, ConsentManagerProvider, ConsentBanner } from "@c15t/nextjs";
 import type { ConsentManagerProps } from "@c15t/nextjs";

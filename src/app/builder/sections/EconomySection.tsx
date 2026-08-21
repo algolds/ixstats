@@ -1,6 +1,5 @@
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useState, useMemo, type ElementType } from "react";
 import {
   TrendingUp,
@@ -13,11 +12,9 @@ import {
   CheckCircle,
   TrendingDown,
   Settings,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Play,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";
@@ -53,7 +50,6 @@ import {
 } from "../lib/economy-calculations";
 
 // Economy Builder Integration
-// eslint-disable-next-line unused-imports/no-unused-imports
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 

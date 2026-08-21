@@ -25,7 +25,6 @@ import { MyLeagueSidebarLayout } from "~/components/sports/league/MyLeagueSideba
 import { type MyLeagueSection } from "~/components/sports/league/MyLeagueSidebarNav";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { Settings } from "lucide-react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { GlareCard } from "~/components/ui/glare-card";
 import SportyPlayerCard from "~/components/sports/player-cards/PlayerCard1";
 import Scoreboard from "~/components/sports/scoreboards/Scoreboard1";
@@ -48,15 +47,11 @@ import {
   Flag,
   MapPin,
   Shield,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Check,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Flame,
   ArrowLeftRight,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   TrendingUp,
   DollarSign,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Briefcase,
   Search,
   ExternalLink,

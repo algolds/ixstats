@@ -5,10 +5,8 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { ArrowUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

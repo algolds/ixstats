@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
@@ -15,12 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
 import {
   NOTIFICATION_CATEGORIES,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   NOTIFICATION_SOURCES,
   NOTIFICATION_TRIGGER_TYPES,
   CATEGORY_ORDER,

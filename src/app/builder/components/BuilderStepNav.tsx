@@ -8,7 +8,6 @@ import {
   TrendingUp,
   CheckCircle,
   Check,
-  // eslint-disable-next-line unused-imports/no-unused-imports
   Lock,
   type LucideIcon,
 } from "lucide-react";

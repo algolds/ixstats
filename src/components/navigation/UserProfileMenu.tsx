@@ -7,7 +7,6 @@ import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { getNationUrl } from "~/lib/utils";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
 interface UserProfileMenuProps {

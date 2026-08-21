@@ -1,9 +1,7 @@
 // src/app/admin/_components/AdminRouter.tsx
 "use client";
 
-// eslint-disable-next-line unused-imports/no-unused-imports
 import React, { useEffect } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { LiveAdminDashboard } from "./LiveAdminDashboard";
