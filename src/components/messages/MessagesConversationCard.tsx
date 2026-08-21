@@ -7,6 +7,8 @@ import { Users, BellOff } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { MessageFolder } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
+import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 function formatRelativeTime(date: Date | string): string {
   const now = new Date();
@@ -49,24 +51,24 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
     if (conversation.source === "diplomatic" || conversation.conversationType === "diplomatic") {
       return {
         label: "Diplomatic",
-        classes: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+        classes: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
       };
     }
     if (conversation.type === "group" || conversation.source === "thinktank") {
       return {
         label: "Group",
-        classes: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+        classes: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
       };
     }
     if (conversation.source === "wiki") {
       return {
         label: "Wiki",
-        classes: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+        classes: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30",
       };
     }
     return {
       label: "Personal",
-      classes: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+      classes: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
     };
   }, [conversation]);
 
@@ -76,6 +78,11 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
       ? `@${otherParticipant.account.username}`
       : (otherParticipant?.account?.displayName ?? conversation.name ?? "Unknown");
   const participantAvatar = otherParticipant?.account?.profileImageUrl ?? null;
+  const participantCountryFlag =
+    otherParticipant?.account?.countryFlag || otherParticipant?.countryFlag || null;
+  const participantCountryName =
+    otherParticipant?.account?.countryName || otherParticipant?.countryName || null;
+
   const identity = resolveIdentity(
     participantName,
     participantAvatar,
@@ -97,40 +104,49 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
 
   const leftBorderClass = React.useMemo(() => {
     if (conversation.source === "diplomatic" || conversation.conversationType === "diplomatic") {
-      return "border-l-2 border-l-amber-500";
+      return "border-l-[3px] border-l-amber-500";
     }
     if (conversation.type === "group" || conversation.source === "thinktank") {
-      return "border-l-2 border-l-indigo-500";
+      return "border-l-[3px] border-l-indigo-500";
     }
     if (conversation.source === "wiki") {
-      return "border-l-2 border-l-purple-500";
+      return "border-l-[3px] border-l-purple-500";
     }
-    return "border-l-2 border-l-emerald-500";
+    return "border-l-[3px] border-l-emerald-500";
   }, [conversation]);
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-black/10",
+        "group relative flex w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-all duration-200 active:scale-[0.985]",
         leftBorderClass,
         isSelected
-          ? "border-indigo-500/40 bg-indigo-600/20 shadow-indigo-950/20"
-          : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.06]",
-        hasUnread && !isSelected && "bg-white/[0.04]"
+          ? "border-primary/50 bg-primary/10 shadow-xs"
+          : "border-border/40 bg-card/40 hover:border-border/80 hover:bg-card/80",
+        hasUnread && !isSelected && "border-blue-500/30 bg-blue-500/[0.04]"
       )}
     >
-      {/* Avatar */}
-      <div className="relative shrink-0">
+      {/* Avatar or National Flag */}
+      <div className="relative mt-0.5 shrink-0">
         {conversation.type === "group" ? (
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-9 w-9">
             <AvatarImage src={conversation.avatar ?? undefined} />
             <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
               <Users className="h-4 w-4" />
             </AvatarFallback>
           </Avatar>
+        ) : participantCountryFlag ? (
+          <div className="h-8 w-10 overflow-hidden rounded-md border border-border/50 shadow-2xs">
+            <UnifiedCountryFlag
+              countryName={participantCountryName || identity.displayName}
+              flagUrl={normalizeFlagUrl(participantCountryFlag)}
+              className="h-full w-full object-cover"
+              showTooltip={false}
+            />
+          </div>
         ) : (
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-9 w-9">
             <AvatarImage src={identity.avatar ?? undefined} />
             <AvatarFallback
               className={cn(
@@ -144,16 +160,23 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             </AvatarFallback>
           </Avatar>
         )}
+
+        {hasUnread && (
+          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
+          </span>
+        )}
       </div>
 
       {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="mb-0.5 flex items-center justify-between gap-2">
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
             <span
               className={cn(
-                "truncate text-sm",
-                hasUnread ? "text-foreground font-semibold" : "text-foreground/90 font-medium"
+                "truncate text-xs tracking-tight",
+                hasUnread ? "text-foreground font-bold" : "text-foreground/90 font-semibold"
               )}
             >
               {isSelfMessage
@@ -165,7 +188,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             <MessagesIdentityBadge identity={identity} />
             <span
               className={cn(
-                "shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-semibold tracking-wider uppercase",
+                "shrink-0 rounded border px-1 py-0.2 text-[8px] font-bold tracking-wider uppercase",
                 typeTag.classes
               )}
             >
@@ -173,9 +196,9 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {isMuted && <BellOff className="h-3 w-3 shrink-0 text-slate-400" />}
+            {isMuted && <BellOff className="text-muted-foreground/60 h-3 w-3 shrink-0" />}
             {lastMessage && (
-              <span className="text-muted-foreground text-[10px] font-medium tabular-nums">
+              <span className="text-muted-foreground/70 text-[9.5px] font-medium tabular-nums">
                 {formatRelativeTime(lastMessage.createdAt ?? lastMessage.ixTimeTimestamp)}
               </span>
             )}
@@ -183,10 +206,10 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
               <Badge
                 variant="secondary"
                 className={cn(
-                  "h-5 min-w-[20px] rounded-full px-1.5 text-[10px] font-bold tabular-nums transition-colors",
+                  "h-4.5 min-w-[18px] rounded-full px-1 text-[9px] font-bold tabular-nums shadow-2xs",
                   isMuted
-                    ? "border-none bg-slate-700 text-slate-300 hover:bg-slate-700"
-                    : "bg-primary text-primary-foreground"
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-blue-500 text-white"
                 )}
               >
                 {conversation.unreadCount}
@@ -198,8 +221,8 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
         {lastMessage && (
           <p
             className={cn(
-              "line-clamp-1 text-xs",
-              hasUnread ? "text-foreground/70 font-medium" : "text-muted-foreground"
+              "line-clamp-1 text-[11px] leading-relaxed",
+              hasUnread ? "text-foreground/80 font-medium" : "text-muted-foreground"
             )}
           >
             {lastMessage.accountId === currentUserId ? "You: " : ""}

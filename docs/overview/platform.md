@@ -49,14 +49,14 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
 | Package / Layer | Version | Notes |
 | :--- | :---: | :--- |
-| **Next.js** | 16.3.0 | App Router architecture, Turbopack |
+| **Next.js** | 16.3.1 | App Router architecture, Turbopack |
 | **React** | 19.2.8 | React 19 concurrent features |
 | **TypeScript** | 7.0.2 | Native Go Engine concurrency |
 | **Prisma** | 6.19.3 | Multi-file schema partitioning |
 | **tRPC** | 11.18.0 | Domain-split modular routers |
 | **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
 | **Zod** | 4.4.3 | Schema validation |
-| **ESLint** | 10.8.0 | Flat config with architecture guard |
+| **ESLint** | 10.8.1 | Flat config with architecture guard |
 | **Jest** | 30.4.2 | Unit and characterization suites |
 | **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
 <!-- END_DOCS:FRAMEWORK_MATRIX -->

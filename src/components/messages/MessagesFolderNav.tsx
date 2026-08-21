@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+import { motion } from "motion/react";
 import {
   Bell,
   Settings,
@@ -7,8 +9,6 @@ import {
   Eye,
   Rows3,
   MessageSquare,
-  // eslint-disable-next-line unused-imports/no-unused-imports
-  Bookmark,
   Users,
   User,
 } from "lucide-react";
@@ -100,15 +100,15 @@ export function MessagesFolderNav({
   // Folder-specific dynamic color accents for the cutout header background
   const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
     conversations: {
-      bg: "bg-emerald-500/10",
+      bg: "bg-emerald-500/[0.06] dark:bg-emerald-500/10",
       border: "border-b border-emerald-500/20",
     },
     system: {
-      bg: "bg-rose-500/10",
+      bg: "bg-rose-500/[0.06] dark:bg-rose-500/10",
       border: "border-b border-rose-500/20",
     },
     groups: {
-      bg: "bg-blue-500/10",
+      bg: "bg-blue-500/[0.06] dark:bg-blue-500/10",
       border: "border-b border-blue-500/20",
     },
   };
@@ -118,12 +118,12 @@ export function MessagesFolderNav({
   return (
     <div
       className={cn(
-        "relative z-20 flex w-full shrink-0 items-center gap-1.5 px-3 pt-3 pb-5 transition-colors duration-500",
+        "relative z-20 flex w-full shrink-0 items-center gap-1.5 px-3 pt-3 pb-4 transition-colors duration-500",
         currentTheme.bg,
         currentTheme.border
       )}
     >
-      <div className="relative z-10 flex flex-1 gap-1 rounded-xl border border-white/5 bg-black/20 p-1">
+      <div className="relative z-10 flex flex-1 items-center gap-1 rounded-xl border border-border/40 bg-accent/10 p-1">
         {MESSAGE_FOLDERS.map((folder) => {
           const isActive = folder.id === activeFolder;
           const Icon = folder.icon;
@@ -134,20 +134,29 @@ export function MessagesFolderNav({
               key={folder.id}
               onClick={() => onNavigate(folder.id)}
               className={cn(
-                "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[11px] font-semibold tracking-tight transition-all duration-200 select-none",
+                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[11px] font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
                 isActive
-                  ? "border-white/10 bg-white/10 text-white shadow-sm"
-                  : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  ? "text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
               )}
               aria-label={folder.title}
             >
-              <Icon className="h-3.5 w-3.5" />
-              <span className="hidden truncate sm:inline">{folder.title}</span>
-              {count > 0 && (
-                <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] leading-none font-bold text-white tabular-nums">
-                  {count > 99 ? "99+" : count}
-                </span>
+              {isActive && (
+                <motion.div
+                  layoutId="messages-folder-tab"
+                  className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
+                  transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                />
               )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                <Icon className={cn("h-3.5 w-3.5", isActive && folder.gradient)} />
+                <span className="hidden truncate sm:inline">{folder.title}</span>
+                {count > 0 && (
+                  <span className="flex h-3.5 min-w-[14px] shrink-0 items-center justify-center rounded-full bg-blue-500 px-1 text-[8.5px] leading-none font-bold text-white shadow-2xs tabular-nums">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}
@@ -156,28 +165,28 @@ export function MessagesFolderNav({
       {/* Settings popover button */}
       <Popover>
         <PopoverTrigger
-          className="relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/5 bg-slate-950/30 p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
-          aria-label="Settings"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border/40 bg-card/50 transition-all active:scale-95"
+          aria-label="Message settings"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-3.5 w-3.5" />
         </PopoverTrigger>
         <PopoverContent
           side="bottom"
           align="end"
-          className="w-64 border-white/10 bg-slate-900 text-white backdrop-blur-xl"
+          className="border-border/60 bg-popover/95 text-popover-foreground w-64 shadow-xl backdrop-blur-xl"
         >
           <PopoverHeader>
-            <PopoverTitle className="text-sm font-semibold tracking-tight text-slate-200">
+            <PopoverTitle className="text-foreground text-sm font-semibold tracking-tight">
               Message Settings
             </PopoverTitle>
-            <PopoverDescription className="mt-1 text-xs text-slate-400">
+            <PopoverDescription className="text-muted-foreground mt-1 text-xs">
               Customize your messaging experience.
             </PopoverDescription>
           </PopoverHeader>
           <div className="mt-4 flex flex-col gap-3">
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Volume2 className="h-3.5 w-3.5 text-slate-400" />
+              <div className="text-foreground/90 flex items-center gap-2">
+                <Volume2 className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">Notification sounds</span>
               </div>
               <Switch
@@ -186,8 +195,8 @@ export function MessagesFolderNav({
               />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Eye className="h-3.5 w-3.5 text-slate-400" />
+              <div className="text-foreground/90 flex items-center gap-2">
+                <Eye className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">Read receipts</span>
               </div>
               <Switch
@@ -196,8 +205,8 @@ export function MessagesFolderNav({
               />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Rows3 className="h-3.5 w-3.5 text-slate-400" />
+              <div className="text-foreground/90 flex items-center gap-2">
+                <Rows3 className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">Compact mode</span>
               </div>
               <Switch
@@ -206,8 +215,8 @@ export function MessagesFolderNav({
               />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-slate-300">
-                <User className="h-3.5 w-3.5 text-slate-400" />
+              <div className="text-foreground/90 flex items-center gap-2">
+                <User className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">Show account username</span>
               </div>
               <Switch

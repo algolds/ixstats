@@ -203,6 +203,8 @@ export class MessagingService {
       forum: 0,
     };
 
+    if (!actorId) return counts;
+
     const activeParticipants = await this.db.conversationParticipant.findMany({
       where: { userId: actorId, isActive: true },
       include: {
@@ -210,18 +212,48 @@ export class MessagingService {
       },
     });
 
+    if (activeParticipants.length === 0) return counts;
+
+    const conversationIds = activeParticipants.map((p: any) => p.conversationId);
+    const unreadMessages = await this.db.thinkshareMessage.findMany({
+      where: {
+        conversationId: { in: conversationIds },
+        userId: { not: actorId },
+        isDeleted: false,
+      },
+      select: {
+        conversationId: true,
+        createdAt: true,
+      },
+    });
+
+    const participantMap = new Map<string, any>(
+      activeParticipants.map((p: any) => [p.conversationId, p])
+    );
+    const convUnreadCounts = new Map<string, number>();
+
+    for (const msg of unreadMessages) {
+      const p = participantMap.get(msg.conversationId);
+      if (p && (!p.lastReadAt || msg.createdAt > p.lastReadAt)) {
+        convUnreadCounts.set(msg.conversationId, (convUnreadCounts.get(msg.conversationId) || 0) + 1);
+      }
+    }
+
     for (const p of activeParticipants) {
+      const unread = convUnreadCounts.get(p.conversationId) || 0;
       if (p.isArchived) {
-        counts.archive++;
+        if (unread > 0) counts.archive += unread;
       } else if (p.isMuted) {
-        counts.trash++;
+        if (unread > 0) counts.trash += unread;
       } else {
-        counts.inbox++;
-        const src = p.conversation?.source;
-        if (src === "thinktank") counts.thinktank++;
-        else if (src === "diplomatic") counts.diplomatic++;
-        else if (src === "wiki") counts.wiki++;
-        else if (src === "forum") counts.forum++;
+        if (unread > 0) {
+          counts.inbox += unread;
+          const src = p.conversation?.source;
+          if (src === "thinktank") counts.thinktank += unread;
+          else if (src === "diplomatic") counts.diplomatic += unread;
+          else if (src === "wiki") counts.wiki += unread;
+          else if (src === "forum") counts.forum += unread;
+        }
       }
     }
 
@@ -573,6 +605,15 @@ export class MessagingService {
       data: { lastReadAt: new Date() },
     });
 
+    return { success: true };
+  }
+
+  public async markAllAsRead(actorId: string) {
+    if (!actorId) return { success: true };
+    await this.db.conversationParticipant.updateMany({
+      where: { userId: actorId, isActive: true },
+      data: { lastReadAt: new Date() },
+    });
     return { success: true };
   }
 

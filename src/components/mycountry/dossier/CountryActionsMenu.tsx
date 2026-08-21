@@ -415,9 +415,9 @@ export function CountryActionsMenu({
                                   value={selectedAchievement}
                                   onChange={(e) => setSelectedAchievement(e.target.value)}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="min-w-[140px] cursor-pointer rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-white/20 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
+                                  className="min-w-[140px] cursor-pointer rounded-lg border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-foreground backdrop-blur-md transition-colors hover:bg-card hover:border-border focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                                 >
-                                  <option value="" className="bg-gray-800 text-white">
+                                  <option value="" className="bg-popover text-popover-foreground">
                                     Select achievement...
                                   </option>
                                   {recentAchievements.map(
@@ -429,7 +429,7 @@ export function CountryActionsMenu({
                                       <option
                                         key={achievement.id}
                                         value={achievement.id}
-                                        className="bg-gray-800 text-white"
+                                        className="bg-popover text-popover-foreground"
                                       >
                                         {achievement.icon} {achievement.title}
                                       </option>

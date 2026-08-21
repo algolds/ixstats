@@ -3,11 +3,12 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Flag } from "lucide-react";
+import { withBasePath } from "~/lib/base-path";
 
 interface UnifiedCountryFlagProps {
   countryName: string;
@@ -56,17 +57,33 @@ export function UnifiedCountryFlag({
   shadow = false,
   border = false,
 }: UnifiedCountryFlagProps) {
+  const [imageError, setImageError] = useState(false);
+
   // Use external props if provided (for bulk loading scenarios)
   // Otherwise use individual flag hook — also falls back when flagUrl is null
   const hookResult = useFlag(
     !externalFlagUrl && externalIsLoading === undefined ? countryName : undefined
   );
 
+  // Reset imageError whenever the resolved flagUrl changes
+  useEffect(() => {
+    setImageError(false);
+  }, [externalFlagUrl, hookResult.flagUrl]);
+
   // Determine which values to use (null flagUrl falls through to hook result)
-  const flagUrl = externalFlagUrl || hookResult.flagUrl;
+  const rawFlagUrl = externalFlagUrl || hookResult.flagUrl;
+  const flagUrl = rawFlagUrl
+    ? rawFlagUrl.startsWith("http://") ||
+      rawFlagUrl.startsWith("https://") ||
+      rawFlagUrl.startsWith("data:") ||
+      rawFlagUrl.startsWith("blob:")
+      ? rawFlagUrl
+      : withBasePath(rawFlagUrl)
+    : null;
+
   const isLoading =
     externalLoading || (externalIsLoading !== undefined ? externalIsLoading : hookResult.isLoading);
-  const error = !isLoading && !flagUrl;
+  const error = (!isLoading && !flagUrl) || imageError;
   const isLocal = flagUrl ? hookResult.isLocal : false;
   const isPlaceholder = flagUrl ? hookResult.isPlaceholder : false;
 
@@ -86,13 +103,13 @@ export function UnifiedCountryFlag({
   const placeholderClasses = cn(
     dimensionsClass,
     placeholderTextSize[size],
-    "bg-gradient-to-br from-gray-100 to-gray-200",
+    "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900",
     "flex items-center justify-center",
-    "text-gray-500 font-medium",
+    "text-gray-500 dark:text-gray-400 font-medium",
     "transition-all duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
-    border && "border border-gray-200",
+    border && "border border-gray-200 dark:border-gray-700",
     className
   );
 
@@ -136,7 +153,7 @@ export function UnifiedCountryFlag({
       alt={`Flag of ${countryName}`}
       className={flagClasses}
       onError={() => {
-        // Handle image load errors by showing placeholder
+        setImageError(true);
         console.warn(`[UnifiedCountryFlag] Failed to load flag image: ${flagUrl}`);
       }}
       loading="lazy" // Enable lazy loading for better performance

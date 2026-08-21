@@ -125,12 +125,12 @@ function CompactViewComponent({
     (n) => n.status !== "read" && n.status !== "dismissed"
   ).length;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const totalUnreadCount =
+  const notificationUnreadCount =
     unreadNotifications +
     (isExecutiveMode ? executiveUnreadCount : 0) +
     enhancedUnreadCount +
-    liveNotificationCount +
-    messageUnreadCount;
+    liveNotificationCount;
+  const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
 
   // ─── Time ──────────────────────────────────────────────────────────────
 
@@ -479,35 +479,29 @@ function CompactViewComponent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      if (messageUnreadCount > 0) {
-                        router.push("/messages");
-                      } else {
-                        onSwitchMode("notifications");
-                      }
-                    }}
+                    onClick={() => onSwitchMode("notifications")}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
-                    {messageUnreadCount > 0 ? (
-                      <MessageCircle
-                        className={`text-blue-400 transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                      />
-                    ) : (
-                      <Bell
-                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                      />
-                    )}
+                    <Bell
+                      className={cn(
+                        "transition-transform hover:scale-110",
+                        totalUnreadCount > 0
+                          ? "text-blue-400 dark:text-blue-300"
+                          : "text-muted-foreground hover:text-foreground",
+                        isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
+                      )}
+                    />
                     <AnimatePresence>
                       {totalUnreadCount > 0 && (
                         <motion.div
-                          key={totalUnreadCount}
+                          key={`total-${totalUnreadCount}`}
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
+                          className={`absolute flex items-center justify-center rounded-full border-0 bg-blue-500 text-[10px] font-bold text-white shadow-lg ${
                             isSticky
                               ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
                               : "-top-1 -right-1 h-3 w-3 p-0"
@@ -519,7 +513,11 @@ function CompactViewComponent({
                     </AnimatePresence>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Alerts</TooltipContent>
+                <TooltipContent side="bottom">
+                  {totalUnreadCount > 0
+                    ? `Alert Center (${totalUnreadCount} unread)`
+                    : "Alert Center"}
+                </TooltipContent>
               </Tooltip>
             )}
 
@@ -560,7 +558,7 @@ function CompactViewComponent({
                       />
                       {action.badge != null && action.badge > 0 && (
                         <span
-                          className={`absolute flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-[8px] font-bold text-white ${
+                          className={`absolute flex items-center justify-center rounded-full bg-blue-500 text-[8px] font-bold text-white ${
                             isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
                           }`}
                         >

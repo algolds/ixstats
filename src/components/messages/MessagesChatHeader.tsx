@@ -132,7 +132,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="shrink-0 text-slate-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 shrink-0"
             title={isSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
           >
             <ChevronLeft

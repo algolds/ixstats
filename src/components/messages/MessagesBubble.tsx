@@ -207,8 +207,8 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                 ? "rounded-xl px-2 py-1 text-xs leading-normal"
                 : "rounded-2xl px-3 py-2 text-sm leading-relaxed",
               isOwn
-                ? "rounded-br-sm bg-blue-600 text-white"
-                : "rounded-bl-sm border border-white/5 bg-white/10 text-slate-100",
+                ? "rounded-br-xs bg-blue-600 text-white shadow-xs"
+                : "rounded-bl-xs border border-border/60 bg-card text-foreground shadow-xs dark:bg-card/80 dark:border-white/10 dark:text-slate-100",
               message.replyTo && "rounded-t-none"
             )}
             style={{

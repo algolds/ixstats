@@ -82,6 +82,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   <UnifiedCountryFlag
                     showTooltip={false}
                     countryName={c.name}
+                    flagUrl={c.flagUrl}
                     size="sm"
                     className="shrink-0"
                   />

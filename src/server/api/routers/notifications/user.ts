@@ -243,22 +243,30 @@ export const notificationsUserRouter = createTRPCRouter({
   markAllAsRead: lightMutationProcedure
     .input(
       z.object({
-        userId: z.string(),
+        userId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      const userId = input.userId;
+      const userId = input.userId || ctx.auth?.userId;
+
+      if (!userId) return { success: true };
 
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
+        where: {
+          OR: [{ clerkUserId: userId }, { id: userId }],
+        },
         include: { country: true },
       });
 
-      // Build OR conditions - only include countryId if user has a country
+      const matchedUserId = userProfile?.id ?? userId;
+      const matchedClerkId = userProfile?.clerkUserId ?? userId;
+
+      // Build OR conditions - include all user id variations and countryId
       const orConditions: any[] = [
-        { userId },
+        { userId: matchedUserId },
+        { userId: matchedClerkId },
         {
           AND: [{ userId: null }, { countryId: null }],
         },
@@ -449,13 +457,19 @@ export const notificationsUserRouter = createTRPCRouter({
 
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
+        where: {
+          OR: [{ clerkUserId: userId }, { id: userId }],
+        },
         include: { country: true },
       });
 
-      // Build OR conditions - only include countryId if user has a country
+      const matchedUserId = userProfile?.id ?? userId;
+      const matchedClerkId = userProfile?.clerkUserId ?? userId;
+
+      // Build OR conditions - include all user id variations and countryId
       const orConditions: any[] = [
-        { userId },
+        { userId: matchedUserId },
+        { userId: matchedClerkId },
         {
           AND: [{ userId: null }, { countryId: null }],
         },

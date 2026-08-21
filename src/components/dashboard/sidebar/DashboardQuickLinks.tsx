@@ -121,16 +121,22 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         </div>
 
         <div className="border-border/30 space-y-2 border-t pt-2">
-          <StatusIndicator
-            status={getChannelStatus(CHANNEL)}
-            label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
-            size="sm"
-            className={cn(
-              "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-colors",
-              channelTheme.borderColor,
-              channelTheme.bgColor
-            )}
-          />
+          <Link
+            href="/changelog"
+            className="group block transition-all duration-150 active:scale-[0.98]"
+            title="View Release Notes & Changelog"
+          >
+            <StatusIndicator
+              status={getChannelStatus(CHANNEL)}
+              label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
+              size="sm"
+              className={cn(
+                "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-all group-hover:border-white/30 group-hover:shadow-xs",
+                channelTheme.borderColor,
+                channelTheme.bgColor
+              )}
+            />
+          </Link>
 
           <div className="space-y-1 text-center">
             <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-[9.5px]">

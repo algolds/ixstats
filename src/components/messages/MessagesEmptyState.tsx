@@ -26,7 +26,7 @@ export function MessagesEmptyState({ activeFolder, onNewConversation }: Messages
       {activeFolder === "conversations" && onNewConversation && (
         <Button
           onClick={onNewConversation}
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
+          className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98]"
         >
           <Plus className="mr-1.5 h-4 w-4" />
           New Conversation

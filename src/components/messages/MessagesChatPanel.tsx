@@ -99,7 +99,7 @@ function SystemAlertCard({ message, onDelete }: { message: any; onDelete?: () =>
   return (
     <div
       className={cn(
-        "relative mx-4 my-3 flex gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4 shadow-lg shadow-black/10 transition-all duration-300 hover:scale-[1.005] hover:bg-white/[0.04]",
+        "relative mx-4 my-3 flex gap-4 rounded-xl border border-border/50 bg-card/60 p-4 shadow-sm transition-all duration-200 hover:bg-card/90",
         borderClass
       )}
     >
@@ -116,19 +116,19 @@ function SystemAlertCard({ message, onDelete }: { message: any; onDelete?: () =>
           <span className="text-[10px] font-semibold tracking-wider uppercase opacity-85">
             {label}
           </span>
-          <span className="text-[10px] font-medium tabular-nums opacity-50">
+          <span className="text-muted-foreground/70 text-[10px] font-medium tabular-nums">
             {formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}
           </span>
         </div>
         <div
-          className="text-xs leading-relaxed font-semibold text-slate-200 [&>a]:text-blue-400 [&>a]:underline [&>a]:hover:text-blue-300 [&>p]:mb-0"
-          dangerouslySetInnerHTML={{ __html: message.content }}
+          className="text-foreground text-xs leading-relaxed font-semibold [&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>p]:mb-0"
+          dangerouslySetInnerHTML={{ __html: sanitizeUserContent(message.content) }}
         />
       </div>
       {onDelete && (
         <button
           onClick={onDelete}
-          className="text-muted-foreground absolute top-3 right-3 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/10 hover:text-rose-400"
+          className="text-muted-foreground hover:bg-accent/15 hover:text-destructive absolute top-3 right-3 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
           title="Delete message"
         >
           <Trash2 className="h-3.5 w-3.5" />

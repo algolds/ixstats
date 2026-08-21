@@ -116,6 +116,11 @@ export function SearchView({
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={String(result.metadata.countryName)}
+                      flagUrl={
+                        result.metadata?.flagUrl
+                          ? String(result.metadata.flagUrl)
+                          : undefined
+                      }
                       className="h-3.5 w-5 rounded-sm object-cover"
                       showPlaceholder={true}
                     />

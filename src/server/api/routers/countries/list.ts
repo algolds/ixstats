@@ -39,7 +39,7 @@ export const listProcedures = {
         id: country.id,
         name: country.name,
         slug: country.slug ?? undefined,
-        flagUrl: normalizeFlagUrl(country.flag),
+        flagUrl: normalizeFlagUrl(country.flag) ?? undefined,
         flag: country.flag, // support flag as string for backward-compatibility on components
         coatOfArmsUrl: country.coatOfArms ?? undefined,
         economicTier: country.economicTier ?? undefined,

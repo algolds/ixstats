@@ -14,6 +14,7 @@ import {
   MessageSquare,
   AlertTriangle,
   Heart,
+  Activity,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
@@ -27,7 +28,7 @@ type FilterTab = "all" | "forum" | "wiki";
 
 const TRENDING_SOURCE: Record<
   string,
-  { icon: typeof Rss; color: string; bg: string; label: string }
+  { icon: typeof Rss | typeof Activity; color: string; bg: string; label: string }
 > = {
   thinkpages: {
     icon: Newspaper,
@@ -48,10 +49,10 @@ const TRENDING_SOURCE: Record<
     label: "Wiki",
   },
   ixstats: {
-    icon: Rss,
-    color: "text-blue-700 dark:text-blue-300",
-    bg: "bg-blue-500/15 border-blue-500/30",
-    label: "IxStats",
+    icon: Activity,
+    color: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-500/15 border-amber-500/30",
+    label: "Live Activity",
   },
   crisis: {
     icon: AlertTriangle,
@@ -211,7 +212,7 @@ export function TrendingSectionWidget() {
   return (
     <div
       className={cn(
-        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-3 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40"
+        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-3 shadow-xs backdrop-blur-xl"
       )}
     >
       <div className="flex flex-col gap-2">
@@ -222,7 +223,7 @@ export function TrendingSectionWidget() {
         </div>
 
         {/* Category Segment Control Bar */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-black/5 bg-black/5 p-1 backdrop-blur-md dark:border-white/10 dark:bg-white/10">
+        <div className="grid grid-cols-3 gap-1 rounded-xl border border-border/40 bg-accent/10 p-1 backdrop-blur-md">
           {(["all", "forum", "wiki"] as const).map((tab) => (
             <button
               key={tab}
@@ -230,8 +231,8 @@ export function TrendingSectionWidget() {
               className={cn(
                 "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150",
                 activeFilter === tab
-                  ? "border border-black/10 bg-white font-semibold text-amber-800 shadow-xs dark:border-white/15 dark:bg-zinc-800 dark:text-amber-300"
-                  : "text-muted-foreground/80 hover:text-foreground font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                  ? "border border-border/60 bg-card font-semibold text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground font-medium hover:bg-accent/15"
               )}
             >
               {tab}
@@ -243,9 +244,9 @@ export function TrendingSectionWidget() {
       <div className="space-y-2 pt-1">
         {isLoading && (
           <div className="space-y-2 py-4">
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-            <div className="h-10 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
           </div>
         )}
 
@@ -305,7 +306,7 @@ export function TrendingSectionWidget() {
               <W
                 key={item.id}
                 {...(linkProps as any)}
-                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-black/10 bg-white/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-white/80 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
+                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-card/80 active:scale-[0.98]"
               >
                 <div
                   className={cn(

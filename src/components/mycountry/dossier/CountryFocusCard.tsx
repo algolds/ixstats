@@ -9,6 +9,7 @@ import { formatPopulation } from "~/lib/utils";
 import { TrendingUp, Users as UsersIcon } from "lucide-react";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
+import { withBasePath } from "~/lib/base-path";
 
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 export type CountryId = Brand<string, "CountryId">;
@@ -159,7 +160,14 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           {/* Flag Background — blurred when expanded for readability */}
           {country.flagUrl ? (
             <img
-              src={country.flagUrl}
+              src={
+                country.flagUrl.startsWith("http://") ||
+                country.flagUrl.startsWith("https://") ||
+                country.flagUrl.startsWith("data:") ||
+                country.flagUrl.startsWith("blob:")
+                  ? country.flagUrl
+                  : withBasePath(country.flagUrl)
+              }
               alt={`${country.name} flag`}
               className={cn(
                 "absolute inset-0 h-full w-full object-cover transition-all duration-500",

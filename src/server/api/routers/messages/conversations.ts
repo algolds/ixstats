@@ -81,6 +81,21 @@ export const messagesConversationsRouter = createTRPCRouter({
     }),
 
   /**
+   * Mark all conversations/messages as read for the current user.
+   */
+  markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+    const messagingService = createMessagingService({
+      db: ctx.db,
+      notifications: notificationAPI,
+      websocket: getThinkPagesServer(),
+      forumBridge,
+      wikiBridge: wikiTalkBridge,
+    });
+
+    return await messagingService.markAllAsRead(ctx.auth.userId);
+  }),
+
+  /**
    * Create a conversation (source-aware).
    */
   createConversation: protectedProcedure

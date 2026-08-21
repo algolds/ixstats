@@ -42,18 +42,18 @@ export function BlurbSection() {
 
   if (isLoading) {
     return (
-      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-black/10 bg-white/60 p-4 shadow-xl backdrop-blur-2xl dark:border-white/10 dark:bg-black/40">
+      <div className="no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 shadow-xs backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <div className="h-4 w-28 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
-          <div className="h-4 w-16 animate-pulse rounded-full bg-black/5 dark:bg-white/5" />
+          <div className="h-4 w-28 animate-pulse rounded-md bg-muted/40" />
+          <div className="h-4 w-16 animate-pulse rounded-full bg-muted/40" />
         </div>
         <div className="space-y-2 py-1">
-          <div className="h-4 w-full animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
-          <div className="h-4 w-4/5 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
+          <div className="h-4 w-full animate-pulse rounded-md bg-muted/40" />
+          <div className="h-4 w-4/5 animate-pulse rounded-md bg-muted/40" />
         </div>
         <div className="flex items-center justify-between pt-1">
-          <div className="h-3 w-20 animate-pulse rounded-md bg-black/5 dark:bg-white/5" />
-          <div className="h-6 w-20 animate-pulse rounded-full bg-black/5 dark:bg-white/5" />
+          <div className="h-3 w-20 animate-pulse rounded-md bg-muted/40" />
+          <div className="h-6 w-20 animate-pulse rounded-full bg-muted/40" />
         </div>
       </div>
     );
@@ -67,7 +67,7 @@ export function BlurbSection() {
     <>
       <div
         onClick={() => setModalOpen(true)}
-        className="no-wiki-tooltip group relative flex cursor-pointer flex-col justify-between space-y-3.5 overflow-hidden rounded-2xl border border-indigo-500/15 bg-white/70 p-4 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:border-indigo-500/30 hover:bg-white/85 active:scale-[0.99] dark:border-indigo-400/15 dark:bg-black/40 dark:hover:border-indigo-400/30 dark:hover:bg-black/55"
+        className="no-wiki-tooltip group relative flex cursor-pointer flex-col justify-between space-y-3.5 overflow-hidden rounded-2xl border border-indigo-500/20 bg-card/70 p-4 shadow-xs backdrop-blur-2xl transition-all duration-200 hover:border-indigo-500/40 hover:bg-card/90 active:scale-[0.99]"
       >
         {/* Subtle Ambient Specular Glow */}
         <div className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-transparent blur-2xl dark:from-indigo-400/20 dark:via-violet-400/10" />
@@ -214,7 +214,7 @@ export function BlurbResponseModal({
         {isSignedIn && !myResponse && (
           <div className="border-border/30 bg-muted/20 border-b px-5 py-3.5">
             <div className="flex flex-col gap-2.5">
-              <div className="relative rounded-xl border border-black/10 bg-white/70 shadow-2xs transition-colors focus-within:border-indigo-500/40 dark:border-white/10 dark:bg-black/30 dark:focus-within:border-indigo-400/40">
+              <div className="relative rounded-xl border border-border/60 bg-card/80 shadow-2xs transition-colors focus-within:border-indigo-500/40">
                 <textarea
                   value={newResponse}
                   onChange={(e) => setNewResponse(e.target.value)}
@@ -298,8 +298,8 @@ export function BlurbResponseModal({
         <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-4">
           {responsesLoading && (
             <div className="space-y-2 py-4">
-              <div className="h-16 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
-              <div className="h-16 animate-pulse rounded-xl bg-black/5 dark:bg-white/5" />
+              <div className="h-16 animate-pulse rounded-xl bg-muted/40" />
+              <div className="h-16 animate-pulse rounded-xl bg-muted/40" />
             </div>
           )}
 
@@ -326,7 +326,7 @@ export function BlurbResponseModal({
                   "rounded-xl border p-3 transition-colors",
                   r.featured
                     ? "border-amber-500/30 bg-amber-500/[0.04]"
-                    : "border-black/5 bg-black/[0.02] hover:bg-black/[0.04] dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+                    : "border-border/30 bg-accent/5 hover:bg-accent/15"
                 )}
               >
                 <div className="mb-1.5 flex items-center justify-between gap-2">

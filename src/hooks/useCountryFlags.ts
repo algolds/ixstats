@@ -107,3 +107,21 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     stats,
   };
 }
+
+/**
+ * Convenience hook for fetching a single country flag.
+ */
+export function useCountryFlag(countryName: string) {
+  const cleanName = countryName?.trim() || "";
+  const countries = useMemo(() => (cleanName ? [cleanName] : []), [cleanName]);
+  const { flags, loading, error, refetchFlag } = useCountryFlags({ countries });
+  const flag = cleanName ? flags.get(cleanName) ?? null : null;
+
+  return {
+    flag,
+    loading: Boolean(cleanName) && loading,
+    error,
+    refetch: () => refetchFlag(cleanName),
+  };
+}
+

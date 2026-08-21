@@ -98,10 +98,10 @@ export function useBulkFlags(
     const result: Record<string, string | null> = {};
     for (const name of memoizedCountryNames) {
       const url = batchResult ? batchResult[name] : null;
-      result[name] = url || placeholderUrl;
+      result[name] = url ?? null;
     }
     return result;
-  }, [memoizedCountryNames, batchResult, placeholderUrl]);
+  }, [memoizedCountryNames, batchResult]);
 
   const placeholderCount = useMemo(() => {
     return Object.values(flagUrls).filter(

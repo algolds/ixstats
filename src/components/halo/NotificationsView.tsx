@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -9,270 +12,28 @@ import { useUser } from "~/context/auth-context";
 import {
   Bell,
   BellRing,
-  BookOpen,
   X,
   CheckCircle,
-  Info,
-  AlertTriangle,
-  AlertCircle,
-  TrendingUp,
-  Globe,
-  Users,
-  Building2,
   ChevronRight,
   Maximize2,
   Minimize2,
+  MessageCircle,
 } from "lucide-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "./types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
-import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/ui/facet/swipeable";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  economic: TrendingUp,
-  diplomatic: Globe,
-  social: Users,
-  security: AlertTriangle,
-  governance: Building2,
-  achievement: CheckCircle,
-  crisis: AlertCircle,
-  opportunity: TrendingUp,
-  military: AlertTriangle,
-  wiki: BookOpen,
-  info: Info,
-  warning: AlertTriangle,
-  success: CheckCircle,
-  error: AlertCircle,
-};
-
-interface NotificationItem {
-  id: string;
-  title: string;
-  message?: string | null;
-  description?: string | null;
-  category?: string | null;
-  type?: string | null;
-  priority?: string | null;
-  severity?: string | null;
-  status?: string | null;
-  timestamp?: number | string | Date | null;
-  createdAt?: number | string | Date | null;
-  actionUrl?: string | null;
-  href?: string | null;
-  metadata?: Record<string, unknown> | string | null;
-  read?: boolean | null;
-  dismissed?: boolean | null;
-  source?: string | null;
-  deliveryMethod?: string | null;
-}
-
-function getIcon(n: NotificationItem) {
-  return (
-    (n.category ? ICON_MAP[n.category] : undefined) ??
-    (n.type ? ICON_MAP[n.type] : undefined) ??
-    Bell
-  );
-}
-
-const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
-  critical: { bg: "bg-red-500/15", text: "text-red-400" },
-  high: { bg: "bg-orange-500/15", text: "text-orange-400" },
-  medium: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
-  warning: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
-  success: { bg: "bg-green-500/15", text: "text-green-400" },
-  error: { bg: "bg-red-500/15", text: "text-red-400" },
-  info: { bg: "bg-blue-500/15", text: "text-blue-400" },
-};
-
-function getColors(n: NotificationItem) {
-  const level = n.priority ?? n.severity ?? n.type;
-  return (level ? PRIORITY_COLORS[level] : undefined) ?? PRIORITY_COLORS.info!;
-}
-
-function relativeTime(ts: string | number | Date): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// ─── NotificationRow Component (powered by Glass SwipeableRow) ────────────────
-interface NotificationRowProps {
-  n: NotificationItem;
-  isRead: boolean;
-  colors: { bg: string; text: string };
-  Icon: React.ComponentType<{ className?: string }>;
-  handleMarkRead: (n: NotificationItem) => void;
-  handleDismiss: (n: NotificationItem) => void;
-  handleClick: (n: NotificationItem) => void;
-  relativeTime: (ts: string | number | Date) => string;
-  isExpanded: boolean;
-  onExpandToggle: () => void;
-}
-
-function NotificationRow({
-  n,
-  isRead,
-  colors,
-  Icon,
-  handleMarkRead,
-  handleDismiss,
-  handleClick,
-  relativeTime: relTime,
-  isExpanded,
-  onExpandToggle,
-}: NotificationRowProps) {
-  return (
-    <SwipeableRow
-      id={`notif-${n.source}-${n.id}`}
-      className="mb-1.5 rounded-xl last:mb-0"
-      springPreset="bouncy"
-      expanded={isExpanded}
-      onExpandedChange={(expanded) => {
-        if (expanded !== isExpanded) onExpandToggle();
-      }}
-    >
-      {/* Leading actions (swipe right → open) */}
-      {n.href && (
-        <SwipeableRow.Leading
-          commit={{ action: () => handleClick(n), label: "Open", color: "#22c55e" }}
-        >
-          <SwipeActionButton
-            id="open"
-            icon={ChevronRight}
-            label="Open"
-            onClick={() => handleClick(n)}
-            color="#22c55e"
-          />
-        </SwipeableRow.Leading>
-      )}
-
-      {/* Trailing actions (swipe left → dismiss) */}
-      <SwipeableRow.Trailing
-        commit={{ action: () => handleDismiss(n), label: "Clear", color: "#ef4444" }}
-      >
-        {n.href && (
-          <SwipeActionButton
-            id="open-trailing"
-            icon={ChevronRight}
-            label="Open"
-            onClick={() => handleClick(n)}
-            color="#3b82f6"
-          />
-        )}
-        <SwipeActionButton
-          id="clear"
-          icon={X}
-          label="Clear"
-          onClick={() => handleDismiss(n)}
-          color="#ef4444"
-        />
-      </SwipeableRow.Trailing>
-
-      {/* Front card content */}
-      <SwipeableRow.Content>
-        <div
-          className={cn(
-            "dark:border-border dark:bg-card/85 dark:hover:bg-secondary/90 relative flex w-full flex-col overflow-hidden rounded-xl border border-white/[0.18] bg-white/[0.16] shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-white/[0.24] hover:bg-white/[0.22] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
-            !isRead &&
-              "dark:from-secondary/60 dark:to-card/80 border-blue-500/40 bg-gradient-to-r from-white/[0.24] to-white/[0.14] shadow-md shadow-blue-500/10",
-            isRead &&
-              "dark:border-border/60 dark:bg-card/60 border-white/[0.08] bg-white/[0.1] opacity-80 hover:opacity-95"
-          )}
-        >
-          {/* Left Accent Border Strip */}
-          <div
-            className={cn(
-              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-all duration-300",
-              colors.text.replace("text-", "bg-"),
-              isRead ? "opacity-30" : "opacity-100"
-            )}
-          />
-
-          {/* Header Content */}
-          <div className="flex cursor-grab items-center gap-3 p-3.5 text-left hover:bg-white/[0.02] active:cursor-grabbing">
-            <div
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5 shadow-sm",
-                colors.bg
-              )}
-            >
-              <Icon className={cn("h-4 w-4", colors.text)} />
-            </div>
-
-            <div className="min-w-0 flex-1 pl-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-foreground block truncate text-xs font-bold">{n.title}</span>
-                {!isRead && (
-                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
-                )}
-              </div>
-              {!isExpanded && (n.description || n.message) && (
-                <span className="text-muted-foreground mt-0.5 block truncate text-[11px] leading-relaxed font-semibold">
-                  {n.description || n.message}
-                </span>
-              )}
-            </div>
-
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <span className="text-muted-foreground/80 text-[9px] font-semibold">
-                {relTime(n.timestamp || n.createdAt || Date.now())}
-              </span>
-              <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
-                <ChevronRight className="text-muted-foreground/60 h-3.5 w-3.5" />
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </SwipeableRow.Content>
-
-      {/* Expanded detail panel */}
-      <SwipeableRow.Expanded>
-        <div className="space-y-3 rounded-b-xl border-t border-slate-200/20 bg-black/[0.02] px-3.5 pt-3 pb-3.5 pl-[18px]">
-          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-semibold whitespace-pre-wrap select-text selection:bg-blue-500/30">
-            {n.description || n.message}
-          </p>
-
-          <div className="flex items-center gap-2 pt-1.5">
-            {n.href && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClick(n);
-                }}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-blue-400/20 bg-blue-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-blue-600 active:scale-[0.98]"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-                <span>Open</span>
-              </button>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss(n);
-              }}
-              className="text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-md border border-slate-300/30 bg-black/5 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-black/10 active:scale-[0.98] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-            >
-              <X className="text-muted-foreground/60 h-3.5 w-3.5" />
-              <span>Dismiss</span>
-            </button>
-          </div>
-        </div>
-      </SwipeableRow.Expanded>
-    </SwipeableRow>
-  );
-}
-
-// ─── Component ───────────────────────────────────────────────────────────────
+import { SwipeableGroup } from "~/components/ui/facet/swipeable";
+import { MessageTrayItem, type MessageTrayConversation } from "./tray/MessageTrayItem";
+import { NotificationRow } from "./tray/NotificationRow";
+import {
+  type NotificationItem,
+  type NotificationTab,
+  getIcon,
+  getColors,
+  relativeTime,
+} from "./tray/types";
 
 export function NotificationsView({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
@@ -314,12 +75,22 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   const { data: notificationsData, refetch: refetchNotifications } =
     api.notifications.getUserNotifications.useQuery(
-      { limit: 5, unreadOnly: false },
+      { limit: 8, unreadOnly: false },
       {
         enabled: !!user?.id,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
+      }
+    );
+
+  const { data: messagesData, refetch: refetchMessages } =
+    api.messages.getConversationsByFolder.useQuery(
+      { folder: "inbox", limit: 8 },
+      {
+        enabled: !!user?.id,
+        staleTime: 30 * 1000,
+        refetchOnWindowFocus: false,
       }
     );
 
@@ -332,18 +103,25 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
       void refetchNotifications();
-      notify.success("All notifications marked as read");
+    },
+  });
+  const markAllMessagesMutation = api.messages.markAllAsRead.useMutation({
+    onSuccess: () => {
+      void refetchMessages();
     },
   });
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const totalUnreadCount =
+  const totalAlertsUnreadCount =
     unreadNotifications +
     (isExecutiveMode ? executiveUnreadCount : 0) +
-    enhancedUnreadCount +
-    messageUnreadCount;
+    enhancedUnreadCount;
+  const totalUnreadCount = totalAlertsUnreadCount + messageUnreadCount;
+
+  // Default active tab to whichever has unread, defaulting to alerts
+  const [activeTab, setActiveTab] = useState<NotificationTab>("alerts");
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
@@ -360,7 +138,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     .filter((n) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
     .map((n) => ({ ...n, source: "enhanced" }));
 
-  const allNotifications: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
+  const allAlerts: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
     .filter((n) => n?.id && n?.title)
     // Deduplicate
     .reduce((acc: NotificationItem[], n: NotificationItem) => {
@@ -374,23 +152,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       return bt - at;
     });
 
-  // Prepend unread messages entry
-  if (messageUnreadCount > 0) {
-    allNotifications.unshift({
-      id: "unread-messages",
-      source: "messages",
-      title: "Unread Messages",
-      message: `You have ${messageUnreadCount} unread message${messageUnreadCount > 1 ? "s" : ""}`,
-      timestamp: Date.now(),
-      priority: "high",
-      category: "social",
-      actionUrl: "/messages",
-      read: false,
-      type: "info",
-    });
-  }
-
-  // Group by time
+  // Group alerts by time
   const groups: { label: string; items: NotificationItem[] }[] = [];
   const buckets = {
     Recent: [] as NotificationItem[],
@@ -399,7 +161,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     Earlier: [] as NotificationItem[],
   };
 
-  for (const n of allNotifications) {
+  for (const n of allAlerts) {
     const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
     if (hrs < 1) buckets.Recent.push(n);
     else if (hrs < 24) buckets["Earlier Today"].push(n);
@@ -410,6 +172,12 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   for (const [label, items] of Object.entries(buckets)) {
     if (items.length > 0) groups.push({ label, items });
   }
+
+  const conversationsList: MessageTrayConversation[] = useMemo(() => {
+    return (messagesData?.conversations || []).filter(
+      (c: MessageTrayConversation) => !locallyDismissedIds.has(c.id)
+    );
+  }, [messagesData?.conversations, locallyDismissedIds]);
 
   // ─── Actions ───────────────────────────────────────────────────────────
 
@@ -441,10 +209,20 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     }
   };
 
+  const handleDismissMessage = (conv: MessageTrayConversation) => {
+    setLocallyDismissedIds((prev) => {
+      const next = new Set(prev);
+      next.add(conv.id);
+      return next;
+    });
+  };
+
   const handleMarkAllRead = () => {
     if (user?.id && unreadNotifications > 0) markAllAsReadMutation.mutate({ userId: user.id });
     if (isExecutiveMode && executiveUnreadCount > 0) markAllExecutiveAsRead();
     if (enhancedUnreadCount > 0) markAllEnhancedAsRead();
+    if (messageUnreadCount > 0) markAllMessagesMutation.mutate();
+    notify.success("All notifications and messages marked as read");
   };
 
   const handleClick = (n: NotificationItem) => {
@@ -453,6 +231,10 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     const targetUrl = n.actionUrl || n.href;
     if (targetUrl) window.location.href = createAbsoluteUrl(targetUrl);
     if (n.source === "enhanced") recordEngagement(n.id, "click");
+  };
+
+  const handleMessageClick = (conv: MessageTrayConversation) => {
+    window.location.href = createAbsoluteUrl(`/messages?conversationId=${conv.id}`);
   };
 
   const toggleGroup = (key: string) => {
@@ -464,20 +246,25 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
     });
   };
 
+  const tabs: Array<{ id: NotificationTab; label: string; icon: typeof Bell; unread: number }> = [
+    { id: "alerts", label: "Notifications", icon: Bell, unread: totalAlertsUnreadCount },
+    { id: "messages", label: "Messages", icon: MessageCircle, unread: messageUnreadCount },
+  ];
+
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
     <div className="p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
+        <div className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight">
           <BellRing className="h-4 w-4 text-blue-400" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            {isExecutiveMode ? "Intelligence" : "Notifications"}
+            {isExecutiveMode ? "Intelligence Hub" : "Alert Center"}
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="bg-destructive min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+              className="bg-blue-500 min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold text-white shadow-xs"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -488,128 +275,208 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           {totalUnreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              disabled={markAllAsReadMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-40"
+              disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
+              title="Mark all notifications and messages as read"
             >
-              <CheckCircle className="h-3 w-3" />
+              <CheckCircle className="h-3 w-3 text-emerald-400" />
               <PreText className="text-inherit" whiteSpace="nowrap">
                 Read all
               </PreText>
             </button>
           )}
+          <Link
+            href="/messages"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold transition-all active:scale-95"
+            title="Open Messages Hub"
+          >
+            <MessageCircle className="h-3 w-3 text-blue-400" />
+            <span className="hidden sm:inline">Messages</span>
+          </Link>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+            title="Close tray"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      {/* List */}
+      {/* Segmented Filter Pills (Notifications vs Messages) */}
+      <div className="mb-3 flex items-center gap-1 rounded-xl border border-border/40 bg-accent/10 p-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isSelected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all select-none active:scale-[0.97]",
+                isSelected
+                  ? "text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+              )}
+            >
+              {isSelected && (
+                <motion.div
+                  layoutId="halo-notif-tab-indicator"
+                  className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
+                  transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-blue-400")} />
+                <span>{tab.label}</span>
+                {tab.unread > 0 && (
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[9px] font-bold text-white shadow-2xs">
+                    {tab.unread > 9 ? "9+" : tab.unread}
+                  </span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Content Area */}
       <div
         className={cn(
           "space-y-2 overflow-y-auto pr-0.5 transition-all duration-300",
-          isUltra ? "max-h-[520px]" : "max-h-80"
+          isUltra ? "max-h-[540px]" : "max-h-80"
         )}
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
       >
-        {groups.length > 0 ? (
-          groups.map((group) => {
-            const isCollapsed = collapsedGroups.has(group.label);
-            return (
-              <div key={group.label}>
-                {/* Group header */}
-                <button
-                  onClick={() => toggleGroup(group.label)}
-                  className="hover:bg-accent/5 mb-1 flex w-full items-center justify-between rounded px-1 py-0.5 transition-colors"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <motion.div
-                      animate={{ rotate: isCollapsed ? 0 : 90 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
-                    </motion.div>
-                    <PreText
-                      className="text-muted-foreground/90 text-[11px] font-semibold tracking-wider uppercase"
-                      whiteSpace="nowrap"
-                    >
-                      {group.label}
-                    </PreText>
-                  </div>
-                  <PreText className="text-muted-foreground/70 text-[10px]" whiteSpace="nowrap">
-                    {String(group.items.length)}
-                  </PreText>
-                </button>
-
-                {/* Items */}
-                <AnimatePresence>
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-1 overflow-hidden"
-                    >
-                      <SwipeableGroup>
-                        {group.items.map((n: NotificationItem, i: number) => {
-                          const Icon = getIcon(n);
-                          const colors = getColors(n);
-                          const isRead = n.status === "read" || Boolean(n.read);
-                          const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
-
-                          return (
-                            <NotificationRow
-                              key={key}
-                              n={n}
-                              isRead={isRead}
-                              colors={colors}
-                              Icon={Icon}
-                              handleMarkRead={handleMarkRead}
-                              handleDismiss={handleDismiss}
-                              handleClick={handleClick}
-                              relativeTime={relativeTime}
-                              isExpanded={expandedNotificationId === key}
-                              onExpandToggle={() => {
-                                setExpandedNotificationId(
-                                  expandedNotificationId === key ? null : key
-                                );
-                              }}
-                            />
-                          );
-                        })}
-                      </SwipeableGroup>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+        {activeTab === "messages" ? (
+          /* Messages View */
+          <div className="space-y-2">
+            {conversationsList.length > 0 ? (
+              <div className="space-y-1">
+                {conversationsList.map((conv) => (
+                  <MessageTrayItem
+                    key={conv.id}
+                    conversation={conv}
+                    currentUserId={user?.id}
+                    relativeTime={relativeTime}
+                    onClick={handleMessageClick}
+                    onDismiss={handleDismissMessage}
+                  />
+                ))}
               </div>
-            );
-          })
+            ) : (
+              <div className="py-10 text-center">
+                <MessageCircle className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
+                <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
+                <Link
+                  href="/messages"
+                  className="text-primary hover:underline mt-2 inline-block text-[11px] font-semibold"
+                >
+                  Start a diplomatic conversation →
+                </Link>
+              </div>
+            )}
+          </div>
         ) : (
-          /* ── Empty state ────────────────────────────────────────── */
-          <div className="py-10 text-center">
-            <Bell className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
-            <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
-              {isExecutiveMode ? "Situation stable" : "All caught up"}
-            </PreText>
-            <PreText className="text-muted-foreground/75 mt-1 text-xs" whiteSpace="nowrap">
-              No notifications right now
-            </PreText>
+          /* Notifications View */
+          <div className="space-y-2">
+            {groups.length > 0 ? (
+              groups.map((group) => {
+                const isCollapsed = collapsedGroups.has(group.label);
+                return (
+                  <div key={group.label}>
+                    {/* Group header */}
+                    <button
+                      onClick={() => toggleGroup(group.label)}
+                      className="hover:bg-accent/5 mb-1 flex w-full items-center justify-between rounded px-1 py-0.5 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <motion.div
+                          animate={{ rotate: isCollapsed ? 0 : 90 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
+                        </motion.div>
+                        <PreText
+                          className="text-muted-foreground/90 text-[11px] font-semibold tracking-wider uppercase"
+                          whiteSpace="nowrap"
+                        >
+                          {group.label}
+                        </PreText>
+                      </div>
+                      <PreText className="text-muted-foreground/70 text-[10px]" whiteSpace="nowrap">
+                        {String(group.items.length)}
+                      </PreText>
+                    </button>
+
+                    {/* Items */}
+                    <AnimatePresence>
+                      {!isCollapsed && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-1 overflow-hidden"
+                        >
+                          <SwipeableGroup>
+                            {group.items.map((n: NotificationItem, i: number) => {
+                              const Icon = getIcon(n);
+                              const colors = getColors(n);
+                              const isRead = n.status === "read" || Boolean(n.read);
+                              const key = n.id ? `${n.source}-${n.id}` : `${n.source}-${i}`;
+
+                              return (
+                                <NotificationRow
+                                  key={key}
+                                  n={n}
+                                  isRead={isRead}
+                                  colors={colors}
+                                  Icon={Icon}
+                                  handleMarkRead={handleMarkRead}
+                                  handleDismiss={handleDismiss}
+                                  handleClick={handleClick}
+                                  relativeTime={relativeTime}
+                                  isExpanded={expandedNotificationId === key}
+                                  onExpandToggle={() => {
+                                    setExpandedNotificationId(
+                                      expandedNotificationId === key ? null : key
+                                    );
+                                  }}
+                                />
+                              );
+                            })}
+                          </SwipeableGroup>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-10 text-center">
+                <Bell className="text-muted-foreground/20 mx-auto mb-3 h-8 w-8" />
+                <PreText className="text-muted-foreground text-sm font-medium" whiteSpace="nowrap">
+                  {isExecutiveMode ? "Situation stable" : "All caught up"}
+                </PreText>
+                <PreText className="text-muted-foreground/75 mt-1 text-xs" whiteSpace="nowrap">
+                  No notifications right now
+                </PreText>
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="mt-3 flex justify-center border-t border-white/5 pt-2">
+      <div className="mt-3 flex justify-center border-t border-border/30 pt-2">
         <button
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border border-white/5 shadow-sm transition-all hover:bg-white/5 active:scale-[0.98]"
-          title={isUltra ? "Standard View" : "Reading View"}
-          aria-label={isUltra ? "Standard View" : "Reading View"}
+          className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border border-border/40 shadow-xs transition-all hover:bg-accent/15 active:scale-[0.98]"
+          title={isUltra ? "Standard View" : "Expanded View"}
+          aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
           {isUltra ? (
             <Minimize2 className="h-3.5 w-3.5 text-blue-400" />

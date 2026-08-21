@@ -109,9 +109,11 @@ export type CountrySummary = {
   id: string;
   name: string;
   slug?: string;
-  flagUrl?: string;
+  flagUrl?: string | null;
+  flag?: string | null;
   coatOfArmsUrl?: string;
   economicTier?: string;
+  continent?: string;
   currentGdpPerCapita?: number | null;
 };
 

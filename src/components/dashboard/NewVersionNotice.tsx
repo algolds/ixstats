@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 import { MdBrowserUpdated } from "react-icons/md";
 // eslint-disable-next-line unused-imports/no-unused-imports
 import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
@@ -32,24 +33,35 @@ export function NewVersionNotice() {
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-surface flex items-center justify-between gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+      className="glass-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
     >
       <TextureOverlay texture="chevron" opacity={0.06} />
       <div className="relative z-10 flex items-center gap-2.5">
         <MdBrowserUpdated className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
           New version! The system has been updated to{" "}
-          <span className="text-blue-400">v{APP_VERSION}</span>{" "}
+          <Link href="/changelog" className="font-semibold text-blue-400 hover:underline">
+            v{APP_VERSION}
+          </Link>{" "}
           <span className="text-muted-foreground font-mono text-[10px]">({BUILD_VERSION})</span>.
         </p>
       </div>
-      <button
-        onClick={dismiss}
-        className="text-muted-foreground hover:text-foreground relative z-10 rounded-lg p-1 transition-colors hover:bg-white/5"
-        title="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
+      <div className="relative z-10 flex items-center gap-2">
+        <Link
+          href="/changelog"
+          className="group inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-[11px] font-semibold text-blue-400 transition-all hover:bg-blue-500/20 active:scale-[0.97]"
+        >
+          <span>What's New</span>
+          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+        <button
+          onClick={dismiss}
+          className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors hover:bg-white/5"
+          title="Dismiss"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
     </motion.div>
   );
 }

@@ -7,6 +7,7 @@ import { CountriesPageModular } from "./_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
 import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 export default function CountriesPage() {
   usePageTitle({ title: "Countries" });
@@ -57,8 +58,11 @@ export default function CountriesPage() {
       gdpDensity: country.gdpDensity ?? undefined,
       adjustedGdpGrowth: country.adjustedGdpGrowth ?? undefined,
       populationGrowthRate: country.populationGrowthRate ?? undefined,
-      // Use cached flag first, then database flag, then undefined
-      flagUrl: flagUrls[country.name] || country.flag || undefined,
+      // Use database flag first, then cached/resolved flag, then undefined
+      flagUrl:
+        normalizeFlagUrl(country.flag) ||
+        normalizeFlagUrl(flagUrls[country.name]) ||
+        undefined,
       // Identity & Governance
       continent: country.continent ?? undefined,
       region: country.region ?? undefined,

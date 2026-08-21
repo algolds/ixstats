@@ -21,7 +21,7 @@ export function MessagesLayout({
       <CutoutCard
         className={cn(
           cutoutCardSurfaceClassName,
-          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-xl transition-all duration-300 lg:col-span-1",
+          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/60 shadow-xl backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-white/[0.03] lg:col-span-1",
           isSidebarCollapsed ? "hidden" : "flex"
         )}
         trackPointerHover={false}
@@ -35,7 +35,7 @@ export function MessagesLayout({
       <CutoutCard
         className={cn(
           cutoutCardSurfaceClassName,
-          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-xl transition-all duration-300",
+          "relative z-10 flex h-full min-w-0 cursor-default flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/60 shadow-xl backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-white/[0.03]",
           isSidebarCollapsed ? "col-span-full lg:col-span-3" : "hidden lg:col-span-2 lg:flex"
         )}
         trackPointerHover={false}

@@ -65,7 +65,7 @@ export function MessagesInputBar({
         <button
           type="button"
           onClick={() => setIsStashModalOpen(true)}
-          className="mb-1 flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 shadow-sm backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground mb-1 flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/50 bg-card/50 shadow-2xs backdrop-blur-xs transition-all active:scale-95"
           title="Attach Lore Stash Link"
         >
           <BookmarkPlus className="h-4.5 w-4.5 text-indigo-400" />

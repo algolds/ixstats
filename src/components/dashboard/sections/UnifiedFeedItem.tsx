@@ -176,13 +176,13 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
   return (
-    <div className="group relative rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-sm transition-all duration-200 hover:border-white/15 hover:bg-white/[0.06]">
+    <div className="group relative rounded-2xl border border-border/40 bg-card/60 p-3.5 shadow-xs transition-all duration-200 hover:border-border hover:bg-card/90 backdrop-blur-xl">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div
           className={cn(
-            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-transform duration-200 group-hover:scale-105",
-            isWiki ? "border-teal-500/20 bg-teal-500/10" : cn(resolvedConfig.bg, "border-white/10")
+            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105",
+            isWiki ? "border-teal-500/20 bg-teal-500/10" : cn(resolvedConfig.bg, "border-border/30")
           )}
         >
           {isWiki ? (
@@ -283,7 +283,7 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-white/10 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>

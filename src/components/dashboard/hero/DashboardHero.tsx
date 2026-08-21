@@ -10,6 +10,7 @@ import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { createUrl } from "~/lib/utils";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { cn } from "~/lib/utils";
@@ -229,6 +230,7 @@ export function DashboardHeroComponent({
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={stats.countryName}
+                      flagUrl={normalizeFlagUrl(flagUrl)}
                       size="lg"
                       className="shrink-0 rounded-xs"
                     />

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Search, Plus } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -42,11 +43,11 @@ export function MessagesConversationPanel({
 
   // Folder-specific dynamic color accents for the search header background
   const folderBgs: Record<MessageFolder, string> = {
-    conversations: "bg-emerald-500/10",
-    system: "bg-rose-500/10",
-    groups: "bg-blue-500/10",
+    conversations: "bg-emerald-500/[0.04] dark:bg-emerald-500/10",
+    system: "bg-rose-500/[0.04] dark:bg-rose-500/10",
+    groups: "bg-blue-500/[0.04] dark:bg-blue-500/10",
   };
-  const currentBg = folderBgs[activeFolder] || "bg-emerald-500/10";
+  const currentBg = folderBgs[activeFolder] || "bg-emerald-500/[0.04]";
 
   // Filter conversations by search query
   const filtered = searchQuery.trim()
@@ -62,27 +63,27 @@ export function MessagesConversationPanel({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
+      {/* Search and Action Header */}
       <div
         className={cn(
-          "relative z-10 flex shrink-0 items-center gap-2 border-b border-white/5 p-3",
+          "relative z-10 flex shrink-0 items-center gap-2 border-b border-border/40 p-3",
           currentBg
         )}
       >
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <Search className="text-muted-foreground/60 absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 pl-8 text-xs"
+            className="h-8 border-border/50 bg-background/60 pl-8 text-xs shadow-2xs backdrop-blur-xs"
           />
         </div>
         {activeFolder === "conversations" && (
           <Button
             size="icon"
             variant="ghost"
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white"
+            className="hover:bg-accent/15 text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/40 bg-card/40 transition-all active:scale-95"
             onClick={onNewConversation}
             title="New conversation"
           >
@@ -91,50 +92,49 @@ export function MessagesConversationPanel({
         )}
       </div>
 
-      {/* Conversation list */}
-      <div className="flex-1 overflow-y-auto p-1.5">
+      {/* Conversation List */}
+      <div
+        className="flex-1 space-y-1 overflow-y-auto p-2"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
+      >
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-3 py-12 text-center">
-            <p className="text-muted-foreground text-sm font-medium">
-              {searchQuery.trim()
-                ? "No matching conversations"
-                : (folderConfig?.emptyTitle ?? "No conversations")}
+          <div className="flex flex-col items-center justify-center p-6 text-center">
+            <p className="text-foreground text-xs font-semibold">
+              {folderConfig?.emptyTitle || "No conversations found"}
             </p>
-            <p className="text-muted-foreground/70 mt-1 text-xs">
-              {searchQuery.trim()
-                ? "Try a different search term"
+            <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+              {searchQuery
+                ? `No conversations match "${searchQuery}"`
                 : (folderConfig?.emptyDescription ?? "")}
             </p>
-            {activeFolder === "conversations" && !searchQuery.trim() && (
+            {activeFolder === "groups" && onOpenGroupsDirectory && (
               <Button
+                variant="outline"
                 size="sm"
-                className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
-                onClick={onNewConversation}
+                className="mt-3 text-xs"
+                onClick={onOpenGroupsDirectory}
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                New Conversation
+                Browse Groups Directory
               </Button>
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {filtered.map((conversation) => (
-              <MessagesConversationCard
-                key={conversation.id}
-                conversation={conversation}
-                isSelected={conversation.id === selectedConversationId}
-                onClick={() => onSelectConversation(conversation.id)}
-                currentUserId={currentUserId}
-                activeFolder={activeFolder}
-                settings={settings}
-                isMuted={mutedConversations.includes(conversation.id)}
-              />
-            ))}
-          </div>
+          filtered.map((conversation) => (
+            <MessagesConversationCard
+              key={conversation.id}
+              conversation={conversation}
+              isSelected={conversation.id === selectedConversationId}
+              onClick={() => onSelectConversation(conversation.id)}
+              currentUserId={currentUserId}
+              activeFolder={activeFolder}
+              settings={settings}
+              isMuted={mutedConversations.includes(conversation.id)}
+            />
+          ))
         )}
       </div>
     </div>

@@ -1,27 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {
-  Globe,
-  BarChart3,
-  Settings,
-  Activity,
-  TrendingUp,
-  Crown,
-  Gauge,
-  Eye,
-  Target,
-  Plus,
-  Home,
-  LogIn,
-  LogOut,
-  BookOpen,
-  History,
-  Shuffle,
-  Search,
-} from "lucide-react";
+import { Globe, BarChart3, Settings, Activity, TrendingUp, Crown, Gauge, Eye, Target, Plus, Home, LogIn, LogOut, BookOpen, History, Shuffle, Search } from "lucide-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { usePathname } from "next/navigation";
@@ -306,7 +286,7 @@ export function useDynamicIslandState() {
   );
 
   const countryIndex = useMemo(() => {
-    const list = extractCountriesList(countriesData);
+    const list = extractCountriesList(countriesData as any);
     return list.map((c) => ({ ...c, _lower: c.name.toLowerCase() }));
   }, [countriesData]);
 
@@ -336,7 +316,11 @@ export function useDynamicIslandState() {
             description: country.economicTier
               ? `Tier: ${country.economicTier}`
               : "View country profile",
-            metadata: { countryName: country.name, economicTier: country.economicTier },
+            metadata: {
+              countryName: country.name,
+              flagUrl: (country as any).flagUrl || (country as any).flag || undefined,
+              economicTier: country.economicTier,
+            },
             action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
           });
         }

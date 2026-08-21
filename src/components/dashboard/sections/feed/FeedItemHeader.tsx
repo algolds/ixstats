@@ -39,7 +39,7 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-white/10 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>
@@ -123,10 +123,10 @@ export function FeedItemHeader({
             className={cn(
               "inline-flex items-center rounded-full border px-2 py-0.5 text-[8.5px] font-medium tracking-tight tabular-nums shadow-xs",
               activity._totalBytes > 0
-                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : activity._totalBytes < 0
-                  ? "border-red-500/25 bg-red-500/10 text-red-400"
-                  : "text-muted-foreground border-white/10 bg-white/5"
+                  ? "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400"
+                  : "text-muted-foreground border-border/40 bg-accent/10"
             )}
           >
             {activity._totalBytes > 0 ? "+" : ""}
