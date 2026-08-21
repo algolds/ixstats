@@ -33,6 +33,16 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🛡️ AST-Backed Import Boundary Enforcement (Wave 3: Plan 153)
+
+- **AST-Backed Router Import Boundary Guard (Plan 153)**:
+  - Replaced text/regex matching with AST-based import analysis using `ts-morph` in `scripts/audit/audit-arch.ts`, evaluating static imports, export-from declarations, side-effect imports, and dynamic `import()` expressions.
+  - Implemented module resolution for `~/` and `@/` path aliases, relative paths (`./`, `../`), extensionless paths, and directory `index.ts` files.
+  - Enforced cross-router boundaries for both nested router groups and flat router file stems.
+  - Extracted shared intelligence alert threshold evaluation into `src/server/shared/intelligence-alert-thresholds.ts`, decoupling `countries/management/lifecycle.ts`, `intelligence/core/dashboard.ts`, and `intelligence/alerts/thresholds.ts` from cross-router dependencies.
+  - Removed helper re-export from `intelligence/alerts/index.ts`.
+  - Added synthetic fixture matrix and test suite `src/tests/scripts/audit-arch-imports.test.ts` covering allowed same-group/shared paths and rejecting all cross-group import forms.
+
 ### 🔒 Security, Authorization & Low-Risk Correctness (Wave 2: Plans 148, 149, 152, 165)
 
 - **Principal-Bound Private Messaging (Plan 148)**:

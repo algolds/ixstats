@@ -5,6 +5,7 @@ import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
 
 export const managementLifecycleProcedures = {
   // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
@@ -53,7 +54,6 @@ export const managementLifecycleProcedures = {
 
         if (targetUserId) {
           try {
-            const { evaluateThresholds } = await import("../../intelligence/alerts");
             await evaluateThresholds(ctx.db, id, targetUserId);
           } catch (e) {
             console.error("[Countries API] Error evaluating thresholds on country update:", e);
