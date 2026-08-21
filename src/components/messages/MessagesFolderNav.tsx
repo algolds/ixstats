@@ -42,38 +42,27 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
     id: "conversations",
     icon: MessageSquare,
-    title: "Conversations",
-    description: "All chat conversations",
+    title: "Messages",
+    description: "Direct, diplomatic, and wiki discussions",
     gradient: "text-emerald-500",
     activeGlow: "bg-emerald-500/10 border-emerald-500/40",
-    emptyTitle: "No conversations yet",
+    emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
-  },
-  {
-    id: "system",
-    icon: Bell,
-    title: "System Alerts",
-    description: "System notifications",
-    gradient: "text-rose-500",
-    activeGlow: "bg-rose-500/10 border-rose-500/40",
-    emptyTitle: "No system alerts",
-    emptyDescription: "Platform notifications will appear here.",
   },
   {
     id: "groups",
     icon: Users,
-    title: "Groups",
-    description: "ThinkTank group chats",
-    gradient: "text-blue-500",
-    activeGlow: "bg-blue-500/10 border-blue-500/40",
-    emptyTitle: "No groups found",
+    title: "ThinkTanks",
+    description: "ThinkTank group chats and working tables",
+    gradient: "text-indigo-500",
+    activeGlow: "bg-indigo-500/10 border-indigo-500/40",
+    emptyTitle: "No ThinkTanks found",
     emptyDescription: "Join or create a ThinkTank group to start collaborating.",
   },
 ];
 
 export function getFolderFromPathname(pathname: string): MessageFolder {
   const cleaned = pathname.replace(/^\/projects\/ixstats/, "");
-  if (cleaned.startsWith("/messages/system")) return "system";
   if (cleaned.startsWith("/messages/groups")) return "groups";
   return "conversations";
 }
@@ -100,16 +89,12 @@ export function MessagesFolderNav({
   // Folder-specific dynamic color accents for the cutout header background
   const folderThemes: Record<MessageFolder, { bg: string; border: string }> = {
     conversations: {
-      bg: "bg-emerald-500/[0.06] dark:bg-emerald-500/10",
+      bg: "bg-emerald-500/[0.04] dark:bg-emerald-500/10",
       border: "border-b border-emerald-500/20",
     },
-    system: {
-      bg: "bg-rose-500/[0.06] dark:bg-rose-500/10",
-      border: "border-b border-rose-500/20",
-    },
     groups: {
-      bg: "bg-blue-500/[0.06] dark:bg-blue-500/10",
-      border: "border-b border-blue-500/20",
+      bg: "bg-indigo-500/[0.04] dark:bg-indigo-500/10",
+      border: "border-b border-indigo-500/20",
     },
   };
 

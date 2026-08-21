@@ -62,14 +62,15 @@ export function formatMessagesConversation(
   const lastMsg = conv.messages?.[0] || conv.lastMessage;
   if (lastMsg) {
     const senderAccount = accountMap.get(lastMsg.userId);
+    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
     lastMessageFormatted = {
       id: lastMsg.id,
-      content: lastMsg.isDeleted ? "This message was deleted" : lastMsg.content,
+      content: isDeleted ? "This message was deleted" : lastMsg.content,
       senderId: lastMsg.userId,
       senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
       senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.createdAt),
-      isDeleted: Boolean(lastMsg.isDeleted),
+      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
+      isDeleted,
     };
   }
 
@@ -78,9 +79,9 @@ export function formatMessagesConversation(
     subject: conv.subject ?? null,
     isGroup: Boolean(conv.isGroup),
     channelId: conv.channelId ?? null,
-    createdAt: new Date(conv.createdAt),
-    updatedAt: new Date(conv.updatedAt),
-    lastMessageAt: new Date(conv.lastMessageAt || conv.updatedAt),
+    createdAt: new Date(conv.createdAt || Date.now()),
+    updatedAt: new Date(conv.updatedAt || Date.now()),
+    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
     source: conv.source || "thinkshare",
     participantCount: participants.length,
     unreadCount,
@@ -103,29 +104,31 @@ export function formatMessagesMessage(
     accountType: "country" as const,
   };
 
+  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
+  const isEdited = Boolean(msg.editedAt || msg.isEdited);
+  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
+
   let replyToFormatted = undefined;
   if (msg.replyTo) {
     const replySender = accountMap.get(msg.replyTo.userId);
+    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
     replyToFormatted = {
       id: msg.replyTo.id,
-      content: msg.replyTo.isDeleted ? "This message was deleted" : msg.replyTo.content,
+      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
       senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
     };
   }
 
-  const rawReactions = msg.reactions || [];
-  const reactionMap = new Map<string, string[]>();
-  for (const r of rawReactions) {
-    const users = reactionMap.get(r.emoji) || [];
-    users.push(r.userId);
-    reactionMap.set(r.emoji, users);
-  }
-
-  const reactions = Array.from(reactionMap.entries()).map(([emoji, users]) => ({
+  const rawReactions = msg.reactions
+    ? typeof msg.reactions === "string"
+      ? JSON.parse(msg.reactions)
+      : msg.reactions
+    : {};
+  const reactions = Object.entries(rawReactions).map(([emoji, count]) => ({
     emoji,
-    count: users.length,
-    users,
-    hasReacted: users.includes(actorId),
+    count: count as number,
+    users: [],
+    hasReacted: false,
   }));
 
   return {
@@ -133,14 +136,18 @@ export function formatMessagesMessage(
     conversationId: msg.conversationId,
     senderId: msg.userId,
     sender: senderAccount,
-    content: msg.isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments ?? [],
+    content: isDeleted ? "This message was deleted" : msg.content,
+    attachments: msg.attachments
+      ? typeof msg.attachments === "string"
+        ? JSON.parse(msg.attachments)
+        : msg.attachments
+      : [],
     reactions,
     replyTo: replyToFormatted,
-    isDeleted: Boolean(msg.isDeleted),
-    isEdited: Boolean(msg.isEdited),
-    createdAt: new Date(msg.createdAt),
-    updatedAt: new Date(msg.updatedAt),
+    isDeleted,
+    isEdited,
+    createdAt: timestamp,
+    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
     source: msg.source || "thinkshare",
     isOwn: msg.userId === actorId,
   };
@@ -173,22 +180,23 @@ export function formatThinkpagesConversation(
   const lastMsg = conv.messages?.[0] || conv.lastMessage;
   if (lastMsg) {
     const senderAccount = accountMap.get(lastMsg.userId);
+    const isDeleted = Boolean(lastMsg.deletedAt || lastMsg.isDeleted);
     lastMessageFormatted = {
       id: lastMsg.id,
-      content: lastMsg.isDeleted ? "This message was deleted" : lastMsg.content,
+      content: isDeleted ? "This message was deleted" : lastMsg.content,
       senderId: lastMsg.userId,
       senderName: senderAccount?.displayName ?? lastMsg.senderName ?? "Unknown",
       senderAvatar: senderAccount?.profileImageUrl ?? lastMsg.senderAvatar ?? null,
-      createdAt: new Date(lastMsg.createdAt),
-      isDeleted: Boolean(lastMsg.isDeleted),
+      createdAt: new Date(lastMsg.ixTimeTimestamp || lastMsg.createdAt || Date.now()),
+      isDeleted,
     };
   }
 
   return {
     id: conv.id,
-    createdAt: new Date(conv.createdAt),
-    updatedAt: new Date(conv.updatedAt),
-    lastMessageAt: new Date(conv.lastMessageAt || conv.updatedAt),
+    createdAt: new Date(conv.createdAt || Date.now()),
+    updatedAt: new Date(conv.updatedAt || Date.now()),
+    lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
     channelId: conv.channelId ?? undefined,
     isGroup: Boolean(conv.isGroup),
     subject: conv.subject ?? undefined,
@@ -206,13 +214,17 @@ export function formatThinkpagesMessage(
   accountMap: Map<string, UserAccount>
 ) {
   const senderAccount = accountMap.get(msg.userId);
+  const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
+  const isEdited = Boolean(msg.editedAt || msg.isEdited);
+  const timestamp = new Date(msg.ixTimeTimestamp || msg.createdAt || Date.now());
 
   let replyToFormatted = undefined;
   if (msg.replyTo) {
     const replySender = accountMap.get(msg.replyTo.userId);
+    const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
     replyToFormatted = {
       id: msg.replyTo.id,
-      content: msg.replyTo.isDeleted ? "This message was deleted" : msg.replyTo.content,
+      content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
       senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
     };
   }
@@ -221,13 +233,17 @@ export function formatThinkpagesMessage(
     id: msg.id,
     conversationId: msg.conversationId,
     userId: msg.userId,
-    content: msg.isDeleted ? "This message was deleted" : msg.content,
-    attachments: msg.attachments ?? [],
+    content: isDeleted ? "This message was deleted" : msg.content,
+    attachments: msg.attachments
+      ? typeof msg.attachments === "string"
+        ? JSON.parse(msg.attachments)
+        : msg.attachments
+      : [],
     replyToId: msg.replyToId ?? undefined,
-    isDeleted: Boolean(msg.isDeleted),
-    isEdited: Boolean(msg.isEdited),
-    createdAt: new Date(msg.createdAt),
-    updatedAt: new Date(msg.updatedAt),
+    isDeleted,
+    isEdited,
+    createdAt: timestamp,
+    updatedAt: new Date(msg.editedAt || msg.ixTimeTimestamp || Date.now()),
     senderName: senderAccount?.displayName ?? msg.senderName ?? "Unknown",
     senderAvatar: senderAccount?.profileImageUrl ?? msg.senderAvatar ?? null,
     replyTo: replyToFormatted,

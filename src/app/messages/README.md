@@ -9,10 +9,9 @@ Unified messaging backbone for IxStats. ThinkShare is a sub-system of ThinkPages
 The page is a catch-all (`[[...folder]]`) rendered by `MessagesRouter`, which uses client-side `history.pushState` navigation (no Next.js route transitions). The active folder is derived from the pathname via `getFolderFromPathname`.
 
 | Route | Folder | Purpose |
-|-------|--------|---------|
-| `/messages` | `conversations` | All chat conversations (default) |
-| `/messages/system` | `system` | System alerts / notifications |
-| `/messages/groups` | `groups` | ThinkTank group directory + group chats |
+|---|---|---|
+| `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages thread) |
+| `/messages/groups` | `groups` | ThinkTank group directory + working tables |
 
 A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL).
 

@@ -303,7 +303,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       mockDb.thinkshareMessage.findUnique.mockResolvedValue({
         id: "m_1",
         userId: "user_1",
-        isDeleted: false,
+        deletedAt: null,
       });
 
       await service.editMessage("user_1", {
@@ -314,7 +314,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.thinkshareMessage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "m_1" },
-          data: expect.objectContaining({ content: "Updated content", isEdited: true }),
+          data: expect.objectContaining({ content: "Updated content", editedAt: expect.any(Date) }),
         })
       );
     });
@@ -323,7 +323,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       mockDb.thinkshareMessage.findUnique.mockResolvedValue({
         id: "m_1",
         userId: "other_user",
-        isDeleted: false,
+        deletedAt: null,
       });
 
       await expect(
@@ -335,7 +335,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       mockDb.thinkshareMessage.findUnique.mockResolvedValue({
         id: "m_1",
         userId: "user_1",
-        isDeleted: false,
+        deletedAt: null,
       });
 
       await service.deleteMessage("user_1", { messageId: "m_1" });
@@ -343,7 +343,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.thinkshareMessage.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "m_1" },
-          data: expect.objectContaining({ isDeleted: true, content: "This message was deleted" }),
+          data: expect.objectContaining({ deletedAt: expect.any(Date), content: "This message was deleted" }),
         })
       );
     });

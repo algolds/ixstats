@@ -84,6 +84,8 @@ export interface ThinkShareAccount {
   username: string;
   displayName: string;
   profileImageUrl?: string | null;
+  countryFlag?: string | null;
+  countryName?: string | null;
   accountType: "government" | "media" | "citizen" | "country";
 }
 
@@ -94,6 +96,8 @@ export interface ThinkShareParticipant {
   id: string;
   accountId: string;
   account: ThinkShareAccount;
+  countryFlag?: string | null;
+  countryName?: string | null;
   isActive: boolean;
   joinedAt?: Date;
   lastReadAt?: Date;
@@ -117,6 +121,10 @@ export interface ThinkShareMessage {
   replyTo?: ThinkShareMessage;
   readReceipts?: MessageReadReceipt[];
   isSystem?: boolean;
+  source?: string;
+  classification?: string | null;
+  priority?: string | null;
+  subject?: string | null;
   editedAt?: Date;
   deletedAt?: Date;
 }
@@ -174,6 +182,10 @@ export interface ThinkShareConversation {
   type: "direct" | "group" | "channel";
   name?: string | null;
   avatar?: string | null;
+  source?: string;
+  conversationType?: string;
+  diplomaticClassification?: string | null;
+  priority?: string | null;
   isActive: boolean;
   lastActivity: Date;
   otherParticipants: ThinkShareParticipant[];

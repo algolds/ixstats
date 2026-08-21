@@ -23,6 +23,8 @@ import type {
   LeaveConversationInput,
   SearchUsersInput,
   UpdatePresenceInput,
+  SendAdminBroadcastInput,
+  SendAdminMessageInput,
 } from "./contracts";
 import {
   MessagingForbiddenError,
@@ -148,9 +150,9 @@ export class MessagingService {
           const count = await this.db.thinkshareMessage.count({
             where: {
               conversationId: mp.conversationId,
-              createdAt: { gt: mp.lastReadAt || new Date(0) },
+              ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
               userId: { not: actorId },
-              isDeleted: false,
+              deletedAt: null,
             },
           });
           unreadMap.set(mp.conversationId, count);
@@ -219,11 +221,11 @@ export class MessagingService {
       where: {
         conversationId: { in: conversationIds },
         userId: { not: actorId },
-        isDeleted: false,
+        deletedAt: null,
       },
       select: {
         conversationId: true,
-        createdAt: true,
+        ixTimeTimestamp: true,
       },
     });
 
@@ -316,9 +318,9 @@ export class MessagingService {
           const count = await this.db.thinkshareMessage.count({
             where: {
               conversationId: mp.conversationId,
-              createdAt: { gt: mp.lastReadAt || new Date(0) },
+              ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
               userId: { not: actorId },
-              isDeleted: false,
+              deletedAt: null,
             },
           });
           unreadMap.set(mp.conversationId, count);
@@ -373,15 +375,14 @@ export class MessagingService {
     const where: any = { conversationId };
 
     if (cursor) {
-      where.createdAt = direction === "after" ? { gt: new Date(cursor) } : { lt: new Date(cursor) };
+      where.ixTimeTimestamp = direction === "after" ? { gt: new Date(cursor) } : { lt: new Date(cursor) };
     }
 
     const messages = await this.db.thinkshareMessage.findMany({
       where,
       take: limit + 1,
-      orderBy: { createdAt: direction === "after" ? "asc" : "desc" },
+      orderBy: { ixTimeTimestamp: direction === "after" ? "asc" : "desc" },
       include: {
-        reactions: true,
         replyTo: true,
       },
     });
@@ -389,7 +390,7 @@ export class MessagingService {
     let nextCursor: string | null = null;
     if (messages.length > limit) {
       const nextItem = messages.pop()!;
-      nextCursor = nextItem.createdAt.toISOString();
+      nextCursor = nextItem.ixTimeTimestamp.toISOString();
     }
 
     const orderedMessages = direction === "after" ? messages : messages.reverse();
@@ -422,9 +423,9 @@ export class MessagingService {
     return await this.db.$transaction(async (tx: any) => {
       const conversation = await tx.thinkshareConversation.create({
         data: {
-          subject: input.subject,
-          isGroup,
-          channelId: input.channelId,
+          name: input.subject,
+          type: isGroup ? "group" : "direct",
+          channelType: input.channelId,
           source: input.source || "thinkshare",
           participants: {
             create: allParticipants.map((uid) => ({
@@ -490,7 +491,7 @@ export class MessagingService {
           userId: actorId,
           content: input.content,
           replyToId: input.replyToId,
-          attachments: input.attachments ?? [],
+          attachments: input.attachments ? JSON.stringify(input.attachments) : null,
           source: input.source || conv?.source || "thinkshare",
           subject: input.subject,
         },
@@ -502,7 +503,7 @@ export class MessagingService {
       await tx.thinkshareConversation.update({
         where: { id: input.conversationId },
         data: {
-          lastMessageAt: new Date(),
+          lastActivity: new Date(),
           updatedAt: new Date(),
         },
       });
@@ -563,14 +564,13 @@ export class MessagingService {
 
     if (!msg) throw new MessagingNotFoundError();
     if (msg.userId !== actorId) throw new MessagingForbiddenError("Cannot edit another user's message");
-    if (msg.isDeleted) throw new MessagingValidationError("Cannot edit a deleted message");
+    if (msg.deletedAt) throw new MessagingValidationError("Cannot edit a deleted message");
 
     return await this.db.thinkshareMessage.update({
       where: { id: input.messageId },
       data: {
         content: input.content,
-        isEdited: true,
-        updatedAt: new Date(),
+        editedAt: new Date(),
       },
     });
   }
@@ -586,9 +586,8 @@ export class MessagingService {
     return await this.db.thinkshareMessage.update({
       where: { id: input.messageId },
       data: {
-        isDeleted: true,
+        deletedAt: new Date(),
         content: "This message was deleted",
-        updatedAt: new Date(),
       },
     });
   }
@@ -788,6 +787,101 @@ export class MessagingService {
     }
 
     return results;
+  }
+
+  public async sendAdminBroadcast(actorId: string, input: SendAdminBroadcastInput) {
+    const notification = await this.db.notification.create({
+      data: {
+        title: input.title,
+        description: input.description,
+        message: input.message || input.description,
+        type: input.type || "system",
+        category: input.category || "system",
+        priority: input.level || "medium",
+        href: input.href,
+        userId: input.scope === "user" && input.userId ? input.userId : null,
+        countryId: input.scope === "country" && input.countryId ? input.countryId : null,
+        actionable: input.actionable ?? false,
+        metadata: input.metadata ? (typeof input.metadata === "string" ? input.metadata : JSON.stringify(input.metadata)) : null,
+      },
+    });
+
+    if (this.websocket?.broadcastMessage) {
+      this.websocket.broadcastMessage({
+        type: "notification:new",
+        notification,
+      });
+    }
+
+    return notification;
+  }
+
+  public async sendAdminMessage(actorId: string, input: SendAdminMessageInput) {
+    if (!input.targetUserId) {
+      throw new MessagingValidationError("targetUserId is required");
+    }
+
+    let conversation = await this.db.thinkshareConversation.findFirst({
+      where: {
+        type: "direct",
+        source: input.source || "system",
+        participants: {
+          every: {
+            userId: { in: [actorId, input.targetUserId] },
+          },
+        },
+      },
+      include: { participants: true },
+    });
+
+    if (!conversation) {
+      conversation = await this.db.thinkshareConversation.create({
+        data: {
+          type: "direct",
+          conversationType: input.conversationType || "official",
+          diplomaticClassification: input.classification || null,
+          source: input.source || "system",
+          subject: input.subject || null,
+          participants: {
+            create: [
+              { userId: actorId, role: "admin" },
+              { userId: input.targetUserId, role: "member" },
+            ],
+          },
+        },
+        include: { participants: true },
+      });
+    }
+
+    const message = await this.db.thinkshareMessage.create({
+      data: {
+        conversationId: conversation.id,
+        userId: actorId,
+        content: input.content,
+        source: input.source || "system",
+        classification: input.classification || null,
+        subject: input.subject || null,
+        isSystem: input.source === "system",
+      },
+    });
+
+    await this.db.thinkshareConversation.update({
+      where: { id: conversation.id },
+      data: { lastActivity: new Date() },
+    });
+
+    if (this.websocket?.broadcastToUsers) {
+      this.websocket.broadcastToUsers([input.targetUserId], "message:new", {
+        type: "message:new",
+        conversationId: conversation.id,
+        messageId: message.id,
+        accountId: actorId,
+        content: input.content,
+        timestamp: message.createdAt.toISOString(),
+      });
+    }
+
+    return { success: true, conversationId: conversation.id, messageId: message.id };
   }
 }
 

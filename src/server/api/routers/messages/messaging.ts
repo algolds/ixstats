@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { validateNoXSS } from "~/lib/utils";
 import { createMessagingService } from "~/server/modules/messaging";
@@ -52,25 +52,25 @@ export const messagesMessagingRouter = createTRPCRouter({
             profileImageUrl: null,
             accountType: "country" as const,
           },
-          content: m.isDeleted ? "This message was deleted" : m.content,
+          content: m.deletedAt ? "This message was deleted" : m.content,
           messageType: m.messageType || "text",
           replyToId: m.replyToId,
           replyTo: m.replyTo
             ? {
                 id: m.replyTo.id,
                 accountId: m.replyTo.userId,
-                content: m.replyTo.content,
-                ixTimeTimestamp: m.replyTo.createdAt || m.replyTo.ixTimeTimestamp,
+                content: m.replyTo.deletedAt ? "This message was deleted" : m.replyTo.content,
+                ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
               }
             : null,
           reactions: m.reactions ? (typeof m.reactions === "string" ? JSON.parse(m.reactions) : m.reactions) : {},
           mentions: m.mentions ? (typeof m.mentions === "string" ? JSON.parse(m.mentions) : m.mentions) : [],
           attachments: m.attachments ? (typeof m.attachments === "string" ? JSON.parse(m.attachments) : m.attachments) : [],
           isSystem: Boolean(m.isSystem),
-          ixTimeTimestamp: m.createdAt,
-          createdAt: m.createdAt,
-          editedAt: m.updatedAt,
-          deletedAt: m.isDeleted ? m.updatedAt : null,
+          ixTimeTimestamp: m.ixTimeTimestamp,
+          createdAt: m.ixTimeTimestamp,
+          editedAt: m.editedAt,
+          deletedAt: m.deletedAt,
           source: m.source || "thinkshare",
           classification: m.classification,
           priority: m.priority,
@@ -299,5 +299,67 @@ export const messagesMessagingRouter = createTRPCRouter({
         messageId: input.messageId,
         emoji: input.reaction,
       });
+    }),
+
+  /**
+   * Send an admin broadcast / platform alert / system notification.
+   */
+  sendAdminBroadcast: adminProcedure
+    .input(
+      z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        message: z.string().optional(),
+        category: z.string().optional().default("system"),
+        level: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+        type: z.string().optional().default("system"),
+        href: z.string().optional(),
+        scope: z.enum(["global", "country", "user"]).default("global"),
+        countryId: z.string().optional(),
+        userId: z.string().optional(),
+        actionable: z.boolean().default(false),
+        metadata: z.any().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
+      });
+
+      const actorId = ctx.auth?.userId || "system-admin";
+      return await messagingService.sendAdminBroadcast(actorId, input);
+    }),
+
+  /**
+   * Send a direct message or official dispatch from administrator / system.
+   */
+  sendAdminMessage: adminProcedure
+    .input(
+      z.object({
+        targetUserId: z.string().min(1),
+        content: z.string().min(1),
+        subject: z.string().optional(),
+        source: z.enum(["thinkshare", "thinktank", "diplomatic", "wiki", "forum", "system"]).default("system"),
+        conversationType: z.enum(["personal", "diplomatic", "official"]).default("official"),
+        classification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      validateNoXSS(input.content);
+
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
+      });
+
+      const actorId = ctx.auth?.userId || "system-admin";
+      return await messagingService.sendAdminMessage(actorId, input);
     }),
 });

@@ -323,6 +323,37 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         data: { memberCount: { increment: 1 } },
       });
 
+      // Synchronize ConversationParticipant if group has a linked conversation
+      if (group.conversationId) {
+        try {
+          const existingConvParticipant = await db.conversationParticipant.findUnique({
+            where: {
+              conversationId_userId: {
+                conversationId: group.conversationId,
+                userId: input.userId,
+              },
+            },
+          });
+
+          if (existingConvParticipant) {
+            await db.conversationParticipant.update({
+              where: { id: existingConvParticipant.id },
+              data: { isActive: true, joinedAt: new Date() },
+            });
+          } else {
+            await db.conversationParticipant.create({
+              data: {
+                conversationId: group.conversationId,
+                userId: input.userId,
+                role: "participant",
+              },
+            });
+          }
+        } catch (e) {
+          console.warn("[ThinkTanks] Failed to sync conversation participant on join:", e);
+        }
+      }
+
       // Notify group admins about new member
       try {
         const admins = await db.thinktankMember.findMany({
@@ -409,8 +440,21 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
       const updatedGroup = await db.thinktankGroup.update({
         where: { id: input.groupId },
         data: { memberCount: { decrement: 1 } },
-        select: { name: true, type: true },
+        select: { name: true, type: true, conversationId: true },
       });
+
+      // Deactivate ConversationParticipant if linked conversation exists
+      if (updatedGroup.conversationId) {
+        await db.conversationParticipant
+          .updateMany({
+            where: {
+              conversationId: updatedGroup.conversationId,
+              userId: input.userId,
+            },
+            data: { isActive: false, leftAt: new Date() },
+          })
+          .catch(() => {});
+      }
 
       // Notify group admins about member leaving
       try {
@@ -511,7 +555,7 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
       // Get group info before deletion for notification
       const group = await db.thinktankGroup.findUnique({
         where: { id: input.groupId },
-        select: { name: true, type: true },
+        select: { name: true, type: true, conversationId: true },
       });
 
       await db.thinktankMember.delete({
@@ -528,6 +572,19 @@ export const thinkpagesThinktanksMembershipRouter = createTRPCRouter({
         where: { id: input.groupId },
         data: { memberCount: { decrement: 1 } },
       });
+
+      // Deactivate ConversationParticipant if linked conversation exists
+      if (group?.conversationId) {
+        await db.conversationParticipant
+          .updateMany({
+            where: {
+              conversationId: group.conversationId,
+              userId: input.userId,
+            },
+            data: { isActive: false, leftAt: new Date() },
+          })
+          .catch(() => {});
+      }
 
       // Notify the removed user
       if (group) {

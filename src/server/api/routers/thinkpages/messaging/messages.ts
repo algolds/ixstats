@@ -56,12 +56,17 @@ export const thinkpagesMessagingMessagesRouter = createTRPCRouter({
 
         const messages = result.messages.map((msg: any) => {
           const senderAccount = result.accountMap.get(msg.userId);
+          const isDeleted = Boolean(msg.deletedAt || msg.isDeleted);
+          const isEdited = Boolean(msg.editedAt || msg.isEdited);
+          const timestamp = msg.ixTimeTimestamp || msg.createdAt;
+
           let replyToFormatted = undefined;
           if (msg.replyTo) {
             const replySender = result.accountMap.get(msg.replyTo.userId);
+            const replyDeleted = Boolean(msg.replyTo.deletedAt || msg.replyTo.isDeleted);
             replyToFormatted = {
               id: msg.replyTo.id,
-              content: msg.replyTo.isDeleted ? "This message was deleted" : msg.replyTo.content,
+              content: replyDeleted ? "This message was deleted" : msg.replyTo.content,
               senderName: replySender?.displayName ?? msg.replyTo.senderName ?? "Unknown",
             };
           }
@@ -70,13 +75,13 @@ export const thinkpagesMessagingMessagesRouter = createTRPCRouter({
             id: msg.id,
             conversationId: msg.conversationId,
             userId: msg.userId,
-            content: msg.isDeleted ? "This message was deleted" : msg.content,
+            content: isDeleted ? "This message was deleted" : msg.content,
             attachments: msg.attachments ?? [],
             replyToId: msg.replyToId ?? undefined,
-            isDeleted: Boolean(msg.isDeleted),
-            isEdited: Boolean(msg.isEdited),
-            createdAt: msg.createdAt,
-            updatedAt: msg.updatedAt,
+            isDeleted,
+            isEdited,
+            createdAt: timestamp,
+            updatedAt: msg.editedAt || timestamp,
             senderName: senderAccount?.displayName ?? msg.senderName ?? "Unknown",
             senderAvatar: senderAccount?.profileImageUrl ?? msg.senderAvatar ?? null,
             replyTo: replyToFormatted,

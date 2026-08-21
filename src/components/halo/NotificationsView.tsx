@@ -258,13 +258,13 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="text-foreground flex items-center gap-2 text-sm font-bold tracking-tight">
-          <BellRing className="h-4 w-4 text-blue-400" />
+          <BellRing className="h-4 w-4 text-amber-400" />
           <PreText className="text-inherit" whiteSpace="nowrap">
             {isExecutiveMode ? "Intelligence Hub" : "Alert Center"}
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="bg-blue-500 min-w-[18px] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold text-white shadow-xs"
+              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white shadow-xs"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -276,7 +276,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             <button
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
               title="Mark all notifications and messages as read"
             >
               <CheckCircle className="h-3 w-3 text-emerald-400" />
@@ -285,17 +285,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
               </PreText>
             </button>
           )}
-          <Link
-            href="/messages"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 items-center gap-1 rounded-md px-2 text-xs font-semibold transition-all active:scale-95"
-            title="Open Messages Hub"
-          >
-            <MessageCircle className="h-3 w-3 text-blue-400" />
-            <span className="hidden sm:inline">Messages</span>
-          </Link>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
             title="Close tray"
           >
             <X className="h-3.5 w-3.5" />
@@ -327,10 +319,10 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">
-                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-blue-400")} />
+                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-amber-400")} />
                 <span>{tab.label}</span>
                 {tab.unread > 0 && (
-                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-500 px-1 text-[9px] font-bold text-white shadow-2xs">
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow-2xs">
                     {tab.unread > 9 ? "9+" : tab.unread}
                   </span>
                 )}
@@ -479,9 +471,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
           {isUltra ? (
-            <Minimize2 className="h-3.5 w-3.5 text-blue-400" />
+            <Minimize2 className="h-3.5 w-3.5 text-foreground/70" />
           ) : (
-            <Maximize2 className="h-3.5 w-3.5 text-blue-400" />
+            <Maximize2 className="h-3.5 w-3.5 text-foreground/70" />
           )}
         </button>
       </div>

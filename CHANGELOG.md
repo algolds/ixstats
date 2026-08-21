@@ -36,14 +36,16 @@ capability integer. Each release entry below lists which components advanced and
 ### 🔔 Native Alert Center & Messages System Design Audit
 
 - **Native Halo Alert Center & Merged Notifications Tray**:
-  - Merged the standalone Message trigger back into a single `<Bell>` icon in `src/components/halo/CompactView.tsx`, showing the unified `totalUnreadCount` (`alerts + messages`) with an Apple-style solid `bg-blue-500` badge.
+  - Merged the standalone Message trigger back into a single `<Bell>` icon in `src/components/halo/CompactView.tsx`, showing the unified `totalUnreadCount` (`alerts + messages`) with an Apple-style solid amber accent badge.
   - Redesigned `src/components/halo/NotificationsView.tsx` as a unified **Alert Center** featuring a two-way Apple-designed segmented switcher between **"Notifications"** and **"Messages"** with `layoutId="halo-notif-tab-indicator"` and spring physics (`stiffness: 450, damping: 30`).
   - Integrated `api.messages.getConversationsByFolder.useQuery({ folder: "inbox" })` and `markAllMessagesMutation`, with a single "Read all" action that simultaneously marks all notifications and inbox messages as read.
   - Created modular subcomponents in `src/components/halo/tray/` (`types.ts`, `MessageTrayItem.tsx`, `NotificationRow.tsx`), displaying sender national flags, participant titles, dispatch badges, excerpts, unread pulse indicators, and 1-click jump to conversation threads while enforcing the ≤700-line architecture ceiling.
 - **Comprehensive Design & Accessibility Audit of `/messages`**:
   - Audited and updated the entire messaging suite with Apple HIG, Emil Kowalski motion craft, and Vercel React Best Practices.
-  - **Light/Dark Mode Theme Compliance**: Fixed washed-out surfaces and unreadable text by replacing hardcoded `bg-white/[0.03]`, `bg-white/10`, `text-slate-100`, and `text-slate-200` with semantic theme tokens (`border-border/50 bg-card/60 text-foreground dark:bg-card/80`) across `MessagesLayout.tsx`, `MessagesConversationCard.tsx`, `MessagesBubble.tsx`, and `MessagesChatPanel.tsx` (`SystemAlertCard`).
-  - **Folder Switcher**: Converted static tab buttons in `MessagesFolderNav.tsx` to an Apple-style frosted segmented switcher with `motion.div` `layoutId="messages-folder-tab"` spring animation, and themed settings popover.
+  - **Light/Dark Mode Theme Compliance**: Fixed washed-out surfaces and unreadable text by replacing hardcoded `bg-white/[0.03]`, `bg-white/10`, `text-slate-100`, and `text-slate-200` with semantic theme tokens (`border-border/50 bg-card/60 text-foreground dark:bg-card/80`) across `MessagesLayout.tsx`, `MessagesConversationCard.tsx`, `MessagesBubble.tsx`, and `MessagesChatPanel.tsx`.
+  - **Folder Taxonomy & Sub-Filters**: Simplified folder navigation to **Messages** and **ThinkTanks**, and added sub-channel filter chips (**All**, **Diplomatic**, **Direct**, **Community**) with animated spring pill indicators.
+  - **Pinned System Broadcast Stream**: Added pinned **System Messages** stream in the conversation list with official broadcast cards, categorized alert glyphs, and read-only banner safeguards.
+  - **Inline Message Editing & Emoji Reactions**: Added inline textarea editing with keyboard shortcuts (Enter to save, Esc to cancel), quick emoji reaction picker, and delete confirmation popovers in `MessagesBubble.tsx`.
   - **Tactile Micro-interactions & National Flags**: Integrated `UnifiedCountryFlag` on conversation cards with normalized flag URLs, unread badge pulses, and `:active:scale-[0.985]` press feedback.
   - **Input Bar & Empty States**: Themed Stash lore attachment trigger in `MessagesInputBar.tsx` and refreshed action buttons in `MessagesEmptyState.tsx`.
 

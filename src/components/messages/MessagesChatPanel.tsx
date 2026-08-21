@@ -10,11 +10,13 @@ import { MessagesInputBar } from "./MessagesInputBar";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
-import { Crown, Shield, TrendingUp, Newspaper, Trash2, Loader2, X } from "lucide-react";
+import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
+import { Crown, Shield, ShieldAlert, TrendingUp, Radio, Sparkles, X, ExternalLink, BellRing } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
 import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
+import Link from "next/link";
 
 // Pretext shrinkwrap / time formatting helper
 function formatTimestamp(date: Date | string): string {
@@ -32,209 +34,133 @@ function formatTimestamp(date: Date | string): string {
   });
 }
 
-function getSystemAlertStyle(content: string) {
-  const text = content.toLowerCase();
+function getSystemAlertStyle(content: string, type?: string) {
+  const text = (content + " " + (type || "")).toLowerCase();
   if (
     text.includes("diplomatic") ||
     text.includes("treaty") ||
     text.includes("embassy") ||
     text.includes("alliance") ||
-    text.includes("peace")
+    text.includes("summons")
   ) {
     return {
       icon: Crown,
-      borderClass: "border-l-3 border-l-amber-500",
-      iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-      label: "Diplomatic Alert",
-      type: "diplomatic",
+      iconColor: "text-amber-500 bg-amber-500/10 ring-amber-500/20",
+      badgeClass: "text-amber-500 bg-amber-500/10",
+      label: "Diplomatic Dispatch",
     };
   }
   if (
     text.includes("spy") ||
-    text.includes("intelligence") ||
     text.includes("security") ||
     text.includes("threat") ||
-    text.includes("breach") ||
-    text.includes("covert") ||
-    text.includes("sabotage")
+    text.includes("crisis") ||
+    text.includes("sabotage") ||
+    text.includes("alert")
   ) {
     return {
-      icon: Shield,
-      borderClass: "border-l-3 border-l-rose-500",
-      iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+      icon: ShieldAlert,
+      iconColor: "text-rose-500 bg-rose-500/10 ring-rose-500/20",
+      badgeClass: "text-rose-500 bg-rose-500/10",
       label: "Security Alert",
-      type: "security",
     };
   }
   if (
     text.includes("gdp") ||
-    text.includes("tax") ||
-    text.includes("income") ||
     text.includes("economy") ||
-    text.includes("gold") ||
     text.includes("market") ||
     text.includes("trade") ||
-    text.includes("credits")
+    text.includes("reward") ||
+    text.includes("achievement")
   ) {
     return {
       icon: TrendingUp,
-      borderClass: "border-l-3 border-l-emerald-500",
-      iconColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-      label: "Economic Alert",
-      type: "economic",
+      iconColor: "text-emerald-500 bg-emerald-500/10 ring-emerald-500/20",
+      badgeClass: "text-emerald-500 bg-emerald-500/10",
+      label: "Economic & Rewards",
     };
   }
   return {
-    icon: Newspaper,
-    borderClass: "border-l-3 border-l-blue-500",
-    iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-    label: "System Alert",
-    type: "system",
+    icon: Radio,
+    iconColor: "text-purple-500 bg-purple-500/10 ring-purple-500/20",
+    badgeClass: "text-purple-500 bg-purple-500/10",
+    label: "Platform Bulletin",
   };
 }
 
-function SystemAlertCard({ message, onDelete }: { message: any; onDelete?: () => void }) {
-  const { icon: Icon, borderClass, iconColor, label } = getSystemAlertStyle(message.content);
-
-  return (
-    <div
-      className={cn(
-        "relative mx-4 my-3 flex gap-4 rounded-xl border border-border/50 bg-card/60 p-4 shadow-sm transition-all duration-200 hover:bg-card/90",
-        borderClass
-      )}
-    >
-      <div
-        className={cn(
-          "flex shrink-0 items-center justify-center self-start rounded-lg border p-2.5",
-          iconColor
-        )}
-      >
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <div className="min-w-0 flex-1 pr-6">
-        <div className="mb-1 flex items-center justify-between">
-          <span className="text-[10px] font-semibold tracking-wider uppercase opacity-85">
-            {label}
-          </span>
-          <span className="text-muted-foreground/70 text-[10px] font-medium tabular-nums">
-            {formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}
-          </span>
-        </div>
-        <div
-          className="text-foreground text-xs leading-relaxed font-semibold [&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>p]:mb-0"
-          dangerouslySetInnerHTML={{ __html: sanitizeUserContent(message.content) }}
-        />
-      </div>
-      {onDelete && (
-        <button
-          onClick={onDelete}
-          className="text-muted-foreground hover:bg-accent/15 hover:text-destructive absolute top-3 right-3 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
-          title="Delete message"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
-}
-
-function NotificationCard({
-  notification,
+function SystemBroadcastCard({
+  item,
   onDismiss,
 }: {
-  notification: any;
+  item: any;
   onDismiss?: () => void;
 }) {
-  const getNotificationStyle = (type: string, priority: string) => {
-    const p = priority.toLowerCase();
-    const t = type.toLowerCase();
-
-    if (p === "critical" || p === "high" || t === "error" || t === "crisis") {
-      return {
-        icon: Shield,
-        borderClass: "border-l-3 border-l-rose-500",
-        iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
-        label: "Critical Notification",
-      };
-    }
-    if (t === "success") {
-      return {
-        icon: TrendingUp,
-        borderClass: "border-l-3 border-l-emerald-500",
-        iconColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-        label: "Success Notification",
-      };
-    }
-    if (t === "warning" || t === "alert") {
-      return {
-        icon: Crown,
-        borderClass: "border-l-3 border-l-amber-500",
-        iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-        label: "Warning Notification",
-      };
-    }
-    return {
-      icon: Newspaper,
-      borderClass: "border-l-3 border-l-blue-500",
-      iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-      label: "Notification",
-    };
-  };
-
-  const {
-    icon: Icon,
-    borderClass,
-    iconColor,
-    label,
-  } = getNotificationStyle(notification.type ?? "info", notification.priority ?? "medium");
+  const content = item.description || item.message || item.content || "";
+  const title = item.title || item.subject || "System Notification";
+  const { icon: Icon, iconColor, badgeClass, label } = getSystemAlertStyle(
+    title + " " + content,
+    item.type || item.category
+  );
 
   return (
-    <div
-      className={cn(
-        "relative mx-4 my-3 flex gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-left shadow-lg shadow-black/10 transition-all duration-300 hover:scale-[1.005] hover:bg-white/[0.04]",
-        borderClass,
-        !notification.read && "border-blue-500/10 bg-blue-500/[0.03]"
-      )}
-    >
+    <div className="relative mx-4 my-2.5 flex gap-3.5 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-2xs backdrop-blur-md transition-all duration-150 hover:border-border/80 hover:bg-card/90">
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center self-start rounded-lg border p-2.5",
+          "flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl ring-1 shadow-2xs",
           iconColor
         )}
       >
-        <Icon className="h-4.5 w-4.5" />
+        <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1 pr-6">
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold tracking-wider uppercase opacity-85">
+            <span
+              className={cn(
+                "rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-tight",
+                badgeClass
+              )}
+            >
               {label}
             </span>
-            {!notification.read && (
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+            {item.priority && (
+              <span className="text-[10px] font-medium text-muted-foreground/70">
+                • {item.priority}
+              </span>
             )}
           </div>
-          <span className="text-[10px] font-medium tabular-nums opacity-50">
-            {formatTimestamp(notification.createdAt)}
+          <span className="text-muted-foreground/60 text-[11px] font-normal tabular-nums">
+            {formatTimestamp(item.createdAt ?? item.ixTimeTimestamp)}
           </span>
         </div>
-        <h4 className="mb-0.5 text-xs font-semibold tracking-tight text-slate-100">
-          {notification.title}
-        </h4>
+
+        <h4 className="mb-1 text-[13px] font-semibold tracking-tight text-foreground">{title}</h4>
+
         <div
-          className="text-xs leading-relaxed text-slate-300 [&>a]:text-blue-400 [&>a]:underline [&>a]:hover:text-blue-300 [&>p]:mb-0"
-          dangerouslySetInnerHTML={{
-            __html: sanitizeUserContent(notification.description || notification.message || ""),
-          }}
+          className="text-muted-foreground text-[12px] leading-relaxed [&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>p]:mb-0"
+          dangerouslySetInnerHTML={{ __html: sanitizeUserContent(content) }}
         />
+
+        {item.href && (
+          <div className="mt-2.5 flex items-center gap-2">
+            <Link
+              href={item.href}
+              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-2xs transition-all hover:bg-primary/90 active:scale-95"
+            >
+              <span>Open Details</span>
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+        )}
       </div>
+
       {onDismiss && (
         <button
           onClick={onDismiss}
-          className="absolute top-3 right-3 cursor-pointer rounded-lg p-1 text-slate-500 transition-colors hover:bg-white/5 hover:text-rose-400"
+          className="text-muted-foreground hover:bg-accent/15 hover:text-foreground absolute top-3 right-3 cursor-pointer rounded-lg p-1 transition-colors"
           title="Dismiss notification"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
     </div>
@@ -283,20 +209,20 @@ export function MessagesChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeAlertFilter, setActiveAlertFilter] = useState<
-    "all" | "diplomatic" | "security" | "economic" | "notifications"
-  >("all");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddParticipantsOpen, setIsAddParticipantsOpen] = useState(false);
 
+  const isSystemThread =
+    conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
+
+  const utils = api.useUtils();
+
+  // Clear system notifications
   const clearAllSystem = api.messages.clearAllSystemNotifications.useMutation({
     onSuccess: () => {
-      notify.success("All system notifications cleared!");
-      void utils.messages.getConversationMessages.invalidate({
-        conversationId: conversation.id,
-        userId: currentUserId,
-      });
-      void utils.messages.getConversationsByFolder.invalidate();
+      notify.success("System notifications cleared");
+      void utils.notifications.getUserNotifications.invalidate();
+      void utils.messages.getFolderCounts.invalidate();
     },
     onError: (err) => {
       notify.error(err.message || "Failed to clear system notifications");
@@ -304,29 +230,24 @@ export function MessagesChatPanel({
   });
 
   const handleClearAllSystem = useCallback(() => {
-    if (
-      confirm(
-        "Are you sure you want to clear all system notifications? This action cannot be undone."
-      )
-    ) {
-      clearAllSystem.mutate({ userId: currentUserId });
-    }
+    clearAllSystem.mutate({ userId: currentUserId });
   }, [clearAllSystem, currentUserId]);
 
-  // Fetch messages
-  const { data: messagesData, isLoading } = api.messages.getConversationMessages.useQuery(
-    {
-      conversationId: conversation.id,
-      userId: currentUserId,
-    },
-    {
-      enabled: !!conversation.id && !!currentUserId,
-      refetchOnWindowFocus: false,
-      staleTime: 30000, // WebSocket provides real-time updates
-    }
-  );
+  // Query 1: Regular conversation messages
+  const { data: messagesData, isLoading: isLoadingMessages } =
+    api.messages.getConversationMessages.useQuery(
+      {
+        conversationId: conversation.id,
+        userId: currentUserId,
+      },
+      {
+        enabled: !isSystemThread && !!conversation.id && !!currentUserId,
+        refetchOnWindowFocus: false,
+        staleTime: 30000,
+      }
+    );
 
-  // Fetch user notifications (for the Notifications tab)
+  // Query 2: System notifications when viewing system thread
   const {
     data: notificationsData,
     isLoading: isLoadingNotifications,
@@ -336,9 +257,9 @@ export function MessagesChatPanel({
       limit: 100,
     },
     {
-      enabled:
-        activeFolder === "system" && activeAlertFilter === "notifications" && !!currentUserId,
+      enabled: isSystemThread && !!currentUserId,
       refetchOnWindowFocus: false,
+      staleTime: 15000,
     }
   );
 
@@ -352,18 +273,7 @@ export function MessagesChatPanel({
     },
   });
 
-  const recentNotifications = useMemo(() => {
-    const rawNotifications = notificationsData?.notifications ?? [];
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    return rawNotifications.filter(
-      (n: any) => new Date(n.createdAt).getTime() >= sevenDaysAgo.getTime()
-    );
-  }, [notificationsData?.notifications]);
-
   // Invalidate conversation list (for unread badges)
-  const utils = api.useUtils();
   const refetchConversations = useCallback(() => {
     void utils.messages.getConversationsByFolder.invalidate();
   }, [utils]);
@@ -377,8 +287,7 @@ export function MessagesChatPanel({
   });
 
   useEffect(() => {
-    // Only fire mark-as-read if there are actually unread messages
-    if (conversation.id && currentUserId && (conversation as any).unreadCount > 0) {
+    if (!isSystemThread && conversation.id && currentUserId && (conversation as any).unreadCount > 0) {
       markAsRead.mutate({
         conversationId: conversation.id,
         userId: currentUserId,
@@ -386,22 +295,16 @@ export function MessagesChatPanel({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id, currentUserId]);
+  }, [conversation.id, currentUserId, isSystemThread]);
 
   // Send message
   const sendMessage = api.messages.sendMessage.useMutation({
     onMutate: async (newMsg) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
-
-      // Cancel outgoing fetches so they don't overwrite our optimistic update
       await utils.messages.getConversationMessages.cancel(queryKey);
-
-      // Snapshot the previous value
       const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
 
-      // Optimistically add the message to the query cache
       const tempId = `temp-${Date.now()}`;
-
       const senderAccount = {
         id: currentUserId,
         username: user?.username ?? "me",
@@ -434,28 +337,20 @@ export function MessagesChatPanel({
         if (!old) return { messages: [optimisticMsg], nextCursor: undefined };
         return {
           ...old,
-          messages: [optimisticMsg, ...old.messages],
+          messages: [...old.messages, optimisticMsg],
         };
       });
 
       return { previousMessages };
     },
-    onError: (error: any, newMsg, context) => {
+    onError: (error: any, _newMsg, context) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
       if (context?.previousMessages) {
         utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
       }
-
-      let msg = "Failed to send message";
-      if (error.message?.includes("conversation")) {
-        msg = "Conversation not found or you're not a participant";
-      } else if (error.message?.includes("content")) {
-        msg = "Message content is invalid";
-      }
-      notify.error(msg);
+      notify.error(error.message?.includes("content") ? "Invalid content" : "Failed to send message");
     },
     onSettled: (_data, error) => {
-      // Only invalidate on error to reconcile; optimistic update handles success
       if (error) {
         const queryKey = { conversationId: conversation.id, userId: currentUserId };
         void utils.messages.getConversationMessages.invalidate(queryKey);
@@ -464,7 +359,7 @@ export function MessagesChatPanel({
     },
   });
 
-  // ── Lifted mutations (shared across all bubbles) ──
+  // Message Actions
   const addReaction = api.messages.addReaction.useMutation({
     onMutate: async ({ messageId, reaction }: { messageId: string; reaction: string }) => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
@@ -485,12 +380,6 @@ export function MessagesChatPanel({
       });
 
       return { previousMessages };
-    },
-    onError: (err, newReaction, context) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      if (context?.previousMessages) {
-        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
-      }
     },
     onSettled: () => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
@@ -513,9 +402,7 @@ export function MessagesChatPanel({
             const reactions = { ...m.reactions };
             if (reactions[reaction] !== undefined) {
               reactions[reaction] = Math.max(0, reactions[reaction] - 1);
-              if (reactions[reaction] === 0) {
-                delete reactions[reaction];
-              }
+              if (reactions[reaction] === 0) delete reactions[reaction];
             }
             return { ...m, reactions };
           }),
@@ -523,12 +410,6 @@ export function MessagesChatPanel({
       });
 
       return { previousMessages };
-    },
-    onError: (err, variables, context) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      if (context?.previousMessages) {
-        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
-      }
     },
     onSettled: () => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
@@ -554,13 +435,6 @@ export function MessagesChatPanel({
 
       return { previousMessages };
     },
-    onError: (err, variables, context) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      if (context?.previousMessages) {
-        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
-      }
-      notify.error("Failed to edit message");
-    },
     onSettled: () => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
       void utils.messages.getConversationMessages.invalidate(queryKey);
@@ -582,13 +456,6 @@ export function MessagesChatPanel({
       });
 
       return { previousMessages };
-    },
-    onError: (err, variables, context) => {
-      const queryKey = { conversationId: conversation.id, userId: currentUserId };
-      if (context?.previousMessages) {
-        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
-      }
-      notify.error("Failed to delete message");
     },
     onSettled: () => {
       const queryKey = { conversationId: conversation.id, userId: currentUserId };
@@ -612,7 +479,7 @@ export function MessagesChatPanel({
   const handleSendMessage = useCallback(
     (content?: string, plainText?: string) => {
       const text = plainText ?? "";
-      if (!text.trim() || !conversation || !currentUserId) return;
+      if (!text.trim() || !conversation || !currentUserId || isSystemThread) return;
 
       sendMessage.mutate({
         conversationId: conversation.id,
@@ -622,49 +489,54 @@ export function MessagesChatPanel({
       });
       setReplyingTo(null);
     },
-    [conversation, currentUserId, sendMessage]
+    [conversation, currentUserId, sendMessage, isSystemThread]
   );
 
-  // Scroll to bottom on new messages
+  const messages = useMemo(() => {
+    const rawMessages = messagesData?.messages ?? [];
+    const sorted = [...rawMessages].sort((a: any, b: any) => {
+      const timeA = new Date(a.createdAt ?? a.ixTimeTimestamp ?? 0).getTime();
+      const timeB = new Date(b.createdAt ?? b.ixTimeTimestamp ?? 0).getTime();
+      return timeA - timeB;
+    });
+    if (!searchQuery) return sorted;
+    return sorted.filter(
+      (msg: any) =>
+        msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [messagesData?.messages, searchQuery]);
+
+  const systemBroadcasts = useMemo(() => {
+    const raw = notificationsData?.notifications ?? [];
+    const sorted = [...raw].sort((a: any, b: any) => {
+      const timeA = new Date(a.createdAt ?? a.ixTimeTimestamp ?? 0).getTime();
+      const timeB = new Date(b.createdAt ?? b.ixTimeTimestamp ?? 0).getTime();
+      return timeA - timeB;
+    });
+    if (!searchQuery) return sorted;
+    return sorted.filter(
+      (n: any) =>
+        (n.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (n.description ?? n.message ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [notificationsData?.notifications, searchQuery]);
+
+  // Scroll to bottom on new messages or system broadcasts
   useEffect(() => {
     if (!searchQuery) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messagesData?.messages?.length, searchQuery]);
-
-  const messages = useMemo(() => {
-    const rawMessages = messagesData?.messages ?? [];
-    let filtered = rawMessages;
-
-    // Filter by text search
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (msg: any) =>
-          msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Filter by alert category if in system folder
-    if (activeFolder === "system" && activeAlertFilter !== "all") {
-      filtered = filtered.filter((msg: any) => {
-        const style = getSystemAlertStyle(msg.content);
-        return style.type === activeAlertFilter;
-      });
-    }
-
-    return filtered;
-  }, [messagesData?.messages, searchQuery, activeFolder, activeAlertFilter]);
-
-  // Memoize reversed message list to avoid re-creating on every render
-  const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+  }, [messages.length, systemBroadcasts.length, searchQuery, isSystemThread]);
 
   const participantStatus = useMemo(() => {
-    if (conversation.type === "group") return undefined;
+    if (isSystemThread || conversation.type === "group") return undefined;
     const otherParticipant = conversation.otherParticipants[0];
     if (!otherParticipant) return undefined;
     return clientState.presenceMap?.[otherParticipant.accountId] as any;
-  }, [conversation, clientState.presenceMap]);
+  }, [conversation, clientState.presenceMap, isSystemThread]);
+
+  const isLoading = isSystemThread ? isLoadingNotifications : isLoadingMessages;
 
   return (
     <div className="flex h-full flex-col">
@@ -681,95 +553,36 @@ export function MessagesChatPanel({
         onMuteToggle={onMuteToggle}
         onArchiveToggle={onArchiveToggle}
         onDeleteConversation={onDeleteConversation}
+        onClearSystemMessages={isSystemThread ? handleClearAllSystem : undefined}
         isMuted={isMuted}
         isArchived={isArchived}
         displayNamePreference={settings?.displayNamePreference}
       />
 
-      {/* Clear All System notifications header banner with category filters */}
-      {activeFolder === "system" && (messagesData?.messages?.length ?? 0) > 0 && (
-        <div className="flex shrink-0 flex-col justify-between gap-3 border-b border-white/5 bg-slate-900/25 px-6 py-3 backdrop-blur-md sm:flex-row sm:items-center">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(
-              [
-                { id: "all", label: "All" },
-                { id: "diplomatic", label: "Diplomatic" },
-                { id: "security", label: "Security" },
-                { id: "economic", label: "Economic" },
-                { id: "notifications", label: "Notifications" },
-              ] as const
-            ).map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setActiveAlertFilter(filter.id)}
-                className={cn(
-                  "cursor-pointer rounded-lg border border-transparent px-2.5 py-1 text-[10px] font-bold transition-all duration-150 select-none",
-                  activeAlertFilter === filter.id
-                    ? "border-white/10 bg-white/10 text-white shadow-sm"
-                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                )}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={handleClearAllSystem}
-            disabled={clearAllSystem.isPending}
-            className="flex cursor-pointer items-center gap-1.5 self-end rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 shadow-sm transition-all hover:bg-rose-500/20 hover:text-rose-300 disabled:opacity-50 sm:self-auto"
-          >
-            {clearAllSystem.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
-            Clear All Alerts
-          </button>
-        </div>
-      )}
-
-      {/* Messages area */}
+      {/* Messages / Broadcasts stream */}
       <div className="flex-1 scrollbar-none overflow-x-hidden overflow-y-auto">
-        {isLoading || (activeAlertFilter === "notifications" && isLoadingNotifications) ? (
+        {isLoading ? (
           <div className="flex h-full items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
-        ) : activeFolder === "system" ? (
+        ) : isSystemThread ? (
           <div className="mx-auto w-full max-w-3xl py-3">
-            {activeAlertFilter === "notifications" ? (
-              recentNotifications.length === 0 ? (
-                <div className="flex h-full min-h-[300px] items-center justify-center p-6 text-center">
-                  <div>
-                    <Newspaper className="mx-auto mb-2 h-10 w-10 text-slate-500/50" />
-                    <p className="text-muted-foreground text-sm font-medium">
-                      No notifications in the last 7 days.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                recentNotifications.map((notif: any) => (
-                  <NotificationCard
-                    key={notif.id}
-                    notification={notif}
-                    onDismiss={() => dismissNotification.mutate({ notificationId: notif.id })}
-                  />
-                ))
-              )
-            ) : messages.length === 0 ? (
-              <div className="flex h-full min-h-[300px] items-center justify-center p-6 text-center">
-                <div>
-                  <Newspaper className="mx-auto mb-2 h-10 w-10 text-slate-500/50" />
-                  <p className="text-muted-foreground text-sm font-medium">
-                    {searchQuery ? "No results matching your search." : "No system alerts."}
-                  </p>
-                </div>
+            {systemBroadcasts.length === 0 ? (
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center p-6 text-center">
+                <BellRing className="text-muted-foreground/40 mb-2 h-10 w-10" />
+                <h4 className="text-foreground text-xs font-semibold">No system broadcasts</h4>
+                <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+                  {searchQuery
+                    ? `No bulletins match "${searchQuery}"`
+                    : "Platform announcements and simulation updates will appear here."}
+                </p>
               </div>
             ) : (
-              reversedMessages.map((message: any) => (
-                <SystemAlertCard
-                  key={message.id}
-                  message={message}
-                  onDelete={() => deleteMutation.mutate({ messageId: message.id })}
+              systemBroadcasts.map((item: any) => (
+                <SystemBroadcastCard
+                  key={item.id}
+                  item={item}
+                  onDismiss={() => dismissNotification.mutate({ notificationId: item.id })}
                 />
               ))
             )}
@@ -777,7 +590,7 @@ export function MessagesChatPanel({
           </div>
         ) : (
           <div className="py-2">
-            {reversedMessages.map((message: any, index: number, arr: any[]) => {
+            {messages.map((message: any, index: number, arr: any[]) => {
               const prev = index > 0 ? arr[index - 1] : null;
               const isConsecutive =
                 prev != null &&
@@ -804,7 +617,15 @@ export function MessagesChatPanel({
         )}
       </div>
 
-      {activeFolder !== "system" && (
+      {/* Footer: Read-only banner for system thread or interactive input bar */}
+      {isSystemThread ? (
+        <div className="border-border/40 bg-card/60 text-muted-foreground flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3 text-xs backdrop-blur-md">
+          <Shield className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-[11px] font-medium">
+            System Messages is an official broadcast channel. Messages are read-only.
+          </span>
+        </div>
+      ) : (
         <MessagesInputBar
           onSendMessage={handleSendMessage}
           onTyping={(isTyping) => {

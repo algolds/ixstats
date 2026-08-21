@@ -62,12 +62,12 @@ export function getIcon(n: NotificationItem) {
 
 export const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
   critical: { bg: "bg-red-500/15", text: "text-red-400" },
-  high: { bg: "bg-orange-500/15", text: "text-orange-400" },
-  medium: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
-  warning: { bg: "bg-yellow-500/15", text: "text-yellow-400" },
-  success: { bg: "bg-green-500/15", text: "text-green-400" },
+  high: { bg: "bg-rose-500/15", text: "text-rose-400" },
+  medium: { bg: "bg-amber-500/15", text: "text-amber-400" },
+  warning: { bg: "bg-amber-500/15", text: "text-amber-400" },
+  success: { bg: "bg-emerald-500/15", text: "text-emerald-400" },
   error: { bg: "bg-red-500/15", text: "text-red-400" },
-  info: { bg: "bg-blue-500/15", text: "text-blue-400" },
+  info: { bg: "bg-amber-500/15", text: "text-amber-400" },
 };
 
 export function getColors(n: NotificationItem) {

@@ -183,3 +183,27 @@ export interface UpdatePresenceInput {
   currentCountryId?: string;
   customStatus?: string;
 }
+
+export interface SendAdminBroadcastInput {
+  title: string;
+  description?: string;
+  message?: string;
+  category?: string;
+  level?: "low" | "medium" | "high" | "critical";
+  type?: string;
+  href?: string;
+  scope: "global" | "country" | "user";
+  countryId?: string;
+  userId?: string;
+  actionable?: boolean;
+  metadata?: any;
+}
+
+export interface SendAdminMessageInput {
+  targetUserId: string;
+  content: string;
+  subject?: string;
+  source?: MessageSource;
+  conversationType?: "personal" | "diplomatic" | "official";
+  classification?: string;
+}

@@ -67,7 +67,7 @@ export function NotificationRow({
             icon={ChevronRight}
             label="Open"
             onClick={() => handleClick(n)}
-            color="#3b82f6"
+            color="#f59e0b"
           />
         )}
         <SwipeActionButton
@@ -85,7 +85,7 @@ export function NotificationRow({
           className={cn(
             "relative flex w-full flex-col overflow-hidden rounded-xl border backdrop-blur-xl transition-all duration-200",
             !isRead
-              ? "border-blue-500/40 bg-blue-500/[0.08] shadow-xs hover:border-blue-500/60"
+              ? "border-amber-500/30 bg-amber-500/[0.04] shadow-xs hover:border-amber-500/50"
               : "border-border/50 bg-card/60 hover:border-border hover:bg-card/90 opacity-85 hover:opacity-100"
           )}
         >
@@ -113,7 +113,7 @@ export function NotificationRow({
               <div className="flex items-center gap-2">
                 <span className="text-foreground block truncate text-xs font-semibold">{n.title}</span>
                 {!isRead && (
-                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-500 shadow-xs shadow-blue-500/50" />
+                  <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-500 shadow-xs shadow-amber-500/50" />
                 )}
               </div>
               {!isExpanded && (n.description || n.message) && (
@@ -138,7 +138,7 @@ export function NotificationRow({
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
         <div className="space-y-3 rounded-b-xl border-t border-border/30 bg-accent/5 px-3.5 pt-3 pb-3.5 pl-[18px]">
-          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-blue-500/30">
+          <p className="text-foreground/95 text-[11.5px] leading-relaxed font-medium whitespace-pre-wrap select-text selection:bg-amber-500/30">
             {n.description || n.message}
           </p>
 
@@ -149,7 +149,7 @@ export function NotificationRow({
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-blue-400/20 bg-blue-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-xs transition-all hover:bg-blue-600 active:scale-[0.98]"
+                className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
                 <span>Open</span>
@@ -160,7 +160,7 @@ export function NotificationRow({
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border/50 bg-accent/10 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-accent/20 active:scale-[0.98]"
+              className="text-muted-foreground hover:text-foreground flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border/50 bg-accent/10 px-3 py-1.5 text-[10px] font-bold transition-all hover:bg-accent/20 active:scale-[0.98]"
             >
               <X className="text-muted-foreground/60 h-3.5 w-3.5" />
               <span>Dismiss</span>

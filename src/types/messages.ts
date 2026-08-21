@@ -10,7 +10,11 @@ import type { ThinkShareConversation } from "./thinkshare";
 
 // ─── Folder System ───────────────────────────────────────────────
 
-export type MessageFolder = "conversations" | "system" | "groups";
+export type MessageFolder = "conversations" | "groups";
+
+export type ChannelFilter = "all" | "diplomatic" | "direct" | "community";
+
+export const SYSTEM_CONVERSATION_ID = "system_messages";
 
 export interface MessageFolderConfig {
   id: MessageFolder;

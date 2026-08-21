@@ -308,7 +308,7 @@ function CompactViewComponent({
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   className="flex items-center gap-1.5 px-2 py-0.5"
                 >
-                  <Bell className="h-3 w-3 animate-pulse text-blue-400" />
+                  <Bell className="h-3 w-3 animate-pulse text-amber-400" />
                   <span className="text-foreground/90 max-w-[160px] truncate text-[11px] font-medium whitespace-nowrap">
                     <PreText whiteSpace="nowrap">{peekText}</PreText>
                   </span>
@@ -370,7 +370,7 @@ function CompactViewComponent({
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     className="flex items-center gap-1.5 px-2 py-1"
                   >
-                    <Bell className="h-3 w-3 animate-pulse text-blue-400" />
+                    <Bell className="h-3 w-3 animate-pulse text-amber-400" />
                     <span className="text-foreground/90 max-w-[200px] truncate text-xs font-medium whitespace-nowrap">
                       <PreText whiteSpace="nowrap">{peekText}</PreText>
                     </span>
@@ -488,7 +488,7 @@ function CompactViewComponent({
                       className={cn(
                         "transition-transform hover:scale-110",
                         totalUnreadCount > 0
-                          ? "text-blue-400 dark:text-blue-300"
+                          ? "text-amber-400 dark:text-amber-300"
                           : "text-muted-foreground hover:text-foreground",
                         isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
                       )}
@@ -501,7 +501,7 @@ function CompactViewComponent({
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          className={`absolute flex items-center justify-center rounded-full border-0 bg-blue-500 text-[10px] font-bold text-white shadow-lg ${
+                          className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-[10px] font-bold text-white shadow-lg ${
                             isSticky
                               ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
                               : "-top-1 -right-1 h-3 w-3 p-0"
@@ -558,7 +558,7 @@ function CompactViewComponent({
                       />
                       {action.badge != null && action.badge > 0 && (
                         <span
-                          className={`absolute flex items-center justify-center rounded-full bg-blue-500 text-[8px] font-bold text-white ${
+                          className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
                             isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
                           }`}
                         >

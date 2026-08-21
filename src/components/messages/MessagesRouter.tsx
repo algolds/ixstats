@@ -25,13 +25,13 @@ import { MessagesGroupsPanel } from "./MessagesGroupsPanel";
 import { MessagesGroupsListPanel } from "./MessagesGroupsListPanel";
 
 import type { MessageFolder } from "~/types/messages";
+import { SYSTEM_CONVERSATION_ID } from "~/types/messages";
 
 // ─── Section titles ──────────────────────────────────────────────
 
 const SECTION_TITLES: Record<MessageFolder, string> = {
-  conversations: "Conversations",
-  system: "System Alerts",
-  groups: "ThinkTank Groups",
+  conversations: "Messages",
+  groups: "ThinkTanks",
 };
 
 // ─── Inner Router ────────────────────────────────────────────────
@@ -188,7 +188,6 @@ function MessagesRouterInner() {
     () =>
       (folderCounts as Record<MessageFolder, number> | undefined) ?? {
         conversations: 0,
-        system: 0,
         groups: 0,
       },
     [folderCounts]
@@ -197,6 +196,22 @@ function MessagesRouterInner() {
   // ── Selected conversation object ──
   const selectedConversation = useMemo(() => {
     if (selectedConversationId === "groups_directory") return null;
+    if (selectedConversationId === SYSTEM_CONVERSATION_ID) {
+      return {
+        id: SYSTEM_CONVERSATION_ID,
+        type: "channel" as const,
+        name: "System Messages",
+        avatar: null,
+        source: "system",
+        conversationType: "official",
+        isActive: true,
+        lastActivity: new Date(),
+        otherParticipants: [],
+        unreadCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
     return activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null;
   }, [activeFolderConversations, selectedConversationId]);
 
@@ -430,17 +445,6 @@ function MessagesRouterInner() {
   useEffect(() => {
     document.title = `${SECTION_TITLES[activeFolder]} - Messages - IxStats`;
   }, [activeFolder]);
-
-  // Auto-select first conversation in system alerts folder
-  useEffect(() => {
-    if (
-      activeFolder === "system" &&
-      activeFolderConversations.length > 0 &&
-      !selectedConversationId
-    ) {
-      setSelectedConversationId(activeFolderConversations[0].id);
-    }
-  }, [activeFolder, activeFolderConversations, selectedConversationId]);
 
   // ── Create conversation (via unified messages router) ──
   const createConversation = api.messages.createConversation.useMutation();

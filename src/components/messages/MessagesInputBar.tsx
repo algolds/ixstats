@@ -42,19 +42,19 @@ export function MessagesInputBar({
   return (
     <div className="border-border/50 bg-background/60 shrink-0 border-t p-3">
       {replyingTo && (
-        <div className="border-primary bg-muted/30 mb-2 flex items-center gap-2 rounded-lg border-l-4 px-3 py-1.5">
+        <div className="mb-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5">
           <Reply className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-muted-foreground text-[11px] font-medium">
               Replying to {replyingTo.account.displayName}
             </p>
-            <p className="text-foreground/70 truncate text-xs">
+            <p className="text-foreground/80 truncate text-xs">
               {replyingTo.content.replace(/<[^>]*>/g, "").substring(0, 80)}
             </p>
           </div>
           <button
             onClick={onCancelReply}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-0.5 transition-colors"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer rounded p-0.5 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>

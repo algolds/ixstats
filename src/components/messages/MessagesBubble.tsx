@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
+import { Heart, Reply, Edit, Trash2, Check, CheckCheck, X, Shield } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
@@ -30,6 +30,9 @@ interface Message {
   editedAt?: Date;
   deletedAt?: Date;
   replyTo?: Message;
+  classification?: string | null;
+  priority?: string | null;
+  source?: string;
 }
 
 export type { Message };
@@ -51,7 +54,7 @@ interface MessagesBubbleProps {
   searchQuery?: string;
 }
 
-const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "😡"];
+const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "🔥"];
 
 // Pretext shrinkwrap constants
 const BUBBLE_PADDING_X = 24; // px-3 = 12px * 2
@@ -93,9 +96,36 @@ export const MessagesBubble = React.memo(function MessagesBubble({
   searchQuery,
 }: MessagesBubbleProps) {
   const [showReactions, setShowReactions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
 
   const isOwn = message.accountId === currentUserId;
   const account = message.account;
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditContent(message.content.replace(/<[^>]*>/g, ""));
+      setTimeout(() => editInputRef.current?.focus(), 50);
+    }
+  }, [isEditing, message.content]);
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() && editContent !== message.content) {
+      actions.onEditMessage(message.id, editContent.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveEdit();
+    } else if (e.key === "Escape") {
+      setIsEditing(false);
+    }
+  };
 
   // Only apply Pretext shrinkwrap to plain-text messages.
   // HTML content (wiki edits, forum messages) has bold/link formatting that
@@ -200,45 +230,84 @@ export const MessagesBubble = React.memo(function MessagesBubble({
             </div>
           )}
 
-          <div
-            className={cn(
-              "overflow-hidden break-words shadow-sm",
-              settings?.compactMode
-                ? "rounded-xl px-2 py-1 text-xs leading-normal"
-                : "rounded-2xl px-3 py-2 text-sm leading-relaxed",
-              isOwn
-                ? "rounded-br-xs bg-blue-600 text-white shadow-xs"
-                : "rounded-bl-xs border border-border/60 bg-card text-foreground shadow-xs dark:bg-card/80 dark:border-white/10 dark:text-slate-100",
-              message.replyTo && "rounded-t-none"
-            )}
-            style={{
-              maxWidth: MAX_BUBBLE_WIDTH,
-              ...(bubbleWidth ? { width: bubbleWidth } : {}),
-            }}
-          >
-            <div className="[&>p]:mb-0" dangerouslySetInnerHTML={{ __html: sanitizeUserContent(highlightedContent) }} />
-
+          {isEditing ? (
+            <div className="w-full min-w-[280px] rounded-xl border border-primary/40 bg-card p-2 shadow-md">
+              <textarea
+                ref={editInputRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={2}
+                className="w-full resize-none bg-transparent text-xs text-foreground outline-none"
+              />
+              <div className="mt-1.5 flex items-center justify-end gap-1.5 border-t border-border/40 pt-1.5">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="cursor-pointer rounded px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="cursor-pointer rounded bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow-2xs hover:bg-primary/90"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
             <div
               className={cn(
-                "mt-1 flex items-center gap-1.5 text-[9px]",
+                "overflow-hidden break-words shadow-sm",
+                settings?.compactMode
+                  ? "rounded-xl px-2 py-1 text-xs leading-normal"
+                  : "rounded-2xl px-3 py-2 text-sm leading-relaxed",
                 isOwn
-                  ? "text-primary-foreground/60 justify-end"
-                  : "text-muted-foreground/70 justify-start"
+                  ? "rounded-br-xs bg-primary text-primary-foreground shadow-xs"
+                  : "rounded-bl-xs border border-border/60 bg-card text-foreground shadow-xs dark:bg-card/80 dark:border-white/10 dark:text-slate-100",
+                message.replyTo && "rounded-t-none"
               )}
+              style={{
+                maxWidth: MAX_BUBBLE_WIDTH,
+                ...(bubbleWidth ? { width: bubbleWidth } : {}),
+              }}
             >
-              <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>
-              {message.editedAt && <span>(edited)</span>}
-              {isOwn && message.readReceipts && (!settings || settings.showReadReceipts) && (
-                <span>
-                  {message.readReceipts.length > 0 ? (
-                    <CheckCheck className="h-2.5 w-2.5" />
-                  ) : (
-                    <Check className="h-2.5 w-2.5" />
-                  )}
-                </span>
+              {message.classification && (
+                <div className="mb-1 flex items-center gap-1">
+                  <span className="flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">
+                    <Shield className="h-2.5 w-2.5" />
+                    {message.classification}
+                  </span>
+                </div>
               )}
+
+              <div
+                className="[&>p]:mb-0"
+                dangerouslySetInnerHTML={{ __html: sanitizeUserContent(highlightedContent) }}
+              />
+
+              <div
+                className={cn(
+                  "mt-1 flex items-center gap-1.5 text-[9px]",
+                  isOwn
+                    ? "text-primary-foreground/60 justify-end"
+                    : "text-muted-foreground/70 justify-start"
+                )}
+              >
+                <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>
+                {message.editedAt && <span>(edited)</span>}
+                {isOwn && message.readReceipts && (!settings || settings.showReadReceipts) && (
+                  <span>
+                    {message.readReceipts.length > 0 ? (
+                      <CheckCheck className="h-2.5 w-2.5" />
+                    ) : (
+                      <Check className="h-2.5 w-2.5" />
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {message.reactions && Object.keys(message.reactions).length > 0 && (
             <div
@@ -260,75 +329,100 @@ export const MessagesBubble = React.memo(function MessagesBubble({
       </div>
 
       {/* Hover action buttons */}
-      <div
-        className={cn(
-          "border-border bg-background absolute -top-3 hidden rounded-md border shadow-sm group-hover:flex",
-          isOwn ? "right-full mr-2" : "left-full ml-2"
-        )}
-      >
-        <div className="relative">
-          <button
-            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-l-md p-1.5 transition-colors"
-            title="React"
-            onClick={() => setShowReactions(!showReactions)}
-          >
-            <Heart className="h-3.5 w-3.5" />
-          </button>
-          {showReactions && (
-            <div
-              className={cn(
-                "border-border bg-background absolute bottom-full z-10 mb-1 flex gap-0.5 rounded-lg border p-1.5 shadow-lg",
-                isOwn ? "left-0" : "right-0"
-              )}
+      {!isEditing && (
+        <div
+          className={cn(
+            "border-border bg-card absolute -top-3 hidden rounded-md border shadow-xs group-hover:flex items-center",
+            isOwn ? "right-full mr-2" : "left-full ml-2"
+          )}
+        >
+          <div className="relative">
+            <button
+              className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer rounded-l-md p-1.5 transition-colors"
+              title="React"
+              onClick={() => setShowReactions(!showReactions)}
             >
-              {QUICK_REACTIONS.map((emoji) => (
+              <Heart className="h-3.5 w-3.5" />
+            </button>
+            {showReactions && (
+              <div
+                className={cn(
+                  "border-border bg-card absolute bottom-full z-10 mb-1 flex gap-0.5 rounded-lg border p-1.5 shadow-lg backdrop-blur-md",
+                  isOwn ? "left-0" : "right-0"
+                )}
+              >
+                {QUICK_REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="hover:bg-muted cursor-pointer rounded p-1 text-base transition-colors hover:scale-110 active:scale-95"
+                    onClick={() => {
+                      actions.onAddReaction(message.id, emoji);
+                      setShowReactions(false);
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer p-1.5 transition-colors"
+            title="Reply"
+            onClick={() => onReply(message)}
+          >
+            <Reply className="h-3.5 w-3.5" />
+          </button>
+          {isOwn && (
+            <>
+              <button
+                className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer p-1.5 transition-colors"
+                title="Edit"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </button>
+
+              <div className="relative">
                 <button
-                  key={emoji}
-                  className="hover:bg-muted rounded p-1 text-base transition-colors"
-                  onClick={() => {
-                    actions.onAddReaction(message.id, emoji);
-                    setShowReactions(false);
-                  }}
+                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-r-md p-1.5 transition-colors"
+                  title="Delete"
+                  onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
                 >
-                  {emoji}
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              ))}
-            </div>
+                {showDeleteConfirm && (
+                  <div
+                    className={cn(
+                      "border-border bg-popover text-popover-foreground absolute bottom-full z-20 mb-1 flex flex-col gap-1.5 rounded-lg border p-2 text-xs shadow-lg",
+                      isOwn ? "right-0" : "left-0"
+                    )}
+                  >
+                    <span className="text-[11px] font-semibold">Delete message?</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="cursor-pointer rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          actions.onDeleteMessage(message.id);
+                        }}
+                        className="cursor-pointer rounded bg-destructive px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
-        <button
-          className="text-muted-foreground hover:bg-muted hover:text-foreground p-1.5 transition-colors"
-          title="Reply"
-          onClick={() => onReply(message)}
-        >
-          <Reply className="h-3.5 w-3.5" />
-        </button>
-        {isOwn && (
-          <>
-            <button
-              className="text-muted-foreground hover:bg-muted hover:text-foreground p-1.5 transition-colors"
-              title="Edit"
-              onClick={() => {
-                const newContent = prompt("Edit message:", message.content.replace(/<[^>]*>/g, ""));
-                if (newContent) actions.onEditMessage(message.id, newContent);
-              }}
-            >
-              <Edit className="h-3.5 w-3.5" />
-            </button>
-            <button
-              className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-r-md p-1.5 transition-colors"
-              title="Delete"
-              onClick={() => {
-                if (confirm("Delete this message?")) {
-                  actions.onDeleteMessage(message.id);
-                }
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </>
-        )}
-      </div>
+      )}
     </div>
   );
 });
