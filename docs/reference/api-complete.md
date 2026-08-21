@@ -3,7 +3,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (94 Routers, 1577 Endpoints)
+### Live tRPC API Inventory (94 Routers, 1579 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -66,7 +66,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.loreCards`** | 15 | 9 | 0 | **24** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 16 | 4 | 0 | **20** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 9 | 20 | 0 | **29** | `src/server/api/routers/meetings/index.ts` |
-| **`api.messages`** | 4 | 12 | 0 | **16** | `src/server/api/routers/messages/index.ts` |
+| **`api.messages`** | 4 | 14 | 0 | **18** | `src/server/api/routers/messages/index.ts` |
 | **`api.militaryEquipment`** | 9 | 8 | 0 | **17** | `src/server/api/routers/militaryEquipment/index.ts` |
 | **`api.mycountry`** | 10 | 1 | 0 | **11** | `src/server/api/routers/mycountry/index.ts` |
 | **`api.narrator`** | 4 | 3 | 0 | **7** | `src/server/api/routers/narrator/index.ts` |
@@ -101,7 +101,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.wikiCache`** | 6 | 6 | 0 | **12** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikiImporter`** | 4 | 2 | 0 | **6** | `src/server/api/routers/wikiImporter/index.ts` |
 | **`api.wikios`** | 55 | 25 | 0 | **80** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **788** | **787** | **1** | **1577** | **94 registered namespaces** |
+| **TOTALS** | **788** | **789** | **1** | **1579** | **94 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 ---

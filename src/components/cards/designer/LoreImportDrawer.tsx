@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   Dialog,
   DialogContent,
@@ -403,8 +404,9 @@ export function LoreImportDrawer({
                         <Coins className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                         <div>
                           <div className="text-muted-foreground text-[10px]">Catalog Value</div>
-                          <div className="text-foreground font-mono font-medium">
-                            {activeMetadata.marketValue.toLocaleString()} IxC
+                          <div className="text-foreground flex items-center gap-1 font-mono font-medium">
+                            <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                            {activeMetadata.marketValue.toLocaleString()}
                           </div>
                         </div>
                       </div>

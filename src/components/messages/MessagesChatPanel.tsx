@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
 import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
+import { ThinktankDocsModal } from "./ThinktankDocsModal";
 import Link from "next/link";
 
 // Pretext shrinkwrap / time formatting helper
@@ -41,50 +42,21 @@ function getSystemAlertStyle(content: string, type?: string) {
     text.includes("treaty") ||
     text.includes("embassy") ||
     text.includes("alliance") ||
-    text.includes("summons")
+    text.includes("summons") ||
+    text.includes("dispatch")
   ) {
     return {
       icon: Crown,
       iconColor: "text-amber-500 bg-amber-500/10 ring-amber-500/20",
       badgeClass: "text-amber-500 bg-amber-500/10",
-      label: "Diplomatic Dispatch",
-    };
-  }
-  if (
-    text.includes("spy") ||
-    text.includes("security") ||
-    text.includes("threat") ||
-    text.includes("crisis") ||
-    text.includes("sabotage") ||
-    text.includes("alert")
-  ) {
-    return {
-      icon: ShieldAlert,
-      iconColor: "text-rose-500 bg-rose-500/10 ring-rose-500/20",
-      badgeClass: "text-rose-500 bg-rose-500/10",
-      label: "Security Alert",
-    };
-  }
-  if (
-    text.includes("gdp") ||
-    text.includes("economy") ||
-    text.includes("market") ||
-    text.includes("trade") ||
-    text.includes("reward") ||
-    text.includes("achievement")
-  ) {
-    return {
-      icon: TrendingUp,
-      iconColor: "text-emerald-500 bg-emerald-500/10 ring-emerald-500/20",
-      badgeClass: "text-emerald-500 bg-emerald-500/10",
-      label: "Economic & Rewards",
+      label: "Dispatch",
     };
   }
   return {
     icon: Radio,
     iconColor: "text-purple-500 bg-purple-500/10 ring-purple-500/20",
     badgeClass: "text-purple-500 bg-purple-500/10",
-    label: "Platform Bulletin",
+    label: "System",
   };
 }
 
@@ -179,6 +151,7 @@ interface MessagesChatPanelProps {
   ) => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
+  onBack?: () => void;
   settings?: MessagesSettings;
   isMuted?: boolean;
   isArchived?: boolean;
@@ -196,6 +169,7 @@ export function MessagesChatPanel({
   sendTypingIndicator,
   isSidebarCollapsed = false,
   onToggleSidebar,
+  onBack,
   settings,
   isMuted = false,
   isArchived = false,
@@ -211,9 +185,14 @@ export function MessagesChatPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddParticipantsOpen, setIsAddParticipantsOpen] = useState(false);
+  const [isDocsOpen, setIsDocsOpen] = useState(false);
 
   const isSystemThread =
     conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
+  const isThinkTank =
+    conversation.source === "thinktank" ||
+    activeFolder === "groups" ||
+    conversation.type === "group";
 
   const utils = api.useUtils();
 
@@ -546,10 +525,11 @@ export function MessagesChatPanel({
         activeFolder={activeFolder}
         participantStatus={participantStatus}
         onSearch={setSearchQuery}
-        onBack={onToggleSidebar}
+        onBack={onBack ?? onToggleSidebar}
         isSidebarCollapsed={isSidebarCollapsed}
         onViewDetails={() => setIsDetailsOpen(true)}
         onAddParticipants={() => setIsAddParticipantsOpen(true)}
+        onOpenDocs={isThinkTank ? () => setIsDocsOpen(true) : undefined}
         onMuteToggle={onMuteToggle}
         onArchiveToggle={onArchiveToggle}
         onDeleteConversation={onDeleteConversation}
@@ -671,6 +651,17 @@ export function MessagesChatPanel({
               await onAddParticipant(userId);
             }
           }}
+        />
+      )}
+
+      {isDocsOpen && (
+        <ThinktankDocsModal
+          isOpen={isDocsOpen}
+          onClose={() => setIsDocsOpen(false)}
+          groupId={conversation.sourceId || conversation.id}
+          groupName={conversation.name || "ThinkTank"}
+          currentUserId={currentUserId}
+          isMember={true}
         />
       )}
     </div>

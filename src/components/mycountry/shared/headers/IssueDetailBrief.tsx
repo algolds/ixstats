@@ -26,6 +26,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useNotify } from "~/hooks/useNotify";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> = {
   economic: { icon: TrendingUp, label: "Economic" },
@@ -266,8 +267,9 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
             </span>
             {issue.ixCreditsAwarded > 0 && (
-              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-400">
-                +{issue.ixCreditsAwarded} IxC
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-400">
+                +{issue.ixCreditsAwarded}
+                <IxCreditsSymbol className="h-3 w-3 shrink-0" />
               </span>
             )}
           </div>

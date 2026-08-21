@@ -5,6 +5,7 @@ import { Trophy, Award } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export interface VaultMilestonesCardProps {
   myAchievements?: Array<{ points?: number }>;
@@ -37,11 +38,19 @@ export function VaultMilestonesCard({
       target: "Collect 10 cards",
       current: totalCards,
       max: 10,
-      reward: "50 IxC",
+      reward: (
+        <span className="inline-flex items-center gap-0.5">
+          +50 <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+        </span>
+      ),
     },
     {
       title: "Credit Stash",
-      target: "Reach 5,000 IxC",
+      target: (
+        <span className="inline-flex items-center gap-0.5">
+          Reach 5,000 <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+        </span>
+      ),
       current: creditsBalance,
       max: 5000,
       reward: "Bronze Badge",

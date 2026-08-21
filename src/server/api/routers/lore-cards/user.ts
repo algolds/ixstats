@@ -76,7 +76,7 @@ export const loreCardsUserRouter = createTRPCRouter({
         if (!useToken && vault.credits < LORE_CARD_REQUEST_COST) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxC to request a lore card (current balance: ${vault.credits} IxC)`,
+            message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxCredits to request a lore card (current balance: ${vault.credits} IxCredits)`,
           });
         }
 
@@ -131,7 +131,7 @@ export const loreCardsUserRouter = createTRPCRouter({
             if (freshVault.credits < LORE_CARD_REQUEST_COST) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
-                message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxC to request a lore card (current balance: ${freshVault.credits} IxC)`,
+                message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxCredits to request a lore card (current balance: ${freshVault.credits} IxCredits)`,
               });
             }
 

@@ -11,7 +11,7 @@ The page is a catch-all (`[[...folder]]`) rendered by `MessagesRouter`, which us
 | Route | Folder | Purpose |
 |---|---|---|
 | `/messages` | `conversations` | All direct, diplomatic, wiki & system messages (with pinned System Messages thread) |
-| `/messages/groups` | `groups` | ThinkTank group directory + working tables |
+| `/messages/groups` | `groups` | ThinkTank group directory + collaborative rooms |
 
 A `?conversation=<id>` query param deep-links a specific conversation (consumed then cleared from the URL).
 

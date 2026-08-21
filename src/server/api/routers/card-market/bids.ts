@@ -29,7 +29,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
-        amount: z.number().min(1, "Bid amount must be at least 1 IxC"),
+        amount: z.number().min(1, "Bid amount must be at least 1 IxCredit"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -79,7 +79,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
             await notificationAPI.create({
               userId: auction.User.clerkUserId,
               title: "New Bid on Your Auction",
-              message: `Someone bid ${input.amount} IxC on your auction`,
+              message: `Someone bid ${input.amount} IxCredits on your auction`,
               type: "info",
               category: "economic",
               priority: "medium",
@@ -105,7 +105,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: `Bid of ${input.amount} IxC placed successfully!`,
+          message: `Bid of ${input.amount} IxCredits placed successfully!`,
         };
       } catch (error) {
         console.error("[Card Market Router] Error placing bid:", error);

@@ -35,10 +35,10 @@ const EXTERNAL_LINKS = [
     color: "text-blue-500",
   },
   {
-    label: "Groups",
-    href: "/messages/groups?tab=discover",
+    label: "ThinkTanks",
+    href: "/thinktanks",
     icon: Users,
-    color: "text-indigo-500",
+    color: "text-emerald-500",
   },
 ] as const;
 

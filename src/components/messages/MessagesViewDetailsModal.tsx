@@ -77,7 +77,9 @@ export function MessagesViewDetailsModal({
                 <Users className="h-3.5 w-3.5" /> Type
               </span>
               <span className="text-foreground font-semibold">
-                {formatType(conversation.type)} Chat
+                {conversation.source === "thinktank" || conversation.type === "group"
+                  ? "ThinkTank Group"
+                  : `${formatType(conversation.type)} Chat`}
               </span>
             </div>
             <div className="bg-muted/40 border-border/20 flex flex-col gap-1 rounded-xl border p-3">

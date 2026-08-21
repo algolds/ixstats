@@ -15,6 +15,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
       <Button
         variant="outline"
         size="sm"
+        data-cuelume-press="page"
         onClick={() => onPageChangeAction(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
       >
@@ -25,6 +26,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
           key={p}
           variant={p === currentPage ? "default" : "outline"}
           size="sm"
+          data-cuelume-press="page"
           onClick={() => onPageChangeAction(p)}
         >
           {p}
@@ -33,6 +35,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
       <Button
         variant="outline"
         size="sm"
+        data-cuelume-press="page"
         onClick={() => onPageChangeAction(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
       >

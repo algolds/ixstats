@@ -58,7 +58,7 @@ export function MessageTrayItem({
     conversation.title ||
     otherParticipant?.name ||
     otherParticipant?.countryName ||
-    "Diplomatic Dispatch";
+    "Dispatch";
 
   const excerpt = latestMessage?.content || "No messages yet";
   const timestamp = conversation.lastMessageAt || latestMessage?.createdAt || Date.now();
@@ -77,14 +77,14 @@ export function MessageTrayItem({
     >
       {/* Leading actions (swipe right -> open) */}
       <SwipeableRow.Leading
-        commit={{ action: () => onClick(conversation), label: "Open", color: "#3b82f6" }}
+        commit={{ action: () => onClick(conversation), label: "Open", color: "#f59e0b" }}
       >
         <SwipeActionButton
           id="open-msg"
           icon={ChevronRight}
           label="Open"
           onClick={() => onClick(conversation)}
-          color="#3b82f6"
+          color="#f59e0b"
         />
       </SwipeableRow.Leading>
 
@@ -110,15 +110,10 @@ export function MessageTrayItem({
           className={cn(
             "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-sm backdrop-blur-xl transition-all duration-200 active:scale-[0.985]",
             isUnread
-              ? "border-blue-500/40 bg-blue-500/[0.08] shadow-blue-500/5 hover:border-blue-500/60"
+              ? "border-amber-500/30 bg-amber-500/[0.04] shadow-xs hover:border-amber-500/50"
               : "border-border/50 bg-card/60 hover:border-border hover:bg-card/90"
           )}
         >
-          {/* Left Accent Strip for Unread Messages */}
-          {isUnread && (
-            <div className="absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl bg-blue-500" />
-          )}
-
           <div className="flex items-start gap-3">
             {/* Sender Avatar / Country Flag */}
             <div className="relative mt-0.5 shrink-0">
@@ -138,17 +133,14 @@ export function MessageTrayItem({
                   className="h-8 w-8 rounded-full object-cover ring-1 ring-white/10"
                 />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-400 shadow-xs">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 shadow-xs">
                   {isDiplomatic ? <Globe className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                 </div>
               )}
 
               {/* Status Dot */}
               {isUnread && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
-                </span>
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
               )}
             </div>
 

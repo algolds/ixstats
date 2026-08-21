@@ -64,6 +64,23 @@ export const messagesConversationsRouter = createTRPCRouter({
     }),
 
   /**
+   * Get single conversation by ID.
+   */
+  getConversation: protectedProcedure
+    .input(z.object({ conversationId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const messagingService = createMessagingService({
+        db: ctx.db,
+        notifications: notificationAPI,
+        websocket: getThinkPagesServer(),
+        forumBridge,
+        wikiBridge: wikiTalkBridge,
+      });
+
+      return await messagingService.getConversation(ctx.auth.userId, input.conversationId);
+    }),
+
+  /**
    * Get unread counts per folder for the sidebar badges.
    */
   getFolderCounts: protectedProcedure

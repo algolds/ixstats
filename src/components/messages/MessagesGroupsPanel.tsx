@@ -1,20 +1,24 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { motion } from "motion/react";
 import {
   Search,
-  Users,
-  Hash,
+  Group,
+  Hashtag,
   Lock,
   Globe,
-  Loader2,
   Compass,
   Check,
   ArrowRight,
-  ChevronLeft,
+  ArrowLeft,
   HelpCircle,
   Plus,
-} from "lucide-react";
+  Xmark,
+  Book,
+  Spark,
+  Eye,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -29,16 +33,9 @@ import {
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Label } from "~/components/ui/label";
+import { soundEffects } from "~/lib/sound/cuelume";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { ThinktankDocsModal } from "./ThinktankDocsModal";
 
 const GROUP_CATEGORIES = [
   "All",
@@ -80,7 +77,15 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // Docs modal state
+  const [docsModalGroup, setDocsModalGroup] = useState<{
+    id: string;
+    name: string;
+    isMember: boolean;
+  } | null>(null);
+
   const handleViewChange = (view: GroupView) => {
+    soundEffects.press();
     setActiveView(view);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -92,7 +97,7 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
   // Fetch groups
   const { data: groupsData, isLoading } = api.thinkpages.getThinktanks.useQuery(
     { userId, type: activeView === "discover" ? "all" : activeView },
-    { enabled: !!userId }
+    { enabled: !!userId, staleTime: 15000 }
   );
 
   const groups = useMemo(() => {
@@ -107,7 +112,10 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       items = items.filter(
-        (g: any) => g.name?.toLowerCase().includes(q) || g.description?.toLowerCase().includes(q)
+        (g: any) =>
+          g.name?.toLowerCase().includes(q) ||
+          g.description?.toLowerCase().includes(q) ||
+          g.category?.toLowerCase().includes(q)
       );
     }
 
@@ -116,188 +124,247 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
 
   // Join/leave mutations
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
-    onSuccess: () => {
-      notify.success("Joined group successfully!");
+    onSuccess: (res: any) => {
+      soundEffects.success();
+      notify.success("Joined ThinkTank!");
       void utils.thinkpages.getThinktanks.invalidate();
+      void utils.messages.getConversationsByFolder.invalidate();
+      if (res?.conversationId) {
+        onSelectGroup(res.conversationId);
+      }
     },
     onError: (err) => {
-      notify.error(err.message || "Failed to join group");
+      soundEffects.error();
+      notify.error(err.message || "Failed to join ThinkTank");
     },
   });
 
   const leaveMutation = api.thinkpages.leaveThinktank.useMutation({
     onSuccess: () => {
-      notify.success("Left group");
+      soundEffects.success();
+      notify.success("Left ThinkTank");
       void utils.thinkpages.getThinktanks.invalidate();
+      void utils.messages.getConversationsByFolder.invalidate();
     },
     onError: (err) => {
-      notify.error(err.message || "Failed to leave group");
+      soundEffects.error();
+      notify.error(err.message || "Failed to leave ThinkTank");
     },
   });
 
   const createGroupMutation = api.thinkpages.createThinktank.useMutation({
     onSuccess: (newGroup) => {
-      notify.success("Group created successfully!");
+      soundEffects.success();
+      notify.success("ThinkTank created successfully!");
       void utils.thinkpages.getThinktanks.invalidate();
+      void utils.messages.getConversationsByFolder.invalidate();
       setShowCreateModal(false);
       if (newGroup?.conversationId) {
         onSelectGroup(newGroup.conversationId);
       }
     },
     onError: (err) => {
-      notify.error(err.message || "Failed to create group");
+      soundEffects.error();
+      notify.error(err.message || "Failed to create ThinkTank");
     },
   });
 
   const handleJoin = async (e: React.MouseEvent, groupId: string) => {
     e.stopPropagation();
+    soundEffects.press();
     joinMutation.mutate({ groupId, userId });
   };
 
   const handleLeave = async (e: React.MouseEvent, groupId: string) => {
     e.stopPropagation();
+    soundEffects.press();
     leaveMutation.mutate({ groupId, userId });
   };
 
   const handleOpenGroup = (group: any) => {
-    if (group.conversationId) {
-      onSelectGroup(group.conversationId);
-    } else {
-      notify.error("This group doesn't have an active chat channel.");
-    }
+    soundEffects.press();
+    onSelectGroup(group.conversationId || group.id);
   };
 
   return (
     <div className="flex h-full flex-col bg-transparent">
-      {/* Header and Controls */}
-      <div className="border-border/40 shrink-0 space-y-4 border-b bg-blue-500/10 p-6">
+      {/* Alpine Green Frosted Header */}
+      <div className="shrink-0 space-y-4 border-b border-border/30 bg-muted/20 p-6 backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {onBack && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onBack}
-                className="mr-1 -ml-2 h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:text-white"
+                onClick={() => {
+                  soundEffects.press();
+                  onBack();
+                }}
+                className="mr-1 -ml-2 h-8 w-8 shrink-0 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="Go Back"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <Compass className="h-5 w-5 text-indigo-400" />
-            <h2 className="text-base font-bold text-slate-100">ThinkTank Groups</h2>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-inner">
+              <Compass className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-foreground">ThinkTank Directory</h2>
+              <p className="text-[11px] text-muted-foreground">
+                Collaborative research, lore drafting, and group discussion.
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => setShowCreateModal(true)}
-              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-xs font-bold text-white shadow-md shadow-indigo-950/20 transition-all hover:bg-indigo-700"
+              onClick={() => {
+                soundEffects.press();
+                setShowCreateModal(true);
+              }}
+              className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Create Group</span>
+              <span>Create ThinkTank</span>
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsHelpOpen(true)}
-              className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white"
-              title="ThinkTank Groups Help"
+              onClick={() => {
+                soundEffects.press();
+                setIsHelpOpen(true);
+              }}
+              className="h-8.5 w-8.5 shrink-0 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+              title="About ThinkTanks"
             >
               <HelpCircle className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Action / View Toggles */}
+        {/* View Switcher & Search Bar */}
         <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
-          <div className="flex w-full gap-1 rounded-xl border border-white/5 bg-slate-950/40 p-1 backdrop-blur-md md:w-auto">
+          {/* Animated Tab Switcher */}
+          <div className="relative flex w-full gap-1 rounded-2xl border border-border/40 bg-background/60 p-1 backdrop-blur-md md:w-auto">
             {(
               [
                 { id: "joined", label: "My Groups" },
-                { id: "discover", label: "Discover" },
-                { id: "created", label: "Managed" },
+                { id: "discover", label: "Discover All" },
+                { id: "created", label: "Managed by Me" },
               ] as const
-            ).map((view) => (
-              <button
-                key={view.id}
-                onClick={() => {
-                  handleViewChange(view.id);
-                  setSearchQuery("");
-                }}
-                className={cn(
-                  "flex-1 rounded-lg px-4 py-1.5 text-xs font-semibold capitalize transition-all duration-200 select-none md:flex-none",
-                  activeView === view.id
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/20"
-                    : "text-slate-400 hover:text-slate-200"
-                )}
-              >
-                {view.label}
-              </button>
-            ))}
+            ).map((view) => {
+              const isActive = activeView === view.id;
+              return (
+                <button
+                  key={view.id}
+                  onClick={() => {
+                    handleViewChange(view.id);
+                    setSearchQuery("");
+                  }}
+                  className={cn(
+                    "relative flex-1 rounded-xl px-4 py-1.5 text-xs font-semibold tracking-tight capitalize transition-all select-none active:scale-[0.97] md:flex-none",
+                    isActive ? "text-white" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="thinktank-view-pill"
+                      className="absolute inset-0 rounded-xl border border-emerald-500/40 bg-emerald-600 shadow-xs dark:bg-emerald-500"
+                      transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{view.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="relative w-full shrink-0 md:w-72">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          {/* Search Input with Clear Button */}
+          <div className="relative w-full shrink-0 md:w-80">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search groups..."
+              placeholder="Search groups by name, tag, or focus..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 pl-9 text-xs"
+              className="h-9.5 rounded-2xl border-input bg-background/70 pl-9 pr-8 text-xs text-foreground placeholder:text-muted-foreground"
             />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  soundEffects.press();
+                  setSearchQuery("");
+                }}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <Xmark className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Scrollable Categories Row */}
-        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-          {GROUP_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                "shrink-0 rounded-full border px-3.5 py-1 text-[10px] font-bold transition-all duration-200",
-                activeCategory === cat
-                  ? "border-indigo-500/40 bg-indigo-500/20 text-indigo-300 shadow-sm"
-                  : "border-transparent bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-              )}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Scrollable Category Filter Pills */}
+        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-0.5">
+          {GROUP_CATEGORIES.map((cat) => {
+            const isSelected = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => {
+                  soundEffects.press();
+                  setActiveCategory(cat);
+                }}
+                className={cn(
+                  "shrink-0 rounded-full border px-3.5 py-1 text-[11px] font-semibold tracking-tight transition-all select-none active:scale-[0.96]",
+                  isSelected
+                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                    : "border-border/30 bg-card/40 text-muted-foreground hover:border-border/60 hover:bg-accent/40 hover:text-foreground"
+                )}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Grid View */}
-      <div className="flex-1 scrollbar-none overflow-y-auto p-6">
+      {/* Main Grid Body */}
+      <div className="scrollbar-none flex-1 overflow-y-auto p-6">
         {isLoading ? (
           <div className="flex h-full items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+            <span className="h-8 w-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
           </div>
         ) : groups.length === 0 ? (
           <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-400 shadow-lg">
-              <Users className="h-6 w-6" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-3xl border border-border/40 bg-muted/20 text-muted-foreground shadow-lg">
+              <Group className="h-6 w-6 text-emerald-500" />
             </div>
-            <h3 className="mb-1 font-semibold text-slate-200">
-              {activeView === "joined"
-                ? "You haven't joined any groups yet"
-                : activeView === "created"
-                  ? "You haven't created any groups"
-                  : "No groups found"}
+            <h3 className="mb-1 font-bold text-foreground">
+              {searchQuery.trim()
+                ? "No matching ThinkTanks found"
+                : activeView === "joined"
+                  ? "You haven't joined any ThinkTanks yet"
+                  : activeView === "created"
+                    ? "You haven't created any ThinkTanks yet"
+                    : "No ThinkTanks found"}
             </h3>
-            <p className="mb-6 text-xs leading-relaxed text-slate-400">
-              {activeView === "joined"
-                ? "Discover and join group chats to start collaborating with other system owners and nations."
-                : activeView === "discover"
-                  ? "Try adjusting your search filters or browse other categories."
-                  : "Create a new group in the ThinkPages control center to start collaborating."}
+            <p className="mb-6 max-w-xs text-xs leading-relaxed text-muted-foreground">
+              {searchQuery.trim()
+                ? `No groups match "${searchQuery}". Try adjusting your query or category filter.`
+                : activeView === "joined"
+                  ? "Discover public groups to co-author history, diplomacy, and lore."
+                  : activeView === "discover"
+                    ? "Try browsing a different category or create a new group."
+                    : "Start your own ThinkTank workspace to lead policy and worldbuilding."}
             </p>
-            {activeView === "joined" && (
+            {activeView === "joined" && !searchQuery.trim() && (
               <Button
-                onClick={() => setActiveView("discover")}
-                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-indigo-700"
+                onClick={() => handleViewChange("discover")}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
               >
-                Browse Directory
+                <Compass className="mr-1.5 h-3.5 w-3.5" />
+                <span>Browse Directory</span>
               </Button>
             )}
           </div>
@@ -305,33 +372,45 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {groups.map((group: any) => {
               const isMember =
-                group.isMember ??
+                group.isJoined ??
                 group.members?.some?.((m: any) => m.userId === userId && m.isActive);
               const TypeIcon =
-                group.type === "private" ? Lock : group.type === "invite_only" ? Hash : Globe;
+                group.type === "private" ? Lock : group.type === "invite_only" ? Hashtag : Globe;
+              const typeLabel =
+                group.type === "private"
+                  ? "Private"
+                  : group.type === "invite_only"
+                    ? "Restricted"
+                    : "Public";
+              const docsCount = group.docsCount ?? group._count?.collaborativeDocs ?? 0;
 
               return (
                 <div
                   key={group.id}
                   onClick={() => handleOpenGroup(group)}
-                  className="group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-white/5 bg-white/5 p-5 text-left transition-all duration-300 hover:scale-[1.01] hover:border-white/10 hover:bg-white/10 hover:shadow-xl hover:shadow-black/20"
+                  className="group relative flex cursor-pointer flex-col justify-between rounded-3xl border border-border/30 bg-card/60 p-5 text-left shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-emerald-500/40 hover:bg-card/90 hover:shadow-md active:scale-[0.99]"
                 >
                   <div>
                     {/* Top row */}
                     <div className="mb-3.5 flex items-start justify-between gap-3">
-                      <Avatar className="h-11 w-11 shrink-0 rounded-xl border border-white/10 shadow-md">
+                      <Avatar className="h-11 w-11 shrink-0 rounded-2xl border border-border/40 shadow-xs">
                         <AvatarImage src={group.avatar ?? undefined} className="object-cover" />
-                        <AvatarFallback className="rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
-                          <Users className="h-5 w-5" />
+                        <AvatarFallback className="rounded-2xl bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Group className="h-5 w-5" />
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex items-center gap-1.5">
-                        <span title={group.type}>
-                          <TypeIcon className="h-3.5 w-3.5 text-slate-500" />
+                        <span
+                          className="flex items-center gap-1 rounded-full border border-border/30 bg-muted/40 px-2 py-0.5 text-[9px] font-semibold text-muted-foreground"
+                          title={typeLabel}
+                        >
+                          <TypeIcon className="h-3 w-3 text-muted-foreground" />
+                          <span>{typeLabel}</span>
                         </span>
+
                         {group.category && (
-                          <span className="rounded-full border border-indigo-500/20 bg-indigo-500/20 px-2 py-0.5 text-[9px] font-bold whitespace-nowrap text-indigo-300">
+                          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
                             {group.category}
                           </span>
                         )}
@@ -340,23 +419,45 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
 
                     {/* Title & Description */}
                     <div className="min-w-0">
-                      <h4 className="truncate text-sm leading-tight font-bold text-slate-200 group-hover:text-white">
+                      <h4 className="truncate text-sm font-bold tracking-tight text-foreground transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                         {group.name}
                       </h4>
                       {group.description && (
-                        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed font-medium text-slate-400">
+                        <p className="mt-1.5 line-clamp-2 text-xs font-normal leading-relaxed text-muted-foreground">
                           {group.description}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Footer Stats & Button */}
-                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/5 pt-3.5">
-                    <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-500">
-                      <Users className="h-3 w-3" />
-                      {group.memberCount ?? group._count?.members ?? 0} Members
-                    </span>
+                  {/* Footer Stats & Action Buttons */}
+                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-border/20 pt-3.5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                        <Group className="h-3.5 w-3.5 text-muted-foreground/70" />
+                        {group.memberCount ?? group._count?.members ?? 0}
+                      </span>
+
+                      {docsCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            soundEffects.press();
+                            setDocsModalGroup({
+                              id: group.id,
+                              name: group.name,
+                              isMember,
+                            });
+                          }}
+                          className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                          title="View Collaborative Papers"
+                        >
+                          <Book className="h-3 w-3" />
+                          <span>{docsCount} Papers</span>
+                        </button>
+                      )}
+                    </div>
 
                     {/* Join/Leave/Open button */}
                     <div className="flex items-center gap-1.5">
@@ -365,11 +466,11 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
                           <button
                             onClick={(e) => handleLeave(e, group.id)}
                             disabled={leaveMutation.isPending}
-                            className="rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-[10px] font-semibold text-rose-400 transition-colors hover:bg-rose-500/20 hover:text-rose-300"
+                            className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[10px] font-semibold text-destructive transition-colors hover:bg-destructive/20 active:scale-95"
                           >
                             Leave
                           </button>
-                          <span className="flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-400">
+                          <span className="flex items-center gap-1 rounded-xl border border-success/30 bg-success/15 px-2.5 py-1.5 text-[10px] font-bold text-success shadow-xs">
                             Joined <Check className="h-3 w-3" />
                           </span>
                         </>
@@ -377,12 +478,9 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
                         <button
                           onClick={(e) => handleJoin(e, group.id)}
                           disabled={joinMutation.isPending}
-                          className="flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-md shadow-indigo-950/20 transition-all hover:bg-indigo-700"
+                          className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-600 px-3.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                         >
-                          {joinMutation.isPending && (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          )}
-                          Join Group
+                          Join ThinkTank
                           <ArrowRight className="h-3 w-3" />
                         </button>
                       )}
@@ -395,53 +493,68 @@ export function MessagesGroupsPanel({ onSelectGroup, onBack }: MessagesGroupsPan
         )}
       </div>
 
-      {/* Groups Help Modal */}
+      {/* Collaborative Documents Modal */}
+      {docsModalGroup && (
+        <ThinktankDocsModal
+          isOpen={!!docsModalGroup}
+          onClose={() => setDocsModalGroup(null)}
+          groupId={docsModalGroup.id}
+          groupName={docsModalGroup.name}
+          currentUserId={userId}
+          isMember={docsModalGroup.isMember}
+        />
+      )}
+
+      {/* About ThinkTanks Help Modal */}
       <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-        <DialogContent className="border-white/10 bg-slate-900 text-white backdrop-blur-xl sm:max-w-md">
+        <DialogContent className="z-[100060] rounded-3xl border-border/40 bg-card/95 text-foreground backdrop-blur-2xl sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-indigo-400" />
-              About ThinkTank Groups
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-400">
-              Collaborative hubs for system owners and nations.
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <HelpCircle className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                About ThinkTanks
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Collaborative institutions for worldbuilding, policy drafting, and nation statecraft.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 text-xs leading-relaxed text-slate-300">
-            <div className="space-y-1">
-              <h4 className="font-bold text-slate-200">🔍 Browse & Discover</h4>
-              <p>
-                Explore categories or use the search bar to find groups that match your interests.
-                You can view all available groups on the **Discover** tab.
+          <div className="mt-2 space-y-3.5 text-xs leading-relaxed text-muted-foreground">
+            <div className="rounded-2xl border border-border/30 bg-muted/20 p-3.5">
+              <h4 className="flex items-center gap-1.5 font-bold text-foreground">
+                <Compass className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                1. Browse & Discover
+              </h4>
+              <p className="mt-1 text-muted-foreground">
+                Find working groups by category — from Economics and Diplomacy to History and Worldbuilding.
               </p>
             </div>
-            <div className="space-y-1">
-              <h4 className="font-bold text-slate-200">💬 Real-time Group Chats</h4>
-              <p>
-                Clicking on a group you've joined opens its dedicated chat channel, allowing you to
-                converse with other members in real-time.
+            <div className="rounded-2xl border border-border/30 bg-muted/20 p-3.5">
+              <h4 className="flex items-center gap-1.5 font-bold text-foreground">
+                <Group className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                2. Real-Time Group Chat
+              </h4>
+              <p className="mt-1 text-muted-foreground">
+                Joined groups unlock a synchronized chat channel with other members and national leaders.
               </p>
             </div>
-            <div className="space-y-1">
-              <h4 className="font-bold text-slate-200">🔒 Group Types</h4>
-              <p>
-                Groups can be public (anyone can join), restricted (require approvals/invites), or
-                private.
-              </p>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-bold text-slate-200">✍️ Collaboration & Lore</h4>
-              <p>
-                ThinkTank groups act as collaborative foundations to draft world history, national
-                policies, and shared wiki articles.
+            <div className="rounded-2xl border border-border/30 bg-muted/20 p-3.5">
+              <h4 className="flex items-center gap-1.5 font-bold text-foreground">
+                <Book className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                3. Collaborative Papers & Treaties
+              </h4>
+              <p className="mt-1 text-muted-foreground">
+                Draft treaties, publish lore papers, and record shared history with version-controlled Markdown documents.
               </p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create Group Modal */}
+      {/* Interactive Create Group Studio Modal */}
       <CreateGroupModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -474,16 +587,29 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup }: CreateGroupModalPr
   const [description, setDescription] = useState("");
   const [type, setType] = useState<"public" | "private" | "invite_only">("public");
   const [category, setCategory] = useState("Worldbuilding");
-  const [tagsText, setTagsText] = useState("");
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>(["worldbuilding", "lore"]);
+
+  const handleAddTag = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const val = tagInput.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      if (val && !tags.includes(val) && tags.length < 5) {
+        soundEffects.press();
+        setTags([...tags, val]);
+        setTagInput("");
+      }
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    soundEffects.release();
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-
-    const tags = tagsText
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
 
     onCreateGroup({
       name: name.trim(),
@@ -498,101 +624,269 @@ function CreateGroupModal({ isOpen, onClose, onCreateGroup }: CreateGroupModalPr
     setDescription("");
     setType("public");
     setCategory("Worldbuilding");
-    setTagsText("");
+    setTags(["worldbuilding", "lore"]);
   };
+
+  const privacyOptions = [
+    {
+      id: "public" as const,
+      icon: Globe,
+      title: "Public",
+      description: "Open to all players. Anyone can join and read papers.",
+    },
+    {
+      id: "invite_only" as const,
+      icon: Hashtag,
+      title: "Restricted",
+      description: "Requires invite or host approval to participate.",
+    },
+    {
+      id: "private" as const,
+      icon: Lock,
+      title: "Private",
+      description: "Hidden ThinkTank. Strictly invite-only.",
+    },
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="z-[100050] max-h-[90vh] overflow-y-auto border-white/10 bg-slate-900 text-white backdrop-blur-xl sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-indigo-400" />
-            <DialogTitle className="font-bold text-slate-100">Create New Group</DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-slate-400">
-            Start a collaborative discussion group for worldbuilding, economics, or lore.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Group Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Caphirian History Society"
-              className="border-white/5 bg-slate-950/50 text-xs text-slate-200"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your group's focus..."
-              className="animate-none resize-none border-white/5 bg-slate-950/50 text-xs text-slate-200"
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-400">Privacy Mode</label>
-              <Select value={type} onValueChange={(val: any) => setType(val)}>
-                <SelectTrigger className="border-white/5 bg-slate-950/50 text-xs text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[100060] border-white/10 bg-slate-950 text-xs text-white">
-                  <SelectItem value="public">Public (Anyone)</SelectItem>
-                  <SelectItem value="private">Private (Invite only)</SelectItem>
-                  <SelectItem value="invite_only">Restricted (Approval)</SelectItem>
-                </SelectContent>
-              </Select>
+      <DialogContent className="z-[100060] max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto rounded-3xl border border-border/40 bg-card/95 p-0 text-foreground shadow-2xl backdrop-blur-2xl scrollbar-none">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border/30 px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <Plus className="h-4.5 w-4.5" />
             </div>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Create ThinkTank
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Establish a collaborative group for shared lore, nation statecraft, or research.
+              </DialogDescription>
+            </div>
+          </div>
+        </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-400">Category</label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="border-white/5 bg-slate-950/50 text-xs text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[100060] max-h-56 border-white/10 bg-slate-950 text-xs text-white">
-                  {GROUP_CATEGORIES.filter((c) => c !== "All").map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
+        {/* Form on Left, Live Preview on Right */}
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-12">
+            {/* Left Form Controls */}
+            <div className="space-y-4 md:col-span-7">
+              {/* Group Name */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  ThinkTank Name
+                </label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Caphirian History Society"
+                  className="h-10 rounded-xl border-input bg-background/80 text-sm font-semibold text-foreground"
+                  maxLength={60}
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Mission & Focus
+                </label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your group's research focus, historical epoch, or policy agenda..."
+                  className="h-20 animate-none resize-none rounded-xl border-input bg-background/80 text-xs text-foreground leading-relaxed"
+                  maxLength={300}
+                />
+              </div>
+
+              {/* Privacy Mode Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Privacy Level
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {privacyOptions.map((opt) => {
+                    const isSelected = type === opt.id;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          soundEffects.press();
+                          setType(opt.id);
+                        }}
+                        className={cn(
+                          "flex flex-col items-start rounded-2xl border p-2.5 text-left transition-all select-none active:scale-[0.97]",
+                          isSelected
+                            ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                            : "border-border/30 bg-card/40 hover:border-border/60 hover:bg-accent/40"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Icon className={cn("h-3.5 w-3.5", isSelected ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")} />
+                          <span className="text-xs font-bold text-foreground">{opt.title}</span>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-muted-foreground">
+                          {opt.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category Pills */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Primary Domain
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {GROUP_CATEGORIES.filter((c) => c !== "All").map((cat) => {
+                    const isSelected = category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          soundEffects.press();
+                          setCategory(cat);
+                        }}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-[10px] font-semibold transition-all select-none active:scale-[0.96]",
+                          isSelected
+                            ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : "border-border/30 bg-card/40 text-muted-foreground hover:border-border/60 hover:text-foreground"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Tags Input */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                  Tags (press Enter to add)
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-input bg-background/80 p-2">
+                  {tags.map((t) => (
+                    <span
+                      key={t}
+                      className="flex items-center gap-1 rounded-lg border border-border/30 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-foreground"
+                    >
+                      <span>#{t}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(t)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Xmark className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
-                </SelectContent>
-              </Select>
+                  {tags.length < 5 && (
+                    <input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      placeholder={tags.length === 0 ? "e.g. treaty, military" : "Add tag..."}
+                      className="min-w-[80px] flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Live Directory Card Preview */}
+            <div className="flex flex-col justify-center border-t border-border/30 pt-6 md:col-span-5 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Live Directory Preview</span>
+              </div>
+
+              {/* Mock Directory Card */}
+              <div className="rounded-3xl border border-border/40 bg-card/90 p-5 shadow-lg backdrop-blur-xl">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-xs">
+                    <Group className="h-5 w-5" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1 rounded-full border border-border/30 bg-muted/40 px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                      {type === "private" ? (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      ) : type === "invite_only" ? (
+                        <Hashtag className="h-3 w-3 text-muted-foreground" />
+                      ) : (
+                        <Globe className="h-3 w-3 text-muted-foreground" />
+                      )}
+                      <span className="capitalize">{type.replace("_", " ")}</span>
+                    </span>
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                      {category}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-bold tracking-tight text-foreground">
+                    {name.trim() || "Untitled ThinkTank"}
+                  </h4>
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {description.trim() || "No description provided yet. Add your group's focus above."}
+                  </p>
+                </div>
+
+                {/* Preview Tags */}
+                {tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {tags.map((t) => (
+                      <span key={t} className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center justify-between border-t border-border/20 pt-3">
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                    <Group className="h-3 w-3" /> 1 Member
+                  </span>
+                  <span className="rounded-xl border border-emerald-500/40 bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white shadow-xs dark:bg-emerald-500">
+                    Join ThinkTank
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Tags (comma-separated)</label>
-            <Input
-              value={tagsText}
-              onChange={(e) => setTagsText(e.target.value)}
-              placeholder="e.g. history, roleplay, caphiria"
-              className="border-white/5 bg-slate-950/50 text-xs text-slate-200"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 border-t border-white/5 pt-3">
+          {/* Form Actions Footer */}
+          <div className="flex items-center justify-end gap-2.5 border-t border-border/30 bg-muted/20 px-6 py-4">
             <Button
               type="button"
               variant="ghost"
-              onClick={onClose}
-              className="text-xs text-slate-400 hover:text-white"
+              size="sm"
+              onClick={() => {
+                soundEffects.press();
+                onClose();
+              }}
+              className="h-8.5 rounded-xl text-xs text-muted-foreground hover:text-foreground"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700"
+              size="sm"
+              disabled={!name.trim()}
+              className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
             >
-              Create Group
+              <Spark className="h-3.5 w-3.5" />
+              <span>Create ThinkTank</span>
             </Button>
           </div>
         </form>

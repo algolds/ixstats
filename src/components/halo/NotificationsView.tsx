@@ -34,6 +34,7 @@ import {
   getColors,
   relativeTime,
 } from "./tray/types";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 export function NotificationsView({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
@@ -286,7 +287,11 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             </button>
           )}
           <button
-            onClick={onClose}
+            onClick={() => {
+              soundEffects.droplet();
+              onClose();
+            }}
+            data-cuelume-press="droplet"
             className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
             title="Close tray"
           >
@@ -303,6 +308,8 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           return (
             <button
               key={tab.id}
+              data-cuelume-press="page"
+              data-cuelume-hover="tick"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all select-none active:scale-[0.97]",

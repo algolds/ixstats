@@ -28,6 +28,7 @@ import { RARITY_THEMES } from "./CardBack";
 import { NationStatesBadge } from "./NationStatesLogo";
 import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
@@ -516,8 +517,9 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                     <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>
-                    <span className="font-mono font-bold text-white/70 tabular-nums">
-                      {card.marketValue.toLocaleString()} IxC
+                    <span className="flex items-center gap-0.5 font-mono font-bold text-white/70 tabular-nums">
+                      <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                      {card.marketValue.toLocaleString()}
                     </span>
                   </div>
                 </div>

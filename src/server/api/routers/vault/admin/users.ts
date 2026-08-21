@@ -171,7 +171,7 @@ export const vaultAdminUsersRouter = createTRPCRouter({
             await notificationAPI.create({
               userId: input.targetUserId,
               title: "Credits Adjusted",
-              message: `${formattedAmount} IxC by Administrator. Reason: ${input.reason}`,
+              message: `${formattedAmount} IxCredits by Administrator. Reason: ${input.reason}`,
               type: "info",
               category: "achievement",
               priority: "high",

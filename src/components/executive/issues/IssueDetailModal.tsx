@@ -28,6 +28,7 @@ import { IxTime } from "~/lib/ixtime";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
 import { useNotify } from "~/hooks/useNotify";
 import { ParadoxFlavorCard } from "~/components/executive/narrator/ParadoxFlavorCard";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 interface ResponseOption {
   id: string;
@@ -282,9 +283,10 @@ function IssueDetailModalInner({
               {issue.ixCreditsAwarded > 0 && (
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-400"
+                  className="inline-flex items-center gap-1 border-amber-500/30 bg-amber-500/20 text-xs text-amber-400"
                 >
-                  +{issue.ixCreditsAwarded} IxC
+                  +{issue.ixCreditsAwarded}
+                  <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                 </Badge>
               )}
             </div>

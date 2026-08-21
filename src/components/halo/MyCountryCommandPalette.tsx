@@ -9,9 +9,14 @@ import { cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "./types";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 export function MyCountryCommandPalette({ onClose }: DIViewProps) {
   const router = useRouter();
+
+  React.useEffect(() => {
+    soundEffects.scan();
+  }, []);
 
   const navigateToSection = useCallback(
     (section: string) => {
@@ -87,7 +92,11 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
           </PreText>
         </div>
         <button
-          onClick={onClose}
+          onClick={() => {
+            soundEffects.droplet();
+            onClose();
+          }}
+          data-cuelume-press="droplet"
           className="text-muted-foreground hover:text-foreground hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
           aria-label="Close Quick Actions"
         >
@@ -103,6 +112,8 @@ export function MyCountryCommandPalette({ onClose }: DIViewProps) {
           return (
             <button
               key={idx}
+              data-cuelume-hover="tick"
+              data-cuelume-press="press"
               onClick={item.action}
               className={cn(actionButtonClass(item.colors), isLast && "col-span-2")}
             >

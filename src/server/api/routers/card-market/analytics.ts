@@ -174,7 +174,7 @@ export const cardMarketAnalyticsRouter = createTRPCRouter({
       return {
         success: true,
         creditsAwarded: creditsAmount,
-        message: `Successfully dusted card for ${creditsAmount} IxC.`,
+        message: `Successfully dusted card for ${creditsAmount} IxCredits.`,
       };
     }),
 

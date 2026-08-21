@@ -60,6 +60,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | **NPC AI** | [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 🥈 Release Candidate |
 | **Crises** | [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 🥈 Release Candidate |
 | **Social** | [systems/social.md](systems/social.md) | ThinkPages v2, ThinkShare unified messaging, activity feeds, polls | 🥈 Release Candidate |
+| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Collaborative groups & research engine, 4-pillar workspace, Apple design, Discord taxonomy | 🥈 Release Candidate |
 | **Cards & Vault** | [systems/cards.md](systems/cards.md) · [systems/myvault.md](systems/myvault.md) | IxCards v2 & MyVault v2 UI — dynamic rarity, pack opening, crafting, store perks | 🥈 Release Candidate |
 | **IxCredits** | [systems/ixcredits.md](systems/ixcredits.md) | Virtual currency ledger, atomic conditional balance locks, passive income | 🥈 Release Candidate |
 | **NationStates**| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown | 🥈 Release Candidate |

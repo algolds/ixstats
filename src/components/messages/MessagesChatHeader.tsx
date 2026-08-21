@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import {
   Search,
-  MoreVertical,
-  Info,
+  MoreVert,
+  InfoCircle,
   UserPlus,
-  Trash2,
+  Trash,
   Archive,
   BellOff,
-  ChevronLeft,
-  X,
+  ArrowLeft,
+  Xmark,
   Crown,
   Shield,
-  RotateCcw,
-} from "lucide-react";
+  Refresh,
+  Book,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
@@ -42,6 +43,7 @@ interface MessagesChatHeaderProps {
   isSidebarCollapsed?: boolean;
   onViewDetails?: () => void;
   onAddParticipants?: () => void;
+  onOpenDocs?: () => void;
   onMuteToggle?: () => void;
   onArchiveToggle?: () => void;
   onDeleteConversation?: () => void;
@@ -54,13 +56,14 @@ interface MessagesChatHeaderProps {
 export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
   conversation,
   currentUserId,
-  activeFolder,
+  activeFolder: _activeFolder,
   participantStatus,
   onSearch,
   onBack,
-  isSidebarCollapsed = false,
+  isSidebarCollapsed: _isSidebarCollapsed,
   onViewDetails,
   onAddParticipants,
+  onOpenDocs,
   onMuteToggle,
   onArchiveToggle,
   onDeleteConversation,
@@ -74,55 +77,65 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
 
   const isSystemThread = conversation.id === SYSTEM_CONVERSATION_ID || conversation.source === "system";
   const isDiplomatic = conversation.source === "diplomatic" || conversation.conversationType === "diplomatic";
-  const isGroup = conversation.type === "group";
-  const participant = conversation.otherParticipants[0];
+  const isGroup = conversation.type === "group" || conversation.source === "thinktank";
 
-  const participantCountryFlag =
-    participant?.account?.countryFlag || participant?.countryFlag || null;
-  const participantCountryName =
-    participant?.account?.countryName || participant?.countryName || null;
+  const otherParticipants = (conversation.otherParticipants ?? []).filter(
+    (p: any) => p.accountId !== currentUserId
+  );
+  const primaryOther = otherParticipants[0]?.account;
+  const memberCount = otherParticipants.length + 1;
 
-  const participantName =
-    displayNamePreference === "account" && participant?.account?.username
-      ? `@${participant.account.username}`
-      : (participant?.account?.displayName ?? conversation.name ?? "Unknown");
-  const participantAvatar = participant?.account?.profileImageUrl ?? null;
+  const identity =
+    !isGroup && !isSystemThread && primaryOther
+      ? resolveIdentity(
+          primaryOther.displayName || primaryOther.username || "User",
+          primaryOther.profileImageUrl || primaryOther.countryFlag || null,
+          _activeFolder,
+          primaryOther.countryName
+            ? { country: { name: primaryOther.countryName, slug: "", flag: primaryOther.countryFlag } }
+            : null,
+          null,
+          conversation.source,
+          conversation.conversationType
+        )
+      : null;
 
-  const identity = participant
-    ? resolveIdentity(
-        participantName,
-        participantAvatar,
-        activeFolder,
-        null,
-        null,
-        conversation.source,
-        conversation.conversationType
-      )
-    : null;
-
-  const isSelf = participant?.accountId === currentUserId;
   const displayTitle = isSystemThread
     ? "System Messages"
     : isGroup
-      ? (conversation.name ?? "ThinkTank Working Table")
-      : isSelf
-        ? `${identity?.displayName} (You)`
-        : (identity?.displayName ?? "Select a conversation");
+      ? conversation.name || "ThinkTank"
+      : identity
+        ? identity.displayName
+        : conversation.name || primaryOther?.displayName || primaryOther?.username || "Direct Message";
 
-  const memberCount = (conversation.otherParticipants?.length ?? 0) + 1;
-  const currentStatus = participantStatus || "offline";
+  const avatarUrl = isSystemThread
+    ? null
+    : isGroup
+      ? conversation.avatar
+      : identity?.avatar || primaryOther?.countryFlag || primaryOther?.profileImageUrl;
+
+  const currentStatus = isSystemThread
+    ? "Broadcast Channel"
+    : participantStatus ||
+      (isGroup ? `${memberCount} members` : "Active now");
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     onSearch?.(e.target.value);
   };
 
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearchVisible(false);
+    onSearch?.("");
+  };
+
   const toggleSearch = () => {
     if (isSearchVisible) {
-      setSearchQuery("");
-      onSearch?.("");
+      clearSearch();
+    } else {
+      setIsSearchVisible(true);
     }
-    setIsSearchVisible(!isSearchVisible);
   };
 
   // Dynamic header styling by thread type
@@ -131,102 +144,94 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
     : isDiplomatic
       ? "bg-amber-500/[0.03] dark:bg-amber-500/[0.07] border-b border-amber-500/20"
       : isGroup
-        ? "bg-indigo-500/[0.03] dark:bg-indigo-500/10 border-b border-indigo-500/20"
-        : "bg-emerald-500/[0.03] dark:bg-emerald-500/10 border-b border-emerald-500/20";
+        ? "bg-emerald-500/[0.04] border-b border-emerald-500/20 dark:bg-emerald-500/10"
+        : "bg-muted/[0.08] border-b border-border/40";
 
   return (
     <header
       className={cn(
-        "relative z-10 flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur-md transition-colors duration-500",
+        "relative z-10 flex h-14 shrink-0 items-center justify-between px-3 md:px-4 backdrop-blur-xl transition-colors duration-300",
         headerTheme
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         {onBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 shrink-0"
-            title={isSidebarCollapsed ? "Show conversation list" : "Hide conversation list"}
+            className="mr-1 -ml-1 h-8 w-8 shrink-0 rounded-xl text-muted-foreground hover:bg-accent/40 hover:text-foreground active:scale-95"
+            title="Back to conversation list"
           >
-            <ChevronLeft
-              className={cn(
-                "h-5 w-5 transition-transform duration-200",
-                isSidebarCollapsed && "rotate-180"
-              )}
-            />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
 
         {isSearchVisible ? (
-          <div className="flex flex-1 items-center gap-2">
-            <div className="relative w-full max-w-md">
-              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
-              <Input
-                autoFocus
-                placeholder="Search messages..."
-                className="h-9 pr-8 pl-9 text-xs"
-                value={searchQuery}
-                onChange={handleSearchChange}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    onSearch?.("");
-                  }}
-                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-            <Button variant="ghost" size="sm" onClick={toggleSearch}>
-              Cancel
+          <div className="flex flex-1 items-center gap-2 pr-2">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search in conversation..."
+              className="h-8 flex-1 rounded-xl bg-background/50 text-xs"
+            />
+            <Button variant="ghost" size="icon" onClick={clearSearch} className="h-7 w-7">
+              <Xmark className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
           <>
-            {isSystemThread ? (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-400 shadow-2xs">
-                <Crown className="h-5 w-5" />
-              </div>
-            ) : !isGroup && participantCountryFlag ? (
-              <div className="h-9 w-12 shrink-0 overflow-hidden rounded-md border border-border/50 shadow-2xs">
-                <UnifiedCountryFlag
-                  countryName={participantCountryName || displayTitle}
-                  flagUrl={normalizeFlagUrl(participantCountryFlag)}
-                  className="h-full w-full object-cover"
-                  showTooltip={false}
-                />
-              </div>
-            ) : !isGroup && participant ? (
-              <div className="relative shrink-0">
-                <img
-                  src={identity?.avatar || "/avatars/default.png"}
-                  alt={displayTitle}
-                  className="ring-border h-10 w-10 rounded-full object-cover ring-1"
-                />
-                {currentStatus !== "offline" && (
-                  <span
-                    className={cn(
-                      "border-background absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2",
-                      currentStatus === "online"
-                        ? "bg-emerald-500"
-                        : currentStatus === "away"
-                          ? "bg-amber-500"
-                          : currentStatus === "busy"
-                            ? "bg-rose-500"
-                            : "bg-muted-foreground/50"
-                    )}
+            <div className="relative shrink-0">
+              {isSystemThread ? (
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 shadow-inner">
+                  <Shield className="h-4.5 w-4.5 text-amber-500" />
+                </div>
+              ) : avatarUrl ? (
+                primaryOther?.countryFlag ? (
+                  <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-border/30 bg-background/50 shadow-xs">
+                    <UnifiedCountryFlag
+                      countryName={primaryOther.countryName || displayTitle}
+                      flagUrl={normalizeFlagUrl(avatarUrl)}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={avatarUrl}
+                    alt={displayTitle}
+                    className="h-9 w-9 rounded-xl border border-border/30 object-cover shadow-xs"
                   />
-                )}
-              </div>
-            ) : null}
+                )
+              ) : (
+                <div
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl border font-bold shadow-xs",
+                    isGroup
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "border-border/30 bg-accent/20 text-muted-foreground"
+                  )}
+                >
+                  {displayTitle.charAt(0).toUpperCase()}
+                </div>
+              )}
 
-            <div className="min-w-0 space-y-0.5">
-              <div className="flex items-center gap-2">
+              {/* Online status indicator */}
+              {!isSystemThread && !isGroup && (
+                <span
+                  className={cn(
+                    "absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-background",
+                    participantStatus?.toLowerCase().includes("online")
+                      ? "bg-emerald-500"
+                      : "bg-muted-foreground/40"
+                  )}
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
                 <h3 className="text-foreground truncate text-sm font-semibold">{displayTitle}</h3>
                 {isSystemThread ? (
                   <span className="flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.2 text-[8px] font-bold tracking-wider uppercase text-amber-500">
@@ -241,12 +246,17 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                     Diplomatic Cable
                   </span>
                 )}
+                {isGroup && (
+                  <span className="flex items-center gap-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.2 text-[8px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                    ThinkTank
+                  </span>
+                )}
               </div>
               <p className="text-muted-foreground text-[10.5px]">
                 {isSystemThread
                   ? "Platform broadcasts, simulation digests & system dispatches"
                   : isGroup
-                    ? `${memberCount || 0} members`
+                    ? `${memberCount || 0} members • ThinkTank`
                     : currentStatus}
               </p>
             </div>
@@ -255,68 +265,89 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
       </div>
 
       {!isSearchVisible && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {onOpenDocs && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenDocs}
+              className="flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-xs font-semibold text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
+              title="Open Collaborative Papers"
+            >
+              <Book className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Papers</span>
+            </Button>
+          )}
+
           {!isSystemThread && (
             <Button variant="ghost" size="icon" onClick={toggleSearch}>
               <Search className="h-4 w-4" />
             </Button>
           )}
 
-          {isSystemThread ? (
-            onClearSystemMessages && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearSystemMessages}
-                className="text-muted-foreground hover:text-foreground text-xs"
-              >
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                Clear All
-              </Button>
-            )
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "icon" }),
-                  "text-muted-foreground cursor-pointer"
-                )}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuGroup>
-                  <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
-                  <DropdownMenuSeparator />
+          {isGroup && onAddParticipants && (
+            <Button variant="ghost" size="icon" onClick={onAddParticipants}>
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={buttonVariants({ variant: "ghost", size: "icon" })}
+              aria-label="Conversation actions"
+            >
+              <MoreVert className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>Conversation</DropdownMenuGroupLabel>
+                {onViewDetails && (
                   <DropdownMenuItem onClick={onViewDetails}>
-                    <Info className="mr-2 h-4 w-4" />
-                    View Details
+                    <InfoCircle className="mr-2 h-4 w-4" />
+                    <span>View Details</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onAddParticipants}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Participants
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                )}
+                {onMuteToggle && !isSystemThread && (
                   <DropdownMenuItem onClick={onMuteToggle}>
                     <BellOff className="mr-2 h-4 w-4" />
-                    {isMuted ? "Unmute Notifications" : "Mute Notifications"}
+                    <span>{isMuted ? "Unmute Thread" : "Mute Thread"}</span>
                   </DropdownMenuItem>
+                )}
+                {onArchiveToggle && !isSystemThread && (
                   <DropdownMenuItem onClick={onArchiveToggle}>
                     <Archive className="mr-2 h-4 w-4" />
-                    {isArchived ? "Unarchive Chat" : "Archive Chat"}
+                    <span>{isArchived ? "Unarchive Thread" : "Archive Thread"}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                )}
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuGroup>
+                {isSystemThread && onClearSystemMessages ? (
                   <DropdownMenuItem
-                    onClick={onDeleteConversation}
-                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                    variant="destructive"
+                    onClick={onClearSystemMessages}
+                    className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Conversation
+                    <Refresh className="mr-2 h-4 w-4" />
+                    <span>Clear System Logs</span>
                   </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                ) : (
+                  onDeleteConversation && (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={onDeleteConversation}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash className="mr-2 h-4 w-4" />
+                      <span>{isGroup ? "Leave ThinkTank" : "Delete Thread"}</span>
+                    </DropdownMenuItem>
+                  )
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </header>

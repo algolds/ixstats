@@ -30,7 +30,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     .input(
       z.object({
         cardId: z.string().min(1, "Card ID is required"),
-        startingPrice: z.number().min(1, "Starting price must be at least 1 IxC"),
+        startingPrice: z.number().min(1, "Starting price must be at least 1 IxCredit"),
         buyoutPrice: z.number().min(1).optional(),
         duration: z.union([z.literal("30"), z.literal("60")]),
         isFeatured: z.boolean().optional().default(false),
@@ -158,7 +158,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
             await notificationAPI.create({
               userId: auction.User.clerkUserId,
               title: "Card Sold!",
-              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
+              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxCredits`,
               type: "info",
               category: "economic",
               priority: "high",

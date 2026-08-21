@@ -5,6 +5,7 @@ import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import type { SearchViewProps, SearchFilter } from "./types";
 import { PreText } from "~/components/ui/pretext";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -73,7 +74,11 @@ export function SearchView({
         </div>
         {/* Close */}
         <button
-          onClick={closeDropdown}
+          onClick={() => {
+            soundEffects.droplet();
+            closeDropdown();
+          }}
+          data-cuelume-press="droplet"
           className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
           aria-label="Close search"
         >
@@ -86,6 +91,8 @@ export function SearchView({
         {FILTERS.map(({ value, label }) => (
           <button
             key={value}
+            data-cuelume-press="page"
+            data-cuelume-hover="tick"
             onClick={() => setSearchFilter?.(value)}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
               searchFilter === value

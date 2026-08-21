@@ -3,15 +3,12 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  Bell,
   Settings,
-  Volume2,
-  Eye,
-  Rows3,
-  MessageSquare,
-  Users,
+  SoundHigh,
+  ChatBubble,
+  Group,
   User,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   Popover,
@@ -23,25 +20,22 @@ import {
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface MessagesSettings {
   notificationSounds: boolean;
-  showReadReceipts: boolean;
-  compactMode: boolean;
   displayNamePreference: "account" | "country";
 }
 
 export const DEFAULT_MESSAGES_SETTINGS: MessagesSettings = {
   notificationSounds: true,
-  showReadReceipts: true,
-  compactMode: false,
   displayNamePreference: "country",
 };
 
 export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   {
     id: "conversations",
-    icon: MessageSquare,
+    icon: ChatBubble,
     title: "Messages",
     description: "Direct, diplomatic, and wiki discussions",
     gradient: "text-emerald-500",
@@ -51,11 +45,11 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   },
   {
     id: "groups",
-    icon: Users,
+    icon: Group,
     title: "ThinkTanks",
-    description: "ThinkTank group chats and working tables",
-    gradient: "text-indigo-500",
-    activeGlow: "bg-indigo-500/10 border-indigo-500/40",
+    description: "ThinkTank group chats and research rooms",
+    gradient: "text-emerald-500",
+    activeGlow: "bg-emerald-500/10 border-emerald-500/40",
     emptyTitle: "No ThinkTanks found",
     emptyDescription: "Join or create a ThinkTank group to start collaborating.",
   },
@@ -83,7 +77,17 @@ export function MessagesFolderNav({
   onSettingsChange,
 }: MessagesFolderNavProps) {
   const toggleSetting = (key: keyof MessagesSettings) => {
-    onSettingsChange?.({ ...settings, [key]: !settings[key] });
+    const nextValue = !settings[key];
+    if (key === "notificationSounds") {
+      if (nextValue) {
+        soundEffects.chime();
+      } else {
+        soundEffects.toggle();
+      }
+    } else {
+      soundEffects.toggle();
+    }
+    onSettingsChange?.({ ...settings, [key]: nextValue });
   };
 
   // Folder-specific dynamic color accents for the cutout header background
@@ -93,8 +97,8 @@ export function MessagesFolderNav({
       border: "border-b border-emerald-500/20",
     },
     groups: {
-      bg: "bg-indigo-500/[0.04] dark:bg-indigo-500/10",
-      border: "border-b border-indigo-500/20",
+      bg: "bg-emerald-500/[0.04] dark:bg-emerald-500/10",
+      border: "border-b border-emerald-500/20",
     },
   };
 
@@ -137,7 +141,7 @@ export function MessagesFolderNav({
                 <Icon className={cn("h-3.5 w-3.5", isActive && folder.gradient)} />
                 <span className="hidden truncate sm:inline">{folder.title}</span>
                 {count > 0 && (
-                  <span className="flex h-3.5 min-w-[14px] shrink-0 items-center justify-center rounded-full bg-blue-500 px-1 text-[8.5px] leading-none font-bold text-white shadow-2xs tabular-nums">
+                  <span className="flex h-3.5 min-w-[14px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-[8.5px] leading-none font-bold text-white shadow-2xs tabular-nums">
                     {count > 99 ? "99+" : count}
                   </span>
                 )}
@@ -171,33 +175,29 @@ export function MessagesFolderNav({
           <div className="mt-4 flex flex-col gap-3">
             <label className="flex cursor-pointer items-center justify-between gap-3">
               <div className="text-foreground/90 flex items-center gap-2">
-                <Volume2 className="text-muted-foreground h-3.5 w-3.5" />
+                <SoundHigh className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="text-xs font-semibold">Notification sounds</span>
               </div>
-              <Switch
-                checked={settings.notificationSounds}
-                onCheckedChange={() => toggleSetting("notificationSounds")}
-              />
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="text-foreground/90 flex items-center gap-2">
-                <Eye className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-xs font-semibold">Read receipts</span>
+              <div className="flex items-center gap-2">
+                {settings.notificationSounds && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      soundEffects.chime();
+                    }}
+                    title="Test notification sound"
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
+                  >
+                    Test
+                  </button>
+                )}
+                <Switch
+                  checked={settings.notificationSounds}
+                  onCheckedChange={() => toggleSetting("notificationSounds")}
+                />
               </div>
-              <Switch
-                checked={settings.showReadReceipts}
-                onCheckedChange={() => toggleSetting("showReadReceipts")}
-              />
-            </label>
-            <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="text-foreground/90 flex items-center gap-2">
-                <Rows3 className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-xs font-semibold">Compact mode</span>
-              </div>
-              <Switch
-                checked={settings.compactMode}
-                onCheckedChange={() => toggleSetting("compactMode")}
-              />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
               <div className="text-foreground/90 flex items-center gap-2">

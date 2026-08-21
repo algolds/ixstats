@@ -108,7 +108,9 @@ export function MyCountryRouter() {
 | :--- | :--- | :--- |
 | **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Diplomacy, Intelligence, Defense, Politics |
 | **`VaultShell`** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) | Dashboard, Binder, Packs, Marketplace, Crafting |
-| **`ThinkPagesHub`**| [`src/components/thinkpages/UnifiedComposerContainer.tsx`](../../src/components/thinkpages/UnifiedComposerContainer.tsx) | Feed, ThinkTanks, ThinkShare Messaging, Polls |
+| **`ThinktanksWorkspace`** | [`src/components/thinktanks/ThinktankWorkspace.tsx`](../../src/components/thinktanks/ThinktankWorkspace.tsx) | Feed, Chat, Docs, Members (Dual CutoutCard / Apple Design) |
+| **`MessagesRouter`** | [`src/components/messages/MessagesRouter.tsx`](../../src/components/messages/MessagesRouter.tsx) | Inbox, Sent, Diplomatic, Classified, Archives, Groups |
+| **`ThinkPagesHub`**| [`src/components/thinkpages/UnifiedComposerContainer.tsx`](../../src/components/thinkpages/UnifiedComposerContainer.tsx) | Feed, Public Thinks, Polls |
 | **`DashboardHub`** | [`src/app/dashboard/page.tsx`](../../src/app/dashboard/page.tsx) | Briefing, Feed, Diplomacy Telemetry, Trends |
 
 ---

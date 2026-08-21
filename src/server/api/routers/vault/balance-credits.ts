@@ -100,7 +100,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           success: true,
           newBalance: result.newBalance,
           amountSpent: input.amount,
-          message: `Spent ${input.amount} IxC. New balance: ${result.newBalance} IxC`,
+          message: `Spent ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
         };
       } catch (error) {
         console.error("[Vault Router] Error spending credits:", error);
@@ -264,7 +264,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           success: true,
           newBalance: result.newBalance,
           amountEarned: input.amount,
-          message: `Earned ${input.amount} IxC. New balance: ${result.newBalance} IxC`,
+          message: `Earned ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
         };
       } catch (error) {
         console.error("[Vault Router] Error earning credits:", error);

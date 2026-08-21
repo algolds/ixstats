@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImportWizard } from "~/components/cards/ns-import";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export default function NSImportPage() {
   const router = useRouter();
@@ -91,7 +92,8 @@ export default function NSImportPage() {
                   <div>
                     <div className="font-semibold text-white">Earn Bonus Credits</div>
                     <div className="text-sm text-white/60">
-                      Get 10 IxCredits per card imported (max 500 IxC bonus)
+                      Get 10 IxCredits per card imported (max 500{" "}
+                      <IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" /> bonus)
                     </div>
                   </div>
                 </div>

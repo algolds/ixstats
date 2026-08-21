@@ -98,7 +98,7 @@ export function CardMarketTab({
           <div className="border-border/60 relative ml-3 space-y-6 border-l pl-6">
             {provenanceEvents.map((event) => {
               let icon = <Package className="h-4 w-4 text-white" />;
-              let actionLabel = "Transferred";
+              let actionLabel: React.ReactNode = "Transferred";
               let colorClass = "bg-blue-500";
 
               if (event.action === "PACK_OPEN") {
@@ -123,10 +123,17 @@ export function CardMarketTab({
                 colorClass = "bg-teal-500";
               } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
                 icon = <ShoppingBag className="h-4 w-4 text-white" />;
-                actionLabel = `Purchased at Auction by ${event.toUserName}`;
-                if (event.price) {
-                  actionLabel += ` for ${event.price.toLocaleString()} IxC`;
-                }
+                actionLabel = (
+                  <span className="inline-flex items-center gap-1">
+                    Purchased at Auction by {event.toUserName}
+                    {event.price && (
+                      <span className="inline-flex items-center gap-0.5 text-amber-500 font-bold">
+                        for <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                        {event.price.toLocaleString()}
+                      </span>
+                    )}
+                  </span>
+                );
                 colorClass = "bg-amber-500";
               } else if (event.action === "ADMIN") {
                 icon = <Star className="h-4 w-4 text-white" />;

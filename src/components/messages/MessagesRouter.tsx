@@ -8,6 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
 import { getSoundService } from "~/lib/media";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { MessagesLayout } from "./MessagesLayout";
@@ -64,9 +65,9 @@ function MessagesRouterInner() {
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Auto-collapse sidebar when a conversation is selected
+  // Auto-collapse sidebar when a specific conversation is selected, but keep sidebar open when browsing groups directory
   useEffect(() => {
-    if (selectedConversationId) {
+    if (selectedConversationId && selectedConversationId !== "groups_directory") {
       setIsSidebarCollapsed(true);
     } else {
       setIsSidebarCollapsed(false);
@@ -193,7 +194,29 @@ function MessagesRouterInner() {
     [folderCounts]
   );
 
-  // ── Selected conversation object ──
+  // ── Selected conversation object with dynamic fallback fetch ──
+  const isCustomSpecialId =
+    !selectedConversationId ||
+    selectedConversationId === "groups_directory" ||
+    selectedConversationId === SYSTEM_CONVERSATION_ID;
+
+  const foundInFolder = useMemo(
+    () =>
+      isCustomSpecialId
+        ? null
+        : activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null,
+    [activeFolderConversations, selectedConversationId, isCustomSpecialId]
+  );
+
+  const { data: fetchedConversation, isLoading: isLoadingSingleConversation } =
+    api.messages.getConversation.useQuery(
+      { conversationId: selectedConversationId || "" },
+      {
+        enabled: !isCustomSpecialId && !foundInFolder,
+        staleTime: 30000,
+      }
+    );
+
   const selectedConversation = useMemo(() => {
     if (selectedConversationId === "groups_directory") return null;
     if (selectedConversationId === SYSTEM_CONVERSATION_ID) {
@@ -212,8 +235,8 @@ function MessagesRouterInner() {
         updatedAt: new Date(),
       };
     }
-    return activeFolderConversations.find((c: any) => c.id === selectedConversationId) ?? null;
-  }, [activeFolderConversations, selectedConversationId]);
+    return foundInFolder ?? (fetchedConversation as any) ?? null;
+  }, [foundInFolder, fetchedConversation, selectedConversationId]);
 
   // ── Presence Tracking ──
   const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
@@ -228,11 +251,7 @@ function MessagesRouterInner() {
           // Play sound on incoming message if not muted
           const isMuted = mutedConversations.includes(data.conversationId);
           if (data.accountId !== currentUserId && messagesSettings.notificationSounds && !isMuted) {
-            try {
-              getSoundService().play("card-select");
-            } catch (err) {
-              console.warn("Failed to play notification sound:", err);
-            }
+            soundEffects.chime();
           }
 
           // Unarchive on new message
@@ -607,9 +626,19 @@ function MessagesRouterInner() {
         chatPanel={
           selectedConversationId === "groups_directory" ? (
             <MessagesGroupsPanel
-              onSelectGroup={setSelectedConversationId}
+              onSelectGroup={(convId) => {
+                setSelectedConversationId(convId);
+                void refetchConversations();
+              }}
               onBack={() => setSelectedConversationId(null)}
             />
+          ) : isLoadingSingleConversation && selectedConversationId ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-sm animate-pulse">
+                <span className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              </div>
+              <p className="text-xs font-semibold text-muted-foreground">Connecting to ThinkTank...</p>
+            </div>
           ) : selectedConversation ? (
             <MessagesChatPanel
               conversation={selectedConversation}
@@ -619,6 +648,11 @@ function MessagesRouterInner() {
               sendTypingIndicator={sendTypingIndicator}
               isSidebarCollapsed={isSidebarCollapsed}
               onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
+              onBack={() =>
+                setSelectedConversationId(
+                  activeFolder === "groups" ? "groups_directory" : null
+                )
+              }
               settings={messagesSettings}
               isMuted={mutedConversations.includes(selectedConversation.id)}
               isArchived={archivedConversations.includes(selectedConversation.id)}
@@ -626,6 +660,14 @@ function MessagesRouterInner() {
               onArchiveToggle={() => handleArchiveToggle(selectedConversation.id)}
               onDeleteConversation={() => handleDeleteConversation(selectedConversation.id)}
               onAddParticipant={handleAddParticipant}
+            />
+          ) : activeFolder === "groups" ? (
+            <MessagesGroupsPanel
+              onSelectGroup={(convId) => {
+                setSelectedConversationId(convId);
+                void refetchConversations();
+              }}
+              onBack={() => setSelectedConversationId(null)}
             />
           ) : (
             <MessagesEmptyState

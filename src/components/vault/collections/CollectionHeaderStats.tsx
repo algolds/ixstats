@@ -4,6 +4,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Globe, Lock, Heart, Share2, Edit2, Trash2 } from "lucide-react";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export interface CollectionStats {
   cardCount: number;
@@ -81,8 +82,9 @@ export function CollectionHeaderStats({
           </div>
           <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Total Value</p>
-            <p className="text-xl font-bold text-green-400 sm:text-2xl">
-              {stats.totalValue.toLocaleString()} IxC
+            <p className="flex items-center gap-1 text-xl font-bold text-green-400 sm:text-2xl">
+              <IxCreditsSymbol className="h-5 w-5 shrink-0" />
+              {stats.totalValue.toLocaleString()}
             </p>
           </div>
           <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">

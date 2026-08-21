@@ -14,6 +14,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 interface CollectionGalleryProps {
   /** Show leaderboard section */
@@ -259,7 +260,9 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Value</div>
-                          <div className="text-sm font-bold text-green-400">0 IxC</div>
+                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-green-400">
+                            <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />0
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs text-white/50">Likes</div>

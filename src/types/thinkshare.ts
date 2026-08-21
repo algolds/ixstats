@@ -183,6 +183,7 @@ export interface ThinkShareConversation {
   name?: string | null;
   avatar?: string | null;
   source?: string;
+  sourceId?: string | null;
   conversationType?: string;
   diplomaticClassification?: string | null;
   priority?: string | null;

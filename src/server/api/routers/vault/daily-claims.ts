@@ -55,7 +55,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         await notificationAPI.create({
           userId: ctx.auth.userId,
           title: "Daily Bonus Claimed",
-          message: `+${result.bonus} IxC! ${result.streak}-day streak`,
+          message: `+${result.bonus} IxCredits! ${result.streak}-day streak`,
           type: "info",
           category: "achievement",
           priority: "low",
@@ -67,7 +67,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         success: true,
         bonus: result.bonus,
         streak: result.streak,
-        message: `Claimed ${result.bonus} IxC! Streak: ${result.streak} days`,
+        message: `Claimed ${result.bonus} IxCredits! Streak: ${result.streak} days`,
       };
     } catch (error) {
       console.error("[Vault Router] Error claiming daily bonus:", error);
@@ -108,7 +108,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         try {
           const rewardMessage =
             result.rewardType === "credits"
-              ? `+${result.creditsAwarded} IxC! ${result.streak}-day streak`
+              ? `+${result.creditsAwarded} IxCredits! ${result.streak}-day streak`
               : `Pulled daily card: ${result.cardAwarded?.title}! ${result.streak}-day streak`;
 
           await notificationAPI.create({

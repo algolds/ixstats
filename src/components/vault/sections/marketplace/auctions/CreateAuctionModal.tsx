@@ -199,8 +199,8 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                    Starting Bid (IxC)
+                  <label className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase">
+                    Starting Bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
                   </label>
                   <Input
                     type="number"

@@ -11,17 +11,26 @@ import type { UserAccount } from "./contracts";
 
 export interface MessagesConversationResult {
   id: string;
+  type: string;
+  name: string | null;
+  avatar: string | null;
   subject: string | null;
   isGroup: boolean;
   channelId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  lastActivity: Date;
   lastMessageAt: Date;
   source: string;
+  sourceId: string | null;
+  conversationType: string | null;
+  diplomaticClassification: string | null;
+  priority: string | null;
+  isActive: boolean;
   participantCount: number;
   unreadCount: number;
-  otherParticipants: UserAccount[];
-  otherParticipant?: UserAccount;
+  otherParticipants: any[];
+  otherParticipant?: any;
   lastMessage?: {
     id: string;
     content: string;
@@ -42,19 +51,49 @@ export function formatMessagesConversation(
   const participants: any[] = conv.participants || [];
   const otherParts = participants.filter((p) => p.userId !== actorId);
 
-  const otherAccounts: UserAccount[] = otherParts
-    .map((p) => accountMap.get(p.userId))
-    .filter((a): a is UserAccount => Boolean(a));
+  const otherAccounts: any[] = otherParts.map((p) => {
+    const acc = accountMap.get(p.userId) || {
+      id: p.userId,
+      username: p.userId,
+      displayName: p.userId.startsWith("forum:")
+        ? "Forum User"
+        : p.userId.startsWith("wiki:")
+          ? "Wiki User"
+          : `User ${p.userId.slice(0, 8)}`,
+      profileImageUrl: null,
+      countryFlag: null,
+      countryName: null,
+      accountType: "country" as const,
+    };
+    return {
+      ...acc,
+      id: p.id || p.userId,
+      accountId: p.userId,
+      account: acc,
+    };
+  });
 
-  // If no account found, generate placeholder
+  // If no account found but other participants exist, generate fallback
   if (otherAccounts.length === 0 && otherParts.length > 0) {
     const firstId = otherParts[0]!.userId;
-    otherAccounts.push({
+    const fallbackAcc = {
       id: firstId,
       username: firstId,
-      displayName: firstId.startsWith("forum:") ? "Forum User" : firstId.startsWith("wiki:") ? "Wiki User" : "Unknown",
+      displayName: firstId.startsWith("forum:")
+        ? "Forum User"
+        : firstId.startsWith("wiki:")
+          ? "Wiki User"
+          : `User ${firstId.slice(0, 8)}`,
       profileImageUrl: null,
-      accountType: "country",
+      countryFlag: null,
+      countryName: null,
+      accountType: "country" as const,
+    };
+    otherAccounts.push({
+      ...fallbackAcc,
+      id: firstId,
+      accountId: firstId,
+      account: fallbackAcc,
     });
   }
 
@@ -74,19 +113,30 @@ export function formatMessagesConversation(
     };
   }
 
+  const isGroupConv = conv.type === "group" || conv.source === "thinktank" || Boolean(conv.isGroup);
+
   return {
     id: conv.id,
+    type: isGroupConv ? "group" : (conv.type ?? "direct"),
+    name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
+    avatar: conv.avatar ?? conv.thinktankGroup?.avatar ?? null,
     subject: conv.subject ?? null,
-    isGroup: Boolean(conv.isGroup),
+    isGroup: isGroupConv,
     channelId: conv.channelId ?? null,
     createdAt: new Date(conv.createdAt || Date.now()),
     updatedAt: new Date(conv.updatedAt || Date.now()),
+    lastActivity: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
     lastMessageAt: new Date(conv.lastActivity || conv.updatedAt || Date.now()),
     source: conv.source || "thinkshare",
+    sourceId: conv.sourceId ?? conv.thinktankGroup?.id ?? null,
+    conversationType: conv.conversationType ?? null,
+    diplomaticClassification: conv.diplomaticClassification ?? null,
+    priority: conv.priority ?? null,
+    isActive: conv.isActive ?? true,
     participantCount: participants.length,
     unreadCount,
     otherParticipants: otherAccounts,
-    otherParticipant: otherAccounts[0],
+    otherParticipant: otherAccounts[0]?.account ?? otherAccounts[0],
     lastMessage: lastMessageFormatted,
   };
 }

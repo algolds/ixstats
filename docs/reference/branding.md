@@ -315,8 +315,8 @@ First-class systems within the IxStates platform.
 
 | Sub-system     | Description                                                                                                                                    |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ThinkShare** | Unified messaging backbone — diplomatic DMs, personal messaging. Prisma: `ThinkshareConversation`, `ThinkshareMessage`. tRPC: `thinkpages.ts`. |
-| **ThinkTanks** | Collaborative group discussions. Prisma: `ThinktankGroup`, `ThinktankMember`, `ThinktankMessage`.                                              |
+| **ThinkShare** | Unified messaging backbone — diplomatic DMs, personal messaging. Prisma: `ThinkshareConversation`, `ThinkshareMessage`. tRPC: `messages/`. |
+| **ThinkTanks** | Collaborative group workspace & research engine (`/thinktanks`). 4-pillar model (Feed, Chat, Docs, Members). Prisma: `ThinktankGroup`, `ThinktankMember`, `ThinktankCollaborativeDoc`. tRPC: `thinkpages/thinktanks/`. |
 | **IxTwitter**  | Discord auto-poster for ThinkPages content. tRPC backfill via `discord-ixtwitter-sync.ts`.                                                     |
 
 ---

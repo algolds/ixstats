@@ -6,6 +6,7 @@ import { ChevronRight, X } from "lucide-react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
 import { cn } from "~/lib/utils";
 import type { NotificationItem } from "./types";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface NotificationRowProps {
   n: NotificationItem;
@@ -59,7 +60,14 @@ export function NotificationRow({
 
       {/* Trailing actions (swipe left -> dismiss) */}
       <SwipeableRow.Trailing
-        commit={{ action: () => handleDismiss(n), label: "Clear", color: "#ef4444" }}
+        commit={{
+          action: () => {
+            soundEffects.droplet();
+            handleDismiss(n);
+          },
+          label: "Clear",
+          color: "#ef4444",
+        }}
       >
         {n.href && (
           <SwipeActionButton
@@ -74,7 +82,10 @@ export function NotificationRow({
           id="clear"
           icon={X}
           label="Clear"
-          onClick={() => handleDismiss(n)}
+          onClick={() => {
+            soundEffects.droplet();
+            handleDismiss(n);
+          }}
           color="#ef4444"
         />
       </SwipeableRow.Trailing>
@@ -82,6 +93,7 @@ export function NotificationRow({
       {/* Front card content */}
       <SwipeableRow.Content>
         <div
+          data-cuelume-hover="whisper"
           className={cn(
             "relative flex w-full flex-col overflow-hidden rounded-xl border backdrop-blur-xl transition-all duration-200",
             !isRead

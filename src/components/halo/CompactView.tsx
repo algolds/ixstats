@@ -28,6 +28,7 @@ import { MapsProfileDropdown } from "./MapsProfileDropdown";
 import { WikiProfileButton as _WikiProfileButton } from "./WikiProfileButton";
 import { PreText } from "~/components/ui/pretext";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -460,7 +461,11 @@ function CompactViewComponent({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onSwitchMode("search")}
+                  data-cuelume-hover="tick"
+                  onClick={() => {
+                    soundEffects.scan();
+                    onSwitchMode("search");
+                  }}
                   className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                     isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                   }`}
@@ -479,7 +484,11 @@ function CompactViewComponent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onSwitchMode("notifications")}
+                    data-cuelume-hover="chime"
+                    onClick={() => {
+                      soundEffects.bloom();
+                      onSwitchMode("notifications");
+                    }}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
@@ -526,7 +535,11 @@ function CompactViewComponent({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onSwitchMode("settings")}
+                  data-cuelume-hover="tick"
+                  onClick={() => {
+                    soundEffects.bloom();
+                    onSwitchMode("settings");
+                  }}
                   className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                     isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                   }`}

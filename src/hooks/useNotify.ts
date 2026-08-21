@@ -31,6 +31,7 @@ import {
 } from "~/stores/toastQueueStore";
 import { useNotificationStore } from "~/stores/notificationStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -103,6 +104,19 @@ export function useNotify(): NotifyAPI {
           duration,
           actions,
         });
+
+        // Play semantic sound feedback based on toast type & priority
+        if (priority === "critical") {
+          soundEffects.pulse();
+        } else if (type === "success") {
+          soundEffects.success();
+        } else if (type === "error") {
+          soundEffects.error();
+        } else if (type === "warning") {
+          soundEffects.bloom();
+        } else {
+          soundEffects.chime();
+        }
       }
 
       // 2. Add to notification store for notification center (only if persistent)
@@ -216,6 +230,18 @@ export function notifyFromStore(options: NotifyOptions): void {
       duration,
       actions,
     });
+
+    if (priority === "critical") {
+      soundEffects.pulse();
+    } else if (type === "success") {
+      soundEffects.success();
+    } else if (type === "error") {
+      soundEffects.error();
+    } else if (type === "warning") {
+      soundEffects.bloom();
+    } else {
+      soundEffects.chime();
+    }
   }
 
   // 2. Notification store (only if persistent)

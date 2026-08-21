@@ -63,6 +63,8 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
   return (
     <button
       type="button"
+      data-cuelume-press="page"
+      data-cuelume-hover="tick"
       data-state={isActive ? "active" : "inactive"}
       className={cn(
         "rounded-full px-4 py-2 transition-colors",

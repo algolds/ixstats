@@ -81,7 +81,7 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
             }}
             labelStyle={{ color: "#94a3b8", fontSize: "10px", fontWeight: "bold" }}
             itemStyle={{ color: "#38bdf8", fontSize: "11px", fontWeight: "black" }}
-            formatter={(value) => [`${value} IxC`, "Value"]}
+            formatter={(value) => [`${value} Credits`, "Value"]}
           />
           <Line
             type="monotone"

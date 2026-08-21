@@ -261,6 +261,7 @@ const AppleSwitch = forwardRef<HTMLButtonElement, AppleSwitchProps>(
         ref={ref}
         type={type}
         role="switch"
+        data-cuelume-toggle=""
         aria-checked={currentChecked}
         disabled={disabled}
         onClick={handleClick}

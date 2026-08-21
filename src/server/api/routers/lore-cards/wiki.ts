@@ -177,7 +177,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
               action: "CARD_DESIGNER_MINT",
               entityType: "CARD",
               target: card.id,
-              details: `Minted custom card "${card.title}" (Rarity: ${input.rarity}, Season: ${input.season}, Value: ${input.marketValue} IxC)`,
+              details: `Minted custom card "${card.title}" (Rarity: ${input.rarity}, Season: ${input.season}, Value: ${input.marketValue} IxCredits)`,
               success: true,
             },
           }),

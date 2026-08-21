@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import { Search, Users, Plus, Loader2, Compass } from "lucide-react";
+import { motion } from "motion/react";
+import { Search, Group, Compass, Xmark, Book } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 interface MessagesGroupsListPanelProps {
   selectedConversationId: string | null;
@@ -30,7 +31,7 @@ export function MessagesGroupsListPanel({
   // Fetch groups
   const { data: groupsData, isLoading } = api.thinkpages.getThinktanks.useQuery(
     { userId, type: activeView },
-    { enabled: !!userId, staleTime: 30000 }
+    { enabled: !!userId, staleTime: 15000 }
   );
 
   const filteredGroups = useMemo(() => {
@@ -39,7 +40,10 @@ export function MessagesGroupsListPanel({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       items = items.filter(
-        (g: any) => g.name?.toLowerCase().includes(q) || g.description?.toLowerCase().includes(q)
+        (g: any) =>
+          g.name?.toLowerCase().includes(q) ||
+          g.description?.toLowerCase().includes(q) ||
+          g.category?.toLowerCase().includes(q)
       );
     }
 
@@ -47,96 +51,120 @@ export function MessagesGroupsListPanel({
   }, [groupsData, searchQuery]);
 
   const handleOpenGroup = (group: any) => {
-    if (group.conversationId) {
-      onSelectConversation(group.conversationId);
-    }
+    soundEffects.press();
+    onSelectConversation(group.conversationId || group.id);
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-transparent">
       {/* Header with Search and View Actions */}
-      <div className="relative z-10 flex shrink-0 flex-col gap-2 border-b border-white/5 bg-blue-500/10 p-3">
+      <div className="relative z-10 flex shrink-0 flex-col gap-2.5 border-b border-border/30 bg-muted/20 p-3 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-2">
-          {/* View tabs */}
-          <div className="flex gap-0.5 rounded-lg border border-white/5 bg-slate-950/40 p-0.5 backdrop-blur-md">
-            <button
-              onClick={() => setActiveView("joined")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-1 text-[10px] font-bold transition-all duration-150 select-none",
-                activeView === "joined"
-                  ? "bg-white/10 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              )}
-            >
-              My Groups
-            </button>
-            <button
-              onClick={() => setActiveView("created")}
-              className={cn(
-                "cursor-pointer rounded-md px-2 py-1 text-[10px] font-bold transition-all duration-150 select-none",
-                activeView === "created"
-                  ? "bg-white/10 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              )}
-            >
-              Managed
-            </button>
+          {/* Animated View tabs */}
+          <div className="relative flex gap-1 rounded-xl border border-border/40 bg-background/60 p-0.5 backdrop-blur-md">
+            {(
+              [
+                { id: "joined", label: "My Groups" },
+                { id: "created", label: "Managed" },
+              ] as const
+            ).map((view) => {
+              const isActive = activeView === view.id;
+              return (
+                <button
+                  key={view.id}
+                  onClick={() => {
+                    soundEffects.press();
+                    setActiveView(view.id);
+                  }}
+                  className={cn(
+                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-tight transition-all select-none active:scale-[0.97]",
+                    isActive ? "text-white" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="groups-list-tab-pill"
+                      className="absolute inset-0 rounded-lg border border-emerald-500/40 bg-emerald-600 shadow-xs dark:bg-emerald-500"
+                      transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{view.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           <Button
             size="sm"
             variant="outline"
-            className="flex h-7 cursor-pointer items-center gap-1 rounded-lg border-white/10 bg-white/5 px-2 text-[10px] font-bold text-slate-300 hover:bg-white/10 hover:text-white"
-            onClick={onOpenGroupsDirectory}
-            title="Discover thinktanks and groups"
+            className="flex h-7.5 cursor-pointer items-center gap-1 rounded-xl border-border/40 bg-card/60 px-2.5 text-[11px] font-semibold text-emerald-600 transition-all hover:bg-accent hover:text-foreground active:scale-95 dark:text-emerald-400"
+            onClick={() => {
+              soundEffects.press();
+              onOpenGroupsDirectory();
+            }}
+            title="Discover all ThinkTanks"
           >
-            <Compass className="h-3 w-3" />
+            <Compass className="h-3.5 w-3.5" />
             <span>Discover</span>
           </Button>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search my groups..."
+            placeholder="Search my ThinkTanks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-xs"
+            className="h-8.5 rounded-xl border-input bg-background/70 pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground"
           />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                soundEffects.press();
+                setSearchQuery("");
+              }}
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <Xmark className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Group List */}
-      <div className="flex-1 overflow-y-auto p-1.5">
+      <div className="scrollbar-none flex-1 overflow-y-auto p-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            <span className="h-6 w-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
           </div>
         ) : filteredGroups.length === 0 ? (
           <div className="px-3 py-12 text-center">
-            <p className="text-muted-foreground text-sm font-medium">
+            <p className="text-sm font-semibold text-foreground">
               {searchQuery.trim()
                 ? "No matching groups"
                 : activeView === "created"
-                  ? "No created groups"
-                  : "No groups joined"}
+                  ? "No managed ThinkTanks"
+                  : "No ThinkTanks joined"}
             </p>
-            <p className="text-muted-foreground/70 mt-1 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
               {searchQuery.trim()
-                ? "Try a different search term"
+                ? "Try a different keyword"
                 : activeView === "created"
-                  ? "Create a group in ThinkPages to manage it"
-                  : "Click Discover to browse and join groups!"}
+                  ? "Create a group in the directory to manage it"
+                  : "Discover public ThinkTanks to start collaborating."}
             </p>
             {activeView === "joined" && !searchQuery.trim() && (
               <Button
                 size="sm"
-                className="mt-4 cursor-pointer rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-semibold text-white hover:from-blue-700 hover:to-indigo-700"
-                onClick={onOpenGroupsDirectory}
+                className="mt-4 cursor-pointer rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                onClick={() => {
+                  soundEffects.press();
+                  onOpenGroupsDirectory();
+                }}
               >
                 <Compass className="mr-1.5 h-3.5 w-3.5" />
-                Browse Groups
+                <span>Browse Directory</span>
               </Button>
             )}
           </div>
@@ -144,41 +172,46 @@ export function MessagesGroupsListPanel({
           <div className="flex flex-col gap-1.5">
             {filteredGroups.map((group) => {
               const isSelected = group.conversationId === selectedConversationId;
+              const docsCount = group.docsCount ?? group._count?.collaborativeDocs ?? 0;
+
               return (
                 <button
                   key={group.id}
                   onClick={() => handleOpenGroup(group)}
-                  disabled={!group.conversationId}
                   className={cn(
-                    "relative flex w-full items-center gap-3 overflow-hidden rounded-xl border px-3 py-2 text-left transition-all duration-300 select-none",
+                    "group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-2.5 text-left transition-all duration-150 select-none active:scale-[0.98]",
                     isSelected
-                      ? "border-indigo-500/40 bg-indigo-600/20 shadow-indigo-950/20"
-                      : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.06]",
-                    !group.conversationId && "cursor-not-allowed border-dashed opacity-55"
+                      ? "border-emerald-500/50 bg-emerald-500/15 shadow-xs dark:border-emerald-400/40"
+                      : "border-border/20 bg-card/40 hover:border-border/40 hover:bg-accent/40"
                   )}
                 >
-                  <Avatar className="h-9 w-9 shrink-0 rounded-lg border border-white/5 shadow-md">
+                  <Avatar className="h-9.5 w-9.5 shrink-0 rounded-xl border border-border/30 shadow-xs">
                     <AvatarImage src={group.avatar ?? undefined} className="object-cover" />
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
-                      <Users className="h-4 w-4" />
+                    <AvatarFallback className="rounded-xl bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <Group className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-xs font-bold text-slate-200">
+                      <span className="truncate text-xs font-bold tracking-tight text-foreground transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
                         {group.name}
                       </span>
                       {group.category && (
-                        <span className="shrink-0 rounded border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-bold whitespace-nowrap text-indigo-400">
+                        <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-bold whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                           {group.category}
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                      {group.memberCount ?? group._count?.members ?? 0} members
-                      {!group.conversationId && " • No chat channel"}
-                    </p>
+                    <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>{group.memberCount ?? group._count?.members ?? 0} members</span>
+                      {docsCount > 0 && (
+                        <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Book className="h-2.5 w-2.5" />
+                          {docsCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
               );

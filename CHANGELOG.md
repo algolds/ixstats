@@ -33,6 +33,21 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### ThinkTanks Workspace and Group Lore Collaboration
+
+- **2-Pillar Workspace (Feed and Members)**:
+  - Focused the ThinkTanks workspace on asynchronous timeline notes (`ThinktankFeedTab.tsx`) and roster management (`ThinktankRosterTab.tsx`), deferring chat and docs for future release phases.
+  - Added a frosted preview for unjoined groups, allowing non-members to see recent notes behind a glass blur with a join action.
+  - Resolved authentic account identities when Multi-Persona posting is disabled, showing real nation names, sovereignty flags, and handles without roleplay badges.
+- **Media Repository Branding**:
+  - Integrated `MediaSearchModal` into group settings and creation modals (`ThinktankSettingsModal.tsx`, `ThinktankCreateModal.tsx`).
+  - Added support for custom group emblems and panoramic banner artwork from Wikimedia Commons, Unsplash, Stash, and file uploads.
+  - Rendered a frosted banner backdrop behind the header navigation bar (`ThinktankHeader.tsx`).
+- **Invitations and Focus Transitions**:
+  - Added member invitations directly in group settings via `api.thinkpages.inviteToThinktank`.
+  - Configured directory auto-collapse on group selection, giving full canvas focus to the active timeline.
+  - Replaced sparkle icons with the semantic group identity icon across settings, author selectors, and badges.
+
 ### 🔔 Native Alert Center & Messages System Design Audit
 
 - **Native Halo Alert Center & Merged Notifications Tray**:

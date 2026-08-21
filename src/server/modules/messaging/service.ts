@@ -74,34 +74,44 @@ export class MessagingService {
       const limit = input.limit ?? 20;
       const { folder, cursor } = input;
 
-      const participantFilter: any = {
-        userId: actorId,
-        isActive: true,
-      };
+      const where: any = {};
 
-      if (folder === "archive") {
-        participantFilter.isArchived = true;
-      } else if (folder === "trash") {
-        participantFilter.isMuted = true;
-      } else {
-        participantFilter.isArchived = false;
-        participantFilter.isMuted = false;
-      }
-
-      const where: any = {
-        participants: {
-          some: participantFilter,
-        },
-      };
-
-      if (folder === "thinktank") {
+      if (folder === "thinktank" || folder === "groups") {
         where.source = "thinktank";
-      } else if (folder === "diplomatic") {
-        where.source = "diplomatic";
-      } else if (folder === "wiki") {
-        where.source = "wiki";
-      } else if (folder === "forum") {
-        where.source = "forum";
+        where.OR = [
+          {
+            participants: {
+              some: {
+                userId: actorId,
+                isActive: true,
+              },
+            },
+          },
+          {
+            thinktankGroup: {
+              members: {
+                some: {
+                  userId: actorId,
+                  isActive: true,
+                },
+              },
+            },
+          },
+        ];
+      } else {
+        where.participants = {
+          some: {
+            userId: actorId,
+            isActive: true,
+          },
+        };
+        if (folder === "diplomatic") {
+          where.source = "diplomatic";
+        } else if (folder === "wiki") {
+          where.source = "wiki";
+        } else if (folder === "forum") {
+          where.source = "forum";
+        }
       }
 
       if (cursor) {
@@ -114,9 +124,10 @@ export class MessagingService {
         orderBy: { lastMessageAt: "desc" },
         include: {
           participants: { where: { isActive: true } },
+          thinktankGroup: true,
           messages: {
             take: 1,
-            orderBy: { createdAt: "desc" },
+            orderBy: { ixTimeTimestamp: "desc" },
           },
         },
       });
@@ -236,7 +247,7 @@ export class MessagingService {
 
     for (const msg of unreadMessages) {
       const p = participantMap.get(msg.conversationId);
-      if (p && (!p.lastReadAt || msg.createdAt > p.lastReadAt)) {
+      if (p && (!p.lastReadAt || msg.ixTimeTimestamp > p.lastReadAt)) {
         convUnreadCounts.set(msg.conversationId, (convUnreadCounts.get(msg.conversationId) || 0) + 1);
       }
     }
@@ -262,6 +273,123 @@ export class MessagingService {
     return counts;
   }
 
+  public async getConversation(actorId: string, conversationId: string) {
+    let conv = await this.db.thinkshareConversation.findFirst({
+      where: {
+        OR: [
+          { id: conversationId },
+          { sourceId: conversationId },
+          { thinktankGroup: { id: conversationId } },
+          { thinktankGroup: { conversationId: conversationId } },
+        ],
+      },
+      include: {
+        participants: { where: { isActive: true } },
+        thinktankGroup: {
+          include: {
+            members: { where: { isActive: true } },
+          },
+        },
+        messages: {
+          take: 1,
+          orderBy: { ixTimeTimestamp: "desc" },
+        },
+      },
+    });
+
+    // Auto-create/heal ThinkTank conversation if missing
+    if (!conv) {
+      const group = await this.db.thinktankGroup.findFirst({
+        where: {
+          OR: [
+            { id: conversationId },
+            { conversationId: conversationId },
+          ],
+        },
+        include: {
+          members: { where: { isActive: true } },
+        },
+      });
+
+      if (group) {
+        const newConv = await this.db.thinkshareConversation.create({
+          data: {
+            type: "group",
+            name: group.name,
+            avatar: group.avatar,
+            source: "thinktank",
+            sourceId: group.id,
+            participants: {
+              create: group.members.map((m: any) => ({
+                userId: m.userId,
+                role: m.role === "owner" || m.role === "admin" ? "admin" : "participant",
+              })),
+            },
+          },
+        });
+
+        await this.db.thinktankGroup.update({
+          where: { id: group.id },
+          data: { conversationId: newConv.id },
+        });
+
+        conv = await this.db.thinkshareConversation.findUnique({
+          where: { id: newConv.id },
+          include: {
+            participants: { where: { isActive: true } },
+            thinktankGroup: {
+              include: {
+                members: { where: { isActive: true } },
+              },
+            },
+            messages: {
+              take: 1,
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+      }
+    }
+
+    if (!conv) return null;
+
+    // Ensure actor is in participants if group is public or user is already a member
+    if (
+      actorId &&
+      !conv.participants.some((p: any) => p.userId === actorId) &&
+      (conv.source === "thinktank" || conv.type === "group")
+    ) {
+      await this.db.conversationParticipant
+        .create({
+          data: {
+            conversationId: conv.id,
+            userId: actorId,
+            role: "participant",
+          },
+        })
+        .catch(() => {});
+    }
+
+    const userIdsToResolve: string[] = [actorId];
+    for (const p of conv.participants || []) userIdsToResolve.push(p.userId);
+    if (conv.thinktankGroup?.members) {
+      for (const m of conv.thinktankGroup.members) userIdsToResolve.push(m.userId);
+    }
+    if (conv.messages?.[0]) userIdsToResolve.push(conv.messages[0].userId);
+
+    const accountMap = await this.batchResolveUsers(userIdsToResolve);
+
+    const unreadCount = await this.db.thinkshareMessage.count({
+      where: {
+        conversationId: conv.id,
+        userId: { not: actorId },
+        deletedAt: null,
+      },
+    });
+
+    return formatMessagesConversation(conv, actorId, accountMap, unreadCount);
+  }
+
   public async getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
     const startTime = Date.now();
     try {
@@ -284,7 +412,7 @@ export class MessagingService {
           participants: { where: { isActive: true } },
           messages: {
             take: 1,
-            orderBy: { createdAt: "desc" },
+            orderBy: { ixTimeTimestamp: "desc" },
           },
         },
       });
@@ -364,15 +492,40 @@ export class MessagingService {
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
     const { conversationId, limit = 50, cursor, direction = "before" } = input;
 
-    const participant = await this.db.conversationParticipant.findFirst({
-      where: { conversationId, userId: actorId, isActive: true },
+    const conv = await this.db.thinkshareConversation.findFirst({
+      where: {
+        OR: [
+          { id: conversationId },
+          { sourceId: conversationId },
+          { thinktankGroup: { id: conversationId } },
+        ],
+      },
     });
 
-    if (!participant) {
+    const targetConvId = conv?.id || conversationId;
+
+    let participant = await this.db.conversationParticipant.findFirst({
+      where: { conversationId: targetConvId, userId: actorId, isActive: true },
+    });
+
+    // For ThinkTank groups or public discussions, auto-enroll or allow read
+    if (!participant && conv && (conv.source === "thinktank" || conv.type === "group")) {
+      participant = await this.db.conversationParticipant
+        .create({
+          data: {
+            conversationId: targetConvId,
+            userId: actorId,
+            role: "participant",
+          },
+        })
+        .catch(() => null);
+    }
+
+    if (!participant && !conv) {
       throw new MessagingForbiddenError();
     }
 
-    const where: any = { conversationId };
+    const where: any = { conversationId: targetConvId };
 
     if (cursor) {
       where.ixTimeTimestamp = direction === "after" ? { gt: new Date(cursor) } : { lt: new Date(cursor) };
@@ -473,21 +626,44 @@ export class MessagingService {
   }
 
   public async sendMessage(actorId: string, input: SendMessageInput) {
-    const participant = await this.db.conversationParticipant.findFirst({
-      where: { conversationId: input.conversationId, userId: actorId, isActive: true },
+    const conv = await this.db.thinkshareConversation.findFirst({
+      where: {
+        OR: [
+          { id: input.conversationId },
+          { sourceId: input.conversationId },
+          { thinktankGroup: { id: input.conversationId } },
+        ],
+      },
+    });
+
+    const targetConvId = conv?.id || input.conversationId;
+
+    let participant = await this.db.conversationParticipant.findFirst({
+      where: { conversationId: targetConvId, userId: actorId, isActive: true },
       include: { conversation: true },
     });
+
+    if (!participant && conv && (conv.source === "thinktank" || conv.type === "group")) {
+      participant = await this.db.conversationParticipant
+        .create({
+          data: {
+            conversationId: targetConvId,
+            userId: actorId,
+            role: "participant",
+          },
+          include: { conversation: true },
+        })
+        .catch(() => null);
+    }
 
     if (!participant) {
       throw new MessagingForbiddenError();
     }
 
-    const conv = participant.conversation;
-
     const message = await this.db.$transaction(async (tx: any) => {
       const createdMsg = await tx.thinkshareMessage.create({
         data: {
-          conversationId: input.conversationId,
+          conversationId: targetConvId,
           userId: actorId,
           content: input.content,
           replyToId: input.replyToId,
@@ -501,7 +677,7 @@ export class MessagingService {
       });
 
       await tx.thinkshareConversation.update({
-        where: { id: input.conversationId },
+        where: { id: targetConvId },
         data: {
           lastActivity: new Date(),
           updatedAt: new Date(),
@@ -877,7 +1053,7 @@ export class MessagingService {
         messageId: message.id,
         accountId: actorId,
         content: input.content,
-        timestamp: message.createdAt.toISOString(),
+        timestamp: message.ixTimeTimestamp.toISOString(),
       });
     }
 

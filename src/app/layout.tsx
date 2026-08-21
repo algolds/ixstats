@@ -27,6 +27,7 @@ import { IxTimeProvider } from "~/context/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
+import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -70,31 +71,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <IxTimeProvider>
               <ExecutiveNotificationProvider>
                 <WikiContextProvider>
-                  <ToastProvider>
-                    <LazyGameProviders>
-                      <WebGLErrorHandler />
-                      <MapPrefetcher />
-                      <NavigationTransitionHandler />
-                      {isStandalone ? (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          <main className="flex flex-1 flex-col">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                        </div>
-                      ) : (
-                        <div className="flex min-h-screen flex-col">
-                          <Navigation />
-                          {/* <GlobalActivityMarquee /> */}
-                          <SetupRedirect />
-                          <main className="flex flex-1 flex-col">
-                            <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                          </main>
-                          <MiniPlayer />
-                        </div>
-                      )}
-                    </LazyGameProviders>
-                  </ToastProvider>
+                  <CuelumeSoundProvider>
+                    <ToastProvider>
+                      <LazyGameProviders>
+                        <WebGLErrorHandler />
+                        <MapPrefetcher />
+                        <NavigationTransitionHandler />
+                        {isStandalone ? (
+                          <div className="flex min-h-screen flex-col">
+                            <Navigation />
+                            <main className="flex flex-1 flex-col">
+                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                            </main>
+                          </div>
+                        ) : (
+                          <div className="flex min-h-screen flex-col">
+                            <Navigation />
+                            {/* <GlobalActivityMarquee /> */}
+                            <SetupRedirect />
+                            <main className="flex flex-1 flex-col">
+                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                            </main>
+                            <MiniPlayer />
+                          </div>
+                        )}
+                      </LazyGameProviders>
+                    </ToastProvider>
+                  </CuelumeSoundProvider>
                 </WikiContextProvider>
               </ExecutiveNotificationProvider>
             </IxTimeProvider>

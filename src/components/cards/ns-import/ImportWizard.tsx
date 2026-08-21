@@ -16,6 +16,7 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import type { NSCard } from "~/lib/nationstates/api-client";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 interface ImportWizardProps {
   onComplete: (results: ImportResults) => void;
@@ -416,8 +417,9 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </div>
             <div className="glass-child col-span-2 rounded-lg p-4">
               <div className="text-sm text-white/60">Bonus Credits Earned</div>
-              <div className="text-gold-400 text-2xl font-bold">
-                {importResults.bonusCredits} IxC
+              <div className="text-gold-400 flex items-center gap-1 text-2xl font-bold">
+                <IxCreditsSymbol className="h-6 w-6 shrink-0 text-amber-400" />
+                {importResults.bonusCredits}
               </div>
             </div>
           </div>

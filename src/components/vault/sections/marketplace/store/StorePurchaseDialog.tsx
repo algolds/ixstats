@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { StoreItemCard, type StoreItem } from "../StoreItemCard";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export interface StorePurchaseDialogProps {
   item: StoreItem | null;
@@ -25,26 +26,30 @@ export function StorePurchaseDialog({
   onClose,
   onConfirm,
   isPurchasing,
-  isOpen,
+  isOpen = true,
 }: StorePurchaseDialogProps) {
   if (!item) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="border-border/50 bg-card/90 max-w-sm rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
+          <DialogTitle className="text-foreground text-center text-lg font-black tracking-tight">
             Confirm Purchase
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground mt-2 text-xs leading-relaxed">
+          <DialogDescription className="text-muted-foreground text-center text-xs">
             Are you sure you want to purchase{" "}
             <strong className="text-foreground font-bold">{item.name}</strong> for{" "}
-            <strong className="font-bold text-amber-500">{item.price} IxCredits</strong>?
+            <span className="inline-flex items-center gap-0.5 font-bold text-amber-500">
+              <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+              {item.price}
+            </span>
+            ?
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-3 flex justify-center">
-          <div className="w-full max-w-[260px]">
+        <div className="my-4 flex justify-center">
+          <div className="w-full max-w-xs">
             <StoreItemCard item={item} onPurchase={() => {}} isPurchasing={false} isOwned={false} />
           </div>
         </div>
@@ -64,7 +69,14 @@ export function StorePurchaseDialog({
             disabled={isPurchasing}
             className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white"
           >
-            {isPurchasing ? "Purchasing..." : `Buy for ${item.price} IxC`}
+            {isPurchasing ? (
+              "Purchasing..."
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                Buy for <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                {item.price}
+              </span>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

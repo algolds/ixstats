@@ -152,6 +152,8 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                       <Link
                         href={item.href}
                         onClick={onClose}
+                        data-cuelume-hover="tick"
+                        data-cuelume-press="press"
                         className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all duration-200 ${
                           active
                             ? "bg-foreground/10 text-foreground shadow-sm"
@@ -195,6 +197,8 @@ export function NavTray({ isOpen, onClose }: NavTrayProps) {
                       key={item.name}
                       href={item.href}
                       onClick={onClose}
+                      data-cuelume-hover="tick"
+                      data-cuelume-press="press"
                       className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
                         isActive(item.href)
                           ? "bg-foreground/10 text-foreground"

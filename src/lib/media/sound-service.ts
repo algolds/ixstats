@@ -2,6 +2,7 @@
 // Comprehensive sound system with volume controls and settings persistence
 
 import type { CardRarity } from "@prisma/client";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 /**
  * Sound effect identifiers
@@ -209,6 +210,9 @@ export class SoundService {
     const sound = RARITY_SOUND_MAP[rarity];
     if (sound) {
       this.play(sound);
+    }
+    if (rarity === "EPIC" || rarity === "LEGENDARY") {
+      soundEffects.sparkle();
     }
   }
 

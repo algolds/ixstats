@@ -24,11 +24,15 @@ import {
   List,
   ExternalLink,
   Search,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import type { SettingsViewProps } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
 import { PreText } from "~/components/ui/pretext";
+import { useSoundSettings } from "~/hooks/useSoundSettings";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 // ─── Local toggle hook ───────────────────────────────────────────────────────
 
@@ -82,6 +86,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function SettingsView({ onClose }: SettingsViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const { theme, effectiveTheme, compactMode, toggleCompactMode } = useTheme();
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled, previewSound } = useSoundSettings();
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
   const isAdmin = useIsAdmin();
@@ -120,14 +125,17 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
+    soundEffects.loading();
     try {
       const promises: Promise<unknown>[] = [refetchCountries()];
       if (isSignedIn && user?.id) {
         promises.push(refetchNotifications());
       }
       await Promise.allSettled(promises);
+      soundEffects.ready();
     } catch (error) {
       console.error("Refresh failed:", error);
+      soundEffects.error();
     } finally {
       setIsRefreshing(false);
     }
@@ -198,6 +206,42 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <ToggleSwitch enabled={compactMode} onToggle={toggleCompactMode} />
           </SettingsRow>
         )}
+
+        {/* Sound Effects — Cuelume Web Audio Palette */}
+        <SettingsRow
+          icon={
+            soundEnabled ? (
+              <Volume2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <VolumeX className="text-muted-foreground h-3.5 w-3.5" />
+            )
+          }
+          iconBg={soundEnabled ? "bg-emerald-500/15" : "bg-muted/15"}
+          label="Sound Effects"
+          description={soundEnabled ? "Tactile synthesized audio" : "Muted"}
+        >
+          <div className="flex items-center gap-2">
+            {soundEnabled && (
+              <button
+                type="button"
+                onClick={() => previewSound("chime")}
+                data-cuelume-press="chime"
+                title="Preview interaction sound"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
+              >
+                Test
+              </button>
+            )}
+            <ToggleSwitch
+              enabled={soundEnabled}
+              onToggle={() => {
+                const next = !soundEnabled;
+                setSoundEnabled(next);
+                if (next) soundEffects.toggle();
+              }}
+            />
+          </div>
+        </SettingsRow>
 
         {/* ── Wiki Settings ──────────────────────────────────────────── */}
         {isOnWikiPage && (
@@ -371,7 +415,11 @@ function SettingsHeader({
           </button>
         )}
         <button
-          onClick={onClose}
+          onClick={() => {
+            soundEffects.droplet();
+            onClose();
+          }}
+          data-cuelume-press="droplet"
           className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
         >
           <X className="h-3.5 w-3.5" />

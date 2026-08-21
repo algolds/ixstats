@@ -15,6 +15,7 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { ArticleSearch } from "./ArticleSearch";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 interface LoreCardGeneratorProps {
   onRequestSubmitted?: (requestId: string) => void;
@@ -154,7 +155,10 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
             {tokenBalance > 0 ? (
               <div className="text-gold-400 text-2xl font-bold">Free (Token Available)</div>
             ) : (
-              <div className="text-gold-400 text-2xl font-bold">50 IxC</div>
+              <div className="text-gold-400 flex items-center gap-1 text-2xl font-bold">
+                <IxCreditsSymbol className="h-6 w-6 shrink-0 text-amber-400" />
+                50
+              </div>
             )}
           </div>
           <div className="text-right">
@@ -176,11 +180,15 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
         disabled={!selectedArticle || requestLoreCardMutation.isPending}
         className="glass-interactive w-full rounded-lg px-6 py-4 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {requestLoreCardMutation.isPending
-          ? "Submitting..."
-          : tokenBalance > 0
-            ? "Request Lore Card (Free with Token)"
-            : "Request Lore Card (50 IxC)"}
+        {requestLoreCardMutation.isPending ? (
+          "Submitting..."
+        ) : tokenBalance > 0 ? (
+          "Request Lore Card (Free with Token)"
+        ) : (
+          <span className="inline-flex items-center justify-center gap-1.5">
+            Request Lore Card (50 <IxCreditsSymbol className="h-4 w-4 shrink-0" />)
+          </span>
+        )}
       </button>
 
       {/* Recent Requests */}

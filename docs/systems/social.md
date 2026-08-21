@@ -10,17 +10,19 @@ ThinkPages is the collaborative storytelling, social feed, and communication bac
 
 ## Architecture & Versioning
 
-ThinkPages v2 introduces full component modularization (<700 lines/file), domain sub-component suites, and centralized caching primitives.
+ThinkPages v2 introduces full component modularization, domain sub-component suites, and centralized caching primitives.
 
 ### UI Surfaces
 - `src/app/thinkpages/page.tsx` – Main exploration feed and post creation stream
+- `src/app/thinktanks/page.tsx` – ThinkTanks collaborative groups and research hub
 - `src/app/messages/page.tsx` – ThinkShare unified messaging hub
+- `src/components/thinktanks/` – Dual-column Apple workspace, 2-pillar group tabs (Feed, Members) with Media Repository branding
 - `src/components/thinkpages/` – Feed cards, authoring composers, hashtag explorers, and reaction trays
 - `src/components/thinkshare/` – Threaded messaging, encryption indicators, and classification badges
 - `src/components/polls/` – Interactive national polling widgets
 
 ### Backend Routers
-- `src/server/api/routers/thinkpages/` (`index.ts`, `feed.ts`, `posts.ts`, `comments.ts`, `reactions.ts`, `groups.ts`) – Core social CRUD
+- `src/server/api/routers/thinkpages/` (`index.ts`, `feed.ts`, `posts.ts`, `comments.ts`, `reactions.ts`, `thinktanks/`) – Core social and group CRUD
 - `src/server/api/routers/messages/` – ThinkShare messaging, conversations, and threads
 - `src/server/api/routers/activities/` (`index.ts`, `feed.ts`, `metrics.ts`) – Global activity log
 - `src/server/api/routers/polls/` – Polling creation, voting, and real-time result tallying
@@ -45,6 +47,7 @@ All messaging across the platform (personal DMs, diplomatic exchanges, group cha
 
 ## Related Documentation
 
+- [ThinkTanks Collaborative Groups Guide](./thinktanks.md)
 - [Diplomacy System Guide](./diplomacy.md)
 - [Forum Integration](./forum.md)
 - [API Reference: ThinkPages & Messages](../reference/api-complete.md#thinkpages-router)
