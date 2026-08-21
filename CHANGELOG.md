@@ -33,6 +33,29 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🛡️ Architecture & Verification Foundations (Wave 1: Plans 150, 151, 155)
+
+- **Database Initialization Cycle Purged (Plan 155)**:
+  - Replaced broad `~/lib/system` barrel imports in `src/server/db.ts` with direct leaf imports (`~/lib/system/query-monitor`, `~/lib/system/dev-memory-config`), severing the circular `db.ts` ➔ `system/index.ts` ➔ `database-optimizations.ts` ➔ `db.ts` module dependency.
+  - Added source-contract regression test `src/tests/server/db-import-boundary.test.ts`.
+- **Trustworthy Verification Gates & Strict Orchestration (Plan 150)**:
+  - Built `scripts/verification/run-typecheck.ts` to stream TypeScript compiler output while preserving child process exit codes without shell pipefail masking.
+  - Added deterministic pass/fail compiler test fixtures in `scripts/verification/fixtures/`.
+  - Built `scripts/verification/verify-strict.ts` (`bun run verify:strict`) to orchestrate sequential validation and short-circuit on first failure.
+  - Updated `.github/workflows/ci.yml` to trigger on `v2`, enforce `bun run lint:strict`, and separate UI, server, and tRPC typechecks.
+  - Set `typescript.ignoreBuildErrors: false` in `next.config.js` to ensure Next.js builds enforce type safety.
+  - Added integration test suite `src/tests/scripts/verification-gates.test.ts`.
+- **Consolidation Characterization Contracts (Plan 151)**:
+  - Created reusable test helpers: `src/tests/helpers/router-context.ts` (mock tRPC context) and `src/tests/helpers/transactional-mock-db.ts` (rollback-capable transactional DB).
+  - Authored contract test suites covering cross-system boundaries with mocked network/DB dependencies:
+    - Country authorization matrix & fast-path/fallback logic (`country-authorization.characterization.test.ts`).
+    - Unified vs ThinkPages messaging pagination, cursors, and response shapes (`messages-characterization.test.ts`).
+    - Unified atomic reads, audit error propagation, and rollback contract (`atomic-components-characterization.test.ts`).
+    - Active vs module-local Forum bridges author resolution & deduplication (`forum-bridge-characterization.test.ts`).
+    - Internal vs template provider Wiki placeholder resolution (`wiki-placeholders-characterization.test.ts`).
+    - Flag resolver hooks & array immutability contract (`flags-characterization.test.tsx`).
+    - `UnifiedAtomicComponentSelector` selection, limits, and read-only behavior (`atomic-ui-characterization.test.tsx`).
+
 ### 🗺️ Map & World Editor: Architecture Overhaul, Modularization, Performance Optimization & Ponytail Deduplication (Plans 143–147)
 
 - **Domain Boundary Separation & Code Deduplication**:
