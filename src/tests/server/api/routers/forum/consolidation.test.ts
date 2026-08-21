@@ -1,4 +1,4 @@
-import { xfFetch, requireForumUser } from "~/server/modules/forum";
+import { xfFetch, requireForumUser } from "../../../../../server/modules/forum";
 
 describe("Forum Router Consolidation", () => {
   test("xfFetch is exported from module and functions as expected", async () => {
