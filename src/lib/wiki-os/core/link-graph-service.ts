@@ -105,30 +105,34 @@ export class LinkGraphService {
       targetMap.set(t.title.toLowerCase(), t.id);
     }
 
-    // Transactionally update the link graph for this article
-    await db.$transaction(async (tx: any) => {
-      // Remove old outgoing links
-      if (tx.wikiLink) {
-        await tx.wikiLink.deleteMany({
-          where: { sourceArticleId: articleId },
-        });
-
-        // Insert new links
-        if (extracted.length > 0) {
-          await tx.wikiLink.createMany({
-            data: extracted.map((link) => ({
-              sourceArticleId: articleId,
-              targetSlug: link.targetSlug,
-              targetArticleId: targetMap.get(link.targetSlug) ?? null,
-              anchorText: link.anchorText ?? null,
-              sectionAnchor: link.sectionAnchor ?? null,
-              isExternal: link.isExternal,
-            })),
-            skipDuplicates: true,
+    try {
+      // Transactionally update the link graph for this article
+      await db.$transaction(async (tx: any) => {
+        // Remove old outgoing links
+        if (tx.wikiLink) {
+          await tx.wikiLink.deleteMany({
+            where: { sourceArticleId: articleId },
           });
+
+          // Insert new links
+          if (extracted.length > 0) {
+            await tx.wikiLink.createMany({
+              data: extracted.map((link) => ({
+                sourceArticleId: articleId,
+                targetSlug: link.targetSlug,
+                targetArticleId: targetMap.get(link.targetSlug) ?? null,
+                anchorText: link.anchorText ?? null,
+                sectionAnchor: link.sectionAnchor ?? null,
+                isExternal: link.isExternal,
+              })),
+              skipDuplicates: true,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch {
+      // Best-effort if table not migrated or transient DB error
+    }
 
     return extracted.length;
   }

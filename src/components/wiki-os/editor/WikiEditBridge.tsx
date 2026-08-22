@@ -147,7 +147,7 @@ export function WikiEditBridge({
 
         if ((result as { editConflict?: boolean }).editConflict) {
           setEditConflict(true);
-          return;
+          throw new Error("Edit conflict detected: this page was modified by another user.");
         }
 
         clearDraft(title);
@@ -163,6 +163,7 @@ export function WikiEditBridge({
         }
       } catch (err) {
         console.error("Failed to save article:", err);
+        throw err;
       } finally {
         setSaving(false);
       }
@@ -185,7 +186,7 @@ export function WikiEditBridge({
 
         if ((result as { editConflict?: boolean }).editConflict) {
           setEditConflict(true);
-          return;
+          throw new Error("Edit conflict detected: this page was modified by another user.");
         }
 
         clearDraft(title);
@@ -201,6 +202,7 @@ export function WikiEditBridge({
         }
       } catch (err) {
         console.error("Failed to save wikitext:", err);
+        throw err;
       } finally {
         setSaving(false);
       }

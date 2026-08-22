@@ -306,6 +306,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
                     title: { contains: input.query, mode: "insensitive" },
                   }
                 : {},
+              select: {
+                id: true,
+                title: true,
+                wikitext: true,
+              },
               take: 20,
               orderBy: { updatedAt: "desc" },
             });

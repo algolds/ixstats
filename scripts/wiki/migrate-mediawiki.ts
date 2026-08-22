@@ -214,6 +214,7 @@ async function main() {
         mwPageId: page.page_id,
         mwLatestRevId: page.page_latest,
       },
+      select: { id: true },
     });
 
     if (wikitext) {
