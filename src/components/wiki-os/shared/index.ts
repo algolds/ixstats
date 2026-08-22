@@ -11,6 +11,7 @@ export { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 export { useWikiOSShortcuts } from "./useWikiOSShortcuts";
 export { WikiContextProvider, useWikiContext } from "./WikiContext";
 export { LorewardsIcon } from "./LorewardsIcon";
+export { WikiOSLogomark } from "./WikiOSLogomark";
 export { WikiOSWordmark } from "./WikiOSWordmark";
 export { WikiOSBrandLockup } from "./WikiOSBrandLockup";
 export { FisheyeRailItem } from "./FisheyeRailItem";

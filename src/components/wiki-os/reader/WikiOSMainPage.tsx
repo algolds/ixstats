@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { WikiOSBrandLockup } from "~/components/wiki-os/shared";
+import { WikiHeroMaster } from "./hero";
 
 // ---------------------------------------------------------------------------
 // Category definitions (matches live IxWiki navigation grid)
@@ -217,12 +217,16 @@ export function WikiOSMainPage() {
 
   return (
     <div className="wikios-main">
-      {/* Hero Header */}
+      {/* Hero Header & Direction Switcher */}
       <header className="wikios-main-hero relative">
-        <div className="wikios-main-hero-inner">
-          <WikiOSBrandLockup />
+        <div className="wikios-main-hero-inner w-full max-w-6xl">
+          <WikiHeroMaster
+            siteStats={siteStats}
+            activePrompt={activePrompt}
+            featuredArticleHtml={featuredArticleHtml}
+            onOpenBlurbs={() => setBlurbModalOpen(true)}
+          />
         </div>
-        <span className="wikios-hero-est">EST. MMIII</span>
       </header>
 
       {/* Quick Stats Bar */}
