@@ -1,0 +1,674 @@
+{
+  "meetings": [
+    {
+      "title": "Emergency Economic Review",
+      "description": "Emergency session to address rising inflation and trade deficit concerns.",
+      "duration": 120,
+      "status": "completed",
+      "daysAgo": 3,
+      "notes": "Agreed to implement targeted fiscal stimulus. Minister of Finance to prepare detailed proposal.",
+      "agendaItems": [
+        {
+          "title": "Inflation Trends & Monetary Response",
+          "duration": 45,
+          "status": "completed",
+          "order": 1
+        },
+        {
+          "title": "Trade Deficit Mitigation Strategy",
+          "duration": 45,
+          "status": "completed",
+          "order": 2
+        },
+        {
+          "title": "Fiscal Stimulus Package Framework",
+          "duration": 30,
+          "status": "completed",
+          "order": 3
+        }
+      ],
+      "votes": [
+        {
+          "title": "Adopt Targeted Fiscal Stimulus Framework",
+          "result": "passed",
+          "votesFor": 12,
+          "votesAgainst": 2,
+          "abstentions": 1
+        }
+      ]
+    },
+    {
+      "title": "Defense Modernization Briefing",
+      "description": "Annual review of military modernization program and budget allocations.",
+      "duration": 90,
+      "status": "completed",
+      "daysAgo": 1,
+      "notes": "Approved Phase 2 of naval modernization. Cyber defense budget increased by 15%.",
+      "agendaItems": [
+        {
+          "title": "Naval Procurement Progress Report",
+          "duration": 30,
+          "status": "completed",
+          "order": 1
+        },
+        {
+          "title": "Cyber Defense Infrastructure Review",
+          "duration": 30,
+          "status": "completed",
+          "order": 2
+        },
+        {
+          "title": "Budget Reallocation Approval",
+          "duration": 30,
+          "status": "completed",
+          "order": 3
+        }
+      ],
+      "votes": [
+        {
+          "title": "Approve Phase 2 Naval Procurement",
+          "result": "passed",
+          "votesFor": 14,
+          "votesAgainst": 0,
+          "abstentions": 1
+        }
+      ]
+    },
+    {
+      "title": "Weekly Cabinet Session",
+      "description": "Regular weekly cabinet meeting to review ongoing policy implementations.",
+      "duration": 60,
+      "status": "in_progress",
+      "daysAgo": 0,
+      "agendaItems": [
+        {
+          "title": "Ministerial Reports",
+          "duration": 30,
+          "status": "in_progress",
+          "order": 1
+        },
+        {
+          "title": "Legislative Calendar Review",
+          "duration": 15,
+          "status": "pending",
+          "order": 2
+        },
+        {
+          "title": "Open Floor / Urgent Items",
+          "duration": 15,
+          "status": "pending",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "title": "Infrastructure Investment Summit",
+      "description": "Review proposals for national infrastructure modernization initiative.",
+      "duration": 180,
+      "status": "scheduled",
+      "daysAhead": 2,
+      "agendaItems": [
+        {
+          "title": "High-Speed Rail Corridor Assessment",
+          "duration": 60,
+          "status": "pending",
+          "order": 1
+        },
+        {
+          "title": "Port Expansion Feasibility Study",
+          "duration": 60,
+          "status": "pending",
+          "order": 2
+        },
+        {
+          "title": "Public-Private Partnership Models",
+          "duration": 60,
+          "status": "pending",
+          "order": 3
+        }
+      ]
+    },
+    {
+      "title": "Education Reform Committee",
+      "description": "Discuss findings from the national education quality assessment.",
+      "duration": 90,
+      "status": "scheduled",
+      "daysAhead": 5,
+      "agendaItems": [
+        {
+          "title": "STEM Curriculum Overhaul",
+          "duration": 45,
+          "status": "pending",
+          "order": 1
+        },
+        {
+          "title": "Teacher Compensation Structure",
+          "duration": 45,
+          "status": "pending",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "title": "Healthcare System Review",
+      "description": "Quarterly review of universal healthcare implementation progress.",
+      "duration": 120,
+      "status": "completed",
+      "daysAgo": 7,
+      "notes": "Hospital capacity targets met in 3 of 5 regions. Rural healthcare initiative extended.",
+      "agendaItems": [
+        {
+          "title": "Regional Hospital Capacity Data",
+          "duration": 45,
+          "status": "completed",
+          "order": 1
+        },
+        {
+          "title": "Pharmaceutical Subsidy Audit",
+          "duration": 45,
+          "status": "completed",
+          "order": 2
+        },
+        {
+          "title": "Rural Healthcare Expansion Plan",
+          "duration": 30,
+          "status": "completed",
+          "order": 3
+        }
+      ],
+      "votes": [
+        {
+          "title": "Extend Rural Healthcare Subsidy Program",
+          "result": "passed",
+          "votesFor": 15,
+          "votesAgainst": 0,
+          "abstentions": 0
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "National Digital Infrastructure Act",
+      "description": "Comprehensive broadband expansion and digital services modernization across all regions.",
+      "policyType": "legislation",
+      "category": "infrastructure",
+      "status": "active",
+      "priority": "high",
+      "objectives": [
+        "95% broadband coverage by 2028",
+        "Digital government services portal",
+        "Rural connectivity initiative"
+      ],
+      "implementationCost": 2500000000,
+      "maintenanceCost": 150000000,
+      "gdpEffect": 0.3,
+      "employmentEffect": 0.5,
+      "inflationEffect": 0.1,
+      "proposedDaysAgo": 30,
+      "effectiveDaysAgo": 15
+    },
+    {
+      "name": "Green Energy Transition Plan",
+      "description": "Phase out coal power plants and transition to renewable energy sources over 10 years.",
+      "policyType": "strategic_plan",
+      "category": "environmental",
+      "status": "active",
+      "priority": "critical",
+      "objectives": [
+        "50% renewable energy by 2030",
+        "Carbon tax implementation",
+        "Electric vehicle incentives"
+      ],
+      "implementationCost": 8000000000,
+      "maintenanceCost": 500000000,
+      "gdpEffect": -0.1,
+      "employmentEffect": 0.8,
+      "inflationEffect": 0.2,
+      "proposedDaysAgo": 60,
+      "effectiveDaysAgo": 45
+    },
+    {
+      "name": "Universal Healthcare Expansion",
+      "description": "Extend universal healthcare coverage to include dental, mental health, and prescription drugs.",
+      "policyType": "reform",
+      "category": "social",
+      "status": "active",
+      "priority": "high",
+      "implementationCost": 5000000000,
+      "maintenanceCost": 3000000000,
+      "gdpEffect": 0.1,
+      "employmentEffect": 1.2,
+      "inflationEffect": 0.3,
+      "proposedDaysAgo": 90,
+      "effectiveDaysAgo": 60
+    },
+    {
+      "name": "Small Business Innovation Fund",
+      "description": "Government-backed venture fund to support technology startups and small business growth.",
+      "policyType": "program",
+      "category": "economic",
+      "status": "active",
+      "priority": "medium",
+      "implementationCost": 1000000000,
+      "maintenanceCost": 100000000,
+      "gdpEffect": 0.5,
+      "employmentEffect": 1.5,
+      "inflationEffect": 0,
+      "proposedDaysAgo": 20,
+      "effectiveDaysAgo": 10
+    },
+    {
+      "name": "National Defense Modernization Act",
+      "description": "Comprehensive military modernization including cyber capabilities and naval expansion.",
+      "policyType": "legislation",
+      "category": "defense",
+      "status": "active",
+      "priority": "critical",
+      "implementationCost": 12000000000,
+      "maintenanceCost": 2000000000,
+      "gdpEffect": 0.2,
+      "employmentEffect": 0.3,
+      "inflationEffect": 0.1,
+      "proposedDaysAgo": 120,
+      "effectiveDaysAgo": 90
+    },
+    {
+      "name": "Anti-Corruption Transparency Act",
+      "description": "Strengthen whistleblower protections and require financial disclosure for all senior officials.",
+      "policyType": "legislation",
+      "category": "governance",
+      "status": "draft",
+      "priority": "medium",
+      "implementationCost": 50000000,
+      "maintenanceCost": 10000000,
+      "gdpEffect": 0.1,
+      "employmentEffect": 0,
+      "inflationEffect": 0,
+      "proposedDaysAgo": 0
+    },
+    {
+      "name": "Agricultural Subsidy Reform",
+      "description": "Restructure agricultural subsidies to favor sustainable farming practices.",
+      "policyType": "reform",
+      "category": "economic",
+      "status": "review",
+      "priority": "medium",
+      "implementationCost": 800000000,
+      "maintenanceCost": 600000000,
+      "gdpEffect": 0.1,
+      "employmentEffect": -0.2,
+      "inflationEffect": -0.1,
+      "proposedDaysAgo": 5
+    },
+    {
+      "name": "Immigration Reform Package",
+      "description": "Streamline skilled worker visa process and strengthen border security measures.",
+      "policyType": "legislation",
+      "category": "social",
+      "status": "draft",
+      "priority": "high",
+      "implementationCost": 2000000000,
+      "maintenanceCost": 500000000,
+      "gdpEffect": 0.4,
+      "employmentEffect": 0.6,
+      "inflationEffect": 0.1,
+      "proposedDaysAgo": 2
+    }
+  ],
+  "partyData": [
+    {
+      "name": "Progressive Alliance",
+      "abbreviation": "PA",
+      "ideology": "Social Democracy",
+      "description": "Advocates for strong public services, progressive taxation, and environmental protection.",
+      "leader": "Elena Vance",
+      "color": "#3B82F6",
+      "isRuling": true
+    },
+    {
+      "name": "National Democratic Union",
+      "abbreviation": "NDU",
+      "ideology": "Liberal Conservatism",
+      "description": "Focuses on fiscal discipline, free markets, and institutional stability.",
+      "leader": "Marcus Sterling",
+      "color": "#EF4444",
+      "isRuling": false
+    },
+    {
+      "name": "Green Future Movement",
+      "abbreviation": "GFM",
+      "ideology": "Green Politics",
+      "description": "Pioneers ecological sustainability, renewable transition, and circular economy.",
+      "leader": "Aria Thorne",
+      "color": "#10B981",
+      "isRuling": false
+    },
+    {
+      "name": "Civic Liberty Party",
+      "abbreviation": "CLP",
+      "ideology": "Classical Liberalism",
+      "description": "Champions individual liberties, deregulation, and free enterprise.",
+      "leader": "Julian Cross",
+      "color": "#F59E0B",
+      "isRuling": false
+    },
+    {
+      "name": "United Labor Front",
+      "abbreviation": "ULF",
+      "ideology": "Democratic Socialism",
+      "description": "Represents organized labor, workers rights, and public ownership of key industries.",
+      "leader": "Damian Reed",
+      "color": "#8B5CF6",
+      "isRuling": false
+    }
+  ],
+  "departments": [
+    {
+      "name": "Ministry of Finance & Economy",
+      "shortName": "MoF",
+      "category": "finance",
+      "description": "Manages fiscal policy, taxation, national budget, and macroeconomic strategy.",
+      "minister": "Marcus Sterling",
+      "ministerTitle": "Minister of Finance",
+      "headquarters": "Capital District, Block A",
+      "established": 1948,
+      "employeeCount": 12500,
+      "icon": "Landmark",
+      "color": "#3B82F6",
+      "priority": 1,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Defense & Security",
+      "shortName": "MoD",
+      "category": "defense",
+      "description": "Oversees armed forces, border security, defense procurement, and strategic intelligence.",
+      "minister": "General Robert Hayes",
+      "ministerTitle": "Minister of Defense",
+      "headquarters": "Pentagon Complex, Sector 4",
+      "established": 1948,
+      "employeeCount": 45000,
+      "icon": "Shield",
+      "color": "#EF4444",
+      "priority": 2,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Foreign Affairs",
+      "shortName": "MFA",
+      "category": "foreign",
+      "description": "Conducts bilateral diplomacy, international treaties, and consular services worldwide.",
+      "minister": "Ambassador Sarah Lin",
+      "ministerTitle": "Minister of Foreign Affairs",
+      "headquarters": "Diplomatic Enclave, Embassy Row",
+      "established": 1949,
+      "employeeCount": 8200,
+      "icon": "Globe",
+      "color": "#10B981",
+      "priority": 3,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Health & Social Services",
+      "shortName": "MoH",
+      "category": "interior",
+      "description": "Administers universal healthcare, disease control, hospital networks, and social safety nets.",
+      "minister": "Dr. Catherine O'Connor",
+      "ministerTitle": "Minister of Health",
+      "headquarters": "Medical City, Pavilion C",
+      "established": 1955,
+      "employeeCount": 65000,
+      "icon": "Heart",
+      "color": "#EC4899",
+      "priority": 4,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Infrastructure & Transport",
+      "shortName": "MoIT",
+      "category": "infrastructure",
+      "description": "Coordinates national highways, railways, civil aviation, maritime ports, and digital networks.",
+      "minister": "Eng. David Chen",
+      "ministerTitle": "Minister of Infrastructure",
+      "headquarters": "Transit Hub Tower, Level 12",
+      "established": 1960,
+      "employeeCount": 28000,
+      "icon": "Building2",
+      "color": "#F59E0B",
+      "priority": 5,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Justice & Legal Affairs",
+      "shortName": "MoJ",
+      "category": "justice",
+      "description": "Maintains judicial integrity, national court systems, law enforcement standards, and legal reform.",
+      "minister": "Justice Patricia Reyes",
+      "ministerTitle": "Attorney General",
+      "headquarters": "Palace of Justice",
+      "established": 1948,
+      "employeeCount": 15000,
+      "icon": "Scale",
+      "color": "#8B5CF6",
+      "priority": 6,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Education & Science",
+      "shortName": "MoE",
+      "category": "education",
+      "description": "Directs primary through tertiary education, national research councils, and innovation grants.",
+      "minister": "Prof. Arthur Pendelton",
+      "ministerTitle": "Minister of Education",
+      "headquarters": "University Heights, Building 7",
+      "established": 1952,
+      "employeeCount": 85000,
+      "icon": "GraduationCap",
+      "color": "#06B6D4",
+      "priority": 7,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    },
+    {
+      "name": "Ministry of Environment & Energy",
+      "shortName": "MoEE",
+      "category": "environmental",
+      "description": "Regulates energy grids, renewable transitions, national parks, and climate adaptation policy.",
+      "minister": "Aria Thorne",
+      "ministerTitle": "Minister of Environment",
+      "headquarters": "Eco-District, Green Tower",
+      "established": 1978,
+      "employeeCount": 9500,
+      "icon": "Leaf",
+      "color": "#84CC16",
+      "priority": 8,
+      "isActive": true,
+      "organizationalLevel": "Ministry"
+    }
+  ],
+  "officials": [
+    {
+      "name": "Elena Vance",
+      "title": "President & Head of State",
+      "role": "head_of_state",
+      "bio": "Former constitutional lawyer and diplomat; elected on a platform of digital modernization and anti-corruption.",
+      "isCurrent": true,
+      "priority": 1,
+      "isActive": true
+    },
+    {
+      "name": "Marcus Sterling",
+      "title": "Minister of Finance",
+      "role": "minister",
+      "bio": "Veteran economist with 20 years in central banking and fiscal policy design.",
+      "isCurrent": true,
+      "priority": 2,
+      "isActive": true
+    },
+    {
+      "name": "General Robert Hayes",
+      "title": "Minister of Defense",
+      "role": "minister",
+      "bio": "Four-star general; former Chief of General Staff specializing in combined-arms and cyber defense.",
+      "isCurrent": true,
+      "priority": 3,
+      "isActive": true
+    },
+    {
+      "name": "Ambassador Sarah Lin",
+      "title": "Minister of Foreign Affairs",
+      "role": "minister",
+      "bio": "Career diplomat having served as ambassador to three major regional powers.",
+      "isCurrent": true,
+      "priority": 4,
+      "isActive": true
+    },
+    {
+      "name": "Dr. Catherine O'Connor",
+      "title": "Minister of Health",
+      "role": "minister",
+      "bio": "Epidemiologist and hospital administrator; led the national healthcare digitization initiative.",
+      "isCurrent": true,
+      "priority": 5,
+      "isActive": true
+    },
+    {
+      "name": "Eng. David Chen",
+      "title": "Minister of Infrastructure",
+      "role": "minister",
+      "bio": "Civil engineer with extensive leadership in megaproject delivery and high-speed rail networks.",
+      "isCurrent": true,
+      "priority": 6,
+      "isActive": true
+    },
+    {
+      "name": "Justice Patricia Reyes",
+      "title": "Attorney General",
+      "role": "minister",
+      "bio": "Former appellate court justice known for landmark rulings in administrative and digital law.",
+      "isCurrent": true,
+      "priority": 7,
+      "isActive": true
+    },
+    {
+      "name": "Prof. Arthur Pendelton",
+      "title": "Minister of Education",
+      "role": "minister",
+      "bio": "University rector and physicist; champion of STEM education and public research funding.",
+      "isCurrent": true,
+      "priority": 8,
+      "isActive": true
+    },
+    {
+      "name": "Aria Thorne",
+      "title": "Minister of Environment",
+      "role": "minister",
+      "bio": "Environmental scientist and clean energy advocate; author of the national decarbonization roadmap.",
+      "isCurrent": true,
+      "priority": 9,
+      "isActive": true
+    },
+    {
+      "name": "Victor Morales",
+      "title": "Governor of the Central Bank",
+      "role": "central_banker",
+      "bio": "Monetary policy specialist focusing on inflation targeting and digital currency frameworks.",
+      "isCurrent": true,
+      "priority": 10,
+      "isActive": true
+    },
+    {
+      "name": "Admiral Thomas Drake",
+      "title": "Chief of Naval Operations",
+      "role": "military_chief",
+      "bio": "Decorated naval commander overseeing maritime domain awareness and fleet expansion.",
+      "isCurrent": true,
+      "priority": 11,
+      "isActive": true
+    },
+    {
+      "name": "Dr. Rebecca Zhang",
+      "title": "Director of National Intelligence",
+      "role": "intelligence_chief",
+      "bio": "Cybersecurity and signals intelligence expert directing the unified intelligence bureau.",
+      "isCurrent": true,
+      "priority": 12,
+      "isActive": true
+    }
+  ],
+  "taxBrackets": [
+    {
+      "bracketName": "Tax-Free Allowance",
+      "minIncome": 0,
+      "maxIncome": 15000,
+      "rate": 0,
+      "flatAmount": 0,
+      "marginalRate": true,
+      "priority": 1
+    },
+    {
+      "bracketName": "Basic Rate",
+      "minIncome": 15001,
+      "maxIncome": 45000,
+      "rate": 12,
+      "flatAmount": 0,
+      "marginalRate": true,
+      "priority": 2
+    },
+    {
+      "bracketName": "Intermediate Rate",
+      "minIncome": 45001,
+      "maxIncome": 90000,
+      "rate": 22,
+      "flatAmount": 3600,
+      "marginalRate": true,
+      "priority": 3
+    },
+    {
+      "bracketName": "Higher Rate",
+      "minIncome": 90001,
+      "maxIncome": 180000,
+      "rate": 32,
+      "flatAmount": 13500,
+      "marginalRate": true,
+      "priority": 4
+    },
+    {
+      "bracketName": "Top Rate",
+      "minIncome": 180001,
+      "maxIncome": null,
+      "rate": 40,
+      "flatAmount": 42300,
+      "marginalRate": true,
+      "priority": 5
+    }
+  ],
+  "govComponents": [
+    "CONSTITUTIONAL_COURT",
+    "BICAMERAL_LEGISLATURE",
+    "CENTRAL_BANK_INDEPENDENT",
+    "CIVIL_SERVICE_MERIT",
+    "UNIVERSAL_SUFFRAGE"
+  ],
+  "econComponents": [
+    "MIXED_MARKET",
+    "TRADE_OPENNESS",
+    "CENTRAL_BANK_DIGITAL",
+    "FINANCIAL_REGULATION",
+    "LABOR_PROTECTION"
+  ],
+  "taxComponents": [
+    "PROGRESSIVE_INCOME_TAX",
+    "CORPORATE_INCOME_TAX",
+    "VALUE_ADDED_TAX",
+    "CARBON_PRICING",
+    "PROPERTY_TAX"
+  ]
+}
