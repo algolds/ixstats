@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Key, Globe, Shield, RefreshCw } from "lucide-react";
 import {

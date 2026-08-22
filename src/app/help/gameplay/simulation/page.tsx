@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Cog, Clock, TrendingUp, Zap } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

@@ -28,9 +28,11 @@ export function useMapEditorTransforms({
   invalidateAllMapData,
   debouncedRefetch,
 }: UseMapEditorTransformsProps) {
-  const updateCity = api.geoFeatures.upsertCity.useMutation();
+  const updateCity = api.geoFeatures.updateCity.useMutation();
+  const createCity = api.geoFeatures.createCity.useMutation();
   const deleteCity = api.geoFeatures.deleteCity.useMutation();
-  const updateSubdivision = api.geoFeatures.upsertSubdivision.useMutation();
+  const updateSubdivision = api.geoFeatures.updateSubdivision.useMutation();
+  const createSubdivision = api.geoFeatures.createSubdivision.useMutation();
   const deleteSubdivision = api.geoFeatures.deleteSubdivision.useMutation();
 
   const mergeSelectedCities = useCallback(async () => {
@@ -50,13 +52,13 @@ export function useMapEditorTransforms({
 
     await updateCity.mutateAsync({
       countryId,
+      cityId: baseCity.id,
       name: baseCity.name,
-      type: baseCity.properties.cityType as string,
+      cityType: baseCity.properties.cityType as string,
       coordinates: baseCity.coordinates!,
       population: totalPopulation,
       isNationalCapital: !!baseCity.properties.isNationalCapital,
       isSubdivisionCapital: !!baseCity.properties.isSubdivisionCapital,
-      subdivisionId: baseCity.properties.subdivisionId as string | undefined,
     });
 
     for (let i = 1; i < citiesToMerge.length; i++) {
@@ -93,19 +95,19 @@ export function useMapEditorTransforms({
 
       await updateCity.mutateAsync({
         countryId,
+        cityId,
         name: `${name} A`,
-        type: city.properties.cityType as string,
+        cityType: city.properties.cityType as string,
         coordinates: [lng, lat],
         population: halvedPop,
         isNationalCapital: !!city.properties.isNationalCapital,
         isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
-        subdivisionId: city.properties.subdivisionId as string | undefined,
       });
 
-      await updateCity.mutateAsync({
+      await createCity.mutateAsync({
         countryId,
         name: `${name} B`,
-        type: city.properties.cityType as string,
+        cityType: city.properties.cityType as string,
         coordinates: [lng + 0.05, lat + 0.05],
         population: halvedPop,
         isNationalCapital: false,
@@ -116,7 +118,7 @@ export function useMapEditorTransforms({
       invalidateAllMapData();
       debouncedRefetch();
     },
-    [countryId, allFeatures, updateCity, invalidateAllMapData, debouncedRefetch]
+    [countryId, allFeatures, updateCity, createCity, invalidateAllMapData, debouncedRefetch]
   );
 
   const scaleSelectedCitiesPopulation = useCallback(
@@ -128,13 +130,13 @@ export function useMapEditorTransforms({
         const scaled = Math.max(1, Math.round(cur * multiplier));
         await updateCity.mutateAsync({
           countryId,
+          cityId: city.id,
           name: city.name,
-          type: city.properties.cityType as string,
+          cityType: city.properties.cityType as string,
           coordinates: city.coordinates!,
           population: scaled,
           isNationalCapital: !!city.properties.isNationalCapital,
           isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
-          subdivisionId: city.properties.subdivisionId as string | undefined,
         });
       }
       invalidateAllMapData();
@@ -162,13 +164,13 @@ export function useMapEditorTransforms({
 
         await updateCity.mutateAsync({
           countryId,
+          cityId: city.id,
           name: city.name,
-          type: city.properties.cityType as string,
+          cityType: city.properties.cityType as string,
           coordinates: newCoords,
           population: city.properties.population ? Number(city.properties.population) : undefined,
           isNationalCapital: !!city.properties.isNationalCapital,
           isSubdivisionCapital: !!city.properties.isSubdivisionCapital,
-          subdivisionId: city.properties.subdivisionId as string | undefined,
         });
       }
       invalidateAllMapData();
@@ -258,7 +260,7 @@ export function useMapEditorTransforms({
         level: Number(sub.properties.level) || 1,
       });
 
-      await updateSubdivision.mutateAsync({
+      await createSubdivision.mutateAsync({
         countryId,
         name: `${sub.name} South`,
         geometry: p2,
@@ -269,7 +271,7 @@ export function useMapEditorTransforms({
       invalidateAllMapData();
       debouncedRefetch();
     },
-    [countryId, allFeatures, updateSubdivision, invalidateAllMapData, debouncedRefetch]
+    [countryId, allFeatures, updateSubdivision, createSubdivision, invalidateAllMapData, debouncedRefetch]
   );
 
   const applyGeometryTransformation = useCallback(

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Theater, HeartHandshake, Plane, Globe } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

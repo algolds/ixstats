@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Plane, CheckCircle, AlertCircle, MapPin, Clock } from "lucide-react";
 import {

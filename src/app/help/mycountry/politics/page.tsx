@@ -1,5 +1,3 @@
-"use client";
-
 import { Vote, Users, Scale, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import {

@@ -21,49 +21,41 @@ export function useMapEditorSync({
     data: countryGeo,
     isLoading: geometryLoading,
     refetch: refetchCountryGeo,
-  } = api.geoCore.getCountryPolygon.useQuery(
+  } = api.geoCore.getCountryGeometry.useQuery(
     { countryId: countryId! },
     { enabled: !!countryId }
-  );
-
-  const {
-    data: linkage,
-    isLoading: linkageLoading,
-  } = api.geoLinkage.getLinkageStatus.useQuery(
-    { countryId: countryId! },
-    { enabled: !!countryId && !skipLinkageGate }
   );
 
   const {
     data: features,
     isLoading: featuresLoading,
     refetch: refetchGeoFeatures,
-  } = api.geoFeatures.getFeaturesByCountry.useQuery(
+  } = api.geoCore.getCountryFeatures.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId && (skipLinkageGate || !!linkage?.isLinked) }
+    { enabled: !!countryId }
   );
 
   const {
     data: routes,
     isLoading: routesLoading,
     refetch: refetchRoutes,
-  } = api.geoRoutes.getRoutesByCountry.useQuery(
+  } = api.transport.getCountryRoutes.useQuery(
     { countryId: countryId! },
-    { enabled: !!countryId && (skipLinkageGate || !!linkage?.isLinked) }
+    { enabled: !!countryId }
   );
 
   // Invalidation & Refetch
   const invalidateAllMapData = useCallback(() => {
     if (!countryId) return;
-    utils.geoFeatures.getFeaturesByCountry.invalidate({ countryId });
-    utils.geoRoutes.getRoutesByCountry.invalidate({ countryId });
-    utils.geoCore.getCountryPolygon.invalidate({ countryId });
+    void utils.geoCore.getCountryFeatures.invalidate({ countryId });
+    void utils.transport.getCountryRoutes.invalidate({ countryId });
+    void utils.geoCore.getCountryGeometry.invalidate({ countryId });
   }, [countryId, utils]);
 
   const refetchFeatures = useCallback(() => {
-    refetchGeoFeatures();
-    refetchRoutes();
-    refetchCountryGeo();
+    void refetchGeoFeatures();
+    void refetchRoutes();
+    void refetchCountryGeo();
   }, [refetchGeoFeatures, refetchRoutes, refetchCountryGeo]);
 
   const debouncedRefetch = useCallback(() => {
@@ -80,7 +72,7 @@ export function useMapEditorSync({
     if (!features) return [];
     const list: EditorFeature[] = [];
 
-    (features.cities || []).forEach((c) => {
+    (features.cities || []).forEach((c: any) => {
       list.push({
         id: c.id,
         type: "city",
@@ -90,7 +82,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.subdivisions || []).forEach((s) => {
+    (features.subdivisions || []).forEach((s: any) => {
       list.push({
         id: s.id,
         type: "subdivision",
@@ -100,7 +92,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.pointsOfInterest || []).forEach((p) => {
+    (features.pois || []).forEach((p: any) => {
       list.push({
         id: p.id,
         type: "poi",
@@ -110,7 +102,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.storyPins || []).forEach((sp) => {
+    (features.storyPins || []).forEach((sp: any) => {
       list.push({
         id: sp.id,
         type: "storyPin",
@@ -120,7 +112,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.mapLabels || []).forEach((ml) => {
+    (features.mapLabels || []).forEach((ml: any) => {
       list.push({
         id: ml.id,
         type: "mapLabel",
@@ -130,7 +122,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.peaks || []).forEach((pk) => {
+    (features.peaks || []).forEach((pk: any) => {
       list.push({
         id: pk.id,
         type: "peak",
@@ -140,7 +132,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.rivers || []).forEach((r) => {
+    (features.namedRivers || []).forEach((r: any) => {
       list.push({
         id: r.id,
         type: "river",
@@ -150,7 +142,7 @@ export function useMapEditorSync({
       });
     });
 
-    (features.lakes || []).forEach((l) => {
+    (features.namedLakes || []).forEach((l: any) => {
       list.push({
         id: l.id,
         type: "lake",
@@ -160,13 +152,13 @@ export function useMapEditorSync({
       });
     });
 
-    (routes || []).forEach((rt: any) => {
+    (((routes as any)?.features as any[]) || []).forEach((f: any) => {
       list.push({
-        id: rt.id,
+        id: f.properties?.id || f.id,
         type: "route",
-        name: rt.name,
-        geometry: rt.geometry || undefined,
-        properties: rt,
+        name: f.properties?.name || f.name || "Route",
+        geometry: f.geometry || undefined,
+        properties: f.properties || f,
       });
     });
 
@@ -176,8 +168,8 @@ export function useMapEditorSync({
   return {
     countryGeo,
     geometryLoading,
-    linkage,
-    linkageLoading,
+    linkage: null,
+    linkageLoading: false,
     features,
     featuresLoading: featuresLoading || routesLoading,
     routes,

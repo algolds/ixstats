@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Calculator, Sigma, TrendingUp, BarChart3, Gauge, ArrowUpRight } from "lucide-react";
 import {

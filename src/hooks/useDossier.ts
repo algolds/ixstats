@@ -269,14 +269,15 @@ export function useDossier({
     const conflicts: DataConflict[] = [];
 
     // Check population conflicts
-    if (wikiData.infobox.population_estimate) {
-      const wikiPop = parseInt(wikiData.infobox.population_estimate.replace(/[^0-9]/g, ""));
+    if (wikiData.infobox.population_estimate != null) {
+      const popStr = String(wikiData.infobox.population_estimate);
+      const wikiPop = parseInt(popStr.replace(/[^0-9]/g, ""), 10);
       const ixStatsPop = countryData.currentPopulation;
-      if (Math.abs(wikiPop - ixStatsPop) / ixStatsPop > 0.1) {
+      if (!isNaN(wikiPop) && ixStatsPop > 0 && Math.abs(wikiPop - ixStatsPop) / ixStatsPop > 0.1) {
         // 10% difference
         conflicts.push({
           field: "Population",
-          wikiValue: wikiData.infobox.population_estimate,
+          wikiValue: popStr,
           ixStatsValue: ixStatsPop.toLocaleString(),
           type: "value_mismatch",
           severity: "high",

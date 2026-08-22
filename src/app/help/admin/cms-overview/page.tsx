@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Settings, Database, Shield, BarChart3 } from "lucide-react";
 import {

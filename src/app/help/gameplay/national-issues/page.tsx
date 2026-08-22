@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Bell, AlertTriangle, CheckCircle, Cog } from "lucide-react";
 import {

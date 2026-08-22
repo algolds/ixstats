@@ -11,3 +11,5 @@ export { PrivacySecurityCard } from "./PrivacySecurityCard";
 export { GeographicReconciliationCard } from "./GeographicReconciliationCard";
 export { NotificationSettingsCard } from "./NotificationSettingsCard";
 export { NSCardSettingsCard } from "./NSCardSettingsCard";
+export { SettingsContent, SettingsSkeleton } from "./SettingsContent";
+export { SettingsQuickNav } from "./SettingsQuickNav";

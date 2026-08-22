@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Clock, Activity, RefreshCw } from "lucide-react";
 import {

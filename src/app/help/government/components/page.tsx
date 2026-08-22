@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ListTree, Puzzle, BookOpen, Coins, Search } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

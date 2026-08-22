@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowLeftRight, Gavel, Timer, Handshake } from "lucide-react";
 import {

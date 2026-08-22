@@ -167,3 +167,14 @@ export function useMyBuilderAutoSync(countryId: string, initialData: FormData) {
 - **Auto-Sync**: `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`) — universal debounced autosave engine.
 - **Notifications**: `useNotify` (`src/hooks/useNotify.ts`) — standardized toast and status messages.
 - **Media / Wiki**: `useWikiProfile` (`src/hooks/useWikiProfile.ts`) — cached MediaWiki infobox extraction.
+
+---
+
+## 6. Server Components (RSC) & Dynamic Bundle Splitting
+
+To ensure optimal initial load times and eliminate client-side waterfalls, routes follow strict RSC boundaries:
+
+1. **Root Route Shells as React Server Components**: Static documentation, hub pages, and settings shells (`src/app/changelog/page.tsx`, `src/app/help/page.tsx`, `src/app/help/**/page.tsx`, `src/app/settings/page.tsx`) render on the server without top-level `"use client"`.
+2. **Targeted `<Suspense>` Streaming**: Interactive data feeds and heavy client trees are wrapped in `<Suspense fallback={<Skeleton />}>`, streaming instant server HTML and hydrating asynchronously.
+3. **Dynamic Library Code-Splitting**: Heavy client rendering engines (`maplibre-gl`, `recharts`, `@xyflow/react`) are dynamically imported via `next/dynamic` with SSR disabled (`{ ssr: false }`) and lightweight placeholder skeletons, preventing heavy canvas/chart code from bloating static entrypoints.
+

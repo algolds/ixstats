@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Gamepad2, Rocket, TrendingUp, Trophy } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

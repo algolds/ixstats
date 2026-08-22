@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Radar, Globe, Shield, LayoutDashboard } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

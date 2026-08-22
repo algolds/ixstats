@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { GaugeCircle, BarChart2, BellRing } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

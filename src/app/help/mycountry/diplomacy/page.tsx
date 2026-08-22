@@ -1,5 +1,3 @@
-"use client";
-
 import { Globe, Building, MessageSquare, FileText } from "lucide-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

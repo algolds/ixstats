@@ -47,7 +47,7 @@ export function useMapEditorSelection({
   }, []);
 
   // Lasso tool state
-  const [lassoTool, setLassoTool] = useState<"lasso" | "rect">("lasso");
+  const [lassoTool, setLassoTool] = useState<"freehand" | "rect">("freehand");
   const [lassoGeometry, setLassoGeometry] = useState<any>(null);
 
   const applyLassoSelection = useCallback(
@@ -71,8 +71,16 @@ export function useMapEditorSelection({
   );
 
   const applyRectSelection = useCallback(
-    (bounds: [[number, number], [number, number]]) => {
-      const [[minLng, minLat], [maxLng, maxLat]] = bounds;
+    (bounds: { west: number; south: number; east: number; north: number } | [[number, number], [number, number]]) => {
+      let minLng: number, minLat: number, maxLng: number, maxLat: number;
+      if (Array.isArray(bounds)) {
+        [[minLng, minLat], [maxLng, maxLat]] = bounds;
+      } else {
+        minLng = bounds.west;
+        minLat = bounds.south;
+        maxLng = bounds.east;
+        maxLat = bounds.north;
+      }
       const newSelected = new Set<string>();
       for (const feat of allFeatures) {
         if (feat.coordinates) {

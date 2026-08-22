@@ -1,5 +1,3 @@
-"use client";
-
 import { ShieldAlert, AlertOctagon, LayoutList } from "lucide-react";
 import {
   ArticleLayout,

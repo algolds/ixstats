@@ -139,6 +139,7 @@ export interface NamedRiverFormData {
 export interface NamedLakeFormData {
   name: string;
   waterType?: string;
+  maxDepthM?: number;
   wikiPageTitle?: string;
   geometry?: object;
 }

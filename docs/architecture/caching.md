@@ -49,8 +49,9 @@ export const geoCountryRouter = createTRPCRouter({
 });
 ```
 
-### 2.2 Vector Map Layer Cache (`layer-cache.ts`)
-Map tiles and GeoJSON feature collections are cached in an LRU buffer with automatic geometry coordinate truncation (6 decimal places $\approx 0.11\text{m}$ precision).
+### 2.2 Vector Map Layer & Static Catalog Cache (`layer-cache.ts`)
+Map tiles, GeoJSON feature collections, and immutable reference catalogs (e.g. equipment catalogs, administrative division lists, country presets) are cached in an in-memory LRU buffer with automatic TTL eviction and geometry coordinate truncation (6 decimal places $\approx 0.11\text{m}$ precision), reducing redundant database round-trips to 0ms for warm lookups.
+
 
 ---
 

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Medal, BarChart3, TrendingUp, Users } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

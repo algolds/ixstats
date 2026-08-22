@@ -264,13 +264,13 @@ export function AutosaveMonitoringDashboard() {
             <div className="space-y-2">
               {failureAnalysis.errorTypes.map((error, index) => (
                 <div
-                  key={`${error.error}-${index}`}
+                  key={`${error.type}-${index}`}
                   className="flex items-center justify-between rounded border p-3 hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-3">
                     <XCircle className="h-5 w-5 text-red-500" />
                     <div>
-                      <span className="text-sm font-medium">{error.error}</span>
+                      <span className="text-sm font-medium">{error.type}</span>
                       <p className="text-xs text-gray-500">
                         {error.count} occurrence{error.count !== 1 ? "s" : ""}
                       </p>

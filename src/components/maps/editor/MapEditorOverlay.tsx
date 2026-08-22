@@ -301,7 +301,7 @@ export default function MapEditorOverlay({
               }
               onDuplicate={
                 editor.selectedFeature
-                  ? () => editor.duplicateFeature(editor.selectedFeature)
+                  ? () => editor.duplicateFeature(editor.selectedFeature!)
                   : undefined
               }
               onDelete={
@@ -334,17 +334,17 @@ export default function MapEditorOverlay({
               // City actions / scatter / snapping
               onScatterCities={(count, type, prefix) => {
                 if (editor.selectedFeature) {
-                  editor.scatterCities(editor.selectedFeature.id, count, type, prefix);
+                  editor.scatterCities(count, type, prefix);
                 }
               }}
               onSnapCityToSubdivisionBorder={
                 editor.selectedFeature
-                  ? () => editor.snapCityToSubdivisionBorder(editor.selectedFeature!.id)
+                  ? () => editor.snapCityToSubdivisionBorder()
                   : undefined
               }
               onSnapCityToCoastline={
                 editor.selectedFeature
-                  ? () => editor.snapCityToCoastline(editor.selectedFeature!.id)
+                  ? () => editor.snapCityToCoastline()
                   : undefined
               }
               cityCoordinates={editor.selectedFeature?.coordinates}
@@ -352,8 +352,8 @@ export default function MapEditorOverlay({
                 editor.selectedFeature
                   ? (coords) =>
                       editor.updatePointCoordinates(
+                        editor.selectedFeature!.type,
                         editor.selectedFeature!.id,
-                        editor.selectedFeature!.type as any,
                         coords
                       )
                   : undefined
@@ -362,9 +362,20 @@ export default function MapEditorOverlay({
               onTogglePickingLocation={() => editor.setIsPickingLocation((p) => !p)}
               // Subdivision Actions
               onStartSplitSubdivision={() => editor.setMode("split-subdivision")}
-              onExecuteSplitSubdivision={editor.executeSplitSubdivision}
+              onExecuteSplitSubdivision={() => {
+                if (editor.selectedFeature) {
+                  void editor.executeSplitSubdivision(editor.selectedFeature.id, []);
+                }
+              }}
               onMergeSelectedSubdivisions={editor.mergeSelectedSubdivisions}
-              onApplyGeometryTransformation={editor.applyGeometryTransformation}
+              onApplyGeometryTransformation={(type, value) => {
+                if (editor.selectedFeature) {
+                  void editor.applyGeometryTransformation(editor.selectedFeature.id, {
+                    type: type as any,
+                    factor: value,
+                  });
+                }
+              }}
               onCancelSplit={() => editor.setMode("edit-subdivision")}
               selectedFeature={editor.selectedFeature}
               // Advanced City Operations
@@ -732,11 +743,13 @@ export default function MapEditorOverlay({
                   selectedFeature={editor.selectedFeature}
                   selectedIds={editor.selectedIds}
                   onToggleSelect={editor.toggleSelectId}
-                  onMapClick={editor.handleMapClick}
+                  onMapClick={(lng, lat) => editor.handleMapClick([lng, lat])}
                   isPickingLocation={editor.isPickingLocation}
                   onDrawComplete={editor.handleDrawComplete}
                   onGeometryUpdate={editor.updateSubdivisionGeometry}
-                  updatePointCoordinates={editor.updatePointCoordinates}
+                  updatePointCoordinates={(id, type, coords) =>
+                    editor.updatePointCoordinates(type, id, coords)
+                  }
                   onFeatureSelect={handleSelectFeature}
                   onApplyEyedropper={editor.applyEyedropper}
                   onApplyMagicWand={editor.applyMagicWand}

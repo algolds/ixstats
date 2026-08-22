@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { BellRing, Inbox, ShieldAlert, LayoutDashboard, Compass } from "lucide-react";
 import {

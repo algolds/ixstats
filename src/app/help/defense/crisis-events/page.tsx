@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { AlertTriangle, Waves, TrendingDown, Users } from "lucide-react";
 import {

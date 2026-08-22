@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Brain, Users2, TrendingUp, Target } from "lucide-react";
 import {

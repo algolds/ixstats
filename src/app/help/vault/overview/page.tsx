@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Coins, Layers, Star, Package } from "lucide-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

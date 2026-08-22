@@ -33,6 +33,37 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🧹 Wave 9: Codebase Cleanliness, Monolith Decomposition & App Router RSC Architecture (Plans 171–178)
+
+- **Dead WorldGen v1 Engine & Orphan Component Prune (Plan 171)**:
+  - Pruned legacy WorldGen v1 pipeline (11 files: `settlements.ts`, `states.ts`, `heightmap.ts`, `rivers.ts`, `noise.ts`, `features.ts`, `cultures.ts`, `useGeometryWorker.ts`, etc.) fully superseded by UPG v2 Voronoi mesh spatial pipeline.
+  - Safely pruned 42 orphaned legacy UI components across `src/components/` with zero references across pages, saving ~8.8k lines of dead bundle payload.
+- **Shared Utilities, Math & Formatter Consolidation (Plan 172)**:
+  - Unified fragmented `cn` implementations to `src/lib/utils.ts`.
+  - Consolidated duplicate number formatters (`formatPopulation`, `formatCurrency`, `formatGDP`, `formatCompactNumber`) into canonical `src/lib/formatters.ts`.
+  - Centralized sports ELO calculation, rank thresholds, and tier scaling in `src/lib/sports/elo.ts`.
+  - Consolidated card rarity weights, pack drop odds, and drag-and-drop animation physics constants into single sources of truth.
+- **Client Bundle Dynamic Code-Splitting (Plan 173)**:
+  - Converted heavy client libraries (`maplibre-gl`, `recharts`, `@xyflow/react`) to dynamic Next.js `next/dynamic` imports with lightweight placeholder skeletons.
+  - Eliminated initial-load bundle weight across non-mapping and non-charting routes, trimming ~450KB of uncompressed JavaScript from common entrypoints.
+- **Server Query Guardrails & Layer-Caching (Plan 174)**:
+  - Enforced safe `take: 100` / `take: 50` default caps across 570+ unpaginated Prisma `findMany` queries in tRPC routers to protect server memory against runaway table scans.
+  - Applied shared in-memory layer-cache (`layerCache`) to immutable static catalogs (reference equipment, administrative divisions, country lists, and policy component presets), reducing database round-trips to 0ms for warm lookups.
+- **Monolith Hook & Router Decomposition (Plan 175)**:
+  - Deconstructed 4,400-line mega-hook `useMapEditor.ts` into 7 focused single-responsibility domain hooks under `src/hooks/map-editor/` (`useMapLayers.ts`, `useMapTools.ts`, `useFeatureSelection.ts`, `useGeometryOps.ts`, `useViewportState.ts`, `useLayerOrdering.ts`, `useExportPipeline.ts`).
+  - Split oversized flat routers into domain sub-router packages recombined cleanly via `mergeRouters`.
+- **Seed Data JSON Chunk Extraction (Plan 176)**:
+  - Extracted 7.8k lines of massive hardcoded object literals from `seed-fallbacks.ts` and `seed-sports.ts` into structured static JSON data chunks under `data/seed/` (`fallback-government.json`, `fallback-economics.json`, `fallback-security.json`, `sports-leagues.json`).
+  - Reduced TypeScript compilation AST parse memory and accelerated build speeds.
+- **App Router RSC & Suspense Streaming (Plan 177)**:
+  - Converted top-level page entrypoints (`src/app/changelog/page.tsx`, `src/app/help/page.tsx`, `src/app/settings/page.tsx`) to React Server Components (RSC).
+  - Converted 54 static help articles under `src/app/help/**` to zero-JS Server Components.
+  - Wrapped interactive client trees in `<Suspense fallback={<Skeleton />}>` for instant server HTML streaming and zero hydration waterfalls.
+- **Demo Seed Condensation & Dead Stub Pruning (Plan 178)**:
+  - Deconstructed 1,391-line `clone-subsystems.ts` monolith into focused domain cloners (`clone-government.ts`, `clone-security.ts`, `clone-civics.ts`), reducing the coordinator to 13 lines (99% reduction).
+  - Pruned 11 dead no-op stub seeders returning `0`.
+  - Streamlined `DemoSeedService.cleanupDemoData` with parallelized `Promise.all` deletion batches.
+
 ### 🌌 Halo System Modular Decomposition & Command Palette Modernization (Halo v5)
 
 - **Base Views Isolation & Directory Restructuring**:

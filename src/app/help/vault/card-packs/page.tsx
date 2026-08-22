@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Package, Sparkles, Eye, Zap } from "lucide-react";
 import {

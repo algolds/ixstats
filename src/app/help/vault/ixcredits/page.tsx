@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { CircleDollarSign, TrendingUp, ShoppingCart, Clock } from "lucide-react";
 import {

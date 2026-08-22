@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Link2, Scale, AlertTriangle, Sparkles } from "lucide-react";
 import {

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { ScrollText, Sparkles, Target, Network } from "lucide-react";
 import {

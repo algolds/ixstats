@@ -1,5 +1,3 @@
-"use client";
-
 import { LayoutDashboard, Activity, BarChart3, Target } from "lucide-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { NamedLakeFormData, EditorFeature } from "~/hooks/useMapEditor";
+import type { NamedLakeFormData, EditorFeature } from "~/hooks/map-editor/editor-types";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const inputClasses =

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Send, MessagesSquare, Users, Shield, Inbox, Globe, MessageCircle } from "lucide-react";
 import {
