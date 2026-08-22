@@ -10,7 +10,7 @@ import {
   type MouseEventHandler,
 } from "react";
 import Image from "next/image";
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { useControllableState } from "~/hooks/useControllableState";
 import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "~/lib/utils";

@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useClerk } from "@clerk/nextjs";
-import { useConsentManager, useConsentDialogTrigger } from "@c15t/nextjs";
 
 interface PrivacySecurityCardProps {
   countryId?: string | null;
@@ -23,9 +22,6 @@ export function PrivacySecurityCard({
   const notify = useNotify();
   const utils = api.useUtils();
   const clerk = useClerk();
-
-  const { consents, consentCategories } = useConsentManager();
-  const { openDialog } = useConsentDialogTrigger();
 
   // Queries
   const { data: preferences, isLoading: prefsLoading } = api.users.getPreferences.useQuery(
@@ -202,44 +198,26 @@ export function PrivacySecurityCard({
             />
           </div>
 
-          {/* Cookie & Consent Preferences (c15t) */}
+          {/* Local Session & Analytics Preferences */}
           <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
             <div className="mr-4">
               <Label className="text-sm font-bold text-slate-900 dark:text-white">
-                Cookie & Consent Preferences
+                Session & Analytics Preferences
               </Label>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Manage your cookie preferences, check your active consent statuses, or modify your
-                opt-in categories.
+                IxStats operates in privacy-first mode with no third-party tracking or advertising cookies.
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {consentCategories?.map((category) => {
-                  const isGranted = consents?.[category];
-                  return (
-                    <span
-                      key={category}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${
-                        isGranted
-                          ? "bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-                          : "bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${isGranted ? "bg-green-500" : "bg-slate-400"}`}
-                      />
-                      {category}
-                    </span>
-                  );
-                })}
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-bold capitalize text-green-600 dark:bg-green-500/20 dark:text-green-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                  Essential (Active)
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-500/10 px-2 py-0.5 text-[10px] font-bold capitalize text-slate-600 dark:bg-slate-500/20 dark:text-slate-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                  Zero Telemetry
+                </span>
               </div>
             </div>
-            <button
-              onClick={() => openDialog()}
-              className="glass-interactive flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <Lock className="h-3.5 w-3.5" />
-              Manage Preferences
-            </button>
           </div>
 
           {/* Security Credentials & MFA Console */}

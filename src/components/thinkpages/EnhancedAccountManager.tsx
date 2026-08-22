@@ -20,7 +20,6 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -244,23 +243,23 @@ export function EnhancedAccountManager({
 
   const innerContent = (
     <>
-      <ToggleGroup
-        type="single"
-        value={filterType}
-        onValueChange={(value) => value && setFilterType(value as typeof filterType)}
-        className="bg-muted/50 grid w-full grid-cols-2 gap-1.5 rounded-lg p-1"
-      >
+      <div className="bg-muted/50 grid w-full grid-cols-2 gap-1.5 rounded-lg p-1">
         {(["all", "government", "media", "citizen"] as const).map((type) => {
           const Icon = getAccountIcon(type);
           const count = type === "all" ? accounts.length : getAccountTypeCount(type);
           const limit =
             type === "government" ? 5 : type === "media" ? 10 : type === "citizen" ? 15 : 25;
+          const isActive = filterType === type;
           return (
-            <ToggleGroupItem
+            <button
               key={type}
-              value={type}
+              type="button"
+              onClick={() => setFilterType(type)}
               className={cn(
-                "data-[state=on]:border-primary data-[state=on]:bg-primary/10 flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all",
+                "flex flex-1 items-center justify-between gap-1 rounded-lg border px-2 py-1.5 text-[10px] tracking-wide uppercase transition-all cursor-pointer",
+                isActive
+                  ? "border-primary bg-primary/10 font-bold shadow-xs"
+                  : "border-transparent opacity-75 hover:opacity-100",
                 type !== "all" ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
               )}
             >
@@ -273,10 +272,10 @@ export function EnhancedAccountManager({
               <span className="bg-background/50 rounded-full px-1.5 py-0.5 text-[9px] font-semibold">
                 {count}/{limit}
               </span>
-            </ToggleGroupItem>
+            </button>
           );
         })}
-      </ToggleGroup>
+      </div>
 
       {/* Accounts List */}
       <div className="max-h-80 space-y-2 overflow-y-auto pr-1">

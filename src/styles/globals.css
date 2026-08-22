@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @source "../**/*.{ts,tsx,js,jsx}";
-@import "@c15t/nextjs/styles.css";
 
 @theme {
   --color-background: var(--color-bg-primary);
