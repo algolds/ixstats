@@ -36,3 +36,48 @@ export function clearLayerCache(layerType?: string): void {
     layerCache.clear();
   }
 }
+
+
+// ──────────────────────────────────────────────
+// Generic in-memory cache for static catalogs & reference definitions.
+// ──────────────────────────────────────────────
+
+const catalogCache = new Map<string, { data: unknown; expires: number }>();
+
+/**
+ * Fetch from in-memory cache or compute and store for ttlMs (default 10 mins).
+ */
+export async function getOrSetCatalogCache<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlMs = 600_000
+): Promise<T> {
+  const cached = catalogCache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return cached.data as T;
+  }
+  const fresh = await fetcher();
+  catalogCache.set(key, { data: fresh, expires: Date.now() + ttlMs });
+  return fresh;
+}
+
+/**
+ * Invalidate catalog cache by exact key or prefix wildcard (e.g. "gov-components*").
+ */
+export function invalidateCatalogCache(keyOrPattern?: string): void {
+  if (!keyOrPattern) {
+    catalogCache.clear();
+    return;
+  }
+  if (keyOrPattern.endsWith("*")) {
+    const prefix = keyOrPattern.slice(0, -1);
+    for (const key of catalogCache.keys()) {
+      if (key.startsWith(prefix)) {
+        catalogCache.delete(key);
+      }
+    }
+  } else {
+    catalogCache.delete(keyOrPattern);
+  }
+}
+

@@ -18,6 +18,8 @@ import {
 } from "~/lib/government/atomic-utils";
 import { mapTaxComponentTypeToId } from "~/lib/enums";
 import { IxTime } from "~/lib/ixtime";
+import { getOrSetCatalogCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+
 
 // Input validation schemas
 const governmentStructureInputSchema = z.object({
@@ -226,29 +228,35 @@ export const governmentComponentsRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Get atomic government components for a country
+  // Get atomic government components for a country (cached with 60s TTL)
   getComponents: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const components = await ctx.db.governmentComponent.findMany({
-        where: { countryId: input.countryId },
-        include: {
-          synergies: {
+      return getOrSetCatalogCache(
+        `gov-components:${input.countryId}`,
+        async () => {
+          return ctx.db.governmentComponent.findMany({
+            where: { countryId: input.countryId },
+            take: 100,
             include: {
-              secondaryComponent: true,
+              synergies: {
+                include: {
+                  secondaryComponent: true,
+                },
+              },
+              conflictsWith: {
+                include: {
+                  primaryComponent: true,
+                },
+              },
             },
-          },
-          conflictsWith: {
-            include: {
-              primaryComponent: true,
-            },
-          },
+            orderBy: { createdAt: "asc" },
+          });
         },
-        orderBy: { createdAt: "asc" },
-      });
-
-      return components;
+        60_000
+      );
     }),
+
 
   // Civil service capacity + rollout queue for the country dashboard.
   // Aggregates government / economic / tax components: staff is consumed by both
@@ -531,6 +539,9 @@ export const governmentComponentsRouter = createTRPCRouter({
         console.error("[Government] Failed to send component addition notification:", error);
       }
 
+      // Invalidate catalog cache for this country
+      invalidateCatalogCache(`gov-components:${input.countryId}`);
+
       return component;
     }),
 
@@ -550,8 +561,12 @@ export const governmentComponentsRouter = createTRPCRouter({
         },
       });
 
+      // Invalidate catalog cache for this country
+      invalidateCatalogCache(`gov-components:${input.countryId}`);
+
       // Apply component effects to game state after removal
       if (deleted.count > 0) {
+
         try {
           const result = await applyGovernmentComponentEffects(ctx.db, input.countryId);
           await notificationAPI.create({

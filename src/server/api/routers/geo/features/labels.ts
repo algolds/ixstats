@@ -45,18 +45,22 @@ import { syncGeographicDemographics } from "~/lib/country-geo/sync";
 export { syncGeographicDemographics };
 
 export async function syncResourcePoolModifiers(db: any, countryId: string) {
-  // 1. Get all points of interest for this country with category "resource"
+  // 1. Get all points of interest for this country with category "resource" (capped)
   const resources = await db.pointOfInterest.findMany({
     where: { countryId, category: "resource", status: "approved" },
+    take: 500,
   });
 
-  // 2. Get all operational transport routes and hubs for this country
+  // 2. Get all operational transport routes and hubs for this country (capped)
   const routes = await db.transportRoute.findMany({
     where: { countryId, status: "operational" },
+    take: 500,
   });
   const hubs = await db.transportHub.findMany({
     where: { countryId },
+    take: 500,
   });
+
 
   for (const resource of resources) {
     const resCoords = resource.coordinates as [number, number] | null;
@@ -358,6 +362,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.mapLabel.findMany({
         where: { countryId: input.countryId, status: "approved" },
+        take: 500,
         orderBy: { text: "asc" },
       });
     }),
@@ -365,8 +370,10 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
   getAllMapLabels: cachedPublicProcedure.query(async ({ ctx }) => {
     const labels = await ctx.db.mapLabel.findMany({
       where: { status: "approved" },
+      take: 2000,
       include: { country: { select: { name: true, slug: true } } },
     });
+
     return {
       type: "FeatureCollection" as const,
       features: labels

@@ -36,13 +36,16 @@ async function loadBrokers(db: any, countryId: string): Promise<ActiveBroker[]> 
   const [components, allocations] = await Promise.all([
     db.governmentComponent.findMany({
       where: { countryId, isActive: true },
+      take: 100,
       select: { componentType: true },
     }),
     db.budgetAllocation.findMany({
       where: { governmentStructure: { countryId }, budgetYear: new Date().getFullYear() },
+      take: 50,
       include: { department: { select: { category: true } } },
     }),
   ]);
+
   const spendByCategory: Record<string, number> = {};
   for (const a of allocations)
     spendByCategory[a.department.category] =

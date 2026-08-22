@@ -60,6 +60,7 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
     }),
     db.governmentComponent.findMany({
       where: { countryId, isActive: true },
+      take: 100,
       select: { componentType: true },
     }),
     db.nationalIssue.count({ where: { countryId, reconReadyIxTime: { gt: now } } }),
@@ -68,6 +69,7 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
         governmentStructure: { countryId },
         budgetYear: new Date().getFullYear(),
       },
+      take: 50,
       include: { department: { select: { category: true } } },
     }),
     db.policy.aggregate({
@@ -711,9 +713,11 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.nationalIssueConsequence.findMany({
         where: { issueId: input.issueId },
+        take: 50,
         orderBy: { appliedAt: "asc" },
       });
     }),
+
 
   // ==================== ADMIN ENDPOINTS ====================
 });

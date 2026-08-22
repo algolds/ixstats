@@ -83,8 +83,10 @@ export const taxSystemCrudRouter = createTRPCRouter({
         }),
         ctx.db.taxComponent.findMany({
           where: { countryId: input.countryId, isActive: true },
+          take: 100,
         }),
       ]);
+
 
       if (!taxSystem) {
         return null;
@@ -287,8 +289,10 @@ export const taxSystemCrudRouter = createTRPCRouter({
               in: (
                 await ctx.db.taxSystem.findMany({
                   where: { countryId: input.countryId },
+                  take: 5,
                   select: { id: true },
                 })
+
               ).map((ts) => ts.id),
             },
           },
@@ -460,8 +464,10 @@ export const taxSystemCrudRouter = createTRPCRouter({
             in: (
               await ctx.db.taxSystem.findMany({
                 where: { countryId: input.countryId },
+                take: 5,
                 select: { id: true },
               })
+
             ).map((ts) => ts.id),
           },
         },

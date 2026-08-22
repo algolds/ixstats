@@ -31,8 +31,10 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
 
       const subdivisions = await ctx.db.subdivision.findMany({
         where: { countryId: input.countryId },
+        take: 200,
         select: { id: true, name: true, geometry: true },
       });
+
 
       if (subdivisions.length === 0) {
         return { updated: 0, total: 0, verticesBefore: 0, verticesAfter: 0, reduction: 0 };

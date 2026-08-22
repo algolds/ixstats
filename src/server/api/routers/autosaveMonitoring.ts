@@ -82,7 +82,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const startDate = getTimeRangeDate(input.timeRange);
 
-      // Get all autosave records within time range
+      // Get all autosave records within time range (capped to prevent memory exhaustion)
       const autosaves = await ctx.db.auditLog.findMany({
         where: {
           action: {
@@ -91,6 +91,10 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           timestamp: {
             gte: startDate,
           },
+        },
+        take: 2000,
+        orderBy: {
+          timestamp: "desc",
         },
         select: {
           id: true,
@@ -101,6 +105,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           details: true,
         },
       });
+
 
       // Calculate statistics
       const totalAutosaves = autosaves.length;
@@ -178,7 +183,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const startDate = getTimeRangeDate(input.timeRange);
 
-      // Get autosave records within time range
+      // Get autosave records within time range (capped)
       const autosaves = await ctx.db.auditLog.findMany({
         where: {
           action: {
@@ -188,6 +193,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
             gte: startDate,
           },
         },
+        take: 2000,
         select: {
           timestamp: true,
           success: true,
@@ -247,7 +253,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const startDate = getTimeRangeDate(input.timeRange);
 
-      // Get failed autosave records
+      // Get failed autosave records (capped)
       const failures = await ctx.db.auditLog.findMany({
         where: {
           action: {
@@ -257,6 +263,10 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           timestamp: {
             gte: startDate,
           },
+        },
+        take: 500,
+        orderBy: {
+          timestamp: "desc",
         },
         select: {
           action: true,
@@ -268,22 +278,36 @@ export const autosaveMonitoringRouter = createTRPCRouter({
 
       // Group by error type
       const errorCountMap = new Map<string, number>();
+      const sectionCountMap = new Map<string, number>();
+
       failures.forEach((failure) => {
-        const errorMsg = failure.error || "Unknown error";
-        errorCountMap.set(errorMsg, (errorCountMap.get(errorMsg) || 0) + 1);
+        // Count error types
+        const errorKey = failure.error || "Unknown Error";
+        errorCountMap.set(errorKey, (errorCountMap.get(errorKey) || 0) + 1);
+
+        // Count failed sections (extracted from action)
+        const sectionMatch = failure.action.match(/autosave:([^:]+)/);
+        const sectionKey = sectionMatch ? sectionMatch[1] : "unknown";
+        if (sectionKey) {
+          sectionCountMap.set(sectionKey, (sectionCountMap.get(sectionKey) || 0) + 1);
+        }
       });
+
+      // Convert to sorted arrays
       const errorTypes = Array.from(errorCountMap.entries())
-        .map(([error, count]) => ({ error, count }))
+        .map(([type, count]) => ({
+          type,
+          count,
+          percentage: totalFailures > 0 ? (count / totalFailures) * 100 : 0,
+        }))
         .sort((a, b) => b.count - a.count);
 
-      // Group by section
-      const sectionCountMap = new Map<string, number>();
-      failures.forEach((failure) => {
-        const section = failure.action.split(":")[1] || "unknown";
-        sectionCountMap.set(section, (sectionCountMap.get(section) || 0) + 1);
-      });
       const failedSections = Array.from(sectionCountMap.entries())
-        .map(([section, count]) => ({ section, count }))
+        .map(([section, count]) => ({
+          section,
+          count,
+          percentage: totalFailures > 0 ? (count / totalFailures) * 100 : 0,
+        }))
         .sort((a, b) => b.count - a.count);
 
       return {
@@ -308,7 +332,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const startDate = getTimeRangeDate(input.timeRange);
 
-      // Get autosave records within time range
+      // Get autosave records within time range (capped)
       const autosaves = await ctx.db.auditLog.findMany({
         where: {
           action: {
@@ -320,6 +344,10 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           userId: {
             not: null,
           },
+        },
+        take: 2000,
+        orderBy: {
+          timestamp: "desc",
         },
         select: {
           userId: true,
@@ -378,7 +406,7 @@ export const autosaveMonitoringRouter = createTRPCRouter({
   getSystemHealth: adminProcedure.query(async ({ ctx }) => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    // Get autosaves from last 5 minutes
+    // Get autosaves from last 5 minutes (capped)
     const recentAutosaves = await ctx.db.auditLog.findMany({
       where: {
         action: {
@@ -388,11 +416,16 @@ export const autosaveMonitoringRouter = createTRPCRouter({
           gte: fiveMinutesAgo,
         },
       },
+      take: 500,
+      orderBy: {
+        timestamp: "desc",
+      },
       select: {
         success: true,
         details: true,
       },
     });
+
 
     const autosavesLast5Min = recentAutosaves.length;
     const failuresLast5Min = recentAutosaves.filter((a) => !a.success).length;

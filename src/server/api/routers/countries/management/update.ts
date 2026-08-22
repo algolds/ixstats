@@ -3,7 +3,10 @@ import { protectedProcedure } from "~/server/api/trpc";
 import { checkComponentSynergy } from "~/lib/government/synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { clearLayerCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+
+
+
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
@@ -1028,8 +1031,10 @@ export const managementUpdateProcedures = {
 
         await invalidateCache(["countries."]);
         clearLayerCache("political");
+        invalidateCatalogCache(`gov-components:${input.id}`);
 
         return result;
+
       } catch (error) {
         console.error("[updateCountry] Transaction failed:", error);
         throw new Error(
