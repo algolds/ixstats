@@ -106,7 +106,7 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
   };
   const csrfToken = csrfData.query?.tokens?.csrftoken;
 
-  if (!csrfToken || csrfToken === "+\\") {
+  if (!csrfToken) {
     throw new Error("Failed to get CSRF token from MediaWiki");
   }
 

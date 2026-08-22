@@ -51,7 +51,7 @@ export class ArticleRepository {
           title: true,
           source: true,
           wikitext: true,
-          createdAt: true,
+          syncedAt: true,
           updatedAt: true,
         },
       });
@@ -77,7 +77,7 @@ export class ArticleRepository {
         redirectTargetSlug: null,
         authorId: null,
         lastEditorId: null,
-        createdAt: article.createdAt ?? new Date(),
+        createdAt: article.syncedAt ?? new Date(),
         updatedAt: article.updatedAt ?? new Date(),
       };
     } catch {
@@ -117,12 +117,19 @@ export class ArticleRepository {
         create: {
           title,
           source,
-          htmlContent: contentHtml,
           wikitext,
         },
         update: {
-          htmlContent: contentHtml,
           wikitext,
+          syncedAt: new Date(),
+        },
+        select: {
+          id: true,
+          title: true,
+          source: true,
+          wikitext: true,
+          syncedAt: true,
+          updatedAt: true,
         },
       });
 
@@ -136,18 +143,31 @@ export class ArticleRepository {
           source,
           author: authorName,
         },
+        select: {
+          id: true,
+          articleId: true,
+          summary: true,
+          minor: true,
+          author: true,
+          createdAt: true,
+        },
       });
 
       return { article, revision };
     });
 
     // 3. Update the link graph outside transaction for performance
-    const linksCount = await LinkGraphService.syncArticleLinks(
-      result.article.id,
-      wikitext,
-      contentHtml,
-      source
-    );
+    let linksCount = 0;
+    try {
+      linksCount = await LinkGraphService.syncArticleLinks(
+        result.article.id,
+        wikitext,
+        contentHtml,
+        source
+      );
+    } catch (linkErr) {
+      console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
+    }
 
     return {
       article: {
@@ -157,7 +177,7 @@ export class ArticleRepository {
         source: result.article.source,
         status: "PUBLISHED",
         format: "STRUCTURED_JSON",
-        contentHtml: result.article.htmlContent || "",
+        contentHtml: contentHtml || "",
         contentJson: null,
         wikitext: result.article.wikitext,
         summary: input.summary ?? null,

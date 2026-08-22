@@ -182,27 +182,47 @@ export async function getArticleHtmlViaParsoid(title: string): Promise<ParsoidAr
 }
 
 /**
- * Convert HTML back to wikitext via Parsoid REST API.
+ * Convert HTML back to wikitext via Parsoid REST API with local fallback.
  */
 export async function htmlToWikitext(html: string, title: string): Promise<ParsoidTransformResult> {
   const encodedTitle = encodeURIComponent(title.replace(/ /g, "_"));
 
-  const response = await fetch(`${PARSOID_BASE}/transform/html/to/wikitext/${encodedTitle}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "User-Agent": DEFAULT_USER_AGENT,
-    },
-    body: JSON.stringify({ html }),
-    signal: AbortSignal.timeout(15000),
-  });
+  try {
+    const response = await fetch(`${PARSOID_BASE}/transform/html/to/wikitext/${encodedTitle}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": DEFAULT_USER_AGENT,
+      },
+      body: JSON.stringify({ html }),
+      signal: AbortSignal.timeout(15000),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Parsoid html->wikitext failed (${response.status})`);
+    if (response.ok) {
+      const wikitext = await response.text();
+      return { wikitext };
+    }
+  } catch (err) {
+    console.warn(`[Parsoid] Remote htmlToWikitext transform failed, falling back:`, err);
   }
 
-  const wikitext = await response.text();
-  return { wikitext };
+  // Resilient fallback for offline/unreachable Parsoid:
+  const fallbackWikitext = html
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "= $1 =\n")
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "== $1 ==\n")
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "=== $1 ===\n")
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, "'''$1'''")
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, "'''$1'''")
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, "''$1''")
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, "''$1''")
+    .replace(/<a[^>]*href=["'][^"']*\/wiki\/([^"']+)["'][^>]*>(.*?)<\/a>/gi, "[[$1|$2]]")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
+  return { wikitext: fallbackWikitext || html };
 }
 
 /**

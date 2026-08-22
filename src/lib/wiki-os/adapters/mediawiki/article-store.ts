@@ -397,6 +397,7 @@ export async function recordArticleRevision(input: RecordRevisionInput): Promise
         revisionId: revid,
         syncedAt: new Date(),
       },
+      select: { id: true },
     });
     await db.wikiRevision.create({
       data: {
@@ -408,6 +409,7 @@ export async function recordArticleRevision(input: RecordRevisionInput): Promise
         summary: input.summary ?? null,
         minor: input.minor ?? false,
       },
+      select: { id: true },
     });
     return true;
   } catch {
@@ -459,6 +461,14 @@ export async function getArticleHistoryShadow(
     if (article) {
       const rows = await db.wikiRevision.findMany({
         where: { articleId: article.id },
+        select: {
+          mwRevId: true,
+          createdAt: true,
+          author: true,
+          summary: true,
+          wikitext: true,
+          minor: true,
+        },
         orderBy: { createdAt: "desc" },
         take: limit + 1,
       });
@@ -503,7 +513,11 @@ export async function getRevisionWikitextShadow(
   try {
     const rev = await db.wikiRevision.findFirst({
       where: { source, mwRevId: revid },
-      include: { article: { select: { title: true } } },
+      select: {
+        wikitext: true,
+        createdAt: true,
+        article: { select: { title: true } },
+      },
     });
     if (rev) {
       return {
