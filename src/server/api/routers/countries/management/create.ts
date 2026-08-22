@@ -1,15 +1,30 @@
+/**
+ * Country Management — Create Procedure
+ *
+ * Handles creation of new player countries from the Country Builder,
+ * including foundation templates, archetypes, and initial sub-system setup.
+ */
+
 import { z } from "zod";
 import { protectedProcedure } from "~/server/api/trpc";
-import { checkComponentSynergy } from "~/lib/government/synergy";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
-import { invalidateCache } from "~/lib/cache";
-import { globalCache } from "~/lib/cache";
+import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
 } from "~/server/shared/country-payload-builder";
+import {
+  syncNationalIdentity,
+  syncDemographics,
+  syncIncomeAndSpending,
+  syncTaxSystem,
+  syncGovernmentStructure,
+  syncGovernmentComponents,
+  syncEconomyBuilderState,
+} from "~/server/shared/country-mutation-helpers";
+
 
 export const managementCreateProcedures = {
   // Create a new country from builder
@@ -179,8 +194,10 @@ export const managementCreateProcedures = {
           try {
             const parsedComps = JSON.parse(archetype.governmentComponents);
             if (Array.isArray(parsedComps)) {
-              governmentComponentsList = parsedComps.map((comp: string) => ({
-                componentType: comp,
+              governmentComponentsList = parsedComps.map((type: string) => ({
+                componentType: type,
+                effectivenessScore: 60,
+                isActive: true,
               }));
             }
           } catch (e) {
@@ -188,25 +205,28 @@ export const managementCreateProcedures = {
           }
         }
 
-        if (!economyBuilderState) {
-          let parsedSectors: string[] = [];
-          if (archetype.economicComponents) {
-            try {
-              const parsed = JSON.parse(archetype.economicComponents);
-              if (Array.isArray(parsed)) {
-                parsedSectors = parsed;
-              }
-            } catch (e) {}
+        if (!economyBuilderState && archetype.economicStructure) {
+          try {
+            const parsedEcon = JSON.parse(archetype.economicStructure);
+            economyBuilderState = {
+              structure: {
+                economicModel: archetype.economicModel || "Social Market",
+                economicTier: "Developed",
+                totalGDP: nominalGDP,
+                gdpPerCapita,
+                population,
+                tradeOpenness: parsedEcon.tradeOpenness || 60,
+                economicFreedom: parsedEcon.economicFreedom || 70,
+                creditRating: "AA",
+                fdi: nominalGDP * 0.03,
+                foreignReserves: nominalGDP * 0.15,
+              },
+              sectors: parsedEcon.sectors || [],
+              selectedAtomicComponents: parsedEcon.selectedAtomicComponents || [],
+            };
+          } catch (e) {
+            console.error("Failed to parse archetype economicStructure:", e);
           }
-          economyBuilderState = {
-            structure: {
-              economicModel: archetype.name || "Mixed Economy",
-              totalGDP: nominalGDP,
-              gdpCurrency: "USD",
-              economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
-            },
-            selectedAtomicComponents: parsedSectors,
-          };
         }
       }
 
@@ -223,46 +243,45 @@ export const managementCreateProcedures = {
           const country = await tx.country.create({
             data: {
               name: input.name,
-              slug: slug,
-              continent: geography.continent || foundationData?.continent || "Unknown",
-              region: geography.region || foundationData?.region || "Unknown",
+              slug,
+              continent: geography.continent || foundationData?.continent || "Custom",
+              region: geography.region || foundationData?.region || "Custom",
+              landArea: foundationData?.landArea,
+              areaSqMi: foundationData?.areaSqMi,
               governmentType:
                 nationalIdentity.governmentType ||
                 governmentStructure?.governmentType ||
-                "Republic",
+                "Federal Republic",
               religion: nationalIdentity.nationalReligion || "Secular",
-              leader: nationalIdentity.leader || "Unknown",
+              leader: nationalIdentity.leader || "President",
               flag: econ.flagUrl || foundationData?.flag || undefined,
               coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
-              landArea: foundationData?.landArea || 100000,
-              areaSqMi: foundationData?.areaSqMi || 38610,
               baselinePopulation: population,
               baselineGdpPerCapita: gdpPerCapita,
-              baselineDate: new Date(),
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
-              maxGdpGrowthRate: 0.05,
               adjustedGdpGrowth:
                 coreIndicators.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.03,
+                  : 0.025,
               populationGrowthRate:
                 demographics.populationGrowthRate !== undefined
                   ? demographics.populationGrowthRate / 100
-                  : 0.01,
+                  : 0.008,
               actualGdpGrowth:
                 coreIndicators.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.03,
-              localGrowthFactor: 1.0,
+                  : 0.025,
               economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
               populationTier: getPopulationTierFromPopulation(population),
-              nominalGDP: nominalGDP,
+              nominalGDP,
               realGDPGrowthRate:
                 coreIndicators.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
-                  : 0.03,
+                  : 0.025,
+              maxGdpGrowthRate: 0.15,
+
               inflationRate:
                 coreIndicators.inflationRate !== undefined
                   ? coreIndicators.inflationRate / 100
@@ -273,30 +292,29 @@ export const managementCreateProcedures = {
               unemploymentRate: laborEmployment.unemploymentRate || 5,
               totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
               averageWorkweekHours: laborEmployment.averageWorkweekHours || 40,
-              minimumWage: laborEmployment.minimumWage || Math.round(gdpPerCapita * 0.02),
-              averageAnnualIncome:
-                laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
+              minimumWage: laborEmployment.minimumWage || 15,
+              averageAnnualIncome: laborEmployment.averageAnnualIncome || gdpPerCapita * 0.8,
               taxRevenueGDPPercent:
-                fiscalSystem.taxRevenueGDPPercent || (taxSystemData as any)?.totalTaxRate || 20,
-              governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.2,
+                fiscalSystem.taxRevenueGDPPercent ||
+                (taxSystemData as any)?.totalTaxRate ||
+                25,
+              governmentRevenueTotal:
+                fiscalSystem.governmentRevenueTotal || nominalGDP * 0.25,
               taxRevenuePerCapita:
-                fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.2) / population,
-              governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 22,
+                fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.25) / population,
+              governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 25,
               budgetDeficitSurplus: fiscalSystem.budgetDeficitSurplus || 0,
-              internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 45,
-              externalDebtGDPPercent: fiscalSystem.externalDebtGDPPercent || 25,
-              totalDebtGDPRatio: fiscalSystem.totalDebtGDPRatio || 70,
-              debtPerCapita: fiscalSystem.debtPerCapita || (nominalGDP * 0.7) / population,
+              internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 30,
+              externalDebtGDPPercent: fiscalSystem.externalDebtGDPPercent || 20,
+              totalDebtGDPRatio: fiscalSystem.totalDebtGDPRatio || 50,
+              debtPerCapita: fiscalSystem.debtPerCapita || (nominalGDP * 0.5) / population,
               interestRates: fiscalSystem.interestRates || 3.5,
-              debtServiceCosts: fiscalSystem.debtServiceCosts || nominalGDP * 0.7 * 0.035,
-              povertyRate: incomeWealth.povertyRate || 15,
+              debtServiceCosts: fiscalSystem.debtServiceCosts || nominalGDP * 0.02,
+              povertyRate: incomeWealth.povertyRate || 12,
               incomeInequalityGini:
-                incomeWealth.incomeInequalityGini !== undefined
-                  ? incomeWealth.incomeInequalityGini
-                  : incomeWealth.giniIndex !== undefined
-                    ? incomeWealth.giniIndex / 100
-                    : 0.38,
-              socialMobilityIndex: incomeWealth.socialMobilityIndex || 60,
+                incomeWealth.incomeInequalityGini ||
+                (incomeWealth.giniIndex ? incomeWealth.giniIndex / 100 : 0.35),
+              socialMobilityIndex: incomeWealth.socialMobilityIndex || 65,
               totalGovernmentSpending: governmentSpending.totalSpending || nominalGDP * 0.22,
               spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
               spendingPerCapita:
@@ -313,618 +331,13 @@ export const managementCreateProcedures = {
             },
           });
 
-          if (nationalIdentity && Object.keys(nationalIdentity).length > 0) {
-            await tx.nationalIdentity.create({
-              data: {
-                countryId: country.id,
-                countryName: nationalIdentity.countryName || input.name,
-                officialName: nationalIdentity.officialName,
-                governmentType: nationalIdentity.governmentType,
-                motto: nationalIdentity.motto,
-                mottoNative: nationalIdentity.mottoNative,
-                capitalCity: nationalIdentity.capitalCity,
-                largestCity: nationalIdentity.largestCity,
-                demonym: nationalIdentity.demonym,
-                currency: nationalIdentity.currency,
-                currencySymbol: nationalIdentity.currencySymbol,
-                officialLanguages: nationalIdentity.officialLanguages,
-                nationalLanguage: nationalIdentity.nationalLanguage,
-                nationalAnthem: nationalIdentity.nationalAnthem,
-                nationalReligion: nationalIdentity.nationalReligion,
-                nationalDay: nationalIdentity.nationalDay,
-                callingCode: nationalIdentity.callingCode,
-                internetTLD: nationalIdentity.internetTLD,
-                drivingSide: nationalIdentity.drivingSide,
-                timeZone: nationalIdentity.timeZone,
-                isoCode: nationalIdentity.isoCode,
-                coordinatesLatitude: nationalIdentity.coordinatesLatitude,
-                coordinatesLongitude: nationalIdentity.coordinatesLongitude,
-                emergencyNumber: nationalIdentity.emergencyNumber,
-                postalCodeFormat: nationalIdentity.postalCodeFormat,
-                nationalSport: nationalIdentity.nationalSport,
-                nationalBird: nationalIdentity.nationalBird,
-                nationalFish: nationalIdentity.nationalFish,
-                founders: nationalIdentity.founders,
-                nationalFlower: nationalIdentity.nationalFlower,
-                nationalDish: nationalIdentity.nationalDish,
-                nationalFruit: nationalIdentity.nationalFruit,
-                nationalDrink: nationalIdentity.nationalDrink,
-                nationalInstrument: nationalIdentity.nationalInstrument,
-                nationalSymbol: nationalIdentity.nationalSymbol,
-                nationalAnimalImage: nationalIdentity.nationalAnimalImage,
-                nationalBirdImage: nationalIdentity.nationalBirdImage,
-                nationalFishImage: nationalIdentity.nationalFishImage,
-                foundersImage: nationalIdentity.foundersImage,
-                nationalFlowerImage: nationalIdentity.nationalFlowerImage,
-                nationalDishImage: nationalIdentity.nationalDishImage,
-                nationalFruitImage: nationalIdentity.nationalFruitImage,
-                nationalDrinkImage: nationalIdentity.nationalDrinkImage,
-                nationalInstrumentImage: nationalIdentity.nationalInstrumentImage,
-                nationalSymbolImage: nationalIdentity.nationalSymbolImage,
-                weekStartDay: nationalIdentity.weekStartDay,
-              },
-            });
-          }
-
-          if (demographics && Object.keys(demographics).length > 0) {
-            await tx.demographics.create({
-              data: {
-                countryId: country.id,
-                ageDistribution: JSON.stringify(demographics.ageDistribution || []),
-                educationLevels: JSON.stringify(demographics.educationLevels || []),
-                birthRate: demographics.birthRate,
-                deathRate: demographics.deathRate,
-                migrationRate: demographics.migrationRate,
-                dependencyRatio: demographics.dependencyRatio,
-                medianAge: demographics.medianAge,
-                populationGrowthProjection: demographics.populationGrowthRate,
-              },
-            });
-          }
-
-          if (fiscalSystem && Object.keys(fiscalSystem).length > 0) {
-            await tx.fiscalSystem.create({
-              data: {
-                countryId: country.id,
-                personalIncomeTaxRates: fiscalSystem.personalIncomeTaxRates,
-                corporateTaxRates: fiscalSystem.corporateTaxRates,
-                salesTaxRate: fiscalSystem.salesTaxRate,
-                propertyTaxRate: fiscalSystem.propertyTaxRate,
-                payrollTaxRate: fiscalSystem.payrollTaxRate,
-                exciseTaxRates: fiscalSystem.exciseTaxRates,
-                wealthTaxRate: fiscalSystem.wealthTaxRate,
-                spendingByCategory: fiscalSystem.spendingByCategory,
-                fiscalBalanceGDPPercent: fiscalSystem.fiscalBalanceGDPPercent,
-                primaryBalanceGDPPercent: fiscalSystem.primaryBalanceGDPPercent,
-                taxEfficiency: fiscalSystem.taxEfficiency,
-              },
-            });
-          }
-
-          if (taxSystemData) {
-            const taxSystem = await tx.taxSystem.create({
-              data: {
-                countryId: country.id,
-                taxSystemName: taxSystemData.taxSystemName || "National Tax System",
-                taxAuthority: taxSystemData.taxAuthority,
-                fiscalYear: taxSystemData.fiscalYear || "calendar",
-                taxCode: taxSystemData.taxCode,
-                baseRate: taxSystemData.baseRate,
-                progressiveTax: taxSystemData.progressiveTax ?? true,
-                flatTaxRate: taxSystemData.flatTaxRate,
-                alternativeMinTax: taxSystemData.alternativeMinTax ?? false,
-                alternativeMinRate: taxSystemData.alternativeMinRate,
-                taxHolidays: taxSystemData.taxHolidays,
-                complianceRate: taxSystemData.complianceRate,
-                collectionEfficiency: taxSystemData.collectionEfficiency,
-                lastReform: taxSystemData.lastReform,
-              },
-            });
-
-            if (taxSystemData.categories && taxSystemData.categories.length > 0) {
-              for (
-                let categoryIndex = 0;
-                categoryIndex < taxSystemData.categories.length;
-                categoryIndex++
-              ) {
-                const categoryData = taxSystemData.categories[categoryIndex];
-                const taxCategory = await tx.taxCategory.create({
-                  data: {
-                    taxSystemId: taxSystem.id,
-                    categoryName: categoryData.categoryName,
-                    categoryType: categoryData.categoryType,
-                    description: categoryData.description,
-                    isActive: categoryData.isActive ?? true,
-                    baseRate: categoryData.baseRate,
-                    calculationMethod: categoryData.calculationMethod || "percentage",
-                    minimumAmount: categoryData.minimumAmount,
-                    maximumAmount: categoryData.maximumAmount,
-                    exemptionAmount: categoryData.exemptionAmount,
-                    deductionAllowed: categoryData.deductionAllowed ?? true,
-                    standardDeduction: categoryData.standardDeduction,
-                    priority: categoryData.priority || 50,
-                    color: categoryData.color,
-                    icon: categoryData.icon,
-                  },
-                });
-
-                if (categoryData.brackets && categoryData.brackets.length > 0) {
-                  for (const bracketData of categoryData.brackets) {
-                    await tx.taxBracket.create({
-                      data: {
-                        taxSystemId: taxSystem.id,
-                        categoryId: taxCategory.id,
-                        bracketName: bracketData.bracketName,
-                        minIncome: bracketData.minIncome,
-                        maxIncome: bracketData.maxIncome,
-                        rate: bracketData.rate,
-                        flatAmount: bracketData.flatAmount,
-                        marginalRate: bracketData.marginalRate ?? true,
-                        isActive: bracketData.isActive ?? true,
-                        priority: bracketData.priority || 50,
-                      },
-                    });
-                  }
-                }
-
-                // TaxDeduction[] for this category — keyed by category index in the
-                // builder (deductions: Record<categoryIndex, TaxDeductionInput[]>).
-                // Previously dropped entirely on save.
-                const categoryDeductions = taxSystemData.deductions?.[String(categoryIndex)];
-                if (Array.isArray(categoryDeductions)) {
-                  for (const ded of categoryDeductions) {
-                    await tx.taxDeduction.create({
-                      data: {
-                        categoryId: taxCategory.id,
-                        deductionName: ded.deductionName,
-                        deductionType: ded.deductionType,
-                        description: ded.description,
-                        maximumAmount: ded.maximumAmount,
-                        percentage: ded.percentage,
-                        qualifications:
-                          ded.qualifications != null ? JSON.stringify(ded.qualifications) : null,
-                        isActive: ded.isActive ?? true,
-                        priority: ded.priority ?? 50,
-                      },
-                    });
-                  }
-                }
-              }
-            }
-
-            // TaxExemption[] — taxSystem-scoped flat array in the builder; previously
-            // deleted on save but never recreated. categoryId left null (the builder's
-            // category linkage is index-based, not a DB id).
-            if (Array.isArray(taxSystemData.exemptions) && taxSystemData.exemptions.length > 0) {
-              for (const ex of taxSystemData.exemptions) {
-                await tx.taxExemption.create({
-                  data: {
-                    taxSystemId: taxSystem.id,
-                    exemptionName: ex.exemptionName,
-                    exemptionType: ex.exemptionType,
-                    description: ex.description,
-                    exemptionAmount: ex.exemptionAmount,
-                    exemptionRate: ex.exemptionRate,
-                    qualifications:
-                      ex.qualifications != null ? JSON.stringify(ex.qualifications) : null,
-                    isActive: ex.isActive ?? true,
-                    startDate: ex.startDate,
-                    endDate: ex.endDate,
-                  },
-                });
-              }
-            }
-          }
-
-          if (governmentStructure) {
-            const govInput = governmentStructure;
-            const govStructure = await tx.governmentStructure.create({
-              data: {
-                countryId: country.id,
-                governmentName: govInput.governmentName || `Government of ${input.name}`,
-                governmentType: govInput.governmentType || "Federal Republic",
-                headOfState: govInput.headOfState,
-                headOfGovernment: govInput.headOfGovernment,
-                legislatureName: govInput.legislatureName,
-                executiveName: govInput.executiveName,
-                judicialName: govInput.judicialName,
-                totalBudget: govInput.totalBudget || 0,
-                fiscalYear: govInput.fiscalYear || "Calendar Year",
-                budgetCurrency: govInput.budgetCurrency || "USD",
-              },
-            });
-
-            if (govInput.departments && govInput.departments.length > 0) {
-              const deptIdMap = new Map<string, string>();
-              for (const deptInput of govInput.departments) {
-                const tempId = deptInput.id || deptInput.name;
-                const department = await tx.governmentDepartment.create({
-                  data: {
-                    governmentStructureId: govStructure.id,
-                    name: deptInput.name,
-                    shortName: deptInput.shortName,
-                    category: deptInput.category,
-                    description: deptInput.description,
-                    minister: deptInput.minister,
-                    ministerTitle: deptInput.ministerTitle || "Minister",
-                    headquarters: deptInput.headquarters,
-                    established: deptInput.established,
-                    employeeCount: deptInput.employeeCount,
-                    icon: deptInput.icon,
-                    color: deptInput.color || "#6366f1",
-                    priority: deptInput.priority || 50,
-                    isActive: deptInput.isActive ?? true,
-                    organizationalLevel: deptInput.organizationalLevel || "Ministry",
-                    functions: deptInput.functions ? JSON.stringify(deptInput.functions) : null,
-                    kpis: deptInput.kpis ? JSON.stringify(deptInput.kpis) : null,
-                  },
-                });
-                deptIdMap.set(tempId, department.id);
-              }
-              for (const deptInput of govInput.departments) {
-                if (deptInput.parentDepartmentId) {
-                  const tempId = deptInput.id || deptInput.name;
-                  const actualDeptId = deptIdMap.get(tempId);
-                  const actualParentId = deptIdMap.get(deptInput.parentDepartmentId);
-                  if (actualDeptId && actualParentId) {
-                    await tx.governmentDepartment.update({
-                      where: { id: actualDeptId },
-                      data: { parentDepartmentId: actualParentId },
-                    });
-                  }
-                }
-              }
-
-              // BudgetAllocation[] — resolve the builder's departmentId to the real
-              // DB id via deptIdMap; skip unresolved or duplicate (departmentId, budgetYear).
-              if (Array.isArray(govInput.budgetAllocations)) {
-                const seenAlloc = new Set<string>();
-                for (const alloc of govInput.budgetAllocations) {
-                  const realDeptId = deptIdMap.get(alloc.departmentId);
-                  if (!realDeptId) continue;
-                  const budgetYear = alloc.budgetYear ?? new Date().getFullYear();
-                  const dedupeKey = `${realDeptId}:${budgetYear}`;
-                  if (seenAlloc.has(dedupeKey)) continue;
-                  seenAlloc.add(dedupeKey);
-                  await tx.budgetAllocation.create({
-                    data: {
-                      governmentStructureId: govStructure.id,
-                      departmentId: realDeptId,
-                      budgetYear,
-                      allocatedAmount: alloc.allocatedAmount ?? 0,
-                      allocatedPercent: alloc.allocatedPercent ?? 0,
-                      notes: alloc.notes,
-                    },
-                  });
-                }
-              }
-            }
-
-            // RevenueSource[]
-            if (Array.isArray(govInput.revenueSources)) {
-              for (const rev of govInput.revenueSources) {
-                await tx.revenueSource.create({
-                  data: {
-                    governmentStructureId: govStructure.id,
-                    name: rev.name,
-                    category: rev.category,
-                    description: rev.description,
-                    rate: rev.rate,
-                    revenueAmount: rev.revenueAmount ?? 0,
-                    revenuePercent: rev.revenuePercent ?? 0,
-                    isActive: rev.isActive ?? true,
-                    collectionMethod: rev.collectionMethod,
-                    administeredBy: rev.administeredBy,
-                  },
-                });
-              }
-            }
-          }
-
-          await tx.historicalDataPoint.create({
-            data: {
-              countryId: country.id,
-              ixTimeTimestamp: new Date(),
-              population: population,
-              gdpPerCapita: gdpPerCapita,
-              totalGdp: totalGdp,
-              populationGrowthRate: demographics.populationGrowthRate || 0.5,
-              gdpGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
-              landArea: foundationData?.landArea || 100000,
-              populationDensity: foundationData?.landArea
-                ? population / foundationData.landArea
-                : undefined,
-              gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-            },
-          });
-
-          if (governmentComponentsList && governmentComponentsList.length > 0) {
-            const componentRecords = [];
-            for (const componentInput of governmentComponentsList) {
-              const component = await tx.governmentComponent.create({
-                data: {
-                  countryId: country.id,
-                  componentType: componentInput.componentType as any,
-                  effectivenessScore: componentInput.effectivenessScore ?? 50,
-                  implementationDate: new Date(),
-                  implementationCost: componentInput.implementationCost ?? 0,
-                  maintenanceCost: componentInput.maintenanceCost ?? 0,
-                  requiredCapacity: componentInput.requiredCapacity ?? 50,
-                  isActive: componentInput.isActive ?? true,
-                  notes: componentInput.notes,
-                },
-              });
-              componentRecords.push(component);
-            }
-
-            const synergies = [];
-            for (let i = 0; i < componentRecords.length; i++) {
-              for (let j = i + 1; j < componentRecords.length; j++) {
-                const comp1 = componentRecords[i]!;
-                const comp2 = componentRecords[j]!;
-                const synergyData = checkComponentSynergy(comp1.componentType, comp2.componentType);
-                if (synergyData) {
-                  const synergy = await tx.componentSynergy.create({
-                    data: {
-                      countryId: country.id,
-                      primaryComponentId: comp1.id,
-                      secondaryComponentId: comp2.id,
-                      synergyType: synergyData.type,
-                      effectMultiplier: synergyData.multiplier,
-                      description: synergyData.description,
-                    },
-                  });
-                  synergies.push(synergy);
-                }
-              }
-            }
-
-            let totalSynergyBonus = 0;
-            let conflictPenalty = 0;
-            for (const synergy of synergies) {
-              if (synergy.synergyType === "CONFLICTING") conflictPenalty += 15;
-              else if (synergy.synergyType === "ADDITIVE") totalSynergyBonus += 10;
-              else if (synergy.synergyType === "MULTIPLICATIVE")
-                totalSynergyBonus += synergy.effectMultiplier * 10;
-            }
-
-            const baseEffectiveness =
-              componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
-              (componentRecords.length || 1);
-            const governmentEffectiveness = Math.max(
-              0,
-              Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty)
-            );
-
-            await tx.governmentStructure.update({
-              where: { countryId: country.id },
-              data: { governmentEffectiveness },
-            });
-          }
-
-          if (economyBuilderState) {
-            const economyState = economyBuilderState;
-            if (
-              economyState.selectedAtomicComponents &&
-              economyState.selectedAtomicComponents.length > 0
-            ) {
-              for (const componentType of economyState.selectedAtomicComponents) {
-                await tx.economicComponent.create({
-                  data: {
-                    countryId: country.id,
-                    componentType: componentType as any,
-                    effectivenessScore: 50,
-                    implementationDate: new Date(),
-                    isActive: true,
-                    notes: `Added during country creation via Economy Builder`,
-                  },
-                });
-              }
-            }
-
-            const sectors = Array.isArray(economyState.sectors) ? economyState.sectors : [];
-
-            // Calculate EconomicProfile metrics
-            const gdpGrowthVolatility =
-              sectors.length > 0
-                ? sectors.reduce(
-                    (sum: number, s: any) => sum + Math.abs((s.growthRate ?? 2.5) - 2.5),
-                    0
-                  ) / sectors.length
-                : undefined;
-
-            const economicComplexity =
-              economyState.structure?.economicTier === "Advanced"
-                ? 85
-                : economyState.structure?.economicTier === "Developed"
-                  ? 70
-                  : economyState.structure?.economicTier === "Emerging"
-                    ? 55
-                    : 40;
-
-            const innovationIndex =
-              sectors.length > 0
-                ? sectors.reduce((sum: number, s: any) => sum + (s.innovation ?? 50), 0) /
-                  sectors.length
-                : undefined;
-
-            const competitivenessRank =
-              sectors.length > 0
-                ? Math.round(
-                    100 -
-                      sectors.reduce((sum: number, s: any) => sum + (s.competitiveness ?? 50), 0) /
-                        sectors.length
-                  )
-                : undefined;
-
-            const exportsGDPPercent =
-              sectors.length > 0
-                ? sectors.reduce(
-                    (sum: number, s: any) =>
-                      sum + ((s.exports ?? 0) * (s.gdpContribution ?? 0)) / 100,
-                    0
-                  )
-                : undefined;
-
-            const importsGDPPercent =
-              sectors.length > 0
-                ? sectors.reduce(
-                    (sum: number, s: any) =>
-                      sum + ((s.imports ?? 0) * (s.gdpContribution ?? 0)) / 100,
-                    0
-                  )
-                : undefined;
-
-            const tradeBalance =
-              economyState.structure?.totalGDP !== undefined && sectors.length > 0
-                ? economyState.structure.totalGDP *
-                  sectors.reduce(
-                    (sum: number, s: any) =>
-                      sum +
-                      (((s.exports ?? 0) - (s.imports ?? 0)) * (s.gdpContribution ?? 0)) / 10000,
-                    0
-                  )
-                : undefined;
-
-            const sectorBreakdownJson =
-              sectors.length > 0
-                ? JSON.stringify(
-                    sectors.map((s: any) => ({
-                      name: s.name,
-                      gdp: s.gdpContribution,
-                      employment: s.employmentShare,
-                      productivity: s.productivity,
-                      growthRate: s.growthRate,
-                    }))
-                  )
-                : economyState.structure
-                  ? JSON.stringify(economyState.structure)
-                  : undefined;
-
-            await tx.economicProfile.upsert({
-              where: { countryId: country.id },
-              update: {
-                sectorBreakdown: sectorBreakdownJson,
-                gdpGrowthVolatility,
-                economicComplexity,
-                innovationIndex,
-                competitivenessRank,
-                exportsGDPPercent,
-                importsGDPPercent,
-                tradeBalance,
-              },
-              create: {
-                countryId: country.id,
-                sectorBreakdown: sectorBreakdownJson,
-                gdpGrowthVolatility: gdpGrowthVolatility ?? 2.5,
-                economicComplexity: economicComplexity ?? 50,
-                innovationIndex: innovationIndex ?? 50,
-                competitivenessRank: competitivenessRank ?? 50,
-                exportsGDPPercent: exportsGDPPercent ?? 20,
-                importsGDPPercent: importsGDPPercent ?? 22,
-                tradeBalance: tradeBalance ?? -2,
-              },
-            });
-
-            const laborConfig = economyState.laborMarket;
-            if (laborConfig) {
-              const youthUnemploymentRate = laborConfig.youthUnemploymentRate;
-              const femaleParticipationRate = laborConfig.femaleParticipationRate;
-              const medianWage =
-                laborConfig.livingWageHourly !== undefined
-                  ? laborConfig.livingWageHourly * 2000
-                  : undefined;
-              const wageGrowthRate = 2.5;
-
-              const employmentBySector =
-                sectors.length > 0
-                  ? JSON.stringify(
-                      sectors.map((s: any) => ({
-                        sector: s.name,
-                        employment: s.employmentShare,
-                        productivity: s.productivity,
-                      }))
-                    )
-                  : undefined;
-
-              const wageBySector =
-                sectors.length > 0 && laborConfig.livingWageHourly !== undefined
-                  ? JSON.stringify(
-                      sectors.map((s: any) => ({
-                        sector: s.name,
-                        avgWage: laborConfig.livingWageHourly * ((s.productivity ?? 100) / 100),
-                      }))
-                    )
-                  : undefined;
-
-              await tx.laborMarket.upsert({
-                where: { countryId: country.id },
-                update: {
-                  youthUnemploymentRate,
-                  femaleParticipationRate,
-                  informalEmploymentRate: laborConfig.employmentType?.informal,
-                  medianWage,
-                  wageGrowthRate,
-                  employmentBySector,
-                  wageBySector,
-                },
-                create: {
-                  countryId: country.id,
-                  youthUnemploymentRate: youthUnemploymentRate ?? 6.0,
-                  femaleParticipationRate: femaleParticipationRate ?? 50,
-                  informalEmploymentRate: laborConfig.employmentType?.informal ?? 5.0,
-                  medianWage: medianWage ?? 30000,
-                  wageGrowthRate: wageGrowthRate ?? 2.5,
-                  employmentBySector: employmentBySector ?? "[]",
-                  wageBySector: wageBySector ?? "[]",
-                },
-              });
-            }
-
-            const demoConfig = economyState.demographics;
-            if (demoConfig) {
-              const ageDistribution = demoConfig.ageDistribution
-                ? JSON.stringify(demoConfig.ageDistribution)
-                : undefined;
-              const regions = demoConfig.regions ? JSON.stringify(demoConfig.regions) : undefined;
-              const educationLevels = demoConfig.educationLevels
-                ? JSON.stringify(demoConfig.educationLevels)
-                : undefined;
-              const birthRate = demoConfig.birthRate;
-              const deathRate = demoConfig.deathRate;
-              const migrationRate = demoConfig.netMigrationRate;
-              const dependencyRatio = demoConfig.totalDependencyRatio;
-              const medianAge = demoConfig.medianAge;
-              const populationGrowthProjection = demoConfig.populationGrowthRate;
-
-              await tx.demographics.upsert({
-                where: { countryId: country.id },
-                update: {
-                  ageDistribution,
-                  regions,
-                  educationLevels,
-                  birthRate,
-                  deathRate,
-                  migrationRate,
-                  dependencyRatio,
-                  medianAge,
-                  populationGrowthProjection,
-                },
-                create: {
-                  countryId: country.id,
-                  ageDistribution: ageDistribution ?? "{}",
-                  regions: regions ?? "[]",
-                  educationLevels: educationLevels ?? "{}",
-                  birthRate: birthRate ?? 12.5,
-                  deathRate: deathRate ?? 8.0,
-                  migrationRate: migrationRate ?? 0,
-                  dependencyRatio: dependencyRatio ?? 54,
-                  medianAge: medianAge ?? 35,
-                  populationGrowthProjection: populationGrowthProjection ?? 0.5,
-                },
-              });
-            }
-          }
+          await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
+          await syncDemographics(tx, country.id, demographics);
+          await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+          await syncTaxSystem(tx, country.id, taxSystemData);
+          await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
+          await syncGovernmentComponents(tx, country.id, governmentComponentsList);
+          await syncEconomyBuilderState(tx, country.id, economyBuilderState);
 
           await tx.user.update({
             where: { clerkUserId: userId },
@@ -938,8 +351,7 @@ export const managementCreateProcedures = {
         clearLayerCache("political");
         await globalCache.delete(`user_profile:${userId}`);
 
-        // Onboarding bonuses (one-time): new player for publishing a country, plus a
-        // wiki-import bonus when the country was founded on a real/wiki nation.
+        // Onboarding bonuses (one-time)
         try {
           const bcfg = await getBonusConfig(ctx.db);
           await grantBonus(ctx.db, userId, "bonus:new_player", bcfg.newPlayer, {
@@ -968,6 +380,4 @@ export const managementCreateProcedures = {
         );
       }
     }),
-
-  // Storyteller effects endpoints
 };
