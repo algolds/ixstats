@@ -2,7 +2,7 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["relationJoins", "nativeDistinct", "prismaSchemaFolder"]
+  previewFeatures = ["relationJoins", "nativeDistinct"]
   // relationJoins: Uses SQL JOINs instead of separate queries for relations (significant perf improvement)
   // nativeDistinct: Uses native SQL DISTINCT for better deduplication performance
 }
