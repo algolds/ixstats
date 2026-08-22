@@ -10,7 +10,7 @@ import {
   type ComponentProps,
   type MouseEvent,
 } from "react";
-import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { useControllableState } from "~/hooks/useControllableState";
 
 /* -----------------------------------------------------------------------------
  * Types

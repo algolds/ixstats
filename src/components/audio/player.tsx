@@ -1,6 +1,5 @@
 "use client";
 
-import type { BaseUIEvent } from "@base-ui/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import React from "react";
 import { IconPlaceholder } from "~/components/audio/icon-placeholder";
@@ -634,7 +633,7 @@ const AudioPlayerPlay = React.memo(
     const showSpinner = isLoading || isBuffering;
 
     const handleClick = React.useCallback(
-      (e: BaseUIEvent<React.MouseEvent<HTMLButtonElement>>) => {
+      (e: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(e);
         togglePlay();
       },
@@ -787,7 +786,7 @@ const AudioPlayerSkipForward = React.memo(
       !currentTrack ||
       (currentQueueIndex === queueLength - 1 && repeatMode !== "all");
     const handleClick = React.useCallback(
-      (e: BaseUIEvent<React.MouseEvent<HTMLButtonElement>>) => {
+      (e: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(e);
         next();
       },
@@ -832,7 +831,7 @@ const AudioPlayerSkipBack = React.memo(
     const disablePrevious =
       !currentTrack || (currentQueueIndex === 0 && repeatMode !== "all");
     const handleClick = React.useCallback(
-      (e: BaseUIEvent<React.MouseEvent<HTMLButtonElement>>) => {
+      (e: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(e);
         previous();
       },

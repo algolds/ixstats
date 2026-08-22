@@ -18,7 +18,6 @@ import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki-os/shared/GlobalLinkTooltipProvider";
-import { ConsentManager } from "../components/consent-manager";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 
@@ -123,25 +122,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <body className="min-h-screen transition-colors duration-200">
-        <ConsentManager>
-          <ChunkLoadErrorHandler />
-          <ChunkLoadErrorBoundary>
-            <ClerkProvider
-              publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-              nonce={headersList.get("x-csp-nonce") ?? undefined}
-              signInUrl={signInPath}
-              signUpUrl={signUpPath}
-              signInFallbackRedirectUrl={dashboardPath}
-            >
-              <AuthProvider>
-                <MediaContextProvider>
-                  <AppContent />
-                </MediaContextProvider>
-              </AuthProvider>
-            </ClerkProvider>
-            {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
-          </ChunkLoadErrorBoundary>
-        </ConsentManager>
+        <ChunkLoadErrorHandler />
+        <ChunkLoadErrorBoundary>
+          <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+            nonce={headersList.get("x-csp-nonce") ?? undefined}
+            signInUrl={signInPath}
+            signUpUrl={signUpPath}
+            signInFallbackRedirectUrl={dashboardPath}
+          >
+            <AuthProvider>
+              <MediaContextProvider>
+                <AppContent />
+              </MediaContextProvider>
+            </AuthProvider>
+          </ClerkProvider>
+          {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
+        </ChunkLoadErrorBoundary>
       </body>
     </html>
   );
