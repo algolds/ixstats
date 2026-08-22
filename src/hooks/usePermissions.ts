@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
+import { isSystemOwner } from "~/lib/auth";
+
 export interface UserRole {
   id: string;
   name: string;
@@ -102,6 +104,36 @@ export function useIsStaff(): boolean {
 // Hook to check if user is moderator or higher
 export function useIsModerator(): boolean {
   return useHasRoleLevel(30); // Moderator level or higher
+}
+
+// Hook to check if user has beta tester privileges or higher (system owner, admin, staff, beta_tester)
+export function useIsBetaTester(): boolean {
+  const { user: authUser } = useUser();
+  const { user: permissionUser, isLoading } = usePermissions();
+
+  if (!authUser) return false;
+  if (isSystemOwner(authUser.id)) return true;
+
+  const authRole = (authUser.publicMetadata as any)?.role;
+  if (
+    typeof authRole === "string" &&
+    ["admin", "owner", "staff", "beta_tester", "beta-tester", "beta"].includes(authRole)
+  ) {
+    return true;
+  }
+
+  if (isLoading || !permissionUser?.role) return false;
+  const roleName = permissionUser.role.name;
+  return (
+    ["owner", "admin", "staff", "beta_tester", "beta-tester", "beta"].includes(roleName) ||
+    permissionUser.role.level <= 20 ||
+    permissionUser.role.level === 90
+  );
+}
+
+// Hook to check if user has access to Narrator feature (system owners, admins, staff, beta testers)
+export function useHasNarratorAccess(): boolean {
+  return useIsBetaTester();
 }
 
 // Utility functions for server-side permission checking

@@ -37,10 +37,19 @@ function SearchViewComponent({
 }: SearchViewProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus on mount
+  // Auto-focus on mount with RAF + fallback
   useEffect(() => {
-    const timer = setTimeout(() => searchInputRef.current?.focus(), 50);
-    return () => clearTimeout(timer);
+    const focusInput = () => {
+      if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    };
+    const rafId = requestAnimationFrame(focusInput);
+    const timer = setTimeout(focusInput, 60);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
   }, []);
 
   return (

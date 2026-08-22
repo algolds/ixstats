@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { CommandPalette } from "~/components/halo";
@@ -25,15 +25,19 @@ export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage =
-    normalizedPathname.startsWith("/wiki/") ||
+    normalizedPathname.startsWith("/wiki") ||
     normalizedPathname.startsWith("/blurbs");
 
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
-  const isMessagesPage = normalizedPathname.startsWith("/messages");
+  const isImmersionPage =
+    isWikiPage ||
+    normalizedPathname.startsWith("/messages") ||
+    normalizedPathname.startsWith("/builder") ||
+    normalizedPathname.startsWith("/mycountry");
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
-    autoHideDefault: isMessagesPage,
+    mode: isImmersionPage ? "hidden" : "default",
   });
 
   const [isWriterMode, setIsWriterMode] = useState(false);
@@ -108,13 +112,6 @@ export function Navigation() {
   const contextKey = getContextKey(normalizedPathname);
   const contextMenu = contextualMenus[contextKey] ?? contextualMenus.default;
 
-  // ── Physics morph progress: 0 = full tabs, 1 = tabs fully absorbed ──
-  const morphProgress = useMemo(() => {
-    const start = 40;
-    const end = 100;
-    return Math.min(1, Math.max(0, (scrollY - start) / (end - start)));
-  }, [scrollY]);
-
   // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
   if (pathname?.startsWith("/maps")) return null;
 
@@ -127,16 +124,16 @@ export function Navigation() {
             : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
         }`}
         style={{
-          opacity: isNavVisible ? Math.max(0, 1 - morphProgress) : 0,
+          opacity: isNavVisible ? 1 : 0,
           transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
-          pointerEvents: !isNavVisible || morphProgress > 0.8 ? "none" : "auto",
+          pointerEvents: isNavVisible ? "auto" : "none",
           transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, background-color 0.3s ease",
         }}
       >
         {!isWikiPage && (
           <div
             className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent"
-            style={{ opacity: Math.max(0, 1 - morphProgress) }}
+            style={{ opacity: isNavVisible ? 1 : 0 }}
           />
         )}
 
@@ -144,7 +141,6 @@ export function Navigation() {
           <NavigationBar
             visibleNavItems={visibleNavItems}
             isCurrentPage={isCurrentPage}
-            morphProgress={morphProgress}
             messageUnreadCount={messageUnreadCount}
           />
 
@@ -240,9 +236,9 @@ export function Navigation() {
         >
           {/* Ambient glow around DI when navbar is visible, fading cleanly to 0 on scroll */}
           <div
-            className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl"
+            className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl transition-opacity duration-300"
             style={{
-              opacity: 0.6 * Math.max(0, 1 - morphProgress),
+              opacity: isNavVisible && !activeIsSticky ? 0.6 : 0,
             }}
           />
           <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />

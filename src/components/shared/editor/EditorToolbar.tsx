@@ -40,7 +40,7 @@ export function EditorToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] p-1 shadow-sm backdrop-blur-xl select-none",
+        "flex flex-wrap items-center gap-1 rounded-xl border border-black/10 bg-black/[0.02] p-1 shadow-xs backdrop-blur-xl select-none dark:border-white/10 dark:bg-white/[0.03]",
         className
       )}
     >
@@ -51,8 +51,8 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.bold
-            ? "bg-purple-500/20 text-purple-300"
-            : "text-slate-400 hover:bg-white/10 hover:text-white"
+            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Bold"
       >
@@ -66,8 +66,8 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.italic
-            ? "bg-purple-500/20 text-purple-300"
-            : "text-slate-400 hover:bg-white/10 hover:text-white"
+            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Italic"
       >
@@ -81,21 +81,21 @@ export function EditorToolbar({
         className={cn(
           "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
           activeMarks.underline
-            ? "bg-purple-500/20 text-purple-300"
-            : "text-slate-400 hover:bg-white/10 hover:text-white"
+            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
+            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Underline"
       >
         <Underline className="h-4 w-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-white/10" />
+      <div className="mx-1 h-4 w-px bg-black/10 dark:bg-white/10" />
 
       {/* Unordered List */}
       <button
         type="button"
         onClick={() => onToggleList("ul")}
-        className="rounded-lg p-1.5 text-slate-400 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-[0.92]"
+        className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
         title="Bullet List"
       >
         <List className="h-4 w-4" />
@@ -105,20 +105,20 @@ export function EditorToolbar({
       <button
         type="button"
         onClick={() => onToggleList("ol")}
-        className="rounded-lg p-1.5 text-slate-400 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-[0.92]"
+        className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
         title="Numbered List"
       >
         <ListOrdered className="h-4 w-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-white/10" />
+      <div className="mx-1 h-4 w-px bg-black/10 dark:bg-white/10" />
 
       {/* Link Popover */}
       <Popover open={linkOpen} onOpenChange={setLinkOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-slate-400 transition-all duration-150 hover:bg-white/10 hover:text-white active:scale-[0.92]"
+            className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
             title="Insert Link"
           >
             <LinkIcon className="h-4 w-4" />
@@ -126,15 +126,15 @@ export function EditorToolbar({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-64 border-white/10 bg-slate-900/95 p-3 backdrop-blur-xl"
+          className="border-border bg-popover/98 text-popover-foreground z-[200000] w-64 rounded-2xl border p-3 shadow-2xl backdrop-blur-2xl"
         >
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-white">Insert Web Link</span>
+            <span className="text-foreground text-xs font-semibold">Insert Web Link</span>
             <Input
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://..."
-              className="border-white/10 bg-black/40 text-xs text-white"
+              className="border-input bg-secondary text-foreground text-xs"
             />
             <Button
               size="sm"

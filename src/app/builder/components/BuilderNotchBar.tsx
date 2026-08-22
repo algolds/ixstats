@@ -26,6 +26,8 @@ import { useBuilderContext } from "~/app/builder/components/enhanced/context/Bui
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { scrollToField } from "../components/enhanced/tabs/utils/validation";
 
+import { useNavigationScroll } from "~/hooks/useNavigationScroll";
+
 // Section icon map
 const SECTION_ICONS: Record<BuilderSection, React.ComponentType<{ className?: string }>> = {
   foundation: Globe,
@@ -95,85 +97,30 @@ export function BuilderNotchBar({
 
   const isOnPreview = activeSection === "preview";
   const containerRef = useRef<HTMLDivElement>(null);
-  const handleScrollRef = useRef<() => void>(() => {});
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isAtBottomState, setIsAtBottomState] = useState(false);
-  const lastScrollYRef = useRef(0);
 
-  const handleScroll = () => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const currentScrollY = window.scrollY;
-    const isAtBottom =
-      window.innerHeight + currentScrollY >= document.documentElement.scrollHeight - 15;
-
-    // Detect scroll direction (with minor threshold to avoid micro-scroll jitter)
-    let direction = "up";
-    if (Math.abs(currentScrollY - lastScrollYRef.current) > 5) {
-      direction = currentScrollY > lastScrollYRef.current ? "down" : "up";
-      lastScrollYRef.current = currentScrollY;
-    }
-
-    const isAtTop = currentScrollY < 60;
-
-    if (isAtTop) {
-      container.style.transform = "translateY(0px)";
-      container.style.opacity = "1";
-      container.style.visibility = "visible";
-      setIsScrolled(false);
-      setIsAtBottomState(false);
-    } else if (isAtBottom) {
-      container.style.transform = "translateY(0px)";
-      container.style.opacity = "1";
-      container.style.visibility = "visible";
-      setIsScrolled(true);
-      setIsAtBottomState(true);
-    } else {
-      setIsAtBottomState(false);
-      setIsScrolled(true);
-      if (direction === "down") {
-        const height = container.offsetHeight || 60;
-        container.style.transform = `translateY(${-height - 20}px)`;
-        container.style.opacity = "0";
-        container.style.visibility = "hidden";
-      } else {
-        container.style.transform = "translateY(0px)";
-        container.style.opacity = "1";
-        container.style.visibility = "visible";
-      }
-    }
-  };
-
-  handleScrollRef.current = handleScroll;
+  const { scrollY, isNavVisible } = useNavigationScroll({ mode: "hidden" });
 
   useEffect(() => {
-    const onScroll = () => handleScrollRef.current();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-
+    let rafId: number | undefined;
+    const checkBottom = () => {
+      rafId = requestAnimationFrame(() => {
+        if (typeof window === "undefined") return;
+        const isBottom =
+          window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 20;
+        setIsAtBottomState(isBottom);
+      });
+    };
+    window.addEventListener("scroll", checkBottom, { passive: true });
+    checkBottom();
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", checkBottom);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 
-  // Reset scroll and container translation back to top whenever the wizard section changes
-  useEffect(() => {
-    lastScrollYRef.current = 0;
-    const container = containerRef.current;
-    if (container) {
-      container.style.transform = "translateY(0px)";
-      container.style.opacity = "1";
-      container.style.visibility = "visible";
-    }
-    setIsScrolled(false);
-    setIsAtBottomState(false);
-  }, [activeSection]);
-
-  // Sync scroll translation immediately after every render
-  useEffect(() => {
-    handleScrollRef.current();
-  });
+  const isScrolled = scrollY > 60;
+  const isNotchVisible = isNavVisible || !isScrolled || isAtBottomState;
 
   return (
     <>
@@ -191,7 +138,15 @@ export function BuilderNotchBar({
             )}
             style={isAtBottomState ? { paddingBottom: "6px" } : { paddingTop: "6px" }}
           >
-            <div ref={containerRef} className="w-full transition-all duration-300 ease-in-out">
+            <div
+              ref={containerRef}
+              className="w-full transition-all duration-300 ease-in-out"
+              style={{
+                transform: isNotchVisible ? "translateY(0px)" : "translateY(-80px)",
+                opacity: isNotchVisible ? 1 : 0,
+                visibility: isNotchVisible ? "visible" : "hidden",
+              }}
+            >
               {/* Notch bar */}
               <div
                 className={cn(

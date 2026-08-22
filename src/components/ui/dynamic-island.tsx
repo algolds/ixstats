@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, motion, useWillChange } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 // Spring physics — Apple HIG fluid spring: critically damped settle (damping ratio ~1.0) to prevent layout text-jitter
 const stiffness = 420;
@@ -322,7 +322,6 @@ const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
 };
 
 const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
-  const willChange = useWillChange();
   const [screenSize, setScreenSize] = useState("desktop");
   const [mounted, setMounted] = useState(false);
 
@@ -377,7 +376,7 @@ const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) =
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl will-change-transform">
+        <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl">
           {children}
         </div>
       </HaloOuterWrapper>
@@ -386,7 +385,7 @@ const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) =
 
   return (
     <HaloOuterWrapper>
-      <DynamicIslandContent id={id} willChange={willChange} screenSize={screenSize} {...props}>
+      <DynamicIslandContent id={id} screenSize={screenSize} {...props}>
         {children}
       </DynamicIslandContent>
     </HaloOuterWrapper>
@@ -478,13 +477,11 @@ interface DynamicIslandContentProps extends Omit<
   children: React.ReactNode;
   id: string;
   screenSize: string;
-  willChange?: ReturnType<typeof useWillChange>;
 }
 
 const DynamicIslandContent = ({
   children,
   id,
-  willChange,
   screenSize,
   ...props
 }: DynamicIslandContentProps) => {
@@ -558,9 +555,7 @@ const DynamicIslandContent = ({
     <div className="relative">
       {/* Outer glow — multi-layer halos for depth, matching maps DI */}
       <motion.div
-        layout
-        layoutId="dynamic-island-glow"
-        className="force-gpu pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0"
         animate={{
           borderRadius: currentSize.borderRadius,
           opacity: isCompactSize(state.size) ? 0.6 : 0.15,
@@ -570,11 +565,6 @@ const DynamicIslandContent = ({
           stiffness,
           damping,
           mass,
-        }}
-        style={{
-          willChange: "transform, opacity",
-          transform: "translate3d(0, 0, 0)",
-          backfaceVisibility: "hidden",
         }}
       >
         {isImpersonating ? (
@@ -593,10 +583,8 @@ const DynamicIslandContent = ({
       {/* Main dynamic island — Apple HIG Acrylic Shell */}
       <motion.div
         id={id}
-        layout
-        layoutId="dynamic-island-main"
         data-expanded={!isCompact ? "true" : undefined}
-        className={`dynamic-island-shell force-gpu relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
+        className={`dynamic-island-shell relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
           isImpersonating ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]" : ""
         }`}
         initial={{
@@ -616,9 +604,9 @@ const DynamicIslandContent = ({
           mass,
         }}
         style={{
-          willChange: "transform, width, height, border-radius",
-          transform: "translate3d(0, 0, 0)",
-          backfaceVisibility: "hidden",
+          transform: "translateZ(0)",
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
           isolation: "isolate",
           overflow: isAutoHeight ? "visible" : "hidden",
         }}
@@ -671,11 +659,9 @@ type DynamicContainerProps = {
 };
 
 const HaloContainer = ({ className, children }: DynamicContainerProps) => {
-  const willChange = useWillChange();
-
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+      initial={{ opacity: 0, scale: 0.98, y: 4 }}
       animate={{
         opacity: 1,
         scale: 1,
@@ -687,8 +673,7 @@ const HaloContainer = ({ className, children }: DynamicContainerProps) => {
           mass,
         },
       }}
-      exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95, y: 20 }}
-      style={{ willChange }}
+      exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
     >
       {children}
@@ -702,11 +687,9 @@ type DynamicChildrenProps = {
 };
 
 const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
-  const willChange = useWillChange();
-
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: 1,
         scale: 1,
@@ -717,8 +700,7 @@ const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
           mass,
         },
       }}
-      exit={{ opacity: 0, filter: "blur(10px)", scale: 0.95 }}
-      style={{ willChange }}
+      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
     >
       {children}
@@ -732,18 +714,15 @@ type MotionProps = {
 };
 
 const DynamicTitle = ({ className, children }: MotionProps) => {
-  const willChange = useWillChange();
-
   return (
     <motion.h3
       className={className}
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: 1,
         scale: 1,
         transition: { type: "spring", stiffness, damping, mass },
       }}
-      style={{ willChange }}
     >
       {children}
     </motion.h3>
@@ -751,18 +730,15 @@ const DynamicTitle = ({ className, children }: MotionProps) => {
 };
 
 const DynamicDescription = ({ className, children }: MotionProps) => {
-  const willChange = useWillChange();
-
   return (
     <motion.p
       className={className}
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{
         opacity: 1,
         scale: 1,
         transition: { type: "spring", stiffness, damping, mass },
       }}
-      style={{ willChange }}
     >
       {children}
     </motion.p>

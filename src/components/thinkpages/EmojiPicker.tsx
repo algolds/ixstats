@@ -546,30 +546,30 @@ export function EmojiPicker({
         side={side}
         align="center"
         sideOffset={8}
-        className="glass-hierarchy-child w-80 overflow-hidden border-blue-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
+        className="border-border bg-popover/98 text-popover-foreground z-[200000] w-80 overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl"
       >
         {/* Search */}
-        <div className="relative border-b border-white/10 p-2">
+        <div className="border-border/60 relative border-b p-2">
           <Search className="text-muted-foreground absolute top-4 left-4 h-3.5 w-3.5" />
           <Input
             placeholder="Search emojis..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 border-white/10 bg-white/5 pl-8 text-xs focus:bg-white/10"
+            className="border-input bg-secondary text-foreground h-8 pl-8 text-xs focus:bg-secondary/80"
           />
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-white/10 bg-white/5 p-1">
+        <div className="border-border/60 bg-muted/30 flex border-b p-1">
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("unicode")}
             className={cn(
-              "flex-1 rounded py-1 text-[11px] font-medium transition-all focus:outline-none",
+              "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all focus:outline-none",
               activeTab === "unicode"
-                ? "bg-blue-500/20 text-blue-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
             )}
           >
             Unicode
@@ -579,10 +579,10 @@ export function EmojiPicker({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setActiveTab("discord")}
             className={cn(
-              "flex-1 rounded py-1 text-[11px] font-medium transition-all focus:outline-none",
+              "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all focus:outline-none",
               activeTab === "discord"
-                ? "bg-blue-500/20 text-blue-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                ? "bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
             )}
           >
             Discord ({discordEmojisData?.count || 0})
@@ -592,7 +592,7 @@ export function EmojiPicker({
         {/* Picker Content Area */}
         <div
           ref={scrollRef}
-          className="max-h-60 scrollbar-thin scrollbar-thumb-white/10 overflow-y-auto p-2"
+          className="thin-scrollbar max-h-60 overflow-y-auto p-2"
         >
           {activeTab === "unicode" ? (
             filteredUnicodeCategories.length > 0 ? (
@@ -603,7 +603,7 @@ export function EmojiPicker({
                     id={`emoji-category-${idx}`}
                     className="scroll-mt-2 space-y-1"
                   >
-                    <div className="px-1 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+                    <div className="text-muted-foreground px-1 text-[10px] font-bold tracking-wider uppercase">
                       {category.name}
                     </div>
                     <div className="grid grid-cols-8 gap-1">
@@ -612,7 +612,7 @@ export function EmojiPicker({
                           key={emoji.name}
                           onClick={() => handleSelectUnicode(emoji.char)}
                           title={`:${emoji.name}:`}
-                          className="flex h-8 w-8 items-center justify-center rounded text-[1.35rem] leading-none transition-transform duration-100 hover:scale-125 hover:bg-white/10"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-[1.35rem] leading-none transition-transform duration-100 hover:scale-125 hover:bg-black/5 dark:hover:bg-white/10"
                         >
                           {emoji.char}
                         </button>
@@ -631,7 +631,7 @@ export function EmojiPicker({
             <div className="pb-8">
               {isLoadingDiscord ? (
                 <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-xs">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                   <span>Loading server emojis...</span>
                 </div>
               ) : filteredDiscordEmojis.length > 0 ? (
@@ -641,7 +641,7 @@ export function EmojiPicker({
                       key={emoji.id}
                       onClick={() => handleSelectDiscord(emoji)}
                       title={`:${emoji.name}:`}
-                      className="flex h-9 w-9 items-center justify-center rounded p-1 transition-transform duration-100 hover:scale-125 hover:bg-white/10"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg p-1 transition-transform duration-100 hover:scale-125 hover:bg-black/5 dark:hover:bg-white/10"
                     >
                       <img
                         src={emoji.url}
@@ -663,7 +663,7 @@ export function EmojiPicker({
 
         {/* Category Navigation Bar (iOS Style) at the Bottom */}
         {activeTab === "unicode" && !searchQuery && (
-          <div className="flex items-center justify-around border-t border-white/10 bg-neutral-900/95 py-1.5 backdrop-blur-md">
+          <div className="border-border/60 bg-popover/98 flex items-center justify-around border-t py-1.5 backdrop-blur-md">
             {EMOJI_CATEGORIES.map((category, idx) => {
               const Icon = category.icon;
               return (
@@ -672,7 +672,7 @@ export function EmojiPicker({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => scrollToCategory(idx)}
-                  className="text-neutral-400 transition-colors hover:text-white focus:outline-none"
+                  className="text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                   title={category.name}
                 >
                   <Icon className="h-4 w-4" />

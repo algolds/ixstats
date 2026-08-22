@@ -74,8 +74,7 @@ export function WikiSourceEditor({
   const previewTimerRef = useRef<NodeJS.Timeout | null>(null);
   const refreshPreviewRef = useRef<() => void>(() => {});
 
-  const { scrollY } = useNavigationScroll();
-  const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
+  const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
 

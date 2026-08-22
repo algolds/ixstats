@@ -435,8 +435,7 @@
   transition: 
     background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.35s ease !important;
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Light Mode: Interactive Opacity on Hover, Focus-Within, Active, or Expanded */
@@ -450,8 +449,8 @@
     inset 0 1px 0 rgba(255, 255, 255, 1),
     0 22px 48px -8px rgba(0, 0, 0, 0.14),
     0 6px 16px -2px rgba(0, 0, 0, 0.06) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
 }
 
 .dark .dynamic-island-shell {
@@ -466,8 +465,7 @@
   transition: 
     background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.35s ease !important;
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Dark Mode: Interactive Opacity on Hover, Focus-Within, Active, or Expanded */
@@ -481,6 +479,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 26px 56px -10px rgba(0, 0, 0, 0.75),
     0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(28px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
 }

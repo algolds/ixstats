@@ -29,11 +29,13 @@ export default function MyCountryLayout({ children }: MyCountryLayoutProps) {
     <Suspense fallback={null}>
       <DemoModeProvider>
         <DevCountryViewProvider>
-          <MyCountryHalo />
-          <DemoModeBanner />
-          <ViewingAsBanner />
-          {children}
-          <DevCountryViewToolbar />
+          <div className="relative min-h-screen">
+            <MyCountryHalo />
+            <DemoModeBanner />
+            <ViewingAsBanner />
+            {children}
+            <DevCountryViewToolbar />
+          </div>
         </DevCountryViewProvider>
       </DemoModeProvider>
     </Suspense>

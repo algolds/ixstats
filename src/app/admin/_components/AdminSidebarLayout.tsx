@@ -42,14 +42,14 @@ export function AdminSidebarLayout({
 
   return (
     <div className="bg-background text-foreground relative min-h-screen">
-      {/* Mobile Navigation Header */}
-      <div className="border-border/40 bg-background/60 fixed top-0 right-0 left-0 z-40 flex h-14 items-center border-b px-4 backdrop-blur-md lg:hidden">
+      {/* Mobile Sub-Navigation Header — sits cleanly below global mobile nav */}
+      <div className="border-border/40 bg-background/80 sticky top-14 right-0 left-0 z-30 flex h-12 items-center border-b px-4 backdrop-blur-md lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
               size="icon"
-              className="bg-card/50 border-border/40 hover:bg-muted/50 h-9 w-9"
+              className="bg-card/50 border-border/40 hover:bg-muted/50 h-8 w-8"
             >
               <Menu className="h-4 w-4" />
               <span className="sr-only">Toggle Admin Navigation</span>
@@ -68,21 +68,21 @@ export function AdminSidebarLayout({
         {onNavigate ? (
           <button
             onClick={() => onNavigate("dashboard")}
-            className="text-muted-foreground/80 hover:text-foreground ml-3 cursor-pointer text-sm font-bold tracking-wide uppercase transition-colors"
+            className="text-muted-foreground/80 hover:text-foreground ml-3 cursor-pointer text-xs font-bold tracking-wide uppercase transition-colors"
           >
             Admin Console
           </button>
         ) : (
           <Link
             href="/admin"
-            className="text-muted-foreground/80 hover:text-foreground ml-3 text-sm font-bold tracking-wide uppercase transition-colors"
+            className="text-muted-foreground/80 hover:text-foreground ml-3 text-xs font-bold tracking-wide uppercase transition-colors"
           >
             Admin Console
           </Link>
         )}
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-4 pt-18 sm:py-6 md:py-8 lg:px-6 lg:pt-8">
+      <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6 md:py-8 lg:px-6 lg:pt-8">
         {/* Main Layout — rail + content */}
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop: Sticky rail (hidden in fullscreen mode) */}

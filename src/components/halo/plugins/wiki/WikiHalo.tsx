@@ -10,6 +10,7 @@
 import React, { useMemo, useState } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
+import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
@@ -60,7 +61,10 @@ function WikiBreadcrumb() {
     return `${timeGreeting}${user?.firstName ? `, ${user.firstName}` : ""}`;
   }, [ixTimeTimestamp, user?.firstName]);
 
+  const hasNarratorAccess = useHasNarratorAccess();
+
   const isNarratorActive = !!(
+    hasNarratorAccess &&
     narratorState &&
     narratorState.totalBlocks > 0 &&
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
@@ -228,8 +232,10 @@ function WikiBreadcrumb() {
 
 export function WikiHalo() {
   const { articleTitle, narratorState, themeColors } = useWikiContext();
-  const isPlaying = !!narratorState?.isPlaying;
+  const hasNarratorAccess = useHasNarratorAccess();
+  const isPlaying = hasNarratorAccess && !!narratorState?.isPlaying;
   const isNarrating = !!(
+    hasNarratorAccess &&
     narratorState &&
     narratorState.totalBlocks > 0 &&
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
@@ -243,16 +249,18 @@ export function WikiHalo() {
       center: <WikiBreadcrumb />,
       expandedViews: (articleTitle
         ? {
-            narrator: WikiNarratorView,
             wiki: WikiView,
+            ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }
         : {
             profile: WikiProfileView,
+            wiki: WikiView,
+            ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }) as Record<string, React.ComponentType<DIViewProps>>,
       accentColor: themeColors?.primary || "#3b82f6",
       stickyLabel: isPlaying ? "Narrating" : "Wiki",
     }),
-    [articleTitle, isPlaying, isNarrating, themeColors?.primary]
+    [articleTitle, hasNarratorAccess, isPlaying, isNarrating, themeColors?.primary]
   );
 
   useDIPlugin(plugin);

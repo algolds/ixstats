@@ -199,8 +199,9 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
     return (
       <div
         className={cn(
-          "group relative flex flex-col rounded-2xl border border-white/10 bg-black/20 backdrop-blur-xl transition-all duration-200",
-          isFocused && "border-white/20 bg-black/30 shadow-lg ring-1 ring-white/10",
+          "group relative flex flex-col rounded-2xl border border-black/10 bg-black/[0.02] backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.03]",
+          isFocused &&
+            "border-black/20 bg-black/[0.04] shadow-lg ring-1 ring-black/10 dark:border-white/20 dark:bg-white/[0.06] dark:ring-white/10",
           disabled && "cursor-not-allowed opacity-50",
           className
         )}
@@ -226,7 +227,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               }}
               onKeyDown={handleKeyDown}
               className={cn(
-                "prose prose-invert max-w-none text-sm text-slate-100 outline-none select-text focus:outline-none",
+                "prose dark:prose-invert text-foreground placeholder:text-muted-foreground max-w-none text-sm outline-none select-text focus:outline-none",
                 italicPlaceholder && "placeholder:italic",
                 contentClassName
               )}
@@ -235,7 +236,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
 
           {/* Bottom Toolbar & Action Bar */}
           {!hideToolbar && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-white/[0.02] px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/5 bg-black/[0.01] px-3 py-2 dark:border-white/5 dark:bg-white/[0.01]">
               <EditorToolbar
                 onToggleMark={handleToggleMark}
                 onToggleList={handleToggleList}

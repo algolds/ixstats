@@ -21,8 +21,8 @@ export function StudioSidebarLayout({
 }: StudioSidebarLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Mobile horizontal nav */}
-      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-900/90 px-4 py-2 backdrop-blur-lg lg:hidden">
+      {/* Mobile horizontal nav — sits cleanly below mobile nav */}
+      <div className="sticky top-14 z-30 border-b border-white/10 bg-slate-900/90 px-4 py-2 backdrop-blur-lg lg:hidden">
         <div className="flex scrollbar-none gap-2 overflow-x-auto">
           <StudioSidebarNav
             activeSection={activeSection}
@@ -34,8 +34,8 @@ export function StudioSidebarLayout({
 
       {/* Desktop grid layout */}
       <div className="mx-auto min-h-screen max-w-[1920px] lg:grid lg:grid-cols-[280px_1fr] lg:gap-0">
-        {/* Sidebar */}
-        <aside className="hidden border-r border-white/10 bg-slate-900/50 backdrop-blur-sm lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        {/* Sidebar — docked cleanly below 64px navbar */}
+        <aside className="hidden border-r border-white/10 bg-slate-900/50 backdrop-blur-sm lg:sticky lg:top-16 lg:flex lg:h-[calc(100vh-4rem)] lg:flex-col">
           {/* Logo */}
           <div className="border-b border-white/10 p-6">
             <h1 className="text-xl font-bold tracking-tight text-white">World Studio</h1>

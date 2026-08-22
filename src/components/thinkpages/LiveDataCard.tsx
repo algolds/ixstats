@@ -5,15 +5,13 @@ import {
   TrendingUp,
   Globe,
   BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
   Loader2,
   Users,
   Briefcase,
   Activity,
 } from "lucide-react";
 import { Card } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { GlassLineChart, GlassBarChart, GlassPieChart } from "~/components/ui/charts";
@@ -100,8 +98,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   if (isLoading) {
     return (
-      <div className="flex h-36 w-full items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-md">
-        <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+      <div className="flex h-36 w-full items-center justify-center rounded-xl border border-black/5 bg-black/[0.02] backdrop-blur-md dark:border-white/5 dark:bg-white/[0.02]">
+        <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
       </div>
     );
   }
@@ -149,10 +147,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
 
     return (
-      <Card className="glass-hierarchy-child border-blue-500/15 bg-blue-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-blue-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-blue-500/20 bg-blue-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-blue-500/30 dark:bg-blue-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <TrendingUp className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">GDP Growth</span>
@@ -172,9 +171,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Recent Trajectory</span>
-          <span className="font-semibold text-white">Current: {formatMoney(currentGdp)}</span>
+          <span className="text-foreground font-semibold">Current: {formatMoney(currentGdp)}</span>
         </div>
       </Card>
     );
@@ -197,10 +196,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     }));
 
     return (
-      <Card className="glass-hierarchy-child border-purple-500/15 bg-purple-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-purple-500/20 bg-purple-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30 dark:bg-purple-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Globe className="h-3.5 w-3.5 text-purple-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <Globe className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">
@@ -221,9 +221,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Global Network</span>
-          <span className="font-semibold text-white">Top {activeRelations.length} Relations</span>
+          <span className="text-foreground font-semibold">Top {activeRelations.length} Relations</span>
         </div>
       </Card>
     );
@@ -240,10 +240,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const netTrade = activeTrade.exports - activeTrade.imports;
 
     return (
-      <Card className="glass-hierarchy-child border-orange-500/15 bg-orange-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-orange-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-orange-500/20 bg-orange-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-orange-500/30 dark:bg-orange-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <BarChart3 className="h-3.5 w-3.5 text-orange-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <BarChart3 className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Flow Dynamics</span>
@@ -262,12 +263,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Net Balance</span>
           <span
             className={cn(
               "font-bold tracking-wider uppercase",
-              netTrade >= 0 ? "text-emerald-400" : "text-red-400"
+              netTrade >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
             )}
           >
             {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
@@ -296,10 +297,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-emerald-500/15 bg-emerald-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 dark:bg-emerald-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Macro Indicators</span>
@@ -318,9 +320,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Current Total GDP</span>
-          <span className="font-semibold text-white">{formatMoney(gdpVal)}</span>
+          <span className="text-foreground font-semibold">{formatMoney(gdpVal)}</span>
         </div>
       </Card>
     );
@@ -344,10 +346,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-green-500/15 bg-green-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-green-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-teal-500/20 bg-teal-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30 dark:bg-teal-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Users className="h-3.5 w-3.5 text-green-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <Users className="h-3.5 w-3.5 text-teal-500 dark:text-teal-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Demographic Split</span>
@@ -366,9 +369,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Population Total</span>
-          <span className="font-semibold text-white">{popVal.toLocaleString()}</span>
+          <span className="text-foreground font-semibold">{popVal.toLocaleString()}</span>
         </div>
       </Card>
     );
@@ -389,10 +392,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-amber-500/15 bg-amber-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-amber-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-amber-500/20 bg-amber-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-amber-500/30 dark:bg-amber-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <BarChart3 className="h-3.5 w-3.5 text-amber-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <BarChart3 className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Fiscal Profile (% of GDP)</span>
@@ -411,12 +415,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Debt Profile</span>
           <span
             className={cn(
               "font-bold",
-              activeEcon.totalDebtGDPRatio > 80 ? "text-red-400" : "text-emerald-400"
+              activeEcon.totalDebtGDPRatio > 80 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
             )}
           >
             Debt/GDP: {activeEcon.totalDebtGDPRatio || 55}%
@@ -441,10 +445,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-teal-500/15 bg-teal-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Briefcase className="h-3.5 w-3.5 text-teal-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <Briefcase className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Labor Dynamics</span>
@@ -463,9 +468,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Average Annual Income</span>
-          <span className="font-semibold text-white">
+          <span className="text-foreground font-semibold">
             ${(activeEcon.averageAnnualIncome || 35000).toLocaleString()}
           </span>
         </div>
@@ -490,10 +495,11 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child border-red-500/15 bg-red-950/10 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-red-500/30">
+      <Card className="glass-hierarchy-child relative overflow-hidden border-red-500/20 bg-red-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-red-500/30 dark:bg-red-950/10">
+        <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2.5 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
-            <Activity className="h-3.5 w-3.5 text-red-400" />
+          <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+            <Activity className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
             {title}
           </span>
           <span className="text-muted-foreground text-[10px]">Vitality Indicators</span>
@@ -512,9 +518,9 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
           />
         </div>
 
-        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-2 text-[10px] text-neutral-400">
+        <div className="text-muted-foreground mt-2 flex items-center justify-between border-t border-black/5 pt-2 text-[10px] dark:border-white/5">
           <span>Overall Health Status</span>
-          <span className="font-bold text-emerald-400">Active</span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400">Active</span>
         </div>
       </Card>
     );

@@ -239,7 +239,7 @@ export function UnifiedDashboardSection({
                     </div>
                     <button
                       onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 cursor-pointer text-[11px] font-semibold text-purple-400 underline hover:text-purple-300"
+                      className="ml-2 cursor-pointer text-[11px] font-semibold text-purple-600 underline hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
                     >
                       Switch Account
                     </button>

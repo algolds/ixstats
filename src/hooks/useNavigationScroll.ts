@@ -5,7 +5,9 @@ import { useState, useEffect, useRef } from "react";
 export interface NavigationScrollOptions {
   /** If true, locks the navigation bar in visible state (e.g. while drawer or modal is open) */
   isLocked?: boolean;
-  /** If true, starts navigation bar in hidden state by default (e.g. on messages / app workspaces) */
+  /** Navigation mode: 'default' (standard scroll-hide) or 'hidden' (starts hidden for canvas/immersion) */
+  mode?: "default" | "hidden";
+  /** @deprecated Use `mode: 'hidden'` instead. Starts navigation bar in hidden state by default */
   autoHideDefault?: boolean;
 }
 
@@ -14,15 +16,20 @@ export interface NavigationScrollState {
   isSticky: boolean;
   isNavVisible: boolean;
   scrollDirection: "up" | "down" | "idle";
+  /**
+   * Universal Dynamic Repulsion Progress: 0 (at rest/top) to 1 (fully repulsed/tucked).
+   * Formula: clamp(scrollY / 56, 0, 1). Used to coordinate sub-headers under the sticky Halo.
+   */
+  repulsionProgress: number;
 }
 
 /**
  * Tracks scroll position with RAF-smoothed updates, directional hysteresis,
- * and Apple-grade fluid navigation visibility state (scroll down to hide, scroll up to reveal).
+ * universal dynamic repulsion progress, and Apple-grade fluid navigation visibility state.
  */
 export function useNavigationScroll(options?: NavigationScrollOptions): NavigationScrollState {
   const isLocked = options?.isLocked ?? false;
-  const autoHideDefault = options?.autoHideDefault ?? false;
+  const autoHideDefault = (options?.mode === "hidden") || (options?.autoHideDefault ?? false);
 
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
@@ -35,7 +42,16 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
   autoHideDefaultRef.current = autoHideDefault;
 
   useEffect(() => {
-    setIsNavVisible(!autoHideDefault);
+    if (typeof window === "undefined") return;
+    if (autoHideDefault) {
+      const navHeight = window.innerWidth >= 1024 ? 64 : 56;
+      if (window.scrollY <= 10) {
+        window.scrollTo({ top: navHeight, behavior: "instant" });
+        setScrollY(navHeight);
+        setIsSticky(true);
+        setIsNavVisible(false);
+      }
+    }
   }, [autoHideDefault]);
 
   useEffect(() => {
@@ -57,36 +73,47 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
 
           // Smooth interpolation for scroll position
           const smoothScrollY =
-            lastScrollY + (currentScrollY - lastScrollY) * Math.min(deltaTime / 16, 1);
+            currentScrollY <= 2
+              ? 0
+              : lastScrollY + (currentScrollY - lastScrollY) * Math.min(deltaTime / 16, 1);
           setScrollY(smoothScrollY);
 
-          // Sticky threshold with hysteresis
-          const stickyThreshold = deltaY > 0 ? 60 : 40;
-          setIsSticky(currentScrollY > stickyThreshold);
+          // Absolute Top / Balanced Anchor Reset
+          if (currentScrollY <= 2) {
+            setIsSticky(false);
+            setIsNavVisible(true);
+            setScrollDirection("idle");
+            accumulatedDelta = 0;
+            currentDirection = "idle";
+          } else {
+            // Sticky threshold with hysteresis
+            const stickyThreshold = deltaY > 0 ? 60 : 40;
+            setIsSticky(currentScrollY > stickyThreshold);
 
-          // Directional detection & accumulated delta hysteresis
-          if (Math.abs(deltaY) > 0.5) {
-            const newDirection: "up" | "down" = deltaY > 0 ? "down" : "up";
+            // Directional detection & accumulated delta hysteresis
+            if (Math.abs(deltaY) > 0.5) {
+              const newDirection: "up" | "down" = deltaY > 0 ? "down" : "up";
 
-            if (newDirection !== currentDirection) {
-              currentDirection = newDirection;
-              accumulatedDelta = 0;
-              setScrollDirection(newDirection);
-            }
+              if (newDirection !== currentDirection) {
+                currentDirection = newDirection;
+                accumulatedDelta = 0;
+                setScrollDirection(newDirection);
+              }
 
-            accumulatedDelta += Math.abs(deltaY);
+              accumulatedDelta += Math.abs(deltaY);
 
-            if (isLockedRef.current) {
-              setIsNavVisible(true);
-            } else if (newDirection === "down" && (accumulatedDelta > 10 || autoHideDefaultRef.current)) {
-              // Hide when scrolling down
-              setIsNavVisible(false);
-            } else if (newDirection === "up" && accumulatedDelta > 10) {
-              // Instantly reveal when scrolling up anywhere
-              setIsNavVisible(true);
-            } else if (currentScrollY < 50 && !autoHideDefaultRef.current) {
-              // Always visible in top anchor zone on regular pages
-              setIsNavVisible(true);
+              if (isLockedRef.current) {
+                setIsNavVisible(true);
+              } else if (currentScrollY < 50) {
+                // Always visible in top anchor zone
+                setIsNavVisible(true);
+              } else if (newDirection === "down" && accumulatedDelta > 10) {
+                // Hide when scrolling down past top zone
+                setIsNavVisible(false);
+              } else if (newDirection === "up" && accumulatedDelta > 10) {
+                // Instantly reveal when scrolling up anywhere
+                setIsNavVisible(true);
+              }
             }
           }
 
@@ -132,6 +159,15 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
   // Ensure locked state immediately reflects in visibility
   const resolvedNavVisible = isLocked ? true : isNavVisible;
 
-  return { scrollY, isSticky, isNavVisible: resolvedNavVisible, scrollDirection };
+  // Universal Dynamic Repulsion Progress: 0 at top to 1 when scrolled >= 56px
+  const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
+
+  return {
+    scrollY,
+    isSticky,
+    isNavVisible: resolvedNavVisible,
+    scrollDirection,
+    repulsionProgress,
+  };
 }
 

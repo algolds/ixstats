@@ -36,8 +36,7 @@ export function WikiVisualEditor({
   onSwitchToSource,
 }: WikiVisualEditorProps) {
   const editableRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useNavigationScroll();
-  const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
+  const { repulsionProgress } = useNavigationScroll();
 
   const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({

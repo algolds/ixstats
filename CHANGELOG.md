@@ -33,6 +33,22 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design Architecture (Plan 179)
+
+- **Unified 3-Mode Navigation Architecture**:
+  - Standardized 210+ App Router pages into 3 universal navigation modes: `DEFAULT` (standard scroll-hide and tab morphing), `HIDDEN` (`mode: "hidden"` / `autoHideDefault: true` for full canvas immersion on `/messages` and `/builder`), and `MAPS` (chromeless standalone with liquid glass `MapDynamicIsland` on `/maps` and `/mycountry/editor`).
+  - Unified scroll listener logic across desktop and mobile, eliminating disjointed scroll handlers and race conditions.
+- **Global Dynamic Repulsion Physics Primitive**:
+  - Promoted Dynamic Repulsion Physics ($\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$) to a universal platform primitive in `useNavigationScroll.ts`.
+  - Sub-headers, toolbars, and filter strips smoothly glide and tuck beneath the sticky floating Halo pill with continuous RAF presentation-value tracking, center branding glide, and ambient refraction glow.
+- **Layout Collision Remediation & Coordinated Mobile Navigation**:
+  - Fixed mobile header collision in `AdminSidebarLayout.tsx` by eliminating redundant `fixed top-0` headers and aligning drawer triggers below the global mobile nav bar (`sticky top-14`).
+  - Standardized sticky navigation offsets across `CountriesHeader.tsx`, `StudioSidebarLayout.tsx`, and `labs/design-bible/page.tsx` (`sticky top-16` / `sticky top-14`), eliminating clipped cards and overlapping controls.
+- **Scroll Performance Optimization & Notch Bar Streamlining**:
+  - Upgraded WikiOS Reader `StickyToc.tsx` with RAF-throttled scroll spy for instant section tracking without layout thrashing.
+  - Refactored `BuilderNotchBar.tsx` to remove unconstrained render-loop scroll listeners, replacing them with unified `useNavigationScroll({ mode: "hidden" })` and smooth spring-based bottom docking.
+  - Pruned dead `useHeadlessNav.ts` hook in favor of the canonical `useNavigationScroll` hook.
+
 ### 🧹 Wave 9: Codebase Cleanliness, Monolith Decomposition & App Router RSC Architecture (Plans 171–178)
 
 - **Dead WorldGen v1 Engine & Orphan Component Prune (Plan 171)**:

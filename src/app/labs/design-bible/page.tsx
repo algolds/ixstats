@@ -974,8 +974,8 @@ export default function DesignBiblePage() {
       <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[50vw] w-[50vw] rounded-full bg-indigo-500/5 blur-[120px]" />
       <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[50vw] w-[50vw] rounded-full bg-cyan-500/5 blur-[120px]" />
 
-      {/* Volumetric Header */}
-      <header className="border-border bg-background/80 sticky top-0 z-50 border-b backdrop-blur-md">
+      {/* Volumetric Header — docks cleanly below global navbar */}
+      <header className="border-border bg-background/80 sticky top-16 z-30 border-b backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-500/10 shadow-lg shadow-indigo-500/5">

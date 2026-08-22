@@ -9,6 +9,7 @@ import { Search, X, Bell, Settings, Bookmark, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
+import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { api } from "~/trpc/react";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
@@ -39,16 +40,15 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
   const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
+  const hasNarratorAccess = useHasNarratorAccess();
   const [wikiTab, setWikiTab] = useState<"workspace" | "narrator">(
-    narratorState?.isPlaying || (narratorState && narratorState.activeBlockIndex > 0)
-      ? "narrator"
-      : "workspace"
+    hasNarratorAccess && narratorState?.isPlaying ? "narrator" : "workspace"
   );
 
   // Surface the player the moment narration starts or state updates
   useEffect(() => {
-    if (narratorState?.isPlaying) setWikiTab("narrator");
-  }, [narratorState?.isPlaying]);
+    if (hasNarratorAccess && narratorState?.isPlaying) setWikiTab("narrator");
+  }, [hasNarratorAccess, narratorState?.isPlaying]);
 
   // Scan local drafts and paused reading sessions
   useEffect(() => {
@@ -250,7 +250,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       />
 
       {/* Segmented Tab Switcher (Workspace vs Narrator) */}
-      {narratorState && narratorState.totalBlocks > 0 && (
+      {hasNarratorAccess && narratorState && narratorState.totalBlocks > 0 && (
         <div className="bg-accent/15 mb-3 flex w-full rounded-lg p-0.5">
           <button
             type="button"
@@ -292,8 +292,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         </div>
       )}
 
-      {/* Tab 1: Narrator Player Focus */}
-      {wikiTab === "narrator" && (
+      {/* Tab 1: Narrator Player Focus (Restricted) */}
+      {hasNarratorAccess && wikiTab === "narrator" && (
         <WikiNarratorPlayer
           visibleToc={visibleToc}
           activeSectionId={activeSectionId}
@@ -306,7 +306,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       )}
 
       {/* Tab 2: Workspace View */}
-      {wikiTab === "workspace" && (
+      {(!hasNarratorAccess || wikiTab === "workspace") && (
         <WikiWorkspaceTab
           articleTitle={articleTitle}
           isMainPage={isMainPage}

@@ -5,9 +5,10 @@
 "use client";
 
 import React from "react";
-import { Headphones, BookOpen, X } from "lucide-react";
+import { Headphones, BookOpen, X, ShieldAlert } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { WikiNarratorPlayer } from "../components";
 import type { DIViewProps } from "~/components/halo/types";
 
@@ -28,6 +29,7 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 }
 
 export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProps) {
+  const hasNarratorAccess = useHasNarratorAccess();
   const {
     articleTitle,
     tocEntries,
@@ -39,6 +41,41 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
 
   const accentColor = themeColors?.primary || "#3b82f6";
   const visibleToc = React.useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
+
+  if (!hasNarratorAccess) {
+    return (
+      <div className="flex flex-col gap-3 p-4 select-none w-full animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-amber-400" />
+            <span className="text-xs font-bold text-foreground">Early Access Feature</span>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          WikiOS Audio Narrator is currently restricted to system owners, administrators, and beta testers.
+        </p>
+        {onSwitchMode && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onSwitchMode("plugin:wiki")}
+            className="w-full text-xs font-semibold gap-1.5 rounded-lg border-border/50"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Go to Wiki Workspace
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   const displayPercent =
     narratorState && narratorState.totalBlocks > 0

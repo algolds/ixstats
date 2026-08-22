@@ -102,7 +102,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               size="sm"
               disabled={disabled}
               className={cn(
-                "h-8 w-8 cursor-pointer p-0 text-purple-400 transition-colors hover:bg-slate-500/5 hover:text-purple-600 dark:text-purple-400 dark:hover:bg-white/5 dark:hover:text-purple-300",
+                "text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 cursor-pointer rounded-xl p-0 transition-colors",
                 disabled && "cursor-not-allowed opacity-50"
               )}
             >
@@ -112,28 +112,28 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="glass-hierarchy-child w-80 overflow-hidden border-green-500/20 bg-neutral-900/90 p-0 shadow-xl backdrop-blur-xl"
+          className="border-border bg-popover/98 text-popover-foreground z-[200000] w-80 overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl"
         >
           {/* Search */}
-          <div className="relative border-b border-white/10 p-2">
+          <div className="border-border/60 relative border-b p-2">
             <Search className="text-muted-foreground absolute top-4 left-4 h-3.5 w-3.5" />
             <Input
               placeholder="Search GIPHY..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 border-white/10 bg-white/5 pl-8 text-xs focus:bg-white/10"
+              className="border-input bg-secondary text-foreground h-8 pl-8 text-xs focus:bg-secondary/80"
             />
           </div>
 
           {/* GIFs Grid View Area */}
-          <div className="h-72 scrollbar-thin scrollbar-thumb-white/10 overflow-y-auto p-2">
+          <div className="thin-scrollbar h-72 overflow-y-auto p-2">
             {isLoading && gifs.length === 0 ? (
               <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 text-xs">
-                <Loader2 className="h-5 w-5 animate-spin text-green-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
                 <span>Searching GIPHY...</span>
               </div>
             ) : error ? (
-              <div className="flex h-full flex-col items-center justify-center p-4 text-center text-xs text-red-400">
+              <div className="flex h-full flex-col items-center justify-center p-4 text-center text-xs text-rose-500">
                 {error}
               </div>
             ) : gifs.length > 0 ? (
@@ -143,7 +143,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                     key={gif.id}
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="group relative aspect-video overflow-hidden rounded-md border border-transparent hover:border-green-400/50"
+                    className="border-border/40 hover:border-emerald-500/50 group relative aspect-video overflow-hidden rounded-lg border transition-all hover:scale-[1.02]"
                   >
                     <img
                       src={gif.images.fixed_height.url}

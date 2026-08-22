@@ -1,6 +1,8 @@
-/* ==========================================
-   NAVIGATION BACKGROUND TRANSPARENCY & OVERLAP
-   ========================================== */
+:root {
+  --nav-height-desktop: 64px;
+  --nav-height-mobile: 56px;
+  --nav-height-compact: 48px;
+}
 
 /* Make the navigation bar fixed by default so it sits cleanly on top of page backgrounds */
 .navigation-bar {
@@ -14,22 +16,21 @@
 
 /* Offset the main element's content by the height of the fixed navigation bar */
 main {
-  padding-top: 56px; /* standard mobile navigation height */
+  padding-top: var(--nav-height-mobile); /* standard mobile navigation height */
 }
 
 @media (min-width: 1024px) {
   main {
-    padding-top: 64px; /* standard desktop navigation height */
+    padding-top: var(--nav-height-desktop); /* standard desktop navigation height */
   }
 }
 
 /* Support compact mode */
 body.compact-mode main {
-  padding-top: 48px;
+  padding-top: var(--nav-height-compact);
 }
 
-/* Dedicated canvas / map pages have zero padding at the top */
-body:has([data-builder-headless]) main,
+/* Dedicated maps canvas pages have zero padding at the top */
 body:has([data-maps-page]) main {
   padding-top: 0 !important;
 }
@@ -57,7 +58,6 @@ body.compact-mode .extend-under-nav {
   top: -48px;
 }
 
-body:has([data-builder-headless]) .extend-under-nav,
 body:has([data-maps-page]) .extend-under-nav {
   top: 0 !important;
 }

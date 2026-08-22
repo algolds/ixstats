@@ -137,29 +137,41 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
 
-  // Scroll spy to highlight active section
+  // Scroll spy with RAF throttling to highlight active section efficiently
   useEffect(() => {
     const ids = visibleEntries.map((e) => e.id);
     if (ids.length === 0) return;
 
+    let rafId: number | undefined;
+    let isTicking = false;
+
     function tick() {
-      let current: string | null = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) {
-            current = id;
+      if (!isTicking) {
+        isTicking = true;
+        rafId = requestAnimationFrame(() => {
+          let current: string | null = null;
+          for (const id of ids) {
+            const el = document.getElementById(id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= 120) {
+                current = id;
+              }
+            }
           }
-        }
+          setActiveId(current);
+          isTicking = false;
+        });
       }
-      setActiveId(current);
     }
 
     window.addEventListener("scroll", tick, { passive: true });
     tick();
 
-    return () => window.removeEventListener("scroll", tick);
+    return () => {
+      window.removeEventListener("scroll", tick);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [visibleEntries]);
 
   if (isCollapsed) return null;

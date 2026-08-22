@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useIxMedia } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
 import { withBasePath } from "~/lib/base-path";
@@ -84,6 +85,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   } = useWikiContext() as any;
 
   const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMedia();
+  const hasNarratorAccess = useHasNarratorAccess();
 
   const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);
   const [activeIdx, setActiveIdx] = useState<number>(-1);
@@ -289,7 +291,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   // Re-build text blocks when article DOM renders
   const rebuildBlocks = useCallback(() => {
-    if (!articleRef.current) return;
+    if (!hasNarratorAccess || !articleRef.current) return;
     const container = articleRef.current;
 
     // Find all headings, paragraphs, and list items
@@ -376,17 +378,31 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       voice,
       volume: volumeRef.current,
     });
-  }, [articleRef, articleTitle, setNarratorState, speed, voice]);
+  }, [articleRef, articleTitle, setNarratorState, speed, voice, hasNarratorAccess]);
 
   // Sync blocks on articleTitle load
   useEffect(() => {
+    if (!hasNarratorAccess) {
+      setBlocks([]);
+      setActiveIdx(-1);
+      setNarratorState({
+        isPlaying: false,
+        totalBlocks: 0,
+        activeBlockIndex: 0,
+        activeText: "",
+        activeSectionTitle: "",
+      });
+      return undefined;
+    }
+
     if (articleTitle) {
       // short delay to let article content mount completely
       const timer = setTimeout(rebuildBlocks, 500);
       return () => clearTimeout(timer);
     }
-    return;
-  }, [articleTitle, rebuildBlocks]);
+
+    return undefined;
+  }, [articleTitle, rebuildBlocks, hasNarratorAccess, setNarratorState]);
 
   // Clean highlighting
   const clearHighlight = useCallback(() => {
@@ -654,7 +670,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   // Narrator Control Actions with intelligent dynamic recovery
   const play = useCallback(() => {
-    if (isPlaying) return;
+    if (!hasNarratorAccess || isPlaying) return;
     setIsPlaying(true);
     let targetIdx = activeIdxRef.current;
     if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
@@ -809,6 +825,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   // Register action hooks in global WikiContext
   useEffect(() => {
+    if (!hasNarratorAccess) {
+      registerNarratorActions(null);
+      return undefined;
+    }
     registerNarratorActions({
       play,
       pause,
@@ -829,6 +849,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     });
     return () => registerNarratorActions(null);
   }, [
+    hasNarratorAccess,
     registerNarratorActions,
     play,
     pause,

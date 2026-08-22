@@ -120,15 +120,20 @@ async function handleTts(request: NextRequest) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    // Determine if admin (to allow config overrides in test calls)
-    let isAdmin = isSystemOwner(userId);
-    if (!isAdmin) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      if (["admin", "owner", "staff"].includes(role)) {
-        isAdmin = true;
-      }
-    }
-    if (!isAdmin) {
+    // Determine authorization: System Owners, Admins/Staff, Beta Testers
+    const isOwner = isSystemOwner(userId);
+    const clerkRole =
+      (session.sessionClaims?.metadata as any)?.role ||
+      (session.sessionClaims?.publicMetadata as any)?.role;
+    const allowedAdminRoles = ["admin", "owner", "staff"];
+    const allowedBetaRoles = ["beta_tester", "beta-tester", "beta"];
+
+    let isAdmin = isOwner || (typeof clerkRole === "string" && allowedAdminRoles.includes(clerkRole));
+    let hasAccess =
+      isAdmin ||
+      (typeof clerkRole === "string" && allowedBetaRoles.includes(clerkRole));
+
+    if (!hasAccess || !isAdmin) {
       const dbUser = await db.user.findUnique({
         where: { clerkUserId: userId },
         include: { role: true },
@@ -136,10 +141,23 @@ async function handleTts(request: NextRequest) {
       if (dbUser) {
         const roleName = dbUser.role?.name || "";
         const roleLevel = dbUser.role?.level ?? 999;
-        if (["owner", "admin", "staff"].includes(roleName) || roleLevel <= 20) {
+        if (allowedAdminRoles.includes(roleName) || roleLevel <= 20) {
           isAdmin = true;
+          hasAccess = true;
+        } else if (allowedBetaRoles.includes(roleName) || roleLevel === 90) {
+          hasAccess = true;
         }
       }
+    }
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        {
+          error:
+            "Narrator feature is currently restricted to system owners, administrators, and beta testers.",
+        },
+        { status: 403 }
+      );
     }
 
     // Read config from DB

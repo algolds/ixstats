@@ -215,19 +215,16 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
 export interface NavigationBarProps {
   visibleNavItems: NavigationItem[];
   isCurrentPage: (href: string) => boolean;
-  morphProgress: number;
   messageUnreadCount: number;
 }
 
 /**
  * Desktop navigation bar: splits visible nav items into balanced left/right
- * groups around the dynamic island and renders them with morph-progress driven
- * transforms. Extracted from navigation.tsx.
+ * groups around the dynamic island.
  */
 export function NavigationBar({
   visibleNavItems,
   isCurrentPage,
-  morphProgress,
   messageUnreadCount,
 }: NavigationBarProps) {
   // Intelligent balancing: ensure visual symmetry around dynamic island
@@ -238,16 +235,8 @@ export function NavigationBar({
 
   return (
     <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
-      {/* Left Side Navigation — morphs toward center */}
-      <div
-        className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3"
-        style={{
-          transform: `translateX(${morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
-          opacity: 1 - morphProgress,
-          pointerEvents: morphProgress > 0.8 ? "none" : "auto",
-          transition: "transform 0.05s linear, opacity 0.05s linear",
-        }}
-      >
+      {/* Left Side Navigation */}
+      <div className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3">
         <NavigationMenu>
           <NavigationMenuList className="flex items-center gap-2">
             {leftNavItems.map((item) => (
@@ -263,16 +252,8 @@ export function NavigationBar({
         </NavigationMenu>
       </div>
 
-      {/* Right Side Navigation — morphs toward center */}
-      <div
-        className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3"
-        style={{
-          transform: `translateX(${-morphProgress * 30}%) scale(${1 - morphProgress * 0.3})`,
-          opacity: 1 - morphProgress,
-          pointerEvents: morphProgress > 0.8 ? "none" : "auto",
-          transition: "transform 0.05s linear, opacity 0.05s linear",
-        }}
-      >
+      {/* Right Side Navigation */}
+      <div className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3">
         <NavigationMenu>
           <NavigationMenuList className="flex items-center gap-2">
             {rightNavItems.map((item) => (
