@@ -273,7 +273,6 @@ model User {
   editedArticles      WikiArticle[]            @relation("WikiArticleEditor")
   authoredRevisions   WikiRevision[]           @relation("WikiRevisionAuthor")
   uploadedAssets      WikiAsset[]              @relation("WikiAssetUploader")
-  stashes             Stash[]
 
   @@index([clerkUserId])
   @@index([countryId])
