@@ -1,4 +1,4 @@
-import { forumBridge as activeForumBridge } from "../../../server/bridges/forum-bridge";
+import { forumBridge as activeForumBridge } from "../../../server/modules/forum";
 import { forumBridge as moduleForumBridge } from "../../../server/modules/forum/services/forum-bridge";
 
 // Mock XenForo client calls

@@ -5,7 +5,7 @@ import { messagesParticipantsRouter } from "../../../../server/api/routers/messa
 import { createInnerTRPCContext } from "../../../../server/api/trpc";
 import { createMockDb } from "../../../helpers/transactional-mock-db";
 import { wikiTalkBridge } from "../../../../server/bridges/wiki-talk-bridge";
-import { forumBridge } from "../../../../server/bridges/forum-bridge";
+import { forumBridge } from "../../../../server/modules/forum";
 
 jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
   wikiTalkBridge: {
@@ -18,7 +18,7 @@ jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
   },
 }));
 
-jest.mock("~/server/bridges/forum-bridge", () => ({
+jest.mock("~/server/modules/forum", () => ({
   forumBridge: {
     syncInbound: jest.fn().mockResolvedValue({
       conversationsCreated: 0,
@@ -28,6 +28,7 @@ jest.mock("~/server/bridges/forum-bridge", () => ({
     sendOutbound: jest.fn().mockResolvedValue({ success: true }),
   },
 }));
+
 
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: {
