@@ -36,6 +36,7 @@
   /* Typography */
   --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --wikios-font-ui: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
   --wikios-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
 }
 

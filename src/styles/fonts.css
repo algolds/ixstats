@@ -161,3 +161,80 @@
   font-style: italic;
   font-display: swap;
 }
+
+/* ===================================
+   HOST GROTESK FONT FAMILY (WikiOS)
+   =================================== */
+
+/* Variable font definition if available */
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk[wght].woff2") format("woff2-variations"),
+    url("/fonts/HostGrotesk/HostGrotesk[wght].ttf") format("truetype-variations"),
+    url("/fonts/HostGrotesk/HostGrotesk-Regular.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-Regular.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-Regular.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk-Italic[wght].woff2") format("woff2-variations"),
+    url("/fonts/HostGrotesk/HostGrotesk-Italic[wght].ttf") format("truetype-variations"),
+    url("/fonts/HostGrotesk/HostGrotesk-Italic.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-Italic.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-Italic.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Static fallback definitions */
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk-Light.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-Light.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk-Medium.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-Medium.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk-SemiBold.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-SemiBold.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Host Grotesk";
+  src:
+    url("/fonts/HostGrotesk/HostGrotesk-Bold.woff2") format("woff2"),
+    url("/fonts/HostGrotesk/HostGrotesk-Bold.ttf") format("truetype"),
+    url("/fonts/HostGrotesk/HostGrotesk-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
