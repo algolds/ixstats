@@ -53,9 +53,9 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
     const failed: string[] = [];
 
     // Load WikiBridge for auto-detecting wiki articles
-    let wikiBridge: typeof import("~/lib/wiki/bridge") | null = null;
+    let wikiBridge: typeof import("~/lib/wiki-os/adapters/mediawiki/bridge") | null = null;
     try {
-      wikiBridge = await import("~/lib/wiki/bridge");
+      wikiBridge = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
     } catch {
       /* wiki bridge unavailable */
     }

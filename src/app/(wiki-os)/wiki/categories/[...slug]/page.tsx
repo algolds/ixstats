@@ -97,14 +97,25 @@ export default function CategoryPage() {
     return countryResults.find((c) => c.name?.toLowerCase() === category.toLowerCase()) ?? null;
   }, [countryResults, category]);
 
-  const subcategories = subcatData?.members ?? [];
-  const pages = pageData?.members ?? [];
+  const subcategories = useMemo(() => {
+    return (subcatData?.members ?? []).map((m) => ({
+      title: m.title,
+      ns: ("ns" in m ? (m as { ns: number }).ns : 14) as number,
+    }));
+  }, [subcatData]);
+
+  const pages = useMemo(() => {
+    return (pageData?.members ?? []).map((m) => ({
+      title: m.title,
+      ns: ("ns" in m ? (m as { ns: number }).ns : 0) as number,
+    }));
+  }, [pageData]);
   const domainMeta = DOMAIN_MAP[category] ?? null;
 
   return (
     <WikiOSLayout title={matchedCountry ? undefined : `Category:${category}`}>
       {isLoading ? (
-        <div className="wikios-loading" style={{ minHeight: 200 }}>
+        <div className="wikios-loading min-h-[200px]">
           <div className="wikios-loading-spinner" />
         </div>
       ) : matchedCountry ? (

@@ -47,7 +47,25 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { activeSectionId, tocEntries } = useWikiContext();
+  const {
+    activeSectionId,
+    tocEntries,
+    narratorState,
+    narratorActions,
+    themeColors,
+  } = useWikiContext();
+
+  const isNarratorActive = !!(
+    narratorState &&
+    narratorState.totalBlocks > 0 &&
+    (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
+
+  const narratorProgressPercent = isNarratorActive
+    ? ((narratorState.activeBlockIndex + 1) / narratorState.totalBlocks) * 100
+    : 0;
+
+  const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "#3b82f6";
 
   const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
   const activeSectionName = activeSectionId
@@ -270,18 +288,14 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 ${
-                            activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
-                          }`}
+                          className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 transition-all duration-300 hover:bg-white/10 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </div>
                       ) : (
                         <div
-                          className={`flex items-center gap-1.5 px-1.5 transition-all duration-300 ${
-                            activeSectionName ? "max-w-[280px]" : "max-w-[220px]"
-                          }`}
+                          className="flex items-center gap-1.5 px-1.5 transition-all duration-300 max-w-[160px] sm:max-w-[200px] min-w-0 overflow-hidden"
                         >
                           {pluginCenter}
                         </div>
@@ -310,143 +324,175 @@ function CompactViewComponent({
               </AnimatePresence>
             )}
 
-            {/* ── Action buttons (Search + Bell + Settings) ───────── */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  data-cuelume-hover="tick"
-                  onClick={() => {
-                    soundEffects.scan();
-                    onSwitchMode("search");
-                  }}
-                  className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
-                    isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                  }`}
-                >
-                  <Search
-                    className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Search</TooltipContent>
-            </Tooltip>
-
-            {isLoaded && isSignedIn && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    data-cuelume-hover="chime"
-                    onClick={() => {
-                      soundEffects.bloom();
-                      onSwitchMode("notifications");
-                    }}
-                    className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
-                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                    }`}
-                  >
-                    <Bell
-                      className={cn(
-                        "transition-transform hover:scale-110",
-                        totalUnreadCount > 0
-                          ? "text-amber-400 dark:text-amber-300"
-                          : "text-muted-foreground hover:text-foreground",
-                        isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
-                      )}
-                    />
-                    <AnimatePresence>
-                      {totalUnreadCount > 0 && (
-                        <motion.div
-                          key={`total-${totalUnreadCount}`}
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-[10px] font-bold text-white shadow-lg ${
-                            isSticky
-                              ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
-                              : "-top-1 -right-1 h-3 w-3 p-0"
-                          }`}
-                        >
-                          {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {totalUnreadCount > 0
-                    ? `Alert Center (${totalUnreadCount} unread)`
-                    : "Alert Center"}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  data-cuelume-hover="tick"
-                  onClick={() => {
-                    soundEffects.bloom();
-                    onSwitchMode("settings");
-                  }}
-                  className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
-                    isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                  }`}
-                >
-                  <Settings
-                    className={`transition-transform hover:scale-110 hover:rotate-45 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Settings</TooltipContent>
-            </Tooltip>
-
-            {/* Plugin-injected action buttons */}
-            {pluginActions?.map((action) => {
-              const ActionIcon = action.icon;
-              return (
-                <Tooltip key={action.id}>
+            {/* ── Right-Side Action Icons Group with Optional Narrator Progress Underneath ── */}
+            <div className="flex flex-col items-center justify-center relative shrink-0">
+              <div className="flex items-center gap-0.5">
+                <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={action.onClick}
-                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                      data-cuelume-hover="tick"
+                      onClick={() => {
+                        soundEffects.scan();
+                        onSwitchMode("search");
+                      }}
+                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
-                      <ActionIcon
+                      <Search
                         className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
                       />
-                      {action.badge != null && action.badge > 0 && (
-                        <span
-                          className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
-                            isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
-                          }`}
-                        >
-                          {action.badge > 9 ? "9+" : action.badge}
-                        </span>
-                      )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">{action.label}</TooltipContent>
+                  <TooltipContent side="bottom">Search</TooltipContent>
                 </Tooltip>
-              );
-            })}
 
-            {/* Plugin badge dot */}
-            {pluginBadge && (
-              <div
-                className={`h-1.5 w-1.5 rounded-full ${pluginBadge.pulse ? "animate-pulse" : ""}`}
-                style={{ backgroundColor: pluginBadge.color }}
-              />
-            )}
+                {isLoaded && isSignedIn && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        data-cuelume-hover="chime"
+                        onClick={() => {
+                          soundEffects.bloom();
+                          onSwitchMode("notifications");
+                        }}
+                        className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                          isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                        }`}
+                      >
+                        <Bell
+                          className={cn(
+                            "transition-transform hover:scale-110",
+                            totalUnreadCount > 0
+                              ? "text-amber-400 dark:text-amber-300"
+                              : "text-muted-foreground hover:text-foreground",
+                            isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
+                          )}
+                        />
+                        <AnimatePresence>
+                          {totalUnreadCount > 0 && (
+                            <motion.div
+                              key={`total-${totalUnreadCount}`}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                              className={`absolute flex items-center justify-center rounded-full border-0 bg-amber-500 text-[10px] font-bold text-white shadow-lg ${
+                                isSticky
+                                  ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
+                                  : "-top-1 -right-1 h-3 w-3 p-0"
+                              }`}
+                            >
+                              {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {totalUnreadCount > 0
+                        ? `Alert Center (${totalUnreadCount} unread)`
+                        : "Alert Center"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      data-cuelume-hover="tick"
+                      onClick={() => {
+                        soundEffects.bloom();
+                        onSwitchMode("settings");
+                      }}
+                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
+                        isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                      }`}
+                    >
+                      <Settings
+                        className={`transition-transform hover:scale-110 hover:rotate-45 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Settings</TooltipContent>
+                </Tooltip>
+
+                {/* Plugin-injected action buttons */}
+                {pluginActions?.map((action) => {
+                  const ActionIcon = action.icon;
+                  return (
+                    <Tooltip key={action.id}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={action.onClick}
+                          className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
+                            isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                          }`}
+                        >
+                          <ActionIcon
+                            className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                          />
+                          {action.badge != null && action.badge > 0 && (
+                            <span
+                              className={`absolute flex items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white ${
+                                isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
+                              }`}
+                            >
+                              {action.badge > 9 ? "9+" : action.badge}
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">{action.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+
+                {/* Plugin badge dot */}
+                {pluginBadge && (
+                  <div
+                    className={`h-1.5 w-1.5 rounded-full ${pluginBadge.pulse ? "animate-pulse" : ""}`}
+                    style={{ backgroundColor: pluginBadge.color }}
+                  />
+                )}
+              </div>
+
+              {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
+              {isNarratorActive && narratorActions && (
+                <div
+                  className="group/narrator-progress relative w-full h-[2.5px] rounded-full bg-foreground/15 dark:bg-white/15 overflow-hidden cursor-pointer mt-0.5 flex items-center transition-all hover:h-[3.5px]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const pct = Math.max(0, Math.min(1, clickX / rect.width));
+                    const targetBlock = Math.min(
+                      narratorState.totalBlocks - 1,
+                      Math.max(0, Math.round(pct * (narratorState.totalBlocks - 1)))
+                    );
+                    narratorActions.jumpToBlock(targetBlock);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-150"
+                    style={{
+                      width: `${narratorProgressPercent}%`,
+                      backgroundColor: narratorAccent,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </DynamicContainer>
         </div>
       </div>

@@ -69,12 +69,14 @@ export function runTypecheck(
     logStream = fs.createWriteStream(resolvedLogPath, { flags: "w" });
   }
 
-  const tscArgs = ["-p", projectPath, "--noEmit", ...extraArgs];
-  const tscBin = path.resolve(process.cwd(), "node_modules/.bin/tsc");
-  const command = fs.existsSync(tscBin) ? tscBin : "tsc";
+  const tscPath = path.resolve(process.cwd(), "node_modules/typescript/bin/tsc");
+  const command = fs.existsSync(tscPath) ? "node" : "tsc";
+  const tscArgs = fs.existsSync(tscPath)
+    ? [tscPath, "-p", projectPath, "--noEmit", ...extraArgs]
+    : ["-p", projectPath, "--noEmit", ...extraArgs];
 
   const child = spawn(command, tscArgs, {
-    stdio: ["inherit", "pipe", "pipe"],
+    stdio: ["ignore", "pipe", "pipe"],
     env: process.env,
   });
 

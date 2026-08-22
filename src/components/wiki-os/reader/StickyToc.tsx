@@ -1,13 +1,15 @@
 // src/components/wiki-os/reader/StickyToc.tsx
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Search, X, ChevronUp, ChevronDown } from "lucide-react";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import { cn } from "~/lib/utils";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 interface StickyTocProps {
   entries: TocEntry[];
   contentRef: React.RefObject<HTMLElement | null>;
+  isCollapsed?: boolean;
 }
 
 function highlightText(element: HTMLElement, query: string) {
@@ -51,7 +53,7 @@ function highlightText(element: HTMLElement, query: string) {
   }
 }
 
-export function StickyToc({ entries, contentRef }: StickyTocProps) {
+export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTocProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,12 +90,10 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
     const container = contentRef.current;
     if (!container) return;
 
-    // Save original HTML before applying highlight modifications
     if (searchQuery && !originalHtml.current) {
       originalHtml.current = container.innerHTML;
     }
 
-    // Restore clean state first
     if (originalHtml.current) {
       container.innerHTML = originalHtml.current;
     }
@@ -104,10 +104,8 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
       return;
     }
 
-    // Run text highlight
     highlightText(container, searchQuery.trim());
 
-    // Count highlight elements
     const matches = container.querySelectorAll(".wikios-search-match");
     setMatchCount(matches.length);
     setCurrentMatchIndex(matches.length > 0 ? 0 : -1);
@@ -119,50 +117,58 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
     if (!container) return;
 
     const matches = container.querySelectorAll(".wikios-search-match");
-
-    // Remove active highlight from all matches
-    matches.forEach((el) => el.classList.remove("wikios-search-match--active"));
-
-    // Add active class and scroll current element
-    if (currentMatchIndex >= 0 && currentMatchIndex < matches.length) {
-      const activeEl = matches[currentMatchIndex];
-      activeEl.classList.add("wikios-search-match--active");
-      activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    matches.forEach((m, idx) => {
+      if (idx === currentMatchIndex) {
+        m.classList.add("wikios-search-match-active");
+        m.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        m.classList.remove("wikios-search-match-active");
+      }
+    });
   }, [currentMatchIndex, contentRef]);
 
   const handleNext = () => {
     if (matchCount <= 0) return;
-    setCurrentMatchIndex((prev) => (prev + 1) % matchCount);
+    setCurrentMatchIndex((prev: number) => (prev + 1) % matchCount);
   };
 
   const handlePrev = () => {
     if (matchCount <= 0) return;
-    setCurrentMatchIndex((prev) => (prev - 1 + matchCount) % matchCount);
+    setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
 
-  // Scroll spy — vanilla DOM, runs once after mount
+  // Scroll spy to highlight active section
   useEffect(() => {
+    const ids = visibleEntries.map((e) => e.id);
+    if (ids.length === 0) return;
+
     function tick() {
-      const ids = entries.map((e) => e.id);
       let current: string | null = null;
       for (const id of ids) {
         const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= 100) {
-          current = id;
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 120) {
+            current = id;
+          }
         }
       }
       setActiveId(current);
     }
 
     window.addEventListener("scroll", tick, { passive: true });
-    return () => window.removeEventListener("scroll", tick);
-  }, [entries]);
+    tick();
 
-  if (entries.length <= 3) return null;
+    return () => window.removeEventListener("scroll", tick);
+  }, [visibleEntries]);
+
+  if (isCollapsed) return null;
 
   return (
-    <nav className="wikios-sticky-toc">
+    <nav
+      className="wikios-sticky-toc transition-all duration-300 ease-out select-none"
+      aria-label="Table of contents"
+    >
       <div className="wikios-sticky-toc-header">
         {showSearch ? (
           <div className="wikios-sticky-toc-search-container">
@@ -171,7 +177,7 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Find..."
+                placeholder="Find in page..."
                 className="wikios-sticky-toc-search-input"
                 autoFocus
                 onKeyDown={(e) => {
@@ -237,7 +243,7 @@ export function StickyToc({ entries, contentRef }: StickyTocProps) {
         )}
       </div>
       <div className="wikios-sticky-toc-list">
-        {visibleEntries.map((item) => (
+        {visibleEntries.map((item: TocEntry) => (
           <a
             key={item.id}
             href={`#${item.id}`}

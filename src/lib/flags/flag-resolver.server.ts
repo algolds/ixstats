@@ -9,8 +9,8 @@ import type {
   PersistentFlagCacheAdapter,
 } from "./contracts";
 import { normalizeCountryName, normalizeFlagUrl, getFlagCandidateFileTitles } from "./normalization";
-import { fetchMediaWikiImageBatch } from "~/lib/wiki/bridge";
-import { getMediaWikiApiUrl } from "~/lib/wiki/config";
+import { fetchMediaWikiImageBatch } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { withBasePath } from "~/lib/base-path";
 
 interface CacheEntry {

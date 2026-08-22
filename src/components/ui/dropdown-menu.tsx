@@ -217,6 +217,8 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
   );
 }
 
+const DropdownMenuLabel = DropdownMenuGroupLabel;
+
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -229,6 +231,7 @@ export {
   DropdownMenuSubContent,
   DropdownMenuGroup,
   DropdownMenuGroupLabel,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,

@@ -2,7 +2,7 @@
 // Unit tests for WikiOS fast search and wikitext summary extractor.
 
 import { describe, it, expect } from "@jest/globals";
-import { extractIntroFromWikitext } from "~/lib/wiki-os/search-service";
+import { extractIntroFromWikitext } from "~/lib/wiki-os/core/native-search-service";
 
 describe("WikiOS Search & Summary Service", () => {
   it("extracts clean introductory prose from complex wikitext", () => {

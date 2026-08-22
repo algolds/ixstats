@@ -7,7 +7,7 @@ import {
   saveDraft,
   getDraft,
   clearDraft,
-} from "~/lib/wiki-os/draft-store";
+} from "~/lib/wiki-os/editor/draft-store";
 
 const WikiVisualEditor = dynamic(
   () => import("~/components/wiki-os/editor/WikiVisualEditor").then((m) => m.WikiVisualEditor),
@@ -145,7 +145,7 @@ export function WikiEditBridge({
           basetimestamp: editorHtml?.timestamp ?? undefined,
         });
 
-        if (result.editConflict) {
+        if ((result as { editConflict?: boolean }).editConflict) {
           setEditConflict(true);
           return;
         }
@@ -183,7 +183,7 @@ export function WikiEditBridge({
           basetimestamp: wikitextData?.timestamp ?? undefined,
         });
 
-        if (result.editConflict) {
+        if ((result as { editConflict?: boolean }).editConflict) {
           setEditConflict(true);
           return;
         }

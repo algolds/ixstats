@@ -10,7 +10,7 @@
 
 import { memo, useState } from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import {
   BookOpen,
   ChevronDown,
@@ -213,14 +213,12 @@ export const WikiArchivesPanel = memo(function WikiArchivesPanel({
         <p className="text-muted-foreground/70 mt-1 text-xs">
           This country doesn&apos;t have a linked IxWiki article yet.
         </p>
-        <a
-          href="https://ixwiki.com"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href={titleToWikiOSPath(countryName)}
           className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
         >
-          Create one on IxWiki <ExternalLink className="h-3 w-3" />
-        </a>
+          Create article in WikiOS <ExternalLink className="h-3 w-3" />
+        </Link>
       </div>
     );
   }

@@ -24,8 +24,8 @@ import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
-import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 function formatTimestamp(date: Date | string): string {

@@ -1,14 +1,28 @@
 // src/components/wiki-os/shared/WikiOSArticleToolbarWidget.tsx
-// Page tools card with quick access to editing, talk pages, history, and stashing.
+// Page tools card with quick access to editing, talk pages, history, stashing, and media theme switching (Auto, Plinth, Raw).
 
 "use client";
 
 import Link from "next/link";
-import { FileEdit, MessageSquare, Clock, Link2 } from "lucide-react";
+import {
+  FileEdit,
+  MessageSquare,
+  Clock,
+  Link2,
+  SunMoon,
+  Square,
+  Eye,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { StashButton } from "~/components/wiki-os/reader/StashButton";
+import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import {
+  type MediaThemeMode,
+  MEDIA_THEME_OPTIONS,
+} from "~/lib/wiki-os/transformers/media-theme";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -20,7 +34,7 @@ interface WikiOSArticleToolbarWidgetProps {
   title: string;
   slug: string;
   isSignedIn: boolean;
-  setActiveModal: (modal: "history" | "backlinks" | null) => void;
+  setActiveModal: (modal: "history" | "backlinks" | "margin" | null) => void;
 }
 
 export function WikiOSArticleToolbarWidget({
@@ -30,6 +44,21 @@ export function WikiOSArticleToolbarWidget({
   setActiveModal,
 }: WikiOSArticleToolbarWidgetProps) {
   const { isCollapsed } = useSidebar();
+  const { isMarginOpen, toggleMargin } = useWikiContext();
+  const { mediaThemeMode, setMediaThemeMode, cycleMediaThemeMode } = useWikiMediaTheme();
+
+  const getModeIcon = (mode: string) => {
+    switch (mode) {
+      case "auto":
+        return <SunMoon className="h-3 w-3 text-sky-400" />;
+      case "plinth":
+        return <Square className="h-3 w-3 text-emerald-400" />;
+      case "raw":
+        return <Eye className="h-3 w-3 text-zinc-400" />;
+      default:
+        return <SunMoon className="h-3 w-3 text-sky-400" />;
+    }
+  };
 
   if (isCollapsed) {
     return (
@@ -45,14 +74,30 @@ export function WikiOSArticleToolbarWidget({
           </Link>
         )}
 
-        {/* Talk */}
-        <Link
-          href={withBasePath(`/wiki/${slug}/talk`)}
-          className="rail-glow-purple rail-animate-wiggle flex h-10 w-10 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/5 text-purple-400 shadow-md transition-all hover:scale-105 hover:bg-purple-500/15 active:scale-95"
-          title="Discussion (Talk)"
+        {/* Margin */}
+        <button
+          type="button"
+          onClick={() => toggleMargin()}
+          className={cn(
+            "rail-glow-purple rail-animate-wiggle flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer",
+            isMarginOpen
+              ? "border-purple-500 bg-purple-500/25 text-purple-300 ring-2 ring-purple-500/40 shadow-purple-500/20"
+              : "border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15"
+          )}
+          title={isMarginOpen ? "Hide Margin (T)" : "Show Margin (Threads, Markup) [T]"}
         >
           <MessageSquare className="h-4.5 w-4.5" />
-        </Link>
+        </button>
+
+        {/* Media Theme Quick Cycle */}
+        <button
+          type="button"
+          onClick={cycleMediaThemeMode}
+          className="rail-glow-teal flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/5 text-teal-400 shadow-md transition-all hover:scale-105 hover:bg-teal-500/15 active:scale-95 cursor-pointer"
+          title={`Media Theme: ${mediaThemeMode} (Click to cycle Auto / Plinth / Raw)`}
+        >
+          {getModeIcon(mediaThemeMode)}
+        </button>
 
         {/* Stash */}
         <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
@@ -91,14 +136,25 @@ export function WikiOSArticleToolbarWidget({
           </Link>
         )}
 
-        {/* Talk */}
-        <Link
-          href={withBasePath(`/wiki/${slug}/talk`)}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all hover:bg-white/5"
+        {/* Margin */}
+        <button
+          type="button"
+          onClick={() => toggleMargin()}
+          className={cn(
+            "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold transition-all cursor-pointer",
+            isMarginOpen
+              ? "bg-purple-500/20 text-purple-300 font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+          )}
         >
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-purple-400" />
-          <span>Discussion (Talk)</span>
-        </Link>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+            <span>{isMarginOpen ? "Hide Margin" : "Show Margin"}</span>
+          </div>
+          <kbd className="text-[9px] font-mono text-slate-400 px-1 py-0.2 rounded bg-white/5 border border-white/10">
+            T
+          </kbd>
+        </button>
 
         {/* History */}
         <button
@@ -120,8 +176,37 @@ export function WikiOSArticleToolbarWidget({
           <span>What Links Here</span>
         </button>
 
+        {/* Media Theme Mode Segmented Selector: Auto | Plinth */}
+        <div className="mt-2 pt-2 border-t border-white/5 space-y-1.5">
+          <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase px-1 flex items-center justify-between">
+            <span>Media Theme</span>
+            <span className="text-[9px] font-semibold text-sky-400 capitalize">{mediaThemeMode}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1 p-0.5 rounded-lg bg-black/20 dark:bg-black/30 border border-white/5">
+            {MEDIA_THEME_OPTIONS.map((opt) => {
+              const isSelected = mediaThemeMode === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setMediaThemeMode(opt.value)}
+                  className={`flex flex-col items-center justify-center py-1 px-1 rounded-md text-[9.5px] font-semibold transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-blue-500/20 text-blue-300 shadow-sm border border-blue-500/30"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+                  }`}
+                  title={`${opt.label}: ${opt.description}`}
+                >
+                  {getModeIcon(opt.value)}
+                  <span className="mt-0.5 scale-90">{opt.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Stash Button */}
-        <div className="mt-1 border-t border-white/5 px-1 pt-2">
+        <div className="mt-2 border-t border-white/5 px-1 pt-2">
           <StashButton title={title} isAuthenticated={isSignedIn} />
         </div>
       </CutoutCardContent>

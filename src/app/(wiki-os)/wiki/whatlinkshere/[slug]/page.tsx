@@ -29,7 +29,7 @@ export default function WhatLinksHerePage() {
         </p>
 
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 200 }}>
+          <div className="wikios-loading min-h-[200px]">
             <div className="wikios-loading-spinner" />
           </div>
         )}

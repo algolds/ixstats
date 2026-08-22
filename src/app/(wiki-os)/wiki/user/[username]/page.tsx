@@ -26,7 +26,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 
 export default function UserProfilePage() {
   const params = useParams<{ username: string }>();

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { lookupWikiUser, linkWikiAccount } from "~/lib/wiki/user-sync";
+import { lookupWikiUser, linkWikiAccount } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { linkDiscordAccount } from "~/lib/discord/user-sync";
 import { linkForumAccount } from "~/server/modules/forum";
 
@@ -28,8 +28,11 @@ export const ixnayidRouter = createTRPCRouter({
         discordUserId: true,
         discordUsername: true,
         lastDiscordSync: true,
+        country: { select: { name: true } },
       },
     });
+
+    const activeWikiName = user?.wikiUsername || user?.country?.name || null;
 
     return {
       forum: {
@@ -38,8 +41,9 @@ export const ixnayidRouter = createTRPCRouter({
         lastSync: user?.lastForumSync ?? null,
       },
       wiki: {
-        linked: !!user?.wikiUsername,
-        username: user?.wikiUsername ?? null,
+        linked: !!activeWikiName,
+        username: activeWikiName,
+        isCustomClaimed: !!user?.wikiUsername,
         lastSync: user?.lastWikiSync ?? null,
       },
       discord: {

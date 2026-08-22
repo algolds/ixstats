@@ -1,7 +1,9 @@
 // src/app/api/mediawiki/route.ts
 import { type NextRequest, NextResponse } from "next/server";
-import { MEDIAWIKI_CONFIG, buildApiUrl } from "~/lib/wiki/config";
-import { ixnayWiki } from "~/lib/wiki/legacy-service";
+import { MEDIAWIKI_CONFIG, buildApiUrl } from "~/lib/wiki-os/config";
+import { getArticleWikitext, getInfobox } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
+import { invalidateCache } from "~/lib/cache";
 
 // Use values from the shared configuration
 const RATE_LIMIT_WINDOW = MEDIAWIKI_CONFIG.rateLimit.windowMs; // 1 minute
@@ -89,8 +91,7 @@ async function handleMediaWikiRequest(
     try {
       console.log(`[MediaWiki API] Getting complete infobox for: ${pageName}`);
 
-      // Use the enhanced MediaWiki service to get complete infobox
-      const infobox = await ixnayWiki.getCountryInfobox(pageName);
+      const infobox = await getInfobox(pageName, "ixwiki");
 
       if (!infobox) {
         return NextResponse.json(
@@ -104,39 +105,15 @@ async function handleMediaWikiRequest(
         );
       }
 
-      // Return the rendered HTML from the complete template parsing
-      const htmlContent = infobox.renderedHtml;
-
-      if (!htmlContent) {
-        return NextResponse.json(
-          {
-            error: "No rendered content",
-            message: `Infobox found but could not render HTML for ${pageName}`,
-            page: pageName,
-            hasRawWikitext: !!infobox.rawWikitext,
-            hasParsedData: !!infobox.parsedTemplateData,
-            parsedDataKeys: infobox.parsedTemplateData
-              ? Object.keys(infobox.parsedTemplateData).length
-              : 0,
-            timestamp: new Date().toISOString(),
-          },
-          { status: 400 }
-        );
-      }
-
       return NextResponse.json(
         {
-          html: htmlContent,
+          fields: infobox.fields,
+          templateName: infobox.templateName,
           meta: {
             page: pageName,
             extractionSuccessful: true,
-            extractedLength: htmlContent.length,
-            hasRawWikitext: !!infobox.rawWikitext,
-            rawWikitextLength: infobox.rawWikitext?.length || 0,
-            hasParsedData: !!infobox.parsedTemplateData,
-            parsedDataKeys: infobox.parsedTemplateData
-              ? Object.keys(infobox.parsedTemplateData).length
-              : 0,
+            hasParsedData: !!infobox.fields,
+            parsedDataKeys: infobox.fields ? infobox.fields.length : 0,
             timestamp: new Date().toISOString(),
             extractionMethod: "complete_template_parsing",
           },
@@ -151,25 +128,15 @@ async function handleMediaWikiRequest(
         }
       );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      console.error(`[MediaWiki API] Error getting complete infobox for ${pageName}:`, error);
-
+      console.error(`[MediaWiki API] Error getting infobox for ${pageName}:`, error);
       return NextResponse.json(
         {
-          error: "Exception during enhanced content parsing",
-          message: errorMessage,
+          error: "Failed to parse infobox",
+          message: error instanceof Error ? error.message : "Unknown error",
           page: pageName,
           timestamp: new Date().toISOString(),
-          type: error instanceof Error ? error.name : "UnknownError",
         },
-        {
-          status: 500,
-          headers: {
-            "X-RateLimit-Limit": RATE_LIMIT_MAX_REQUESTS.toString(),
-            "X-RateLimit-Remaining": rateLimit.remaining.toString(),
-            "X-RateLimit-Reset": rateLimit.resetTime.toString(),
-          },
-        }
+        { status: 500 }
       );
     }
   }
@@ -182,15 +149,13 @@ async function handleMediaWikiRequest(
     }
 
     try {
-      const wikitext = await ixnayWiki.getPageWikitext(pageName);
+      const res = await getArticleWikitext(pageName, "ixwiki");
+      const wikitext = res?.wikitext ?? null;
 
       if (!wikitext || typeof wikitext !== "string") {
         return NextResponse.json(
           {
-            error:
-              wikitext && typeof wikitext === "object" && (wikitext as any).error
-                ? (wikitext as any).error
-                : "Failed to get page wikitext",
+            error: "Failed to get page wikitext",
             page: pageName,
             timestamp: new Date().toISOString(),
           },
@@ -433,7 +398,7 @@ export async function DELETE(request: Request) {
     }
 
     // Clear cache for the specific country
-    ixnayWiki.clearCountryCache(countryName);
+    invalidateCache([`wiki:${countryName}`]);
 
     console.log(
       `[MediaWiki API] Cache cleared for country: ${countryName} - will use enhanced template and wikilink processing`

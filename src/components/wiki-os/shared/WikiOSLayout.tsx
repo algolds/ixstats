@@ -28,7 +28,7 @@ import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
 
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 export function WikiOSLayout({
   title,

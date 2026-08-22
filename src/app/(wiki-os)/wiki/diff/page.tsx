@@ -87,30 +87,20 @@ export default function DiffPage() {
             </div>
 
             {/* Undo action bar */}
-            <div style={{ display: "flex", gap: 8, margin: "12px 0" }}>
+            <div className="my-3 flex items-center gap-2">
               {!undoConfirm ? (
                 <button
-                  className="wikios-action-btn"
-                  style={{
-                    background: "rgba(251,191,36,0.12)",
-                    borderColor: "rgba(251,191,36,0.3)",
-                    color: "#fbbf24",
-                    fontSize: "0.8125rem",
-                  }}
+                  type="button"
+                  className="wikios-action-btn border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 active:scale-95"
                   onClick={() => setUndoConfirm(true)}
                 >
                   Undo this change (revert to r{data.from.revid})
                 </button>
               ) : (
-                <>
+                <div className="flex items-center gap-2">
                   <button
-                    className="wikios-action-btn"
-                    style={{
-                      background: "rgba(239,68,68,0.15)",
-                      borderColor: "rgba(239,68,68,0.3)",
-                      color: "#f87171",
-                      fontSize: "0.8125rem",
-                    }}
+                    type="button"
+                    className="wikios-action-btn border-red-500/30 bg-red-500/15 text-xs font-semibold text-red-400 hover:bg-red-500/25 active:scale-95 disabled:opacity-50"
                     disabled={revertMutation.isPending || !revContent}
                     onClick={() => {
                       if (revContent) {
@@ -125,43 +115,23 @@ export default function DiffPage() {
                     {revertMutation.isPending ? "Reverting..." : "Confirm Undo"}
                   </button>
                   <button
-                    className="wikios-action-btn"
-                    style={{ fontSize: "0.8125rem" }}
+                    type="button"
+                    className="wikios-action-btn text-xs active:scale-95"
                     onClick={() => setUndoConfirm(false)}
                   >
                     Cancel
                   </button>
-                </>
+                </div>
               )}
             </div>
 
             {revertMutation.isSuccess && (
-              <div
-                style={{
-                  marginBottom: 12,
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  background: "rgba(34,197,94,0.08)",
-                  border: "1px solid rgba(34,197,94,0.3)",
-                  color: "#4ade80",
-                  fontSize: "0.875rem",
-                }}
-              >
+              <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
                 Successfully reverted to revision r{data.from.revid}.
               </div>
             )}
             {revertMutation.isError && (
-              <div
-                style={{
-                  marginBottom: 12,
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.3)",
-                  color: "#f87171",
-                  fontSize: "0.875rem",
-                }}
-              >
+              <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400">
                 Revert failed: {revertMutation.error.message}
               </div>
             )}

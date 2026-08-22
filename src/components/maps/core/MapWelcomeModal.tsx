@@ -25,6 +25,7 @@ import {
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
+import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 
 const STORAGE_KEY = "ixworld-welcome-seen";
 
@@ -355,7 +356,7 @@ export function MapWelcomeModal({
                       }
                     >
                       <a
-                        href="https://ixwiki.com"
+                        href={DEFAULT_MEDIAWIKI_URL}
                         target="_blank"
                         rel="noopener"
                         className="text-muted-foreground hover:text-foreground cursor-help underline decoration-dotted"

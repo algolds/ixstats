@@ -7,7 +7,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { ChevronDown, ChevronRight, FileText, FilePlus, Filter } from "lucide-react";
 
 // ---------------------------------------------------------------------------

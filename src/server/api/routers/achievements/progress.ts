@@ -4,7 +4,7 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
-import { getWikiDbPool } from "~/lib/wiki/bridge";
+import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsProgressRouter = createTRPCRouter({

@@ -2,8 +2,8 @@
 // API endpoint to preview article quality and estimated rarity
 
 import { NextResponse } from "next/server";
-import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki/config";
+import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

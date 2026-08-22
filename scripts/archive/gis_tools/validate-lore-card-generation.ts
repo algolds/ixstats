@@ -18,8 +18,8 @@ process.env.SKIP_ENV_VALIDATION = "1";
 process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5433/ixstats";
 
-import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
-import { LORE_CATEGORIES } from "~/lib/lorewards";
+import { wikiLoreCardGenerator } from "../../../src/lib/cards/lore-card-generator";
+import { LORE_CATEGORIES } from "../../../src/lib/lorewards";
 import { CardRarity } from "@prisma/client";
 
 const VALID_CATEGORIES = Object.values(LORE_CATEGORIES);
@@ -158,7 +158,7 @@ function validateCandidate(candidate: Record<string, unknown>): {
   }
 
   // 9. Category
-  if (!candidate.category || !VALID_CATEGORIES.includes(candidate.category as string)) {
+  if (!candidate.category || !(VALID_CATEGORIES as string[]).includes(candidate.category as string)) {
     errors.push(`Invalid category: ${String(candidate.category)}`);
   }
 

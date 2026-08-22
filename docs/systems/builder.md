@@ -56,7 +56,7 @@ graph LR
 
 ## Key Optimizations & Stability Guardrails
 
-- **Wiki API Compliance**: All MediaWiki infobox imports strictly use the centralized user-agent `IxStats-Builder` (`src/lib/wiki/config.ts`). Never make ad-hoc fetch calls.
+- **Wiki API Compliance**: All MediaWiki infobox imports strictly use the centralized user-agent `IxStats-Builder` (`src/lib/wiki-os/config.ts`). Never make ad-hoc fetch calls.
 - **Persistent Wiki Cache**: Parsed infoboxes are cached in Redis / database for 24 hours to prevent upstream MediaWiki rate limiting.
 - **Draft Autosaving**: `builderDraftRouter` automatically syncs step state so browser refreshes do not lose configuration.
 - **Archetype Context**: Selecting a government or economic archetype dynamically populates context-aware defaults for subsequent steps.

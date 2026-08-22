@@ -6,7 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
 export interface ScheduleMatch {
   id: string;

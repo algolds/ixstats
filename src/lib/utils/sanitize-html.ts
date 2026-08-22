@@ -13,11 +13,11 @@ import * as DOMPurifyModule from "dompurify";
 const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
 
 // Register hook to block data: URIs in src/href attributes
-if (typeof window !== "undefined") {
-  DOMPurify.addHook("uponSanitizeAttribute", (node, event) => {
+if (typeof window !== "undefined" && typeof (DOMPurify as any)?.addHook === "function") {
+  (DOMPurify as any).addHook("uponSanitizeAttribute", (_node: any, event: any) => {
     if (
       (event.attrName === "src" || event.attrName === "href") &&
-      event.attrValue.trim().toLowerCase().startsWith("data:")
+      event.attrValue?.trim().toLowerCase().startsWith("data:")
     ) {
       event.attrValue = "";
     }
@@ -27,12 +27,13 @@ if (typeof window !== "undefined") {
 // Type definition for the sanitize function
 type SanitizeFunc = (html: string, config?: any) => string;
 
-// Client-side DOMPurify instance
-// Note: This should only be used in client components or after hydration
 const getPurify = (): { sanitize: SanitizeFunc } => {
-  if (typeof window === "undefined") {
-    // Server-side: pass through HTML as-is (will be sanitized on client hydration)
-    // This prevents SSR from escaping all HTML tags, breaking links and formatting
+  if (
+    typeof window === "undefined" ||
+    !DOMPurify ||
+    typeof (DOMPurify as any).sanitize !== "function"
+  ) {
+    // Server-side / test runner: pass through HTML as-is (sanitized on client hydration)
     return {
       sanitize: (html: string, _config?: any) => html,
     };

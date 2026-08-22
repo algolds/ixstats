@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
   saveDraft,
   getDraft,
@@ -5,11 +6,30 @@ import {
   hasDraft,
   listDrafts,
   type WikiEditorDraft,
-} from "../../../lib/wiki-os/draft-store";
+} from "../../../lib/wiki-os/editor/draft-store";
+
+// Mock localStorage for non-browser test runner
+const storageMap = new Map<string, string>();
+const localStorageMock = {
+  getItem: (key: string) => storageMap.get(key) ?? null,
+  setItem: (key: string, value: string) => storageMap.set(key, value),
+  removeItem: (key: string) => storageMap.delete(key),
+  clear: () => storageMap.clear(),
+  key: (index: number) => Array.from(storageMap.keys())[index] ?? null,
+  get length() {
+    return storageMap.size;
+  },
+};
+
+if (typeof globalThis.window === "undefined") {
+  (globalThis as any).window = { localStorage: localStorageMock };
+} else if (!globalThis.window.localStorage) {
+  (globalThis.window as any).localStorage = localStorageMock;
+}
 
 describe("draft-store", () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    globalThis.window.localStorage.clear();
   });
 
   it("saves and retrieves a visual editor draft in canonical format", () => {

@@ -10,30 +10,65 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId } from "~/lib/wiki-os/auth";
 
 import { db } from "~/server/db";
-import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";
+import { saveToMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
-  /** Add a text-selection annotation to a stashed page. */
+  /** Add a text-selection annotation to a stashed page (or directly by pageTitle). */
   addAnnotation: protectedProcedure
     .input(
       z.object({
-        itemId: z.string(),
-        anchorSelector: z.string().max(500),
-        anchorOffset: z.number(),
-        focusSelector: z.string().max(500),
-        focusOffset: z.number(),
+        itemId: z.string().optional(),
+        pageTitle: z.string().min(1).max(500).optional(),
+        anchorSelector: z.string().max(500).default("p"),
+        anchorOffset: z.number().default(0),
+        focusSelector: z.string().max(500).default("p"),
+        focusOffset: z.number().default(0),
         selectedText: z.string().max(2000),
         comment: z.string().max(5000).optional(),
         color: z.string().max(20).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const item = await db.stashItem.findUnique({
-        where: { id: input.itemId },
-        include: { stash: true },
+      const userId = requireWikiUserId(ctx);
+      let targetItemId = input.itemId;
+
+      if (!targetItemId) {
+        if (!input.pageTitle) throw new Error("Either itemId or pageTitle is required");
+        let defaultStash = await db.stash.findFirst({
+          where: { userId, isDefault: true },
+        });
+        if (!defaultStash) {
+          defaultStash = await db.stash.create({
+            data: { userId, name: "My Stash", color: "#3b82f6", isDefault: true },
+          });
+        }
+        const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
+        const item = await db.stashItem.upsert({
+          where: { stashId_pageTitle: { stashId: defaultStash.id, pageTitle: input.pageTitle } },
+          create: { stashId: defaultStash.id, pageTitle: input.pageTitle, pageSlug },
+          update: {},
+        });
+        targetItemId = item.id;
+      } else {
+        const item = await db.stashItem.findUnique({
+          where: { id: targetItemId },
+          include: { stash: true },
+        });
+        if (!item || item.stash.userId !== userId) throw new Error("Item not found");
+      }
+
+      return db.stashAnnotation.create({
+        data: {
+          itemId: targetItemId,
+          anchorSelector: input.anchorSelector,
+          anchorOffset: input.anchorOffset,
+          focusSelector: input.focusSelector,
+          focusOffset: input.focusOffset,
+          selectedText: input.selectedText,
+          comment: input.comment || null,
+          color: input.color || "#fbbf24",
+        },
       });
-      if (!item || item.stash.userId !== requireWikiUserId(ctx)) throw new Error("Item not found");
-      return db.stashAnnotation.create({ data: input });
     }),
 
   /** Update an annotation's comment or color. */

@@ -11,13 +11,15 @@ import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { useLinkPreviews } from "~/components/wiki-os/reader/LinkPreview";
 import { withBasePath } from "~/lib/base-path";
-import type { ArticleMode } from "~/lib/wiki/types";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import type { ArticleMode } from "~/lib/wiki-os/types";
 
 export default function WikiOSArticlePage() {
   const params = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const utils = api.useUtils();
+  const { setActiveModal } = useWikiContext();
   const articleRef = useRef<HTMLDivElement>(null);
 
   const slug = params.slug;
@@ -26,6 +28,7 @@ export default function WikiOSArticlePage() {
 
   // Check URL search param for edit mode (e.g. ?action=edit)
   const isEditAction = searchParams.get("action") === "edit";
+  const isMarginParam = searchParams.get("margin");
   const [mode, setMode] = useState<ArticleMode>(isEditAction ? "source" : "reading");
 
   // Sync mode with URL
@@ -34,6 +37,14 @@ export default function WikiOSArticlePage() {
       setMode("source");
     }
   }, [isEditAction, mode]);
+
+  // Sync margin param with WikiContext
+  useEffect(() => {
+    if (isMarginParam) {
+      setActiveModal("margin");
+    }
+  }, [isMarginParam, setActiveModal]);
+
 
   // Redirect Category: pages to the category browser
   useEffect(() => {
@@ -155,6 +166,27 @@ export default function WikiOSArticlePage() {
                 toc={data.toc}
                 categories={data.categories}
                 lastModified={data.lastModified ?? null}
+                authorInfo={
+                  data.authorInfo
+                    ? {
+                        creator:
+                          "creator" in data.authorInfo
+                            ? data.authorInfo.creator ?? null
+                            : (data.authorInfo as { author?: string | null }).author ?? null,
+                        createdAt:
+                          "createdAt" in data.authorInfo
+                            ? data.authorInfo.createdAt ?? null
+                            : (data.authorInfo as { createdTimestamp?: string | null })
+                                .createdTimestamp ?? null,
+                        lastEditor: data.authorInfo.lastEditor ?? null,
+                        lastEditedAt:
+                          "lastEditedAt" in data.authorInfo
+                            ? data.authorInfo.lastEditedAt ?? null
+                            : (data.authorInfo as { lastModifiedTimestamp?: string | null })
+                                .lastModifiedTimestamp ?? null,
+                      }
+                    : null
+                }
               />
             )}
           </>

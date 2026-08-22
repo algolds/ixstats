@@ -20,7 +20,7 @@ import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 const TRENDING_LIMIT = 5;
 

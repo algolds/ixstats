@@ -142,7 +142,7 @@ function CommandPaletteContent({
       } else if (expandedMode === "notifications") {
         newSize = diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
-        newSize = SIZE_PRESETS.MEDIUM; // 371px wide
+        newSize = diSizeState.size === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
         newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
       } else if (expandedMode.startsWith("plugin:")) {

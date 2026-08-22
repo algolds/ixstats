@@ -18,62 +18,184 @@ model WikiCache {
   @@index([countryName])
 }
 
-/// Postgres shadow of MediaWiki article wikitext — groundwork for the source-of-truth
-/// migration (see plans/WIKIOS.md → MediaWiki Independence Path, Stage 2).
-/// Populated read-through on article load (lib/wiki-os/article-store.ts). MediaWiki MySQL
-/// stays authoritative; this lets WikiOS keep serving content if MediaWiki is unavailable.
+/// Authoritative primary article entity in PostgreSQL (WikiOS Native Engine).
 model WikiArticle {
-  id           String   @id @default(cuid())
-  source       String   @default("ixwiki") // ixwiki | iiwiki | althistory
-  title        String                       // normalized DB title (spaces → underscores)
-  wikitext     String
-  revisionId   Int?                          // MW rev_id this content was synced from
-  revTimestamp String?                       // MW rev_timestamp of revisionId
-  htmlContent  String?                       // pre-rendered transformed HTML cache (Phase 8)
-  htmlSyncedAt DateTime?                     // timestamp when HTML was last rendered
-  syncedAt     DateTime @default(now())      // last pull from MediaWiki
-  updatedAt    DateTime @updatedAt
+  id                  String               @id @default(cuid())
+  slug                String               @default("")
+  title               String               // Display title e.g. "Treaty of Oakhaven"
+  source              String               @default("ixwiki") // ixwiki | iiwiki | althistory
+  status              String               @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED | PROTECTED
+  format              String               @default("STRUCTURED_JSON") // STRUCTURED_JSON | MARKDOWN | WIKITEXT | HTML
+  
+  // Dual-Layer Content Storage
+  contentJson         Json?                // Structured Block AST (for 0ms Canvas startup)
+  contentHtml         String?              @db.Text // Pre-compiled HTML (for <2ms reads)
+  htmlContent         String?              @db.Text // Legacy pre-rendered transformed HTML cache
+  wikitext            String               @db.Text // Canonical wikitext representation
+  summary             String?              @db.VarChar(500)
+  
+  // Structured Metadata & Infobox
+  infoboxData         Json?                // Structured key-value infobox properties
+  readingTime         Int                  @default(1)
+  wordCount           Int                  @default(0)
+  viewCount           Int                  @default(0)
+  leadImageUrl        String?
+  redirectTargetSlug  String?              // URL alias target if this article is a redirect
+  
+  // Author Attribution
+  authorId            String?
+  author              User?                @relation("WikiArticleAuthor", fields: [authorId], references: [id])
+  lastEditorId        String?
+  lastEditor          User?                @relation("WikiArticleEditor", fields: [lastEditorId], references: [id])
+  
+  // Versioning & Lineage
+  currentRevId        String?
+  revisionId          Int?                 // MW rev_id this content was synced from
+  revTimestamp        String?              // MW rev_timestamp of revisionId
+  htmlSyncedAt        DateTime?            // timestamp when HTML was last rendered
+  syncedAt            DateTime             @default(now()) // last pull from MediaWiki
+  mwPageId            Int?                 // Legacy MediaWiki page_id
+  mwLatestRevId       Int?                 // Legacy MediaWiki rev_id
+  lastMwSyncAt        DateTime?
+  
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  revisions    WikiRevision[]
+  revisions           WikiRevision[]       @relation("ArticleRevisions")
+  categories          WikiCategoryMember[] @relation("ArticleCategoryMembers")
+  outgoingLinks       WikiLink[]           @relation("SourceArticleLinks")
+  incomingLinks       WikiLink[]           @relation("TargetArticleLinks")
+  stashItems          StashItem[]          @relation("ArticleStashItems")
+  awards              WikiArticleAward[]   @relation("ArticleAwards")
 
   @@unique([source, title])
-  @@index([source])
+  @@index([source, slug])
+  @@index([source, status])
+  @@index([slug])
+  @@index([authorId])
   @@map("wiki_articles")
 }
 
-/// Append-only local revision history for WikiOS articles (Stage 2b).
-/// Written through on save (WikiOS-originated edits) and by the recentchanges
-/// sync job (edits made directly on MediaWiki). MediaWiki still owns the canonical
-/// revid (mwRevId); this mirrors it so history/diff survive MediaWiki downtime.
+/// Append-only revision ledger for WikiOS articles.
 model WikiRevision {
-  id        String      @id @default(cuid())
-  articleId String
-  article   WikiArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  mwRevId   Int?                          // MediaWiki rev_id (null if MW edit returned none)
-  wikitext  String
-  author    String?
-  summary   String?
-  minor     Boolean     @default(false)
-  source    String      @default("ixwiki") // ixwiki | iiwiki | althistory
-  createdAt DateTime    @default(now())
+  id               String       @id @default(cuid())
+  articleId        String
+  article          WikiArticle  @relation("ArticleRevisions", fields: [articleId], references: [id], onDelete: Cascade)
+  mwRevId          Int?         // MediaWiki rev_id (null if native WikiOS edit)
+  format           String       @default("STRUCTURED_JSON")
+  contentJson      Json?
+  contentHtml      String?      @db.Text
+  wikitext         String       @db.Text
+  author           String?
+  authorId         String?
+  authorUser       User?        @relation("WikiRevisionAuthor", fields: [authorId], references: [id])
+  summary          String?
+  minor            Boolean      @default(false)
+  source           String       @default("ixwiki") // ixwiki | iiwiki | althistory
+  parentRevisionId String?
+  createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
   @@index([source, mwRevId])
+  @@index([authorId])
   @@map("wiki_revisions")
 }
 
-/// Wiki template registry — cached TemplateData schemas from MediaWiki.
+/// Native Directed Link Graph Edge
+model WikiLink {
+  id              String       @id @default(cuid())
+  sourceArticleId String
+  sourceArticle   WikiArticle  @relation("SourceArticleLinks", fields: [sourceArticleId], references: [id], onDelete: Cascade)
+  
+  targetSlug      String       // Normalized target slug e.g. "treaty_of_oakhaven"
+  targetArticleId String?      // NULL = Red Link (Broken citation)
+  targetArticle   WikiArticle? @relation("TargetArticleLinks", fields: [targetArticleId], references: [id], onDelete: SetNull)
+  
+  anchorText      String?      // Label displayed on the link
+  sectionAnchor   String?      // #Heading anchor
+  isExternal      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  @@unique([sourceArticleId, targetSlug, sectionAnchor])
+  @@index([targetSlug])
+  @@index([targetArticleId])
+  @@index([sourceArticleId])
+  @@map("wiki_links")
+}
+
+/// Native Category Tree (DAG)
+model WikiCategory {
+  id          String               @id @default(cuid())
+  slug        String               @unique
+  name        String
+  description String?              @db.Text
+  parentId    String?
+  parent      WikiCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    WikiCategory[]       @relation("CategoryHierarchy")
+  members     WikiCategoryMember[] @relation("CategoryMembers")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+  @@map("wiki_categories")
+}
+
+model WikiCategoryMember {
+  id         String       @id @default(cuid())
+  categoryId String
+  category   WikiCategory @relation("CategoryMembers", fields: [categoryId], references: [id], onDelete: Cascade)
+  articleId  String
+  article    WikiArticle  @relation("ArticleCategoryMembers", fields: [articleId], references: [id], onDelete: Cascade)
+  sortKey    String?
+  createdAt  DateTime     @default(now())
+
+  @@unique([categoryId, articleId])
+  @@index([articleId])
+  @@index([categoryId])
+  @@map("wiki_category_members")
+}
+
+/// Native Media Commons Asset
+model WikiAsset {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  filename     String
+  url          String
+  thumbnailUrl String?
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  blurhash     String?
+  
+  uploaderId   String?
+  uploader     User?    @relation("WikiAssetUploader", fields: [uploaderId], references: [id])
+  md5Hash      String   @unique
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([slug])
+  @@index([mimeType])
+  @@index([uploaderId])
+  @@map("wiki_assets")
+}
+
+/// Wiki template registry — cached TemplateData schemas and scoped styles.
 model WikiTemplate {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  description   String?
-  category      String?  // navigation, infobox, formatting, maintenance, etc.
-  templateData  Json?    // TemplateData JSON schema (params, description, format)
-  paramCount    Int      @default(0)
-  usageCount    Int      @default(0)
-  lastSynced    DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String   @unique
+  description  String?
+  category     String?  // navigation, infobox, formatting, maintenance, etc.
+  templateData Json?    // TemplateData JSON schema (params, description, format)
+  scopedCss    String?  @db.Text
+  paramCount   Int      @default(0)
+  usageCount   Int      @default(0)
+  lastSynced   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([category])
   @@index([name])
@@ -105,8 +227,10 @@ model StashItem {
   stashId     String
   pageTitle   String
   pageSlug    String
+  articleId   String?
+  article     WikiArticle?      @relation("ArticleStashItems", fields: [articleId], references: [id], onDelete: SetNull)
   contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?                                  // XenForo thread_id or post_id for forum items
+  contentId   Int?                               // XenForo thread_id or post_id for forum items
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())
@@ -117,6 +241,7 @@ model StashItem {
   @@unique([stashId, pageTitle])
   @@index([stashId])
   @@index([pageTitle])
+  @@index([articleId])
   @@index([contentType])
   @@map("lore_stash_items")
 }
@@ -268,7 +393,9 @@ model BlurbResponse {
 
 /// A general wiki award or milestone achievement assigned to an article.
 model WikiArticleAward {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
+  articleId      String?
+  article        WikiArticle? @relation("ArticleAwards", fields: [articleId], references: [id], onDelete: SetNull)
   pageTitle      String
   pageSlug       String
   category       String   // FEATURED, COLLABORATION, PEER_REVIEW, SPECIAL, EDITOR_MILESTONE
@@ -280,7 +407,59 @@ model WikiArticleAward {
 
   @@index([pageTitle])
   @@index([pageSlug])
+  @@index([articleId])
   @@index([category])
   @@map("wiki_article_awards")
+}
+
+enum DiscussionStatus {
+  OPEN
+  RESOLVED
+  ARCHIVED
+}
+
+/// A structured discussion thread on a wiki article (WikiOS Margin)
+model WikiDiscussionThread {
+  id            String            @id @default(cuid())
+  articleTitle  String            // Normalized title (e.g. "Treaty_of_Oakhaven")
+  status        DiscussionStatus  @default(OPEN)
+  title         String            @db.VarChar(300)
+  sectionAnchor String?           // Heading anchor ID (e.g. "Territorial_Boundaries")
+  selectedText  String?           // Exact text quote if anchored to highlighted phrase
+  anchorOffset  Int?              // Character offset in block
+  resolvedAt    DateTime?
+  resolvedBy    String?
+  createdBy     String            // Author user ID
+  countryId     String?           // Optional country affiliation
+  teamId        String?           // Optional linked ThinktankGroup ID
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  comments      WikiDiscussionComment[]
+
+  @@index([articleTitle, status])
+  @@index([articleTitle, sectionAnchor])
+  @@index([teamId])
+  @@index([createdBy])
+  @@map("wiki_discussion_threads")
+}
+
+/// A single comment or reply within a wiki discussion thread
+model WikiDiscussionComment {
+  id            String               @id @default(cuid())
+  threadId      String
+  userId        String
+  countryId     String?
+  content       String               @db.Text
+  suggestedEdit String?              // Optional proposed wikitext replacement
+  reactions     Json?                // Reaction counts { "👍": 3, "❤️": 1 }
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  thread        WikiDiscussionThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([userId])
+  @@map("wiki_discussion_comments")
 }
 

@@ -11,8 +11,8 @@ import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
 import type { ScoringWeights } from "~/lib/lorewards";
 import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki/bridge";
-import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/template-registry";
+import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 
 export const adminWikiRouter = createTRPCRouter({
   // Internal calculation formulas management
@@ -770,4 +770,4 @@ export const adminWikiRouter = createTRPCRouter({
     }),
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki/bridge"
+// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

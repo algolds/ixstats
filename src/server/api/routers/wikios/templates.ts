@@ -7,12 +7,12 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { searchTemplates as searchTemplatesDB } from "~/lib/wiki/bridge";
+import { searchTemplates as searchTemplatesDB } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   fetchTemplateData,
   getTemplatePreview as renderTemplatePreview,
   categorizeTemplate,
-} from "~/lib/wiki-os/template-registry";
+} from "~/lib/wiki-os/templates/template-registry";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 

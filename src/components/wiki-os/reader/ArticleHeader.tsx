@@ -10,11 +10,15 @@ import {
   Sparkles,
   Award,
   Calendar,
+  User,
+  PenTool,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
+import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
+import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 
@@ -29,6 +33,16 @@ export type ArticleThemeColors =
       rgbPrimary?: { r: number; g: number; b: number };
     };
 
+export interface ArticleAuthorInfo {
+  creator?: string | null;
+  author?: string | null;
+  createdAt?: string | null;
+  createdTimestamp?: string | null;
+  lastEditor?: string | null;
+  lastEditedAt?: string | null;
+  lastModifiedTimestamp?: string | null;
+}
+
 export interface ArticleHeaderProps {
   title: string;
   lastModified: string | null;
@@ -36,6 +50,7 @@ export interface ArticleHeaderProps {
   countryData?: ActiveCountryData | Record<string, unknown> | null;
   featuredImageUrl?: string | null;
   themeColors?: ArticleThemeColors | null;
+  authorInfo?: ArticleAuthorInfo | null;
   awardsData?: {
     hasAwards: boolean;
     hasLoreward: boolean;
@@ -60,6 +75,7 @@ export function WikiOSHeader({
   countryData,
   featuredImageUrl,
   themeColors,
+  authorInfo,
   awardsData,
   _tocLength,
   _onTocClick,
@@ -224,6 +240,13 @@ export function WikiOSHeader({
     maxHeight: "260px",
   } as React.CSSProperties;
 
+  const { getImageStyle, isDarkTheme } = useWikiMediaTheme();
+  const heroMediaType = useMemo(() => detectMediaType(backdropUrl), [backdropUrl]);
+  const heroMediaStyle = useMemo(
+    () => getImageStyle(backdropUrl || "", heroMediaType),
+    [backdropUrl, heroMediaType, getImageStyle]
+  );
+
   return (
     <div
       ref={cardRef}
@@ -238,11 +261,13 @@ export function WikiOSHeader({
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl select-none"
+          style={heroMediaStyle.backgroundColor ? { backgroundColor: heroMediaStyle.backgroundColor } : undefined}
         >
           <img
             src={backdropUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center saturate-110"
+            className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-all duration-300"
+            style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
             loading="eager"
             referrerPolicy="no-referrer"
           />
@@ -292,18 +317,63 @@ export function WikiOSHeader({
           </div>
 
           {/* Metadata & Awards */}
-          {(lastModified || awardsData?.hasAwards) && (
-            <div className="flex w-full flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-2">
-              <div className="text-muted-foreground flex items-center gap-4 text-[10px]">
-                {lastModified && (
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} className="text-muted-foreground/60" />
-                    Updated: {new Date(lastModified).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
+          {(() => {
+            const creatorName = authorInfo?.creator || authorInfo?.author || null;
+            const lastEditorName = authorInfo?.lastEditor || null;
 
-              <div className="flex items-center gap-2">
+            return (lastModified || awardsData?.hasAwards || creatorName || lastEditorName) && (
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 border-t border-black/10 dark:border-white/5 pt-2.5">
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
+                  {/* Author Attribution (Apple Design Hierarchy) */}
+                  {creatorName && (
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <span className="text-[10px] text-muted-foreground/80 font-normal">Author:</span>
+                      <Link
+                        href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
+                      >
+                        <User size={11} className="text-purple-400 shrink-0" />
+                        <span>{creatorName}</span>
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Most Recent Editor (if different from original author) */}
+                  {lastEditorName &&
+                    creatorName &&
+                    lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <span className="text-muted-foreground/40 select-none">•</span>
+                        <span className="text-[10px] text-muted-foreground/80 font-normal">Updated by:</span>
+                        <Link
+                          href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
+                        >
+                          <PenTool size={10} className="text-purple-400 shrink-0" />
+                          <span>{lastEditorName}</span>
+                        </Link>
+                      </div>
+                    )}
+
+                  {/* Updated Timestamp */}
+                  {lastModified && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground/80 text-[10.5px]">
+                      {(creatorName || lastEditorName) && (
+                        <span className="text-muted-foreground/40 select-none">•</span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} className="text-muted-foreground/60" />
+                        {new Date(lastModified).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
                 {awardsData?.hasAwards && primaryAward && badgeConfig && (
                   <Popover open={showPopover} onOpenChange={setShowPopover}>
                     <PopoverTrigger asChild>
@@ -411,7 +481,8 @@ export function WikiOSHeader({
                 )}
               </div>
             </div>
-          )}
+          );
+        })()}
         </div>
       </div>
 

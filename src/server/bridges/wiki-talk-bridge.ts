@@ -8,12 +8,9 @@
 import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
 
-const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
+import { ixwikiGetNamespacedWikitext, ixwikiRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge/mysql-reader";
 
-// ─── Helpers ─────────────────────────────────────────────────────
-
-/** Fetch recent changes to pages the user has edited (watchlist proxy). */
+/** Fetch recent changes to pages (watchlist proxy). */
 async function getUserWatchlistChanges(
   wikiUsername: string,
   limit = 20
@@ -29,57 +26,21 @@ async function getUserWatchlistChanges(
   }[]
 > {
   try {
-    // Get pages the user has edited, then check recent changes on those pages
-    const params = new URLSearchParams({
-      action: "query",
-      list: "recentchanges",
-      rcnamespace: "0|1", // Main + Talk
-      rclimit: String(limit),
-      rcprop: "title|user|timestamp|comment|sizes|flags",
-      rctype: "edit|new",
-      format: "json",
-    });
-
-    const headers: Record<string, string> = {};
-    if (botToken) headers.Authorization = `Bearer ${botToken}`;
-
-    const res = await fetch(`${apiBase}?${params}`, { headers });
-    if (!res.ok) return [];
-
-    const data = await res.json();
-    const changes = data?.query?.recentchanges ?? [];
-
-    // Filter to changes NOT by this user (notifications about others' edits)
-    return changes.filter((rc: any) => rc.user !== wikiUsername);
+    const changes = await ixwikiRecentChanges(limit);
+    return changes.filter((rc) => rc.user !== wikiUsername);
   } catch {
     return [];
   }
 }
 
-/** Check if user's talk page has new messages. */
+/** Check if user's talk page has new messages via direct MariaDB query. */
 async function getUserTalkPageMessages(
   wikiUsername: string
 ): Promise<{ hasMessages: boolean; content: string | null }> {
   try {
-    const talkTitle = `User_talk:${wikiUsername}`;
-    const params = new URLSearchParams({
-      action: "parse",
-      page: talkTitle,
-      prop: "wikitext",
-      format: "json",
-    });
-
-    const headers: Record<string, string> = {};
-    if (botToken) headers.Authorization = `Bearer ${botToken}`;
-
-    const res = await fetch(`${apiBase}?${params}`, { headers });
-    if (!res.ok) return { hasMessages: false, content: null };
-
-    const data = await res.json();
-    if (data?.error) return { hasMessages: false, content: null };
-
-    const wikitext = data?.parse?.wikitext?.["*"] ?? "";
-    return { hasMessages: wikitext.length > 0, content: wikitext };
+    const res = await ixwikiGetNamespacedWikitext(wikiUsername, 3);
+    if (!res?.wikitext) return { hasMessages: false, content: null };
+    return { hasMessages: res.wikitext.length > 0, content: res.wikitext };
   } catch {
     return { hasMessages: false, content: null };
   }

@@ -7,7 +7,7 @@ import { Rss, Users } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, getActivityLabel } from "./UnifiedFeedItem";
 

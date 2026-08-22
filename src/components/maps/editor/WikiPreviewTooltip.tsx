@@ -10,7 +10,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { createPortal } from "react-dom";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";

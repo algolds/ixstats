@@ -23,7 +23,7 @@ export default function ContributionsPage() {
     <WikiOSLayout title={`Contributions: ${user}`}>
       <div className="wikios-special-page">
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 200 }}>
+          <div className="wikios-loading min-h-[200px]">
             <div className="wikios-loading-spinner" />
           </div>
         )}

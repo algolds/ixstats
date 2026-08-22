@@ -610,11 +610,11 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-item:hover {
   vertical-align: middle;
 }
 
-/* Inline icons (small SVGs like increase/decrease arrows) — keep at declared size */
+/* Inline icons (small SVGs like increase/decrease arrows) */
 .wikios-article-content img[width],
 .wikios-infobox img[width] {
-  width: attr(width px);
   max-width: 100%;
+  height: auto;
 }
 
 /* mw-file-element — the standard MediaWiki image class */
@@ -2497,16 +2497,19 @@ button.wikios-rc-expand-btn:hover {
 }
 
 /* ---------------------------------------------------------------------------
-   Modern Editor (VS Code + Google Docs hybrid)
+   Modern Editor (VS Code + Google Docs hybrid + Apple Design System)
    --------------------------------------------------------------------------- */
 .wikios-editor-modern {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 120px);
+  min-height: 520px;
+  max-height: calc(100vh - 100px);
   border: 1px solid var(--wikios-border);
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
   background: var(--wikios-surface);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 /* Title bar */
@@ -2535,7 +2538,7 @@ button.wikios-rc-expand-btn:hover {
 
 .wikios-editor-titlebar-name,
 .wikios-ve-titlebar-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--wikios-text);
   overflow: hidden;
@@ -2609,7 +2612,6 @@ button.wikios-rc-expand-btn:hover {
   cursor: not-allowed !important;
   transform: none !important;
 }
-
 
 /* Color styling for Apple Circular Action Icons */
 .wikios-editor-btn-cancel {
@@ -2705,7 +2707,6 @@ button.wikios-rc-expand-btn:hover {
 }
 
 /* Save bar (inline, not dropdown) */
-
 .wikios-editor-save-bar {
   display: flex;
   align-items: center;
@@ -2744,65 +2745,96 @@ button.wikios-rc-expand-btn:hover {
 }
 
 /* Formatting toolbar */
-.wikios-editor-format-bar {
+.wikios-editor-format-bar,
+.wikios-ve-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
+  gap: 6px;
+  padding: 6px 14px;
   border-bottom: 1px solid var(--wikios-border);
   background: var(--wikios-surface);
   flex-shrink: 0;
+  min-height: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-.wikios-editor-format-group {
-  display: flex;
+.wikios-editor-format-group,
+.wikios-ve-toolbar-group {
+  display: inline-flex;
   align-items: center;
-  gap: 1px;
-  padding: 2px;
-  border-radius: 6px;
+  gap: 2px;
+  padding: 2px 3px;
+  border-radius: 8px;
   background: rgba(120, 120, 120, 0.05);
   border: 1px solid rgba(120, 120, 120, 0.12);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.01);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
+  height: 32px;
+  box-sizing: border-box;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.wikios-editor-format-group:hover {
+.wikios-editor-format-group:hover,
+.wikios-ve-toolbar-group:hover {
   border-color: rgba(59, 130, 246, 0.25);
   background: rgba(120, 120, 120, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 10px rgba(59, 130, 246, 0.08);
 }
 
-.wikios-editor-format-btn {
-  display: flex;
+.wikios-editor-format-btn,
+.wikios-ve-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
+  min-width: 26px;
   height: 26px;
+  padding: 0 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: var(--wikios-text-muted);
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s, color 0.1s;
+  white-space: nowrap;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s, color 0.1s;
 }
 
-.wikios-editor-format-btn:hover {
-  background: rgba(120, 120, 120, 0.12);
+.wikios-editor-format-btn:hover,
+.wikios-ve-btn:hover {
+  background: rgba(120, 120, 120, 0.14);
   color: var(--wikios-text);
-  transform: scale(1.05);
+  transform: translateY(-1px);
 }
 
-.wikios-editor-format-btn:active {
+.wikios-editor-format-btn:active,
+.wikios-ve-btn:active {
   transform: scale(0.95);
 }
 
-.wikios-editor-format-sep {
-  display: none;
+.wikios-editor-format-select {
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.wikios-editor-format-sep,
+.wikios-ve-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--wikios-border);
+  margin: 0 2px;
+  flex-shrink: 0;
+  display: block;
 }
 
 /* Editor body — holds CodeMirror + optional preview */
 .wikios-editor-body {
   flex: 1;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   display: flex;
 }
@@ -2813,27 +2845,42 @@ button.wikios-rc-expand-btn:hover {
   background: var(--wikios-border);
 }
 
-.wikios-editor-split .wikios-editor-cm-container {
+.wikios-editor-split .wikios-editor-cm-container,
+.wikios-editor-split .wikios-editor-cm {
   flex: 1;
   min-width: 0;
 }
 
 /* CodeMirror container */
-.wikios-editor-cm-container {
+.wikios-editor-cm-container,
+.wikios-editor-cm {
   flex: 1;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   background: var(--wikios-bg);
+  display: flex;
+  flex-direction: column;
 }
 
-.wikios-editor-cm-container .cm-editor {
-  height: 100%;
+.wikios-editor-cm-container .cm-editor,
+.wikios-editor-cm .cm-editor {
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.wikios-editor-cm-container .cm-scroller {
-  overflow: auto;
+.wikios-editor-cm-container .cm-scroller,
+.wikios-editor-cm .cm-scroller {
+  height: 100% !important;
+  overflow: auto !important;
+  flex: 1 !important;
 }
 
-.wikios-editor-cm-container .cm-focused {
+.wikios-editor-cm-container .cm-focused,
+.wikios-editor-cm .cm-focused {
   outline: none;
 }
 

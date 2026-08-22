@@ -81,7 +81,7 @@ export async function resolveCountryFactbook(countryName: string) {
 
 ### Prohibited Pattern:
 > [!CAUTION]
-> **No Ad-Hoc Calls**: NEVER write manual `fetch()` requests or hardcode inline MediaWiki API URLs / User-Agents in frontend UI components, hooks, or non-wiki router files. All access must use `src/lib/wiki/bridge.ts` with the canonical `IxStats-Builder` User-Agent.
+> **No Ad-Hoc Calls**: NEVER write manual `fetch()` requests or hardcode inline MediaWiki API URLs / User-Agents in frontend UI components, hooks, or non-wiki router files. All access must use `src/lib/wiki-os/adapters/mediawiki/bridge/` with the canonical `IxStats-Builder` User-Agent.
 
 ---
 

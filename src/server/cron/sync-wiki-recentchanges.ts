@@ -10,8 +10,8 @@
  * per run. Best-effort — every step swallows errors so it can never crash the
  * server cron loop.
  */
-import { getRecentChanges, getArticleWikitext, getCurrentRevMeta } from "~/lib/wiki-os/bridge";
-import { recordArticleRevision, hasRevision } from "~/lib/wiki-os/article-store";
+import { getRecentChanges, getArticleWikitext, getCurrentRevMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { recordArticleRevision, hasRevision } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 export interface RecentChangesSyncResult {
   changesSeen: number;

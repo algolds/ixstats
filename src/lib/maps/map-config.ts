@@ -13,6 +13,7 @@ import {
   CLIMATE_COLORS,
   type IxWorldClimate,
 } from "~/lib/worldgen/climate-system";
+import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
@@ -732,7 +733,7 @@ export interface WorldMapConfig {
 const IXWORLD_DEFAULTS: WorldMapConfig = {
   worldId: "default",
   name: "IxWorld",
-  wikiBaseUrl: "https://ixwiki.com",
+  wikiBaseUrl: DEFAULT_MEDIAWIKI_URL,
   wikiApiPath: "/api.php",
   mapProjection: "dynamic",
   defaultCenter: MAP_DEFAULTS.center,

@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 export { parseWikitextToHtml };
 
@@ -16,15 +16,24 @@ export function InlineWikiArticlePreview({
   title: string;
   wiki?: "ixwiki" | "iiwiki";
 }) {
+  const cleanTitle = useMemo(() => {
+    try {
+      return decodeURIComponent(title).replace(/_/g, " ").trim();
+    } catch {
+      return title.replace(/_/g, " ").trim();
+    }
+  }, [title]);
+
   const { data: intro } = api.wikios.getIntro.useQuery(
-    { title, wiki },
-    { enabled: !!title, staleTime: 30 * 60_000 }
+    { title: cleanTitle, wiki },
+    { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 
   const formattedHtml = useMemo(() => {
-    if (!intro?.text) return "";
-    return parseWikitextToHtml(intro.text, wiki);
-  }, [intro?.text, wiki]);
+    const raw = intro?.text || intro?.intro || "";
+    if (!raw) return "";
+    return parseWikitextToHtml(raw, wiki);
+  }, [intro?.text, intro?.intro, wiki]);
 
   if (!formattedHtml) return null;
 

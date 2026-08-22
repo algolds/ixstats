@@ -1,0 +1,127 @@
+/* ===========================================================================
+   WikiOS Media Theme & Image Inversion System
+   Dynamic & theme-compliant image/media switcher for dark/light mode.
+   Supports Auto (Adaptive Hue-Safe Invert), Plinth (Frosted Plate), and Raw.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. Base Image Transitions & Smooth Filter Mechanics
+   --------------------------------------------------------------------------- */
+.wikios-article-content img,
+.wikios-infobox img,
+.wikios-lightbox-image,
+.thumbinner img,
+figure img {
+  transition:
+    filter 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-radius 180ms ease,
+    padding 180ms ease;
+  will-change: filter;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Dark Mode Automatic & Adaptive Inversion Rules
+   --------------------------------------------------------------------------- */
+
+/* Global Plinth Mode (applied when root has data-media-theme="plinth" in Dark Mode) */
+:root:not([data-theme="light"])[data-media-theme="plinth"] .wikios-article-content img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .wikios-infobox img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]),
+:root:not([data-theme="light"])[data-media-theme="plinth"] .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="invert"]):not([data-media-filter="auto"]) {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+}
+
+/* Global Auto / Adaptive Invert Mode (applied when root does not have data-media-theme="plinth" in Dark Mode) */
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*=".svg"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*=".svg.png"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-article-content img[src*="/Special:FilePath/"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .wikios-infobox img[src*=".svg"]:not([data-media-filter="raw"]):not([data-media-filter="plinth"]):not([data-media-filter="plate"]):not([data-media-filter="original"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="plinth"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="plinth"]) {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+}
+
+/* Specific pure monochrome invert for LaTeX / Math formulas in Auto mode */
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-fallback-image-inline:not([data-media-filter="raw"]):not([data-media-filter="plinth"]),
+:root:not([data-theme="light"]):not([data-media-theme="plinth"]) .mwe-math-element img:not([data-media-filter="raw"]):not([data-media-filter="plinth"]) {
+  filter: brightness(0) invert(1) brightness(0.95);
+}
+
+/* When in Light Mode, all SVGs / Math render normally without inversion */
+[data-theme="light"] .wikios-article-content img,
+[data-theme="light"] .wikios-infobox img,
+[data-theme="light"] .mwe-math-fallback-image-inline,
+[data-theme="light"] .mwe-math-element img {
+  filter: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   3. Explicit Filter Overrides (Auto, Plinth, Raw)
+   --------------------------------------------------------------------------- */
+
+/* Forced Invert / Auto */
+:root:not([data-theme="light"]) img[data-media-filter="invert"],
+:root:not([data-theme="light"]) img[data-media-filter="auto"] {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02) !important;
+}
+
+/* Frosted Light Plinth / Backplate (Dark Mode) */
+:root:not([data-theme="light"]) img[data-media-filter="plinth"],
+:root:not([data-theme="light"]) img[data-media-filter="plate"] {
+  filter: none !important;
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  display: inline-block;
+}
+
+/* Plinth in Light Mode is clean and transparent */
+[data-theme="light"] img[data-media-filter="plinth"],
+[data-theme="light"] img[data-media-filter="plate"] {
+  filter: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Forced Raw / Original */
+img[data-media-filter="raw"],
+img[data-media-filter="original"] {
+  filter: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   4. Image Container Anchoring
+   --------------------------------------------------------------------------- */
+.wikios-article-content .thumb,
+.wikios-article-content figure,
+.wikios-infobox .infobox-image,
+.wikios-article-content .gallerybox {
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+   5. Accessibility & Reduced Motion
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .wikios-article-content img,
+  .wikios-infobox img,
+  .wikios-lightbox-image {
+    transition: opacity 120ms ease !important;
+    transform: none !important;
+  }
+}

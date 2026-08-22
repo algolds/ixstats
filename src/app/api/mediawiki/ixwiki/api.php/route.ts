@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimiter } from "~/lib/cache";
+import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 
 /**
  * SECURITY: Whitelist of allowed MediaWiki API actions
@@ -113,9 +114,8 @@ export async function GET(request: NextRequest) {
 
     // Use local IxWiki path if available (same-server optimization)
     // Otherwise fall back to external HTTPS
-    const ixwikiUrl = process.env.IXWIKI_LOCAL_PATH
-      ? `${process.env.IXWIKI_LOCAL_PATH}/api.php?${queryString}`
-      : `https://ixwiki.com/api.php?${queryString}`;
+    const baseUrl = process.env.IXWIKI_LOCAL_PATH || DEFAULT_MEDIAWIKI_URL;
+    const ixwikiUrl = `${baseUrl.replace(/\/+$/, "")}/api.php?${queryString}`;
 
     const response = await fetch(ixwikiUrl, {
       method: "GET",

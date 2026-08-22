@@ -10,7 +10,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 
 export const loreCardsMaintenanceRouter = createTRPCRouter({

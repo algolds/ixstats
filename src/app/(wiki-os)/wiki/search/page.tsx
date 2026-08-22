@@ -46,7 +46,7 @@ export default function SearchPage() {
         </form>
 
         {isLoading && (
-          <div className="wikios-loading" style={{ minHeight: 100 }}>
+          <div className="wikios-loading min-h-[100px]">
             <div className="wikios-loading-spinner" />
           </div>
         )}

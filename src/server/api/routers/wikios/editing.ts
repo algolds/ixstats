@@ -7,20 +7,22 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/parsoid-client";
-import { getWikiAuth } from "~/lib/wiki-os/auth";
-import { transformWikiLinks } from "~/lib/wiki-os/url-compat";
+import { htmlToWikitext, wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
 import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
-} from "~/lib/wiki-os/article-store";
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/sync-worker";
+import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
+import { resolveWikiUsername } from "~/lib/wiki-os/auth";
 
-import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wiki-os/csrf-cache";
 import {
   saveToMediaWiki,
   cleanHtmlForParsoid,
-  updateFileUploadActor,
-} from "~/lib/wiki-os/wiki-write-service";
+  executeMediaWikiWrite,
+} from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 export const wikiosEditingRouter = createTRPCRouter({
   /**
@@ -71,8 +73,8 @@ export const wikiosEditingRouter = createTRPCRouter({
     }),
 
   /**
-   * Save an article edit via MediaWiki Action API.
-   * Converts HTML to wikitext first, then saves.
+   * Save an article edit via PostgreSQL Native Core (<10ms).
+   * Persists to PostgreSQL first, updates the link graph, and dispatches background sync.
    */
   saveArticle: protectedProcedure
     .input(
@@ -81,20 +83,52 @@ export const wikiosEditingRouter = createTRPCRouter({
         html: z.string(),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
+        turnstileToken: z.string().optional(),
         basetimestamp: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // 1. Verify Cloudflare Turnstile if token is provided
+      if (input.turnstileToken) {
+        await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
+      }
+
+      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
       const cleanedHtml = cleanHtmlForParsoid(input.html);
       const { wikitext } = await htmlToWikitext(cleanedHtml, input.title);
-      return saveToMediaWiki(
-        input.title,
-        wikitext,
-        input.summary,
-        input.minor,
-        ctx,
-        input.basetimestamp
+
+      // 2. Primary Save: Direct to PostgreSQL (<10ms)
+      const saveResult = await ArticleRepository.saveArticle(
+        {
+          slug: input.title,
+          title: input.title,
+          contentHtml: cleanedHtml,
+          wikitext,
+          summary: input.summary,
+          minor: input.minor,
+        },
+        ctx.auth?.userId ?? undefined,
+        authorName
       );
+
+      // 3. Dispatch non-blocking background tasks
+      MediaWikiExportWorker.enqueue({
+        slug: input.title,
+        title: input.title,
+        wikitext,
+        summary: input.summary,
+        minor: input.minor,
+        authorWikiUsername: authorName,
+      });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(input.title);
+
+      return {
+        success: true,
+        title: input.title,
+        revisionId: saveResult.revisionId,
+        extractedLinksCount: saveResult.extractedLinksCount,
+      };
     }),
 
   /**
@@ -107,39 +141,49 @@ export const wikiosEditingRouter = createTRPCRouter({
         wikitext: z.string(),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
+        turnstileToken: z.string().optional(),
         basetimestamp: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return saveToMediaWiki(
-        input.title,
-        input.wikitext,
-        input.summary,
-        input.minor,
-        ctx,
-        input.basetimestamp
+      if (input.turnstileToken) {
+        await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
+      }
+
+      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
+
+      // 1. Primary Save: Direct to PostgreSQL
+      const saveResult = await ArticleRepository.saveArticle(
+        {
+          slug: input.title,
+          title: input.title,
+          wikitext: input.wikitext,
+          summary: input.summary,
+          minor: input.minor,
+        },
+        ctx.auth?.userId ?? undefined,
+        authorName
       );
+
+      // 2. Background MediaWiki sync & cache purge
+      MediaWikiExportWorker.enqueue({
+        slug: input.title,
+        title: input.title,
+        wikitext: input.wikitext,
+        summary: input.summary,
+        minor: input.minor,
+        authorWikiUsername: authorName,
+      });
+
+      void CloudflareGuardian.purgeArticleEdgeCache(input.title);
+
+      return {
+        success: true,
+        title: input.title,
+        revisionId: saveResult.revisionId,
+        extractedLinksCount: saveResult.extractedLinksCount,
+      };
     }),
-
-  // ---------------------------------------------------------------------------
-  // Template Registry (Phase 1)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Lore Stash — save-for-later with color-coded collections
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Annotations
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // User Info (for WikiOS profiles)
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Rollback / Undo endpoints
-  // ---------------------------------------------------------------------------
 
   /**
    * Revert a page to a specific revision.
@@ -154,11 +198,21 @@ export const wikiosEditingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const oldRev = await getRevisionWikitextShadow(input.revid, "ixwiki");
-      if (!oldRev) throw new Error("Target revision not found");
+      const oldRev = await getRevisionWikitextShadow(input.revid);
+      if (!oldRev) {
+        throw new Error(`Revision ${input.revid} not found`);
+      }
 
-      const summary = input.summary ?? `Reverted to revision ${input.revid}`;
-      return saveToMediaWiki(input.title, oldRev.wikitext, summary, false, ctx);
+      const summary =
+        input.summary || `Reverted to revision ${input.revid} via WikiOS`;
+
+      return saveToMediaWiki(
+        input.title,
+        oldRev.wikitext,
+        summary,
+        false,
+        ctx
+      );
     }),
 
   /**
@@ -185,99 +239,41 @@ export const wikiosEditingRouter = createTRPCRouter({
     }),
 
   /**
-   * Upload a file to MediaWiki.
-   * Accepts base64-encoded file data with metadata.
+   * Upload a file (image/document) to MediaWiki via Action API upload endpoint.
    */
   uploadFile: protectedProcedure
     .input(
       z.object({
-        filename: z.string().min(1).max(500),
+        filename: z.string().min(1).max(255),
         fileBase64: z.string(),
         description: z.string().max(10000).default(""),
         comment: z.string().max(500).default("Uploaded via WikiOS"),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-
       // Validate file size (10MB max)
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
       if (fileBuffer.length > 10 * 1024 * 1024) {
         throw new Error("File size exceeds 10MB limit");
       }
 
-      let { cookies, csrfToken } = await getUserSessionAndToken(ctx);
-      const { wikiUsername } = getWikiAuth(ctx);
+      const result = await executeMediaWikiWrite(
+        {
+          action: "upload",
+          filename: input.filename,
+          comment: `${input.comment} (via WikiOS)`,
+          text: input.description,
+          ignorewarnings: "1",
+        },
+        ctx
+      );
 
-      let attempt = 0;
-      let uploadData: {
-        upload?: {
-          result: string;
-          filename?: string;
-          imageinfo?: { url?: string; descriptionurl?: string };
-        };
-        error?: { code: string; info: string };
-      } | null = null;
-
-      while (attempt < 2) {
-        // Build multipart form data
-        const formData = new FormData();
-        formData.append("action", "upload");
-        formData.append("filename", input.filename);
-        formData.append("comment", `${input.comment} (via WikiOS)`);
-        formData.append("token", csrfToken);
-        formData.append("format", "json");
-        formData.append("ignorewarnings", "1");
-        formData.append("file", new Blob([fileBuffer]), input.filename);
-
-        const uploadRes = await fetch(apiBase, {
-          method: "POST",
-          headers: {
-            Cookie: cookies.join("; "),
-          },
-          body: formData,
-        });
-
-        uploadData = (await uploadRes.json()) as {
-          upload?: {
-            result: string;
-            filename?: string;
-            imageinfo?: { url?: string; descriptionurl?: string };
-          };
-          error?: { code: string; info: string };
-        };
-
-        if (uploadData.error) {
-          if (uploadData.error.code === "badtoken" && attempt === 0) {
-            console.warn(
-              "[Editing Router] Bad token for upload. Invalidating cache and retrying..."
-            );
-            invalidateCsrfToken();
-            const fresh = await getUserSessionAndToken(ctx);
-            cookies = fresh.cookies;
-            csrfToken = fresh.csrfToken;
-            attempt++;
-            continue;
-          }
-          throw new Error(`Upload failed: ${uploadData.error.info}`);
-        }
-
-        break;
-      }
-
-      if (uploadData?.error) {
-        throw new Error(`Upload failed: ${uploadData.error.info}`);
-      }
-
-      if (uploadData?.upload?.result === "Success" && wikiUsername) {
-        await updateFileUploadActor(uploadData.upload.filename ?? input.filename, wikiUsername);
-      }
-
+      const resAny = result.result as any;
       return {
-        success: uploadData?.upload?.result === "Success",
-        filename: uploadData?.upload?.filename ?? input.filename,
-        url: uploadData?.upload?.imageinfo?.url ?? null,
-        descriptionUrl: uploadData?.upload?.imageinfo?.descriptionurl ?? null,
+        success: result.success,
+        filename: resAny?.upload?.filename ?? input.filename,
+        url: resAny?.upload?.imageinfo?.url ?? null,
+        descriptionUrl: resAny?.upload?.imageinfo?.descriptionurl ?? null,
       };
     }),
 

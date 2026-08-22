@@ -7,7 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Loader2, Search, Plus, X, ExternalLink } from "lucide-react";
 import { cn, debounce } from "~/lib/utils";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { api } from "~/trpc/react";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 

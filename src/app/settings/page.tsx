@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
@@ -69,6 +69,27 @@ function ProfileContent() {
   const [showGeoReconciliation, setShowGeoReconciliation] = useState(false);
   const [showNSCards, setShowNSCards] = useState(false);
   const [heroCollapsed, setHeroCollapsed] = useState(true);
+
+  // Auto-expand section based on URL hash (e.g. #wiki-settings)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (
+      hash === "#wiki-settings" ||
+      hash === "#wiki-settings-section" ||
+      hash === "#wiki-preferences" ||
+      hash === "#wiki-preferences-section" ||
+      hash === "#lore-section"
+    ) {
+      setShowLore(true);
+      setTimeout(() => {
+        const el =
+          document.getElementById("wiki-settings-section") ||
+          document.getElementById("wiki-preferences-section");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    }
+  }, []);
 
   const profileSettings = useProfileSettings({
     userProfileCountryId: userProfile?.countryId ?? undefined,
@@ -252,7 +273,7 @@ function ProfileContent() {
                 )}
 
                 {showLore && (
-                  <div id="lore-section">
+                  <div id="wiki-settings-section">
                     <WikiPreferencesCard />
                   </div>
                 )}
@@ -609,7 +630,7 @@ function ProfileContent() {
                           setTimeout(
                             () =>
                               document
-                                .getElementById("lore-section")
+                                .getElementById("wiki-preferences-section")
                                 ?.scrollIntoView({ behavior: "smooth", block: "start" }),
                             100
                           );
@@ -628,7 +649,7 @@ function ProfileContent() {
                             showLore ? "text-blue-500" : "text-slate-400"
                           )}
                         />
-                        LoreScanner Preferences
+                        Wiki Settings
                       </div>
                       <div
                         className={cn(

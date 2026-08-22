@@ -67,14 +67,10 @@ export default function HistoryPage() {
 
         {/* Rollback button — reverts all consecutive edits by the last editor */}
         {revisions.length >= 2 && revisions[0]!.user === revisions[1]?.user && (
-          <div style={{ marginBottom: 12 }}>
+          <div className="mb-3">
             <button
-              className="wikios-action-btn"
-              style={{
-                background: "rgba(239,68,68,0.15)",
-                borderColor: "rgba(239,68,68,0.3)",
-                color: "#f87171",
-              }}
+              type="button"
+              className="wikios-action-btn border-red-500/30 bg-red-500/15 text-xs font-semibold text-red-400 hover:bg-red-500/25 active:scale-95 disabled:opacity-50"
               disabled={rollbackPending || rollbackMutation.isPending}
               onClick={() => {
                 if (confirm(`Rollback all recent edits by "${revisions[0]!.user}"?`)) {
@@ -91,34 +87,12 @@ export default function HistoryPage() {
         )}
 
         {rollbackMutation.isSuccess && (
-          <div
-            className="wikios-notice"
-            style={{
-              borderColor: "rgba(34,197,94,0.3)",
-              background: "rgba(34,197,94,0.08)",
-              color: "#4ade80",
-              marginBottom: 12,
-              padding: "8px 12px",
-              borderRadius: 8,
-              fontSize: "0.875rem",
-            }}
-          >
+          <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
             Rollback successful.
           </div>
         )}
         {rollbackMutation.isError && (
-          <div
-            className="wikios-notice"
-            style={{
-              borderColor: "rgba(239,68,68,0.3)",
-              background: "rgba(239,68,68,0.08)",
-              color: "#f87171",
-              marginBottom: 12,
-              padding: "8px 12px",
-              borderRadius: 8,
-              fontSize: "0.875rem",
-            }}
-          >
+          <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400">
             Rollback failed: {rollbackMutation.error.message}
           </div>
         )}
@@ -192,8 +166,8 @@ export default function HistoryPage() {
                   {/* Undo button — revert to this specific revision */}
                   {idx > 0 && (
                     <button
-                      className="wikios-history-diff-link"
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                      type="button"
+                      className="wikios-history-diff-link cursor-pointer border-none bg-transparent p-0 text-amber-400/80 hover:text-amber-300"
                       onClick={() => setUndoTarget({ revid: rev.revid, user: rev.user })}
                       title={`Revert to this revision (r${rev.revid})`}
                     >

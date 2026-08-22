@@ -99,15 +99,6 @@ export class MemoryOptimizer {
         console.error("[MemoryOptimizer] Failed to clear trpc memory cache:", error);
       }
 
-      // Clear MediaWiki L1 caches
-      try {
-        const { clearAllMediaWikiCaches } = await import("../wiki/legacy-service");
-        clearAllMediaWikiCaches();
-        console.log("[MemoryOptimizer] Cleared mediawikiL1Caches");
-      } catch (error) {
-        console.error("[MemoryOptimizer] Failed to clear mediawiki memory caches:", error);
-      }
-
       console.log("[MemoryOptimizer] All caches cleared");
     } catch (error) {
       console.error("[MemoryOptimizer] Error clearing caches:", error);

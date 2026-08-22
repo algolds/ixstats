@@ -1,7 +1,7 @@
 import {
   fetchCommonsCategoryMembers,
   type CommonsCategoryItem,
-} from "~/lib/wiki/bridge";
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 export type CommonsFlagItem = CommonsCategoryItem & {
   isAlreadyImported?: boolean;

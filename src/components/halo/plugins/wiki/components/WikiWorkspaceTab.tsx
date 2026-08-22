@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { formatTimeAgo, type LocalDraft, type PausedSession } from "../types";
 
 interface WikiWorkspaceTabProps {

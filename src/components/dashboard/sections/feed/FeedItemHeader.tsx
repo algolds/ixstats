@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Clock, ExternalLink, Rss } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { formatTimeAgo } from "~/lib/utils";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import {
   WikiHtmlContent,
   WikiLinkPreview,

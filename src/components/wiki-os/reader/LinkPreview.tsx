@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { navigateWithBasePath } from "~/lib/base-path";
-import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
+import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 
 // Show delay (ms) before tooltip appears — short enough to feel responsive
 const SHOW_DELAY = 150;

@@ -17,10 +17,12 @@ import {
   getParentCategories as getParentCategoriesMySQL,
   getCategoryInfo,
   type WikiSource,
-} from "~/lib/wiki/bridge";
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
-import { saveToMediaWiki } from "~/lib/wiki-os/wiki-write-service";
-import { searchShadowArticles } from "~/lib/wiki-os/search-service";
+import { saveToMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/write-service";
+import { searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
+import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
 
 export const wikiosSearchCategoriesRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -42,6 +44,25 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const { query, limit, wikiSource } = input;
+
+      if (wikiSource === "ixwiki") {
+        // Fast-path: Native PostgreSQL Spotlight Search (<2ms)
+        const nativeResults = await NativeSearchService.spotlightSearch(query, "ixwiki", limit);
+        if (nativeResults.length > 0) {
+          return nativeResults.map((r) => ({
+            title: r.title,
+            pageId: 0,
+            length: 0,
+            source: "ixwiki" as const,
+          }));
+        }
+
+        const results = await searchPages(query, limit, "ixwiki");
+        return results.map((r) => ({
+          ...r,
+          source: "ixwiki" as const,
+        }));
+      }
 
       if (wikiSource !== "all") {
         const results = await searchPages(query, limit, wikiSource as WikiSource);
@@ -107,6 +128,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
 
   /**
    * Get members of a category.
+   * Native PostgreSQL Category Tree (<2ms) with MySQL fallback.
    */
   getCategoryMembers: publicProcedure
     .input(
@@ -118,10 +140,56 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // Direct MySQL — ~30ms vs ~400ms via API
+      // 1. Fast-path: Native PostgreSQL Category DAG
+      const nativeDetails = await CategoryService.getCategoryDetails(input.category);
+      if (nativeDetails.category && (nativeDetails.articles.length > 0 || nativeDetails.subcategories.length > 0)) {
+        const members: Array<{
+          pageid: number;
+          title: string;
+          type: "page" | "subcat" | "file";
+          ns: number;
+          isSubcategory: boolean;
+        }> = [
+          ...nativeDetails.subcategories.map((c) => ({
+            pageid: 0,
+            title: `Category:${c.name}`,
+            type: "subcat" as const,
+            ns: 14,
+            isSubcategory: true,
+          })),
+          ...nativeDetails.articles.map((a) => ({
+            pageid: 0,
+            title: a.title,
+            type: "page" as const,
+            ns: 0,
+            isSubcategory: false,
+          })),
+        ];
+
+        return {
+          members: members.slice(0, input.limit),
+          continueToken: members.length > input.limit ? "more" : null,
+        };
+      }
+
+      // 2. Fallback: MySQL bridge
       const result = await getCategoryMembers(input.category, input.limit, input.type);
+      const members: Array<{
+        pageid: number;
+        title: string;
+        type: "page" | "subcat" | "file";
+        ns: number;
+        isSubcategory: boolean;
+      }> = result.members.map((m) => ({
+        title: m.title,
+        ns: m.ns,
+        isSubcategory: m.isSubcategory,
+        pageid: 0,
+        type: m.ns === 14 ? ("subcat" as const) : m.ns === 6 ? ("file" as const) : ("page" as const),
+      }));
+
       return {
-        members: result.members,
+        members,
         continueToken: result.hasMore ? "more" : null,
       };
     }),
@@ -455,7 +523,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
         try {
-          const { getIxWikiPool } = await import("~/lib/wiki/bridge");
+          const { getIxWikiPool } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
           const pool = getIxWikiPool();
           const [rows] = await pool.query(
             `

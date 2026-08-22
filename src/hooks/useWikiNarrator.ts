@@ -90,6 +90,24 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1.0);
   const [voice, setVoice] = useState("");
+  const [volume, setVolume] = useState(0.2);
+
+  // Load persisted audio preferences (default volume ~20%)
+  useEffect(() => {
+    try {
+      const storedVol = localStorage.getItem("onoma-personal-volume");
+      if (storedVol !== null) {
+        const v = parseFloat(storedVol);
+        if (!isNaN(v) && v >= 0 && v <= 1) {
+          setVolume(v);
+          volumeRef.current = v;
+        }
+      } else {
+        setVolume(0.2);
+        volumeRef.current = 0.2;
+      }
+    } catch {}
+  }, []);
 
   // Create mediaTrack representing the article
   const mediaTrack = useMemo<Media>(() => {
@@ -157,6 +175,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const transitionTimeoutRef = useRef<any>(null);
   const speedRef = useRef(1.0);
   const voiceRef = useRef("");
+  const volumeRef = useRef(1.0);
 
   const fetchAudioBlob = useCallback(async (requestUrl: string): Promise<Blob> => {
     if (activeFetchesRef.current.has(requestUrl)) {
@@ -330,18 +349,34 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       }
     });
 
+    // Restore saved reading progress if available
+    let initialIdx = -1;
+    try {
+      if (articleTitle) {
+        const savedPos = sessionStorage.getItem(`wikios:narrator:pos:${articleTitle}`);
+        if (savedPos !== null) {
+          const parsed = parseInt(savedPos, 10);
+          if (!isNaN(parsed) && parsed >= 0 && parsed < validBlocks.length) {
+            initialIdx = parsed;
+          }
+        }
+      }
+    } catch {}
+
     setBlocks(validBlocks);
-    setActiveIdx(-1);
+    setActiveIdx(initialIdx);
+    activeIdxRef.current = initialIdx;
     setNarratorState({
       isPlaying: false,
-      activeBlockIndex: 0,
+      activeBlockIndex: initialIdx >= 0 ? initialIdx : 0,
       totalBlocks: validBlocks.length,
-      activeText: "",
-      activeSectionTitle: "",
+      activeText: initialIdx >= 0 ? validBlocks[initialIdx]?.text ?? "" : "",
+      activeSectionTitle: initialIdx >= 0 ? validBlocks[initialIdx]?.sectionId ?? "" : "",
       speed,
       voice,
+      volume: volumeRef.current,
     });
-  }, [articleRef, setNarratorState, speed, voice]);
+  }, [articleRef, articleTitle, setNarratorState, speed, voice]);
 
   // Sync blocks on articleTitle load
   useEffect(() => {
@@ -487,6 +522,13 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
 
+      // Save progress to session storage
+      try {
+        if (articleTitle) {
+          sessionStorage.setItem(`wikios:narrator:pos:${articleTitle}`, String(index));
+        }
+      } catch {}
+
       try {
         if (isKokoroEnabled) {
           // Pre-fetch N+1 and N+2
@@ -500,6 +542,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           activeAudioUrlRef.current = url;
           const audio = new Audio(url);
           audio.playbackRate = speedRef.current; // speed applied client-side, no re-synth
+          audio.volume = volumeRef.current;
           audioRef.current = audio;
 
           audio.ontimeupdate = () => {
@@ -574,6 +617,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     },
     [
       config,
+      articleTitle,
       highlightBlock,
       setNarratorState,
       setActiveSectionId,
@@ -586,12 +630,51 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     ]
   );
 
-  // Narrator Control Actions
+  // Find block closest to current viewport scroll position
+  const findViewportClosestBlock = useCallback((): number => {
+    if (typeof window === "undefined" || blocksRef.current.length === 0) return 0;
+    const viewportTargetY = window.scrollY + 120;
+    let bestIdx = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < blocksRef.current.length; i++) {
+      const el = blocksRef.current[i]?.element;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const absoluteTop = rect.top + window.scrollY;
+        const dist = Math.abs(absoluteTop - viewportTargetY);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestIdx = i;
+        }
+      }
+    }
+    return bestIdx;
+  }, []);
+
+  // Narrator Control Actions with intelligent dynamic recovery
   const play = useCallback(() => {
     if (isPlaying) return;
     setIsPlaying(true);
-    playTrack(mediaTrack);
-  }, [isPlaying, playTrack, mediaTrack]);
+    let targetIdx = activeIdxRef.current;
+    if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
+      try {
+        const savedPos = articleTitle
+          ? sessionStorage.getItem(`wikios:narrator:pos:${articleTitle}`)
+          : null;
+        if (savedPos !== null) {
+          const parsed = parseInt(savedPos, 10);
+          if (!isNaN(parsed) && parsed >= 0 && parsed < blocksRef.current.length) {
+            targetIdx = parsed;
+          }
+        }
+      } catch {}
+      if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
+        targetIdx = findViewportClosestBlock();
+      }
+    }
+    playBlock(targetIdx);
+  }, [isPlaying, articleTitle, findViewportClosestBlock, playBlock]);
 
   const pause = useCallback(() => {
     setIsPlaying(false);
@@ -663,6 +746,22 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     [playBlock, setNarratorState]
   );
 
+  const changeVolume = useCallback(
+    (newVol: number) => {
+      const clamped = Math.max(0, Math.min(1, newVol));
+      setVolume(clamped);
+      volumeRef.current = clamped;
+      try {
+        localStorage.setItem("onoma-personal-volume", String(clamped));
+      } catch {}
+      setNarratorState({ volume: clamped });
+      if (audioRef.current) {
+        audioRef.current.volume = clamped;
+      }
+    },
+    [setNarratorState]
+  );
+
   const clearVoiceCache = useCallback(async () => {
     try {
       if (typeof window === "undefined" || typeof caches === "undefined") {
@@ -683,9 +782,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
 
   useEffect(() => {
     playRef.current = () => {
-      setIsPlaying(true);
-      const idx = activeIdxRef.current === -1 ? 0 : activeIdxRef.current;
-      playBlock(idx);
+      play();
     };
     pauseRef.current = () => {
       setIsPlaying(false);
@@ -708,7 +805,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     setSpeedRef.current = (s: number) => {
       changeSpeed(s);
     };
-  }, [playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
+  }, [play, playBlock, changeSpeed, setNarratorState, updatePlaybackState]);
 
   // Register action hooks in global WikiContext
   useEffect(() => {
@@ -720,6 +817,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       skipPrev,
       setSpeed: changeSpeed,
       setVoice: changeVoice,
+      setVolume: changeVolume,
       jumpToSection,
       jumpToBlock: (idx: number) => {
         setIsPlaying(true);
@@ -739,6 +837,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     skipPrev,
     changeSpeed,
     changeVoice,
+    changeVolume,
     jumpToSection,
     clearVoiceCache,
     playTrack,

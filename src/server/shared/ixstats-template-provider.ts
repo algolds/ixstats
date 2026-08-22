@@ -8,7 +8,7 @@ import type {
   TemplateKey,
   ResolvedTemplate,
   ResolveOptions,
-} from "~/lib/wiki-os/template-resolver";
+} from "~/lib/wiki-os/templates/template-resolver";
 import { resolveWikiPlaceholderValues } from "./wiki-placeholders";
 
 export const ixstatsTemplateProvider: TemplateDataProvider = {

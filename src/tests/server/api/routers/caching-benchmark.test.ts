@@ -133,7 +133,7 @@ jest.mock("~/server/db", () => ({
   db: createPrismaMock(),
 }));
 
-jest.mock("~/lib/wiki-os/bridge", () => ({
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   ixwikiRecentChanges: () => Promise.resolve([]),
   getRecentChanges: () => Promise.resolve([]),
 }));

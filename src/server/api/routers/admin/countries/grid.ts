@@ -270,4 +270,4 @@ export const adminCountriesGridRouter = createTRPCRouter({
   // ─── Wiki Link Management ──────────────────────────────────────────
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki/bridge"
+// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

@@ -1,94 +1,574 @@
 /* ===========================================================================
-   Image Lightbox
+   WikiOS Margin & Gutter Pins
    =========================================================================== */
-.wikios-lightbox-overlay {
+.wikios-anchor-highlighted {
+  outline: 2px solid var(--wikios-accent, #3b82f6) !important;
+  outline-offset: 4px;
+  background-color: var(--wikios-accent-bg, rgba(59, 130, 246, 0.12)) !important;
+  border-radius: 8px;
+  transition: all 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ===========================================================================
+   Image Lightbox (Apple Quick Look & Facet Design System)
+   =========================================================================== */
+.wikios-lightbox-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10002;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 100005;
+  background: rgba(6, 8, 12, 0.88);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: zoom-out;
-  animation: wikios-fade-in 0.15s ease-out;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  overflow: hidden;
+  user-select: none;
+  opacity: 1;
+  transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.wikios-lightbox-content {
+.wikios-lightbox-backdrop.wikios-lightbox-entering {
+  opacity: 1;
+}
+
+.wikios-lightbox-backdrop.wikios-lightbox-closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Main Left/Center Interactive Viewport Pane */
+.wikios-lightbox-main-pane {
+  flex: 1;
+  height: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
-  max-width: 90vw;
-  max-height: 90vh;
-  cursor: default;
-}
-
-.wikios-lightbox-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  gap: 12px;
-}
-
-.wikios-lightbox-alt {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wikios-lightbox-buttons {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.wikios-lightbox-btn {
-  display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Top-Right Corner Dismiss Button */
+.wikios-lightbox-top-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   height: 32px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  padding: 0 12px 0 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(24, 27, 34, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #f4f4f5;
   cursor: pointer;
-  transition: background 0.12s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.wikios-lightbox-top-close-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ffffff;
+}
+
+.wikios-lightbox-top-close-btn:active {
+  transform: scale(0.92);
+}
+
+[data-theme="light"] .wikios-lightbox-top-close-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.14);
+  color: #18181b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .wikios-lightbox-top-close-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #dc2626;
+}
+
+/* Floating Facet Bottom Dock (Apple Photos / Quick Look Style) */
+.wikios-lightbox-bottom-dock {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  max-width: min(92vw, 640px);
+  padding: 6px 10px 6px 14px;
+  border-radius: 9999px;
+  background: rgba(22, 25, 32, 0.9);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.65),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f4f4f5;
+  font-family: var(--wikios-font-ui, system-ui, sans-serif);
+}
+
+[data-theme="light"] .wikios-lightbox-bottom-dock {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: #18181b;
+}
+
+.wikios-lightbox-badge {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .wikios-lightbox-badge {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.wikios-lightbox-segmented-group {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .wikios-lightbox-segmented-group {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.wikios-lightbox-icon-btn,
+.wikios-lightbox-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.wikios-lightbox-icon-btn {
+  width: 26px;
+  padding: 0;
+}
+
+.wikios-lightbox-pill-btn {
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 46px;
+}
+
+.wikios-lightbox-icon-btn:hover,
+.wikios-lightbox-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+[data-theme="light"] .wikios-lightbox-icon-btn:hover,
+[data-theme="light"] .wikios-lightbox-pill-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000000;
+}
+
+.wikios-lightbox-icon-btn:active,
+.wikios-lightbox-pill-btn:active {
+  transform: scale(0.94);
+}
+
+.wikios-lightbox-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.wikios-lightbox-v-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 3px;
+}
+
+[data-theme="light"] .wikios-lightbox-v-divider {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.wikios-lightbox-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    color 120ms ease-out,
+    border-color 120ms ease-out,
+    transform 100ms ease-out;
   text-decoration: none;
 }
 
-.wikios-lightbox-btn:hover {
+.wikios-lightbox-action-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: #ffffff;
 }
 
-.wikios-lightbox-image-wrapper {
+.wikios-lightbox-action-btn--active {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  color: #60a5fa !important;
+}
+
+[data-theme="light"] .wikios-lightbox-action-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .wikios-lightbox-action-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #000000;
+}
+
+.wikios-lightbox-action-btn:active {
+  transform: scale(0.92);
+}
+
+/* Main Interactive Stage */
+.wikios-lightbox-viewport {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;
-  cursor: zoom-in;
+  position: relative;
+  overflow: hidden;
+  padding: 36px 20px 72px;
 }
 
-.wikios-lightbox-image {
-  max-width: 85vw;
-  max-height: 80vh;
+.wikios-lightbox-canvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+  will-change: transform;
+}
+
+/* Unified Bolted Frame (Image + Bolted Inspector Wing) */
+.wikios-lightbox-bolted-frame {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: min(94vw, 1260px);
+  max-height: 76vh;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.14);
+  background: rgba(16, 18, 24, 0.92);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  transition: all 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .wikios-lightbox-bolted-frame {
+    flex-direction: row;
+  }
+}
+
+[data-theme="light"] .wikios-lightbox-bolted-frame {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.wikios-lightbox-img-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-height: 76vh;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+  transition:
+    background-color 200ms ease,
+    background-image 200ms ease;
+}
+
+[data-theme="light"] .wikios-lightbox-img-wrapper {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Apple-style subtle transparency checkerboard pattern for SVGs and transparent graphics */
+.wikios-lightbox-img-wrapper.wikios-lightbox-img-wrapper--transparent {
+  background-color: rgba(255, 255, 255, 0.04);
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+[data-theme="light"] .wikios-lightbox-img-wrapper.wikios-lightbox-img-wrapper--transparent {
+  background-color: rgba(0, 0, 0, 0.02);
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.035) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.035) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.035) 75%);
+}
+
+.wikios-lightbox-img-wrapper.wikios-lightbox-img-wrapper--svg {
+  padding: 18px;
+}
+
+.wikios-lightbox-img-master {
+  max-width: min(80vw, 980px);
+  max-height: 76vh;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  border-radius: 4px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  display: block;
+  user-select: none;
+  pointer-events: auto;
+  image-rendering: auto;
+  transition:
+    filter 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.wikios-lightbox-zoomed {
-  cursor: zoom-out;
+/* Bolted Inspector Wing (Attached directly with 0 gap) */
+.wikios-lightbox-bolted-wing {
+  width: 290px;
+  max-height: 76vh;
+  border-top: 1px solid var(--wikios-border, rgba(255, 255, 255, 0.12));
+  background: var(--wikios-surface, #18181b);
+  color: var(--wikios-text, #f4f4f5);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  animation: wikios-wing-expand-v 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.wikios-lightbox-zoomed .wikios-lightbox-image {
-  max-width: none;
-  max-height: none;
+@media (min-width: 768px) {
+  .wikios-lightbox-bolted-wing {
+    border-top: none;
+    border-left: 1px solid var(--wikios-border, rgba(255, 255, 255, 0.12));
+    animation: wikios-wing-expand-h 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes wikios-wing-expand-h {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 290px;
+    opacity: 1;
+  }
+}
+
+@keyframes wikios-wing-expand-v {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 380px;
+    opacity: 1;
+  }
+}
+
+.wikios-lightbox-flank-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--wikios-border, rgba(255, 255, 255, 0.1));
+  background: var(--wikios-surface, #18181b);
+}
+
+[data-theme="light"] .wikios-lightbox-flank-header {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.wikios-lightbox-flank-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--wikios-text-dim, #a1a1aa);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.wikios-lightbox-flank-close:hover {
+  background: var(--wikios-surface-hover, rgba(255, 255, 255, 0.1));
+  color: var(--wikios-text, #ffffff);
+}
+
+.wikios-lightbox-flank-box {
+  border-radius: 12px;
+  border: 1px solid var(--wikios-border, rgba(255, 255, 255, 0.08));
+  background: var(--wikios-surface-card, rgba(255, 255, 255, 0.04));
+  padding: 10px 12px;
+}
+
+[data-theme="light"] .wikios-lightbox-flank-box {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.wikios-lightbox-side-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--wikios-text-dim, #a1a1aa);
+}
+
+.wikios-lightbox-flank-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--wikios-border, rgba(255, 255, 255, 0.1));
+  background: var(--wikios-surface-card, rgba(255, 255, 255, 0.04));
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 100ms ease;
+}
+
+.wikios-lightbox-flank-btn:hover {
+  background: var(--wikios-surface-hover, rgba(255, 255, 255, 0.1));
+  border-color: var(--wikios-border-focus, rgba(59, 130, 246, 0.5));
+}
+
+.wikios-lightbox-flank-btn:active {
+  transform: scale(0.95);
+}
+
+[data-theme="light"] .wikios-lightbox-flank-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .wikios-lightbox-flank-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.wikios-lightbox-flank-stash {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    transform 100ms ease;
+}
+
+.wikios-lightbox-flank-stash:hover {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+}
+
+.wikios-lightbox-flank-stash:active {
+  transform: scale(0.96);
+}
+
+.wikios-lightbox-flank-stash:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.wikios-lightbox-side-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.wikios-lightbox-side-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
 }
 
 /* ===========================================================================

@@ -26,6 +26,7 @@ import { AbilityProvider } from "~/components/providers/AbilityProvider";
 import { IxTimeProvider } from "~/context/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
+import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 
@@ -71,33 +72,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <IxTimeProvider>
               <ExecutiveNotificationProvider>
                 <WikiContextProvider>
-                  <CuelumeSoundProvider>
-                    <ToastProvider>
-                      <LazyGameProviders>
-                        <WebGLErrorHandler />
-                        <MapPrefetcher />
-                        <NavigationTransitionHandler />
-                        {isStandalone ? (
-                          <div className="flex min-h-screen flex-col">
-                            <Navigation />
-                            <main className="flex flex-1 flex-col">
-                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                            </main>
-                          </div>
-                        ) : (
-                          <div className="flex min-h-screen flex-col">
-                            <Navigation />
-                            {/* <GlobalActivityMarquee /> */}
-                            <SetupRedirect />
-                            <main className="flex flex-1 flex-col">
-                              <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
-                            </main>
-                            <MiniPlayer />
-                          </div>
-                        )}
-                      </LazyGameProviders>
-                    </ToastProvider>
-                  </CuelumeSoundProvider>
+                  <MediaThemeProvider>
+                    <CuelumeSoundProvider>
+                      <ToastProvider>
+                        <LazyGameProviders>
+                          <WebGLErrorHandler />
+                          <MapPrefetcher />
+                          <NavigationTransitionHandler />
+                          {isStandalone ? (
+                            <div className="flex min-h-screen flex-col">
+                              <Navigation />
+                              <main className="flex flex-1 flex-col">
+                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                              </main>
+                            </div>
+                          ) : (
+                            <div className="flex min-h-screen flex-col">
+                              <Navigation />
+                              {/* <GlobalActivityMarquee /> */}
+                              <SetupRedirect />
+                              <main className="flex flex-1 flex-col">
+                                <RackFocusBlurWrapper>{children}</RackFocusBlurWrapper>
+                              </main>
+                              <MiniPlayer />
+                            </div>
+                          )}
+                        </LazyGameProviders>
+                      </ToastProvider>
+                    </CuelumeSoundProvider>
+                  </MediaThemeProvider>
                 </WikiContextProvider>
               </ExecutiveNotificationProvider>
             </IxTimeProvider>

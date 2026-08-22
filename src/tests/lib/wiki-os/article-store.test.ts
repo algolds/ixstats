@@ -21,7 +21,7 @@ const mockGetRevisionWikitext = jest.fn();
 const mockGetRecentChanges = jest.fn();
 
 jest.mock("~/server/db", () => ({ db: mockDb }));
-jest.mock("~/lib/wiki-os/bridge", () => ({
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
   getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
@@ -33,7 +33,7 @@ import {
   getArticleWikitextShadow,
   recordArticleRevision,
   getArticleHistoryShadow,
-} from "~/lib/wiki-os/article-store";
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
 
 const row = (overrides: Record<string, unknown> = {}) => ({

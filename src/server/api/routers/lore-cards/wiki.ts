@@ -13,15 +13,15 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
 import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
-import { searchPages, getRecentChanges } from "~/lib/wiki/bridge";
-import { getArticleWikitextShadow } from "~/lib/wiki-os/article-store";
-import { getWikiUserAgent, getMediaWikiApiUrl } from "~/lib/wiki/config";
-import { cleanWikitextExcerpt } from "~/lib/wiki/wikitext-parser";
+import { searchPages, getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { getWikiUserAgent, getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 const isArticleTitle = (title: string): boolean => {
   if (!title || !title.trim()) return false;
@@ -361,12 +361,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
           // If searchPages returned empty, fall back to HTTP API with correct User-Agent
           if (results.length === 0) {
             try {
-              const httpUrl =
-                wikiSrc === "iiwiki"
-                  ? `${getMediaWikiApiUrl("iiwiki")}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`
-                  : `https://ixwiki.com/api.php?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
+              const httpUrl = `${getMediaWikiApiUrl(wikiSrc as any)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
               const res = await fetch(httpUrl, {
-                headers: { "User-Agent": getWikiUserAgent(wikiSrc as any) },
+                headers: { "User-Agent": DEFAULT_USER_AGENT },
+                signal: AbortSignal.timeout(6000),
               });
               if (res.ok) {
                 const data = await res.json();

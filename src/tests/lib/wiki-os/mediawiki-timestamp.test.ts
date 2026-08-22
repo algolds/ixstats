@@ -3,7 +3,7 @@ import {
   parseMWDateObject,
   formatMWTimeAgo,
   formatMWDate,
-} from "~/lib/wiki-os/mediawiki-timestamp";
+} from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 
 describe("mediawiki-timestamp", () => {
   describe("parseMWTimestamp", () => {

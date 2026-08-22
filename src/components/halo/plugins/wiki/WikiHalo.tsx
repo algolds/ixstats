@@ -1,21 +1,31 @@
 "use client";
 
 /**
- * WikiHalo — Halo overlay plugin for wiki pages.
+ * WikiHalo — Apple Design Halo overlay plugin for wiki pages.
  *
- * Renders the wiki breadcrumb and narrator player state in the capsule center
- * and exposes WikiView and WikiProfileView as expanded views.
+ * Renders the wiki breadcrumb in the capsule center and exposes
+ * WikiNarratorView, WikiView, and WikiProfileView as dedicated expanded views.
  */
 
 import React, { useMemo, useState } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { PlayPauseMorph } from "./components";
+import { useUser } from "~/context/auth-context";
+import { useIxTimeStore } from "~/stores/ixtime-store";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
-import { WikiView, WikiProfileView } from "./views";
+import { WikiView, WikiProfileView, WikiNarratorView } from "./views";
+import { PlayPauseMorph } from "./components/PlayPauseMorph";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+
+function getGreeting(ixTime: number): string {
+  const hour = new Date(ixTime).getUTCHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 21) return "Good evening";
+  return "Good night";
+}
 
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
@@ -32,6 +42,8 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 }
 
 function WikiBreadcrumb() {
+  const { user } = useUser();
+  const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
   const {
     articleTitle,
     activeSectionId,
@@ -43,19 +55,34 @@ function WikiBreadcrumb() {
   } = useWikiContext();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  const greetingText = useMemo(() => {
+    const timeGreeting = getGreeting(ixTimeTimestamp || Date.now());
+    return `${timeGreeting}${user?.firstName ? `, ${user.firstName}` : ""}`;
+  }, [ixTimeTimestamp, user?.firstName]);
+
+  const isNarratorActive = !!(
+    narratorState &&
+    narratorState.totalBlocks > 0 &&
+    (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
+
+  const hasSpecificTitle = Boolean(
+    articleTitle && articleTitle !== "IxWiki" && articleTitle !== "Main Page"
+  );
+
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
-  return (
-    <span
-      className={cn(
-        "flex w-full items-center gap-1.5 overflow-hidden transition-all duration-300",
-        activeSectionName ? "max-w-[285px] min-w-[220px]" : "max-w-[220px] min-w-[160px]"
-      )}
-    >
-      {narratorState && narratorState.totalBlocks > 0 && narratorActions && (
+  const accentColor = themeColors?.primary || "#3b82f6";
+
+  // ── Narrator Active in Breadcrumb: Clean, tactile, zero clutter ──
+  if (isNarratorActive && narratorActions) {
+    return (
+      <div className="flex items-center gap-1.5 min-w-0 max-w-[170px] sm:max-w-[220px] select-none">
+        {/* Leading: Tactile Apple Play/Pause Morph Button */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             if (narratorState.isPlaying) {
@@ -65,58 +92,76 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-white/10 bg-white/5 text-white transition-all duration-200 hover:border-white/20 hover:bg-white/10 active:scale-90"
-          title={narratorState.isPlaying ? "Pause Narration" : "Resume Narration"}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white shadow-xs transition-all duration-150 active:scale-88 hover:scale-105 cursor-pointer"
+          style={{
+            backgroundColor: accentColor,
+            boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
+          }}
+          title={narratorState.isPlaying ? "Pause narration" : "Resume narration"}
         >
           <PlayPauseMorph
-            isPlaying={narratorState.isPlaying}
+            isPlaying={!!narratorState.isPlaying}
             size={10}
-            className={cn(
-              "fill-current",
-              narratorState.isPlaying ? "text-blue-400" : "text-zinc-400"
-            )}
+            className="fill-current text-white"
           />
         </button>
+
+        {/* Title in theme color */}
+        <span
+          className="truncate text-xs font-semibold tracking-tight transition-colors"
+          style={{ color: accentColor }}
+        >
+          {hasSpecificTitle ? articleTitle : "Wiki Narrator"}
+        </span>
+
+        {activeSectionName && (
+          <span className="truncate text-[10px] text-muted-foreground/75 hidden sm:inline">
+            · {activeSectionName}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // ── Default Reading / Profile Breadcrumb ──
+  return (
+    <div className="flex items-center gap-1.5 min-w-0 max-w-[160px] sm:max-w-[200px]">
+      {/* Title or Personalized Greeting */}
+      {hasSpecificTitle ? (
+        <span
+          className="truncate text-xs font-semibold max-w-[90px] sm:max-w-[120px] transition-colors"
+          style={themeColors?.primary ? { color: themeColors.primary } : undefined}
+        >
+          {articleTitle}
+        </span>
+      ) : (
+        <span className="flex items-center gap-1.5 min-w-0">
+          {user?.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt=""
+              className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20 shrink-0"
+            />
+          ) : (
+            <span className="text-muted-foreground h-3.5 w-3.5 text-xs shrink-0">👤</span>
+          )}
+          <PreText
+            className="text-foreground/90 truncate text-xs font-medium max-w-[100px] sm:max-w-[130px]"
+            whiteSpace="nowrap"
+          >
+            {greetingText}
+          </PreText>
+        </span>
       )}
 
-      {narratorState?.isPlaying && (
-        <div
-          className="mr-1 flex h-3 shrink-0 origin-center scale-[0.8] items-center gap-[2px] rounded border border-blue-500/20 bg-blue-500/10 px-1 py-0.5 select-none"
-          title="Audio narrator playing"
-        >
-          <span className="h-2.5 w-[1.5px] animate-bounce rounded-full bg-blue-400" />
-          <span
-            className="h-1.5 w-[1.5px] animate-bounce rounded-full bg-blue-400"
-            style={{ animationDelay: "0.15s" }}
-          />
-          <span
-            className="h-2 w-[1.5px] animate-bounce rounded-full bg-blue-400"
-            style={{ animationDelay: "0.3s" }}
-          />
-        </div>
-      )}
-      <span
-        className={cn(
-          "di-wiki-title flex-1 transition-all duration-300",
-          activeSectionName ? "max-w-[120px] min-w-[100px]" : "max-w-[180px] min-w-[140px]"
-        )}
-      >
-        <PreText
-          className="di-wiki-title-text"
-          whiteSpace="normal"
-          font="500 14px Inter, sans-serif"
-          lineHeight={16}
-        >
-          {articleTitle || "IxWiki"}
-        </PreText>
-      </span>
-      {activeSectionName && (
+      {/* Section Popover Dropdown when not in narrator mode */}
+      {hasSpecificTitle && activeSectionName && (
         <>
           <span className="text-foreground/25 shrink-0 text-[10px]">›</span>
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-foreground relative z-[60] inline-block max-w-[110px] min-w-[60px] flex-1 cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left transition-all duration-200 hover:bg-white/20 active:scale-95"
+                className="hover:text-foreground relative z-[60] inline-block max-w-[70px] truncate cursor-pointer overflow-hidden rounded px-1 py-0.5 text-left text-[10px] font-medium text-foreground/50 transition-all duration-200 hover:bg-white/20 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -125,9 +170,7 @@ function WikiBreadcrumb() {
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
               >
-                <PreText className="text-foreground/50 text-[10px] font-medium" whiteSpace="nowrap">
-                  {activeSectionName}
-                </PreText>
+                {activeSectionName}
               </span>
             </PopoverTrigger>
             <PopoverContent
@@ -179,26 +222,37 @@ function WikiBreadcrumb() {
           </Popover>
         </>
       )}
-    </span>
+    </div>
   );
 }
 
 export function WikiHalo() {
-  const { articleTitle } = useWikiContext();
+  const { articleTitle, narratorState, themeColors } = useWikiContext();
+  const isPlaying = !!narratorState?.isPlaying;
+  const isNarrating = !!(
+    narratorState &&
+    narratorState.totalBlocks > 0 &&
+    (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
 
   const plugin = useMemo(
     () => ({
       id: "wiki",
-      priority: 10,
+      // When narrating or playing audio, boost priority to 100 so it takes over the Dynamic Island / Halo like a live activity
+      priority: isPlaying ? 100 : isNarrating ? 50 : 10,
       center: <WikiBreadcrumb />,
-      expandedViews: (articleTitle ? { wiki: WikiView } : { profile: WikiProfileView }) as Record<
-        string,
-        React.ComponentType<DIViewProps>
-      >,
-      accentColor: "#3b82f6",
-      stickyLabel: "Wiki",
+      expandedViews: (articleTitle
+        ? {
+            narrator: WikiNarratorView,
+            wiki: WikiView,
+          }
+        : {
+            profile: WikiProfileView,
+          }) as Record<string, React.ComponentType<DIViewProps>>,
+      accentColor: themeColors?.primary || "#3b82f6",
+      stickyLabel: isPlaying ? "Narrating" : "Wiki",
     }),
-    [articleTitle]
+    [articleTitle, isPlaying, isNarrating, themeColors?.primary]
   );
 
   useDIPlugin(plugin);

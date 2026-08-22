@@ -613,12 +613,26 @@
 .wikios-ve-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px) !important;
+  height: calc(100vh - 120px) !important;
+  min-height: 520px !important;
+  max-height: calc(100vh - 100px) !important;
   border: 1px solid var(--wikios-border) !important;
-  border-radius: 10px !important;
+  border-radius: 14px !important;
   overflow: hidden !important;
   background: var(--wikios-surface) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   box-sizing: border-box;
+}
+
+.wikios-ve-editor-wrapper {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--wikios-bg);
+  display: flex;
+  flex-direction: column;
 }
 
 /* Title bar */

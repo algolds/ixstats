@@ -18,7 +18,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { BookOpen, ExternalLink, MessageSquare, Eye, Users } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
 // ──────────────────────────────────────────────
 // Link detection types

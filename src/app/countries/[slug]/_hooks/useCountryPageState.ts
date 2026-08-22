@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { unsplashService } from "~/lib/media";
-import type { CountryInfobox } from "~/lib/wiki/legacy-service";
+import type { CountryInfobox } from "~/types/dossier";
 import type { BannerMode, ProfileTabType, BaseCountryData } from "../_types";
 
 export type { BannerMode, ProfileTabType as TabType };

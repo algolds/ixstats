@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 

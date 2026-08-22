@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 

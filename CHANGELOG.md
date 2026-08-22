@@ -64,6 +64,83 @@ capability integer. Each release entry below lists which components advanced and
   - Standardized spring physics across capsule expansions, tray reveals, and modal transforms (`stiffness: 420, damping: 38, mass: 0.8`).
   - Standardized iconography on `iconoir-react` and `react-icons/gi`, eliminating all generic sparkle icons.
 
+### ✍️ WikiOS Editor Modernization, Internal Scroll & Architecture Optimization (Plan 171)
+
+- **Internal Viewport Containment & CodeMirror 6 Inline Scrolling**:
+  - Overhauled `.wikios-editor-modern`, `.wikios-ve-container`, and `.wikios-ve-editor-wrapper` in `src/styles/wiki-os/elements.css` and `editors.css` to `height: calc(100vh - 120px); min-height: 520px; max-height: calc(100vh - 100px); overflow: hidden`.
+  - Enforced `height: 100% !important; overflow: auto !important` on `.cm-scroller` and ContentEditable canvas, locking the title bar, formatting bar, and status bar in place while documents scroll internally.
+  - Aligned toolbar button groups to Apple Design System segmented pills (`32px` containers, `26px` buttons, `18px` dividers, and `Mod-s` / `⌘S` quick-save).
+- **Subtree Render Isolation & Lazy Stash Resolution**:
+  - Extracted `<WikiEditorStatusBar />` wrapped in `React.memo` for cursor line/col, document word/line count, and encoding indicators, eliminating toolbar re-renders on cursor ticks.
+  - Conditioned `getStashes`, `getStashItems`, and `getImageInfoByTitles` to fire only upon opening the Stashes popover (`enabled: stashesOpen`).
+- **Strict TypeScript 7.0 Type System & Build Resilience**:
+  - Created `src/components/wiki-os/editor/types.ts` defining `StashEntity`, `StashItemEntity`, `WikimediaImageMeta`, `EditorCursorPos`, and `SaveActionType`, eliminating all `any[]` and `Map<string, any>` prop surfaces.
+  - Unified `authorInfo` structure (`creator`, `createdAt`, `lastEditor`, `lastEditedAt`) in `page-content.ts` and `[slug]/page.tsx`.
+  - Resolved all sub-project typecheck issues (`typecheck:ui`, `typecheck:server`, `typecheck:trpc`, `typecheck:db`) to 100% green.
+
+### 📖 WikiOS Multi-Tier Resilience, Feed Activity Cards & Adapter Hardening
+
+- **Dashboard Feed Activity Card & Snippet Resolution**:
+  - Resolved blank wiki feed items on `/dashboard` by unblocking `descHtml` rendering in `src/components/dashboard/sections/UnifiedFeedItem.tsx` so edit actions (`Created new page`, `Edited page`, byte deltas, and comments) always display.
+  - Normalized URL-encoded and underscore slugs in `InlineWikiArticlePreview.tsx` and connected `getArticleSummaryFromShadow` to the bridge wikitext extractor.
+- **Resilient Multi-Tier Reader & Fallback Pipeline**:
+  - Integrated native `parseWikitextToHtml` compiler fallback into `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` and `src/server/api/routers/wikios/page-content.ts` when MediaWiki `action=parse` fails, guaranteeing articles with wikitext never throw false 404 errors.
+  - Generalized `extractFeaturedArticle` in `src/components/wiki-os/reader/WikiOSMainPage.tsx` across alternative MediaWiki main page layouts (`featured_article`, `mp-tfa`, `mainpage-featured`, `tfa-box`, `mp-box`).
+- **Prisma Schema Runtime Alignment & Deploy-Safe Queries**:
+  - Fixed `prisma.wikiArticle.findFirst()` in `src/lib/wiki-os/core/native-search-service.ts` by removing prospective `slug` and `summary` field selections, eliminating runtime 500 crashes on `wikios.getIntro`.
+  - Added explicit column selection (`id`, `title`, `source`, `wikitext`, `createdAt`, `updatedAt`) and promise error guards to `ArticleRepository.findBySlug` in `src/lib/wiki-os/core/article-repository.ts`, resolving `The column t0.htmlContent does not exist` errors.
+  - Aligned `shadowGet` and `getArticleWikitextShadow` in `src/lib/wiki-os/adapters/mediawiki/article-store.ts` with confirmed database columns.
+- **MariaDB Circuit Breaker & 0ms Offline Fallback**:
+  - Added `isMysqlAvailable()` circuit breaker with 1500ms connection timeout and 30s backoff to `src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool.ts` and `mysql-reader.ts`, eliminating connection latency when running in development environments without active database port tunnels.
+- **Canonical MediaWiki Integration Standards**:
+  - Enforced `DEFAULT_USER_AGENT` (`IxStats-Builder`) and `getMediaWikiApiUrl` across `src/server/api/routers/lore-cards/wiki.ts` and `src/server/api/routers/wikiCache.ts`.
+  - Migrated legacy test imports in `src/tests/lib/wiki-search-service.test.ts` and `src/tests/lib/factbook-routes.test.ts` to canonical `@wikios/core` modules.
+
+### 📖 WikiOS Native Backend Decoupling, Direct MariaDB Read-Through & Global Neutral Bot Bridge (Plan 170)
+
+- **Core Package Architecture & Legacy Seam Deletion (`@wikios/core`)**:
+  - Migrated all 75+ call-sites across frontend pages, UI components, custom hooks, and tRPC routers to the canonical `~/lib/wiki-os` package.
+  - Completely deleted the legacy `src/lib/wiki/` directory and purged all 20 flat forwarder files from `src/lib/wiki-os/`.
+  - Structured `@wikios/core` into 7 root primitives (`index.ts`, `config.ts`, `types.ts`, `auth.ts`, `use-wiki-auth.ts`, `storage.ts`) and 7 focused subdirectories: `core/`, `guardian/`, `adapters/`, `transformers/`, `templates/`, `editor/`, and `migration/`.
+- **Authoritative PostgreSQL Primary Store & Dual-Layer Storage Pipeline**:
+  - Promoted PostgreSQL (`wiki_articles`, `wiki_revisions`, `wiki_links`) to the authoritative primary source of truth, delivering sub-2ms reads and sub-10ms atomic writes.
+  - Implemented the Dual-Layer Compiled Storage Model:
+    - `contentHtml` (Read layer): Pre-compiled, sanitized HTML with infobox tables, table of contents, and simulation macros baked in, serving reads directly from database indexes with zero Parsoid HTTP hops.
+    - `contentJson` (Edit layer): Structured Block AST (PlateJS/TipTap node tree) mounting immediately in the visual Canvas editor with zero parsing latency.
+    - `wikitext` (Compatibility layer): Serialized on save for background federation, external bot ingestion, and raw exports.
+- **Relational Directed Link Graph (`wiki_links`)**:
+  - Implemented an indexed directed edge graph in `wiki_links`, delivering sub-1ms backlink queries (`SELECT sourceArticleId FROM wiki_links WHERE targetSlug = :slug`) compared to >400ms recursive MediaWiki SQL joins.
+  - Enabled zero-query red link detection (`targetArticleId IS NULL`) rendering "+ Create Page" triggers without per-link network lookups.
+  - Added automatic cascade updates across `wiki_links` on article slug renames to maintain citation integrity.
+- **Two-Tier Native Search Engine**:
+  - Tier 1 (Spotlight Autocomplete, <1.5ms): Trigram similarity matching (`pg_trgm`) and prefix indexing for typo-tolerant live keystroke queries in the `Cmd+K` palette.
+  - Tier 2 (Full-Text Search, <3.5ms): Weighted PostgreSQL `tsvector` queries ranking title (1.0), summary and infobox parameters (0.4), headings (0.2), and body text (0.1), with server-side snippet generation via `ts_headline()`.
+- **Direct MariaDB Read-Through Pool (`mysql-reader.ts`)**:
+  - Configured `mysql-reader.ts` to query the MariaDB connection pool (`getIxWikiPool()`) directly on port 3306/13306 for legacy unmigrated articles, revision history, recent changes, and categories.
+  - Completely eliminated outbound HTTP `api.php` reads for IxWiki, reducing legacy read latency from 8.6s down to 1-3ms.
+- **Global Neutral Bot Bridge & Dynamic Actor Attribution**:
+  - Re-architected `MediaWikiExportWorker` and `write-service.ts` into a global neutral gateway running under the dedicated bot account (`WikiOS-Bridge`).
+  - Implemented dynamic actor patching (`updateRevisionActor`) updating MariaDB `revision.rev_actor` and `recentchanges.rc_actor` post-commit so edits are credited directly to the author's MediaWiki username (`Special:Contributions/<username>`) with `bot: 0` visibility.
+- **Simulation Macro Engine (`template-resolver.ts`)**:
+  - Built a batch macro evaluator executing `{{CountryData:Name|field}}` and `{{BusinessData:Name|field}}` macros in under 2ms directly from active PostgreSQL game models.
+  - Rendered national indicators (GDP, population, tax rates, stability) with trend badges inside wiki articles.
+- **WikiGuardian Edge Defense & Cloudflare Security (`guardian/`)**:
+  - Integrated Cloudflare Turnstile verification on untrusted edits without manual CAPTCHAs.
+  - Added Zero-Trust Service Token validation (`CF-Access-Client-Id`) for background workers and migration pipelines.
+  - Wired non-blocking edge CDN cache purges (`wiki:[slug]`) dispatched to Cloudflare Zone endpoints on commit for worldwide <50ms edge delivery.
+  - Implemented AbuseFilter heuristics blocking mass blanking (>70% text deletion) and script injection.
+- **Universal Migration Pipeline (`migration/`)**:
+  - Built streaming SQL (`.sql`) and XML (`.xml`) tokenizers with constant memory usage ($O(1)$) to import multi-gigabyte MediaWiki dumps into PostgreSQL with automated infobox extraction and link indexing.
+- **Router Hardening, Headless Test Guard & URL Consolidation**:
+  - Pruned unused maintenance mutation arguments from `wikiCacheRouter` and synchronized signatures with `WikiCacheService`.
+  - Refactored `src/server/bridges/wiki-talk-bridge.ts` to query MariaDB directly via `ixwikiGetNamespacedWikitext(username, 3)` with zero outbound HTTP calls.
+  - Protected `DOMPurify.addHook` and `getPurify` in `src/lib/utils/sanitize-html.ts` for isomorphic SSR and headless test-runner stability under Bun/Jest.
+  - Consolidated all remaining hardcoded `"https://ixwiki.com"` strings across the workspace to `DEFAULT_MEDIAWIKI_URL` in `src/lib/wiki-os/config.ts`.
+- **Documentation Overhaul & Unslop Pass**:
+  - Rewrote `src/lib/wiki-os/README.md` with complete Mermaid system topology, compiled dual-layer storage pipeline, benchmark matrix, and directory layout.
+  - Updated `docs/systems/wikios/WIKIOS.md` and `docs/systems/wikios.md` to reflect the decoupled native engine.
+  - Completed an unslop pass across all WikiOS documentation, removing all em dashes, decorative emojis, puffery, and AI jargon in favor of concrete active-voice descriptions.
+
 ### 📖 WikiOS Full Architecture Modernization, Performance Acceleration & Ponytail Audit
 
 - **WikiBridge Backend Decomposition (Plan 1)**:

@@ -20,7 +20,7 @@ import {
   WikiSearchDropdown,
 } from "../components";
 import { type LocalDraft, type PausedSession } from "../types";
-import { listDrafts } from "~/lib/wiki-os/draft-store";
+import { listDrafts } from "~/lib/wiki-os/editor/draft-store";
 
 export interface WikiViewProps extends DIViewProps {}
 
@@ -39,11 +39,15 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
   const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
-  const [wikiTab, setWikiTab] = useState<"workspace" | "nowplaying">("workspace");
+  const [wikiTab, setWikiTab] = useState<"workspace" | "narrator">(
+    narratorState?.isPlaying || (narratorState && narratorState.activeBlockIndex > 0)
+      ? "narrator"
+      : "workspace"
+  );
 
-  // Surface the player the moment narration starts
+  // Surface the player the moment narration starts or state updates
   useEffect(() => {
-    if (narratorState?.isPlaying) setWikiTab("nowplaying");
+    if (narratorState?.isPlaying) setWikiTab("narrator");
   }, [narratorState?.isPlaying]);
 
   // Scan local drafts and paused reading sessions
@@ -245,14 +249,14 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         onSelectArticle={handleNavigateToArticle}
       />
 
-      {/* Segmented Tab Switcher (Workspace vs Now Playing) */}
+      {/* Segmented Tab Switcher (Workspace vs Narrator) */}
       {narratorState && narratorState.totalBlocks > 0 && (
         <div className="bg-accent/15 mb-3 flex w-full rounded-lg p-0.5">
           <button
             type="button"
             onClick={() => setWikiTab("workspace")}
             className={cn(
-              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all",
+              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all cursor-pointer",
               wikiTab === "workspace"
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-white/15 dark:text-white"
                 : "text-muted-foreground hover:text-foreground"
@@ -262,21 +266,34 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
           </button>
           <button
             type="button"
-            onClick={() => setWikiTab("nowplaying")}
+            onClick={() => setWikiTab("narrator")}
             className={cn(
-              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all",
-              wikiTab === "nowplaying"
+              "flex-1 rounded-md py-1 text-center text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+              wikiTab === "narrator"
                 ? "bg-white text-blue-600 shadow-sm dark:bg-white/15 dark:text-blue-400"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            Now Playing
+            <span>Narrator</span>
+            <span
+              className={cn(
+                "px-1.5 py-0.2 rounded-full text-[8.5px] font-bold tracking-widest uppercase transition-colors",
+                wikiTab === "narrator"
+                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                  : "bg-white/10 text-zinc-400 border border-white/5"
+              )}
+            >
+              BETA
+            </span>
+            {narratorState?.isPlaying && (
+              <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse ml-0.5" />
+            )}
           </button>
         </div>
       )}
 
-      {/* Tab 1: Now Playing / Narrator Focus */}
-      {wikiTab === "nowplaying" && (
+      {/* Tab 1: Narrator Player Focus */}
+      {wikiTab === "narrator" && (
         <WikiNarratorPlayer
           visibleToc={visibleToc}
           activeSectionId={activeSectionId}

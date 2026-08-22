@@ -7,7 +7,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 export interface WikiThemeColors {
   primary: string;
@@ -59,10 +59,20 @@ interface WikiContextState {
   navigateToSection: (id: string) => void;
   /** Navigate to a recently visited wiki article */
   restoreSession: (title?: string) => void;
-  /** Active overlay modal (history or backlinks) */
-  activeModal: "history" | "backlinks" | null;
+  /** Active overlay modal (history, backlinks, or margin inspector) */
+  activeModal: "history" | "backlinks" | "margin" | null;
   /** Set the active modal */
-  setActiveModal: (modal: "history" | "backlinks" | null) => void;
+  setActiveModal: (modal: "history" | "backlinks" | "margin" | null) => void;
+  /** Whether the Margin Split-Canvas suite is open */
+  isMarginOpen: boolean;
+  /** Set Margin open state */
+  setIsMarginOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  /** Active tab in Margin */
+  marginTab: "threads" | "markup";
+  /** Set Margin active tab */
+  setMarginTab: (tab: "threads" | "markup") => void;
+  /** Toggle Margin open/close with optional tab */
+  toggleMargin: (tab?: "threads" | "markup") => void;
   /** Audio Narrator playback state */
   narratorState: WikiNarratorState;
   /** Update audio narrator playback state */
@@ -86,6 +96,11 @@ const WikiContext = createContext<WikiContextState>({
   restoreSession: () => {},
   activeModal: null,
   setActiveModal: () => {},
+  isMarginOpen: false,
+  setIsMarginOpen: () => {},
+  marginTab: "threads",
+  setMarginTab: () => {},
+  toggleMargin: () => {},
   narratorState: {
     isPlaying: false,
     activeBlockIndex: 0,
@@ -107,7 +122,23 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const [themeColors, setThemeColors] = useState<WikiThemeColors | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [recentArticles, setRecentArticles] = useState<string[]>([]);
-  const [activeModal, setActiveModal] = useState<"history" | "backlinks" | null>(null);
+  const [activeModal, setActiveModal] = useState<"history" | "backlinks" | "margin" | null>(null);
+  const [isMarginOpen, setIsMarginOpen] = useState(false);
+  const [marginTab, setMarginTab] = useState<"threads" | "markup">("threads");
+
+  const toggleMargin = useCallback((tab?: "threads" | "markup") => {
+    setIsMarginOpen((prev) => {
+      if (!prev && tab) {
+        setMarginTab(tab);
+        return true;
+      }
+      if (prev && tab && tab !== marginTab) {
+        setMarginTab(tab);
+        return true;
+      }
+      return !prev;
+    });
+  }, [marginTab]);
 
   // Narrator state and action hooks
   const [narratorState, setNarratorStateInternal] = useState<WikiNarratorState>({
@@ -278,6 +309,11 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
         restoreSession,
         activeModal,
         setActiveModal,
+        isMarginOpen,
+        setIsMarginOpen,
+        marginTab,
+        setMarginTab,
+        toggleMargin,
         narratorState,
         setNarratorState,
         narratorActions,

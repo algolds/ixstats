@@ -26,8 +26,8 @@ import {
   ForumLinkPreview,
   WikiHtmlContent,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/url-compat";
-import { resolveImageUrl, getImageUrl } from "~/lib/wiki/image-url";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { resolveImageUrl, getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { formatTimeAgo } from "~/lib/utils";
@@ -248,23 +248,26 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
             )}
           </div>
 
+          {/* Edit description for non-grouped wiki items or standard posts */}
+          {!isGrouped && descHtml && (
+            <WikiHtmlContent
+              html={descHtml}
+              className="text-muted-foreground/90 pt-0.5 text-xs leading-relaxed tracking-tight break-words whitespace-pre-wrap"
+            />
+          )}
+
           {/* Inline Wiki Article Lead Snippet Preview */}
           {isWiki && wikiPageTitle && (
             <InlineWikiArticlePreview title={wikiPageTitle} wiki="ixwiki" />
           )}
 
-          {/* Body Content / Poll / Sports Card / Description (non-wiki items) */}
+          {/* Body Content / Poll / Sports Card (non-wiki items) */}
           {!isWiki &&
             !isGrouped &&
             (activity.poll ? (
               <FeedPollWidget poll={activity.poll} />
             ) : sportsBulletin ? (
               <SportsBulletinCard data={sportsBulletin} />
-            ) : descHtml ? (
-              <WikiHtmlContent
-                html={descHtml}
-                className="text-muted-foreground/90 pt-0.5 text-xs leading-relaxed tracking-tight break-words whitespace-pre-wrap"
-              />
             ) : null)}
 
           {/* Grouped sub-items expandable drawer */}

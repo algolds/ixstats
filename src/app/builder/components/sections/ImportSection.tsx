@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { DynamicIslandSearch } from "../../import/_components/DynamicIslandSearch";
+import { DynamicIslandSearch, type SearchResult } from "../../import/_components/DynamicIslandSearch";
 import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";
 import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveInfoboxPreview";
 import { EligibleCountryGrid } from "../../import/_components/EligibleCountryGrid";
 import type { BuilderSection } from "../../lib/builder-theme";
-import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { WikiDeepScanPanel } from "../../import/_components/WikiDeepScanPanel";
 import type { ExtractedBuilderData } from "../../lib/wiki-data-extractor";
 import { ScanCompleteToast } from "../../import/_components/ScanCompleteToast";
@@ -28,29 +28,17 @@ interface WikiSite {
   gradient: string;
 }
 
-interface SearchResult {
-  title: string;
-  snippet: string;
-  url: string;
-  namespace?: number;
-  flagUrl?: string | null;
-  population?: number;
-  gdpPerCapita?: number;
-  capital?: string;
-  government?: string;
-}
-
 interface ParsedCountryData extends UnifiedInfoboxData {
   wikiIntro?: string;
 }
 
-// ─── Constants ───
+import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 
 const wikiSites: WikiSite[] = [
   {
     name: "ixwiki",
     displayName: "IxWiki",
-    baseUrl: "https://ixwiki.com",
+    baseUrl: DEFAULT_MEDIAWIKI_URL,
     description: "Geopolitical worldbuilding community",
     theme: "blue",
     gradient: "from-blue-500/20 to-cyan-600/20",

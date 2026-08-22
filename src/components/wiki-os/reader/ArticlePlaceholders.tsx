@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { withBasePath } from "~/lib/base-path";
-import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
+import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 
 export function injectPlaceholderElements(html: string): string {
   let processed = html;

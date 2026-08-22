@@ -20,7 +20,7 @@ import {
   Activity,
   BookOpen,
 } from "lucide-react";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { useFacetDepth } from "~/components/ui/facet-container";
 import {
   ResponsiveContainer,

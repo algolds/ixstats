@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -21,8 +21,8 @@ import {
 import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/builder";
 import type { WikiSection } from "~/lib/builder";
-import { resolveImageUrl } from "~/lib/wiki/unified-parser";
-import { type WikiSource } from "~/lib/wiki/config";
+import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import { type WikiSource } from "~/lib/wiki-os/config";
 
 const CLASSIFICATION_STYLES = {
   PUBLIC: { color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },

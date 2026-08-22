@@ -16,7 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
 interface WikiSite {
   name: string;

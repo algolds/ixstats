@@ -3,7 +3,7 @@
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/utils";
-import { hashToFactbookRoute } from "~/lib/wiki/factbook-routes";
+import { hashToFactbookRoute } from "~/lib/wiki-os/adapters/ixstates/factbook-routes";
 
 /**
  * PublicCountryPage — `/countries/[slug]` (route group `(profile)`).

@@ -3,15 +3,28 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import type {
+  StashEntity,
+  StashItemEntity,
+  WikimediaImageMeta,
+  SaveActionType,
+} from "../types";
 
 export interface UseWikiEditorStateProps {
   title: string;
+  onSave?: (
+    content: string,
+    summary: string,
+    minor: boolean,
+    keepEditing?: boolean
+  ) => Promise<void> | void;
 }
 
-export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
+export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
   const notify = useNotify();
 
   // Dirty and word count state
@@ -24,7 +37,7 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
   const [saving, setSaving] = useState(false);
   const [showSavePanel, setShowSavePanel] = useState(false);
   const [saveDropdownOpen, setSaveDropdownOpen] = useState(false);
-  const [saveActionType, setSaveActionType] = useState<"publish" | "session">("publish");
+  const [saveActionType, setSaveActionType] = useState<SaveActionType>("publish");
 
   // Modals and popovers
   const [showImageSearch, setShowImageSearch] = useState(false);
@@ -37,7 +50,16 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
   const [stashesOpen, setStashesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Editor settings
+  // Warn on unload when dirty
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Editor settings with localStorage sync
   const [enableAutocomplete, setEnableAutocomplete] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("wikios-editor-autocomplete") !== "false";
@@ -47,7 +69,9 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
 
   const handleToggleAutocomplete = useCallback((val: boolean) => {
     setEnableAutocomplete(val);
-    localStorage.setItem("wikios-editor-autocomplete", String(val));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wikios-editor-autocomplete", String(val));
+    }
   }, []);
 
   const [showLineNumbers, setShowLineNumbers] = useState(() => {
@@ -59,7 +83,9 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
 
   const handleToggleLineNumbers = useCallback((val: boolean) => {
     setShowLineNumbers(val);
-    localStorage.setItem("wikios-editor-line-numbers", String(val));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wikios-editor-line-numbers", String(val));
+    }
   }, []);
 
   const [enableWordWrap, setEnableWordWrap] = useState(() => {
@@ -71,23 +97,26 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
 
   const handleToggleWordWrap = useCallback((val: boolean) => {
     setEnableWordWrap(val);
-    localStorage.setItem("wikios-editor-word-wrap", String(val));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wikios-editor-word-wrap", String(val));
+    }
   }, []);
 
-  // Stash queries and image resolution
+  // Lazy Stash queries (Only executed when stashesOpen is active)
   const stashesQuery = api.wikios.getStashes.useQuery(undefined, {
-    staleTime: 30_000,
+    enabled: stashesOpen,
+    staleTime: 60_000,
   });
-  const stashes = stashesQuery.data || [];
+  const stashes = (stashesQuery.data as StashEntity[]) || [];
   const defaultStash = stashes.find((s) => s.isDefault) || stashes[0];
   const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
   const activeStashId = selectedStashId || defaultStash?.id || "";
 
   const stashItemsQuery = api.wikios.getStashItems.useQuery(
     { stashId: activeStashId, limit: 50 },
-    { enabled: !!activeStashId, staleTime: 10_000 }
+    { enabled: stashesOpen && !!activeStashId, staleTime: 30_000 }
   );
-  const stashItems = stashItemsQuery.data?.items || [];
+  const stashItems = (stashItemsQuery.data?.items as StashItemEntity[]) || [];
 
   const imageItems = useMemo(() => {
     return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
@@ -99,18 +128,65 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
 
   const { data: resolvedImages } = api.commons.getImageInfoByTitles.useQuery(
     { titles: imageTitles },
-    { enabled: imageTitles.length > 0, staleTime: 5 * 60 * 1000 }
+    { enabled: stashesOpen && imageTitles.length > 0, staleTime: 5 * 60 * 1000 }
   );
 
   const imagesMap = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, WikimediaImageMeta>();
     if (resolvedImages) {
       for (const img of resolvedImages) {
-        map.set(`commons:${img.title}`, img);
+        map.set(`commons:${img.title}`, img as WikimediaImageMeta);
       }
     }
     return map;
   }, [resolvedImages]);
+
+  // Consolidated Save Workflow
+  const executeSave = useCallback(
+    async (getContent: () => string) => {
+      if (!onSave) return;
+      const content = getContent();
+      setSaving(true);
+      const isSession = saveActionType === "session";
+      try {
+        await onSave(content, summary, minor, isSession);
+        clearDraft(title, "ixwiki");
+        setIsDirty(false);
+        setShowSavePanel(false);
+        notify.success(
+          isSession ? "Session Saved" : "Article Published",
+          isSession
+            ? "Your progress has been saved successfully."
+            : "Your changes have been published to the wiki."
+        );
+      } catch (err) {
+        console.error("Save failed:", err);
+        notify.error("Save Failed", "Could not save article changes.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [onSave, saveActionType, summary, minor, title, notify]
+  );
+
+  const executeSaveDraft = useCallback(
+    (getContent: () => string, mode: "visual" | "source") => {
+      const content = getContent();
+      try {
+        if (mode === "visual") {
+          saveDraft({ title, source: "ixwiki", html: content, mode: "visual" });
+        } else {
+          saveDraft({ title, source: "ixwiki", wikitext: content, mode: "source" });
+        }
+        setIsDirty(false);
+        notify.success("Draft Saved", "Your draft has been saved locally.");
+      } catch (err) {
+        console.error("Failed to save draft:", err);
+        notify.error("Save Draft Failed", "Could not write draft to local storage.");
+      }
+    },
+    [title, notify]
+  );
 
   return {
     notify,
@@ -131,6 +207,8 @@ export function useWikiEditorState({ title }: UseWikiEditorStateProps) {
     setSaveDropdownOpen,
     saveActionType,
     setSaveActionType,
+    executeSave,
+    executeSaveDraft,
     showImageSearch,
     setShowImageSearch,
     showTemplateInserter,

@@ -322,17 +322,30 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             icon={<BookOpen className="h-6 w-6 text-blue-500" />}
             color="bg-blue-100 dark:bg-blue-900/30"
             linked={status?.wiki.linked ?? false}
-            username={status?.wiki.username ?? null}
+            username={
+              status?.wiki.username
+                ? `${status.wiki.username} ${status.wiki.isCustomClaimed ? "(Claimed)" : "(Unified)"}`
+                : null
+            }
             lastSync={status?.wiki.lastSync ?? null}
             onLink={() => setShowWikiInput(true)}
-            onUnlink={() => unlinkWiki.mutate()}
+            onUnlink={() => {
+              if (status?.wiki.isCustomClaimed) {
+                unlinkWiki.mutate();
+              } else {
+                setShowWikiInput(true);
+              }
+            }}
             isLinking={linkWiki.isPending}
             isUnlinking={unlinkWiki.isPending}
           />
 
           {/* Wiki input */}
-          {showWikiInput && !status?.wiki.linked && (
+          {showWikiInput && (
             <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Claim a legacy MediaWiki account to preserve your historical edits and contributions.
+              </div>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -341,7 +354,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                     setWikiInput(e.target.value);
                     setWikiLookup(null);
                   }}
-                  placeholder="Wiki username..."
+                  placeholder="Legacy wiki username..."
                   className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                   onKeyDown={(e) => e.key === "Enter" && handleWikiLookup()}
                 />
@@ -369,7 +382,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                     disabled={linkWiki.isPending}
                     className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
                   >
-                    {linkWiki.isPending ? "Linking..." : "Confirm Link"}
+                    {linkWiki.isPending ? "Claiming..." : "Confirm Claim"}
                   </button>
                 </div>
               )}

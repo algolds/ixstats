@@ -39,6 +39,12 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { AppleSwitch } from "~/components/ui/apple-switch";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashImageCard } from "./StashImageCard";
+import type {
+  StashEntity,
+  StashItemEntity,
+  WikimediaImageMeta,
+  SaveActionType,
+} from "../types";
 
 export interface WikiSourceToolbarProps {
   title: string;
@@ -53,8 +59,8 @@ export interface WikiSourceToolbarProps {
   saving: boolean;
   saveDropdownOpen: boolean;
   setSaveDropdownOpen: (open: boolean) => void;
-  saveActionType: "publish" | "session";
-  setSaveActionType: (t: "publish" | "session") => void;
+  saveActionType: SaveActionType;
+  setSaveActionType: (t: SaveActionType) => void;
   setShowSavePanel: (show: boolean) => void;
   summary: string;
   setSummary: (s: string) => void;
@@ -84,11 +90,11 @@ export interface WikiSourceToolbarProps {
   enableAutocomplete: boolean;
   handleToggleAutocomplete: (val: boolean) => void;
 
-  stashes: any[];
+  stashes: StashEntity[];
   activeStashId: string;
   setSelectedStashId: (id: string) => void;
-  imageItems: any[];
-  imagesMap: Map<string, any>;
+  imageItems: StashItemEntity[];
+  imagesMap: Map<string, WikimediaImageMeta>;
   handleInsertStashedImage: (filename: string) => void;
 }
 
@@ -219,8 +225,8 @@ export function WikiSourceToolbar({
         <div className="wikios-editor-format-group">
           <Popover>
             <PopoverTrigger className="wikios-editor-format-btn wikios-editor-format-select">
-              <span className="text-[11px] font-semibold">Heading</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
+              <span className="text-[11px] font-semibold tracking-tight">Heading</span>
+              <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
             </PopoverTrigger>
             <PopoverContent
               align="start"
@@ -390,9 +396,9 @@ export function WikiSourceToolbar({
               className="wikios-editor-format-btn wikios-editor-format-select"
               title="Insert Template"
             >
-              <Puzzle className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-semibold">Templates</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
+              <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+              <span className="text-[11px] font-semibold tracking-tight">Templates</span>
+              <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
             </PopoverTrigger>
             <PopoverContent
               align="start"
@@ -545,7 +551,7 @@ function FmtBtn({
       onClick={onClick}
       title={title}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3.5 w-3.5 shrink-0" />
     </button>
   );
 }

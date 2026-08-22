@@ -14,7 +14,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { Loader2, Sparkles } from "lucide-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { MatchPredictionWidget } from "~/components/sports/league/MatchPredictionWidget";
 import Link from "next/link";
 

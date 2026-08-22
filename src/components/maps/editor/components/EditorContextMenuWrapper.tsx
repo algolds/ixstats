@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { FeatureContextMenu } from "~/components/maps/editor/FeatureContextMenu";
 
 interface EditorContextMenuWrapperProps {

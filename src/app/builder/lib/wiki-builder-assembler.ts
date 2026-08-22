@@ -3,7 +3,7 @@
  * a complete BuilderState from infobox data + parsed wiki attributes.
  */
 
-import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import type { ComponentType } from "~/lib/enums";
 import type {
   EconomicInputs,

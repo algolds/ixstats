@@ -21,6 +21,7 @@ import { wikiosEditingRouter } from "./editing";
 import { wikiosStashRouter } from "./stash";
 import { wikiosWatchlistAnnotationsRouter } from "./watchlist-annotations";
 import { wikiosUserTalkRouter } from "./user-talk";
+import { wikiosDiscussionsRouter } from "./discussions";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -29,5 +30,7 @@ export const wikiosRouter = mergeRouters(
   wikiosEditingRouter,
   wikiosStashRouter,
   wikiosWatchlistAnnotationsRouter,
-  wikiosUserTalkRouter
+  wikiosUserTalkRouter,
+  wikiosDiscussionsRouter
 );
+

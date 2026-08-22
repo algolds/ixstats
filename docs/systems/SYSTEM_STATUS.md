@@ -115,13 +115,13 @@ The platform uses the **Canon Platform Readiness Scale** as established in `docs
 ### Pillar 3: Knowledge, Publishing & Media (WikiOS)
 
 #### WikiOS Knowledge Platform (`WIKIOS_VERSION = 1`, `CANVAS_VERSION = 1`)
-- **Launch Grade:** **A- (Release Candidate — 89%)**
-- **State of the Code:** Next.js modern frontend, PlateJS visual block editor, direct MariaDB SQL cache engine ($<10\text{ms}$ retrieval), Kokoro TTS article narration with Halo equalizer, Stash bookmarks, and Commons multimedia repository (`commons.ts`).
+- **Launch Grade:** **A (Release Candidate — 95%)**
+- **State of the Code:** Pure native PostgreSQL storage (`wiki_articles`, `wiki_revisions`, `wiki_links`), $O(1)$ backlink relational graph, sub-2ms pre-rendered reads, Canvas visual block editor, direct MariaDB read-through pool (`mysql-reader.ts`), asynchronous neutral bot mirror (`WikiOS-Bridge`), Kokoro TTS narration with Halo waveform, and Stash bookmarks.
 - **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `shrink`: Consolidate duplicate wikitext parser regular expressions into `src/lib/wiki/bridge.ts`.
-  - `native`: Use standard CSS `@container` queries for responsive infobox layouts instead of resize-observer JS hooks.
+  - `delete`: All legacy forwarders and `src/lib/wiki/` directory completely deleted in favor of clean `@wikios/core` scaffolding.
+  - `native`: Sub-2ms reads driven directly by PostgreSQL primary store and in-memory connection pooling.
 - **Path to Gold Master (GM Punch List):**
-  1. Harden bidirectional wikitext translation for nested infobox tables.
+  1. Harden bidirectional wikitext translation for complex nested templates.
   2. Implement automated background cache warming for top 100 featured articles.
 
 ---

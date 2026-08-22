@@ -12,7 +12,7 @@ import {
   parseInfobox,
   extractCoordsFromFields,
   parseCoordTemplate,
-} from "~/lib/wiki/infobox-parser";
+} from "~/lib/wiki-os/transformers/infobox-parser";
 
 export const geoWikiRouter = createTRPCRouter({
   /** Fetch wiki article intro for a map feature (city/POI) by its linked wiki page title. */
@@ -22,7 +22,7 @@ export const geoWikiRouter = createTRPCRouter({
       const name = input.wikiPageTitle.trim();
       if (!name) return null;
 
-      const { getArticleIntro } = await import("~/lib/wiki/bridge");
+      const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
       // Try ixwiki first (direct MySQL, ~8ms), then iiwiki (HTTP, ~400ms)
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
@@ -49,7 +49,7 @@ export const geoWikiRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
       const title = input.pageTitle.trim();
-      const { getArticleWikitext } = await import("~/lib/wiki/bridge");
+      const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
         const article = await getArticleWikitext(title, wiki);
@@ -114,7 +114,7 @@ export const geoWikiRouter = createTRPCRouter({
       z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) })
     )
     .query(async ({ input }) => {
-      const { searchPages } = await import("~/lib/wiki/bridge");
+      const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
       // Try ixwiki first (MySQL, ~30ms), then iiwiki (HTTP, ~400ms)
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
@@ -147,7 +147,7 @@ export const geoWikiRouter = createTRPCRouter({
       const title = input.pageTitle.trim();
 
       // Fetch article intro via WikiBridge (direct MySQL for ixwiki)
-      const { getArticleIntro } = await import("~/lib/wiki/bridge");
+      const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
       let plaintext = "";
 
       for (const wiki of ["ixwiki", "iiwiki"] as const) {

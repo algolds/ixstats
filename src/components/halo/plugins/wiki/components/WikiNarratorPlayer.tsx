@@ -1,20 +1,34 @@
 // src/components/halo/plugins/wiki/components/WikiNarratorPlayer.tsx
-// Kokoro TTS voice narrator player & article reading progress track.
+// Unified narrator audio player built with audio-ui.xyz components (ghost variant, Transport, Fader).
+// Theme compliant with WikiOS accents, ambient animated background waveform, and inline Apple Design controls.
 
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
   User,
-  Scroll,
   Trash2,
+  Volume2,
+  Volume1,
+  VolumeX,
+  Check,
+  Headphones,
+  ChevronDown,
+  Gauge,
 } from "lucide-react";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import {
+  AudioPlayer,
+  AudioPlayerControlBar,
+  AudioPlayerButton,
+} from "~/components/audio/player";
+import { Transport } from "~/components/audio/elements/transport";
+import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
-import { PreText } from "~/components/ui/pretext";
+import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
@@ -30,27 +44,48 @@ interface TOCEntry {
 }
 
 interface WikiNarratorPlayerProps {
-  visibleToc: TOCEntry[];
-  activeSectionId: string | null;
+  visibleToc?: TOCEntry[];
+  activeSectionId?: string | null;
   themeColors?: { primary: string; secondary: string } | null;
-  scrollPercent: number;
-  sectionOffsets: Record<string, number>;
+  scrollPercent?: number;
+  sectionOffsets?: Record<string, number>;
   narratorState: any;
   narratorActions: any;
+  showHeader?: boolean;
+}
+
+type ActiveInlineTray = "none" | "voice" | "speed" | "volume";
+
+const BG_WAVEFORM_BARS = [
+  15, 28, 38, 22, 45, 32, 50, 38, 26, 48, 42, 28, 36, 44, 24, 46, 38, 30, 44, 32, 22, 40, 28, 16,
+];
+
+function getRgbaColor(colorStr: string, opacity: number): string {
+  if (colorStr.startsWith("#")) {
+    const cleanHex = colorStr.replace("#", "");
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (colorStr.startsWith("hsl")) {
+    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
+  }
+  return `rgba(59, 130, 246, ${opacity})`;
 }
 
 export function WikiNarratorPlayer({
-  visibleToc,
+  visibleToc = [],
   activeSectionId,
   themeColors,
-  scrollPercent,
-  sectionOffsets,
+  scrollPercent = 0,
+  sectionOffsets = {},
   narratorState,
   narratorActions,
+  showHeader = true,
 }: WikiNarratorPlayerProps) {
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeTray, setActiveTray] = useState<ActiveInlineTray>("none");
+  const [lastNonZeroVol, setLastNonZeroVol] = useState(0.2);
 
   const hasNarrator = !!(narratorState && narratorState.totalBlocks > 0 && narratorActions);
   const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
@@ -59,19 +94,16 @@ export function WikiNarratorPlayer({
   });
   const voiceOptions: string[] = voicesData?.voices ?? Object.keys(NARRATOR_VOICE_LABELS);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setAutoScroll(localStorage.getItem("onoma-narrator-autoscroll") !== "false");
-    }
-  }, []);
-
-  const handleToggleAutoScroll = () => {
-    const next = !autoScroll;
-    setAutoScroll(next);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("onoma-narrator-autoscroll", String(next));
-    }
-  };
+  const currentVolume = typeof narratorState?.volume === "number" ? narratorState.volume : 0.2;
+  const currentSpeed = typeof narratorState?.speed === "number" ? narratorState.speed : 1.0;
+  const currentVoiceId = narratorState?.voice || "";
+  const currentVoiceLabel =
+    (currentVoiceId && NARRATOR_VOICE_LABELS[currentVoiceId]) ||
+    currentVoiceId ||
+    "Default Voice";
+  const shortVoiceName =
+    currentVoiceLabel.split(" - ")[1] ||
+    currentVoiceLabel.replace("Female ", "").replace("Male ", "");
 
   const isNarratorActive = !!(
     narratorState &&
@@ -79,13 +111,91 @@ export function WikiNarratorPlayer({
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
   );
 
+  const isPlaying = !!narratorState?.isPlaying;
+
   const displayPercent = isNarratorActive
-    ? (narratorState.activeBlockIndex / narratorState.totalBlocks) * 100
+    ? ((narratorState.activeBlockIndex + 1) / narratorState.totalBlocks) * 100
     : scrollPercent;
 
   const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
-  const activeSectionTitle = activeEntry?.text ?? "";
+  const activeSectionTitle = activeEntry?.text ?? narratorState?.activeSectionTitle ?? "Overview";
+  const accentColor = themeColors?.primary || NARRATOR_ACCENT;
 
+  const narratorTracks = useMemo(
+    () => [
+      {
+        id: activeSectionId || "wiki-narrator",
+        title: narratorState?.activeSectionTitle || "Wiki Article",
+        artist: "Wiki Narrator",
+        url: "",
+      },
+    ],
+    [activeSectionId, narratorState?.activeSectionTitle]
+  );
+
+  // Sync narrator state into audio-ui's centralized audio store
+  useEffect(() => {
+    if (!narratorState) return;
+
+    useAudioStore.setState({
+      isPlaying: !!narratorState.isPlaying,
+      isLoading: false,
+      isBuffering: false,
+      currentTime: narratorState.activeBlockIndex ?? 0,
+      duration: Math.max(1, narratorState.totalBlocks ?? 1),
+      volume: currentVolume,
+      playbackRate: currentSpeed,
+      currentTrack: narratorTracks[0],
+    });
+  }, [
+    narratorState?.isPlaying,
+    narratorState?.activeBlockIndex,
+    narratorState?.totalBlocks,
+    currentVolume,
+    currentSpeed,
+    narratorTracks,
+  ]);
+
+  // Connect audio-ui playback, seek, and volume actions directly to the narrator engine
+  useEffect(() => {
+    if (!narratorActions) return;
+
+    const originalTogglePlay = useAudioStore.getState().togglePlay;
+    const originalSeek = useAudioStore.getState().seek;
+    const originalSetVolume = useAudioStore.getState().setVolume;
+    const originalSetPlaybackRate = useAudioStore.getState().setPlaybackRate;
+
+    useAudioStore.setState({
+      togglePlay: () => {
+        if (narratorState?.isPlaying) {
+          narratorActions.pause();
+        } else {
+          narratorActions.play();
+        }
+      },
+      seek: (targetTime: number) => {
+        narratorActions.jumpToBlock(Math.round(targetTime));
+      },
+      setVolume: ({ volume }: { volume: number }) => {
+        narratorActions.setVolume(volume);
+      },
+      setPlaybackRate: (rate: number) => {
+        narratorActions.setSpeed(rate);
+        useAudioStore.setState({ playbackRate: rate });
+      },
+    });
+
+    return () => {
+      useAudioStore.setState({
+        togglePlay: originalTogglePlay,
+        seek: originalSeek,
+        setVolume: originalSetVolume,
+        setPlaybackRate: originalSetPlaybackRate,
+      });
+    };
+  }, [narratorActions, narratorState?.isPlaying]);
+
+  // Timeline & section scrubbing callback
   const handleScrub = useCallback(
     (pct: number) => {
       if (isNarratorActive && narratorActions) {
@@ -107,90 +217,94 @@ export function WikiNarratorPlayer({
     [isNarratorActive, narratorActions, narratorState?.totalBlocks]
   );
 
-  const updateScrollFromPointer = (e: React.PointerEvent) => {
-    if (!trackRef.current) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const pct = (clickX / rect.width) * 100;
-    const clampedPct = Math.min(100, Math.max(0, pct));
-
-    if (isNarratorActive && narratorActions) {
-      const targetIdx = Math.min(
-        narratorState.totalBlocks - 1,
-        Math.max(0, Math.round((clampedPct / 100) * (narratorState.totalBlocks - 1)))
-      );
-      narratorActions.jumpToBlock(targetIdx);
+  const toggleMute = () => {
+    if (!narratorActions?.setVolume) return;
+    if (currentVolume > 0) {
+      setLastNonZeroVol(currentVolume);
+      narratorActions.setVolume(0);
     } else {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight > 0) {
-        window.scrollTo({
-          top: (clampedPct / 100) * scrollHeight,
-          behavior: "auto",
-        });
-      }
+      narratorActions.setVolume(lastNonZeroVol || 0.2);
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    updateScrollFromPointer(e);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    updateScrollFromPointer(e);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    setIsDragging(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
+  const toggleTray = (tray: ActiveInlineTray) => {
+    setActiveTray((prev) => (prev === tray ? "none" : tray));
   };
 
   return (
-    <>
-      {/* Progressive Scrubbing Track */}
-      {visibleToc.length > 0 && (
-        <div className="mb-4 px-1">
-          <div className="text-muted-foreground mb-1.5 flex items-center justify-between text-[10px] font-semibold select-none">
-            <span className="max-w-[200px] truncate">
-              {isNarratorActive
-                ? `Narrating: ${narratorState.activeSectionTitle || "Overview"}`
-                : activeSectionTitle
-                  ? `Reading: ${activeSectionTitle}`
-                  : "Overview"}
-            </span>
-            <span className="tabular-nums">{Math.round(displayPercent)}%</span>
+    <div className="relative w-full space-y-2.5">
+      {/* ── Ambient Background Audio Waveform (Apple Design Subtlety) ── */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 px-3 py-1.5 overflow-hidden rounded-xl select-none"
+        aria-hidden="true"
+      >
+        {BG_WAVEFORM_BARS.map((heightPct, idx) => (
+          <span
+            key={idx}
+            className={cn(
+              "block flex-1 min-w-[2px] max-w-[4px] rounded-full transition-all duration-700 ease-out",
+              isPlaying ? "animate-pulse" : "opacity-30"
+            )}
+            style={{
+              height: isPlaying ? `${heightPct}%` : `${Math.max(8, heightPct * 0.25)}%`,
+              backgroundColor: accentColor,
+              opacity: isPlaying ? 0.14 : 0.03,
+              animationDuration: `${1.1 + (idx % 5) * 0.2}s`,
+              animationDelay: `${(idx * 60) % 400}ms`,
+            }}
+          />
+        ))}
+      </div>
+
+      <AudioPlayer
+        tracks={narratorTracks}
+        variant="ghost"
+        size="sm"
+        className="relative z-10 w-full space-y-2.5 p-0 border-0 bg-transparent shadow-none hover:bg-transparent before:hidden"
+        data-slot="wiki-narrator-player"
+      >
+        {/* ── 1. Top HUD Bar (Section Title + Reading Progress) ── */}
+        {showHeader && (
+          <div className="flex items-center justify-between gap-2 px-1 text-xs">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <Headphones className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
+              <span className="font-semibold text-foreground truncate max-w-[170px]">
+                {activeSectionTitle}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground tabular-nums shrink-0">
+              {hasNarrator && (
+                <span>
+                  {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
+                </span>
+              )}
+              <span className="font-bold text-foreground px-1.5 py-0.5 rounded-md bg-accent/20 border border-border/40">
+                {Math.round(displayPercent)}%
+              </span>
+            </div>
           </div>
+        )}
 
-          <div
-            ref={trackRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            className="group relative flex h-3 w-full cursor-pointer touch-none items-center select-none"
-            style={{ touchAction: "none" }}
-          >
-            {/* Background Track Line */}
-            <div className="absolute left-0 h-1 w-full rounded-full bg-white/10" />
+        {/* ── 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) ── */}
+        <div className="relative w-full px-1 py-1">
+          <Transport
+            aria-label="Timeline Section Scrubber"
+            value={displayPercent}
+            onSeek={(val) => handleScrub(val)}
+            size="sm"
+            className="w-full"
+          />
 
-            {/* Active Progress Fill Line */}
-            <div
-              className="absolute left-0 h-1 rounded-full bg-blue-500"
-              style={{
-                width: `${displayPercent}%`,
-                backgroundColor: themeColors?.primary ?? undefined,
-              }}
-            />
-
-            {/* Section Ticks (Dots) */}
+          {/* Section Chapter Dots Overlay */}
+          <div className="pointer-events-none absolute inset-x-1 top-1/2 -translate-y-1/2 h-3 flex items-center">
             {visibleToc.map((entry) => {
               const offset = sectionOffsets[entry.id] ?? 0;
               const isActive = activeSectionId === entry.id;
               return (
                 <div
                   key={entry.id}
-                  className="group/tick absolute top-1/2 z-20 flex h-3 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                  className="pointer-events-auto group/tick absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-3.5 w-3.5 items-center justify-center cursor-pointer z-20"
                   style={{ left: `${offset}%` }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -203,187 +317,355 @@ export function WikiNarratorPlayer({
                 >
                   <div
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full border transition-all duration-200",
-                      isActive && !themeColors
-                        ? "scale-125 border-blue-400 bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
-                        : isActive
-                          ? "scale-125"
-                          : "border-white/20 bg-zinc-950 group-hover/tick:scale-110 group-hover/tick:border-white"
+                      "h-1.5 w-1.5 rounded-full border transition-all duration-150",
+                      isActive
+                        ? "scale-125 border-white shadow-[0_0_6px_rgba(96,165,250,0.9)]"
+                        : "border-border/60 bg-muted group-hover/tick:scale-125 group-hover/tick:border-foreground"
                     )}
                     style={
-                      isActive && themeColors
+                      isActive
                         ? {
-                            borderColor: themeColors.secondary,
-                            backgroundColor: themeColors.primary,
-                            boxShadow: `0 0 8px ${themeColors.primary}`,
+                            borderColor: "#ffffff",
+                            backgroundColor: accentColor,
+                            boxShadow: `0 0 6px ${accentColor}`,
                           }
                         : undefined
                     }
                   />
                   {/* Tooltip */}
-                  <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1.5 -translate-x-1/2 rounded border border-white/10 bg-zinc-950/95 px-2 py-1 text-[9px] font-bold whitespace-nowrap text-white opacity-0 shadow-xl transition-opacity duration-150 group-hover/tick:opacity-100">
+                  <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 rounded-md border border-border/50 bg-popover/95 px-2 py-1 text-[9.5px] font-bold whitespace-nowrap text-popover-foreground opacity-0 shadow-2xl backdrop-blur-md transition-opacity duration-150 group-hover/tick:opacity-100">
                     {entry.text}
                   </span>
                 </div>
               );
             })}
-
-            {/* Glowing Scrubber Playhead Handle */}
-            <div
-              className="absolute z-30 h-3 w-3 -translate-x-1/2 cursor-grab rounded-full border border-blue-500 bg-white shadow-[0_0_8px_rgba(59,130,246,0.6)] transition-transform hover:scale-115 active:cursor-grabbing"
-              style={{
-                left: `${displayPercent}%`,
-                borderColor: themeColors?.primary ?? undefined,
-                boxShadow: themeColors ? `0 0 8px ${themeColors.primary}` : undefined,
-              }}
-            />
           </div>
         </div>
-      )}
 
-      {/* Narrator player controls */}
-      {hasNarrator && (
-        <div className="mb-3">
-          <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
-            <PreText whiteSpace="nowrap">Narrator</PreText>
-          </div>
-          <div className="flex items-center justify-center gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-3">
+        {/* ── 3. Primary Audio-UI Controls Bar ── */}
+        <AudioPlayerControlBar
+          variant="compact"
+          className="w-full items-center justify-between gap-1.5 px-0 py-0.5"
+        >
+          {/* Left: Playback & Section Skip Buttons */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Direct Play/Pause Vector Morph Trigger (Zero Spinner Stall) */}
             <button
               type="button"
-              onClick={narratorActions.skipPrev}
-              disabled={narratorState.activeBlockIndex <= 1}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-30"
-              title="Previous"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                narratorState.isPlaying ? narratorActions.pause() : narratorActions.play()
-              }
-              className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-all duration-200 hover:scale-105 active:scale-90"
-              style={{ backgroundColor: NARRATOR_ACCENT }}
-              title={narratorState.isPlaying ? "Pause" : "Play"}
+              onClick={() => {
+                if (isPlaying) {
+                  narratorActions?.pause?.();
+                } else {
+                  narratorActions?.play?.();
+                }
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white shadow-md transition-all duration-150 hover:scale-105 active:scale-92 cursor-pointer shrink-0"
+              style={{
+                backgroundColor: accentColor,
+                boxShadow: `0 2px 8px ${getRgbaColor(accentColor, 0.35)}`,
+              }}
+              title={isPlaying ? "Pause narration" : "Play narration"}
             >
               <PlayPauseMorph
-                isPlaying={narratorState.isPlaying}
-                size={20}
+                isPlaying={isPlaying}
+                size={16}
                 className="fill-current text-white"
               />
             </button>
+            
+            <AudioPlayerButton
+              aria-label="Previous Section"
+              onClick={narratorActions?.skipPrev}
+              disabled={!hasNarrator || narratorState.activeBlockIndex <= 0}
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground active:scale-92 disabled:opacity-30"
+              tooltipLabel="Previous Section"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </AudioPlayerButton>
 
-            <button
-              type="button"
-              onClick={narratorActions.skipNext}
-              disabled={narratorState.activeBlockIndex >= narratorState.totalBlocks}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90 disabled:pointer-events-none disabled:opacity-30"
-              title="Next"
+            <AudioPlayerButton
+              aria-label="Next Section"
+              onClick={narratorActions?.skipNext}
+              disabled={!hasNarrator || narratorState.activeBlockIndex >= narratorState.totalBlocks - 1}
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground active:scale-92 disabled:opacity-30"
+              tooltipLabel="Next Section"
             >
               <ChevronRight className="h-4 w-4" />
+            </AudioPlayerButton>
+          </div>
+
+          {/* Right: Inline Triggers for Voice, Speed, Volume */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Voice Trigger (Inline) */}
+            <button
+              type="button"
+              onClick={() => toggleTray("voice")}
+              className={cn(
+                "flex items-center gap-1 h-7 px-2 rounded-lg text-[11px] font-medium transition-all active:scale-95 cursor-pointer",
+                activeTray === "voice"
+                  ? "border font-bold shadow-xs"
+                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+              )}
+              style={
+                activeTray === "voice"
+                  ? {
+                      backgroundColor: getRgbaColor(accentColor, 0.15),
+                      borderColor: getRgbaColor(accentColor, 0.35),
+                      color: accentColor,
+                    }
+                  : undefined
+              }
+              title={`Voice: ${currentVoiceLabel}`}
+            >
+              <User className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
+              <span className="truncate max-w-[55px] sm:max-w-[75px]">{shortVoiceName}</span>
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 transition-transform duration-150 opacity-70",
+                  activeTray === "voice" && "rotate-180 opacity-100"
+                )}
+              />
             </button>
 
-            <Popover>
-              <PopoverTrigger
-                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-90"
-                title="Narrator settings"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                side="top"
-                sideOffset={10}
-                className="w-60 rounded-xl border border-white/10 bg-zinc-950/95 p-3 backdrop-blur-xl dark:bg-black/90"
-              >
-                {/* Speed */}
-                <div className="mb-3">
-                  <span className="text-muted-foreground mb-1.5 block text-[10px] font-semibold tracking-wide uppercase">
-                    Speed
-                  </span>
-                  <div className="flex gap-1">
-                    {NARRATOR_SPEEDS.map((s) => {
-                      const active = Number(narratorState.speed) === s;
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => narratorActions.setSpeed(s)}
-                          className={cn(
-                            "flex-1 rounded-lg py-1 text-[11px] font-semibold transition-all duration-200 active:scale-90",
-                            active
-                              ? "text-white"
-                              : "text-muted-foreground hover:text-foreground bg-white/5"
-                          )}
-                          style={active ? { backgroundColor: NARRATOR_ACCENT } : undefined}
-                        >
-                          {s}×
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+            {/* Speed Trigger (Inline) */}
+            <button
+              type="button"
+              onClick={() => toggleTray("speed")}
+              className={cn(
+                "flex items-center gap-0.5 h-7 px-2 rounded-lg text-[11px] font-mono font-medium transition-all active:scale-95 cursor-pointer",
+                activeTray === "speed"
+                  ? "border font-bold shadow-xs"
+                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+              )}
+              style={
+                activeTray === "speed"
+                  ? {
+                      backgroundColor: getRgbaColor(accentColor, 0.15),
+                      borderColor: getRgbaColor(accentColor, 0.35),
+                      color: accentColor,
+                    }
+                  : undefined
+              }
+              title={`Speed: ${currentSpeed}×`}
+            >
+              <Gauge className="h-3 w-3 shrink-0 mr-0.5 opacity-70" />
+              <span>{currentSpeed}×</span>
+            </button>
 
-                {/* Voice */}
-                <div className="mb-3">
-                  <span className="text-muted-foreground mb-1.5 flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase">
-                    <User className="h-3 w-3" /> Voice
-                  </span>
-                  <select
-                    value={narratorState.voice || ""}
-                    onChange={(e) => narratorActions.setVoice(e.target.value)}
-                    className="text-foreground w-full cursor-pointer rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs transition-colors hover:border-white/20 focus:outline-none"
+            {/* Volume Trigger (Inline) */}
+            <button
+              type="button"
+              onClick={() => toggleTray("volume")}
+              className={cn(
+                "flex items-center justify-center h-7 w-7 rounded-lg transition-all active:scale-95 cursor-pointer",
+                activeTray === "volume"
+                  ? "border shadow-xs"
+                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
+              )}
+              style={
+                activeTray === "volume"
+                  ? {
+                      backgroundColor: getRgbaColor(accentColor, 0.15),
+                      borderColor: getRgbaColor(accentColor, 0.35),
+                      color: accentColor,
+                    }
+                  : undefined
+              }
+              title={`Volume: ${Math.round(currentVolume * 100)}%`}
+            >
+              {currentVolume === 0 ? (
+                <VolumeX className="h-3.5 w-3.5 text-destructive" />
+              ) : currentVolume < 0.5 ? (
+                <Volume1 className="h-3.5 w-3.5 text-foreground" />
+              ) : (
+                <Volume2 className="h-3.5 w-3.5 text-foreground" />
+              )}
+            </button>
+          </div>
+        </AudioPlayerControlBar>
+
+        {/* ── 4. INLINE EXPANDABLE TRAYS (Guaranteed 0% clipping behind Halo) ── */}
+
+        {/* 4A. Inline Voice Picker Tray */}
+        {activeTray === "voice" && (
+          <div className="mt-2 p-2 rounded-xl border border-border/50 bg-popover/90 dark:bg-zinc-900/90 text-popover-foreground backdrop-blur-xl space-y-1 animate-in fade-in slide-in-from-top-1 duration-150 shadow-md">
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-border/40 text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider">
+              <span>Narrator Voice</span>
+              <span className="text-[10px] opacity-70 font-normal">Kokoro TTS</span>
+            </div>
+
+            <div className="max-h-36 overflow-y-auto space-y-0.5 scrollbar-thin scrollbar-thumb-muted">
+              <button
+                type="button"
+                onClick={() => {
+                  narratorActions?.setVoice("");
+                  setActiveTray("none");
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer",
+                  !currentVoiceId
+                    ? "font-bold"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                )}
+                style={
+                  !currentVoiceId
+                    ? {
+                        backgroundColor: getRgbaColor(accentColor, 0.15),
+                        color: accentColor,
+                      }
+                    : undefined
+                }
+              >
+                <span>Default Voice</span>
+                {!currentVoiceId && <Check className="h-3.5 w-3.5" style={{ color: accentColor }} />}
+              </button>
+
+              {voiceOptions.map((id) => {
+                const isSelected = currentVoiceId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      narratorActions?.setVoice(id);
+                      setActiveTray("none");
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left text-xs transition-all cursor-pointer",
+                      isSelected
+                        ? "font-bold"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: getRgbaColor(accentColor, 0.15),
+                            color: accentColor,
+                          }
+                        : undefined
+                    }
                   >
-                    <option value="">Default voice</option>
-                    {voiceOptions.map((id) => (
-                      <option key={id} value={id}>
-                        {NARRATOR_VOICE_LABELS[id] || id}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <span className="truncate">{NARRATOR_VOICE_LABELS[id] || id}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5" style={{ color: accentColor }} />}
+                  </button>
+                );
+              })}
+            </div>
 
-                {/* Follow scroll */}
+            {narratorActions?.clearCache && (
+              <div className="pt-1 border-t border-border/40">
                 <button
                   type="button"
-                  onClick={handleToggleAutoScroll}
-                  className="mb-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
+                  onClick={() => {
+                    narratorActions.clearCache();
+                    setActiveTray("none");
+                  }}
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-left text-[11px] text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
                 >
-                  <span className="flex items-center gap-2">
-                    <Scroll className="h-3.5 w-3.5" /> Follow scroll
-                  </span>
-                  <span
-                    className={cn(
-                      "relative h-4 w-7 rounded-full transition-colors duration-200",
-                      autoScroll ? "" : "bg-white/15"
-                    )}
-                    style={autoScroll ? { backgroundColor: NARRATOR_ACCENT } : undefined}
-                  >
-                    <span
-                      className={cn(
-                        "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all duration-200",
-                        autoScroll ? "left-3.5" : "left-0.5"
-                      )}
-                    />
-                  </span>
+                  <Trash2 className="h-3 w-3" />
+                  <span>Clear Voice Audio Cache</span>
                 </button>
-
-                {/* Clear cache */}
-                {narratorActions.clearCache && (
-                  <button
-                    type="button"
-                    onClick={narratorActions.clearCache}
-                    className="text-muted-foreground flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors hover:bg-red-500/10 hover:text-red-400"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Clear voice cache
-                  </button>
-                )}
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        {/* 4B. Inline Playback Speed Tray */}
+        {activeTray === "speed" && (
+          <div className="mt-2 p-2.5 rounded-xl border border-border/50 bg-popover/90 dark:bg-zinc-900/90 text-popover-foreground backdrop-blur-xl space-y-2 animate-in fade-in slide-in-from-top-1 duration-150 shadow-md">
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider">
+              <span>Playback Speed</span>
+              <span className="font-mono font-bold" style={{ color: accentColor }}>
+                {currentSpeed}×
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-1.5">
+              {NARRATOR_SPEEDS.map((s) => {
+                const isActive = currentSpeed === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      narratorActions?.setSpeed(s);
+                      useAudioStore.getState().setPlaybackRate(s);
+                      setActiveTray("none");
+                    }}
+                    className={cn(
+                      "flex-1 py-1 rounded-lg text-xs font-bold font-mono transition-all active:scale-92 cursor-pointer",
+                      isActive
+                        ? "border shadow-xs"
+                        : "bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
+                    )}
+                    style={
+                      isActive
+                        ? {
+                            backgroundColor: getRgbaColor(accentColor, 0.15),
+                            borderColor: getRgbaColor(accentColor, 0.35),
+                            color: accentColor,
+                          }
+                        : undefined
+                    }
+                  >
+                    {s}×
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
+        {activeTray === "volume" && (
+          <div className="mt-2 p-2.5 rounded-xl border border-border/50 bg-popover/90 dark:bg-zinc-900/90 text-popover-foreground backdrop-blur-xl space-y-2 animate-in fade-in slide-in-from-top-1 duration-150 shadow-md">
+            <div className="flex items-center justify-between text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider">
+              <span>Volume Gain</span>
+              <span className="font-mono font-bold tabular-nums" style={{ color: accentColor }}>
+                {Math.round(currentVolume * 100)}%
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md active:scale-90 cursor-pointer shrink-0"
+                title={currentVolume === 0 ? "Unmute" : "Mute"}
+              >
+                {currentVolume === 0 ? (
+                  <VolumeX className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Volume2 className="h-4 w-4 text-foreground" />
+                )}
+              </button>
+
+              <div className="flex-1">
+                <Fader
+                  orientation="horizontal"
+                  size="sm"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Math.round(currentVolume * 100)}
+                  onValueChange={(val: number | readonly number[]) => {
+                    const num = Array.isArray(val) ? val[0] : (val as number);
+                    if (typeof num === "number") {
+                      narratorActions?.setVolume(num / 100);
+                      if (num > 0) setLastNonZeroVol(num / 100);
+                    }
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </AudioPlayer>
+    </div>
   );
 }

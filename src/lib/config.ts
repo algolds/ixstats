@@ -18,7 +18,7 @@ import { DEFAULT_PARAMS as UPG_DEFAULT_PARAMS } from "./worldgen/v2/config";
 import { SPORT_PRESETS, type SportPresetKey } from "./sports/presets";
 import { SPORTS_NOTIFY_KEYS, type SportsNotifyConfig } from "./sports/notify-config";
 import { BRANCH_CONFIGS } from "./military/config";
-import { MEDIAWIKI_CONFIG, DEFAULT_USER_AGENT } from "./wiki/config";
+import { MEDIAWIKI_CONFIG, DEFAULT_USER_AGENT } from "./wiki-os/config";
 import { memoryConfig } from "./system/dev-memory-config";
 
 // ──────────────────────────────────────────────

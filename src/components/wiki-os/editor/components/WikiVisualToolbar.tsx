@@ -40,6 +40,12 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { AppleSwitch } from "~/components/ui/apple-switch";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashImageCard } from "./StashImageCard";
+import type {
+  StashEntity,
+  StashItemEntity,
+  WikimediaImageMeta,
+  SaveActionType,
+} from "../types";
 
 export interface WikiVisualToolbarProps {
   title: string;
@@ -53,8 +59,8 @@ export interface WikiVisualToolbarProps {
   saving: boolean;
   saveDropdownOpen: boolean;
   setSaveDropdownOpen: (open: boolean) => void;
-  saveActionType: "publish" | "session";
-  setSaveActionType: (t: "publish" | "session") => void;
+  saveActionType: SaveActionType;
+  setSaveActionType: (t: SaveActionType) => void;
   setShowSavePanel: (show: boolean) => void;
   summary: string;
   setSummary: (s: string) => void;
@@ -85,11 +91,11 @@ export interface WikiVisualToolbarProps {
   setSettingsOpen: (open: boolean) => void;
   enableAutocomplete: boolean;
   handleToggleAutocomplete: (val: boolean) => void;
-  stashes: any[];
+  stashes: StashEntity[];
   activeStashId: string;
   setSelectedStashId: (id: string) => void;
-  imageItems: any[];
-  imagesMap: Map<string, any>;
+  imageItems: StashItemEntity[];
+  imagesMap: Map<string, WikimediaImageMeta>;
   handleInsertStashedImage: (filename: string) => void;
 }
 

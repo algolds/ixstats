@@ -46,7 +46,9 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | **Statecraft** | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | Statecraft closed game loops: Directives, Volatility, National Issues, Consequences | 🥈 Release Candidate |
 | **MyCountry** | [systems/mycountry.md](systems/mycountry.md) | Executive command suite (Command Surface v5, Statecraft Engine v4, Directives) | 🥈 Release Candidate |
 | **MyCountry** | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | **WikiOS Master Spec** — MediaWiki headless independence, PlateJS editor, Parsoid pipeline | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | **WikiOS Master Spec** — Native PostgreSQL engine, O(1) link graph, Canvas editor, direct MariaDB read-through | 🥈 Release Candidate |
+| **WikiOS** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | **WikiOS Margin Spec** — Unified split-canvas inspector, text markup, margin pins, threads | 🥈 Release Candidate |
+| **Lore Lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | **The Complete Lore Lifecycle** — Ideation (ThinkTanks/Stashes) to Publishing & Canonization | 🥈 Release Candidate |
 | **WikiOS** | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | WikiOS Stage 2b (Postgres dual-write) & Stage 3 (render-service isolation) | 🥈 Release Candidate |
 | **WikiOS** | [systems/wikios/wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) | WikiOS Stage 3 render-service configuration and deployment architecture | 🥈 Release Candidate |
 | **WikiOS** | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | Multi-year WikiOS engine longevity and packaging workflow | 🥈 Release Candidate |

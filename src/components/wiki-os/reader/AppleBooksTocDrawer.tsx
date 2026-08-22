@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { cn } from "~/lib/utils";
 
 interface AppleBooksTocDrawerProps {

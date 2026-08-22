@@ -146,7 +146,7 @@ export const cardsCollectionsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { getArticleWikitext, getArticleIntro } = await import("~/lib/wiki/bridge");
+      const { getArticleWikitext, getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
       const article = await getArticleWikitext(
         input.articleTitle,
         input.wikiSource as "ixwiki" | "iiwiki"

@@ -16,9 +16,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki/lore-card-generator";
+import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
-import type { WikiSource } from "~/lib/wiki/config";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 

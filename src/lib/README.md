@@ -70,9 +70,8 @@ All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/
 - **`src/lib/country-geo/`** — PostGIS spatial SQL queries, territorial compliance validation, and geographic boundary analyzers.
 - **`src/lib/worldgen/`** — UPG v2 procedural Voronoi mesh generator, coastal hypsometry, Catmull-Rom splines, and marching squares.
 
-### Knowledge & Wiki
-- **`src/lib/wiki/`** — MediaWiki API client (`IxStats-Builder` UA), wikitext infobox parsers, search indexers, and lore card generators.
-- **`src/lib/wiki-os/`** — Native PlateJS wiki editor store, block parsers, and Parsoid synchronization layer.
+### Knowledge & Wiki Engine
+- **`src/lib/wiki-os/`** — Decoupled native knowledge engine, authoritative PostgreSQL repository (`wiki_articles`, `wiki_revisions`, `wiki_links`), $O(1)$ relational link graph, Canvas visual block editor, direct MariaDB read pool (`mysql-reader.ts`), and asynchronous neutral bot bridge (`WikiOS-Bridge`).
 
 ---
 
@@ -87,7 +86,7 @@ import { rateLimiter, globalCache } from "~/lib/cache";
 import { logger, devMemoryConfig } from "~/lib/system";
 import { IxStatsCalculator } from "~/lib/economy";
 import { MilitaryForceCalculator } from "~/lib/military";
-import { WikiApiClient } from "~/lib/wiki";
+import { ArticleRepository, LinkGraphService } from "~/lib/wiki-os";
 
 // ❌ Avoid: Importing from deep legacy root paths
 import { formatCurrency } from "~/lib/format-utils"; // Deprecated

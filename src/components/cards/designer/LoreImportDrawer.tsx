@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
-import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardDesignState } from "./types";

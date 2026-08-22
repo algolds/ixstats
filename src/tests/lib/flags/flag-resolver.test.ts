@@ -1,6 +1,6 @@
 import { ServerFlagResolver } from "~/lib/flags/flag-resolver.server";
 import { normalizeCountryName, normalizeFlagUrl, getFlagCandidateFileTitles } from "~/lib/flags/normalization";
-import * as wikiBridge from "~/lib/wiki/bridge";
+import * as wikiBridge from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 describe("Flag Resolver & Normalization (Plan 164)", () => {
   beforeEach(() => {

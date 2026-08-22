@@ -1,7 +1,10 @@
-// Service for downloading external images and saving to server filesystem
-// Used when users select images from wiki/Unsplash repositories
-
 import { withBasePath } from "~/lib/base-path";
+import {
+  isWikimediaCommonsUrl,
+  getCommonsProxyUrl,
+} from "~/lib/wiki-os/transformers/image-url";
+
+export { isWikimediaCommonsUrl, getCommonsProxyUrl };
 
 export interface DownloadedImage {
   url: string;
@@ -146,50 +149,6 @@ export function isExternalImageUrl(url: string): boolean {
 
   // External HTTP(S) URLs need to be downloaded
   return url.startsWith("http://") || url.startsWith("https://");
-}
-
-/**
- * Detects if a URL is a Wikimedia Commons / Wikipedia image URL
- */
-export function isWikimediaCommonsUrl(url: string): boolean {
-  if (!url) return false;
-  return url.includes("wikimedia.org") || url.includes("wikipedia.org");
-}
-
-/**
- * Converts a Wikimedia Commons / Wikipedia URL to our local mediawiki commons proxy URL
- */
-export function getCommonsProxyUrl(url: string): string {
-  if (!url) return url;
-
-  if (url.includes("/api/mediawiki/commons/")) {
-    return url;
-  }
-
-  try {
-    const decodedUrl = decodeURIComponent(url);
-
-    // Pattern to match /wikipedia/commons/... or /wikipedia/en/... and extract filename
-    const commonsMatch = decodedUrl.match(
-      /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i
-    );
-    if (commonsMatch && commonsMatch[1]) {
-      const filename = commonsMatch[1];
-      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`;
-    }
-
-    // Fallback: extract last segment
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    const lastSegment = pathname.split("/").pop();
-    if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
-      return `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(lastSegment.replace(/ /g, "_"))}`;
-    }
-  } catch (e) {
-    console.error("[ImageDownloadService] Error parsing Wikimedia URL:", e);
-  }
-
-  return url;
 }
 
 /**

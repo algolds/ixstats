@@ -6,13 +6,14 @@
 
 import React, { useRef, useEffect, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
-import { fixEditorImageUrls } from "~/lib/wiki-os/fix-editor-images";
-import { getDraft, saveDraft, clearDraft } from "~/lib/wiki-os/draft-store";
+import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
+import { getDraft } from "~/lib/wiki-os/editor/draft-store";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { useWikiVisualFormatting } from "./hooks/useWikiVisualFormatting";
 import { WikiVisualToolbar } from "./components/WikiVisualToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
+import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 
 export interface WikiVisualEditorProps {
   initialHtml: string;
@@ -38,7 +39,7 @@ export function WikiVisualEditor({
   const { scrollY } = useNavigationScroll();
   const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
 
-  const state = useWikiEditorState({ title });
+  const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({
     title,
     editableRef,
@@ -74,7 +75,7 @@ export function WikiVisualEditor({
     };
   }, [title, initialHtml, fmt.protectTemplatesAndImages, state.setIsDirty, state.setWordCount]);
 
-  // Dirty tracking, word count, beforeunload
+  // Dirty tracking, word count
   const handleInput = useCallback(() => {
     state.setIsDirty(true);
     if (editableRef.current) {
@@ -82,48 +83,14 @@ export function WikiVisualEditor({
     }
   }, [state.setIsDirty, state.setWordCount]);
 
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (state.isDirty) e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [state.isDirty]);
-
   // Save actions
   const handleSave = useCallback(async () => {
-    const html = editableRef.current?.innerHTML ?? "";
-    state.setSaving(true);
-    const isSession = state.saveActionType === "session";
-    try {
-      await onSave(html, state.summary, state.minor, isSession);
-      clearDraft(title, "ixwiki");
-      state.setIsDirty(false);
-      state.setShowSavePanel(false);
-      state.notify.success(
-        isSession ? "Session Saved" : "Article Published",
-        isSession
-          ? "Your progress has been saved successfully."
-          : "Your changes have been published to the wiki."
-      );
-    } catch (err) {
-      console.error("Save failed:", err);
-    } finally {
-      state.setSaving(false);
-    }
-  }, [onSave, state, title]);
+    await state.executeSave(() => editableRef.current?.innerHTML ?? "");
+  }, [state]);
 
   const handleSaveDraft = useCallback(() => {
-    const html = editableRef.current?.innerHTML ?? "";
-    try {
-      saveDraft({ title, source: "ixwiki", html, mode: "visual" });
-      state.setIsDirty(false);
-      state.notify.success("Draft Saved", "Your draft has been saved locally.");
-    } catch (err) {
-      console.error("Failed to save draft:", err);
-      state.notify.error("Save Draft Failed", "Could not write draft to local storage.");
-    }
-  }, [title, state]);
+    state.executeSaveDraft(() => editableRef.current?.innerHTML ?? "", "visual");
+  }, [state]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
@@ -342,6 +309,14 @@ export function WikiVisualEditor({
           spellCheck
         />
       </div>
+
+      <WikiEditorStatusBar
+        cursorPos={{ line: 1, col: 1 }}
+        wordCount={state.wordCount}
+        lineCount={1}
+        formatName="Canvas Block AST"
+        encoding="UTF-8"
+      />
 
       <WikiEditorModalHost
         showImageSearch={state.showImageSearch}

@@ -8,7 +8,7 @@ import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookMod
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { FactbookSidebar } from "../../_components/FactbookSidebar";
 import { calculateVitalityData } from "../../_utils/countryDataTransformers";
-import { sectionFromPathname } from "~/lib/wiki/factbook-routes";
+import { sectionFromPathname } from "~/lib/wiki-os/adapters/ixstates/factbook-routes";
 
 /**
  * FactbookLayout — persistent shell for all five factbook sections

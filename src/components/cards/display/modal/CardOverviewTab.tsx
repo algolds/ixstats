@@ -13,7 +13,7 @@ import { isValidLoreCategory, LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { RarityBadge } from "../RarityBadge";
 import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
-import { parseWikitextToHtml } from "~/lib/wiki/wikitext-parser";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { api } from "~/trpc/react";
 

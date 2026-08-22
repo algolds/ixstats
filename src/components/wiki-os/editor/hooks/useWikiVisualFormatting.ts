@@ -5,7 +5,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { fixEditorImageUrls } from "~/lib/wiki-os/fix-editor-images";
+import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import { getChipClassName, getChipInnerHTML } from "../utils/wiki-chips";
 
 export interface UseWikiVisualFormattingProps {

@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { BookOpen, Download } from "lucide-react";
 
 export interface StandingsRow {

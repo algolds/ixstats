@@ -9,7 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
-import { Calendar, FileText, Trophy, Scroll, UserPlus } from "lucide-react";
+import { Calendar, FileText, Trophy, Scroll } from "lucide-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -37,37 +37,25 @@ export function WikiOSProfileWidget({
   const showExpanded = expanded || isLocalHoverExpanded;
   const hoverBorderColor = themeColors?.primary ?? "var(--wikios-accent)";
 
-  // Resolve the signed-in user's linked wiki account.
-  const status = api.ixnayid.getStatus.useQuery(undefined, {
+  // Resolve the signed-in user's consolidated profile in a single query
+  const profileQuery = api.wikios.getAuthorProfile.useQuery(undefined, {
     enabled: !!isSignedIn,
     staleTime: 5 * 60 * 1000,
   });
-  const wikiUsername = status.data?.wiki.username ?? null;
-  const linked = !!status.data?.wiki.linked && !!wikiUsername;
-
-  const userInfo = api.wikios.getUserInfo.useQuery(
-    { username: wikiUsername ?? "" },
-    { enabled: linked, staleTime: 5 * 60 * 1000 }
-  );
-  const loreStats = api.lorewards.getUserStats.useQuery(
-    { username: wikiUsername ?? "" },
-    { enabled: linked, staleTime: 5 * 60 * 1000 }
-  );
 
   // Signed out → nothing.
   if (!isSignedIn) return null;
 
-  const displayName = wikiUsername ?? user?.username ?? "You";
+  const authorProfile = profileQuery.data;
+  const displayName = authorProfile?.displayName ?? user?.username ?? "You";
   const initials = getInitials(displayName);
   const avatarUrl = !imgError ? user?.imageUrl : undefined;
 
-  const stats = loreStats.data?.stats;
-  const rank = loreStats.data?.rank ?? null;
-  const lorescore = stats?.totalScore ?? 0;
-  const lorewards = (stats?.dailyWins ?? 0) + (stats?.weeklyWins ?? 0) + (stats?.monthlyWins ?? 0);
-  const info = userInfo.data;
-  const registration = info && info.exists ? info.registration : null;
-  const editCount = info && info.exists ? info.editCount : null;
+  const lorescore = authorProfile?.loreScore ?? 0;
+  const lorewards = authorProfile?.totalWins ?? 0;
+  const rank = authorProfile?.rank ?? null;
+  const registration = authorProfile?.registration ?? null;
+  const editCount = authorProfile?.editCount ?? null;
 
   const renderAvatar = (withBadge: boolean) => (
     <div className="relative shrink-0">
@@ -94,61 +82,7 @@ export function WikiOSProfileWidget({
     </div>
   );
 
-  // ── Signed in but no wiki account linked ──
-  if (!linked) {
-    const settingsHref = withBasePath("/settings");
-    if (!expanded && !isLocalHoverExpanded) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href={settingsHref}
-              className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-all"
-            >
-              {renderAvatar(false)}
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">Link your wiki account</TooltipContent>
-        </Tooltip>
-      );
-    }
-    if (isLocalHoverExpanded) {
-      return (
-        <Link
-          href={settingsHref}
-          className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out outline-none"
-        >
-          {renderAvatar(false)}
-          <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
-            Link wiki account
-          </span>
-        </Link>
-      );
-    }
-    return (
-      <Link
-        href={settingsHref}
-        className="group bg-foreground/[0.02] hover:bg-foreground/[0.05] flex w-full items-center gap-2.5 rounded-xl border border-dashed border-[var(--wikios-border)] px-2.5 py-2 transition-all hover:border-[var(--hover-border-color)]"
-        style={
-          {
-            "--hover-border-color": hoverBorderColor,
-          } as React.CSSProperties
-        }
-      >
-        {renderAvatar(false)}
-        <div className="min-w-0">
-          <div className="flex items-center gap-1 text-xs font-semibold text-[var(--wikios-text)]">
-            <UserPlus className="h-3 w-3 shrink-0" /> Link wiki account
-          </div>
-          <div className="truncate text-[10px] text-[var(--wikios-text-muted)]">
-            Connect to see your profile
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  const profileHref = withBasePath(`/wiki/user/${encodeURIComponent(wikiUsername!)}`);
+  const profileHref = withBasePath(`/wiki/user/${encodeURIComponent(displayName)}`);
 
   // ── Collapsed rail → avatar + rank badge only ──
   if (!expanded && !isLocalHoverExpanded) {

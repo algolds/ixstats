@@ -38,10 +38,11 @@ import {
   wrapSelectionCM,
 } from "./utils/codemirror-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
-import { getDraft, saveDraft, clearDraft } from "~/lib/wiki-os/draft-store";
+import { getDraft, clearDraft } from "~/lib/wiki-os/editor/draft-store";
 import { WikiSourceToolbar } from "./components/WikiSourceToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";
+import { WikiEditorStatusBar } from "./components/WikiEditorStatusBar";
 
 export interface WikiSourceEditorProps {
   initialWikitext: string;
@@ -76,7 +77,7 @@ export function WikiSourceEditor({
   const { scrollY } = useNavigationScroll();
   const repulsionProgress = Math.min(1, Math.max(0, scrollY / 56));
 
-  const state = useWikiEditorState({ title });
+  const state = useWikiEditorState({ title, onSave });
 
   // CodeMirror 6 Compartments for dynamic configuration
   const lineNumbersComp = useRef(new Compartment());
@@ -171,13 +172,22 @@ export function WikiSourceEditor({
               key: "Mod-k",
               run: (view) => wrapSelectionCM(view, "[[", "]]"),
             },
+            {
+              key: "Mod-s",
+              run: () => {
+                void state.executeSave(() => viewRef.current?.state.doc.toString() ?? initialWikitext);
+                return true;
+              },
+            },
           ])
         ),
         keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
         updateStats,
         EditorView.theme({
           "&": {
-            fontSize: "14px",
+            height: "100%",
+            width: "100%",
+            fontSize: "13.5px",
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
             backgroundColor: "var(--wikios-bg) !important",
             color: "var(--wikios-text) !important",
@@ -186,11 +196,14 @@ export function WikiSourceEditor({
             outline: "none",
           },
           ".cm-scroller": {
+            height: "100%",
+            overflow: "auto !important",
             fontFamily: "inherit",
           },
           ".cm-content": {
-            padding: "12px 0",
+            padding: "16px 0",
             caretColor: "var(--wikios-accent)",
+            minHeight: "100%",
           },
           ".cm-cursor": {
             borderLeftColor: "var(--wikios-accent)",
@@ -306,38 +319,12 @@ export function WikiSourceEditor({
 
   // Save actions
   const handleSave = useCallback(async () => {
-    const wikitext = viewRef.current?.state.doc.toString() ?? initialWikitext;
-    state.setSaving(true);
-    const isSession = state.saveActionType === "session";
-    try {
-      await onSave(wikitext, state.summary, state.minor, isSession);
-      clearDraft(title, "ixwiki");
-      state.setIsDirty(false);
-      state.setShowSavePanel(false);
-      state.notify.success(
-        isSession ? "Session Saved" : "Article Published",
-        isSession
-          ? "Your progress has been saved successfully."
-          : "Your changes have been published to the wiki."
-      );
-    } catch (err) {
-      console.error("Save failed:", err);
-    } finally {
-      state.setSaving(false);
-    }
-  }, [onSave, state, initialWikitext, title]);
+    await state.executeSave(() => viewRef.current?.state.doc.toString() ?? initialWikitext);
+  }, [state, initialWikitext]);
 
   const handleSaveDraft = useCallback(() => {
-    const wikitext = viewRef.current?.state.doc.toString() ?? "";
-    try {
-      saveDraft({ title, source: "ixwiki", wikitext, mode: "source" });
-      state.setIsDirty(false);
-      state.notify.success("Draft Saved", "Your draft has been saved locally.");
-    } catch (err) {
-      console.error("Failed to save draft:", err);
-      state.notify.error("Save Draft Failed", "Could not write draft to local storage.");
-    }
-  }, [title, state]);
+    state.executeSaveDraft(() => viewRef.current?.state.doc.toString() ?? "", "source");
+  }, [state]);
 
   // Local draft restore on mount
   useEffect(() => {
@@ -481,7 +468,7 @@ export function WikiSourceEditor({
 
       {/* Editor + Preview container */}
       <div className={`wikios-editor-body ${showPreview ? "wikios-editor-split" : ""}`}>
-        <div ref={containerRef} className="wikios-editor-cm" />
+        <div ref={containerRef} className="wikios-editor-cm-container wikios-editor-cm" />
         {showPreview && (
           <div className="wikios-editor-preview">
             <div className="wikios-editor-preview-header">
@@ -501,19 +488,13 @@ export function WikiSourceEditor({
       </div>
 
       {/* Status bar */}
-      <div className="wikios-editor-statusbar">
-        <span>
-          Ln {cursorPos.line}, Col {cursorPos.col}
-        </span>
-        <span className="wikios-editor-status-sep" />
-        <span>{state.wordCount} words</span>
-        <span className="wikios-editor-status-sep" />
-        <span>{lineCount} lines</span>
-        <span className="wikios-editor-status-sep" />
-        <span>Wikitext</span>
-        <span className="wikios-editor-status-sep" />
-        <span>UTF-8</span>
-      </div>
+      <WikiEditorStatusBar
+        cursorPos={cursorPos}
+        wordCount={state.wordCount}
+        lineCount={lineCount}
+        formatName="Wikitext"
+        encoding="UTF-8"
+      />
 
       <WikiEditorModalHost
         showImageSearch={state.showImageSearch}

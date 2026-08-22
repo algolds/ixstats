@@ -18,7 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { sanitizeWikiContent } from "~/lib/utils";
-import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
 interface InteractiveInfoboxPreviewProps {
   data: UnifiedInfoboxData & { wikiIntro?: string };

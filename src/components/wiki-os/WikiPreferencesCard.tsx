@@ -1,9 +1,12 @@
-// src/components/profile/WikiPreferencesCard.tsx
-// Wiki & lore preferences card for user profile page
+// src/components/wiki-os/WikiPreferencesCard.tsx
+// Wiki & Lore settings card for user profile / settings page.
+// Manages Primary Knowledge Base Sources, Autonomous Lore Scanner, Interface Integration,
+// and system-level wiki engine configuration.
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Compass } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
@@ -21,22 +24,22 @@ interface WikiPreferences {
 }
 
 const SOURCE_OPTIONS: { value: WikiSource; label: string; description: string }[] = [
-  { value: "ixwiki", label: "IxWiki first", description: "Prefer IxWiki articles" },
-  { value: "iiwiki", label: "IIWiki first", description: "Prefer IIWiki articles" },
-  { value: "both", label: "Both", description: "Show results from both wikis" },
+  { value: "ixwiki", label: "IxWiki first", description: "Prefer IxWiki articles & primary canon" },
+  { value: "iiwiki", label: "IIWiki first", description: "Prefer IIWiki external articles" },
+  { value: "both", label: "Both (Federated)", description: "Query and federate results across both wikis" },
 ];
 
 const DISPLAY_OPTIONS: { value: WikiDisplayMode; label: string; description: string }[] = [
   {
     value: "inline",
     label: "Inline with stats",
-    description: "Lore sections appear alongside data",
+    description: "Lore sections appear seamlessly alongside nation stats",
   },
-  { value: "sidebar", label: "Sidebar only", description: "Lore content in sidebar panels" },
+  { value: "sidebar", label: "Sidebar only", description: "Lore content in dedicated sidebar panels" },
   { value: "hidden", label: "Hidden", description: "Disable lore display entirely" },
 ];
 
-export function WikiPreferencesCard() {
+export function WikiSettingsCard() {
   const utils = api.useUtils();
 
   const { data: preferences, isLoading } = api.users.getPreferences.useQuery(undefined, {
@@ -78,7 +81,7 @@ export function WikiPreferencesCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <BookOpen className="h-5 w-5 text-indigo-500" />
-            Wiki &amp; Lore Preferences
+            Wiki Settings
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -102,22 +105,29 @@ export function WikiPreferencesCard() {
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="dark:text-foreground text-xl font-bold text-slate-900">LoreScanner</h2>
+              <h2 className="dark:text-foreground text-xl font-bold text-slate-900">
+                Wiki Settings
+              </h2>
+              <p className="text-muted-foreground text-xs font-medium">
+                Configure Primary Knowledge Base Sources, Autonomous Lore Scanner, and interface integration preferences.
+              </p>
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
+          {/* Autonomous Lore Scanner */}
           <div className="dark:bg-secondary/50 flex items-center justify-between rounded-2xl bg-slate-50/50 p-4">
             <div>
               <Label
                 htmlFor="wiki-auto-scan"
-                className="dark:text-foreground text-sm font-bold text-slate-900"
+                className="dark:text-foreground text-sm font-bold text-slate-900 flex items-center gap-2"
               >
-                Autonomous Intelligence
+                <Compass className="h-4 w-4 text-indigo-500" />
+                Autonomous Lore Scanner
               </Label>
               <p className="dark:text-muted-foreground text-xs font-medium text-slate-500">
-                Auto-scan for relevant lore
+                Auto-scan and index national lore, stats, and MediaWiki articles across IxStates
               </p>
             </div>
             <Switch
@@ -129,9 +139,10 @@ export function WikiPreferencesCard() {
             />
           </div>
 
+          {/* Primary Knowledge Base Source */}
           <div className="space-y-3">
             <label className="dark:text-muted-foreground block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-              Primary Knowledge Base
+              Primary Knowledge Base Source
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {SOURCE_OPTIONS.map((option) => (
@@ -141,7 +152,7 @@ export function WikiPreferencesCard() {
                   onClick={() => handleUpdate({ wikiSourcePriority: option.value })}
                   disabled={updateMutation.isPending}
                   className={cn(
-                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
+                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
                     localPrefs.wikiSourcePriority === option.value
                       ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
                       : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
@@ -156,6 +167,7 @@ export function WikiPreferencesCard() {
             </div>
           </div>
 
+          {/* Interface Integration */}
           <div className="space-y-3">
             <label className="dark:text-muted-foreground block text-[10px] font-bold tracking-wider text-slate-400 uppercase">
               Interface Integration
@@ -168,7 +180,7 @@ export function WikiPreferencesCard() {
                   onClick={() => handleUpdate({ wikiDisplayMode: option.value })}
                   disabled={updateMutation.isPending}
                   className={cn(
-                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
+                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
                     localPrefs.wikiDisplayMode === option.value
                       ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
                       : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
@@ -202,3 +214,6 @@ export function WikiPreferencesCard() {
     </div>
   );
 }
+
+// Backwards compatibility alias
+export const WikiPreferencesCard = WikiSettingsCard;

@@ -2,6 +2,7 @@
 // Single source of truth for WikiOS and MediaWiki configuration.
 
 export const DEFAULT_USER_AGENT = "IxStats-Builder";
+export const DEFAULT_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 
@@ -16,7 +17,7 @@ export interface WikiSourceConfig {
 export const WIKI_SOURCES: Record<WikiSource, WikiSourceConfig> = {
   ixwiki: {
     name: "IxWiki",
-    baseUrl: process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com",
+    baseUrl: DEFAULT_MEDIAWIKI_URL,
     apiEndpoint: "/api.php",
     description:
       "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia",

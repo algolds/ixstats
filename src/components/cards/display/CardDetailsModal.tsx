@@ -17,7 +17,7 @@ import {
   Download,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";

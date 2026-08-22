@@ -6,7 +6,8 @@
  * integration (IxWiki, IIWiki, custom wikis) with intelligent content processing.
  */
 
-import { type CountryInfobox } from "~/lib/wiki/legacy-service";
+import type { UnifiedInfoboxData as CountryInfobox } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+export type { CountryInfobox };
 
 /**
  * Represents a single intelligence section extracted from wiki sources.

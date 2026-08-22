@@ -8,7 +8,7 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import type { TocEntry } from "~/lib/wiki-os/html-transformer";
+import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
@@ -21,11 +21,11 @@ import { useWikiNarrator } from "~/hooks/useWikiNarrator";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
-import { safeDecodeURI } from "~/lib/wiki-os/safe-decode";
-import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/wiki-embed-shared";
+import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/editor/wiki-embed-shared";
 
 // Subcomponent imports
-import { WikiOSHeader } from "./ArticleHeader";
+import { WikiOSHeader, type ArticleAuthorInfo } from "./ArticleHeader";
 import { QuickHistoryModal, QuickBacklinksModal } from "./ArticleModals";
 import {
   injectPlaceholderElements,
@@ -35,6 +35,16 @@ import {
 } from "./ArticlePlaceholders";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
+import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
+import { useNotify } from "~/hooks/useNotify";
+import {
+  WikiMarginDrawer,
+  MarginGutterPins,
+  SelectionCapsule,
+  type SelectionPayload,
+  type MarginTab,
+} from "~/components/wiki-os/margin";
 
 const CoordinatesMapEmbed = dynamic(
   () =>
@@ -78,6 +88,7 @@ interface ArticleRendererProps {
   categories: string[];
   lastModified: string | null;
   wikiSource?: "ixwiki" | "iiwiki" | "althistory";
+  authorInfo?: ArticleAuthorInfo | null;
 }
 
 const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
@@ -114,15 +125,133 @@ export function ArticleRenderer({
   categories,
   lastModified,
   wikiSource,
+  authorInfo,
 }: ArticleRendererProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { setWikiPage, activeModal, setActiveModal, setActiveSectionId } = useWikiContext();
+  const {
+    setWikiPage,
+    activeModal,
+    setActiveModal,
+    setActiveSectionId,
+    isMarginOpen: marginOpen,
+    setIsMarginOpen: setMarginOpen,
+    marginTab,
+    setMarginTab,
+    toggleMargin,
+  } = useWikiContext();
   const _narrator = useWikiNarrator(contentRef);
   const { isSignedIn } = useWikiAuth();
   const isAuthenticated = isSignedIn;
   const [tocOpen, setTocOpen] = useState(false);
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
+
+  // --- WikiOS Margin Suite State ---
+  const [marginExpanded, setMarginExpanded] = useState(false);
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  const [draftQuote, setDraftQuote] = useState<string | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const utils = api.useUtils();
+
+  const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
+
+  // Query discussions for Gutter Pins & counts
+  const { data: marginData, refetch: refetchMargin } = api.wikios.getArticleMarginData.useQuery(
+    { articleTitle: title, status: "ALL" },
+    { enabled: !!title, staleTime: 15_000 }
+  );
+
+  // Sync activeModal from Toolbar/Sidebar triggers
+  useEffect(() => {
+    if (activeModal === "margin") {
+      setMarginOpen(true);
+      setActiveModal(null);
+    }
+  }, [activeModal, setActiveModal, setMarginOpen]);
+
+  // Global hotkey listener: 'T' or 'I' toggles Margin
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (
+        (e.key === "t" || e.key === "T" || e.key === "i" || e.key === "I") &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        soundEffects.press();
+        toggleMargin();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleMargin]);
+
+  // Selection Capsule Handlers & Live Sync
+  const notify = useNotify();
+
+  const { data: annotationsData, refetch: refetchAnnotations } = api.wikios.getAnnotations.useQuery(
+    { pageTitle: title },
+    { enabled: !!title && isAuthenticated, staleTime: 15_000 }
+  );
+
+  const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
+    onSuccess: () => {
+      soundEffects.success();
+      notify.success("Highlight saved to Margin Markup");
+      void utils.wikios.getAnnotations.invalidate({ pageTitle: title });
+      void refetchAnnotations();
+    },
+    onError: (err: { message?: string }) => {
+      notify.error(err.message || "Failed to add highlight");
+    },
+  });
+
+  const stashPageMutation = api.wikios.stashPage.useMutation({
+    onSuccess: () => {
+      soundEffects.success();
+      notify.success("Saved to Lore Stash");
+      void utils.wikios.isStashed.invalidate({ pageTitle: title });
+      void utils.wikios.getStashes.invalidate();
+    },
+    onError: (err: { message?: string }) => {
+      notify.error(err.message || "Failed to stash page");
+    },
+  });
+
+  const handleAddHighlight = (payload: SelectionPayload, color: string) => {
+    addAnnotationMutation.mutate({
+      pageTitle: title,
+      selectedText: payload.text,
+      color,
+    });
+  };
+
+  const handleOpenThreadDraft = (payload: SelectionPayload) => {
+    setActiveAnchor(null);
+    setDraftQuote(payload.text);
+    setMarginTab("threads");
+    setMarginOpen(true);
+  };
+
+  const handleStashQuote = (payload: SelectionPayload) => {
+    addAnnotationMutation.mutate({
+      pageTitle: title,
+      selectedText: payload.text,
+      comment: "Saved quote",
+      color: "#f472b6",
+    });
+    stashPageMutation.mutate({ pageTitle: title });
+  };
 
   // --- Portal & Dynamic Widgets Setup ---
   const statKeys = useMemo(() => {
@@ -376,8 +505,6 @@ export function ArticleRenderer({
   );
   const awardsData = awardsQuery.data;
 
-  const slug = encodeURIComponent(title.replace(/ /g, "_"));
-
   const featuredImageUrl = useMemo(() => {
     const imgRegex = /<img[^>]+src\s*=\s*(?:["']([^"']+)["']|([^>\s"'=]+))/i;
     let rawUrl: string | null = null;
@@ -409,7 +536,13 @@ export function ArticleRenderer({
   } as React.CSSProperties;
 
   return (
-    <div className="wikios-article" style={containerStyle}>
+    <div
+      className={cn(
+        "wikios-article transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
+      )}
+      style={containerStyle}
+    >
       <div ref={titleRef} className="wikios-title-sentinel" />
 
       {/* Redesigned Custom WikiOSHeader */}
@@ -420,6 +553,7 @@ export function ArticleRenderer({
         countryData={countryData}
         featuredImageUrl={featuredImageUrl}
         themeColors={themeColors}
+        authorInfo={authorInfo}
         awardsData={awardsData}
         tocLength={toc.length}
         onTocClick={() => setTocOpen(true)}
@@ -495,21 +629,28 @@ export function ArticleRenderer({
           <ArticleFooter title={title} lastModified={lastModified} />
         </div>
 
-        {showWikiToc && toc.length > 3 && <StickyToc entries={toc} contentRef={contentRef} />}
+        {/* Desktop sticky TOC (autocollapses when Margin is open) */}
+        {toc.length > 0 && (
+          <StickyToc
+            entries={toc}
+            contentRef={contentRef}
+            isCollapsed={marginOpen}
+          />
+        )}
       </div>
 
-      {lightboxPortal}
-      {toolbarPortal}
-      {annotationPopover}
-      {citeTooltipPortal}
-
-      {/* Table of Contents Drawer */}
+      {/* Apple Books Style TOC Drawer (Modal Sheet) */}
       <AppleBooksTocDrawer
         isOpen={tocOpen}
         onClose={() => setTocOpen(false)}
         entries={toc}
         themeColors={themeColors}
       />
+
+      {lightboxPortal}
+      {toolbarPortal}
+      {annotationPopover}
+      {citeTooltipPortal}
 
       {/* Quick action modals */}
       {activeModal === "history" && (
@@ -518,6 +659,45 @@ export function ArticleRenderer({
       {activeModal === "backlinks" && (
         <QuickBacklinksModal title={title} slug={slug} onClose={() => setActiveModal(null)} />
       )}
+
+      {/* Margin Suite: Gutter Pins, Selection Capsule & Split-Canvas Drawer */}
+      <MarginGutterPins
+        contentRef={contentRef}
+        threads={(marginData?.threads as any) || []}
+        annotations={(annotationsData as any) || []}
+        themeColors={themeColors}
+        onSelectAnchor={(anchor, threadId, tab) => {
+          setActiveAnchor(anchor);
+          setSelectedThreadId(threadId || null);
+          setMarginTab(tab || "threads");
+        }}
+        onOpenDrawer={() => setMarginOpen(true)}
+      />
+
+      <SelectionCapsule
+        contentRef={contentRef}
+        isAuthenticated={isAuthenticated}
+        onAddHighlight={handleAddHighlight}
+        onOpenThreadDraft={handleOpenThreadDraft}
+        onStashQuote={handleStashQuote}
+      />
+
+      <WikiMarginDrawer
+        isOpen={marginOpen}
+        onClose={() => setMarginOpen(false)}
+        articleTitle={title}
+        initialTab={marginTab}
+        activeAnchor={activeAnchor}
+        draftQuote={draftQuote}
+        onClearDraftQuote={() => setDraftQuote(null)}
+        selectedThreadId={selectedThreadId}
+        onSelectThread={setSelectedThreadId}
+        contentRef={contentRef}
+        isAuthenticated={isAuthenticated}
+        themeColors={themeColors}
+        onExpandedChange={setMarginExpanded}
+      />
     </div>
   );
 }
+

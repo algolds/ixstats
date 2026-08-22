@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { motion, AnimatePresence } from "motion/react";
 import type { DossierTabProps } from "~/types/dossier";
 import { useDossier } from "~/hooks/useDossier";
@@ -14,7 +14,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
-import { resolveImageUrl } from "~/lib/wiki/unified-parser";
+import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import Link from "next/link";
 import { BookOpen, Plus, Upload, Trash2, Edit3, Lock, Shield, Eye } from "lucide-react";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";

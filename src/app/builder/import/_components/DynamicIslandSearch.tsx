@@ -19,7 +19,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { IconSwap, IconSwapItem } from "~/components/ui/icon-swap";
-import type { UnifiedInfoboxData } from "~/lib/wiki/unified-parser";
+import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 
 // ─── Types ───
 
@@ -30,10 +30,10 @@ interface WikiSite {
   theme: "blue" | "indigo";
 }
 
-interface SearchResult {
+export interface SearchResult {
   title: string;
   snippet: string;
-  url: string;
+  url?: string;
   namespace?: number;
   flagUrl?: string | null;
   population?: number;

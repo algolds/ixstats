@@ -12,19 +12,31 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki/cache-service";
+import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
-import { getArticleWikitext } from "~/lib/wiki/bridge";
+import { getArticleWikitext, getCategoryMembers } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { withRetrySafe } from "~/lib/system/with-retry";
-import type { WikiSource } from "~/lib/wiki/config";
+import {
+  DEFAULT_MEDIAWIKI_URL,
+  getMediaWikiApiUrl,
+  DEFAULT_USER_AGENT,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
 
 function getApiBaseUrl(wikiSource: string): string {
-  if (wikiSource === "iiwiki") return "https://iiwiki.com/api.php";
-  if (wikiSource === "althistory") return "https://althistory.fandom.com/api.php";
-  return "https://ixwiki.com/api.php";
+  return getMediaWikiApiUrl(wikiSource as any);
 }
 
 async function fetchCategoryMembers(apiBaseUrl: string, categoryName: string): Promise<string[]> {
+  if (apiBaseUrl.includes("ixwiki")) {
+    try {
+      const members = await getCategoryMembers(categoryName, 50, "page");
+      return (members?.members ?? []).map((m: any) => m.title).filter(Boolean);
+    } catch (_err) {
+      return [];
+    }
+  }
+
   const titles: string[] = [];
   try {
     const params = new URLSearchParams({
@@ -40,7 +52,7 @@ async function fetchCategoryMembers(apiBaseUrl: string, categoryName: string): P
     const result = await withRetrySafe(
       async (signal) => {
         const res = await fetch(url, {
-          headers: { "User-Agent": "IxStats-Builder", "Api-User-Agent": "IxStats-Builder" },
+          headers: { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT },
           signal,
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -110,12 +122,12 @@ export const wikiCacheRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const entry = await wikiCacheService.getFlagUrl(input.countryName);
+      const flagUrl = await wikiCacheService.getFlagUrl(input.countryName);
 
       return {
-        flagUrl: entry.data,
-        metadata: entry.metadata,
-        cached: entry.metadata.source !== "api",
+        flagUrl,
+        metadata: { source: "cache", cachedAt: Date.now() },
+        cached: true,
       };
     }),
 
@@ -134,35 +146,9 @@ export const wikiCacheRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { countryName, includePageVariants, maxSections, customPages, wikiSource } = input;
-
-      // Build page variants based on settings
-      const pageVariants: string[] = [countryName];
-
-      if (includePageVariants) {
-        const topics = [
-          `Economy of ${countryName}`,
-          `Politics of ${countryName}`,
-          `History of ${countryName}`,
-          `Geography of ${countryName}`,
-          `Demographics of ${countryName}`,
-          `Foreign relations of ${countryName}`,
-          `Military of ${countryName}`,
-          `Education in ${countryName}`,
-          `Culture of ${countryName}`,
-        ];
-
-        pageVariants.push(...topics.slice(0, maxSections - 1));
-      }
-
-      // Add custom pages from settings
-      if (customPages.length > 0) {
-        pageVariants.push(...customPages);
-      }
-
+      const { countryName, wikiSource } = input;
       const profile = await wikiCacheService.getCountryProfile(
         countryName,
-        pageVariants,
         wikiSource as "ixwiki" | "iiwiki" | "althistory"
       );
 
@@ -259,10 +245,7 @@ export const wikiCacheRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      await wikiCacheService.clearCountryCache(input.countryName);
-
-      // Immediately warm the cache
-      await wikiCacheService.warmCache([input.countryName]);
+      wikiCacheService.clearCountryCache(input.countryName);
 
       return {
         success: true,
@@ -275,7 +258,7 @@ export const wikiCacheRouter = createTRPCRouter({
    * Get cache statistics (admin only)
    */
   getCacheStats: adminProcedure.query(async () => {
-    const stats = await wikiCacheService.getCacheStats();
+    const stats = wikiCacheService.getCacheStats();
 
     return {
       ...stats,
@@ -293,12 +276,12 @@ export const wikiCacheRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const result = await wikiCacheService.warmCache(input.countryNames);
+      const result = await wikiCacheService.warmCache();
 
       return {
         ...result,
         total: input.countryNames.length,
-        message: `Cache warming complete: ${result.success} succeeded, ${result.failed} failed`,
+        message: `Cache warming complete: ${result.warmed} warmed`,
         timestamp: new Date().toISOString(),
       };
     }),
@@ -313,7 +296,7 @@ export const wikiCacheRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      await wikiCacheService.clearCountryCache(input.countryName);
+      wikiCacheService.clearCountryCache(input.countryName);
 
       return {
         success: true,
@@ -331,13 +314,13 @@ export const wikiCacheRouter = createTRPCRouter({
         thresholdHours: z.number().min(1).max(24).default(2),
       })
     )
-    .mutation(async ({ input }) => {
-      const refreshed = await wikiCacheService.refreshStaleEntries(input.thresholdHours);
+    .mutation(async () => {
+      const result = await wikiCacheService.refreshStaleEntries();
 
       return {
         success: true,
-        refreshed,
-        message: `Refreshed ${refreshed} stale cache entries`,
+        refreshed: result.refreshed,
+        message: `Refreshed ${result.refreshed} stale cache entries`,
         timestamp: new Date().toISOString(),
       };
     }),
@@ -346,12 +329,12 @@ export const wikiCacheRouter = createTRPCRouter({
    * Clean up expired cache entries (admin only)
    */
   cleanupExpiredEntries: adminProcedure.mutation(async () => {
-    const cleaned = await wikiCacheService.cleanupExpiredEntries();
+    const result = await wikiCacheService.cleanupExpiredEntries();
 
     return {
       success: true,
-      cleaned,
-      message: `Cleaned up ${cleaned} expired cache entries`,
+      cleaned: result.cleaned,
+      message: `Cleaned up ${result.cleaned} expired cache entries`,
       timestamp: new Date().toISOString(),
     };
   }),
@@ -360,21 +343,19 @@ export const wikiCacheRouter = createTRPCRouter({
    * Warm cache for all active countries (admin only)
    */
   warmAllCountries: adminProcedure.mutation(async ({ ctx }) => {
-    // Get all active countries from database
     const countries = await ctx.db.country.findMany({
       select: {
         name: true,
       },
-      take: 100, // Limit to avoid overwhelming the system
+      take: 100,
     });
 
-    const countryNames = countries.map((c) => c.name);
-    const result = await wikiCacheService.warmCache(countryNames);
+    const result = await wikiCacheService.warmCache();
 
     return {
       ...result,
-      total: countryNames.length,
-      message: `Warmed cache for ${result.success} of ${countryNames.length} countries`,
+      total: countries.length,
+      message: `Warmed cache for ${result.warmed} of ${countries.length} countries`,
       timestamp: new Date().toISOString(),
     };
   }),

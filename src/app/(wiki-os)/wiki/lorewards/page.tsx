@@ -1,21 +1,9 @@
 // src/app/(wiki-os)/wiki/lorewards/page.tsx
-// Reroutes to the new unified Achievements dashboard with the Wiki & Lorewards tab focused.
+// Instant redirect to unified Achievements hub with Wiki & Lorewards tab focused.
 
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
+import { withBasePath } from "~/lib/base-path";
 
 export default function LorewardsPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/achievements?tab=wiki-lore");
-  }, [router]);
-
-  return (
-    <div className="bg-background text-muted-foreground flex h-screen items-center justify-center text-sm">
-      Redirecting to Achievements hub...
-    </div>
-  );
+  redirect(withBasePath("/achievements?tab=wiki-lore"));
 }

@@ -7,8 +7,8 @@ import {
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { ixnayWiki } from "~/lib/wiki/legacy-service";
-import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki/entity-parser";
+import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { parseEntityAttributesFromWiki, type EntityKind } from "~/lib/wiki-os/adapters/ixstates/entity-parser";
 import { checkGeoCompliance } from "~/lib/country-geo";
 import { getTerrainAtPoint } from "~/lib/country-geo";
 import {
@@ -534,8 +534,9 @@ export const countryGeoRouter = createTRPCRouter({
       }
 
       // 2. Fetch the wiki page wikitext.
-      const wikitext = await ixnayWiki.getPageWikitext(wikiTitle);
-      if (!wikitext || typeof wikitext === "object") {
+      const wikiRes = await getArticleWikitext(wikiTitle, "ixwiki");
+      const wikitext = wikiRes?.wikitext ?? null;
+      if (!wikitext) {
         return {
           wikiTitle,
           templateName: null,

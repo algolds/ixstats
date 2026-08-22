@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/url-compat";
+import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import {
   Search,
   BookOpen,
@@ -20,9 +20,9 @@ import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { parseInfoboxValue } from "~/lib/builder";
-import { resolveImageUrl } from "~/lib/wiki/unified-parser";
-import type { CountryInfobox } from "~/lib/wiki/legacy-service";
-import type { WikiSource } from "~/lib/wiki/config";
+import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import type { CountryInfobox } from "~/types/dossier";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export interface TocItem {
   id: string;

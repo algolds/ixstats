@@ -10,13 +10,13 @@ import {
   getPageSections,
   getPageImages as wikiBridgePageImages,
   getInfobox as wikiBridgeInfobox,
-} from "~/lib/wiki/bridge";
-import { getArticleWikitextShadow } from "~/lib/wiki-os/article-store";
-import { searchWiki as searchWikiService } from "~/lib/wiki/search-service";
-import { parseInfobox as parseInfoboxParser } from "~/lib/wiki/infobox-parser";
-import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki/unified-parser";
-import { wikiCacheService } from "~/lib/wiki/cache-service";
-import { getEligibleCountries } from "~/lib/wiki/eligible-country-service";
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
+import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
+import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
+import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [

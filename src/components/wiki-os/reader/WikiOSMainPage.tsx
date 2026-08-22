@@ -10,7 +10,7 @@ import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/mediawiki-timestamp";
+import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { BookOpen, ExternalLink, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
@@ -428,17 +428,48 @@ export function WikiOSMainPage() {
 // ---------------------------------------------------------------------------
 
 function extractFeaturedArticle(html: string): string | null {
-  // The featured article card has id="featured&#95;article" (HTML-encoded underscore)
-  // Find the start of the card div, then extract it using balanced tag counting
+  if (!html) return null;
 
-  const startIdx = html.search(/<div[^>]*id="featured(?:_|&#95;)article"/i);
-  if (startIdx === -1) return null;
+  // Patterns for featured article container on MediaWiki main pages
+  const patterns = [
+    /<div[^>]*id="featured(?:_|&#95;)article"/i,
+    /<div[^>]*id="mp-tfa"/i,
+    /<div[^>]*id="mainpage-featured"/i,
+    /<div[^>]*class="[^"]*(?:featured-article|tfa-box|mp-box|featured_article)[^"]*"/i,
+    /<section[^>]*class="[^"]*featured[^"]*"/i,
+  ];
 
-  // Balanced extraction — count <div> opens and </div> closes
+  let startIdx = -1;
+  for (const pattern of patterns) {
+    const idx = html.search(pattern);
+    if (idx !== -1) {
+      startIdx = idx;
+      break;
+    }
+  }
+
+  // If no explicit featured ID found, check if there is an article card or intro block
+  if (startIdx === -1) {
+    const cardIdx = html.search(/<div[^>]*class="[^"]*card[^"]*"/i);
+    if (cardIdx !== -1) {
+      startIdx = cardIdx;
+    }
+  }
+
+  if (startIdx === -1) {
+    // If the HTML is already a direct snippet/fragment (< 2000 chars), use it directly
+    if (html.length < 2500 && html.includes("<p>")) {
+      return transformFeaturedContent(html);
+    }
+    return null;
+  }
+
+  // Balanced extraction — count tag opens and closes
   let depth = 0;
   let pos = startIdx;
-  const openTag = "<div";
-  const closeTag = "</div>";
+  const isSection = html.slice(startIdx, startIdx + 10).toLowerCase().startsWith("<section");
+  const openTag = isSection ? "<section" : "<div";
+  const closeTag = isSection ? "</section>" : "</div>";
 
   while (pos < html.length) {
     const nextOpen = html.indexOf(openTag, pos + (depth === 0 ? 0 : 1));
@@ -470,5 +501,6 @@ function transformFeaturedContent(cardHtml: string): string {
     .replace(/class="card-image[^"]*"/gi, 'class="wikios-fa-image"')
     .replace(/class="card-text"/gi, 'class="wikios-fa-text"')
     .replace(/class="byline"/gi, 'class="wikios-fa-byline"')
-    .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/');
+    .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/')
+    .replace(/href="https?:\/\/ixwiki\.com\/wiki\//g, 'href="/wiki/');
 }

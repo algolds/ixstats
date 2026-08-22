@@ -39,6 +39,8 @@ export class UserManagementService {
           countryId: true,
           roleId: true,
           membershipTier: true,
+          wikiUsername: true,
+          wikiUserId: true,
           createdAt: true,
           updatedAt: true,
           country: { select: { id: true, name: true, flag: true } },

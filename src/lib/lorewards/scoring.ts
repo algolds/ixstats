@@ -7,7 +7,7 @@
  */
 
 import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki/bridge";
+import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 
 // ---------------------------------------------------------------------------
 // Config
