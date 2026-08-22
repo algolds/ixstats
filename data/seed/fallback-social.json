@@ -1,0 +1,118 @@
+{
+  "posts": [
+    {
+      "content": "The Ministry of Finance has published the revised macroeconomic growth projection for Q3. National vitality indicators remain robust across all core sectors.",
+      "visibility": "public",
+      "likesCount": 42,
+      "commentsCount": 7,
+      "sharesCount": 12
+    },
+    {
+      "content": "Exciting progress on the High-Speed Rail Corridor Phase 1! First electrified test train scheduled to begin trials next month between Capital District and Northport.",
+      "visibility": "public",
+      "likesCount": 88,
+      "commentsCount": 15,
+      "sharesCount": 34
+    },
+    {
+      "content": "New public consultation open regarding the Green Energy Transition roadmap. Citizens are encouraged to submit feedback on regional solar incentives.",
+      "visibility": "public",
+      "likesCount": 65,
+      "commentsCount": 22,
+      "sharesCount": 19
+    }
+  ],
+  "econMessages": [
+    {
+      "sender": "Economic Policy Institute",
+      "content": "Our econometric model shows that the proposed carbon dividend policy will result in net-positive disposable income for bottom three quintiles.",
+      "minutesAgo": 120
+    },
+    {
+      "sender": "Chamber of Commerce Analyst",
+      "content": "Agreed, though transitional assistance for heavy manufacturing in the industrial corridor will be crucial during years 1-3.",
+      "minutesAgo": 95
+    },
+    {
+      "sender": "Central Bank Liaison",
+      "content": "Monetary policy committee is keeping key rates steady while watching inflationary pass-through in energy inputs.",
+      "minutesAgo": 45
+    }
+  ],
+  "secMessages": [
+    {
+      "sender": "Strategic Defense Studies Group",
+      "content": "Cyber Command's recent blue-team exercise demonstrated 98% containment rate on simulated critical infrastructure incursions.",
+      "minutesAgo": 180
+    },
+    {
+      "sender": "Naval Doctrine Review",
+      "content": "Maritime domain awareness integration with autonomous surveillance buoys has reduced unflagged littoral crossings by 80%.",
+      "minutesAgo": 110
+    }
+  ],
+  "activities": [
+    {
+      "activityType": "POLICY_ENACTED",
+      "description": "Enacted National Digital Infrastructure Act",
+      "metadata": {
+        "category": "infrastructure"
+      }
+    },
+    {
+      "activityType": "BUDGET_ADJUSTED",
+      "description": "Approved supplementary defense procurement budget",
+      "metadata": {
+        "amount": 150000000
+      }
+    },
+    {
+      "activityType": "DIPLOMATIC_TREATY",
+      "description": "Signed bilateral mutual tariff reduction framework",
+      "metadata": {
+        "status": "ratified"
+      }
+    },
+    {
+      "activityType": "ELECTION_HELD",
+      "description": "National Parliamentary General Election certified",
+      "metadata": {
+        "turnout": "78.4%"
+      }
+    }
+  ],
+  "achievements": [
+    {
+      "code": "FOUNDING_FATHER",
+      "title": "Nation Builder",
+      "description": "Created and customized your sovereign national entity.",
+      "category": "general",
+      "tier": "bronze",
+      "points": 100
+    },
+    {
+      "code": "ECONOMIC_PIONEER",
+      "title": "Economic Pioneer",
+      "description": "Configured full fiscal system with balanced budget projection.",
+      "category": "economy",
+      "tier": "silver",
+      "points": 250
+    },
+    {
+      "code": "MASTER_DIPLOMAT",
+      "title": "Master Diplomat",
+      "description": "Established active diplomatic missions with 5 partner nations.",
+      "category": "diplomacy",
+      "tier": "gold",
+      "points": 500
+    },
+    {
+      "code": "CARTOGRAPHER",
+      "title": "Master Cartographer",
+      "description": "Created custom subdivisions, cities, and points of interest on the world map.",
+      "category": "geography",
+      "tier": "gold",
+      "points": 500
+    }
+  ]
+}

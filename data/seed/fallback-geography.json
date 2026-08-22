@@ -1,0 +1,123 @@
+{
+  "subdivisions": [
+    {
+      "name": "Capital Territory",
+      "type": "federal_district",
+      "level": 1,
+      "population": 3500000,
+      "areaSqKm": 1200,
+      "color": "#3B82F6"
+    },
+    {
+      "name": "Northern Highlands",
+      "type": "province",
+      "level": 1,
+      "population": 4200000,
+      "areaSqKm": 45000,
+      "color": "#10B981"
+    },
+    {
+      "name": "Eastern Coastal Province",
+      "type": "province",
+      "level": 1,
+      "population": 6800000,
+      "areaSqKm": 32000,
+      "color": "#F59E0B"
+    },
+    {
+      "name": "Western Valley",
+      "type": "state",
+      "level": 1,
+      "population": 5100000,
+      "areaSqKm": 38000,
+      "color": "#8B5CF6"
+    },
+    {
+      "name": "Southern Plains",
+      "type": "province",
+      "level": 1,
+      "population": 2900000,
+      "areaSqKm": 52000,
+      "color": "#EC4899"
+    }
+  ],
+  "cities": [
+    {
+      "name": "Metropolis Prime",
+      "type": "capital",
+      "population": 2800000,
+      "isNationalCapital": true,
+      "isSubdivisionCapital": true,
+      "elevation": 120,
+      "foundedYear": 1848
+    },
+    {
+      "name": "Port Azure",
+      "type": "port",
+      "population": 1650000,
+      "isNationalCapital": false,
+      "isSubdivisionCapital": true,
+      "elevation": 15,
+      "foundedYear": 1872
+    },
+    {
+      "name": "Ironforge",
+      "type": "industrial",
+      "population": 980000,
+      "isNationalCapital": false,
+      "isSubdivisionCapital": false,
+      "elevation": 450,
+      "foundedYear": 1895
+    },
+    {
+      "name": "Silverdale",
+      "type": "tech_hub",
+      "population": 1250000,
+      "isNationalCapital": false,
+      "isSubdivisionCapital": true,
+      "elevation": 210,
+      "foundedYear": 1920
+    },
+    {
+      "name": "Oakhaven",
+      "type": "regional",
+      "population": 420000,
+      "isNationalCapital": false,
+      "isSubdivisionCapital": true,
+      "elevation": 95,
+      "foundedYear": 1912
+    }
+  ],
+  "pois": [
+    {
+      "name": "National Parliament Palace",
+      "category": "government",
+      "description": "Historic neoclassical seat of the national legislature.",
+      "icon": "Landmark"
+    },
+    {
+      "name": "Grand Central Terminal",
+      "category": "transport",
+      "description": "Historic terminus serving high-speed and regional rail lines.",
+      "icon": "Train"
+    },
+    {
+      "name": "Azure Deepwater Port",
+      "category": "port",
+      "description": "High-capacity automated container maritime terminal.",
+      "icon": "Anchor"
+    },
+    {
+      "name": "National Science & Tech Campus",
+      "category": "education",
+      "description": "Premier research institute and particle physics laboratory.",
+      "icon": "Atom"
+    },
+    {
+      "name": "Great Highland National Park",
+      "category": "nature",
+      "description": "Glacial alpine preserve with protected boreal ecosystems.",
+      "icon": "Mountain"
+    }
+  ]
+}
