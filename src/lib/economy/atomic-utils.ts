@@ -509,33 +509,12 @@ export function getEffectivenessColor(effectiveness: number): string {
   return "red";
 }
 
-/**
- * Format large numbers with commas
- * @param num Number to format
- * @returns Formatted string
- */
-export function formatNumber(num: number): string {
-  return num.toLocaleString();
-}
+export {
+  formatWholeNumber as formatNumber,
+  formatCurrency,
+  formatPercentage,
+} from "~/lib/utils/format-utils";
 
-/**
- * Format currency values
- * @param amount Amount to format
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number): string {
-  return `$${formatNumber(amount)}`;
-}
-
-/**
- * Format percentage values
- * @param value Percentage value (0-100)
- * @param decimals Number of decimal places
- * @returns Formatted percentage string
- */
-export function formatPercentage(value: number, decimals: number = 1): string {
-  return `${value.toFixed(decimals)}%`;
-}
 
 // ============================================================================
 // Component Utility Functions

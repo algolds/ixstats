@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
+import type maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
-import { acquireSurface } from "~/lib/maps/map-engine";
 
 interface UseMapLibreInstanceOptions {
   theme?: MapTheme;
@@ -34,38 +33,51 @@ export function useMapLibreInstance(options: UseMapLibreInstanceOptions = {}) {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let isCancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: buildBaseStyle(theme) as any,
-      center,
-      zoom,
-      pitch,
-      bearing,
-      interactive,
-      attributionControl: false,
+    void import("maplibre-gl").then((mod) => {
+      if (isCancelled || !containerRef.current || mapRef.current) return;
+      const MapClass = mod.default?.Map || (mod as any).Map;
+      if (!MapClass) return;
+
+      const map = new MapClass({
+        container: containerRef.current,
+        style: buildBaseStyle(theme) as any,
+        center,
+        zoom,
+        pitch,
+        bearing,
+        interactive,
+        attributionControl: false,
+      });
+
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (!isCancelled) {
+          setIsLoaded(true);
+          onLoad?.(map);
+        }
+      });
+
+      resizeObserver = new ResizeObserver(() => {
+        map.resize();
+      });
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
+      }
     });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      setIsLoaded(true);
-      onLoad?.(map);
-    });
-
-    // Resize observer
-    const resizeObserver = new ResizeObserver(() => {
-      map.resize();
-    });
-    resizeObserver.observe(containerRef.current);
 
     return () => {
-      resizeObserver.disconnect();
-      map.remove();
-      mapRef.current = null;
-      setIsLoaded(false);
+      isCancelled = true;
+      resizeObserver?.disconnect();
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
-  }, []);
+  }, [theme, center, zoom, pitch, bearing, interactive, onLoad]);
 
   return {
     map: mapRef.current,

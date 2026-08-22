@@ -3,8 +3,21 @@
 import { useMemo } from "react";
 import { Info } from "lucide-react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { MarkovVisualizer } from "../MarkovVisualizer";
+import dynamic from "next/dynamic";
 import { LexiconExplorer } from "../LexiconExplorer";
+
+const MarkovVisualizer = dynamic(
+  () => import("../MarkovVisualizer").then((m) => m.MarkovVisualizer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 w-full animate-pulse items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/5">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      </div>
+    ),
+  }
+);
+
 import { type StudioState } from "../../../hooks/useStudioState";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";

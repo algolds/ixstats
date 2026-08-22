@@ -4,19 +4,10 @@ export * from "./racing-resolver";
 export * from "./types";
 
 import { createRNG } from "./rng";
-import { computeStrength } from "./elo-calculator";
+import { computeStrength, computeEloDelta } from "./elo-calculator";
 import type { MatchResult, TeamRatingVector } from "./types";
 import { clamp } from "~/lib/utils";
 
-export function computeEloDelta(
-  rating: number,
-  opponentRating: number,
-  actualScore: number,
-  kFactor: number
-): number {
-  const expected = 1 / (1 + Math.pow(10, (opponentRating - rating) / 400));
-  return kFactor * (actualScore - expected);
-}
 
 export interface EventTraceStep {
   t: number;

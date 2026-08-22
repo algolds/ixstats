@@ -94,12 +94,9 @@ export function getResponsiveClasses(mobile: string, tablet?: string, desktop?: 
   return classes.join(" ");
 }
 
-/**
- * Conditional class helper
- */
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(" ");
-}
+import { cn } from "~/lib/utils/cn";
+export { cn };
+
 
 /**
  * Theme-aware button class generator
@@ -255,28 +252,5 @@ export function getAnimationClasses(
   return map[animation];
 }
 
-/**
- * Format a number, optionally as USD currency, with precision and
- * compact notation support.
- */
-export function formatNumber(
-  num: number | null | undefined,
-  options: {
-    isCurrency?: boolean;
-    precision?: number;
-    compact?: boolean;
-  } = {}
-): string {
-  if (num == null || !isFinite(num)) {
-    return "N/A";
-  }
-  const { isCurrency = false, precision = 0, compact = false } = options;
-  const nfOpts: Intl.NumberFormatOptions = {
-    style: isCurrency ? "currency" : "decimal",
-    currency: isCurrency ? "USD" : undefined,
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
-    notation: compact ? "compact" : "standard",
-  };
-  return new Intl.NumberFormat("en-US", nfOpts).format(num);
-}
+export { formatNumber } from "~/lib/utils/format-utils";
+
