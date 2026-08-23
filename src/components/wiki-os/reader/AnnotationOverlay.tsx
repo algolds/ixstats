@@ -6,7 +6,13 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { Highlighter, MessageSquare, X, Trash2, Check } from "lucide-react";
+import {
+  DesignPencil as Highlighter,
+  ChatBubble as MessageSquare,
+  Xmark as X,
+  Trash as Trash2,
+  Check,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -189,7 +195,7 @@ export function useAnnotationOverlay(
         className={cn("wikios-toolbar-action", annotationsOn && "wikios-toolbar-action-active")}
         title={annotationsOn ? "Turn off markup mode" : "Turn on markup mode"}
       >
-        <Highlighter size={13} />
+        <Highlighter className="h-3.5 w-3.5" />
         <span>Markup</span>
       </button>
     ) : null;
@@ -304,11 +310,11 @@ const AnnotationToolbarUI = forwardRef<
       </div>
       <div className="wikios-annotation-toolbar-actions">
         <button onClick={props.onSave} className="wikios-annotation-save" disabled={props.isSaving}>
-          <Check size={12} />
+          <Check className="h-3 w-3 inline mr-1" />
           {props.isSaving ? "Saving..." : "Highlight"}
         </button>
         <button onClick={props.onClose} className="wikios-annotation-cancel">
-          <X size={12} />
+          <X className="h-3 w-3" />
         </button>
       </div>
     </div>
@@ -357,7 +363,7 @@ function AnnotationPopover({
       </div>
       {annotation.comment && (
         <div className="wikios-annotation-popover-comment">
-          <MessageSquare size={11} />
+          <MessageSquare className="h-2.5 w-2.5 inline mr-1" />
           {annotation.comment}
         </div>
       )}
@@ -367,11 +373,11 @@ function AnnotationPopover({
           className="wikios-annotation-popover-delete"
           disabled={isDeleting}
         >
-          <Trash2 size={11} />
+          <Trash2 className="h-2.5 w-2.5 inline mr-1" />
           {isDeleting ? "Removing..." : "Remove"}
         </button>
         <button onClick={onClose} className="wikios-annotation-popover-close">
-          <X size={11} />
+          <X className="h-2.5 w-2.5" />
         </button>
       </div>
     </div>

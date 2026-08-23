@@ -40,6 +40,8 @@ export interface WikiRecentChange {
   type: "edit" | "new" | "log";
   oldLen: number;
   newLen: number;
+  blurb?: string | null;
+  thumbnail?: string | null;
 }
 
 // ──────────────────────────────────────────────

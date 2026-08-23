@@ -19,6 +19,7 @@ import {
   type WikiSource,
 } from "./bridge";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { globalCache } from "~/lib/cache";
 
 // Serve a shadow copy without re-checking MediaWiki for this long. In-app edits
 // invalidate the shadow on save, so this window only matters for edits made
@@ -541,13 +542,131 @@ export async function getRevisionWikitextShadow(
 
 export interface ArticleAuthorInfo {
   creator: string | null;
+  creatorAvatar?: string | null;
   createdAt: string | null;
   lastEditor: string | null;
+  lastEditorAvatar?: string | null;
   lastEditedAt: string | null;
 }
 
 /**
- * Fetch article creator and latest editor.
+ * Resolve Clerk profile picture URLs for wiki usernames.
+ * Checks globalCache -> PostgreSQL db.user -> Clerk API with 1-hour TTL.
+ */
+async function resolveClerkAvatars(
+  usernames: Array<string | null | undefined>
+): Promise<Record<string, string | null>> {
+  const result: Record<string, string | null> = {};
+  const clean = usernames.filter(
+    (u): u is string => typeof u === "string" && u.trim().length > 0 && !/^\d+\.\d+\.\d+\.\d+$/.test(u)
+  );
+  if (clean.length === 0) return result;
+
+  const toFetch: string[] = [];
+
+  // 1. Check in-memory cache first (<0.1ms)
+  for (const name of clean) {
+    const key = `wiki_author_avatar:${name.toLowerCase()}`;
+    const cached = await globalCache.get<string | null>(key);
+    if (cached !== undefined && cached !== null) {
+      result[name.toLowerCase()] = cached;
+    } else {
+      toFetch.push(name);
+    }
+  }
+
+  if (toFetch.length === 0) return result;
+
+  try {
+    // 2. Query Postgres db.user for linked accounts
+    const dbUsers = await db.user.findMany({
+      where: {
+        OR: [
+          { wikiUsername: { in: toFetch, mode: "insensitive" } },
+          { clerkUserId: { in: toFetch } },
+        ],
+      },
+      select: {
+        clerkUserId: true,
+        wikiUsername: true,
+      },
+    });
+
+    const wikiToClerk = new Map<string, string>();
+    for (const u of dbUsers) {
+      if (u.clerkUserId) {
+        if (u.wikiUsername) {
+          wikiToClerk.set(u.wikiUsername.toLowerCase(), u.clerkUserId);
+        }
+        wikiToClerk.set(u.clerkUserId.toLowerCase(), u.clerkUserId);
+      }
+    }
+
+    const hasClerkKeys = Boolean(
+      process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    );
+
+    if (hasClerkKeys) {
+      const { clerkClient } = await import("@clerk/nextjs/server");
+      const client = await clerkClient();
+
+      // Resolve via found clerkUserIds
+      const uniqueClerkIds = Array.from(new Set(wikiToClerk.values()));
+      for (const clerkId of uniqueClerkIds) {
+        try {
+          const clerkUser = await client.users.getUser(clerkId);
+          if (clerkUser?.imageUrl) {
+            for (const [wName, cId] of wikiToClerk.entries()) {
+              if (cId === clerkId) {
+                result[wName] = clerkUser.imageUrl;
+                void globalCache.set(`wiki_author_avatar:${wName}`, clerkUser.imageUrl, { ttl: 3600 });
+              }
+            }
+          }
+        } catch {
+          /* ignore Clerk user lookup error */
+        }
+      }
+
+      // Check remaining unresolved names directly in Clerk by username
+      const remaining = toFetch.filter((n) => !result[n.toLowerCase()]);
+      if (remaining.length > 0) {
+        try {
+          const clerkList = await client.users.getUserList({
+            username: remaining,
+            limit: 10,
+          });
+          const usersArray = Array.isArray(clerkList) ? clerkList : clerkList?.data || [];
+          for (const u of usersArray) {
+            if (u.username && u.imageUrl) {
+              const lower = u.username.toLowerCase();
+              result[lower] = u.imageUrl;
+              void globalCache.set(`wiki_author_avatar:${lower}`, u.imageUrl, { ttl: 3600 });
+            }
+          }
+        } catch {
+          /* ignore Clerk user list error */
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[ArticleStore] Failed to resolve Clerk avatars:", err);
+  }
+
+  // Cache nulls for remaining unresolved to avoid hammering on re-render (5 min TTL)
+  for (const name of toFetch) {
+    const lower = name.toLowerCase();
+    if (result[lower] === undefined) {
+      result[lower] = null;
+      void globalCache.set(`wiki_author_avatar:${lower}`, null, { ttl: 300 });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Fetch article creator and latest editor with Clerk profile images.
  */
 export async function getArticleAuthors(
   title: string,
@@ -601,17 +720,24 @@ export async function getArticleAuthors(
       createdAt = lastEditedAt;
     }
 
+    // Resolve Clerk avatars for both creator and editor
+    const avatars = await resolveClerkAvatars([creator, lastEditor]);
+
     return {
       creator,
+      creatorAvatar: creator ? avatars[creator.toLowerCase()] ?? null : null,
       createdAt,
       lastEditor,
+      lastEditorAvatar: lastEditor ? avatars[lastEditor.toLowerCase()] ?? null : null,
       lastEditedAt,
     };
   } catch {
     return {
       creator: null,
+      creatorAvatar: null,
       createdAt: null,
       lastEditor: null,
+      lastEditorAvatar: null,
       lastEditedAt: null,
     };
   }

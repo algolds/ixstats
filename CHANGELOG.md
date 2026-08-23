@@ -33,6 +33,25 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 📚 WikiOS Direct Database Architecture & Apple / Facet Design Standardization (Plan 180)
+
+- **Dual Editorial & Sculpted Layout Engine (`WikiOSMainPage.tsx`)**:
+  - Engineered dual front-page presentation modes: `editorial-masthead` (Atlantic / Economist long-form editorial hierarchy) and `sculpted-emblem` (spatial floating glass deck).
+  - Streamlined section headers (`Browse by topic`, `Recent activity`, `Explore Countries`) by removing arbitrary colored indicator dots in favor of clean proportional typography.
+  - Implemented dynamic Fisher-Yates randomization for the Explore Countries 12-nation carousel on every page load/mount across all 82 sovereign realms.
+  - Built a deterministic 32-bit Murmur seeded daily hash PRNG for World Almanac spotlight article rotation from `Category:Bureau of International Statistics`.
+- **Volumetric Under-Glow & Refractive Card Physics (`FeaturedImageRefraction.tsx`)**:
+  - Implemented ambient volumetric under-glow physics constrained to the golden ratio ($1 : 1.618$).
+  - Layered tactile paper grain texture overlay, specular sheen, and chromatic aberration chamfered borders without unbounded card expansion.
+- **Infobox-First Image Extraction & Notice Icon Filtering (`image-url.ts`, `mysql-reader.ts`)**:
+  - Built `isNoticeOrUtilityIcon` blacklist blocking 40+ maintenance, WIP, and construction templates (e.g. `Under_construction_icon-red.svg`, `Red_piston.svg`, `Ambox_warning_construction.png`).
+  - Implemented `extractLeadImageFromWikitext` querying MariaDB `text` table directly to prioritize genuine Infobox parameters (`| logo =`, `| image =`, `| flag =`, `| seal =`) before falling back to body figures.
+  - Enhanced `extractLeadImageFromHtml` to strip `.ambox`, `.metadata`, `.hatnote`, and `.wip` blocks before parsing.
+  - Added universal URL normalization (`normalizeWikiImageUrl`) handling `//`, `http:`, `/thumb/`, and `/images/` paths, with `<ActivityItemThumbnail />` graceful `onError` fallback.
+- **Cuelume Sound Effects & Apple Spring Motion**:
+  - Integrated declarative `data-cuelume-press` and `data-cuelume-hover` attributes across category pills, recent activity items, and country cards.
+  - Added critically damped Apple spring transitions (`stiffness: 400, damping: 24`) with `prefers-reduced-motion` accessibility support.
+
 ### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design Architecture (Plan 179)
 
 - **Unified 3-Mode Navigation Architecture**:

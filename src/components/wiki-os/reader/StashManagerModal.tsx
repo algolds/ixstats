@@ -6,7 +6,15 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bookmark, X, Check, Plus, AlertCircle, Loader2, ChevronRight } from "lucide-react";
+import {
+  Bookmark,
+  Xmark as X,
+  Check,
+  Plus,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -80,11 +88,11 @@ export function StashManagerModal({
       <div className="wikios-quick-modal wikios-stash-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wikios-quick-modal-header">
           <div className="wikios-quick-modal-title">
-            <Bookmark size={16} />
+            <Bookmark className="h-4 w-4" />
             <span>Save to Lore Stash</span>
           </div>
           <button onClick={onClose} className="wikios-quick-modal-close" type="button">
-            <X size={16} />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -95,7 +103,7 @@ export function StashManagerModal({
         <div className="wikios-quick-modal-body">
           {stashesQuery.isLoading && (
             <div className="wikios-quick-modal-loading">
-              <Loader2 size={16} className="animate-spin" /> Loading stashes...
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading stashes...
             </div>
           )}
 
@@ -120,7 +128,7 @@ export function StashManagerModal({
                     active && "wikios-stash-manager-toggle-active"
                   )}
                 >
-                  {active ? <Check size={14} /> : <Plus size={14} />}
+                  {active ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                 </span>
               </button>
             );
@@ -161,7 +169,7 @@ export function StashManagerModal({
               </div>
               {error && (
                 <div className="wikios-stash-error">
-                  <AlertCircle size={12} /> {error}
+                  <AlertCircle className="h-3 w-3 inline mr-1" /> {error}
                 </div>
               )}
               <div className="wikios-stash-create-actions">
@@ -181,7 +189,7 @@ export function StashManagerModal({
                   className="wikios-stash-create-save"
                   disabled={!newName.trim() || createMutation.isPending}
                 >
-                  {createMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : null}
+                  {createMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                   {createMutation.isPending ? "Creating..." : "Create"}
                 </button>
               </div>
@@ -192,7 +200,7 @@ export function StashManagerModal({
               onClick={() => setShowCreate(true)}
               className="wikios-stash-manager-add"
             >
-              <Plus size={14} />
+              <Plus className="h-3.5 w-3.5" />
               Create new stash
               <span className="wikios-stash-manager-hint">{allStashes.length}/25</span>
             </button>
@@ -204,7 +212,7 @@ export function StashManagerModal({
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >
-          <ChevronRight size={12} />
+          <ChevronRight className="h-3 w-3" />
           Go to My Stashes
         </Link>
       </div>

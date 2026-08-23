@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { ChevronRight, ChevronDown, Folder, Search } from "lucide-react";
+import {
+  NavArrowRight as ChevronRight,
+  NavArrowDown as ChevronDown,
+  Folder,
+  Search,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 
 // Curated worldbuilding-relevant categories organized by theme

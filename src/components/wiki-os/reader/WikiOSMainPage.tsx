@@ -1,25 +1,44 @@
 // src/components/wiki-os/reader/WikiOSMainPage.tsx
-// Custom WikiOS main page — inspired by live IxWiki but with
-// IxStats/IxWorld/IxTime integration and modern glass-physics design.
-// No separate WikiOS header — uses the IxStats navigation bar.
+// Custom WikiOS main page — Apple Design & Emil Design Engineering architecture.
+// Supports dual design archetypes: Editorial Masthead vs. Sculpted Emblem.
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
-import { BookOpen, ExternalLink, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { WikiHeroMaster } from "./hero";
+import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
+import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
+import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "~/lib/wiki-os/transformers/image-url";
+
+const STORAGE_KEY = "wikios:heroVariant";
+
+const FALLBACK_ALMANAC_PAGES = [
+  "List of countries by GDP",
+  "List of countries by population",
+  "List of countries by Human Development Index",
+  "List of sovereign states by system of government",
+  "List of countries by life expectancy",
+  "List of countries by literacy rate",
+  "List of countries by intentional homicide rate",
+  "List of countries by median age",
+  "List of countries by military expenditures",
+  "List of countries by rail transport network size",
+  "List of countries by electricity consumption",
+  "List of sovereign states by date of formation",
+  "List of countries by carbon dioxide emissions",
+  "List of countries by arable land area",
+];
 
 // ---------------------------------------------------------------------------
-// Category definitions (matches live IxWiki navigation grid)
+// Category definitions
 // ---------------------------------------------------------------------------
 
 const CATEGORIES = [
@@ -73,7 +92,7 @@ function BlurbPromptModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0 rounded-3xl border border-white/20 dark:border-white/10 bg-white/80 dark:bg-zinc-950/90 backdrop-blur-2xl shadow-2xl">
         {/* Header */}
         <DialogHeader className="border-b border-white/10 px-5 py-4">
           <div className="flex items-start justify-between gap-3">
@@ -104,15 +123,15 @@ function BlurbPromptModal({
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-lg border p-3 ${
-                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10"
+              className={`rounded-2xl border p-3.5 ${
+                r.featured ? "border-amber-500/30 bg-amber-500/5" : "border-white/10 bg-foreground/[0.02]"
               }`}
             >
               <div className="mb-1.5 flex items-center gap-2">
                 {r.country?.flag && (
                   <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
                 )}
-                <span className="text-xs font-medium text-[var(--wikios-text)]">
+                <span className="text-xs font-medium text-foreground">
                   {r.country?.name ?? "Unknown"}
                 </span>
                 {r.featured && (
@@ -124,7 +143,7 @@ function BlurbPromptModal({
                   </Badge>
                 )}
               </div>
-              <p className="line-clamp-4 text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
+              <p className="line-clamp-4 text-sm whitespace-pre-wrap text-muted-foreground">
                 {r.content}
               </p>
             </div>
@@ -171,7 +190,30 @@ function BlurbPromptModal({
 // ---------------------------------------------------------------------------
 
 export function WikiOSMainPage() {
+  const [variant, setVariant] = useState<WikiHeroVariant>("sculpted-emblem");
   const [blurbModalOpen, setBlurbModalOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY) as string | null;
+      if (saved === "editorial-masthead") {
+        setVariant("editorial-masthead");
+      } else {
+        setVariant("sculpted-emblem");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
+    setVariant(newVariant);
+    try {
+      localStorage.setItem(STORAGE_KEY, newVariant);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Fetch Main_Page HTML to extract the featured article from it
   const { data: mainPageData } = api.wikios.getArticleHtml.useQuery(
@@ -185,237 +227,257 @@ export function WikiOSMainPage() {
     { staleTime: 30_000 }
   );
 
-  // Fetch countries for "Explore the World"
+  // Fetch countries for "Explore the World" (all realms)
   const { data: countries } = api.countries.getSelectList.useQuery(
-    { limit: 50 },
+    { limit: 100 },
     { staleTime: 10 * 60 * 1000 }
   );
+
+  // Randomly shuffle countries on mount/reload for Explore Countries grid
+  const randomCountries = useMemo(() => {
+    if (!countries || countries.length === 0) return [];
+    const copy = [...countries];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+    }
+    return copy;
+  }, [countries]);
 
   // Fetch site stats
   const { data: siteStats } = api.wikios.getSiteStats.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch random active blurb prompt (cycles on each page load)
+  // Fetch random active blurb prompt
   const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // Extract featured article from Main_Page contentHtml (server-transformed)
+  // Extract featured article from Main_Page contentHtml
   const featuredArticleHtml = useMemo(() => {
     if (!mainPageData?.contentHtml) return null;
     return extractFeaturedArticle(mainPageData.contentHtml);
   }, [mainPageData?.contentHtml]);
 
-  // Pick 12 random countries for "Explore the World"
-  const randomCountries = useMemo(() => {
-    if (!countries || countries.length === 0) return [];
-    const shuffled = [...countries].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 12);
-  }, [countries]);
+  // Extract structured featured article details for Apple Editorial card
+  const featuredArticleDetails = useMemo(() => {
+    if (!featuredArticleHtml) return null;
+
+    // Extract title & slug from link or heading
+    const titleMatch =
+      featuredArticleHtml.match(/<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i) ||
+      featuredArticleHtml.match(/<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i) ||
+      featuredArticleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+
+    const slug = titleMatch ? decodeURIComponent(titleMatch[1] || "").replace(/ /g, "_") : "Featured_Article";
+    const title = titleMatch
+      ? (titleMatch[2] || titleMatch[1])?.replace(/<[^>]+>/g, "").trim()
+      : "Featured Article";
+
+    // Extract image src using robust HTML image scanner with normalizeWikiImageUrl fallback
+    let imgSrc = extractLeadImageFromHtml(featuredArticleHtml);
+    if (!imgSrc) {
+      const imgMatch = featuredArticleHtml.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+      if (imgMatch && imgMatch[1]) {
+        imgSrc = normalizeWikiImageUrl(imgMatch[1]);
+      }
+    }
+
+    // Extract paragraph text (clean of bylines / tags)
+    const pMatches = featuredArticleHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
+    const validParagraphs = pMatches.filter(
+      (p) => !p.toLowerCase().includes("byline") && !p.toLowerCase().includes("featured article")
+    );
+    const summary =
+      validParagraphs.length > 0
+        ? validParagraphs[0].replace(/<[^>]+>/g, "").replace(/^Featured article\s*/i, "").trim()
+        : "";
+
+    return {
+      title,
+      slug,
+      imgSrc,
+      summary,
+    };
+  }, [featuredArticleHtml]);
+
+  // Live query author info for the extracted featured article
+  const { data: featuredAuthorInfo } = api.wikios.getArticleAuthors.useQuery(
+    { title: featuredArticleDetails?.title ?? "" },
+    {
+      enabled: Boolean(
+        featuredArticleDetails?.title && featuredArticleDetails.title !== "Featured Article"
+      ),
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  const featuredArticleData = useMemo(() => {
+    if (!featuredArticleDetails) return null;
+    return {
+      ...featuredArticleDetails,
+      authorInfo: featuredAuthorInfo ?? null,
+    };
+  }, [featuredArticleDetails, featuredAuthorInfo]);
+
+  // Extract latest live dispatch change
+  const latestChange = useMemo(() => {
+    if (!recentChanges || recentChanges.length === 0) return null;
+    const first = recentChanges[0];
+    if (!first) return null;
+    return {
+      title: first.title,
+      user: first.user,
+      timestamp: first.timestamp,
+      comment: first.comment,
+    };
+  }, [recentChanges]);
+
+  // Fetch members of Category:Bureau_of_International_Statistics for World Almanac Spotlight (limit 100)
+  const { data: almanacMembers, isLoading: isLoadingAlmanacMembers } =
+    api.wikios.getCategoryMembers.useQuery(
+      { category: "Bureau of International Statistics", limit: 100 },
+      { staleTime: 10 * 60 * 1000 }
+    );
+
+  // Pick a pseudo-random daily rotated article from the statistical pool
+  const selectedAlmanacTitle = useMemo(() => {
+    const memberList = almanacMembers?.members;
+    const validPages = (memberList ?? [])
+      .filter((m) => m.type === "page" || !m.isSubcategory)
+      .map((m) => m.title)
+      .filter(
+        (t) =>
+          !t.startsWith("Category:") &&
+          !t.startsWith("Template:") &&
+          !t.startsWith("User:") &&
+          !t.startsWith("MediaWiki:")
+      );
+
+    const pool = validPages.length > 0 ? validPages : FALLBACK_ALMANAC_PAGES;
+
+    // Seeded daily PRNG based on current UTC calendar day: YYYY-MM-DD
+    const now = new Date();
+    const dateKey = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()}`;
+    let hash = 0;
+    for (let i = 0; i < dateKey.length; i++) {
+      hash = (Math.imul(31, hash) + dateKey.charCodeAt(i)) | 0;
+    }
+    const positiveHash = Math.abs(hash);
+    const index = positiveHash % pool.length;
+    return pool[index] || "List of countries by GDP";
+  }, [almanacMembers]);
+
+  // Fetch the live parsed HTML of the selected B.I.S. Almanac article
+  const { data: almanacArticleHtmlData, isLoading: isLoadingAlmanacArticle } =
+    api.wikios.getArticleHtml.useQuery(
+      { title: selectedAlmanacTitle },
+      {
+        enabled: Boolean(selectedAlmanacTitle),
+        staleTime: 10 * 60 * 1000,
+      }
+    );
+
+  // Parse lead paragraph, title, and image directly from the wiki article
+  const almanacSpotlightData = useMemo(() => {
+    if (!selectedAlmanacTitle) return null;
+    const rawHtml = almanacArticleHtmlData?.contentHtml || "";
+
+    // Extract robust lead image via universal HTML scanner
+    const thumbnail = extractLeadImageFromHtml(rawHtml);
+
+    // Extract clean lead paragraph (skipping empty / infobox paragraphs)
+    const pMatches = rawHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
+    const validParagraph = pMatches.find(
+      (p) =>
+        p.length > 25 &&
+        !p.toLowerCase().includes("infobox") &&
+        !p.toLowerCase().includes("mw-empty-elt")
+    );
+    const excerpt = validParagraph
+      ? validParagraph
+          .replace(/<[^>]+>/g, "")
+          .replace(/\[\d+\]/g, "")
+          .trim()
+          .replace(/\s+/g, " ")
+      : `Official comparative statistical catalog of the League of Nations Bureau of International Statistics for ${selectedAlmanacTitle.replace(/_/g, " ")}.`;
+
+    return {
+      title: selectedAlmanacTitle.replace(/_/g, " "),
+      slug: encodeURIComponent(selectedAlmanacTitle.replace(/ /g, "_")),
+      category: "Bureau of International Statistics",
+      excerpt,
+      thumbnail,
+      metricLabel: "B.I.S. Registry",
+      metricValue: "Official Index",
+    };
+  }, [selectedAlmanacTitle, almanacArticleHtmlData]);
 
   return (
-    <div className="wikios-main">
-      {/* Hero Header & Direction Switcher */}
-      <header className="wikios-main-hero relative">
-        <div className="wikios-main-hero-inner w-full max-w-6xl">
-          <WikiHeroMaster
-            siteStats={siteStats}
-            activePrompt={activePrompt}
-            featuredArticleHtml={featuredArticleHtml}
-            onOpenBlurbs={() => setBlurbModalOpen(true)}
-          />
-        </div>
-      </header>
-
-      {/* Quick Stats Bar */}
-      <section className="wikios-main-stats">
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.articles?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Articles</span>
-        </div>
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.edits?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Edits</span>
-        </div>
-        <div className="wikios-main-stat relative overflow-hidden">
-          <TextureOverlay texture="paperGrain" opacity={0.08} />
-          <span className="wikios-main-stat-value">
-            {siteStats?.users?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Users</span>
-        </div>
-        {activePrompt ? (
-          <button
-            onClick={() => setBlurbModalOpen(true)}
-            className="wikios-main-stat wikios-main-stat-blurb relative overflow-hidden"
-          >
-            <TextureOverlay texture="paperGrain" opacity={0.08} />
-            <span className="wikios-main-stat-badge">
-              Blurbs
-              {activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
-            </span>
-            <span className="wikios-main-stat-value wikios-main-stat-ixtime">
-              {activePrompt.title}
-            </span>
-            <span className="wikios-main-stat-label wikios-main-stat-question">
-              {activePrompt.question}
-            </span>
-          </button>
-        ) : (
-          <div className="wikios-main-stat relative overflow-hidden">
-            <TextureOverlay texture="paperGrain" opacity={0.08} />
-            <span className="wikios-main-stat-value wikios-main-stat-ixtime">0</span>
-            <span className="wikios-main-stat-label">Blurbs</span>
-          </div>
-        )}
-      </section>
-
-      <div className="wikios-main-content">
-        {/* Featured Article */}
-        {featuredArticleHtml && (
-          <section className="wikios-main-featured glass-hierarchy-child relative overflow-hidden">
-            <TextureOverlay texture="diagonal" opacity={0.05} />
-            <div className="mb-3 flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 uppercase shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-              >
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Featured Article
-              </Badge>
-            </div>
-            <div
-              className="wikios-main-featured-content wikios-article-content"
-              dangerouslySetInnerHTML={{ __html: featuredArticleHtml }}
+    <div className="wikios-main w-full pt-1 pb-3">
+      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-5">
+        {/* ── 1. Master Hero & Direction Switcher ── */}
+        <header className="wikios-main-hero relative w-full">
+          <div className="wikios-main-hero-inner w-full">
+            <WikiHeroMaster
+              variant={variant}
+              onSelectVariant={handleSelectVariant}
+              siteStats={siteStats}
+              activePrompt={activePrompt}
+              featuredArticleHtml={featuredArticleHtml}
+              featuredArticleData={featuredArticleData}
+              latestChange={latestChange}
+              totalNations={countries?.length ? (countries.length > 50 ? countries.length : 82) : 82}
+              onOpenBlurbs={() => setBlurbModalOpen(true)}
             />
-          </section>
-        )}
+          </div>
+        </header>
 
-        {/* Two-column grid: Categories + Recent Changes */}
-        <div className="wikios-main-grid">
-          {/* Category Navigation */}
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">Browse by topic</h2>
-            <div className="wikios-main-categories">
-              {CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.name}
-                  href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.name)}`)}
-                  className="wikios-main-cat-pill relative overflow-hidden"
-                  style={{ "--cat-color": cat.color } as React.CSSProperties}
-                >
-                  <TextureOverlay texture="halftone" opacity={0.05} />
-                  <span className="wikios-main-cat-name relative z-10">{cat.name}</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* Recent Changes */}
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">
-              Recent activity
-              <Link
-                href={withBasePath("/wiki/recent-changes")}
-                className="wikios-main-section-more"
+        {/* ── 2. Redesigned Main Content Area (Layout-Aware) ── */}
+        <main className="w-full">
+          <AnimatePresence mode="wait">
+            {variant === "editorial-masthead" ? (
+              <motion.div
+                key="editorial-content"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               >
-                View all →
-              </Link>
-            </h2>
-            {recentChanges && recentChanges.length > 0 ? (
-              <ul className="wikios-main-recent">
-                {recentChanges.map((rc, idx) => {
-                  const diff = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
-                  const diffSign = diff > 0 ? "+" : "";
-                  const formattedDiff = `${diffSign}${diff.toLocaleString()}`;
-
-                  let diffClass = "text-muted-foreground/60";
-                  if (diff > 0) {
-                    diffClass =
-                      diff >= 500
-                        ? "text-emerald-500 font-bold"
-                        : "text-emerald-600 dark:text-emerald-450";
-                  } else if (diff < 0) {
-                    diffClass =
-                      diff <= -500 ? "text-red-500 font-bold" : "text-red-600 dark:text-red-400";
-                  }
-
-                  return (
-                    <li key={idx} className="wikios-main-recent-item">
-                      <Link
-                        href={withBasePath(
-                          `/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
-                        )}
-                        className="wikios-main-recent-title"
-                      >
-                        {rc.title}
-                      </Link>
-                      <span className="wikios-main-recent-meta flex items-center gap-1.5">
-                        <span>{rc.user}</span>
-                        <span className="opacity-40">·</span>
-                        <span>{formatMWTimeAgo(rc.timestamp)}</span>
-                        <span className="opacity-40">·</span>
-                        <span
-                          className={cn("font-mono text-[10px]", diffClass)}
-                          title={`${rc.oldLen} → ${rc.newLen} bytes`}
-                        >
-                          ({formattedDiff})
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : isLoadingRecent ? (
-              <p className="text-sm text-[var(--wikios-text-dim)]">Loading recent changes...</p>
+                <EditorialMainPageContent
+                  categories={CATEGORIES}
+                  recentChanges={recentChanges}
+                  isLoadingRecent={isLoadingRecent}
+                  countries={randomCountries}
+                  almanacSpotlight={almanacSpotlightData}
+                  isLoadingAlmanac={isLoadingAlmanacArticle || isLoadingAlmanacMembers}
+                />
+              </motion.div>
             ) : (
-              <p className="text-sm text-[var(--wikios-text-dim)]">No recent activity found.</p>
+              <motion.div
+                key="sculpted-content"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <SculptedMainPageContent
+                  categories={CATEGORIES}
+                  recentChanges={recentChanges}
+                  isLoadingRecent={isLoadingRecent}
+                  countries={randomCountries}
+                  almanacSpotlight={almanacSpotlightData}
+                  isLoadingAlmanac={isLoadingAlmanacArticle || isLoadingAlmanacMembers}
+                />
+              </motion.div>
             )}
-          </section>
-        </div>
-
-        {/* Explore the World — random country cards */}
-        {randomCountries.length > 0 && (
-          <section className="wikios-main-section">
-            <h2 className="wikios-main-section-title">
-              Explore the world
-              <Link href={withBasePath("/countries")} className="wikios-main-section-more">
-                All countries →
-              </Link>
-            </h2>
-            <div className="wikios-main-world">
-              {randomCountries.map((c) => (
-                <Link
-                  key={c.id}
-                  href={withBasePath(
-                    `/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`
-                  )}
-                  className="wikios-main-world-card glass-hierarchy-child"
-                >
-                  {c.flagUrl && (
-                    <img src={c.flagUrl} alt="" className="wikios-main-world-flag" loading="lazy" />
-                  )}
-                  <div className="wikios-main-world-info">
-                    <span className="wikios-main-world-name">{c.name}</span>
-                    {c.economicTier && (
-                      <span className="wikios-main-world-tier">{c.economicTier}</span>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+          </AnimatePresence>
+        </main>
       </div>
 
-      {/* Blurb Prompt Modal */}
+      {/* ── 3. Blurb Prompt Modal ── */}
       {activePrompt && (
         <BlurbPromptModal
           open={blurbModalOpen}
@@ -434,7 +496,6 @@ export function WikiOSMainPage() {
 function extractFeaturedArticle(html: string): string | null {
   if (!html) return null;
 
-  // Patterns for featured article container on MediaWiki main pages
   const patterns = [
     /<div[^>]*id="featured(?:_|&#95;)article"/i,
     /<div[^>]*id="mp-tfa"/i,
@@ -452,7 +513,6 @@ function extractFeaturedArticle(html: string): string | null {
     }
   }
 
-  // If no explicit featured ID found, check if there is an article card or intro block
   if (startIdx === -1) {
     const cardIdx = html.search(/<div[^>]*class="[^"]*card[^"]*"/i);
     if (cardIdx !== -1) {
@@ -461,14 +521,12 @@ function extractFeaturedArticle(html: string): string | null {
   }
 
   if (startIdx === -1) {
-    // If the HTML is already a direct snippet/fragment (< 2000 chars), use it directly
     if (html.length < 2500 && html.includes("<p>")) {
       return transformFeaturedContent(html);
     }
     return null;
   }
 
-  // Balanced extraction — count tag opens and closes
   let depth = 0;
   let pos = startIdx;
   const isSection = html.slice(startIdx, startIdx + 10).toLowerCase().startsWith("<section");
@@ -498,13 +556,15 @@ function extractFeaturedArticle(html: string): string | null {
 }
 
 function transformFeaturedContent(cardHtml: string): string {
-  // Content is already server-transformed (links, images).
-  // Just restyle the card classes for WikiOS layout.
   return cardHtml
+    .replace(/<div[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
+    .replace(/<p[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/p>/gi, "")
+    .replace(/<div[^>]*class="[^"]*card-byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
+    .replace(/<p>\s*Featured article\s*<\/p>/gi, "")
     .replace(/class="card[^"]*"/i, 'class="wikios-fa-card"')
     .replace(/class="card-image[^"]*"/gi, 'class="wikios-fa-image"')
     .replace(/class="card-text"/gi, 'class="wikios-fa-text"')
-    .replace(/class="byline"/gi, 'class="wikios-fa-byline"')
+    .replace(/class="byline"/gi, 'class="wikios-fa-byline hidden"')
     .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/')
     .replace(/href="https?:\/\/ixwiki\.com\/wiki\//g, 'href="/wiki/');
 }

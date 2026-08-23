@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Puzzle, X } from "lucide-react";
+import { Puzzle, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ImageSearchModal } from "~/components/wiki-os/editor/ImageSearchModal";
 import { TemplateInserter } from "~/components/wiki-os/editor/TemplateInserter";
@@ -170,11 +170,11 @@ function TemplateEditorDialog({
       >
         <div className="wikios-quick-modal-header">
           <div className="wikios-quick-modal-title">
-            <Puzzle size={16} />
+            <Puzzle className="h-4 w-4" />
             <span>Edit: {templateName}</span>
           </div>
           <button onClick={onClose} className="wikios-quick-modal-close">
-            <X size={16} />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="wikios-quick-modal-body">

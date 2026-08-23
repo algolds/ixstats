@@ -50,13 +50,14 @@ export class ArticleRepository {
           id: true,
           title: true,
           source: true,
+          contentHtml: true,
           wikitext: true,
           syncedAt: true,
           updatedAt: true,
         },
       });
 
-      if (!article || !article.wikitext) return null;
+      if (!article || (!article.wikitext && !article.contentHtml)) return null;
 
       return {
         id: toArticleId(article.id),
@@ -65,9 +66,9 @@ export class ArticleRepository {
         source: article.source,
         status: "PUBLISHED" as any,
         format: "STRUCTURED_JSON" as any,
-        contentHtml: "",
+        contentHtml: article.contentHtml ?? "",
         contentJson: null,
-        wikitext: article.wikitext,
+        wikitext: article.wikitext ?? "",
         summary: null,
         infoboxData: null,
         readingTime: 1,

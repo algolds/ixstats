@@ -1,14 +1,13 @@
-import React from "react";
 import {
-  FileText,
+  Page as FileText,
   User,
   Building,
   Clock,
   Globe,
   ShieldAlert,
-  Landmark,
-  Sparkles,
-} from "lucide-react";
+  Bank as Landmark,
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type PageType } from "../CreatePageModal";
 

@@ -2,8 +2,8 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { WikiOSLogomark } from "./WikiOSLogomark";
-import { WikiOSWordmark } from "./WikiOSWordmark";
+import { IxWikiLogo } from "./IxWikiLogo";
+import { IxWikiWordmark } from "./IxWikiWordmark";
 import { motion } from "motion/react";
 
 interface WikiOSBrandLockupProps {
@@ -43,10 +43,10 @@ export function WikiOSBrandLockup({
           <div className="absolute inset-0 bg-radial from-blue-500/10 via-purple-500/5 to-transparent opacity-60 dark:opacity-80" />
 
           {/* Logomark */}
-          <WikiOSLogomark
+          <IxWikiLogo
+            size={isCompact ? 20 : 24}
             className={cn(
-              "relative z-10 text-zinc-900 dark:text-zinc-100 transition-transform duration-300 group-hover:scale-105",
-              isCompact ? "h-5" : "h-6"
+              "relative z-10 text-[#1d4e89] dark:text-blue-400 transition-transform duration-300 group-hover:scale-105"
             )}
           />
 
@@ -56,11 +56,9 @@ export function WikiOSBrandLockup({
 
         {/* Text Stack */}
         <div className="flex flex-col justify-center text-left">
-          <WikiOSWordmark
-            className={cn(
-              "text-zinc-900 dark:text-zinc-100 transition-colors duration-200",
-              isCompact ? "h-3.5" : "h-4.5"
-            )}
+          <IxWikiWordmark
+            size={isCompact ? "sm" : "md"}
+            className="text-foreground"
           />
           {showSubtitle && !isCompact && (
             <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase mt-0.5">
@@ -76,63 +74,35 @@ export function WikiOSBrandLockup({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center select-none group py-4",
+        "flex flex-col items-center justify-center text-center select-none group py-2",
         className
       )}
     >
-      {/* 1. Monogram Tile Icon */}
+      {/* 1. Free-Standing Laurel Emblem */}
       <motion.div
-        whileHover={{ scale: 1.04, y: -2 }}
-        whileTap={{ scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 380, damping: 22 }}
-        className="relative mb-5 cursor-pointer"
+        whileHover={{ scale: 1.05, y: -2 }}
+        whileTap={{ scale: 0.96 }}
+        transition={{ type: "spring", stiffness: 360, damping: 24 }}
+        className="relative mb-2.5 cursor-pointer flex items-center justify-center"
       >
-        {/* Ambient background bloom */}
-        <div className="absolute -inset-2 rounded-[28px] bg-gradient-to-br from-blue-500/20 via-purple-500/15 to-amber-500/10 opacity-70 blur-xl transition-all duration-500 group-hover:opacity-100 group-hover:blur-2xl dark:from-blue-500/25 dark:via-purple-500/20 dark:to-amber-500/15" />
-
-        {/* Apple continuous squircle container */}
-        <div
-          className={cn(
-            "relative flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[28px]",
-            "border border-white/30 dark:border-white/15",
-            "bg-gradient-to-b from-white/95 via-white/80 to-white/60 dark:from-zinc-800/90 dark:via-zinc-900/90 dark:to-black/95",
-            "shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.8),0_12px_36px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.2),0_16px_48px_rgba(0,0,0,0.5)]",
-            "backdrop-blur-2xl transition-all duration-300"
-          )}
-        >
-          {/* Subtle specular top-edge light */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/80 dark:via-white/40 to-transparent" />
-
-          {/* Radial depth glow */}
-          <div className="absolute inset-0 bg-radial from-blue-500/15 via-indigo-500/10 to-transparent opacity-80 dark:opacity-100" />
-
-          {/* The Monogram Mark */}
-          <WikiOSLogomark className="relative z-10 h-12 w-auto sm:h-14 text-zinc-900 dark:text-zinc-50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:drop-shadow-[0_2px_12px_rgba(0,0,0,0.4)] transition-transform duration-300 group-hover:scale-105" />
-
-          {/* Dynamic shimmer sweep */}
-          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 dark:via-white/15 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
-        </div>
+        {/* The Laurel Logo */}
+        <IxWikiLogo
+          size={84}
+          className="relative z-10 h-18 w-18 sm:h-22 sm:w-22 text-[#1d4e89] dark:text-[#60a5fa] drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)] transition-transform duration-300 group-hover:scale-105"
+        />
       </motion.div>
 
-      {/* 2. Wordmark ("wikiOS") */}
-      <div className="mb-2 flex items-center justify-center">
-        <WikiOSWordmark className="h-6 sm:h-7 w-auto text-zinc-900 dark:text-zinc-100 transition-all duration-300 group-hover:brightness-110" />
+      {/* 2. Wordmark ("IxWiki") */}
+      <div className="mb-1 flex items-center justify-center">
+        <IxWikiWordmark size="2xl" className="leading-none transition-all duration-300 group-hover:brightness-110" />
       </div>
 
       {/* 3. Subtitle & Editorial Tagline */}
       {showSubtitle && (
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground/80 font-medium tracking-wide">
-          <span className="tracking-[0.14em] uppercase text-[11px] sm:text-xs text-muted-foreground">
+        <div className="flex items-center justify-center text-xs text-muted-foreground/80 font-medium tracking-wide mt-1">
+          <span className="tracking-[0.18em] uppercase text-[11px] sm:text-xs font-semibold text-muted-foreground/80 leading-none">
             Worldbuilding Encyclopedia
           </span>
-          {showBadge && (
-            <>
-              <span className="text-muted-foreground/40 text-[10px]">·</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-foreground/[0.03] px-2 py-0.5 text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase">
-                EST. MMIII
-              </span>
-            </>
-          )}
         </div>
       )}
     </div>

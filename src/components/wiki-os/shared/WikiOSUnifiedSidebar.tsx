@@ -12,23 +12,23 @@ import {
 } from "motion/react";
 import {
   Search,
-  Image as ImageIcon,
-  FileEdit,
-  MessageSquare,
+  MediaImage as ImageIcon,
+  EditPencil as FileEdit,
+  ChatBubble as MessageSquare,
   Clock,
-  Link2,
+  Link as Link2,
   Home,
   Shuffle,
   Bookmark,
-  BookmarkCheck,
+  BookmarkSolid as BookmarkCheck,
   Check,
   Plus,
-  PanelLeftClose,
-  PanelLeftOpen,
-  MoreHorizontal,
+  SidebarCollapse as PanelLeftClose,
+  SidebarExpand as PanelLeftOpen,
+  MoreHoriz as MoreHorizontal,
   Printer,
-  FileCode,
-} from "lucide-react";
+  Code as FileCode,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";

@@ -5,7 +5,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Highlighter } from "lucide-react";
+import {
+  ChatBubble as MessageSquare,
+  DesignPencil as Highlighter,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 

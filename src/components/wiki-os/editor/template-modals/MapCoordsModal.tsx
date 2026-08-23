@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, Map as MapIcon, Loader2, Compass } from "lucide-react";
+import {
+  Xmark as X,
+  Map as MapIcon,
+  SystemRestart as Loader2,
+  Compass,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";

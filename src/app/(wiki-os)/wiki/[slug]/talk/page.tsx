@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { withBasePath } from "~/lib/base-path";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { MessageSquare } from "lucide-react";
+import { ChatBubble as MessageSquare } from "iconoir-react";
 
 export default function TalkPageRedirect() {
   const params = useParams<{ slug: string }>();

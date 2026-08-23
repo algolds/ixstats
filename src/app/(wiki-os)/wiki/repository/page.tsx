@@ -10,7 +10,13 @@ import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsG
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
-import { Search, X, Globe, Database, HelpCircle } from "lucide-react";
+import {
+  Search,
+  Xmark as X,
+  Globe,
+  Database,
+  HelpCircle,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";

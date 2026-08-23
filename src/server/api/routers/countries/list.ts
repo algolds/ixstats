@@ -32,6 +32,8 @@ export const listProcedures = {
           coatOfArms: true,
           economicTier: true,
           continent: true,
+          currentPopulation: true,
+          currentTotalGdp: true,
         },
       });
 
@@ -44,6 +46,8 @@ export const listProcedures = {
         coatOfArmsUrl: country.coatOfArms ?? undefined,
         economicTier: country.economicTier ?? undefined,
         continent: country.continent ?? undefined,
+        population: country.currentPopulation ? Number(country.currentPopulation) : undefined,
+        gdp: country.currentTotalGdp ? Number(country.currentTotalGdp) : undefined,
       }));
     }),
 

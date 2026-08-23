@@ -2,7 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import { History, Link2, X, ExternalLink } from "lucide-react";
+import {
+  ClockRotateRight as History,
+  Link as Link2,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
@@ -27,11 +32,11 @@ export function QuickHistoryModal({
       <div className="wikios-quick-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wikios-quick-modal-header">
           <div className="wikios-quick-modal-title">
-            <History size={16} />
+            <History className="h-4 w-4" />
             <span>Recent History</span>
           </div>
           <button onClick={onClose} className="wikios-quick-modal-close">
-            <X size={16} />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -69,7 +74,7 @@ export function QuickHistoryModal({
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >
-          <ExternalLink size={12} />
+          <ExternalLink className="h-3 w-3" />
           View full history
         </Link>
       </div>
@@ -98,11 +103,11 @@ export function QuickBacklinksModal({
       <div className="wikios-quick-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wikios-quick-modal-header">
           <div className="wikios-quick-modal-title">
-            <Link2 size={16} />
+            <Link2 className="h-4 w-4" />
             <span>What Links Here</span>
           </div>
           <button onClick={onClose} className="wikios-quick-modal-close">
-            <X size={16} />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -128,7 +133,7 @@ export function QuickBacklinksModal({
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >
-          <ExternalLink size={12} />
+          <ExternalLink className="h-3 w-3" />
           View all backlinks
         </Link>
       </div>

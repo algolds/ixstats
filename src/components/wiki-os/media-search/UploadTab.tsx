@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "~/lib/utils";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";

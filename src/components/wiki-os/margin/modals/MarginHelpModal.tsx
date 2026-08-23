@@ -7,15 +7,15 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MessageSquare,
-  Highlighter,
+  ChatBubble as MessageSquare,
+  DesignPencil as Highlighter,
   Bookmark,
-  Sparkles,
-  X,
-  Keyboard,
+  Sparks as Sparkles,
+  Xmark as X,
+  Keyframe as Keyboard,
   Compass,
-  CheckCircle2,
-} from "lucide-react";
+  CheckCircle as CheckCircle2,
+} from "iconoir-react";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 interface ThemeColors {

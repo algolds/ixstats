@@ -63,6 +63,14 @@
 
   /* Host Grotesk (WikiOS Brand Font) */
   --font-host-grotesk: "Host Grotesk", sans-serif;
+
+  /* SangBleu Neoclassical Editorial Font Family */
+  --font-sangbleu-empire: "SangBleu Empire", Georgia, serif;
+  --font-sangbleu-kingdom: "SangBleu Kingdom", Georgia, serif;
+  --font-sangbleu-republic: "SangBleu Republic", Georgia, serif;
+  --font-sangbleu-sunrise: "SangBleu Sunrise", Georgia, serif;
+  --font-sangbleu-versailles: "SangBleu Versailles", Georgia, serif;
+  --font-sangbleu: "SangBleu", "SangBleu Empire", "SangBleu Kingdom", Georgia, serif;
 }
 
 /* Import modular CSS files */

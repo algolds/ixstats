@@ -5,13 +5,13 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import {
-  MessageSquare,
+  ChatBubble as MessageSquare,
   Plus,
   Check,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-} from "lucide-react";
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Trash as Trash2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";

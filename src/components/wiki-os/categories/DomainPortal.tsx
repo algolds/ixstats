@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
-import { FileText, Folder } from "lucide-react";
+import { Page as FileText, Folder } from "iconoir-react";
 
 interface CategoryMember {
   title: string;

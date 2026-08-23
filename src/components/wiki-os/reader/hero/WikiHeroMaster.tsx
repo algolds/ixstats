@@ -1,85 +1,95 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import React, { useState, useEffect, useCallback } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { WikiHeroProps, WikiHeroVariant } from "./types";
-import { SystemCommandDockHero } from "./SystemCommandDockHero";
-import { TypographicMastheadHero } from "./TypographicMastheadHero";
-import { DynamicHaloHubHero } from "./DynamicHaloHubHero";
-import { AsymmetricSplitHorizonHero } from "./AsymmetricSplitHorizonHero";
+import { EditorialMastheadHero } from "./EditorialMastheadHero";
 import { SculptedEmblemHero } from "./SculptedEmblemHero";
-import { WikiHeroDevSwitcher } from "./WikiHeroDevSwitcher";
+import {
+  type RefractionMode,
+  REFRACTION_STORAGE_KEY,
+  getStoredRefractionMode,
+} from "./FeaturedImageRefraction";
 
 const STORAGE_KEY = "wikios:heroVariant";
 
 export function WikiHeroMaster(props: WikiHeroProps) {
-  const [variant, setVariant] = useState<WikiHeroVariant>("command-dock");
-  const [mounted, setMounted] = useState(false);
+  const [internalVariant, setInternalVariant] = useState<WikiHeroVariant>("sculpted-emblem");
+  const [internalRefraction, setInternalRefraction] = useState<RefractionMode>("ambient-underglow");
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) as WikiHeroVariant | null;
-      if (
-        saved &&
-        [
-          "command-dock",
-          "typographic",
-          "halo-hub",
-          "split-horizon",
-          "sculpted-emblem",
-        ].includes(saved)
-      ) {
-        setVariant(saved);
+      const saved = localStorage.getItem(STORAGE_KEY) as string | null;
+      if (saved === "editorial-masthead") {
+        setInternalVariant("editorial-masthead");
+      } else {
+        setInternalVariant("sculpted-emblem");
       }
+      setInternalRefraction(getStoredRefractionMode());
     } catch {
       // ignore storage failures
     }
-    setMounted(true);
   }, []);
 
-  const handleSelectVariant = (newVariant: WikiHeroVariant) => {
-    setVariant(newVariant);
+  const activeVariant = props.variant ?? internalVariant;
+  const activeRefraction = props.refractionMode ?? internalRefraction;
+
+  const handleSelectVariant = useCallback((newVariant: WikiHeroVariant) => {
+    if (props.onSelectVariant) {
+      props.onSelectVariant(newVariant);
+    } else {
+      setInternalVariant(newVariant);
+    }
     try {
       localStorage.setItem(STORAGE_KEY, newVariant);
     } catch {
       // ignore
     }
+  }, [props.onSelectVariant]);
+
+  const handleSelectRefraction = useCallback((newMode: RefractionMode) => {
+    if (props.onSelectRefractionMode) {
+      props.onSelectRefractionMode(newMode);
+    } else {
+      setInternalRefraction(newMode);
+    }
+    try {
+      localStorage.setItem(REFRACTION_STORAGE_KEY, newMode);
+    } catch {
+      // ignore
+    }
+  }, [props.onSelectRefractionMode]);
+
+  const heroProps: WikiHeroProps = {
+    ...props,
+    variant: activeVariant,
+    onSelectVariant: handleSelectVariant,
+    refractionMode: activeRefraction,
+    onSelectRefractionMode: handleSelectRefraction,
   };
 
   const renderActiveHero = () => {
-    switch (variant) {
-      case "command-dock":
-        return <SystemCommandDockHero {...props} />;
-      case "typographic":
-        return <TypographicMastheadHero {...props} />;
-      case "halo-hub":
-        return <DynamicHaloHubHero {...props} />;
-      case "split-horizon":
-        return <AsymmetricSplitHorizonHero {...props} />;
+    switch (activeVariant) {
+      case "editorial-masthead":
+        return <EditorialMastheadHero {...heroProps} />;
       case "sculpted-emblem":
-        return <SculptedEmblemHero {...props} />;
       default:
-        return <SystemCommandDockHero {...props} />;
+        return <SculptedEmblemHero {...heroProps} />;
     }
   };
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* ── Dev Toggle Bar ── */}
-      <WikiHeroDevSwitcher
-        currentVariant={variant}
-        onSelectVariant={handleSelectVariant}
-      />
-
-      {/* ── Active Hero Render with Seamless Morph/Crossfade ── */}
+      {/* ── Active Hero Render with Apple-Grade Spring Morph/Crossfade ── */}
       <div className="w-full">
         <AnimatePresence mode="wait">
           <motion.div
-            key={variant}
-            initial={{ opacity: 0, y: 8 }}
+            key={activeVariant}
+            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="w-full"
           >
             {renderActiveHero()}

@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
@@ -38,6 +38,7 @@ import { ArticleFooter } from "./ArticleFooter";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
 import {
   WikiMarginDrawer,
   MarginGutterPins,
@@ -506,25 +507,7 @@ export function ArticleRenderer({
   const awardsData = awardsQuery.data;
 
   const featuredImageUrl = useMemo(() => {
-    const imgRegex = /<img[^>]+src\s*=\s*(?:["']([^"']+)["']|([^>\s"'=]+))/i;
-    let rawUrl: string | null = null;
-    if (infoboxHtml) {
-      const match = infoboxHtml.match(imgRegex);
-      if (match) rawUrl = match[1] || match[2] || null;
-    }
-    if (!rawUrl && contentHtml) {
-      const match = contentHtml.match(imgRegex);
-      if (match) rawUrl = match[1] || match[2] || null;
-    }
-
-    if (rawUrl) {
-      const thumbMatch = rawUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
-      if (thumbMatch) {
-        return rawUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
-      }
-      return rawUrl;
-    }
-    return null;
+    return extractLeadImageFromHtml(infoboxHtml) ?? extractLeadImageFromHtml(contentHtml);
   }, [infoboxHtml, contentHtml]);
 
   const containerStyle = {
@@ -568,7 +551,7 @@ export function ArticleRenderer({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded border border-amber-500/10 bg-amber-50/5 px-2 py-0.5 text-xs text-amber-500 transition-colors hover:bg-amber-500/10"
           >
-            <ExternalLink size={11} />
+            <ExternalLink className="h-3 w-3" />
             From {WIKI_SOURCE_LABELS[wikiSource]!.label}
           </a>
         </div>

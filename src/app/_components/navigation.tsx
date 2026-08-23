@@ -31,12 +31,10 @@ export function Navigation() {
   const { isMobile, mobileMenuOpen, setMobileMenuOpen } = useResponsiveNav(normalizedPathname);
   const { user, isLoaded } = useUser();
   const isImmersionPage =
-    isWikiPage ||
-    normalizedPathname.startsWith("/messages") ||
     normalizedPathname.startsWith("/builder") ||
-    normalizedPathname.startsWith("/mycountry");
+    normalizedPathname.startsWith("/mycountry/editor");
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const { scrollY, isSticky, isNavVisible } = useNavigationScroll({
+  const { scrollY, isSticky, isNavVisible, onNavMouseEnter, onNavMouseLeave } = useNavigationScroll({
     mode: isImmersionPage ? "hidden" : "default",
   });
 
@@ -118,6 +116,8 @@ export function Navigation() {
   return (
     <>
       <nav
+        onMouseEnter={onNavMouseEnter}
+        onMouseLeave={onNavMouseLeave}
         className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"

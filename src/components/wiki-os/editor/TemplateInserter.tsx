@@ -5,7 +5,14 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Search, X, ChevronDown, ChevronRight, Eye, Plus } from "lucide-react";
+import {
+  Search,
+  Xmark as X,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Eye,
+  Plus,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -83,14 +90,14 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
       <div className="wikios-ti-header">
         <h3 className="wikios-ti-title">Insert Template</h3>
         <button onClick={onClose} className="wikios-ti-close" aria-label="Close">
-          <X size={16} />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Search */}
       {!selectedTemplate && (
         <div className="wikios-ti-search">
-          <Search size={14} className="wikios-ti-search-icon" />
+          <Search className="h-3.5 w-3.5 wikios-ti-search-icon" />
           <input
             ref={inputRef}
             type="text"
@@ -127,7 +134,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
       {selectedTemplate && (
         <div className="wikios-ti-form">
           <button onClick={() => setSelectedTemplate(null)} className="wikios-ti-back">
-            <ChevronRight size={14} className="rotate-180" />
+            <ChevronRight className="h-3.5 w-3.5 rotate-180" />
             <span>Back to search</span>
           </button>
 
@@ -175,9 +182,9 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
 
           {/* Preview toggle */}
           <button onClick={() => setShowPreview(!showPreview)} className="wikios-ti-preview-toggle">
-            <Eye size={14} />
+            <Eye className="h-3.5 w-3.5" />
             <span>{showPreview ? "Hide Preview" : "Show Preview"}</span>
-            {showPreview ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {showPreview ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           </button>
 
           {showPreview && previewQuery.data && (
@@ -193,7 +200,7 @@ export function TemplateInserter({ onInsert, onClose }: TemplateInserterProps) {
               Cancel
             </button>
             <button onClick={handleInsert} className="wikios-ti-insert">
-              <Plus size={14} />
+              <Plus className="h-3.5 w-3.5" />
               Insert Template
             </button>
           </div>

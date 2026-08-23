@@ -238,3 +238,392 @@
   font-display: swap;
 }
 
+
+/* ===================================
+   SANGBLEU FONT FAMILY DECLARATIONS
+   =================================== */
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-BlackItalic.otf") format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Empire";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Air.otf") format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-AirItalic.otf") format("opentype");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-LightItalic.otf") format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Kingdom";
+  src: url("/fonts/SangBleu/SangBleuKingdomTrial-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-BookItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Republic";
+  src: url("/fonts/SangBleu/SangBleuRepublicTrial-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Air.otf") format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-AirItalic.otf") format("opentype");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-LightItalic.otf") format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Livre.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Sunrise";
+  src: url("/fonts/SangBleu/SangBleuSunriseTrial-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Book.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-BookItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu Versailles";
+  src: url("/fonts/SangBleu/SangBleuVersaillesTrial-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Generic SangBleu Alias */
+@font-face {
+  font-family: "SangBleu";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Black.otf") format("opentype");
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SangBleu";
+  src: url("/fonts/SangBleu/SangBleuEmpireTrial-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

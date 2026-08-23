@@ -323,12 +323,18 @@ function transformImages(
 
   if (wikiSource === "ixwiki") {
     result = result
+      .replace(/src="\/\/(?:www\.)?ixwiki\.com\//gu, `src="https://ixwiki.com/`)
+      .replace(/src="http:\/\/ixwiki\.com\//gu, `src="https://ixwiki.com/`)
       .replace(/src="\/images\//gu, `src="${origin}/images/`)
+      .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${origin}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
       .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
+          .replace(/http:\/\/ixwiki\.com\//gu, `https://ixwiki.com/`)
+          .replace(/\/\/(?:www\.)?ixwiki\.com\//gu, `https://ixwiki.com/`)
           .replace(/\/images\//gu, `${origin}/images/`)
+          .replace(/\/thumb\//gu, `${origin}/images/thumb/`)
           .replace(/\/data\//gu, `${origin}/data/`);
         return `srcset="${transformed}"`;
       });
@@ -336,6 +342,7 @@ function transformImages(
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
       .replace(/src="\/images\//gu, `src="${proxyBase}/images/`)
+      .replace(/src="\/thumb\//gu, `src="${proxyBase}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${proxyBase}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
       .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `src="${proxyBase}/images/`)
@@ -350,6 +357,7 @@ function transformImages(
       .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
           .replace(/\/images\//gu, `${proxyBase}/images/`)
+          .replace(/\/thumb\//gu, `${proxyBase}/images/thumb/`)
           .replace(/\/data\//gu, `${proxyBase}/data/`)
           .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `${proxyBase}/images/`);
         return `srcset="${transformed}"`;

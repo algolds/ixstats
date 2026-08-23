@@ -5,7 +5,13 @@
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import { Clock, Highlighter, StickyNote, ArrowRight, X } from "lucide-react";
+import {
+  Clock,
+  DesignPencil as Highlighter,
+  Page as StickyNote,
+  ArrowRight,
+  Xmark as X,
+} from "iconoir-react";
 import { sanitizeUserContent } from "~/lib/utils";
 import type { StashedPageItem } from "./types";
 
@@ -26,7 +32,7 @@ export function StashPagesList({ items, onUnstash }: StashPagesListProps) {
               </span>
               <div className="wikios-stash-item-meta">
                 <span>
-                  <Clock size={10} />{" "}
+                  <Clock className="h-2.5 w-2.5 inline mr-1" />
                   {new Date(item.savedAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -35,18 +41,18 @@ export function StashPagesList({ items, onUnstash }: StashPagesListProps) {
                 </span>
                 {(item.annotationCount ?? 0) > 0 && (
                   <span className="wikios-stash-item-badge wikios-stash-item-badge-highlight">
-                    <Highlighter size={10} /> {item.annotationCount} highlight
+                    <Highlighter className="h-2.5 w-2.5 inline mr-1" /> {item.annotationCount} highlight
                     {item.annotationCount !== 1 ? "s" : ""}
                   </span>
                 )}
                 {item.note && (
                   <span className="wikios-stash-item-badge wikios-stash-item-badge-note">
-                    <StickyNote size={10} /> Has note
+                    <StickyNote className="h-2.5 w-2.5 inline mr-1" /> Has note
                   </span>
                 )}
               </div>
             </div>
-            <ArrowRight size={14} className="wikios-stash-item-arrow" />
+            <ArrowRight className="h-3.5 w-3.5 wikios-stash-item-arrow" />
           </Link>
           {item.note && (
             <div
@@ -65,7 +71,7 @@ export function StashPagesList({ items, onUnstash }: StashPagesListProps) {
             className="wikios-stash-item-remove"
             title="Remove from stash"
           >
-            <X size={12} />
+            <X className="h-3 w-3" />
           </button>
         </div>
       ))}

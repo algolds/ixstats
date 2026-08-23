@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { withBasePath } from "~/lib/base-path";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
@@ -165,9 +165,9 @@ export function CoordsPill({
     <Popover>
       <PopoverTrigger>
         <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-all select-none hover:border-white/20 hover:bg-white/10">
-          <MapPin size={11} className="animate-pulse text-blue-400" />
+          <MapPin className="h-3 w-3 animate-pulse text-blue-400" />
           <span>{label}</span>
-          <span className="font-mono text-[10px] opacity-65">
+          <span className="text-[10px] opacity-65 tabular-nums">
             ({lat.toFixed(2)}, {lng.toFixed(2)})
           </span>
         </span>
@@ -175,17 +175,17 @@ export function CoordsPill({
       <PopoverContent className="z-[10001] flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-zinc-200">{label}</span>
-          <span className="font-mono text-[10px] text-zinc-400">Zoom {zoom}</span>
+          <span className="text-[10px] text-zinc-400 tabular-nums">Zoom {zoom}</span>
         </div>
 
         <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
 
         <div className="flex flex-col gap-0.5 text-[10px] font-medium text-zinc-400">
           <div>
-            Latitude: <span className="font-mono text-zinc-200">{lat.toFixed(4)}</span>
+            Latitude: <span className="text-zinc-200 tabular-nums">{lat.toFixed(4)}</span>
           </div>
           <div>
-            Longitude: <span className="font-mono text-zinc-200">{lng.toFixed(4)}</span>
+            Longitude: <span className="text-zinc-200 tabular-nums">{lng.toFixed(4)}</span>
           </div>
           {calc && (
             <div className="mt-1 font-semibold text-blue-400">
@@ -225,7 +225,7 @@ export function DynamicStatSpan({
   data?: DynamicStatData | null;
 }) {
   if (!data) {
-    return <span className="font-mono text-xs text-zinc-500">Loading...</span>;
+    return <span className="text-xs text-zinc-500">Loading...</span>;
   }
 
   const metadata = data.metadata;
@@ -268,7 +268,7 @@ export function DynamicStatSpan({
           {metadata?.lastCalculated && (
             <div className="flex justify-between">
               <span>Updated</span>
-              <span className="font-mono text-zinc-200">
+              <span className="text-zinc-200 tabular-nums">
                 {new Date(metadata.lastCalculated).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",

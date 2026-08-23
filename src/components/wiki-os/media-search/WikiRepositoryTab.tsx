@@ -6,16 +6,16 @@ import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import {
   Search,
-  Loader2,
+  SystemRestart as Loader2,
   Check,
-  X,
-  FolderOpen,
+  Xmark as X,
+  Folder as FolderOpen,
   Globe,
   Database,
   Bookmark,
   ZoomIn,
-  SlidersHorizontal,
-} from "lucide-react";
+  ControlSlider as SlidersHorizontal,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -292,7 +292,7 @@ export function WikiRepositoryTab({
                   isCategoryExpanded && "border-blue-500/50 bg-slate-100 dark:bg-white/5"
                 )}
               >
-                <SlidersHorizontal size={14} className="h-3.5 w-3.5" />
+                <SlidersHorizontal className="h-3.5 w-3.5" />
                 Filters
               </Button>
             </div>

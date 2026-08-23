@@ -5,21 +5,21 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { api } from "~/trpc/react";
 import {
   Clock,
-  FileText,
-  FilePlus,
-  FolderOpen,
+  Page as FileText,
+  PagePlus as FilePlus,
+  Folder as FolderOpen,
   Bookmark,
-  Hash,
-  AlertTriangle,
-  Layers,
-  Info,
-  Sliders,
-  CheckCircle2,
+  Hashtag as Hash,
+  WarningTriangle as AlertTriangle,
+  Packages as Layers,
+  InfoCircle as Info,
+  ControlSlider as Sliders,
+  CheckCircle as CheckCircle2,
   Search,
-  ArrowUpDown,
+  ArrowSeparateVertical as ArrowUpDown,
   Activity,
-  BookOpen,
-} from "lucide-react";
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { useFacetDepth } from "~/components/ui/facet-container";
 import {

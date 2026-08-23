@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, BarChart2, Loader2, Compass } from "lucide-react";
+import {
+  Xmark as X,
+  Search,
+  GraphUp as BarChart2,
+  SystemRestart as Loader2,
+  Compass,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Portal, type BaseModalProps } from "./types";
 

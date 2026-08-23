@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { X, Image as ImageIcon, Upload } from "lucide-react";
+import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
 import { ImageSearchGrid, type ImageResult } from "~/components/wiki-os/editor/ImageSearchGrid";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -125,7 +125,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
       <div className="wikios-img-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wikios-img-modal-header">
           <div className="wikios-img-modal-title">
-            <ImageIcon size={16} />
+            <ImageIcon className="h-4 w-4" />
             <span>Insert Image</span>
           </div>
 
@@ -141,12 +141,12 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
               className={cn("wikios-img-modal-tab-btn", tab === "upload" && "tab-upload-active")}
               onClick={() => setTab("upload")}
             >
-              <Upload size={12} /> Upload
+              <Upload className="h-3 w-3" /> Upload
             </button>
           </div>
 
           <button onClick={onClose} className="wikios-quick-modal-close">
-            <X size={16} />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -241,7 +241,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                   <img src={uploadPreview} alt="Preview" className="wikios-img-modal-preview-img" />
                 ) : (
                   <>
-                    <Upload size={32} className="wikios-img-modal-upload-icon" />
+                    <Upload className="h-8 w-8 wikios-img-modal-upload-icon" />
                     <p className="wikios-img-modal-upload-text">
                       Click to select a file or drag and drop
                     </p>

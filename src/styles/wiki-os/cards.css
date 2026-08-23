@@ -1,23 +1,23 @@
-/* WikiOS glass card — promoted from the former Kapwa sandbox (.kp-card).
-   Usable on any WikiOS page; no parent scope, no Kapwa dependency. */
+/* WikiOS glass card — Facet Glass Physics with Apple Design & Emil Design Engineering standards */
 
 :root {
-  --wikios-card-bg: rgba(30, 32, 40, 0.45);
-  --wikios-card-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  --wikios-card-bg: rgba(22, 24, 29, 0.72);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 [data-theme="light"] {
-  --wikios-card-bg: rgba(255, 255, 255, 0.65);
-  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --wikios-card-bg: rgba(255, 255, 255, 0.72);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.6);
 }
 
 .wikios-card {
   position: relative;
   border: 1px solid var(--wikios-border);
-  border-radius: 8px;
+  border-radius: 1rem;
   background: var(--wikios-card-bg);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--wikios-card-shadow);
+  overflow: hidden;
 }
 
 /* Chamfered edge glare (Facet refraction overlay) */
@@ -27,7 +27,7 @@
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -37,43 +37,80 @@
 }
 
 [data-theme="light"] .wikios-card::before {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.01));
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
 }
 
-/* Sandbox-only: live-adjustable variant driven by inline --sandbox-card-* vars */
-.wikios-card-adjustable {
-  position: relative;
-  border: 1px solid var(--wikios-border);
-  border-radius: 8px;
-  background: var(--sandbox-card-bg, rgba(30, 32, 40, 0.45));
-  backdrop-filter: blur(var(--sandbox-card-blur, 16px)) saturate(150%);
-  -webkit-backdrop-filter: blur(var(--sandbox-card-blur, 16px)) saturate(150%);
-  box-shadow: var(--wikios-card-shadow);
+/* Interactive Card with Apple spring feedback and touch hysteresis */
+.wikios-card-interactive {
+  transition: transform var(--duration-fast) var(--ease-out);
+  will-change: transform;
+  cursor: pointer;
+  user-select: none;
 }
 
-.wikios-card-adjustable::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, var(--sandbox-card-glare, 0.08)),
-    rgba(255, 255, 255, calc(var(--sandbox-card-glare, 0.08) * 0.25))
-  );
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask-composite: xor;
-  pointer-events: none;
+@media (hover: hover) and (pointer: fine) {
+  .wikios-card-interactive:hover {
+    transform: translateY(-2px);
+  }
 }
 
-[data-theme="light"] .wikios-card-adjustable::before {
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, var(--sandbox-card-glare, 0.04)),
-    rgba(0, 0, 0, calc(var(--sandbox-card-glare, 0.04) * 0.25))
-  );
+.wikios-card-interactive:active {
+  transform: scale(0.97);
+  transition-duration: 100ms;
+}
+
+/* Focus Ring for Keyboard Accessibility (WCAG 2.1 AA) */
+.wikios-card-interactive:focus-visible,
+.wikios-focus-ring:focus-visible {
+  outline: 2px solid var(--wikios-accent);
+  outline-offset: 2px;
+}
+
+/* Standardized Section Eyebrow Header (13-14px) */
+.wikios-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--wikios-border-subtle);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.wikios-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--wikios-text);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Major Section Anchor (H2, 18-22px) */
+.wikios-h2-anchor {
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--wikios-text);
+  letter-spacing: -0.015em;
+}
+
+/* Accessibility & Reduced Motion / Transparency Overrides */
+@media (prefers-reduced-motion: reduce) {
+  .wikios-card-interactive {
+    transition: opacity 150ms ease !important;
+    transform: none !important;
+  }
+  .wikios-card-interactive:hover,
+  .wikios-card-interactive:active {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .wikios-card {
+    background: var(--wikios-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

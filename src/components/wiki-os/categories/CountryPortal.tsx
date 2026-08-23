@@ -5,7 +5,13 @@ import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
-import { ExternalLink, TrendingUp, Users, Coins, BarChart3 } from "lucide-react";
+import {
+  OpenNewWindow as ExternalLink,
+  GraphUp as TrendingUp,
+  Group as Users,
+  Coins,
+  GraphUp as BarChart3,
+} from "iconoir-react";
 
 const CountryMapEmbed = dynamic(
   () =>

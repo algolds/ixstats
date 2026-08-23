@@ -4,21 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X,
+  Xmark as X,
   Globe,
   Database,
-  SlidersHorizontal,
+  ControlSlider as SlidersHorizontal,
   Bookmark,
   Copy,
   Download,
-  ExternalLink,
-  BookOpen,
-  Sparkles,
-  Info,
-  Smile,
+  OpenNewWindow as ExternalLink,
+  OpenBook as BookOpen,
+  Sparks as Sparkles,
+  InfoCircle as Info,
+  Emoji as Smile,
   HelpCircle,
   Eye,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 

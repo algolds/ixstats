@@ -3,7 +3,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "~/lib/utils";
-import { Search, Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  SystemRestart as Loader2,
+  Check,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

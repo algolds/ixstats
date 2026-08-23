@@ -222,6 +222,25 @@ export function DashboardSidebarLayout({
               )}
               {children}
             </div>
+
+            {/* Symmetrical Right Balancer (Rail Mode) — ensures centered page alignment on sidebar lock/unlock */}
+            {variant === "rail" && (
+              <div
+                aria-hidden="true"
+                className={cn(
+                  "relative z-10 hidden shrink-0 pointer-events-none transition-[width] duration-300 ease-out lg:block",
+                  isCollapsedNow && !isHoverActive
+                    ? "-right-6 w-14 opacity-0 xl:-right-12"
+                    : cn("-right-6 opacity-0 xl:-right-12", resolvedExpandedWidthClass)
+                )}
+                style={{
+                  width:
+                    isCollapsedNow && !isHoverActive
+                      ? "3.5rem"
+                      : resolvedExpandedWidthStyle,
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

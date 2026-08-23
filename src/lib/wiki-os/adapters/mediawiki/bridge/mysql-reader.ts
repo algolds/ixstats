@@ -116,29 +116,43 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
 }
 
 export async function ixwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
-  const cacheKey = `search:${query}:${limit}`;
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const cacheKey = `search:${trimmed}:${limit}`;
   const cached = cacheGet<WikiSearchResult[]>(cacheKey);
   if (cached) return cached;
 
   if (isMysqlAvailable()) {
     try {
       const pool = getIxWikiPool();
-      const pattern = query.replace(/ /g, "_") + "%";
+      const exact = trimmed.replace(/ /g, "_");
+      const prefix = exact + "%";
+      const contains = "%" + exact + "%";
 
       const [rows] = await pool.execute<MWPageRow[]>(
-        `SELECT page_id, page_title, page_len
+        `SELECT page_id, page_title, page_len, page_namespace,
+           CASE
+             WHEN page_title = ? THEN 1
+             WHEN page_title LIKE ? THEN 2
+             WHEN page_title LIKE ? THEN 3
+             ELSE 4
+           END AS rank_score
          FROM page
-         WHERE page_namespace = 0
-           AND CONVERT(page_title USING utf8mb4) LIKE ?
+         WHERE page_namespace IN (0, 14)
+           AND (
+             page_title = ?
+             OR page_title LIKE ?
+             OR page_title LIKE ?
+           )
            AND page_is_redirect = 0
-         ORDER BY page_len DESC
+         ORDER BY rank_score ASC, (page_namespace = 0) DESC, page_len DESC
          LIMIT ?`,
-        [pattern, limit]
+        [exact, prefix, contains, exact, prefix, contains, limit]
       );
 
       markMysqlOnline();
       const results: WikiSearchResult[] = (rows ?? []).map((row) => ({
-        title: String(row.page_title).replace(/_/g, " "),
+        title: (row.page_namespace === 14 ? "Category:" : "") + String(row.page_title).replace(/_/g, " "),
         pageId: Number(row.page_id) || 0,
         length: Number(row.page_len) || 0,
       }));
@@ -147,37 +161,71 @@ export async function ixwikiSearch(query: string, limit: number = 10): Promise<W
       return results;
     } catch (err) {
       markMysqlOffline();
-      console.warn("[WikiBridge] MySQL search error, falling back to HTTP:", err);
+      console.warn("[WikiBridge] MySQL search error, falling back to live parallel API:", err);
     }
   }
 
-  // HTTP Fallback
+  // High-Performance Fallback: Parallel prefixsearch + list=search
   try {
     const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
     const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "opensearch",
-      search: query,
-      limit: String(limit),
-      namespace: "0",
-      format: "json",
-      origin: "*",
-    });
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as [string, string[], string[], string[]];
-      const titles = data[1] || [];
-      const results: WikiSearchResult[] = titles.map((title) => ({
-        title,
-        pageId: 0,
-        length: 0,
-      }));
-      cacheSet(cacheKey, results, 5 * 60 * 1000);
-      return results;
+
+    const [prefixRes, searchRes] = await Promise.allSettled([
+      fetch(
+        `${apiEndpoint}?action=query&list=prefixsearch&pssearch=${encodeURIComponent(trimmed)}&pslimit=${limit}&format=json`,
+        {
+          headers: { "User-Agent": DEFAULT_USER_AGENT },
+          signal: AbortSignal.timeout(6000),
+        }
+      ).then((r) => r.json()),
+      fetch(
+        `${apiEndpoint}?action=query&list=search&srsearch=${encodeURIComponent(trimmed)}&srnamespace=0|14&srlimit=${limit}&format=json`,
+        {
+          headers: { "User-Agent": DEFAULT_USER_AGENT },
+          signal: AbortSignal.timeout(6000),
+        }
+      ).then((r) => r.json()),
+    ]);
+
+    const itemsMap = new Map<string, { title: string; pageId: number; length: number }>();
+
+    if (prefixRes.status === "fulfilled" && (prefixRes.value as any)?.query?.prefixsearch) {
+      for (const item of (prefixRes.value as any).query.prefixsearch) {
+        itemsMap.set(item.title, {
+          title: item.title,
+          pageId: Number(item.pageid) || 0,
+          length: 0,
+        });
+      }
     }
+
+    if (searchRes.status === "fulfilled" && (searchRes.value as any)?.query?.search) {
+      for (const item of (searchRes.value as any).query.search) {
+        if (!itemsMap.has(item.title)) {
+          itemsMap.set(item.title, {
+            title: item.title,
+            pageId: Number(item.pageid) || 0,
+            length: Number(item.size) || 0,
+          });
+        }
+      }
+    }
+
+    const queryLower = trimmed.toLowerCase();
+    const results = Array.from(itemsMap.values()).map((item) => {
+      const titleLower = item.title.toLowerCase();
+      let score = 4;
+      if (titleLower === queryLower) score = 1;
+      else if (titleLower.startsWith(queryLower)) score = 2;
+      else if (titleLower.includes(queryLower)) score = 3;
+      return { ...item, score };
+    });
+
+    results.sort((a, b) => a.score - b.score);
+    const finalResults: WikiSearchResult[] = results.slice(0, limit).map(({ score, ...r }) => r);
+
+    cacheSet(cacheKey, finalResults, 5 * 60 * 1000);
+    return finalResults;
   } catch (err) {
     console.error("[WikiBridge] HTTP search fallback error:", err);
   }
@@ -217,6 +265,20 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
         newLen: Number(row.rc_new_len) || 0,
       }));
 
+      if (results.length > 0) {
+        const uniqueTitles = Array.from(new Set(results.map((r) => r.title)));
+        const descMap = await batchFetchDescriptions(uniqueTitles);
+        for (const r of results) {
+          const meta = descMap.get(r.title) || descMap.get(r.title.replace(/_/g, " "));
+          if (meta?.extract) {
+            r.blurb = meta.extract;
+          }
+          if (meta?.thumbnail) {
+            r.thumbnail = meta.thumbnail;
+          }
+        }
+      }
+
       cacheSet(cacheKey, results, 60 * 1000);
       return results;
     } catch (err) {
@@ -254,6 +316,21 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
         oldLen: rc.oldlen || 0,
         newLen: rc.newlen || 0,
       }));
+
+      if (results.length > 0) {
+        const uniqueTitles = Array.from(new Set(results.map((r) => r.title)));
+        const descMap = await batchFetchDescriptions(uniqueTitles);
+        for (const r of results) {
+          const meta = descMap.get(r.title) || descMap.get(r.title.replace(/_/g, " "));
+          if (meta?.extract) {
+            r.blurb = meta.extract;
+          }
+          if (meta?.thumbnail) {
+            r.thumbnail = meta.thumbnail;
+          }
+        }
+      }
+
       cacheSet(cacheKey, results, 60 * 1000);
       return results;
     }
@@ -809,6 +886,236 @@ export async function ixwikiSearchTemplates(query: string, limit: number = 20): 
   }
 }
 
+import {
+  normalizeWikiImageUrl,
+  isNoticeOrUtilityIcon,
+  extractLeadImageFromWikitext,
+} from "~/lib/wiki-os/transformers/image-url";
+
+/**
+ * Direct MySQL lookup for page images, strictly prioritizing infobox parameters
+ * and excluding template icons, WIP badges, and maintenance notices.
+ */
+export async function ixwikiBatchGetPageImages(titles: string[]): Promise<Map<string, string>> {
+  const imageMap = new Map<string, string>();
+  const validTitles = titles.filter((t) => !t.startsWith("Category:") && t.trim().length > 0);
+  if (!isMysqlAvailable() || validTitles.length === 0) return imageMap;
+
+  try {
+    const pool = getIxWikiPool();
+    const dbTitles = validTitles.map((t) => t.replace(/^File:/, "").replace(/ /g, "_"));
+    const placeholders = dbTitles.map(() => "?").join(",");
+
+    // 1. High Priority: Direct Wikitext Infobox extraction from database
+    try {
+      const [textRows] = await pool.execute<mysql.RowDataPacket[]>(
+        `SELECT p.page_title, t.old_text
+         FROM page p
+         JOIN slots s ON s.slot_revision_id = p.page_latest
+         JOIN content c ON c.content_id = s.slot_content_id
+         JOIN text t ON t.old_id = CAST(SUBSTRING(c.content_address, 4) AS UNSIGNED)
+         WHERE p.page_title IN (${placeholders}) AND p.page_namespace = 0`,
+        dbTitles
+      );
+
+      if (textRows && textRows.length > 0) {
+        for (const row of textRows) {
+          const title = String(row.page_title).replace(/_/g, " ");
+          const rawWikitext = String(row.old_text || "");
+          const leadImg = extractLeadImageFromWikitext(rawWikitext);
+          if (leadImg && !isNoticeOrUtilityIcon(leadImg)) {
+            imageMap.set(title, leadImg);
+          }
+        }
+      }
+    } catch (wtErr) {
+      console.warn("[WikiBridge] Direct wikitext infobox lookup warning:", wtErr);
+    }
+
+    // 2. Fallback: Check page_props for page_image or page_image_free (validated against notice icons)
+    const missingPropTitles = dbTitles.filter((t) => !imageMap.has(t.replace(/_/g, " ")));
+    if (missingPropTitles.length > 0) {
+      const propPlaceholders = missingPropTitles.map(() => "?").join(",");
+      const [propRows] = await pool.execute<mysql.RowDataPacket[]>(
+        `SELECT p.page_title, pp.pp_value
+         FROM page p
+         JOIN page_props pp ON pp.pp_page = p.page_id
+         WHERE p.page_title IN (${propPlaceholders})
+           AND pp.pp_propname IN ('page_image', 'page_image_free')`,
+        missingPropTitles
+      );
+
+      if (propRows && propRows.length > 0) {
+        for (const row of propRows) {
+          const title = String(row.page_title).replace(/_/g, " ");
+          if (imageMap.has(title)) continue;
+          const imgFile = String(row.pp_value).replace(/^File:/, "").trim();
+          if (imgFile && !isNoticeOrUtilityIcon(imgFile)) {
+            const url = `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(imgFile.replace(/ /g, "_"))}?width=160`;
+            imageMap.set(title, url);
+          }
+        }
+      }
+    }
+
+    // 3. Fallback: Check imagelinks excluding known notice icons
+    const missingImgTitles = dbTitles.filter((t) => !imageMap.has(t.replace(/_/g, " ")));
+    if (missingImgTitles.length > 0) {
+      const missingPlaceholders = missingImgTitles.map(() => "?").join(",");
+      const [imgLinkRows] = await pool.execute<mysql.RowDataPacket[]>(
+        `SELECT p.page_title, il.il_to
+         FROM page p
+         JOIN imagelinks il ON il.il_from = p.page_id
+         WHERE p.page_title IN (${missingPlaceholders})
+           AND il.il_to NOT LIKE 'Ambox%'
+           AND il.il_to NOT LIKE 'Red_piston%'
+           AND il.il_to NOT LIKE 'Symbol_%'
+           AND il.il_to NOT LIKE 'Padlock%'
+           AND il.il_to NOT LIKE 'Icon_%'
+           AND il.il_to NOT LIKE 'Nuvola_%'
+           AND il.il_to NOT LIKE 'Gnome_%'
+           AND il.il_to NOT LIKE 'Crystal_%'
+           AND il.il_to NOT LIKE 'Commons-%'
+           AND il.il_to NOT LIKE 'Disambig%'
+           AND il.il_to NOT LIKE 'Question_book%'
+           AND il.il_to NOT LIKE 'Wiki_letter%'
+           AND il.il_to NOT LIKE 'Flag_of_None%'
+           AND il.il_to NOT LIKE 'Underconstruction%'
+           AND il.il_to NOT LIKE 'under_construction%'
+           AND il.il_to NOT LIKE 'Construction%'
+           AND il.il_to NOT LIKE 'Roadworks%'
+           AND il.il_to NOT LIKE 'road_works%'
+           AND il.il_to NOT LIKE 'WIP%'
+           AND il.il_to NOT LIKE 'Stub%'
+           AND il.il_to NOT LIKE 'Information_icon%'
+         GROUP BY p.page_id, il.il_to`,
+        missingImgTitles
+      );
+
+      if (imgLinkRows && imgLinkRows.length > 0) {
+        for (const row of imgLinkRows) {
+          const title = String(row.page_title).replace(/_/g, " ");
+          if (imageMap.has(title)) continue;
+          const imgFile = String(row.il_to).replace(/^File:/, "").trim();
+          if (imgFile && !isNoticeOrUtilityIcon(imgFile)) {
+            const url = `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(imgFile.replace(/ /g, "_"))}?width=160`;
+            imageMap.set(title, url);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[WikiBridge] Direct MySQL batch page image lookup warning:", err);
+  }
+
+  return imageMap;
+}
+
+export async function batchFetchDescriptions(
+  titles: string[]
+): Promise<Map<string, { extract?: string; thumbnail?: string }>> {
+  const map = new Map<string, { extract?: string; thumbnail?: string }>();
+  const validTitles = titles.filter((t) => !t.startsWith("Category:") && t.trim().length > 0);
+  if (validTitles.length === 0) return map;
+
+  try {
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
+    const res = await fetch(
+      `${apiEndpoint}?action=query&titles=${encodeURIComponent(validTitles.join("|"))}&prop=extracts|pageimages&exintro=1&explaintext=1&exchars=140&pithumbsize=160&format=json`,
+      {
+        headers: { "User-Agent": DEFAULT_USER_AGENT },
+        signal: AbortSignal.timeout(4000),
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const pages = data.query?.pages;
+      if (pages) {
+        for (const p of Object.values(pages) as any[]) {
+          if (p.title) {
+            const rawThumb = p.thumbnail?.source;
+            const thumb =
+              rawThumb && !isNoticeOrUtilityIcon(rawThumb)
+                ? normalizeWikiImageUrl(rawThumb)
+                : undefined;
+
+            map.set(p.title, {
+              extract: p.extract ? p.extract.replace(/\s+/g, " ").trim() : undefined,
+              thumbnail: thumb ?? undefined,
+            });
+          }
+        }
+      }
+    }
+  } catch {
+    // Non-fatal, proceed to SQL fallback
+  }
+
+  // Backfill missing thumbnails via direct SQL wikitext & infobox extraction
+  const missingThumbTitles = validTitles.filter((t) => !map.get(t)?.thumbnail);
+  if (missingThumbTitles.length > 0) {
+    const sqlImages = await ixwikiBatchGetPageImages(missingThumbTitles);
+    for (const [title, imgUrl] of sqlImages.entries()) {
+      const existing = map.get(title) || {};
+      map.set(title, {
+        ...existing,
+        thumbnail: normalizeWikiImageUrl(imgUrl) ?? imgUrl,
+      });
+    }
+  }
+
+  return map;
+}
+
+export async function batchFetchThumbnails(titles: string[]): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  const validTitles = titles.filter((t) => !t.startsWith("Category:") && t.trim().length > 0);
+  if (validTitles.length === 0) return map;
+
+  try {
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
+    const res = await fetch(
+      `${apiEndpoint}?action=query&titles=${encodeURIComponent(validTitles.join("|"))}&prop=pageimages&pithumbsize=160&format=json`,
+      {
+        headers: { "User-Agent": DEFAULT_USER_AGENT },
+        signal: AbortSignal.timeout(4000),
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const pages = data.query?.pages;
+      if (pages) {
+        for (const p of Object.values(pages) as any[]) {
+          if (p.title && p.thumbnail?.source) {
+            const normalized = normalizeWikiImageUrl(p.thumbnail.source);
+            if (normalized) {
+              map.set(p.title, normalized);
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Non-fatal, proceed to SQL fallback
+  }
+
+  // Backfill missing thumbnails via direct SQL
+  const missingThumbTitles = validTitles.filter((t) => !map.has(t));
+  if (missingThumbTitles.length > 0) {
+    const sqlImages = await ixwikiBatchGetPageImages(missingThumbTitles);
+    for (const [title, imgUrl] of sqlImages.entries()) {
+      const normalized = normalizeWikiImageUrl(imgUrl);
+      if (normalized) {
+        map.set(title, normalized);
+      }
+    }
+  }
+
+  return map;
+}
+
 export async function ixwikiFullTextSearch(
   query: string,
   limit: number = 20,
@@ -822,84 +1129,170 @@ export async function ixwikiFullTextSearch(
     size: number;
     wordCount: number;
     timestamp: string;
+    thumbnail?: string | null;
   }>;
   totalHits: number;
 }> {
-  const cacheKey = `ftsearch:${query}:${limit}:${offset}:${namespace ?? "all"}`;
+  const trimmed = query.trim();
+  if (!trimmed) return { results: [], totalHits: 0 };
+  const cacheKey = `ftsearch:${trimmed}:${limit}:${offset}:${namespace ?? "all"}`;
   const cached =
     cacheGet<ReturnType<typeof ixwikiFullTextSearch> extends Promise<infer T> ? T : never>(
       cacheKey
     );
   if (cached) return cached;
 
+  if (isMysqlAvailable()) {
+    try {
+      const pool = getIxWikiPool();
+      const exact = trimmed.replace(/ /g, "_");
+      const prefix = exact + "%";
+      const contains = "%" + exact + "%";
+
+      let nsFilter = "";
+      const nsParams: number[] = [];
+      if (namespace !== undefined) {
+        nsFilter = "AND p.page_namespace = ?";
+        nsParams.push(namespace);
+      } else {
+        nsFilter = "AND p.page_namespace IN (0, 14)";
+      }
+
+      // Fast-path title & category search
+      const [rows] = await pool.execute<mysql.RowDataPacket[]>(
+        `SELECT p.page_id, p.page_title, p.page_namespace, p.page_len, p.page_touched,
+           CASE
+             WHEN p.page_title = ? THEN 1
+             WHEN p.page_title LIKE ? THEN 2
+             WHEN p.page_title LIKE ? THEN 3
+             ELSE 4
+           END AS relevance
+         FROM page p
+         WHERE p.page_is_redirect = 0
+           ${nsFilter}
+           AND (p.page_title = ? OR p.page_title LIKE ? OR p.page_title LIKE ?)
+         ORDER BY relevance ASC, (p.page_namespace = 0) DESC, p.page_len DESC
+         LIMIT ? OFFSET ?`,
+        [exact, prefix, contains, ...nsParams, exact, prefix, contains, limit, offset]
+      );
+
+      if (rows && rows.length > 0) {
+        const rawResults = rows.map((row) => {
+          const rawTitle = String(row.page_title).replace(/_/g, " ");
+          const titleStr = (Number(row.page_namespace) === 14 ? "Category:" : "") + rawTitle;
+          return {
+            title: titleStr,
+            namespace: Number(row.page_namespace) || 0,
+            snippet: `WikiOS article entry for ${titleStr}.`,
+            size: Number(row.page_len) || 0,
+            wordCount: Math.round((Number(row.page_len) || 0) / 6),
+            timestamp: formatMWTimestamp(String(row.page_touched)),
+          };
+        });
+
+        const titleList = rawResults.map((r) => r.title);
+        const thumbnailMap = await batchFetchThumbnails(titleList);
+        const results = rawResults.map((r) => ({
+          ...r,
+          thumbnail: thumbnailMap.get(r.title) ?? null,
+        }));
+
+        const result = { results, totalHits: results.length };
+        cacheSet(cacheKey, result, 2 * 60 * 1000);
+        return result;
+      }
+    } catch (err) {
+      console.warn("[WikiBridge] Direct DB search error, falling back to live parallel API:", err);
+    }
+  }
+
+  // High-Performance Fallback: Parallel prefixsearch + list=search
   try {
-    const pool = getIxWikiPool();
+    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
 
-    let countQuery = `SELECT COUNT(*) as total FROM searchindex si JOIN page p ON p.page_id = si.si_page WHERE MATCH(si.si_text) AGAINST(? IN NATURAL LANGUAGE MODE)`;
-    const countParams: (string | number)[] = [query];
-    if (namespace !== undefined) {
-      countQuery += ` AND p.page_namespace = ?`;
-      countParams.push(namespace);
+    const [prefixRes, searchRes] = await Promise.allSettled([
+      fetch(
+        `${apiEndpoint}?action=query&list=prefixsearch&pssearch=${encodeURIComponent(trimmed)}&pslimit=${limit}&format=json`,
+        {
+          headers: { "User-Agent": DEFAULT_USER_AGENT },
+          signal: AbortSignal.timeout(6000),
+        }
+      ).then((r) => r.json()),
+      fetch(
+        `${apiEndpoint}?action=query&list=search&srsearch=${encodeURIComponent(trimmed)}&srnamespace=0|14&srlimit=${limit}&format=json`,
+        {
+          headers: { "User-Agent": DEFAULT_USER_AGENT },
+          signal: AbortSignal.timeout(6000),
+        }
+      ).then((r) => r.json()),
+    ]);
+
+    const itemsMap = new Map<
+      string,
+      { title: string; namespace: number; snippet: string; size: number; wordCount: number; timestamp: string }
+    >();
+
+    if (prefixRes.status === "fulfilled" && (prefixRes.value as any)?.query?.prefixsearch) {
+      for (const item of (prefixRes.value as any).query.prefixsearch) {
+        itemsMap.set(item.title, {
+          title: item.title,
+          namespace: Number(item.ns) || 0,
+          snippet: `WikiOS article entry for ${item.title}.`,
+          size: 0,
+          wordCount: 0,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
-    const [countRows] = await pool.execute<mysql.RowDataPacket[]>(countQuery, countParams);
-    const totalHits = (countRows?.[0]?.total as number) ?? 0;
 
-    let searchQuery = `
-      SELECT p.page_id, p.page_title, p.page_namespace, p.page_len, p.page_touched,
-             MATCH(si.si_text) AGAINST(? IN NATURAL LANGUAGE MODE) AS relevance,
-             SUBSTRING(si.si_text, 1, 500) AS text_preview
-      FROM searchindex si
-      JOIN page p ON p.page_id = si.si_page
-      WHERE MATCH(si.si_text) AGAINST(? IN NATURAL LANGUAGE MODE)
-    `;
-    const searchParams: (string | number)[] = [query, query];
-    if (namespace !== undefined) {
-      searchQuery += ` AND p.page_namespace = ?`;
-      searchParams.push(namespace);
-    }
-    searchQuery += ` ORDER BY relevance DESC LIMIT ? OFFSET ?`;
-    searchParams.push(limit, offset);
-
-    const [rows] = await pool.execute<mysql.RowDataPacket[]>(searchQuery, searchParams);
-
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(Boolean);
-    const results = (rows ?? []).map((row) => {
-      const textPreview = String(row.text_preview ?? "");
-      const lowerText = textPreview.toLowerCase();
-      let snippetStart = 0;
-      for (const term of queryTerms) {
-        const idx = lowerText.indexOf(term);
-        if (idx >= 0) {
-          snippetStart = Math.max(0, idx - 60);
-          break;
+    if (searchRes.status === "fulfilled" && (searchRes.value as any)?.query?.search) {
+      for (const item of (searchRes.value as any).query.search) {
+        const existing = itemsMap.get(item.title);
+        if (existing) {
+          existing.snippet = item.snippet || existing.snippet;
+          existing.size = Number(item.size) || 0;
+          existing.wordCount = Number(item.wordcount) || 0;
+        } else {
+          itemsMap.set(item.title, {
+            title: item.title,
+            namespace: Number(item.ns) || 0,
+            snippet: item.snippet || `WikiOS article entry for ${item.title}.`,
+            size: Number(item.size) || 0,
+            wordCount: Number(item.wordcount) || 0,
+            timestamp: item.timestamp || new Date().toISOString(),
+          });
         }
       }
-      let snippet = textPreview.substring(snippetStart, snippetStart + 200);
-      for (const term of queryTerms) {
-        snippet = snippet.replace(
-          new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
-          '<span class="searchmatch">$1</span>'
-        );
-      }
-      if (snippetStart > 0) snippet = "..." + snippet;
+    }
 
-      return {
-        title: String(row.page_title).replace(/_/g, " "),
-        namespace: row.page_namespace as number,
-        snippet,
-        size: row.page_len as number,
-        wordCount: Math.round((row.page_len as number) / 6),
-        timestamp: formatMWTimestamp(String(row.page_touched)),
-      };
+    const queryLower = trimmed.toLowerCase();
+    const allResults = Array.from(itemsMap.values()).map((item) => {
+      const titleLower = item.title.toLowerCase();
+      let score = 4;
+      if (titleLower === queryLower) score = 1;
+      else if (titleLower.startsWith(queryLower)) score = 2;
+      else if (titleLower.includes(queryLower)) score = 3;
+      return { ...item, score };
     });
 
-    const result = { results, totalHits };
+    allResults.sort((a, b) => a.score - b.score);
+    const results = allResults.slice(0, limit).map(({ score, ...r }) => r);
+    const titleList = results.map((r) => r.title);
+    const thumbnailMap = await batchFetchThumbnails(titleList);
+    const enrichedResults = results.map((r) => ({
+      ...r,
+      thumbnail: thumbnailMap.get(r.title) ?? null,
+    }));
+
+    const result = { results: enrichedResults, totalHits: enrichedResults.length };
     cacheSet(cacheKey, result, 2 * 60 * 1000);
     return result;
   } catch (err) {
-    console.error("[WikiBridge] MySQL fulltext search error:", err);
-    return { results: [], totalHits: 0 };
+    console.error("[WikiBridge] HTTP fulltext search fallback error:", err);
   }
+
+  return { results: [], totalHits: 0 };
 }
 
 export async function ixwikiGetParentCategories(

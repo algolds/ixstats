@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import { ChevronRight } from "lucide-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface CategoryBreadcrumbProps {
@@ -39,7 +39,7 @@ export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
     <nav className="wikios-breadcrumb" aria-label="Categories">
       {relevant.map((cat, i) => (
         <span key={cat.title} className="wikios-breadcrumb-item">
-          {i > 0 && <ChevronRight size={12} className="wikios-breadcrumb-sep" />}
+          {i > 0 && <ChevronRight className="h-3 w-3 wikios-breadcrumb-sep" />}
           <Link
             href={withBasePath(
               `/wiki/categories/${encodeURIComponent(cat.title.replace(/ /g, "_"))}`

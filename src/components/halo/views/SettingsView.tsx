@@ -326,6 +326,22 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <AnimatedThemeToggler className="h-8 w-8" />
           </div>
 
+          {/* Compact Mode */}
+          <SettingsRow
+            icon={<Layout className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
+            iconBg="bg-purple-500/15"
+            label="Compact Mode"
+            description="Denser UI layout"
+          >
+            <ToggleSwitch
+              enabled={compactMode}
+              onToggle={() => {
+                soundEffects.toggle();
+                toggleCompactMode();
+              }}
+            />
+          </SettingsRow>
+
           {/* Sound */}
           <SettingsRow
             icon={
@@ -372,18 +388,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   setMediaThemeMode(checked ? "plinth" : "auto");
                 }}
               />
-            </SettingsRow>
-          )}
-
-          {/* Compact Mode (Non-Wiki) */}
-          {!isOnWikiPage && (
-            <SettingsRow
-              icon={<Layout className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />}
-              iconBg="bg-purple-500/15"
-              label="Compact Mode"
-              description="Denser UI layout"
-            >
-              <ToggleSwitch enabled={compactMode} onToggle={toggleCompactMode} />
             </SettingsRow>
           )}
 

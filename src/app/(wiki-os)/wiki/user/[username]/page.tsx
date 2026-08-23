@@ -13,18 +13,18 @@ import {
   User,
   Trophy,
   Calendar,
-  FileText,
+  Page as FileText,
   Clock,
   Shield,
-  TrendingUp,
-  Award,
-  Flame,
-  BookOpen,
-  Loader2,
-  Hash,
+  GraphUp as TrendingUp,
+  Medal as Award,
+  FireFlame as Flame,
+  OpenBook as BookOpen,
+  SystemRestart as Loader2,
+  Hashtag as Hash,
   ArrowUpRight,
   ArrowDownRight,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 
@@ -52,14 +52,14 @@ export default function UserProfilePage() {
       <div className="wikios-special-page wikios-profile-page">
         {isLoading && (
           <div className="wikios-stashes-loading">
-            <Loader2 size={24} className="animate-spin opacity-40" />
+            <Loader2 className="h-6 w-6 animate-spin opacity-40" />
             <span>Loading profile...</span>
           </div>
         )}
 
         {!isLoading && info && !info.exists && (
           <div className="wikios-stashes-empty-state">
-            <User size={48} className="opacity-20" />
+            <User className="h-12 w-12 opacity-20" />
             <h2>User not found</h2>
             <p>No MediaWiki account exists for &ldquo;{username}&rdquo;.</p>
           </div>
@@ -70,14 +70,14 @@ export default function UserProfilePage() {
             {/* Profile Header */}
             <div className="wikios-profile-header">
               <div className="wikios-profile-avatar">
-                <User size={32} />
+                <User className="h-8 w-8" />
               </div>
               <div className="wikios-profile-identity">
                 <h1 className="wikios-profile-username">{username}</h1>
                 <div className="wikios-profile-meta">
                   {info.registration && (
                     <span>
-                      <Calendar size={12} /> Joined{" "}
+                      <Calendar className="h-3 w-3 inline mr-1" /> Joined{" "}
                       {new Date(info.registration).toLocaleDateString("en-US", {
                         month: "long",
                         year: "numeric",
@@ -85,18 +85,18 @@ export default function UserProfilePage() {
                     </span>
                   )}
                   <span>
-                    <FileText size={12} /> {info.editCount.toLocaleString()} edits
+                    <FileText className="h-3 w-3 inline mr-1" /> {info.editCount.toLocaleString()} edits
                   </span>
                   {rank && (
                     <span>
-                      <Trophy size={12} /> Rank #{rank}
+                      <Trophy className="h-3 w-3 inline mr-1" /> Rank #{rank}
                     </span>
                   )}
                 </div>
                 <div className="wikios-profile-groups">
                   {info.groups.map((g) => (
                     <span key={g} className="wikios-profile-group-badge">
-                      <Shield size={10} /> {g}
+                      <Shield className="h-2.5 w-2.5 inline mr-1" /> {g}
                     </span>
                   ))}
                 </div>
@@ -110,44 +110,44 @@ export default function UserProfilePage() {
                 {stats && (
                   <section className="wikios-profile-section">
                     <h2 className="wikios-profile-section-title">
-                      <Trophy size={16} /> Lorewards
+                      <Trophy className="h-4 w-4" /> Lorewards
                     </h2>
                     <div className="wikios-profile-stats-grid">
                       <StatCard
                         label="Daily Wins"
                         value={stats.dailyWins}
-                        icon={<Award size={16} />}
+                        icon={<Award className="h-4 w-4" />}
                         color="#fbbf24"
                       />
                       <StatCard
                         label="Runner-ups"
                         value={stats.dailyRunnerUps}
-                        icon={<TrendingUp size={16} />}
+                        icon={<TrendingUp className="h-4 w-4" />}
                         color="#94a3b8"
                       />
                       <StatCard
                         label="Weekly Wins"
                         value={stats.weeklyWins}
-                        icon={<Trophy size={16} />}
+                        icon={<Trophy className="h-4 w-4" />}
                         color="#60a5fa"
                       />
                       <StatCard
                         label="Monthly Wins"
                         value={stats.monthlyWins}
-                        icon={<Trophy size={16} />}
+                        icon={<Trophy className="h-4 w-4" />}
                         color="#a78bfa"
                       />
                       <StatCard
                         label="Current Streak"
                         value={stats.currentStreak}
-                        icon={<Flame size={16} />}
+                        icon={<Flame className="h-4 w-4" />}
                         color={stats.currentStreak > 0 ? "#f97316" : "#64748b"}
                         suffix="days"
                       />
                       <StatCard
                         label="Best Streak"
                         value={stats.longestStreak}
-                        icon={<Flame size={16} />}
+                        icon={<Flame className="h-4 w-4" />}
                         color="#ef4444"
                         suffix="days"
                       />
@@ -169,7 +169,7 @@ export default function UserProfilePage() {
                 {!stats && !loreStats.isLoading && (
                   <section className="wikios-profile-section">
                     <h2 className="wikios-profile-section-title">
-                      <Trophy size={16} /> Lorewards
+                      <Trophy className="h-4 w-4" /> Lorewards
                     </h2>
                     <p className="wikios-profile-empty-text">No Loreward entries yet.</p>
                   </section>
@@ -178,7 +178,7 @@ export default function UserProfilePage() {
                 {/* Streak Calendar */}
                 <section className="wikios-profile-section">
                   <h2 className="wikios-profile-section-title">
-                    <Calendar size={16} /> Award Calendar
+                    <Calendar className="h-4 w-4" /> Award Calendar
                   </h2>
                   <StreakCalendar username={username} />
                 </section>
@@ -187,7 +187,7 @@ export default function UserProfilePage() {
                 {awards.length > 0 && (
                   <section className="wikios-profile-section">
                     <h2 className="wikios-profile-section-title">
-                      <Award size={16} /> Award History
+                      <Award className="h-4 w-4" /> Award History
                     </h2>
                     <div className="wikios-profile-award-list">
                       {awards.map((a, i) => (
@@ -236,7 +236,7 @@ export default function UserProfilePage() {
                 {/* Recent Edits */}
                 <section className="wikios-profile-section">
                   <h2 className="wikios-profile-section-title">
-                    <BookOpen size={16} /> Recent Edits
+                    <BookOpen className="h-4 w-4" /> Recent Edits
                   </h2>
                   {edits.length === 0 && !contribs.isLoading && (
                     <p className="wikios-profile-empty-text">No recent edits.</p>
@@ -254,7 +254,7 @@ export default function UserProfilePage() {
                         </Link>
                         <div className="wikios-profile-edit-meta">
                           <span>
-                            <Clock size={10} /> {formatMWTimeAgo(edit.timestamp)}
+                            <Clock className="h-2.5 w-2.5 inline mr-1" /> {formatMWTimeAgo(edit.timestamp)}
                           </span>
                           <span
                             className={cn(
@@ -267,9 +267,9 @@ export default function UserProfilePage() {
                             )}
                           >
                             {edit.size > 0 ? (
-                              <ArrowUpRight size={10} />
+                              <ArrowUpRight className="h-2.5 w-2.5 inline" />
                             ) : edit.size < 0 ? (
-                              <ArrowDownRight size={10} />
+                              <ArrowDownRight className="h-2.5 w-2.5 inline" />
                             ) : null}
                             {edit.size > 0 ? "+" : ""}
                             {edit.size.toLocaleString()}
@@ -292,7 +292,7 @@ export default function UserProfilePage() {
                 {recentEntries.length > 0 && (
                   <section className="wikios-profile-section">
                     <h2 className="wikios-profile-section-title">
-                      <Hash size={16} /> Recent Activity
+                      <Hash className="h-4 w-4" /> Recent Activity
                     </h2>
                     <div className="wikios-profile-activity">
                       {recentEntries.slice(0, 7).map((e, i) => (

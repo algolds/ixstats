@@ -5,7 +5,12 @@
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import { MessageSquare, Clock, ArrowRight, X } from "lucide-react";
+import {
+  ChatBubble as MessageSquare,
+  Clock,
+  ArrowRight,
+  Xmark as X,
+} from "iconoir-react";
 
 interface StashedThreadItem {
   id: string;
@@ -30,12 +35,12 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
             <Link href={withBasePath(item.pageSlug)} className="wikios-stash-item-link">
               <div className="wikios-stash-item-info">
                 <span className="wikios-stash-item-title flex items-center gap-1.5">
-                  <MessageSquare size={13} className="shrink-0 text-orange-500" />
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
                   {cleanTitle}
                 </span>
                 <div className="wikios-stash-item-meta">
                   <span>
-                    <Clock size={10} />{" "}
+                    <Clock className="h-2.5 w-2.5 inline mr-1" />{" "}
                     {new Date(item.savedAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
@@ -44,7 +49,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                   </span>
                 </div>
               </div>
-              <ArrowRight size={14} className="wikios-stash-item-arrow" />
+              <ArrowRight className="h-3.5 w-3.5 wikios-stash-item-arrow" />
             </Link>
             <button
               type="button"
@@ -55,7 +60,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
               className="wikios-stash-item-remove"
               title="Remove from stash"
             >
-              <X size={12} />
+              <X className="h-3 w-3" />
             </button>
           </div>
         );

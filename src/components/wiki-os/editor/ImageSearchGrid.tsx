@@ -6,16 +6,16 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
   Search,
-  Loader2,
-  X,
-  ExternalLink,
+  SystemRestart as Loader2,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
   Copy,
   Check,
-  Image as ImageIcon,
+  MediaImage as ImageIcon,
   Globe,
   Database,
   ZoomIn,
-} from "lucide-react";
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -111,7 +111,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
             }}
             className={cn("wikios-imgs-tab", tab === "ixwiki" && "wikios-imgs-tab-active")}
           >
-            <Database size={13} /> IxWiki
+            <Database className="h-3.5 w-3.5" /> IxWiki
           </button>
           <button
             onClick={() => {
@@ -120,11 +120,11 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
             }}
             className={cn("wikios-imgs-tab", tab === "commons" && "wikios-imgs-tab-active")}
           >
-            <Globe size={13} /> Commons
+            <Globe className="h-3.5 w-3.5" /> Commons
           </button>
         </div>
         <div className="wikios-imgs-search">
-          <Search size={14} />
+          <Search className="h-3.5 w-3.5" />
           <input
             type="text"
             value={query}
@@ -142,7 +142,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
               }}
               className="wikios-imgs-search-clear"
             >
-              <X size={12} />
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
@@ -159,7 +159,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
       {/* States */}
       {isLoading && debouncedQuery.length >= 2 && (
         <div className="wikios-imgs-state">
-          <Loader2 size={24} className="animate-spin" />
+          <Loader2 className="h-6 w-6 animate-spin" />
           <span>Searching {tab === "ixwiki" ? "IxWiki" : "Wikimedia Commons"}...</span>
         </div>
       )}
@@ -167,7 +167,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
       {debouncedQuery.length < 2 && (
         <div className="wikios-imgs-state wikios-imgs-empty-state">
           <div className="wikios-imgs-empty-icon">
-            <ImageIcon size={36} />
+            <ImageIcon className="h-9 w-9" />
           </div>
           <h3>Search for images</h3>
           <p>
@@ -179,7 +179,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
 
       {!isLoading && debouncedQuery.length >= 2 && results.length === 0 && (
         <div className="wikios-imgs-state">
-          <ImageIcon size={24} className="opacity-30" />
+          <ImageIcon className="h-6 w-6 opacity-30" />
           <span>No images found for &ldquo;{debouncedQuery}&rdquo;</span>
         </div>
       )}
@@ -216,7 +216,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                     referrerPolicy="no-referrer"
                   />
                   <div className="wikios-imgs-card-overlay">
-                    <ZoomIn size={16} />
+                    <ZoomIn className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="wikios-imgs-card-footer">
@@ -233,9 +233,9 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                       title="Copy wikitext"
                     >
                       {copiedId === img.url ? (
-                        <Check size={11} className="text-green-400" />
+                        <Check className="h-3 w-3 text-green-400" />
                       ) : (
-                        <Copy size={11} />
+                        <Copy className="h-3 w-3" />
                       )}
                     </button>
                     <a
@@ -246,7 +246,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                       className="wikios-imgs-card-btn"
                       title="Open full size"
                     >
-                      <ExternalLink size={11} />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
         {!compact && expandedImage && (
           <div className="wikios-imgs-detail">
             <button onClick={() => setExpandedImage(null)} className="wikios-imgs-detail-close">
-              <X size={14} />
+              <X className="h-3.5 w-3.5" />
             </button>
             <div className="wikios-imgs-detail-preview">
               <img src={expandedImage.url} alt={expandedImage.title} referrerPolicy="no-referrer" />
@@ -281,11 +281,11 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                 >
                   {copiedId === expandedImage.url ? (
                     <>
-                      <Check size={12} /> Copied!
+                      <Check className="h-3 w-3" /> Copied!
                     </>
                   ) : (
                     <>
-                      <Copy size={12} /> Copy wikitext
+                      <Copy className="h-3 w-3" /> Copy wikitext
                     </>
                   )}
                 </button>
@@ -295,7 +295,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                   rel="noopener noreferrer"
                   className="wikios-imgs-detail-btn wikios-imgs-detail-btn-secondary"
                 >
-                  <ExternalLink size={12} /> View full size
+                  <ExternalLink className="h-3 w-3" /> View full size
                 </a>
               </div>
             </div>

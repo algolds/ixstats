@@ -1,10 +1,8 @@
 // src/components/wiki-os/reader/hero/index.ts
 
 export * from "./types";
+export * from "./FeaturedImageRefraction";
 export { WikiHeroMaster } from "./WikiHeroMaster";
 export { WikiHeroDevSwitcher } from "./WikiHeroDevSwitcher";
-export { SystemCommandDockHero } from "./SystemCommandDockHero";
-export { TypographicMastheadHero } from "./TypographicMastheadHero";
-export { DynamicHaloHubHero } from "./DynamicHaloHubHero";
-export { AsymmetricSplitHorizonHero } from "./AsymmetricSplitHorizonHero";
+export { EditorialMastheadHero } from "./EditorialMastheadHero";
 export { SculptedEmblemHero } from "./SculptedEmblemHero";

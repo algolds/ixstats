@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -57,17 +57,6 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     setSelectedIndex(0);
   }, [items.length]);
 
-  // Global Cmd+K listener
-  useEffect(() => {
-    const handleGlobal = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        if (open) onClose();
-      }
-    };
-    window.addEventListener("keydown", handleGlobal);
-    return () => window.removeEventListener("keydown", handleGlobal);
-  }, [open, onClose]);
 
   const navigate = useCallback(
     (title: string) => {

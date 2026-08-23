@@ -4,7 +4,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Highlighter, Trash2, ArrowUpRight, MessageSquare, X } from "lucide-react";
+import {
+  DesignPencil as Highlighter,
+  Trash as Trash2,
+  ArrowUpRight,
+  ChatBubble as MessageSquare,
+  Xmark as X,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";

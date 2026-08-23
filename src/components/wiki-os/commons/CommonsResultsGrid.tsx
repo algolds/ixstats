@@ -1,6 +1,6 @@
 "use client";
 
-import { ZoomIn } from "lucide-react";
+import { ZoomIn } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 

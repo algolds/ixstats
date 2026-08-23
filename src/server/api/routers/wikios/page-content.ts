@@ -139,59 +139,53 @@ export const wikiosPageContentRouter = createTRPCRouter({
       const resolvedTitle = await resolveRedirect(rawTitle);
 
       // Fast-path: Check PostgreSQL Native Article Repository (<2ms)
+      // Only serve if pre-compiled full HTML is present; otherwise fall through to MediaWiki parse to preserve infoboxes & templates.
       const nativeArticle = await ArticleRepository.findBySlug(resolvedTitle, "ixwiki").catch(() => null);
-      if (nativeArticle) {
-        if (!nativeArticle.contentHtml && nativeArticle.wikitext) {
-          const { parseWikitextToHtml } = await import("~/lib/wiki-os/transformers/wikitext-parser");
-          nativeArticle.contentHtml = parseWikitextToHtml(nativeArticle.wikitext, "ixwiki");
+      if (nativeArticle && nativeArticle.contentHtml && nativeArticle.contentHtml.trim() !== "") {
+        const transformed = transformArticleHtml(stripConflictingStyles(nativeArticle.contentHtml), "", "ixwiki");
+
+        const templateKeys = extractTemplateKeys(transformed.contentHtml);
+        let resolvedMap: Map<string, ResolvedTemplate> | undefined;
+        try {
+          const myCountryId = await resolveActiveCountryId(ctx);
+          resolvedMap = await resolveTemplates(templateKeys, {
+            activeCountryId: myCountryId,
+          });
+        } catch {
+          resolvedMap = undefined;
         }
 
-        if (nativeArticle.contentHtml) {
-          const transformed = transformArticleHtml(stripConflictingStyles(nativeArticle.contentHtml), "", "ixwiki");
+        const contentHtml = resolvedMap
+          ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
+          : transformed.contentHtml;
+        const infoboxHtml =
+          resolvedMap && transformed.infoboxHtml
+            ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
+            : transformed.infoboxHtml;
+        const noticesHtml =
+          resolvedMap && transformed.noticesHtml
+            ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
+            : transformed.noticesHtml;
 
-          const templateKeys = extractTemplateKeys(transformed.contentHtml);
-          let resolvedMap: Map<string, ResolvedTemplate> | undefined;
-          try {
-            const myCountryId = await resolveActiveCountryId(ctx);
-            resolvedMap = await resolveTemplates(templateKeys, {
-              activeCountryId: myCountryId,
-            });
-          } catch {
-            resolvedMap = undefined;
-          }
-
-          const contentHtml = resolvedMap
-            ? applyResolvedTemplates(transformed.contentHtml, resolvedMap)
-            : transformed.contentHtml;
-          const infoboxHtml =
-            resolvedMap && transformed.infoboxHtml
-              ? applyResolvedTemplates(transformed.infoboxHtml, resolvedMap)
-              : transformed.infoboxHtml;
-          const noticesHtml =
-            resolvedMap && transformed.noticesHtml
-              ? applyResolvedTemplates(transformed.noticesHtml, resolvedMap)
-              : transformed.noticesHtml;
-
-          return {
-            contentHtml,
-            infoboxHtml,
-            noticesHtml,
-            toc: transformed.toc,
-            title: nativeArticle.title,
-            categories: [] as string[],
-            lastModified: nativeArticle.updatedAt.toISOString(),
-            isRedirect: false,
-            redirectTarget: null,
-            resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
-            wikiSource: "ixwiki" as const,
-            authorInfo: {
-              creator: nativeArticle.authorId ? "Registered User" : null,
-              createdAt: nativeArticle.createdAt.toISOString(),
-              lastEditor: nativeArticle.lastEditorId ? "Registered User" : null,
-              lastEditedAt: nativeArticle.updatedAt.toISOString(),
-            } as ArticleAuthorInfo,
-          };
-        }
+        return {
+          contentHtml,
+          infoboxHtml,
+          noticesHtml,
+          toc: transformed.toc,
+          title: nativeArticle.title,
+          categories: [] as string[],
+          lastModified: nativeArticle.updatedAt.toISOString(),
+          isRedirect: false,
+          redirectTarget: null,
+          resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
+          wikiSource: "ixwiki" as const,
+          authorInfo: {
+            creator: nativeArticle.authorId ? "Registered User" : null,
+            createdAt: nativeArticle.createdAt.toISOString(),
+            lastEditor: nativeArticle.lastEditorId ? "Registered User" : null,
+            lastEditedAt: nativeArticle.updatedAt.toISOString(),
+          } as ArticleAuthorInfo,
+        };
       }
 
       // Fast-path: Check Postgres shadow HTML cache (<3ms)

@@ -46,21 +46,28 @@ export default function WikiOSArticlePage() {
   }, [isMarginParam, setActiveModal]);
 
 
-  // Redirect Category: pages to the category browser
+  // Redirect Category: pages or /wiki/categories to the category browser
   useEffect(() => {
     if (title.startsWith("Category:")) {
       const catName = title.slice("Category:".length);
       router.replace(
         withBasePath(`/wiki/categories/${encodeURIComponent(catName.replace(/ /g, "_"))}`)
       );
+    } else if (title.toLowerCase() === "categories") {
+      router.replace(withBasePath("/wiki/categories"));
     }
   }, [title, router]);
+
+  const isCategoryOrMain =
+    isMainPage ||
+    title.startsWith("Category:") ||
+    title.toLowerCase() === "categories";
 
   // Fetch article HTML
   const { data, isLoading, error, refetch } = api.wikios.getArticleHtml.useQuery(
     { title },
     {
-      enabled: !!title && !isMainPage,
+      enabled: !!title && !isCategoryOrMain,
       staleTime: 10 * 60 * 1000,
     }
   );
@@ -173,12 +180,20 @@ export default function WikiOSArticlePage() {
                           "creator" in data.authorInfo
                             ? data.authorInfo.creator ?? null
                             : (data.authorInfo as { author?: string | null }).author ?? null,
+                        creatorAvatar:
+                          "creatorAvatar" in data.authorInfo
+                            ? (data.authorInfo as { creatorAvatar?: string | null }).creatorAvatar ?? null
+                            : null,
                         createdAt:
                           "createdAt" in data.authorInfo
                             ? data.authorInfo.createdAt ?? null
                             : (data.authorInfo as { createdTimestamp?: string | null })
                                 .createdTimestamp ?? null,
                         lastEditor: data.authorInfo.lastEditor ?? null,
+                        lastEditorAvatar:
+                          "lastEditorAvatar" in data.authorInfo
+                            ? (data.authorInfo as { lastEditorAvatar?: string | null }).lastEditorAvatar ?? null
+                            : null,
                         lastEditedAt:
                           "lastEditedAt" in data.authorInfo
                             ? data.authorInfo.lastEditedAt ?? null

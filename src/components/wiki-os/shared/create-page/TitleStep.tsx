@@ -1,5 +1,10 @@
 import React from "react";
-import { PenTool, ShieldAlert, ChevronRight, X } from "lucide-react";
+import {
+  EditPencil as PenTool,
+  ShieldAlert,
+  NavArrowRight as ChevronRight,
+  Xmark as X,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";

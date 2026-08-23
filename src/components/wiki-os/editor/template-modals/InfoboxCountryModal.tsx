@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Flag } from "lucide-react";
+import { Xmark as X, TriangleFlag as Flag } from "iconoir-react";
 import { Portal, type BaseModalProps } from "./types";
 
 export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProps) {

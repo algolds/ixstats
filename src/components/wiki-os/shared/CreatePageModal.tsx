@@ -2,7 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, ChevronRight, ChevronLeft, Plus, PenTool } from "lucide-react";
+import {
+  Xmark as X,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  Plus,
+  EditPencil as PenTool,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { generateWikitext } from "./create-page/WikitextTemplates";
@@ -198,7 +204,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
             onClick={onClose}
             className="hover:bg-foreground/[0.05] rounded-lg p-1 text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
           >
-            <X size={18} />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
@@ -249,7 +255,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
                 onClick={handleBack}
                 className="flex items-center gap-1 text-xs text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft className="h-3.5 w-3.5" />
                 <span>Back</span>
               </button>
             )}
@@ -275,13 +281,13 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
                 <span>Checking...</span>
               ) : step === 3 || (step === 2 && pageType === "blank") ? (
                 <>
-                  <Plus size={14} />
+                  <Plus className="h-3.5 w-3.5" />
                   <span>Create Page</span>
                 </>
               ) : (
                 <>
                   <span>Next</span>
-                  <ChevronRight size={14} />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </>
               )}
             </button>

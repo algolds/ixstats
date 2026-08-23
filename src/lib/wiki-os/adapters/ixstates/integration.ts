@@ -5,8 +5,18 @@
  * Behavior preserved exactly.
  */
 
-import { Clock, Shield, Landmark, Globe2, Scroll, Users, BookOpen } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  Clock,
+  Shield,
+  Bank as Landmark,
+  Globe as Globe2,
+  OpenBook as Scroll,
+  Group as Users,
+  OpenBook as BookOpen,
+} from "iconoir-react";
+import type { ComponentType, SVGProps } from "react";
+
+export type WikiSectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 // ─── Wiki intro parsing ──────────────────────────────────────────────────────
 
@@ -112,7 +122,7 @@ export function cleanWikiSectionContent(rawContent: string | null): string | nul
 export const WIKI_SECTION_TYPES: Array<{
   pattern: RegExp;
   label: string;
-  icon: LucideIcon;
+  icon: WikiSectionIcon;
   color: string;
 }> = [
   {
@@ -165,7 +175,7 @@ export const WIKI_SECTION_TYPES: Array<{
  */
 export function classifyWikiSection(title: string): {
   label: string;
-  icon: LucideIcon;
+  icon: WikiSectionIcon;
   color: string;
 } {
   for (const type of WIKI_SECTION_TYPES) {

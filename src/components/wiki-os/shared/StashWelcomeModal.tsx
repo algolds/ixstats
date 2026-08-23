@@ -4,21 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X,
+  Xmark as X,
   Bookmark,
-  Highlighter,
+  DesignPencil as Highlighter,
   Globe,
-  MessageSquare,
-  BookOpen,
-  Sparkles,
-  Info,
+  ChatBubble as MessageSquare,
+  OpenBook as BookOpen,
+  Sparks as Sparkles,
+  InfoCircle as Info,
   Clock,
   HelpCircle,
   Eye,
-  FolderOpen,
+  Folder as FolderOpen,
   Plus,
-  StickyNote,
-} from "lucide-react";
+  Page as StickyNote,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { WIKIOS_VERSION, STASHES_WELCOME_VERSION } from "~/lib/buildVersion";
 

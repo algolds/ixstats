@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, Building, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import {
+  Xmark as X,
+  Search,
+  Building,
+  SystemRestart as Loader2,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Portal, type BaseModalProps } from "./types";
 

@@ -46,17 +46,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       const { query, limit, wikiSource } = input;
 
       if (wikiSource === "ixwiki") {
-        // Fast-path: Native PostgreSQL Spotlight Search (<2ms)
-        const nativeResults = await NativeSearchService.spotlightSearch(query, "ixwiki", limit);
-        if (nativeResults.length > 0) {
-          return nativeResults.map((r) => ({
-            title: r.title,
-            pageId: 0,
-            length: 0,
-            source: "ixwiki" as const,
-          }));
-        }
-
+        // Direct MariaDB High-Speed SQL Search (<2ms)
         const results = await searchPages(query, limit, "ixwiki");
         return results.map((r) => ({
           ...r,
@@ -248,7 +238,6 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // Direct MySQL FULLTEXT search — ~100ms vs ~500ms via API
       const result = await fullTextSearch(input.query, input.limit, input.offset, input.namespace);
       return {
         results: result.results.map((r) => ({
@@ -261,6 +250,7 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
           size: r.size,
           wordCount: r.wordCount,
           timestamp: r.timestamp,
+          thumbnail: r.thumbnail ?? null,
         })),
         totalHits: result.totalHits,
         hasMore: result.results.length >= input.limit,
@@ -461,28 +451,47 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
     }),
 
   /**
-   * Search wiki categories by prefix.
+   * Search wiki categories by prefix or letter.
    */
   searchCategories: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(200),
-        limit: z.number().min(1).max(50).default(20),
+        query: z.string().max(200).optional().default(""),
+        from: z.string().max(200).optional(),
+        limit: z.number().min(1).max(100).default(30),
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
     .query(async ({ input }) => {
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
-      const url = `${baseUrl}?action=query&list=allcategories&acprefix=${encodeURIComponent(
-        input.query.replace(/ /g, "_")
-      )}&aclimit=${input.limit}&acprop=size&format=json`;
+      const params = new URLSearchParams({
+        action: "query",
+        list: "allcategories",
+        aclimit: String(input.limit),
+        acprop: "size",
+        format: "json",
+      });
 
-      const res = await fetch(url, { headers: { "User-Agent": DEFAULT_USER_AGENT } });
+      if (input.query && input.query.trim().length > 0) {
+        params.set("acprefix", input.query.trim().replace(/ /g, "_"));
+      } else if (input.from && input.from.trim().length > 0) {
+        params.set("acfrom", input.from.trim().replace(/ /g, "_"));
+      }
+
+      const res = await fetch(`${baseUrl}?${params.toString()}`, {
+        headers: { "User-Agent": DEFAULT_USER_AGENT },
+      });
       if (!res.ok) return [];
       const data = (await res.json()) as {
         query?: {
-          allcategories?: Array<{ "*": string; size: number; pages: number; files: number; subcats: number }>;
+          allcategories?: Array<{
+            "*": string;
+            size?: number;
+            pages?: number;
+            files?: number;
+            subcats?: number;
+          }>;
         };
       };
 
@@ -490,10 +499,10 @@ export const wikiosSearchCategoriesRouter = createTRPCRouter({
         data.query?.allcategories?.map((cat) => ({
           name: cat["*"],
           title: `Category:${cat["*"]}`,
-          size: cat.size,
-          pages: cat.pages,
-          files: cat.files,
-          subcats: cat.subcats,
+          size: cat.size ?? 0,
+          pages: cat.pages ?? 0,
+          files: cat.files ?? 0,
+          subcats: cat.subcats ?? 0,
         })) ?? []
       );
     }),

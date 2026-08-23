@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Download } from "lucide-react";
+import { SystemRestart as Loader2, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";

@@ -8,14 +8,14 @@ import { createPortal } from "react-dom";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
   ZoomIn,
-  Loader2,
-  X,
+  SystemRestart as Loader2,
+  Xmark as X,
   Copy,
   Check,
-  ImageIcon,
+  MediaImage as ImageIcon,
   Download,
-  Trash2,
-} from "lucide-react";
+  Trash as Trash2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { CommonsImage } from "./types";
@@ -92,7 +92,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                 className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-black/60 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
                 title="Remove from stash"
               >
-                <X size={12} />
+                <X className="h-3 w-3" />
               </button>
             </div>
           );

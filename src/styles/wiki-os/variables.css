@@ -1,6 +1,6 @@
 /* ===================================
-   WIKIOS DESIGN SYSTEM
-   Vector skin spirit + IxStats glass physics
+   WIKIOS DESIGN SYSTEM (APPLE & EMIL DESIGN ENGINEERING SPEC)
+   Vector skin spirit + IxStates Facet Glass Physics
    =================================== */
 
 /* ---------------------------------------------------------------------------
@@ -10,56 +10,98 @@
   /* WikiOS color palette — scholarly, neutral base */
   --wikios-bg: #0f1114;
   --wikios-surface: #16181d;
+  --wikios-surface-hover: #1c1f26;
   --wikios-border: rgba(255, 255, 255, 0.08);
+  --wikios-border-subtle: rgba(255, 255, 255, 0.05);
+  --wikios-border-strong: rgba(255, 255, 255, 0.15);
+  
   --wikios-text: #e4e4e7;
   --wikios-text-muted: #a1a1aa;
   --wikios-text-dim: #71717a;
+  
   --wikios-accent: #3b82f6;
   --wikios-accent-hover: #60a5fa;
+  --wikios-accent-subtle: rgba(59, 130, 246, 0.12);
+  
   --wikios-link: #6890f0;
   --wikios-link-visited: #a37cf0;
   --wikios-link-hover: #8ab4f8;
   --wikios-red: #ef4444;
   --wikios-green: #22c55e;
-
+  --wikios-amber: #f59e0b;
+  --wikios-purple: #a855f7;
 
   /* Traditional Wikipedia body link colors (Dark Mode accessible) */
   --wikios-body-link: #6890f0;
   --wikios-body-link-visited: #a37cf0;
   --wikios-body-link-hover: #8ab4f8;
 
+  /* Glassmorphism & Elevation */
+  --wikios-card-bg: rgba(22, 24, 29, 0.72);
+  --wikios-card-border: rgba(255, 255, 255, 0.08);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  --wikios-popover-bg: rgba(15, 17, 20, 0.95);
+  --wikios-popover-border: rgba(255, 255, 255, 0.12);
+  --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
   /* Layout dimensions */
   --wikios-content-max-width: 960px;
   --wikios-infobox-width: 320px;
   --wikios-toc-width: 200px;
 
-  /* Typography */
+  /* Typography (Apple Human Interface Guidelines) */
   --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --wikios-font-ui: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
   --wikios-font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+
+  /* Motion & Easing Curves (Emil Kowalski Animation Framework) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 160ms;
+  --duration-normal: 220ms;
+  --duration-drawer: 320ms;
 }
 
 /* Light mode overrides */
 [data-theme="light"] {
   --wikios-bg: #fafafa;
   --wikios-surface: #ffffff;
-  --wikios-border: rgba(0, 0, 0, 0.1);
+  --wikios-surface-hover: #f4f4f5;
+  --wikios-border: rgba(0, 0, 0, 0.08);
+  --wikios-border-subtle: rgba(0, 0, 0, 0.04);
+  --wikios-border-strong: rgba(0, 0, 0, 0.16);
+  
   --wikios-text: #18181b;
   --wikios-text-muted: #52525b;
   --wikios-text-dim: #a1a1aa;
+  
   --wikios-accent: #2563eb;
   --wikios-accent-hover: #3b82f6;
+  --wikios-accent-subtle: rgba(37, 99, 235, 0.08);
+  
   --wikios-link: #36c;
   --wikios-link-visited: #5a3696;
   --wikios-link-hover: #447ff5;
   --wikios-red: #dc2626;
   --wikios-green: #16a34a;
-
+  --wikios-amber: #d97706;
+  --wikios-purple: #9333ea;
 
   /* Traditional Wikipedia body link colors (Light Mode) */
   --wikios-body-link: #36c;
   --wikios-body-link-visited: #5a3696;
   --wikios-body-link-hover: #447ff5;
+
+  /* Glassmorphism & Elevation */
+  --wikios-card-bg: rgba(255, 255, 255, 0.72);
+  --wikios-card-border: rgba(0, 0, 0, 0.08);
+  --wikios-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  --wikios-popover-bg: rgba(255, 255, 255, 0.96);
+  --wikios-popover-border: rgba(0, 0, 0, 0.1);
+  --wikios-popover-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 

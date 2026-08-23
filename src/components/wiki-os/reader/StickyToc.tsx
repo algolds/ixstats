@@ -2,7 +2,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Xmark as X,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
@@ -219,7 +224,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Previous match"
                 type="button"
               >
-                <ChevronUp size={12} />
+                <ChevronUp className="h-3 w-3" />
               </button>
               <button
                 onClick={handleNext}
@@ -228,7 +233,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Next match"
                 type="button"
               >
-                <ChevronDown size={12} />
+                <ChevronDown className="h-3 w-3" />
               </button>
               <button
                 onClick={handleCloseSearch}
@@ -236,7 +241,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Close search"
                 type="button"
               >
-                <X size={12} />
+                <X className="h-3 w-3" />
               </button>
             </div>
           </div>
@@ -249,7 +254,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
               title="Find on page"
               type="button"
             >
-              <Search size={12} />
+              <Search className="h-3 w-3" />
             </button>
           </>
         )}

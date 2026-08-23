@@ -1,14 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  Check,
+  ControlSlider as SlidersHorizontal,
+  Sparks as Sparkles,
+  OpenBook as BookOpen,
+  Compass,
+} from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Layers, Check, Sparkles, SlidersHorizontal, ChevronRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { WikiHeroVariant } from "./types";
+import {
+  REFRACTION_MODES,
+  type RefractionMode,
+} from "./FeaturedImageRefraction";
 
 interface WikiHeroDevSwitcherProps {
   currentVariant: WikiHeroVariant;
   onSelectVariant: (variant: WikiHeroVariant) => void;
+  currentRefraction?: RefractionMode;
+  onSelectRefraction?: (mode: RefractionMode) => void;
 }
 
 const VARIANTS: Array<{
@@ -17,90 +29,90 @@ const VARIANTS: Array<{
   name: string;
   badge: string;
   desc: string;
+  icon: React.ComponentType<{ className?: string }>;
 }> = [
   {
-    id: "command-dock",
+    id: "editorial-masthead",
     number: "1",
-    name: "Command Dock",
-    badge: "macOS Dock",
-    desc: "Unified Liquid Glass Masthead Dock with search prompt & live telemetry",
-  },
-  {
-    id: "typographic",
-    number: "2",
-    name: "Typographic",
-    badge: "Broadsheet",
-    desc: "Pure editorial linework, drop-cap monogram & running headers",
-  },
-  {
-    id: "halo-hub",
-    number: "3",
-    name: "Halo Hub",
-    badge: "Dynamic Island",
-    desc: "Obsidian pill that springs open into a command deck on hover/tap",
-  },
-  {
-    id: "split-horizon",
-    number: "4",
-    name: "Split Horizon",
-    badge: "50/50 Studio",
-    desc: "Asymmetric brand manifesto + 3D pointer-tilt Featured Lore card",
+    name: "Editorial Masthead",
+    badge: "Archival",
+    desc: "Archival linework, search, quick-launch chips, 4 stats tiles, and featured article",
+    icon: BookOpen,
   },
   {
     id: "sculpted-emblem",
-    number: "5",
+    number: "2",
     name: "Sculpted Emblem",
     badge: "Material",
-    desc: "Borderless titanium vector with cursor-following radial spotlight",
+    desc: "Specular spotlight, sculpted emblem, quick-launch chips, 4 stats tiles, and featured article",
+    icon: Sparkles,
   },
 ];
 
 export function WikiHeroDevSwitcher({
   currentVariant,
   onSelectVariant,
+  currentRefraction = "ambient-underglow",
+  onSelectRefraction,
 }: WikiHeroDevSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Keyboard shortcut: pressing Shift + 1..5 switches hero
+  // Keyboard shortcut: Shift + 1/2 for hero, Shift + R to cycle refraction modes
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      if (e.shiftKey && ["1", "2", "3", "4", "5"].includes(e.key)) {
-        const index = parseInt(e.key, 10) - 1;
-        if (VARIANTS[index]) {
-          onSelectVariant(VARIANTS[index].id);
+      if (e.shiftKey && (e.key === "1" || e.key === "!" || e.code === "Digit1")) {
+        if (VARIANTS[0]) {
+          onSelectVariant(VARIANTS[0].id);
+        }
+      } else if (e.shiftKey && (e.key === "2" || e.key === "@" || e.code === "Digit2")) {
+        if (VARIANTS[1]) {
+          onSelectVariant(VARIANTS[1].id);
+        }
+      } else if (e.shiftKey && (e.key === "R" || e.key === "r" || e.code === "KeyR")) {
+        e.preventDefault();
+        if (onSelectRefraction) {
+          const currentIndex = REFRACTION_MODES.findIndex((m) => m.id === currentRefraction);
+          const nextIndex = (currentIndex + 1) % REFRACTION_MODES.length;
+          onSelectRefraction(REFRACTION_MODES[nextIndex].id);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onSelectVariant]);
+  }, [onSelectVariant, onSelectRefraction, currentRefraction]);
 
   const activeOption = VARIANTS.find((v) => v.id === currentVariant) || VARIANTS[0];
+  const activeRefraction =
+    REFRACTION_MODES.find((m) => m.id === currentRefraction) || REFRACTION_MODES[0];
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-4 flex flex-col items-center select-none">
+    <div className="w-full max-w-4xl mx-auto mb-3 sm:mb-4 flex flex-col items-center select-none">
       {/* ── Compact Dev Bar Header & Trigger ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap justify-center">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
+          data-cuelume-press="droplet"
+          data-cuelume-hover="tick"
           className={cn(
             "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer shadow-xs",
             "border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 dark:text-blue-400",
-            "backdrop-blur-md transition-all active:scale-95"
+            "backdrop-blur-md transition-colors duration-150 active:scale-95"
           )}
-          title="Toggle Header Layout Direction Switcher (Shift+1..5)"
+          title="Toggle Design Lab Controls (Shift+1/2, Shift+R)"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span className="font-semibold">Dev Header Lab:</span>
+          <span className="font-semibold">Design Lab:</span>
           <span className="font-bold text-foreground underline decoration-blue-500/50 underline-offset-2">
             {activeOption.name}
           </span>
-          <span className="text-[10px] text-muted-foreground font-mono ml-1">
-            [{isOpen ? "Hide Lab" : "Explore All 5"}]
+          <span className="opacity-40">·</span>
+          <span className="text-amber-500 font-semibold">{activeRefraction.name}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">
+            [{isOpen ? "Close Lab" : "Dev Controls"}]
           </span>
         </button>
       </div>
@@ -117,57 +129,106 @@ export function WikiHeroDevSwitcher({
           >
             <div
               className={cn(
-                "w-full rounded-2xl p-2 border border-white/20 dark:border-white/10",
-                "bg-white/80 dark:bg-zinc-950/90 backdrop-blur-2xl shadow-xl",
-                "grid grid-cols-1 sm:grid-cols-5 gap-1.5"
+                "w-full max-w-3xl mx-auto rounded-2xl p-3 sm:p-4 border border-white/20 dark:border-white/10",
+                "bg-white/85 dark:bg-zinc-950/90 backdrop-blur-2xl shadow-xl flex flex-col gap-4"
               )}
             >
-              {VARIANTS.map((variant) => {
-                const isActive = currentVariant === variant.id;
-                return (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    onClick={() => onSelectVariant(variant.id)}
-                    className={cn(
-                      "relative flex flex-col items-start text-left p-2.5 rounded-xl cursor-pointer transition-all text-xs",
-                      isActive
-                        ? "text-foreground font-semibold shadow-xs"
-                        : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
-                    )}
-                  >
-                    {/* Active Pill Highlight */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeHeroPill"
-                        className="absolute inset-0 rounded-xl bg-blue-500/15 border border-blue-500/30 dark:bg-blue-500/20"
-                        transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                      />
-                    )}
-
-                    <div className="relative z-10 flex items-center justify-between w-full mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground/10 text-[9px] font-mono font-bold">
-                          {variant.number}
+              {/* Section 1: Hero Layouts */}
+              <div>
+                <div className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-2 flex items-center justify-between">
+                  <span>1. Header Layout Direction</span>
+                  <span className="text-[10px] font-normal lowercase">Shift + 1 / Shift + 2</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {VARIANTS.map((variant) => {
+                    const isActive = currentVariant === variant.id;
+                    const Icon = variant.icon;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => onSelectVariant(variant.id)}
+                        data-cuelume-press="page"
+                        data-cuelume-hover="tick"
+                        className={cn(
+                          "relative flex flex-col items-start text-left p-2.5 rounded-xl cursor-pointer transition-colors text-xs active:scale-[0.98]",
+                          isActive
+                            ? "text-foreground font-semibold shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+                        )}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeHeroPill"
+                            className="absolute inset-0 rounded-xl bg-blue-500/15 border border-blue-500/30 dark:bg-blue-500/20"
+                            transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                          />
+                        )}
+                        <div className="relative z-10 flex items-center justify-between w-full mb-0.5">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                            <Icon className="h-3.5 w-3.5 text-blue-500" />
+                            <span>{variant.name}</span>
+                          </div>
+                          {isActive && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                        </div>
+                        <span className="relative z-10 text-[10.5px] text-muted-foreground leading-snug">
+                          {variant.desc}
                         </span>
-                        <span className="font-bold text-[11px] truncate">
-                          {variant.name}
-                        </span>
-                      </div>
-                      {isActive && (
-                        <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                      )}
-                    </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                    <span className="relative z-10 text-[10px] text-muted-foreground line-clamp-2 leading-tight">
-                      {variant.desc}
+              {/* Section 2: Refraction Directions */}
+              {onSelectRefraction && (
+                <div className="border-t border-black/5 dark:border-white/10 pt-3">
+                  <div className="text-[11px] font-bold tracking-wider uppercase text-amber-500 mb-2 flex items-center justify-between">
+                    <span>2. Glass & Backlight Direction</span>
+                    <span className="text-[10px] font-normal lowercase text-muted-foreground">
+                      Press Shift + R to toggle
                     </span>
-                  </button>
-                );
-              })}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {REFRACTION_MODES.map((mode) => {
+                      const isActive = currentRefraction === mode.id;
+                      return (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => onSelectRefraction(mode.id)}
+                          data-cuelume-press="sparkle"
+                          data-cuelume-hover="tick"
+                          className={cn(
+                            "relative flex flex-col items-start text-left p-2.5 rounded-xl cursor-pointer transition-colors text-xs active:scale-[0.98]",
+                            isActive
+                              ? "text-foreground font-semibold shadow-xs"
+                              : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+                          )}
+                        >
+                          {isActive && (
+                            <motion.div
+                              layoutId="activeRefractionPill"
+                              className="absolute inset-0 rounded-xl bg-amber-500/15 border border-amber-500/30 dark:bg-amber-500/20"
+                              transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                            />
+                          )}
+                          <div className="relative z-10 flex items-center justify-between w-full mb-0.5">
+                            <span className="font-bold text-xs text-foreground">{mode.name}</span>
+                            {isActive && <Check className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                          </div>
+                          <span className="relative z-10 text-[10.5px] text-muted-foreground leading-snug">
+                            {mode.desc}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="text-center text-[10px] text-muted-foreground mt-1.5 font-mono">
-              Tip: Press <kbd className="px-1 py-0.5 rounded bg-muted">Shift + 1..5</kbd> anywhere on this page to quickly cycle layouts.
+            <div className="text-center text-[10px] text-muted-foreground mt-2">
+              Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-muted">Shift + 1</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-muted">Shift + 2</kbd> for layout, <kbd className="px-1.5 py-0.5 rounded bg-muted">Shift + R</kbd> for refraction.
             </div>
           </motion.div>
         )}

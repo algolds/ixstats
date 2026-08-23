@@ -8,17 +8,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  MessageSquare,
-  Highlighter,
+  ChatBubble as MessageSquare,
+  DesignPencil as Highlighter,
   Bookmark,
-  X,
-  Maximize2,
-  Minimize2,
-  RefreshCw,
+  Xmark as X,
+  Expand as Maximize2,
+  Collapse as Minimize2,
+  RefreshDouble as RefreshCw,
   Clock,
-  Link2,
+  Link as Link2,
   HelpCircle,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { api } from "~/trpc/react";

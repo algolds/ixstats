@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "iconoir-react";
 
 export interface StashImageCardProps {
   imgInfo: any;

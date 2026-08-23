@@ -6,12 +6,12 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  FileText,
-  Save,
+  Page as FileText,
+  FloppyDisk as Save,
   Bookmark,
-  X,
-  Loader2,
-} from "lucide-react";
+  Xmark as X,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { CANVAS_VERSION } from "~/lib/buildVersion";
 import {
@@ -66,7 +66,7 @@ export function WikiEditorHeader({
       <div className={isVisual ? "wikios-ve-titlebar-left" : "wikios-editor-titlebar-left"}>
         {isVisual ? (
           <>
-            <FileText size={16} className="text-[var(--wikios-accent)]" />
+            <FileText className="h-4 w-4 text-[var(--wikios-accent)]" />
             <span className="wikios-ve-title-text">{title}</span>
             <span className="wikios-ve-badge">Canvas v{CANVAS_VERSION}</span>
             {wordCount !== undefined && (

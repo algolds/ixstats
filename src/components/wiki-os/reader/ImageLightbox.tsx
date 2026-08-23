@@ -14,19 +14,19 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import {
-  X,
-  ExternalLink,
+  Xmark as X,
+  OpenNewWindow as ExternalLink,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
+  RotateCameraLeft as RotateCcw,
   Download,
-  FileImage,
-  Info,
+  MediaImage as FileImage,
+  InfoCircle as Info,
   Copy,
   Check,
   Bookmark,
-  Sparkles,
-} from "lucide-react";
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType, type MediaType } from "~/lib/wiki-os/transformers/media-theme";
 import {

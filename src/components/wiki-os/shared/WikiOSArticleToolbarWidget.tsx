@@ -5,14 +5,14 @@
 
 import Link from "next/link";
 import {
-  FileEdit,
-  MessageSquare,
+  EditPencil as FileEdit,
+  ChatBubble as MessageSquare,
   Clock,
-  Link2,
-  SunMoon,
+  Link as Link2,
+  HalfMoon as SunMoon,
   Square,
   Eye,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";

@@ -9,14 +9,14 @@ import {
   Italic,
   Underline,
   Strikethrough,
-  Superscript,
-  Subscript,
+  ArrowUp as Superscript,
+  ArrowDown as Subscript,
   List,
-  ListOrdered,
-  Quote,
-  Link2,
-  Unlink,
-  Image as ImageIcon,
+  NumberedListLeft as ListOrdered,
+  QuoteSolid as Quote,
+  Link as Link2,
+  LinkSlash as Unlink,
+  MediaImage as ImageIcon,
   Puzzle,
   Code,
   Minus,
@@ -24,17 +24,17 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Undo2,
-  Redo2,
-  RemoveFormatting,
+  Undo as Undo2,
+  Redo as Redo2,
+  Erase as RemoveFormatting,
   Table,
-  Indent,
-  Outdent,
+  ArrowRight as Indent,
+  ArrowLeft as Outdent,
   Bookmark,
-  Sparkles,
+  Sparks as Sparkles,
   Map as MapIcon,
   Settings,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { AppleSwitch } from "~/components/ui/apple-switch";
@@ -172,33 +172,33 @@ export function WikiVisualToolbar({
       <div className="wikios-ve-toolbar">
         {/* Undo / Redo */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Undo2 size={14} />} title="Undo (Ctrl+Z)" onClick={() => exec("undo")} />
-          <VEBtn icon={<Redo2 size={14} />} title="Redo (Ctrl+Y)" onClick={() => exec("redo")} />
+          <VEBtn icon={<Undo2 className="h-3.5 w-3.5" />} title="Undo (Ctrl+Z)" onClick={() => exec("undo")} />
+          <VEBtn icon={<Redo2 className="h-3.5 w-3.5" />} title="Redo (Ctrl+Y)" onClick={() => exec("redo")} />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
         {/* Text formatting */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<Bold size={14} />}
+            icon={<Bold className="h-3.5 w-3.5" />}
             title="Bold (Ctrl+B)"
             active={activeFormats.has("bold")}
             onClick={() => exec("bold")}
           />
           <VEBtn
-            icon={<Italic size={14} />}
+            icon={<Italic className="h-3.5 w-3.5" />}
             title="Italic (Ctrl+I)"
             active={activeFormats.has("italic")}
             onClick={() => exec("italic")}
           />
           <VEBtn
-            icon={<Underline size={14} />}
+            icon={<Underline className="h-3.5 w-3.5" />}
             title="Underline (Ctrl+U)"
             active={activeFormats.has("underline")}
             onClick={() => exec("underline")}
           />
           <VEBtn
-            icon={<Strikethrough size={14} />}
+            icon={<Strikethrough className="h-3.5 w-3.5" />}
             title="Strikethrough (Ctrl+Shift+X)"
             active={activeFormats.has("strikethrough")}
             onClick={() => exec("strikeThrough")}
@@ -209,19 +209,19 @@ export function WikiVisualToolbar({
         {/* Script / code */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<Superscript size={14} />}
+            icon={<Superscript className="h-3.5 w-3.5" />}
             title="Superscript"
             active={activeFormats.has("superscript")}
             onClick={() => exec("superscript")}
           />
           <VEBtn
-            icon={<Subscript size={14} />}
+            icon={<Subscript className="h-3.5 w-3.5" />}
             title="Subscript"
             active={activeFormats.has("subscript")}
             onClick={() => exec("subscript")}
           />
           <VEBtn
-            icon={<Code size={14} />}
+            icon={<Code className="h-3.5 w-3.5" />}
             title="Inline code"
             onClick={() => insertHtmlAtCursor("<code>code</code>")}
           />
@@ -230,7 +230,7 @@ export function WikiVisualToolbar({
 
         {/* Block formatting */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Type size={14} />} title="Normal paragraph" onClick={setParagraph} />
+          <VEBtn icon={<Type className="h-3.5 w-3.5" />} title="Normal paragraph" onClick={setParagraph} />
           <VEBtn
             icon={<span className="wikios-ve-heading-label">H2</span>}
             title="Section heading"
@@ -252,41 +252,41 @@ export function WikiVisualToolbar({
         {/* Lists & structure */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<List size={14} />}
+            icon={<List className="h-3.5 w-3.5" />}
             title="Bullet list"
             active={activeFormats.has("ul")}
             onClick={() => exec("insertUnorderedList")}
           />
           <VEBtn
-            icon={<ListOrdered size={14} />}
+            icon={<ListOrdered className="h-3.5 w-3.5" />}
             title="Numbered list"
             active={activeFormats.has("ol")}
             onClick={() => exec("insertOrderedList")}
           />
           <VEBtn
-            icon={<Quote size={14} />}
+            icon={<Quote className="h-3.5 w-3.5" />}
             title="Blockquote"
             onClick={() => exec("formatBlock", "blockquote")}
           />
-          <VEBtn icon={<Indent size={14} />} title="Indent" onClick={() => exec("indent")} />
-          <VEBtn icon={<Outdent size={14} />} title="Outdent" onClick={() => exec("outdent")} />
+          <VEBtn icon={<Indent className="h-3.5 w-3.5" />} title="Indent" onClick={() => exec("indent")} />
+          <VEBtn icon={<Outdent className="h-3.5 w-3.5" />} title="Outdent" onClick={() => exec("outdent")} />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
         {/* Alignment */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<AlignLeft size={14} />}
+            icon={<AlignLeft className="h-3.5 w-3.5" />}
             title="Align left"
             onClick={() => exec("justifyLeft")}
           />
           <VEBtn
-            icon={<AlignCenter size={14} />}
+            icon={<AlignCenter className="h-3.5 w-3.5" />}
             title="Align center"
             onClick={() => exec("justifyCenter")}
           />
           <VEBtn
-            icon={<AlignRight size={14} />}
+            icon={<AlignRight className="h-3.5 w-3.5" />}
             title="Align right"
             onClick={() => exec("justifyRight")}
           />
@@ -295,15 +295,15 @@ export function WikiVisualToolbar({
 
         {/* Links */}
         <div className="wikios-ve-toolbar-group">
-          <VEBtn icon={<Link2 size={14} />} title="Insert link (Ctrl+K)" onClick={insertLink} />
-          <VEBtn icon={<Unlink size={14} />} title="Remove link" onClick={removeLink} />
+          <VEBtn icon={<Link2 className="h-3.5 w-3.5" />} title="Insert link (Ctrl+K)" onClick={insertLink} />
+          <VEBtn icon={<Unlink className="h-3.5 w-3.5" />} title="Remove link" onClick={removeLink} />
         </div>
         <span className="wikios-ve-toolbar-sep" />
 
         {/* Insert objects */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<ImageIcon size={14} />}
+            icon={<ImageIcon className="h-3.5 w-3.5" />}
             title="Insert image"
             onClick={() => {
               saveSelection();
@@ -376,7 +376,7 @@ export function WikiVisualToolbar({
             </PopoverContent>
           </Popover>
 
-          <VEBtn icon={<Table size={14} />} title="Insert table" onClick={insertTable} />
+          <VEBtn icon={<Table className="h-3.5 w-3.5" />} title="Insert table" onClick={insertTable} />
 
           {/* Templates dropdown */}
           <Popover open={templatesOpen} onOpenChange={setTemplatesOpen}>
@@ -456,7 +456,7 @@ export function WikiVisualToolbar({
               </div>
             </PopoverContent>
           </Popover>
-          <VEBtn icon={<Minus size={14} />} title="Horizontal rule" onClick={insertHR} />
+          <VEBtn icon={<Minus className="h-3.5 w-3.5" />} title="Horizontal rule" onClick={insertHR} />
           <VEBtn
             icon={
               <span className="wikios-ve-heading-label" style={{ fontSize: 9 }}>
@@ -472,7 +472,7 @@ export function WikiVisualToolbar({
         {/* Clear */}
         <div className="wikios-ve-toolbar-group">
           <VEBtn
-            icon={<RemoveFormatting size={14} />}
+            icon={<RemoveFormatting className="h-3.5 w-3.5" />}
             title="Clear formatting"
             onClick={clearFormatting}
           />

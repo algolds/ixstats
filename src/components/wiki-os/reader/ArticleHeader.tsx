@@ -5,14 +5,14 @@ import Link from "next/link";
 import {
   Trophy,
   Star,
-  Users,
-  CheckCircle2,
-  Sparkles,
-  Award,
+  Group as Users,
+  CheckCircle as CheckCircle2,
+  Sparks as Sparkles,
+  Medal as Award,
   Calendar,
   User,
-  PenTool,
-} from "lucide-react";
+  EditPencil as PenTool,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
@@ -36,9 +36,11 @@ export type ArticleThemeColors =
 export interface ArticleAuthorInfo {
   creator?: string | null;
   author?: string | null;
+  creatorAvatar?: string | null;
   createdAt?: string | null;
   createdTimestamp?: string | null;
   lastEditor?: string | null;
+  lastEditorAvatar?: string | null;
   lastEditedAt?: string | null;
   lastModifiedTimestamp?: string | null;
 }
@@ -319,7 +321,9 @@ export function WikiOSHeader({
           {/* Metadata & Awards */}
           {(() => {
             const creatorName = authorInfo?.creator || authorInfo?.author || null;
+            const creatorAvatar = authorInfo?.creatorAvatar || null;
             const lastEditorName = authorInfo?.lastEditor || null;
+            const lastEditorAvatar = authorInfo?.lastEditorAvatar || null;
 
             return (lastModified || awardsData?.hasAwards || creatorName || lastEditorName) && (
               <div className="flex w-full flex-wrap items-center justify-between gap-3 border-t border-black/10 dark:border-white/5 pt-2.5">
@@ -330,9 +334,23 @@ export function WikiOSHeader({
                       <span className="text-[10px] text-muted-foreground/80 font-normal">Author:</span>
                       <Link
                         href={withBasePath(`/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`)}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
+                        className="group/author inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
                       >
-                        <User size={11} className="text-purple-400 shrink-0" />
+                        {creatorAvatar ? (
+                          <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
+                            <img
+                              src={creatorAvatar}
+                              alt={creatorName}
+                              className="aspect-square size-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <User className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
+                          </span>
+                        ) : (
+                          <User className="h-3 w-3 text-purple-400 shrink-0" />
+                        )}
                         <span>{creatorName}</span>
                       </Link>
                     </div>
@@ -347,9 +365,23 @@ export function WikiOSHeader({
                         <span className="text-[10px] text-muted-foreground/80 font-normal">Updated by:</span>
                         <Link
                           href={withBasePath(`/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`)}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
+                          className="group/editor inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground font-semibold hover:border-purple-500/40 hover:bg-purple-500/10 hover:text-purple-300 active:scale-95 transition-all text-[11px]"
                         >
-                          <PenTool size={10} className="text-purple-400 shrink-0" />
+                          {lastEditorAvatar ? (
+                            <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
+                              <img
+                                src={lastEditorAvatar}
+                                alt={lastEditorName}
+                                className="aspect-square size-full object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                }}
+                              />
+                              <PenTool className="h-2.5 w-2.5 text-purple-400 absolute inset-0 m-auto -z-10" />
+                            </span>
+                          ) : (
+                            <PenTool className="h-2.5 w-2.5 text-purple-400 shrink-0" />
+                          )}
                           <span>{lastEditorName}</span>
                         </Link>
                       </div>
@@ -362,7 +394,7 @@ export function WikiOSHeader({
                         <span className="text-muted-foreground/40 select-none">•</span>
                       )}
                       <span className="flex items-center gap-1">
-                        <Calendar size={11} className="text-muted-foreground/60" />
+                        <Calendar className="h-3 w-3 text-muted-foreground/60" />
                         {new Date(lastModified).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",

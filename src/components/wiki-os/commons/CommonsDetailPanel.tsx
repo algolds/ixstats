@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Copy, Check, ExternalLink, Download, Bookmark, Image } from "lucide-react";
+import {
+  Xmark as X,
+  Copy,
+  Check,
+  OpenNewWindow as ExternalLink,
+  Download,
+  Bookmark,
+  MediaImage as Image,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";

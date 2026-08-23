@@ -4,7 +4,10 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -23,20 +26,16 @@ const MONTH_NAMES = [
   "December",
 ];
 
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
-interface StreakCalendarProps {
-  username: string;
-}
-
-export function StreakCalendar({ username }: StreakCalendarProps) {
+export function StreakCalendar({ username }: { username: string }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [month, setMonth] = useState(now.getMonth() + 1); // 1-12
 
-  const { data } = api.lorewards.getStreakCalendar.useQuery(
+  const { data, isLoading } = api.wikios.getUserStreakCalendar.useQuery(
     { username, year, month },
-    { staleTime: 60000 }
+    { staleTime: 60_000 }
   );
 
   const days = data?.days ?? {};
@@ -63,19 +62,19 @@ export function StreakCalendar({ username }: StreakCalendarProps) {
     <div className="wikios-streak-calendar">
       <div className="wikios-streak-header">
         <button onClick={prevMonth} className="wikios-streak-nav">
-          <ChevronLeft size={14} />
+          <ChevronLeft className="h-3.5 w-3.5" />
         </button>
         <span className="wikios-streak-month">
           {MONTH_NAMES[month - 1]} {year}
         </span>
         <button onClick={nextMonth} className="wikios-streak-nav" disabled={isCurrentMonth}>
-          <ChevronRight size={14} />
+          <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
 
       <div className="wikios-streak-grid">
-        {DAY_LABELS.map((d) => (
-          <div key={d} className="wikios-streak-day-label">
+        {DAY_LABELS.map((d, i) => (
+          <div key={i} className="wikios-streak-day-label">
             {d}
           </div>
         ))}

@@ -4,7 +4,7 @@
 "use client";
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 
 export interface WikiEditorSavePanelProps {
   showSavePanel: boolean;

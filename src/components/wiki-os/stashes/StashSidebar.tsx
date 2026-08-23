@@ -4,7 +4,14 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Check, X, Plus, Loader2 } from "lucide-react";
+import {
+  EditPencil as Pencil,
+  Trash as Trash2,
+  Check,
+  Xmark as X,
+  Plus,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { PRESET_COLORS, type StashHeaderItem } from "./types";
 
@@ -31,13 +38,13 @@ export function StashSidebar({
 }: StashSidebarProps) {
   const [editingStash, setEditingStash] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editColor, setEditColor] = useState("");
+  const [editColor, setEditColor] = useState(PRESET_COLORS[0]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const handleStartEdit = (s: StashHeaderItem) => {
-    setEditingStash(s.id);
-    setEditName(s.name);
-    setEditColor(s.color);
+  const handleStartEdit = (stash: StashHeaderItem) => {
+    setEditingStash(stash.id);
+    setEditName(stash.name);
+    setEditColor(stash.color);
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -52,21 +59,23 @@ export function StashSidebar({
   };
 
   return (
-    <div className="wikios-stashes-sidebar w-full shrink-0 md:w-60">
-      <div className="wikios-stashes-sidebar-label">Your Stashes</div>
+    <div className="wikios-stash-sidebar">
+      <div className="wikios-stash-sidebar-header">
+        <span className="wikios-stash-sidebar-title">Collections</span>
+        <span className="wikios-stash-sidebar-badge">{stashes.length}</span>
+      </div>
+
       {stashes.map((s) => (
-        <div key={s.id} className="wikios-stash-sidebar-item-wrapper">
+        <div key={s.id} className="wikios-stash-sidebar-row">
           {editingStash === s.id ? (
-            <div className="wikios-stash-edit-inline">
+            <div className="wikios-stash-sidebar-edit-form">
               <input
+                type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 className="wikios-stash-edit-input"
                 autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveEdit(s.id);
-                  if (e.key === "Escape") setEditingStash(null);
-                }}
+                placeholder="Collection name..."
               />
               <div className="wikios-stash-edit-colors">
                 {PRESET_COLORS.map((c) => (
@@ -89,7 +98,7 @@ export function StashSidebar({
                   className="wikios-stash-btn-primary-sm"
                   disabled={isUpdating || !editName.trim()}
                 >
-                  {isUpdating ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                  {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                   Save
                 </button>
                 <button
@@ -97,7 +106,7 @@ export function StashSidebar({
                   onClick={() => setEditingStash(null)}
                   className="wikios-stash-btn-secondary-sm"
                 >
-                  <X size={11} />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             </div>
@@ -124,7 +133,7 @@ export function StashSidebar({
                 className="wikios-stash-sidebar-action"
                 title="Edit"
               >
-                <Pencil size={11} />
+                <Pencil className="h-3 w-3" />
               </button>
               {!s.isDefault &&
                 (confirmDelete === s.id ? (
@@ -136,7 +145,7 @@ export function StashSidebar({
                       title="Confirm"
                       disabled={isDeleting}
                     >
-                      {isDeleting ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                      {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                     </button>
                     <button
                       type="button"
@@ -144,7 +153,7 @@ export function StashSidebar({
                       className="wikios-stash-confirm-no"
                       title="Cancel"
                     >
-                      <X size={11} />
+                      <X className="h-3 w-3" />
                     </button>
                   </div>
                 ) : (
@@ -154,7 +163,7 @@ export function StashSidebar({
                     className="wikios-stash-sidebar-action wikios-stash-sidebar-delete"
                     title="Delete"
                   >
-                    <Trash2 size={11} />
+                    <Trash2 className="h-3 w-3" />
                   </button>
                 ))}
             </div>
@@ -163,7 +172,7 @@ export function StashSidebar({
       ))}
 
       <button type="button" onClick={onOpenCreate} className="wikios-stash-sidebar-add">
-        <Plus size={12} /> New stash
+        <Plus className="h-3 w-3" /> New stash
       </button>
     </div>
   );

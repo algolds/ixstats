@@ -5,8 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { BookOpen, Compass } from "lucide-react";
+import { OpenBook as BookOpen, Compass } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";

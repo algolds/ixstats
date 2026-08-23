@@ -9,7 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
-import { Calendar, FileText, Trophy, Scroll } from "lucide-react";
+import { Calendar, Page as FileText, Trophy, OpenBook as Scroll } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";

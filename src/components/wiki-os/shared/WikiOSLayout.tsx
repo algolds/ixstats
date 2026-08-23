@@ -27,6 +27,7 @@ import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
+import { WikiOSLogomark } from "./WikiOSLogomark";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
@@ -60,17 +61,6 @@ export function WikiOSLayout({
     }
   }, []);
 
-  // Global Cmd+K to open search
-  useEffect(() => {
-    const handleKey = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, []);
 
   const activeTitle = title || articleTitle || "";
   const slug = activeTitle ? encodeURIComponent(activeTitle.replace(/ /g, "_")) : null;
@@ -192,24 +182,28 @@ export function WikiOSLayout({
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
-      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">
-        <div className="flex items-center justify-center gap-1.5">
-          <span>Powered by</span>
-          <Popover>
-            <PopoverTrigger className="cursor-pointer font-bold text-[var(--wikios-text)] underline decoration-dotted transition-colors select-none hover:text-blue-400">
-              WikiOS
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4 text-left">
-              <PopoverTitle className="mb-1 text-sm font-bold text-[var(--wikios-text)]">
-                About WikiOS
-              </PopoverTitle>
-              <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
-                WikiOS is a next-generation wiki platform built for worldbuilding communities. 
-              </PopoverDescription>
-            </PopoverContent>
-          </Popover>
-          <span>v{WIKIOS_VERSION}</span>
-        </div>
+      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="group flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 select-none opacity-80 hover:opacity-100 active:scale-95">
+              <WikiOSLogomark className="h-7 w-auto text-zinc-900 dark:text-zinc-100 transition-transform duration-300 group-hover:scale-105" />
+              <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted-foreground/70 group-hover:text-muted-foreground">
+                <span>Powered by wikiOS</span>
+                <span>•</span>
+                <span>v{WIKIOS_VERSION}</span>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4 text-left">
+            <PopoverTitle className="mb-1 text-sm font-bold text-[var(--wikios-text)]">
+              About WikiOS
+            </PopoverTitle>
+            <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+              WikiOS is the next-generation sovereign wiki engine and reading environment for IxStates and worldbuilding communities.
+            </PopoverDescription>
+          </PopoverContent>
+        </Popover>
+
         <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
           <Link href="/terms" className="transition-colors hover:text-amber-400">
             Terms of Service

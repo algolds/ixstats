@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { Folder, FileText } from "lucide-react";
+import { Folder, Page as FileText } from "iconoir-react";
 
 interface CategoryMember {
   title: string;

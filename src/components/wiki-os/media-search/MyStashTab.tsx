@@ -3,12 +3,17 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import { Search, Loader2, Bookmark, Folder } from "lucide-react";
+import {
+  Search,
+  SystemRestart as Loader2,
+  Bookmark,
+  Folder,
+  ZoomIn,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { ZoomIn } from "lucide-react";
 import type { CommonsImage } from "./types";
 
 interface MyStashTabProps {
