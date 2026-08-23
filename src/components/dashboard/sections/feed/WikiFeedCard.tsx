@@ -15,6 +15,7 @@ import {
   Check,
   Trash,
   Xmark as X,
+  NavArrowDown as ChevronDown,
 } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { api } from "~/trpc/react";
@@ -23,52 +24,56 @@ import { useNotify } from "~/hooks/useNotify";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { formatTimeAgo, formatThinkpagesContentForDisplay, cn } from "~/lib/utils";
 import {
   normalizeWikiImageUrl,
   extractLeadImageFromWikitext,
   extractLeadImageFromHtml,
   isNoticeOrUtilityIcon,
 } from "~/lib/wiki-os/transformers/image-url";
-import { cn } from "~/lib/utils";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
+import { WikiAuthorPopover } from "../WikiAuthorPopover";
 import { RepostModal } from "~/components/thinkpages/RepostModal";
-
-export { parseWikitextToHtml };
 
 const QUICK_REACTIONS = ["❤️", "🔥", "👏", "💡", "🤯", "🚀"];
 
-export function InlineWikiArticlePreview({
-  title,
-  wiki = "ixwiki",
-}: {
-  title: string;
-  wiki?: "ixwiki" | "iiwiki";
-}) {
+export function WikiFeedCard({ activity }: { activity: any }) {
   const { user } = useUser();
   const notify = useNotify();
   const utils = api.useUtils();
 
+  const isGrouped = !!activity._grouped;
+  const metadata = activity.content?.metadata ?? {};
+  const wikiPageTitle = (metadata.pageTitle as string) || activity.content?.title || "";
+
   const cleanTitle = useMemo(() => {
     try {
-      return decodeURIComponent(title).replace(/_/g, " ").trim();
+      return decodeURIComponent(wikiPageTitle)
+        .replace(/^(Wiki edit|New wiki page):\s*/i, "")
+        .replace(/_/g, " ")
+        .trim();
     } catch {
-      return title.replace(/_/g, " ").trim();
+      return wikiPageTitle
+        .replace(/^(Wiki edit|New wiki page):\s*/i, "")
+        .replace(/_/g, " ")
+        .trim();
     }
-  }, [title]);
+  }, [wikiPageTitle]);
+
+  const wikiHref = titleToWikiOSRoute(cleanTitle);
+  const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
 
   // ─── Queries ─────────────────────────────────────────────────────────────────
-  // Article text intro
   const { data: intro } = api.wikios.getIntro.useQuery(
-    { title: cleanTitle, wiki },
+    { title: cleanTitle, wiki: "ixwiki" },
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 
-  // Eligible article images
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
     { title: cleanTitle },
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 
-  // Stash status & user stashes
   const { data: stashData } = api.wikios.isStashed.useQuery(
     { pageTitle: cleanTitle },
     { enabled: !!user, retry: false, staleTime: 10_000 }
@@ -78,14 +83,12 @@ export function InlineWikiArticlePreview({
     staleTime: 30_000,
   });
 
-  // Margin discussion count
   const { data: discussionsData } = api.wikios.getArticleMarginData.useQuery(
     { articleTitle: cleanTitle },
     { enabled: !!cleanTitle, staleTime: 60_000 }
   );
   const marginThreadsCount = (discussionsData as any)?.threads?.length ?? 0;
 
-  // Thinkpages accounts for repost modal
   const { data: accounts = [] } = api.thinkpages.getMyAccounts.useQuery(undefined, {
     enabled: !!user,
     staleTime: 60_000,
@@ -98,6 +101,7 @@ export function InlineWikiArticlePreview({
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
   const [isReactionOpen, setIsReactionOpen] = useState(false);
   const [isRepostOpen, setIsRepostOpen] = useState(false);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [localLikes, setLocalLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -201,7 +205,6 @@ export function InlineWikiArticlePreview({
     async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const wikiHref = titleToWikiOSRoute(cleanTitle);
       const fullUrl =
         typeof window !== "undefined" ? `${window.location.origin}${wikiHref}` : wikiHref;
 
@@ -225,7 +228,7 @@ export function InlineWikiArticlePreview({
         setTimeout(() => setCopied(false), 2000);
       }
     },
-    [cleanTitle, notify]
+    [cleanTitle, wikiHref, notify]
   );
 
   const handleToggleLike = useCallback(() => {
@@ -247,11 +250,11 @@ export function InlineWikiArticlePreview({
     setIsReactionOpen(false);
   }, [hasLiked]);
 
-  const formattedHtml = useMemo(() => {
+  const formattedIntroHtml = useMemo(() => {
     const raw = intro?.text || intro?.intro || "";
     if (!raw) return "";
-    return parseWikitextToHtml(raw, wiki);
-  }, [intro?.text, intro?.intro, wiki]);
+    return parseWikitextToHtml(raw, "ixwiki");
+  }, [intro?.text, intro?.intro]);
 
   const leadImage = useMemo(() => {
     // 1. Check pageImages from API query
@@ -299,46 +302,166 @@ export function InlineWikiArticlePreview({
     return null;
   }, [pageImages, intro?.text, intro?.intro]);
 
-  if (!formattedHtml && !leadImage) return null;
-
-  const wikiHref = titleToWikiOSRoute(cleanTitle);
-  const marginHref = `${titleToWikiOSRoute(cleanTitle)}?modal=margin`;
+  const descText = activity.content?.description ?? "";
+  const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <div className="group/preview mt-2.5 overflow-hidden rounded-2xl border border-teal-500/20 bg-teal-500/[0.04] p-3.5 sm:p-4 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-teal-500/35 hover:bg-teal-500/[0.07] dark:bg-teal-500/[0.04] dark:hover:bg-teal-500/[0.08]">
-      {/* Content & Lead Image Row */}
-      <div className="flex items-start gap-3.5">
-        <div className="min-w-0 flex-1 space-y-1">
-          {formattedHtml && (
-            <WikiHtmlContent
-              html={formattedHtml}
-              className="text-foreground/85 group-hover/preview:text-foreground line-clamp-3 text-xs sm:text-[13px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
-            />
-          )}
+    <div className="group relative overflow-hidden rounded-2xl border border-teal-500/20 bg-card/85 p-4 sm:p-5 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-teal-500/35 hover:bg-card/95 hover:shadow-md dark:bg-card/75 dark:hover:bg-card/90">
+      {/* ── 1. Cohesive Header Row ── */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          {/* Wiki Logomark Badge */}
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-500/25 bg-teal-500/10 text-teal-500 shadow-xs transition-transform duration-200 group-hover:scale-105">
+            <WikiOSLogomark className="h-4.5 w-4.5" />
+          </div>
+
+          {/* Title & Metadata Lockup */}
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Link
+                href={wikiHref}
+                className="text-foreground truncate text-sm sm:text-base font-semibold tracking-tight transition-colors hover:text-teal-400"
+              >
+                {cleanTitle}
+              </Link>
+              {activity._isNew && (
+                <span className="shrink-0 rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.2 text-[9px] font-semibold tracking-wider text-teal-400 uppercase">
+                  New
+                </span>
+              )}
+            </div>
+
+            {/* Author / Subtitle / Diff Metadata */}
+            <div className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-medium tracking-tight">
+              {isGrouped ? (
+                <span>
+                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits by{" "}
+                  {activity._editors?.map((editor: string, idx: number) => (
+                    <span key={editor}>
+                      {idx > 0 && ", "}
+                      <WikiAuthorPopover username={editor} />
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                activity.user?.name && (
+                  <span className="flex items-center gap-1">
+                    <span>by</span>
+                    <WikiAuthorPopover username={activity.user.name} />
+                  </span>
+                )
+              )}
+
+              {!isGrouped && descHtml && (
+                <>
+                  <span className="text-muted-foreground/40">·</span>
+                  <WikiHtmlContent
+                    html={descHtml}
+                    as="span"
+                    className="text-muted-foreground/90 font-normal"
+                  />
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Lead Image Thumbnail */}
-        {leadImage && (
+        {/* Top Right: Timestamp & Open Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-muted-foreground/80 text-xs font-medium tabular-nums">
+            {formatTimeAgo(new Date(activity.timestamp))}
+          </span>
           <Link
             href={wikiHref}
-            className="relative h-20 w-28 sm:h-22 sm:w-32 shrink-0 overflow-hidden rounded-xl border border-border/40 bg-black/5 shadow-xs transition-transform duration-200 group-hover/preview:scale-[1.02] active:scale-95 dark:border-white/10 dark:bg-white/5"
-            title={`View ${cleanTitle}`}
+            className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-1 text-xs font-semibold text-teal-600 transition-all duration-150 hover:bg-teal-500/20 hover:text-teal-700 active:scale-95 dark:text-teal-400 dark:hover:text-teal-300"
           >
-            <img
-              src={leadImage}
-              alt={cleanTitle}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover/preview:scale-105"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
+            <span>Open</span>
+            <ExternalLink className="h-3 w-3" />
           </Link>
-        )}
+        </div>
       </div>
 
-      {/* ── Action Toolbar Row ── */}
-      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-teal-500/15 pt-2.5">
-        <div className="flex flex-wrap items-center gap-1">
+      {/* ── 2. Immersive Body Excerpt & Lead Image (No nested box!) ── */}
+      {(formattedIntroHtml || leadImage) && (
+        <div className="mt-3.5 flex items-start gap-3.5">
+          <div className="min-w-0 flex-1 space-y-1">
+            {formattedIntroHtml && (
+              <WikiHtmlContent
+                html={formattedIntroHtml}
+                className="text-foreground/85 line-clamp-3 text-xs sm:text-[13px] leading-relaxed font-normal tracking-tight [&_a]:transition-colors"
+              />
+            )}
+          </div>
+
+          {/* Lead Image Thumbnail */}
+          {leadImage && (
+            <Link
+              href={wikiHref}
+              className="relative h-20 w-28 sm:h-24 sm:w-34 shrink-0 overflow-hidden rounded-xl border border-border/40 bg-black/5 shadow-xs transition-transform duration-200 group-hover:scale-[1.02] active:scale-95 dark:border-white/10 dark:bg-white/5"
+              title={`View ${cleanTitle}`}
+            >
+              <img
+                src={leadImage}
+                alt={cleanTitle}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* ── 3. Integrated Grouped History Timeline ── */}
+      {isGrouped && activity._subEdits && activity._subEdits.length > 1 && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+            className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border/50 bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-95"
+          >
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 transition-transform duration-200",
+                isHistoryExpanded && "rotate-180"
+              )}
+            />
+            <span>
+              {isHistoryExpanded ? "Hide edit history" : `Show ${activity._subEdits.length} edits`}
+            </span>
+          </button>
+
+          {isHistoryExpanded && (
+            <div className="animate-in fade-in mt-2 space-y-1.5 rounded-xl border border-border/40 bg-muted/30 p-2.5 shadow-2xs backdrop-blur-md duration-150 dark:bg-black/20">
+              {activity._subEdits.map((sub: any, i: number) => {
+                const subDesc = sub.content?.description ?? "";
+                return (
+                  <div
+                    key={i}
+                    className="text-muted-foreground flex items-center justify-between py-0.5 text-[11px] tracking-tight"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+                      <span className="text-foreground shrink-0 font-semibold">
+                        {sub.user?.name ?? "?"}
+                      </span>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="truncate text-foreground/80">{subDesc}</span>
+                    </div>
+                    <span className="text-muted-foreground/70 ml-2 shrink-0 font-medium tabular-nums text-[10px]">
+                      {formatTimeAgo(new Date(sub.timestamp))}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 4. Unified Action Toolbar ── */}
+      <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* 1. Margin Note / Comment Button */}
           <button
             type="button"
@@ -535,18 +658,9 @@ export function InlineWikiArticlePreview({
             <span>{copied ? "Copied!" : "Share"}</span>
           </button>
         </div>
-
-        {/* Open in Wiki Link */}
-        <Link
-          href={wikiHref}
-          className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-3 py-1 text-xs font-semibold text-teal-600 transition-all duration-150 hover:bg-teal-500/20 hover:text-teal-700 active:scale-95 dark:text-teal-400 dark:hover:text-teal-300"
-        >
-          <span>Open in Wiki</span>
-          <ExternalLink className="h-3 w-3" />
-        </Link>
       </div>
 
-      {/* ── Inline Margin Note Composer ── */}
+      {/* ── 5. Inline Margin Note Composer ── */}
       <AnimatePresence>
         {isMarginOpen && (
           <motion.div
@@ -610,7 +724,7 @@ export function InlineWikiArticlePreview({
         )}
       </AnimatePresence>
 
-      {/* ── Repost Modal ── */}
+      {/* ── 6. Repost Modal ── */}
       {isRepostOpen && (
         <RepostModal
           open={isRepostOpen}

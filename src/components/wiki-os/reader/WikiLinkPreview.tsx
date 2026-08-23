@@ -4,6 +4,7 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import { Tooltip } from "~/components/ui/tooltip-card";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 // ──────────────────────────────────────────────
 // WikiLinkPreview — for React element wrapping
@@ -102,16 +103,7 @@ function domNodeToReact(node: Node, index: number): React.ReactNode {
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
-              <img
-                src="https://cdn.simpleicons.org/wikipedia/1d4e89"
-                className="h-3 w-3 dark:hidden"
-                alt=""
-              />
-              <img
-                src="https://cdn.simpleicons.org/wikipedia/38bdf8"
-                className="hidden h-3 w-3 dark:block"
-                alt=""
-              />
+              <WikiOSLogomark className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
               <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>

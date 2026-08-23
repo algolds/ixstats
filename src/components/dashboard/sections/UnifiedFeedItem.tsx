@@ -26,6 +26,7 @@ import {
   ForumLinkPreview,
   WikiHtmlContent,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl, getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
@@ -37,9 +38,10 @@ import { WikiAuthorPopover } from "./WikiAuthorPopover";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
 import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
+import { WikiFeedCard } from "./feed/WikiFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 
-export { parseWikitextToHtml, InlineWikiArticlePreview };
+export { parseWikitextToHtml, InlineWikiArticlePreview, WikiFeedCard };
 
 export const SOURCE_CONFIG: Record<
   string,
@@ -175,6 +177,11 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
 
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
+  // For wiki activities, render the dedicated cohesive WikiFeedCard
+  if (isWiki) {
+    return <WikiFeedCard activity={activity} />;
+  }
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80 hover:bg-card/95 hover:shadow-md">
       <div className="flex items-start gap-3">
@@ -186,11 +193,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           )}
         >
           {isWiki ? (
-            <img
-              src="https://cdn.simpleicons.org/wikipedia/teal"
-              alt="Wiki"
-              className="h-4.5 w-4.5"
-            />
+            <WikiOSLogomark className="h-4.5 w-4.5 text-teal-500" />
           ) : (
             <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
           )}

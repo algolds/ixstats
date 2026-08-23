@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { StatsReport as BarChart3, OpenBook as BookOpen, Compass, Crown, Database, Globe, ChatBubble as MessageSquare, Trophy } from "iconoir-react";
-import { FaWikipediaW } from "react-icons/fa";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
 import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
@@ -83,7 +83,7 @@ export function useNavigationItems({
       {
         name: "Wiki",
         href: "/wiki",
-        icon: FaWikipediaW,
+        icon: WikiOSLogomark,
         requiresAuth: false,
       },
       {

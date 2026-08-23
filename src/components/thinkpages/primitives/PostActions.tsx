@@ -454,48 +454,69 @@ export function PostActions({
     onShare?.(postId);
   }, [postId, onShare, notify]);
 
-  const iconSize = size === "sm" ? "h-3 w-3" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
-  const buttonPadding = size === "sm" ? "p-1" : size === "lg" ? "p-3" : "p-2";
+  const iconSize = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
+  const pillPadding =
+    size === "sm"
+      ? "px-2 py-1 text-[11px]"
+      : size === "lg"
+        ? "px-3.5 py-2 text-sm"
+        : "px-2.5 py-1.5 text-xs";
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
         {/* Reply Button */}
         <button
+          type="button"
           onClick={() => onReply?.(postId)}
-          className="text-muted-foreground group flex items-center gap-1 transition-colors hover:text-blue-500"
+          className={cn(
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            pillPadding,
+            "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/15"
+          )}
+          aria-label="Reply to post"
         >
-          <div
+          <MessageCircle
             className={cn(
-              `${buttonPadding} rounded-full transition-colors group-hover:bg-blue-500/20`
+              iconSize,
+              "transition-transform duration-200 group-hover:scale-110 group-active:scale-90"
             )}
-          >
-            <MessageCircle className={iconSize} />
-          </div>
-          {showCounts && replyCount > 0 && <span className="text-sm">{replyCount}</span>}
+          />
+          <span>Reply</span>
+          {showCounts && replyCount > 0 && (
+            <span className="tabular-nums font-semibold">{replyCount}</span>
+          )}
         </button>
 
         {/* Repost Button */}
         <button
+          type="button"
           onClick={handleRepost}
           className={cn(
-            "group flex items-center gap-1 transition-colors",
-            isReposted ? "text-green-500" : "text-muted-foreground hover:text-green-500"
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            pillPadding,
+            isReposted
+              ? "bg-emerald-500/10 font-semibold text-emerald-500 dark:bg-emerald-500/15"
+              : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:bg-emerald-500/15"
           )}
+          aria-label="Repost"
         >
-          <div
+          <Repeat2
             className={cn(
-              `${buttonPadding} rounded-full transition-colors group-hover:bg-green-500/20`
+              iconSize,
+              "transition-transform duration-200 group-hover:rotate-45 group-active:scale-90"
             )}
-          >
-            <Repeat2 className={iconSize} />
-          </div>
-          {showCounts && repostCount > 0 && <span className="text-sm">{repostCount}</span>}
+          />
+          <span>Repost</span>
+          {showCounts && repostCount > 0 && (
+            <span className="tabular-nums font-semibold">{repostCount}</span>
+          )}
         </button>
 
         {/* Like/Reaction Button */}
         <div className="relative">
           <button
+            type="button"
             ref={reactionButtonRef}
             onClick={(e) => {
               e.stopPropagation();
@@ -507,25 +528,32 @@ export function PostActions({
               setShowReactionPopup(!showReactionPopup);
             }}
             className={cn(
-              "group flex items-center gap-1 transition-colors",
-              isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500",
+              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+              pillPadding,
+              isLiked
+                ? "bg-rose-500/10 font-semibold text-rose-500 dark:bg-rose-500/15"
+                : "text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 dark:hover:bg-rose-500/15",
               !currentUserAccountId && "cursor-not-allowed opacity-50",
-              showReactionPopup && "ring-2 ring-blue-500/50"
+              showReactionPopup && "bg-rose-500/10 ring-2 ring-rose-500/40"
             )}
             title={
               currentUserAccountId
                 ? "Click to like (right-click for emoji reactions)"
                 : "Please select a ThinkPages account first"
             }
+            aria-label="Like post"
           >
-            <div
+            <Heart
               className={cn(
-                `${buttonPadding} rounded-full transition-colors group-hover:bg-red-500/20`
+                iconSize,
+                "transition-all duration-200 group-hover:scale-115 group-active:scale-90",
+                isLiked && "scale-105 fill-current"
               )}
-            >
-              <Heart className={cn(iconSize, isLiked && "fill-current")} />
-            </div>
-            {showCounts && likeCount > 0 && <span className="text-sm">{likeCount}</span>}
+            />
+            <span>{isLiked ? "Liked" : "Like"}</span>
+            {showCounts && likeCount > 0 && (
+              <span className="tabular-nums font-semibold">{likeCount}</span>
+            )}
           </button>
 
           {/* Reaction Popup */}
@@ -533,7 +561,7 @@ export function PostActions({
             typeof window !== "undefined" &&
             createPortal(
               <div
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/20 backdrop-blur-xs"
                 style={{ zIndex: 99998 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -566,16 +594,22 @@ export function PostActions({
 
         {/* Share Button */}
         <button
+          type="button"
           onClick={handleShare}
-          className="text-muted-foreground group flex items-center gap-1 transition-colors hover:text-blue-500"
+          className={cn(
+            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-all duration-200 select-none active:scale-95",
+            pillPadding,
+            "text-muted-foreground hover:bg-cyan-500/10 hover:text-cyan-500 dark:hover:bg-cyan-500/15"
+          )}
+          aria-label="Share post"
         >
-          <div
+          <Share
             className={cn(
-              `${buttonPadding} rounded-full transition-colors group-hover:bg-blue-500/20`
+              iconSize,
+              "transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-90"
             )}
-          >
-            <Share className={iconSize} />
-          </div>
+          />
+          <span>Share</span>
         </button>
       </div>
 

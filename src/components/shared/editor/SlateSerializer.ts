@@ -93,8 +93,12 @@ export function slateNodesToBbcode(nodes: any[]): string {
 }
 
 export function parsoidHtmlToSlate(htmlContent: string): any[] {
-  if (!htmlContent) return [{ type: "p", children: [{ text: "" }] }];
-  if (typeof window === "undefined") return [{ type: "p", children: [{ text: "" }] }];
+  if (!htmlContent || !htmlContent.trim()) {
+    return [{ type: "p", children: [{ text: "" }] }];
+  }
+  if (typeof window === "undefined") {
+    return [{ type: "p", children: [{ text: htmlContent }] }];
+  }
 
   try {
     const parser = new DOMParser();
@@ -104,10 +108,13 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
 
     const deserializeNode = (el: Node): any[] => {
       const result: any[] = [];
-      for (const child of Array.from(el.childNodes)) {
+      if (!el || !el.childNodes) return [];
+      const childrenArray = Array.from(el.childNodes || []);
+      for (const child of childrenArray) {
+        if (!child) continue;
         if (child.nodeType === Node.TEXT_NODE) {
           const txt = child.textContent ?? "";
-          if (txt.trim() || txt === " ") result.push({ text: txt });
+          if (txt) result.push({ text: txt });
           continue;
         }
         if (child.nodeType !== Node.ELEMENT_NODE) continue;
@@ -128,7 +135,11 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
         }
 
         if (tag === "p") {
-          result.push({ type: "p", children: deserializeNode(elem) });
+          const children = deserializeNode(elem);
+          result.push({
+            type: "p",
+            children: children.length > 0 ? children : [{ text: "" }],
+          });
           continue;
         }
         if (tag === "strong" || tag === "b") {
@@ -136,7 +147,7 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
           inner.forEach((n: any) => {
             if ("text" in n) n.bold = true;
           });
-          result.push(...inner);
+          result.push(...(inner.length > 0 ? inner : [{ text: "", bold: true }]));
           continue;
         }
         if (tag === "em" || tag === "i") {
@@ -144,7 +155,7 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
           inner.forEach((n: any) => {
             if ("text" in n) n.italic = true;
           });
-          result.push(...inner);
+          result.push(...(inner.length > 0 ? inner : [{ text: "", italic: true }]));
           continue;
         }
         if (tag === "u" || elem.style.textDecoration === "underline") {
@@ -152,35 +163,49 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
           inner.forEach((n: any) => {
             if ("text" in n) n.underline = true;
           });
-          result.push(...inner);
+          result.push(...(inner.length > 0 ? inner : [{ text: "", underline: true }]));
           continue;
         }
         if (tag === "ul") {
-          result.push({ type: "ul", children: deserializeNode(elem) });
+          const children = deserializeNode(elem);
+          result.push({
+            type: "ul",
+            children: children.length > 0 ? children : [{ type: "li", children: [{ text: "" }] }],
+          });
           continue;
         }
         if (tag === "ol") {
-          result.push({ type: "ol", children: deserializeNode(elem) });
+          const children = deserializeNode(elem);
+          result.push({
+            type: "ol",
+            children: children.length > 0 ? children : [{ type: "li", children: [{ text: "" }] }],
+          });
           continue;
         }
         if (tag === "li") {
-          result.push({ type: "li", children: deserializeNode(elem) });
+          const children = deserializeNode(elem);
+          result.push({
+            type: "li",
+            children: children.length > 0 ? children : [{ text: "" }],
+          });
           continue;
         }
         if (tag === "a") {
           const href = elem.getAttribute("href") || "";
+          const children = deserializeNode(elem);
+          const validChildren = children.length > 0 ? children : [{ text: href || "link" }];
           if (href.startsWith("/wiki/")) {
             const target = decodeURIComponent(href.replace("/wiki/", "")).replace(/_/g, " ");
             result.push({
               type: "wikilink",
               target,
-              children: deserializeNode(elem),
+              children: validChildren,
             });
           } else {
             result.push({
               type: "link",
               url: href,
-              children: deserializeNode(elem),
+              children: validChildren,
             });
           }
           continue;
@@ -196,12 +221,49 @@ export function parsoidHtmlToSlate(htmlContent: string): any[] {
         }
         result.push(...deserializeNode(elem));
       }
-      if (result.length === 0) result.push({ text: "" });
       return result;
     };
 
     const res = deserializeNode(root);
-    return res.length > 0 ? res : [{ type: "p", children: [{ text: "" }] }];
+
+    // CRITICAL: Top-level Slate nodes MUST all be Block Elements with children!
+    // If res has text leaves or inlines at the top level, group/wrap them in <p>
+    const normalizedBlocks: any[] = [];
+    let currentInlineChildren: any[] = [];
+
+    for (const node of res) {
+      if (
+        node.type === "p" ||
+        node.type === "ul" ||
+        node.type === "ol" ||
+        node.type === "wikiembed" ||
+        node.type === "img"
+      ) {
+        if (currentInlineChildren.length > 0) {
+          normalizedBlocks.push({ type: "p", children: currentInlineChildren });
+          currentInlineChildren = [];
+        }
+        normalizedBlocks.push(node);
+      } else {
+        currentInlineChildren.push(node);
+      }
+    }
+
+    if (currentInlineChildren.length > 0) {
+      normalizedBlocks.push({ type: "p", children: currentInlineChildren });
+    }
+
+    if (normalizedBlocks.length === 0) {
+      return [{ type: "p", children: [{ text: "" }] }];
+    }
+
+    // Ensure every block node has a valid non-empty children array
+    return normalizedBlocks.map((block) => {
+      if (!Array.isArray(block.children) || block.children.length === 0) {
+        return { ...block, children: [{ text: "" }] };
+      }
+      return block;
+    });
   } catch (err) {
     console.warn("Failed to parse parsoid HTML to Slate:", err);
     return [{ type: "p", children: [{ text: "" }] }];

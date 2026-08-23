@@ -27,6 +27,13 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import {
+  normalizeWikiImageUrl,
+  extractLeadImageFromWikitext,
+  extractLeadImageFromHtml,
+  isNoticeOrUtilityIcon,
+} from "~/lib/wiki-os/transformers/image-url";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 const TRENDING_LIMIT = 3;
 
@@ -38,14 +45,14 @@ const TRENDING_SOURCE: Record<
 > = {
   thinkpages: {
     icon: Newspaper,
-    color: "text-purple-700 dark:text-purple-300",
-    bg: "bg-purple-500/15 border-purple-500/30",
-    label: "Social",
+    color: "text-blue-700 dark:text-blue-300",
+    bg: "bg-blue-500/15 border-blue-500/30",
+    label: "ThinkPages",
   },
   forum: {
-    icon: MessageCircle,
-    color: "text-indigo-700 dark:text-indigo-300",
-    bg: "bg-indigo-500/15 border-indigo-500/30",
+    icon: MessageSquare,
+    color: "text-violet-700 dark:text-violet-300",
+    bg: "bg-violet-500/15 border-violet-500/30",
     label: "Forum",
   },
   wiki: {
@@ -54,7 +61,7 @@ const TRENDING_SOURCE: Record<
     bg: "bg-teal-500/15 border-teal-500/30",
     label: "Wiki",
   },
-  ixstats: {
+  general: {
     icon: Activity,
     color: "text-amber-700 dark:text-amber-300",
     bg: "bg-amber-500/15 border-amber-500/30",
@@ -70,23 +77,81 @@ const TRENDING_SOURCE: Record<
 
 export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+  const { data: pageImages } = api.wikios.getPageImages.useQuery(
+    { title },
+    { enabled: !!title, staleTime: 30 * 60_000 }
+  );
+
+  const leadImage = useMemo(() => {
+    if (pageImages && Array.isArray(pageImages) && pageImages.length > 0) {
+      const eligible =
+        pageImages.find(
+          (img: any) =>
+            img &&
+            (img.thumbUrl || img.url) &&
+            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl) &&
+            !img.title?.toLowerCase().endsWith(".svg") &&
+            !img.title?.toLowerCase().includes("flag") &&
+            !img.title?.toLowerCase().includes("icon")
+        ) ||
+        pageImages.find(
+          (img: any) =>
+            img &&
+            (img.thumbUrl || img.url) &&
+            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl)
+        ) ||
+        pageImages[0];
+
+      const rawUrl = eligible?.thumbUrl || eligible?.url || null;
+      if (rawUrl) {
+        const normalized = normalizeWikiImageUrl(rawUrl);
+        if (normalized) return normalized;
+      }
+    }
+
+    const rawText = intro?.text || intro?.intro || "";
+    if (rawText) {
+      const fromWikitext = extractLeadImageFromWikitext(rawText);
+      if (fromWikitext) {
+        const normalized = normalizeWikiImageUrl(fromWikitext);
+        if (normalized) return normalized;
+      }
+      const fromHtml = extractLeadImageFromHtml(rawText);
+      if (fromHtml) {
+        const normalized = normalizeWikiImageUrl(fromHtml);
+        if (normalized) return normalized;
+      }
+    }
+
+    return null;
+  }, [pageImages, intro?.text, intro?.intro]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-teal-500" />
         <span className="text-foreground truncate text-sm font-semibold">{title}</span>
         <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
-      {intro?.text ? (
-        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
-          {intro.text.substring(0, 300)}
-          {intro.text.length > 300 ? "…" : ""}
-        </p>
-      ) : (
-        <div className="bg-muted h-10 animate-pulse rounded" />
-      )}
+      <div className="flex items-start gap-2.5">
+        <div className="min-w-0 flex-1">
+          {intro?.text ? (
+            <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+              {intro.text.substring(0, 300)}
+              {intro.text.length > 300 ? "…" : ""}
+            </p>
+          ) : (
+            <div className="bg-muted h-10 animate-pulse rounded" />
+          )}
+        </div>
+        {leadImage && (
+          <div className="relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border border-border/40 bg-black/5 dark:border-white/10">
+            <img src={leadImage} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -282,7 +282,7 @@ export function HeroPostView({
       })()}
 
       {/* Hashtags */}
-      {post.hashtags && post.hashtags.length > 0 && (
+      {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-1">
           {post.hashtags.map((hashtag: string, index: number) => (
             <button

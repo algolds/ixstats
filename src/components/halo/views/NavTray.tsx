@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { StatsReport as BarChart3, Compass, Crown, Globe, ChatBubble as MessageSquare, MoreHoriz as MoreHorizontal } from "iconoir-react";
-import { FaWikipediaW } from "react-icons/fa";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 
@@ -51,7 +51,7 @@ const PRIMARY_NAV: NavTrayItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, accent: "#10b981" },
   { name: "MyCountry", href: "/mycountry", icon: Crown, accent: "#f59e0b" },
   { name: "Explore", href: "/countries", icon: Globe, accent: "#8b5cf6" },
-  { name: "Wiki", href: "/w", icon: FaWikipediaW, accent: "#3b82f6" },
+  { name: "Wiki", href: "/w", icon: WikiOSLogomark, accent: "#3b82f6" },
   { name: "Maps", href: "/maps", icon: Compass, accent: "#06b6d4" },
   { name: "Forum", href: "/forum", icon: MessageSquare, accent: "#f97316" },
 ];

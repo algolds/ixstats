@@ -4,7 +4,7 @@
 "use client";
 
 import { Sparks as Sparkles, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
-import { FaWikipediaW } from "react-icons/fa";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -97,7 +97,7 @@ export function WikiAndStashPopovers({
             title="Insert Wiki Link or Embed"
             aria-label="Insert Wiki Link or Embed"
           >
-            <FaWikipediaW className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
+            <WikiOSLogomark className="text-wiki h-3.5 w-3.5 dark:text-blue-400" />
           </Button>
         </PopoverTrigger>
         <PopoverContent

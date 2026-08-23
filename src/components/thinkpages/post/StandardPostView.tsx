@@ -371,7 +371,7 @@ export function StandardPostView({
             return null;
           })()}
 
-          {post.hashtags && post.hashtags.length > 0 && (
+          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1">
               {post.hashtags.map((hashtag: string, index: number) => (
                 <button key={index} className="text-sm text-blue-500 hover:underline">
@@ -509,6 +509,11 @@ export function StandardPostView({
             setReplyText={setReplyText}
             handleSubmitReply={handleSubmitReply}
             isReplyPending={createPostMutation.isPending}
+            currentUserAccountId={currentUserAccountId}
+            accounts={accounts}
+            onAccountSelect={onAccountSelect}
+            onCreateAccount={onCreateAccount}
+            isOwner={isOwner}
             proxyDiscordUrl={proxyDiscordUrl}
           />
 
