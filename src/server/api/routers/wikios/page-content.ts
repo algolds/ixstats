@@ -610,6 +610,24 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
+   * Batch get lead thumbnails for article titles.
+   */
+  getArticleThumbnails: publicProcedure
+    .input(z.object({ titles: z.array(z.string().min(1)).max(100) }))
+    .query(async ({ input }) => {
+      if (input.titles.length === 0) return {};
+      const { batchFetchThumbnails } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
+      const map = await batchFetchThumbnails(input.titles);
+      const result: Record<string, string> = {};
+      for (const [title, url] of map.entries()) {
+        result[title] = url;
+        result[title.replace(/ /g, "_")] = url;
+        result[title.replace(/_/g, " ")] = url;
+      }
+      return result;
+    }),
+
+  /**
    * Get forum thread preview by threadId.
    */
   getForumThreadPreview: publicProcedure

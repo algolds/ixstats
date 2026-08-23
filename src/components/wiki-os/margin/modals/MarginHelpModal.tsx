@@ -1,11 +1,12 @@
 // src/components/wiki-os/margin/modals/MarginHelpModal.tsx
-// Theme-compliant Apple-grade interactive help & guide modal for WikiOS Margin suite.
+// Interactive help modal for WikiOS Margin suite.
+// Signature Highlighter Yellow / Warm Amber branding for Margin.
 
 "use client";
 
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
@@ -31,7 +32,7 @@ interface MarginHelpModalProps {
 }
 
 export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModalProps) {
-  const primaryColor = themeColors?.primary || "var(--wikios-accent, #a855f7)";
+  const primaryColor = themeColors?.primary || "var(--wikios-accent, #fef036)";
 
   // ESC key handler
   useEffect(() => {
@@ -78,19 +79,14 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
             <div className="flex items-center justify-between p-4.5 border-b border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40">
               <div className="flex items-center gap-3">
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm"
-                  style={{
-                    borderColor: `${primaryColor}40`,
-                    backgroundColor: `${primaryColor}15`,
-                    color: primaryColor,
-                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/60 bg-[#fef036] text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.4)] font-bold"
                 >
-                  <Sparkles className="h-5 w-5" />
+                  <Highlighter className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold tracking-tight">WikiOS Margin Guide</h3>
+                  <h3 className="text-base font-bold tracking-tight">Margin guide</h3>
                   <p className="text-xs text-[var(--wikios-text-dim)]">
-                    Interactive reading, threaded discourse, and annotations
+                    Discussions, highlights, and simulation stats
                   </p>
                 </div>
               </div>
@@ -113,31 +109,30 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
               {/* Feature 1: Selection Capsule */}
               <div className="p-3.5 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 space-y-2">
                 <div
-                  className="flex items-center gap-2 font-bold"
-                  style={{ color: primaryColor }}
+                  className="flex items-center gap-2 font-bold text-[var(--wikios-text)]"
                 >
-                  <Compass className="w-4 h-4" />
-                  <span>1. Select Any Text in the Article</span>
+                  <Compass className="w-4 h-4 text-yellow-600 dark:text-[#fef036]" />
+                  <span>1. Selecting text</span>
                 </div>
                 <p className="text-[11.5px] text-[var(--wikios-text-muted)] leading-relaxed">
-                  Highlighting any sentence or paragraph brings up the floating Selection Capsule with quick actions:
+                  Select prose in the article to highlight, start a discussion, suggest an edit, or save a quote:
                 </p>
                 <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
                   <div className="flex items-center gap-2 p-2 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)]">
-                    <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0" />
-                    <span>Highlight with 4 colors</span>
+                    <span className="w-3 h-3 rounded-full bg-[#fef036] shrink-0" />
+                    <span>Highlight</span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)]">
-                    <MessageSquare className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                    <span>Start anchored thread</span>
+                    <MessageSquare className="w-3.5 h-3.5 text-yellow-600 dark:text-[#fef036] shrink-0" />
+                    <span>Discuss</span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)]">
                     <Bookmark className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                    <span>Clip quote to Stash</span>
+                    <span>Save quote</span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)]">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>One-click copy</span>
+                    <span>Copy text</span>
                   </div>
                 </div>
               </div>
@@ -149,10 +144,10 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   style={{ color: primaryColor }}
                 >
                   <MessageSquare className="w-4 h-4" />
-                  <span>2. Discussion Threads</span>
+                  <span>2. Discussions</span>
                 </div>
                 <p className="text-[11.5px] text-[var(--wikios-text-muted)] leading-relaxed">
-                  Collaborate on lore, ask clarifying questions, or discuss treaties. Threads display author user roles, nation affiliations, and support interactive hold-to-resolve completion.
+                  Talk through lore details, dispute claims, or suggest edits. Long-press &ldquo;Hold to resolve&rdquo; when a discussion is settled.
                 </p>
               </div>
 
@@ -163,10 +158,10 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   style={{ color: primaryColor }}
                 >
                   <Highlighter className="w-4 h-4" />
-                  <span>3. Markup & Jump to Text</span>
+                  <span>3. Highlights & quotes</span>
                 </div>
                 <p className="text-[11.5px] text-[var(--wikios-text-muted)] leading-relaxed">
-                  Saved highlights appear in the Markup tab with color swatches. Clicking &ldquo;Jump to text&rdquo; instantly scrolls the article directly to that passage with an animated focus ring.
+                  Highlights appear in the Markup tab. Click &ldquo;Jump&rdquo; to scroll to the passage in the article.
                 </p>
               </div>
 
@@ -177,7 +172,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   style={{ color: primaryColor }}
                 >
                   <Keyboard className="w-4 h-4" />
-                  <span>Keyboard Shortcuts</span>
+                  <span>Shortcuts</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-0.5">
                   <div className="flex items-center justify-between p-2 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)]">
@@ -200,10 +195,9 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                   soundEffects.press();
                   onClose();
                 }}
-                style={{ backgroundColor: primaryColor }}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-stone-950 bg-[#fef036] hover:bg-[#fef036]/90 active:scale-95 transition-all shadow-md cursor-pointer"
               >
-                Got It
+                Done
               </button>
             </div>
           </motion.div>

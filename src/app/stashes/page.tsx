@@ -1,10 +1,12 @@
 // src/app/stashes/page.tsx
-// Lore Stash manager — browse, organize, and annotate saved wiki pages, images, and forum threads.
+// Stash manager — browse, organize, search, and annotate saved wiki pages, quotes, images, and forum threads.
+// Apple Design & WikiOS standard.
 
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -12,44 +14,47 @@ import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import {
   Bookmark,
-  Plus,
-  X,
-  Loader2,
-  AlertCircle,
-  BookOpen,
-  FolderOpen,
-  Hash,
+  Xmark as X,
+  SystemRestart as Loader2,
+  WarningCircle as AlertCircle,
   HelpCircle,
-  StickyNote,
-  Highlighter,
-} from "lucide-react";
+  DesignPencil as Highlighter,
+  Search,
+  MediaImage as ImageIcon,
+  ChatBubble as MessageSquare,
+} from "iconoir-react";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { cn } from "~/lib/utils";
-import "~/styles/wiki-os.css";
+import { soundEffects } from "~/lib/sound/cuelume";
+import { useNotify } from "~/hooks/useNotify";
 import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
 import {
-  PRESET_COLORS,
   StashSidebar,
   StashPagesList,
+  StashQuotesList,
   StashImagesGrid,
   StashThreadsList,
+  StashSettingsMenu,
+  CreateStashPopover,
   type CommonsImage,
   type StashTab,
+  type StashedQuoteItem,
 } from "~/components/wiki-os/stashes";
 
 export default function StashesPage() {
-  usePageTitle({ title: "My Stash" });
+  usePageTitle({ title: "Stash" });
+  const notify = useNotify();
 
   const [selectedStashId, setSelectedStashId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState("#3b82f6");
   const [error, setError] = useState<string | null>(null);
-  const [stashTab, setStashTab] = useState<StashTab>("pages");
+  const [stashTab, setStashTab] = useState<StashTab>("articles");
+  const [searchQuery, setSearchQuery] = useState("");
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
-  // Reset tab when active stash changes
+  // Reset tab & search when active stash changes
   useEffect(() => {
-    setStashTab("pages");
+    setStashTab("articles");
+    setSearchQuery("");
   }, [selectedStashId]);
 
   const utils = api.useUtils();
@@ -58,24 +63,27 @@ export default function StashesPage() {
   const createMutation = api.wikios.createStash.useMutation({
     onSuccess: (data) => {
       utils.wikios.getStashes.invalidate();
-      setNewName("");
-      setNewColor("#3b82f6");
-      setShowCreate(false);
+      soundEffects.press();
       setError(null);
       setSelectedStashId(data.id);
+      notify.success(`Created collection "${data.name}"`);
     },
     onError: (err) => setError(err.message ?? "Failed to create"),
   });
+
   const updateMutation = api.wikios.updateStash.useMutation({
     onSuccess: () => {
       utils.wikios.getStashes.invalidate();
+      notify.success("Collection updated");
     },
     onError: (err) => setError(err.message ?? "Failed to update"),
   });
+
   const deleteMutation = api.wikios.deleteStash.useMutation({
     onSuccess: () => {
       utils.wikios.getStashes.invalidate();
       setSelectedStashId(null);
+      notify.success("Collection deleted");
     },
     onError: (err) => setError(err.message ?? "Failed to delete"),
   });
@@ -92,14 +100,35 @@ export default function StashesPage() {
     onSuccess: () => {
       utils.wikios.getStashItems.invalidate();
       utils.wikios.getStashes.invalidate();
+      notify.success("Removed from collection");
     },
   });
 
   const items = itemsQuery.data?.items ?? [];
 
+  // Group items by category
+  const allArticles = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.contentType === "wiki" ||
+          (!item.pageTitle.startsWith("commons:") && !item.pageTitle.startsWith("forum:thread:"))
+      ),
+    [items]
+  );
+
+  const articleTitles = useMemo(() => allArticles.map((a) => a.pageTitle), [allArticles]);
+
+  // Fetch article lead thumbnails
+  const { data: thumbnailsMap } = api.wikios.getArticleThumbnails.useQuery(
+    { titles: articleTitles },
+    { enabled: articleTitles.length > 0, staleTime: 5 * 60 * 1000 }
+  );
+
+  // Filter image titles for media resolution
   const commonsImageTitles = useMemo(() => {
     return items
-      .filter((item) => item.pageTitle.startsWith("commons:"))
+      .filter((item) => item.contentType === "image" || item.pageTitle.startsWith("commons:"))
       .map((item) => item.pageTitle.replace(/^commons:/, ""));
   }, [items]);
 
@@ -118,42 +147,81 @@ export default function StashesPage() {
     return map;
   }, [resolvedCommonsImages]);
 
-  const totalPages = stashes.reduce((sum, s) => sum + s.itemCount, 0);
+  const totalItems = stashes.reduce((sum, s) => sum + s.itemCount, 0);
 
-  const displayedPages = useMemo(
+  const allImages = useMemo(
     () =>
       items.filter(
-        (item) =>
-          !item.pageTitle.startsWith("commons:") && !item.pageTitle.startsWith("forum:thread:")
+        (item) => item.contentType === "image" || item.pageTitle.startsWith("commons:")
       ),
     [items]
   );
-  const displayedImages = useMemo(
-    () => items.filter((item) => item.pageTitle.startsWith("commons:")),
-    [items]
-  );
-  const displayedThreads = useMemo(
-    () => items.filter((item) => item.pageTitle.startsWith("forum:thread:")),
+
+  const allThreads = useMemo(
+    () =>
+      items.filter(
+        (item) => item.contentType === "forum_thread" || item.pageTitle.startsWith("forum:thread:")
+      ),
     [items]
   );
 
-  const currentCount =
-    stashTab === "pages"
-      ? displayedPages.length
-      : stashTab === "images"
-        ? displayedImages.length
-        : displayedThreads.length;
-
-  const handleCreate = () => {
-    const trimmed = newName.trim();
-    if (!trimmed) return;
-    if (stashes.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
-      setError(`"${trimmed}" already exists`);
-      return;
+  // Flatten quotes across all saved articles in this stash
+  const allQuotes: StashedQuoteItem[] = useMemo(() => {
+    const list: StashedQuoteItem[] = [];
+    for (const article of allArticles) {
+      if (article.annotations && article.annotations.length > 0) {
+        for (const ann of article.annotations) {
+          list.push({
+            id: ann.id,
+            itemId: article.id,
+            pageTitle: article.pageTitle,
+            pageSlug: article.pageSlug,
+            selectedText: ann.selectedText,
+            comment: ann.comment,
+            color: ann.color,
+            savedAt: ann.createdAt,
+          });
+        }
+      }
     }
-    setError(null);
-    createMutation.mutate({ name: trimmed, color: newColor });
-  };
+    return list;
+  }, [allArticles]);
+
+  // Apply search query filter
+  const query = searchQuery.trim().toLowerCase();
+
+  const filteredArticles = useMemo(() => {
+    if (!query) return allArticles;
+    return allArticles.filter(
+      (a) =>
+        a.pageTitle.toLowerCase().includes(query) ||
+        (a.note && a.note.toLowerCase().includes(query))
+    );
+  }, [allArticles, query]);
+
+  const filteredQuotes = useMemo(() => {
+    if (!query) return allQuotes;
+    return allQuotes.filter(
+      (q) =>
+        q.selectedText.toLowerCase().includes(query) ||
+        q.pageTitle.toLowerCase().includes(query) ||
+        (q.comment && q.comment.toLowerCase().includes(query))
+    );
+  }, [allQuotes, query]);
+
+  const filteredImages = useMemo(() => {
+    if (!query) return allImages;
+    return allImages.filter((img) => img.pageTitle.toLowerCase().includes(query));
+  }, [allImages, query]);
+
+  const filteredThreads = useMemo(() => {
+    if (!query) return allThreads;
+    return allThreads.filter(
+      (t) =>
+        t.pageTitle.toLowerCase().includes(query) ||
+        (t.note && t.note.toLowerCase().includes(query))
+    );
+  }, [allThreads, query]);
 
   const handleUnstash = (pageTitle: string) => {
     unstashMutation.mutate({
@@ -162,307 +230,386 @@ export default function StashesPage() {
     });
   };
 
+  // Export current collection to Markdown
+  const handleExportMarkdown = () => {
+    if (!activeStash) return;
+    soundEffects.press();
+    const lines = [
+      `# ${activeStash.name} (Stash Export)`,
+      `Exported from WikiOS Stash on ${new Date().toLocaleDateString()}`,
+      ``,
+      `## Articles (${allArticles.length})`,
+      ...allArticles.map((a) => `- [${a.pageTitle.replace(/_/g, " ")}](/wiki/${a.pageSlug})`),
+      ``,
+      `## Saved Quotes & Highlights (${allQuotes.length})`,
+      ...allQuotes.map(
+        (q) =>
+          `> "${q.selectedText}"\n> — *From [${q.pageTitle.replace(/_/g, " ")}](/wiki/${q.pageSlug})*${q.comment ? `\n> Note: ${q.comment}` : ""}\n`
+      ),
+      ``,
+      `## Media (${allImages.length})`,
+      ...allImages.map((img) => `- ${img.pageTitle}`),
+      ``,
+      `## Discussions (${allThreads.length})`,
+      ...allThreads.map((t) => `- ${t.pageTitle}`),
+    ];
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeStash.name.toLowerCase().replace(/\s+/g, "_")}_stash.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notify.success("Exported collection to Markdown");
+  };
+
+  // Export current collection to JSON
+  const handleExportJson = () => {
+    if (!activeStash) return;
+    soundEffects.press();
+    const data = {
+      name: activeStash.name,
+      color: activeStash.color,
+      itemCount: activeStash.itemCount,
+      exportedAt: new Date().toISOString(),
+      articles: allArticles.map((a) => ({
+        title: a.pageTitle,
+        slug: a.pageSlug,
+        savedAt: a.savedAt,
+        note: a.note,
+        annotations: a.annotations,
+      })),
+      quotes: allQuotes,
+      images: allImages.map((img) => ({ title: img.pageTitle, id: img.id })),
+      threads: allThreads.map((t) => ({ title: t.pageTitle, slug: t.pageSlug, savedAt: t.savedAt })),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeStash.name.toLowerCase().replace(/\s+/g, "_")}_stash.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notify.success("Exported collection to JSON");
+  };
+
+  const tabs: Array<{ id: StashTab; label: string; count: number; icon: React.ComponentType<{ className?: string }> }> = [
+    { id: "articles", label: "Articles", count: allArticles.length, icon: WikiOSLogomark },
+    { id: "quotes", label: "Quotes", count: allQuotes.length, icon: Highlighter },
+    { id: "images", label: "Media", count: allImages.length, icon: ImageIcon },
+    { id: "threads", label: "Threads", count: allThreads.length, icon: MessageSquare },
+  ];
+
   return (
     <>
       <SignedIn>
         <WikiOSLayout sidebarVariant="dashboard">
-          <div className="wikios-root min-h-screen p-1 sm:p-2">
-            <div className="w-full px-2 sm:px-4">
-              {/* Header */}
-              <div className="wikios-stashes-page-header">
+          <div className="min-h-screen p-3 sm:p-6 max-w-7xl mx-auto space-y-6">
+            {/* Top Page Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--wikios-border)]">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-md">
+                  <Bookmark className="h-5 w-5" />
+                </div>
                 <div>
-                  <h1 className="wikios-stashes-page-title flex items-center gap-2">
-                    <Bookmark size={22} /> My Stash
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-bold tracking-tight text-[var(--wikios-text)]">
+                      Stash
+                    </h1>
                     <button
+                      type="button"
                       onClick={() => setWelcomeOpen(true)}
-                      className="text-muted-foreground ml-1 cursor-pointer rounded p-0.5 transition-colors hover:bg-white/5 hover:text-rose-500"
-                      title="Open Help Guide"
+                      className="text-[var(--wikios-text-dim)] hover:text-rose-400 p-1 rounded-lg hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                      title="Stash Guide"
                     >
-                      <HelpCircle size={16} />
+                      <HelpCircle className="h-4 w-4" />
                     </button>
-                  </h1>
-                  <p className="wikios-stashes-page-subtitle">
-                    {totalPages} {totalPages === 1 ? "page" : "pages"} across {stashes.length}{" "}
-                    {stashes.length === 1 ? "stash" : "stashes"}
+                  </div>
+                  <p className="text-xs text-[var(--wikios-text-dim)]">
+                    {totalItems} item{totalItems === 1 ? "" : "s"} saved across {stashes.length}{" "}
+                    collection{stashes.length === 1 ? "" : "s"}
                   </p>
                 </div>
-                {!showCreate && stashes.length > 0 && (
-                  <button onClick={() => setShowCreate(true)} className="wikios-stashes-create-btn">
-                    <Plus size={14} /> New Stash
-                  </button>
-                )}
               </div>
 
-              {error && (
-                <div className="wikios-stash-error-banner">
-                  <AlertCircle size={14} /> {error}
-                  <button onClick={() => setError(null)} className="wikios-stash-error-dismiss">
-                    <X size={12} />
-                  </button>
-                </div>
-              )}
-
-              {stashesQuery.isLoading && (
-                <div className="wikios-stashes-loading">
-                  <Loader2 size={24} className="animate-spin opacity-40" />
-                  <span>Loading your stashes...</span>
-                </div>
-              )}
-
-              {/* Empty state */}
-              {!stashesQuery.isLoading && stashes.length === 0 && !showCreate && (
-                <div className="wikios-stashes-empty-state">
-                  <div className="wikios-stashes-empty-icon">
-                    <Bookmark size={40} />
-                  </div>
-                  <h2>Start your Lore Stash</h2>
-                  <p>
-                    Save wiki pages, media repository images, and forum threads to read later, add
-                    personal notes, and highlight text with the Markup tool for your worldbuilding
-                    research.
-                  </p>
-                  <div className="wikios-stashes-empty-features">
-                    <div className="wikios-stashes-feature">
-                      <BookOpen size={16} />
-                      <div>
-                        <strong>Save for later</strong>
-                        <span>Bookmark pages across color-coded collections</span>
-                      </div>
-                    </div>
-                    <div className="wikios-stashes-feature">
-                      <StickyNote size={16} />
-                      <div>
-                        <strong>Personal notes</strong>
-                        <span>Add rich text notes to any saved page</span>
-                      </div>
-                    </div>
-                    <div className="wikios-stashes-feature">
-                      <Highlighter size={16} />
-                      <div>
-                        <strong>Markup tool</strong>
-                        <span>Highlight and annotate text directly on articles</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowCreate(true)}
-                    className="wikios-stashes-empty-action"
-                  >
-                    <Plus size={14} /> Create your first stash
-                  </button>
-                </div>
-              )}
-
-              {/* Create form */}
-              {showCreate && (
-                <div className="wikios-stash-create-card">
-                  <h3 className="wikios-stash-create-title">Create a new Lore Stash</h3>
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => {
-                      setNewName(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder="e.g. Characters, Geography, Timeline, Magic System..."
-                    className="wikios-stash-create-input-lg"
-                    autoFocus
-                    maxLength={100}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreate();
-                      if (e.key === "Escape") setShowCreate(false);
-                    }}
-                  />
-                  <div className="wikios-stash-create-color-row">
-                    <span className="wikios-stash-create-color-label">Color:</span>
-                    {PRESET_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setNewColor(c)}
-                        className={cn(
-                          "wikios-stash-preset-color-lg",
-                          newColor === c && "wikios-stash-preset-active-lg"
-                        )}
-                        style={{ background: c }}
-                      />
-                    ))}
-                  </div>
-                  <div className="wikios-stash-create-actions-lg">
-                    <button
-                      onClick={() => {
-                        setShowCreate(false);
-                        setError(null);
-                      }}
-                      className="wikios-stash-btn-secondary"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleCreate}
-                      className="wikios-stash-btn-primary"
-                      disabled={!newName.trim() || createMutation.isPending}
-                    >
-                      {createMutation.isPending && <Loader2 size={13} className="animate-spin" />}
-                      {createMutation.isPending ? "Creating..." : "Create Stash"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Main layout */}
-              {stashes.length > 0 && (
-                <div className="mt-6 flex flex-col gap-6 md:flex-row">
-                  {/* Sidebar */}
-                  <StashSidebar
-                    stashes={stashes}
-                    activeStashId={activeStash?.id}
-                    onSelectStash={setSelectedStashId}
-                    onUpdateStash={async (params) => {
-                      await updateMutation.mutateAsync(params);
-                    }}
-                    onDeleteStash={async (id) => {
-                      await deleteMutation.mutateAsync({ id });
-                    }}
-                    onOpenCreate={() => setShowCreate(true)}
-                    isUpdating={updateMutation.isPending}
-                    isDeleting={deleteMutation.isPending}
-                  />
-
-                  {/* Main content */}
-                  <div className="wikios-stashes-main min-w-0 flex-1">
-                    {activeStash && (
-                      <div className="wikios-stashes-content-header flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                          <div className="wikios-stashes-content-title-row">
-                            <span
-                              className="wikios-stash-header-swatch"
-                              style={{ background: activeStash.color }}
-                            />
-                            <h2 className="wikios-stashes-stash-name">{activeStash.name}</h2>
-                          </div>
-                          <div className="wikios-stashes-content-stats">
-                            <span>
-                              <Hash size={12} /> {activeStash.itemCount}{" "}
-                              {activeStash.itemCount === 1 ? "item" : "items"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="wikios-filter-group select-none">
-                          <button
-                            onClick={() => setStashTab("pages")}
-                            className={cn(
-                              "wikios-filter-btn",
-                              stashTab === "pages" && "wikios-filter-btn--active"
-                            )}
-                          >
-                            Pages ({displayedPages.length})
-                          </button>
-                          <button
-                            onClick={() => setStashTab("images")}
-                            className={cn(
-                              "wikios-filter-btn",
-                              stashTab === "images" && "wikios-filter-btn--active"
-                            )}
-                          >
-                            Images ({displayedImages.length})
-                          </button>
-                          <button
-                            onClick={() => setStashTab("threads")}
-                            className={cn(
-                              "wikios-filter-btn",
-                              stashTab === "threads" && "wikios-filter-btn--active"
-                            )}
-                          >
-                            Threads ({displayedThreads.length})
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {itemsQuery.isLoading && (
-                      <div className="wikios-stashes-loading-sm">
-                        <Loader2 size={16} className="animate-spin opacity-40" />
-                      </div>
-                    )}
-
-                    {currentCount === 0 && !itemsQuery.isLoading && activeStash && (
-                      <div className="wikios-stashes-empty-stash">
-                        <FolderOpen size={36} className="opacity-15" />
-                        <p>No stashed {stashTab} found</p>
-                        <p className="wikios-stashes-empty-hint">
-                          {stashTab === "pages" ? (
-                            <>
-                              Browse wiki articles and click{" "}
-                              <Bookmark size={12} className="inline" /> <strong>Stash</strong> to
-                              save pages here.
-                              <br />
-                              Use the <Highlighter size={12} className="inline" />{" "}
-                              <strong>Markup</strong> tool on stashed pages to highlight and
-                              annotate text.
-                            </>
-                          ) : stashTab === "images" ? (
-                            <>
-                              Browse the{" "}
-                              <Link
-                                href={withBasePath("/wiki/repository")}
-                                className="text-[var(--wikios-accent)] hover:underline"
-                              >
-                                Image Repository
-                              </Link>{" "}
-                              and click the <Bookmark size={12} className="inline" />{" "}
-                              <strong>Stash</strong> button to save media images here.
-                            </>
-                          ) : (
-                            <>
-                              Browse the{" "}
-                              <Link
-                                href={withBasePath("/forum")}
-                                className="text-[var(--wikios-accent)] hover:underline"
-                              >
-                                Forum
-                              </Link>{" "}
-                              and click the bookmark icon on thread posts to save threads here.
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    {stashTab === "pages" && displayedPages.length > 0 && (
-                      <StashPagesList items={displayedPages} onUnstash={handleUnstash} />
-                    )}
-
-                    {stashTab === "images" && displayedImages.length > 0 && (
-                      <StashImagesGrid
-                        items={displayedImages}
-                        resolvedImagesMap={resolvedImagesMap}
-                        onUnstash={handleUnstash}
-                      />
-                    )}
-
-                    {stashTab === "threads" && displayedThreads.length > 0 && (
-                      <StashThreadsList items={displayedThreads} onUnstash={handleUnstash} />
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Header Actions */}
+              <div className="flex items-center gap-2">
+                <CreateStashPopover
+                  onCreate={async (params) => {
+                    await createMutation.mutateAsync(params);
+                  }}
+                  isCreating={createMutation.isPending}
+                  existingNames={stashes.map((s) => s.name)}
+                />
+              </div>
             </div>
+
+            {/* Error Banner */}
+            {error && (
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 shadow-xs animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="p-1 text-rose-300 hover:text-white rounded-lg hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Main Content Layout: Sidebar + Canvas */}
+            {stashes.length > 0 && (
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                {/* Left Collections Rail */}
+                <StashSidebar
+                  stashes={stashes}
+                  activeStashId={activeStash?.id}
+                  onSelectStash={setSelectedStashId}
+                  onUpdateStash={async (params) => {
+                    await updateMutation.mutateAsync(params);
+                  }}
+                  onDeleteStash={async (id) => {
+                    await deleteMutation.mutateAsync({ id });
+                  }}
+                  onCreateStash={async (params) => {
+                    await createMutation.mutateAsync(params);
+                  }}
+                  isCreating={createMutation.isPending}
+                  isUpdating={updateMutation.isPending}
+                  isDeleting={deleteMutation.isPending}
+                />
+
+                {/* Right Content Canvas */}
+                <main className="flex-1 min-w-0 w-full space-y-4">
+                  {activeStash && (
+                    <div className="p-4 rounded-3xl bg-[var(--wikios-card-bg)]/80 border border-[var(--wikios-border)] shadow-xs backdrop-blur-xl space-y-4">
+                      {/* Active Stash Header Banner */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--wikios-border)]">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"
+                            style={{
+                              backgroundColor: activeStash.color,
+                              boxShadow: `0 0 12px ${activeStash.color}80`,
+                            }}
+                          />
+                          <h2 className="text-base font-bold text-[var(--wikios-text)] tracking-tight truncate">
+                            {activeStash.name}
+                          </h2>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--wikios-surface)] border border-[var(--wikios-border)] text-[var(--wikios-text-dim)] shrink-0">
+                            {activeStash.itemCount} item{activeStash.itemCount === 1 ? "" : "s"}
+                          </span>
+                        </div>
+
+                        {/* Stash Settings Dropdown (Rename, Color Swatches, Export MD/JSON, Share, Delete) */}
+                        <StashSettingsMenu
+                          stash={activeStash}
+                          onUpdateStash={async (params) => {
+                            await updateMutation.mutateAsync(params);
+                          }}
+                          onDeleteStash={async (id) => {
+                            await deleteMutation.mutateAsync({ id });
+                          }}
+                          onExportMarkdown={handleExportMarkdown}
+                          onExportJson={handleExportJson}
+                          isUpdating={updateMutation.isPending}
+                          isDeleting={deleteMutation.isPending}
+                        />
+                      </div>
+
+                      {/* Search Bar + Floating Segmented Tab Bar */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        {/* Instant Filter Search */}
+                        <div className="relative flex-1 max-w-xs">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Filter in this stash..."
+                            className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-xs text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] outline-none focus:border-[var(--wikios-accent)] transition-colors shadow-2xs"
+                          />
+                        </div>
+
+                        {/* Segmented Tab Control */}
+                        <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/5 border border-[var(--wikios-border)] relative shadow-2xs self-start sm:self-auto">
+                          {tabs.map((tab) => {
+                            const Icon = tab.icon;
+                            const isActive = stashTab === tab.id;
+                            return (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => {
+                                  soundEffects.press();
+                                  setStashTab(tab.id);
+                                }}
+                                className={cn(
+                                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer select-none",
+                                  isActive
+                                    ? "text-[var(--wikios-text)] font-bold shadow-xs"
+                                    : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                                )}
+                              >
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="stash-active-tab-pill"
+                                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                                    className="absolute inset-0 rounded-xl bg-[var(--wikios-surface)] border border-[var(--wikios-border)] shadow-xs"
+                                  />
+                                )}
+                                <Icon className="w-3.5 h-3.5 relative z-10" />
+                                <span className="relative z-10">{tab.label}</span>
+                                <span
+                                  className={cn(
+                                    "relative z-10 ml-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold leading-none",
+                                    isActive
+                                      ? "bg-rose-500/15 text-rose-400 border border-rose-500/25"
+                                      : "bg-white/5 text-[var(--wikios-text-dim)]"
+                                  )}
+                                >
+                                  {tab.count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Loading State */}
+                      {itemsQuery.isLoading && (
+                        <div className="py-16 flex flex-col items-center justify-center gap-2 text-[var(--wikios-text-muted)]">
+                          <Loader2 className="h-6 w-6 animate-spin opacity-40 text-rose-500" />
+                          <span className="text-xs">Loading stash items...</span>
+                        </div>
+                      )}
+
+                      {/* Content Views */}
+                      {!itemsQuery.isLoading && (
+                        <div>
+                          {/* Tab 1: Articles */}
+                          {stashTab === "articles" && (
+                            filteredArticles.length > 0 ? (
+                              <StashPagesList
+                                items={filteredArticles}
+                                onUnstash={handleUnstash}
+                                thumbnailsMap={thumbnailsMap ?? {}}
+                              />
+                            ) : (
+                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
+                                <WikiOSLogomark className="h-10 w-10 mx-auto opacity-20 text-[var(--wikios-accent)]" />
+                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                  {query ? "No articles match your search" : "No articles in this collection"}
+                                </p>
+                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                  Browse wiki articles and click the <Bookmark className="h-3 w-3 inline text-rose-400" /> <strong>Stash</strong> button in the toolbar to save them here.
+                                </p>
+                              </div>
+                            )
+                          )}
+
+                          {/* Tab 2: Quotes & Highlights */}
+                          {stashTab === "quotes" && (
+                            filteredQuotes.length > 0 ? (
+                              <StashQuotesList quotes={filteredQuotes} />
+                            ) : (
+                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
+                                <Highlighter className="h-10 w-10 mx-auto opacity-20" />
+                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                  {query ? "No quotes match your search" : "No saved quotes in this collection"}
+                                </p>
+                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                  Highlight text while reading an article and click <strong>Save Quote</strong> in the Margin capsule to curate excerpts here.
+                                </p>
+                              </div>
+                            )
+                          )}
+
+                          {/* Tab 3: Media & Images */}
+                          {stashTab === "images" && (
+                            filteredImages.length > 0 ? (
+                              <StashImagesGrid
+                                items={filteredImages}
+                                resolvedImagesMap={resolvedImagesMap}
+                                onUnstash={handleUnstash}
+                              />
+                            ) : (
+                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
+                                <ImageIcon className="h-10 w-10 mx-auto opacity-20" />
+                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                  {query ? "No media matches your search" : "No media in this collection"}
+                                </p>
+                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                  Browse the{" "}
+                                  <Link
+                                    href={withBasePath("/wiki/repository")}
+                                    className="text-[var(--wikios-accent)] font-semibold hover:underline"
+                                  >
+                                    Media Repository
+                                  </Link>{" "}
+                                  and click Stash to curate visual assets.
+                                </p>
+                              </div>
+                            )
+                          )}
+
+                          {/* Tab 4: Forum Threads */}
+                          {stashTab === "threads" && (
+                            filteredThreads.length > 0 ? (
+                              <StashThreadsList items={filteredThreads} onUnstash={handleUnstash} />
+                            ) : (
+                              <div className="py-16 text-center space-y-2 text-[var(--wikios-text-muted)]">
+                                <MessageSquare className="h-10 w-10 mx-auto opacity-20" />
+                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                  {query ? "No threads match your search" : "No forum threads in this collection"}
+                                </p>
+                                <p className="text-[11px] text-[var(--wikios-text-dim)] max-w-sm mx-auto">
+                                  Browse the{" "}
+                                  <Link
+                                    href={withBasePath("/forum")}
+                                    className="text-orange-400 font-semibold hover:underline"
+                                  >
+                                    Forum
+                                  </Link>{" "}
+                                  and bookmark threads to save them here.
+                                </p>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </main>
+              </div>
+            )}
           </div>
+
           <StashWelcomeModal open={welcomeOpen} onOpenChangeAction={setWelcomeOpen} />
         </WikiOSLayout>
       </SignedIn>
+
       <SignedOut>
-        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 dark:bg-slate-950">
-          <div className="mx-auto max-w-sm text-center">
-            <Bookmark className="mx-auto mb-4 h-12 w-12 text-slate-400 dark:text-slate-600" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              Access Lore Stashes
-            </h2>
-            <p className="mt-2 mb-6 text-sm text-slate-500 dark:text-slate-400">
-              Please sign in to view your saved collections, highlights, and stashed images or forum
-              threads.
-            </p>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--wikios-bg)] p-4 text-[var(--wikios-text)]">
+          <div className="mx-auto max-w-sm text-center space-y-4 p-8 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 backdrop-blur-2xl shadow-xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 mx-auto shadow-md">
+              <Bookmark className="h-7 w-7" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">Access Stash</h2>
+              <p className="mt-1 text-xs text-[var(--wikios-text-muted)] leading-relaxed">
+                Sign in to manage your saved lore collections, highlights, media assets, and forum bookmarks.
+              </p>
+            </div>
             <SignInButton mode="modal" />
           </div>
         </div>

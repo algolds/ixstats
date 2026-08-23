@@ -5,7 +5,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
   ZoomIn,
   SystemRestart as Loader2,
@@ -36,7 +35,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const imgInfo = resolvedImagesMap.get(item.pageTitle);
           const cleanTitle = item.pageTitle
@@ -46,54 +45,51 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
           return (
             <div
               key={item.id}
-              className="wikios-commons-card group relative cursor-pointer overflow-hidden"
+              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 hover:bg-[var(--wikios-surface)]/90 hover:border-[var(--wikios-border)]/80 shadow-xs hover:shadow-md transition-all duration-200 backdrop-blur-xl flex flex-col"
               onClick={() => imgInfo && setSelectedImage(imgInfo)}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.05}
-                className="mix-blend-overlay"
-              />
-              <TextureOverlay
-                texture="dots"
-                opacity={0.03}
-                className="mix-blend-overlay"
-              />
-              <div className="wikios-commons-card-thumb">
+              <div className="relative aspect-4/3 w-full overflow-hidden bg-white/5 border-b border-[var(--wikios-border)]/60">
                 {imgInfo ? (
                   <img
                     src={imgInfo.thumbUrl}
                     alt={cleanTitle}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-white/5">
+                  <div className="flex h-full w-full items-center justify-center">
                     <Loader2 className="h-4 w-4 animate-spin opacity-40" />
                   </div>
                 )}
-                <div className="wikios-commons-card-overlay">
-                  <ZoomIn className="h-5 w-5" />
+
+                {/* Hover overlay button */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white backdrop-blur-2xs">
+                  <div className="h-8 w-8 rounded-full bg-white/20 border border-white/40 flex items-center justify-center shadow-md">
+                    <ZoomIn className="h-4 w-4" />
+                  </div>
                 </div>
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnstash(item.pageTitle);
+                  }}
+                  className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/20 bg-black/60 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/80 hover:border-rose-500 shadow-xs"
+                  title="Remove from stash"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
-              <div className="wikios-commons-card-info">
-                <span className="wikios-commons-card-title truncate" title={cleanTitle}>
+
+              <div className="p-2.5 flex flex-col justify-between gap-1 flex-1">
+                <span className="text-xs font-bold text-[var(--wikios-text)] group-hover:text-[var(--wikios-accent)] transition-colors truncate" title={cleanTitle}>
                   {cleanTitle}
                 </span>
-                <span className="wikios-commons-card-meta">
-                  {imgInfo ? `${imgInfo.width}×${imgInfo.height}` : "..."}
+                <span className="text-[10px] text-[var(--wikios-text-dim)] font-mono">
+                  {imgInfo ? `${imgInfo.width} × ${imgInfo.height}` : "..."}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnstash(item.pageTitle);
-                }}
-                className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded border border-white/10 bg-black/60 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
-                title="Remove from stash"
-              >
-                <X className="h-3 w-3" />
-              </button>
             </div>
           );
         })}

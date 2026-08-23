@@ -120,6 +120,14 @@
   color: rgb(251, 191, 36) !important;
 }
 
+.rail-glow-highlighter:hover,
+.group:hover .rail-glow-highlighter {
+  border-color: rgba(250, 204, 21, 0.7) !important;
+  box-shadow: 0 0 14px rgba(254, 240, 54, 0.45) !important;
+  background-color: #fef036 !important;
+  color: #09090b !important;
+}
+
 .rail-glow-green:hover,
 .group:hover .rail-glow-green {
   border-color: rgba(16, 185, 129, 0.45) !important;

@@ -17,6 +17,8 @@ export const getGlowColor = (id: string): string => {
     case "recent":
     case "history":
       return "rgba(245, 158, 11, 0.45)";
+    case "margin":
+      return "var(--margin-accent-glow, rgba(254, 240, 54, 0.55))";
     case "random":
       return "rgba(99, 102, 241, 0.45)";
     case "stashes":
@@ -37,24 +39,28 @@ export const getActiveColorClass = (itemId: string): string => {
   switch (itemId) {
     case "search":
     case "backlinks":
-      return "text-teal-400 border-teal-500/30 bg-teal-500/10";
+      return "text-teal-600 dark:text-teal-400 border-teal-500/30 bg-teal-500/10";
     case "main":
     case "edit":
-      return "text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
     case "recent":
     case "history":
-      return "text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
+    case "margin":
+      return "text-stone-950 border-yellow-400/60 bg-[#fef036] shadow-[0_0_12px_rgba(254,240,54,0.45)]";
     case "random":
-      return "text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+      return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+    case "stashes":
+      return "text-rose-600 dark:text-rose-400 border-rose-500/30 bg-rose-500/10";
     case "images":
     case "talk":
-      return "text-purple-400 border-purple-500/30 bg-purple-500/10";
+      return "text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10";
     case "lorewards":
-      return "text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
     case "create-page":
-      return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+      return "text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     default:
-      return "text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
   }
 };
 

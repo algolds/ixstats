@@ -33,6 +33,30 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 📑 Stash Research Vault & Apple Design Overhaul (STASH_VERSION: 1)
+
+- **Primary Brand Slogan & Architecture**:
+  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: *"Stash it once. Keep it forever."*).
+  - Published canonical system specification ([`docs/systems/stash.md`](docs/systems/stash.md)) and design style guide ([`docs/systems/stash-style-guide.md`](docs/systems/stash-style-guide.md)) covering cognitive offloading, research workflows, WCAG 2.1 AA contrast matrices, and export schemas.
+- **Apple Design Collection Creation Popover (`CreateStashPopover.tsx`)**:
+  - Replaced the disruptive, layout-shifting inline form with an anchored, non-disruptive Apple Design popover.
+  - Features 100% solid opaque surface (`bg-white dark:bg-[#18181b]`), 8-color preset swatch selector with animated checkmarks, live input autofocus, and keyboard shortcuts (`Enter` to submit, `Escape` to dismiss).
+  - Universally accessible from both the header action toolbar and the collection sidebar rail ([`StashSidebar.tsx`](src/components/wiki-os/stashes/StashSidebar.tsx)).
+- **Apple Design Collection Settings Popover (`StashSettingsMenu.tsx`)**:
+  - Replaced the standalone "Export Markdown" button with an Apple-grade collection management popover.
+  - Includes inline collection renaming, 8-color theme swatch switcher, shareable collection link copying (`?stash=<id>`) with toast confirmation, and destructive collection deletion with a safe confirmation banner.
+  - Implemented dual-format exporting: full Markdown (`.md`) with citation blockquotes and structured JSON (`.json`) for programmatic data backups.
+  - Eliminated background bleed-through with 100% opaque elevation surfaces and replaced muddy dark window scrims with an invisible clickaway capture layer (`fixed inset-0 z-40`).
+- **4-Tab Lore Hub Domain Architecture (`/stashes`)**:
+  - **Articles Tab ([`StashPagesList.tsx`](src/components/wiki-os/stashes/StashPagesList.tsx))**: Displays saved wiki pages with automatic lead image thumbnail resolution via `/api/mediawiki/ixwiki/` image proxy, active `onError` fallback to [`WikiOSLogomark`](src/components/wiki-os/shared/WikiOSLogomark.tsx), word counts, last updated dates, and personal notes.
+  - **Quotes & Highlights Tab ([`StashQuotesList.tsx`](src/components/wiki-os/stashes/StashQuotesList.tsx))**: Full 2-way synchronization with WikiOS Margin annotations, rendering clipped excerpts, highlight color pills, lore notes, one-click clipboard copying, and direct anchor links back to article sections.
+  - **Media Assets Tab ([`StashImagesGrid.tsx`](src/components/wiki-os/stashes/StashImagesGrid.tsx))**: 4-column responsive gallery for Wikimedia Commons graphics and local uploads with aspect ratio tags, wikitext snippet copy (`[[File:...|thumb]]`), and full-screen lightbox inspection.
+  - **Forum Threads Tab ([`StashThreadsList.tsx`](src/components/wiki-os/stashes/StashThreadsList.tsx))**: Bookmarked regional discussion threads with custom summary notes and direct links to live forum debates.
+- **WikiOS Logomark Standardization**:
+  - Replaced all generic book icons with the official vector `WikiOSLogomark` across tabs, empty states, reader steps, and quote cards.
+- **Un-slopped Stash Guide Modal (`StashWelcomeModal.tsx`)**:
+  - Rebuilt the guide modal with clean, concrete, un-slopped prose and Apple Design card layout across 4 structured tabs.
+
 ### 📚 WikiOS Direct Database Architecture & Apple / Facet Design Standardization (Plan 180)
 
 - **Dual Editorial & Sculpted Layout Engine (`WikiOSMainPage.tsx`)**:

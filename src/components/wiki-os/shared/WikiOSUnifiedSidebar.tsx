@@ -15,6 +15,7 @@ import {
   MediaImage as ImageIcon,
   EditPencil as FileEdit,
   ChatBubble as MessageSquare,
+  DesignPencil as Highlighter,
   Clock,
   Link as Link2,
   Home,
@@ -241,7 +242,7 @@ export function WikiOSUnifiedSidebar({
             "flex-1 overflow-hidden text-left text-xs font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
             !isRowExpanded ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100",
             isActive
-              ? cn("font-semibold", activeColorClass.split(" ")[0])
+              ? (id === "margin" ? "font-bold text-[var(--wikios-text)]" : cn("font-semibold", activeColorClass.split(" ")[0]))
               : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
           )}
           style={transitionStyle}
@@ -453,10 +454,10 @@ export function WikiOSUnifiedSidebar({
             {renderRow({
               id: "margin",
               onClick: () => toggleMargin(),
-              icon: MessageSquare,
+              icon: Highlighter,
               title: isMarginOpen ? "Hide Margin" : "Show Margin",
               glowClass:
-                "rail-glow-purple rail-animate-wiggle border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-500/15",
+                "rail-glow-highlighter rail-animate-wiggle border-yellow-400/50 bg-[#fef036]/15 text-[var(--wikios-text)] hover:bg-[#fef036]/25",
               isActive: isMarginOpen || activeId === "margin",
               badge: (
                 <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px] font-mono">

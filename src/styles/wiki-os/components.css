@@ -1,11 +1,13 @@
 /* ===========================================================================
-   WikiOS Margin & Gutter Pins
+   WikiOS Margin & Gutter Pins (Block Heading Anchors)
    =========================================================================== */
-.wikios-anchor-highlighted {
-  outline: 2px solid var(--wikios-accent, #3b82f6) !important;
+:not(.wikios-annotation-mark).wikios-anchor-highlighted {
+  outline: 2px solid var(--wikios-accent, #fef036) !important;
   outline-offset: 4px;
-  background-color: var(--wikios-accent-bg, rgba(59, 130, 246, 0.12)) !important;
+  background-color: var(--wikios-accent-bg, rgba(254, 240, 54, 0.18)) !important;
   border-radius: 8px;
+  box-shadow: 0 0 24px rgba(254, 240, 54, 0.25);
+  color: inherit !important;
   transition: all 200ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -2672,19 +2674,117 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Annotation Marks (in-article highlights)
+   Annotation Marks (Apple Books Physical Highlighter in-article markup)
+   By default, marked text remains clean and non-intrusive (dashed underline).
+   Hovering or clicking the pin/text illuminates the full radiant highlighter wash.
    --------------------------------------------------------------------------- */
+mark.wikios-annotation-mark,
 .wikios-annotation-mark {
-  background: color-mix(in srgb, var(--annotation-color, #fbbf24) 25%, transparent);
-  border-bottom: 2px solid var(--annotation-color, #fbbf24);
+  background-color: transparent !important;
+  color: inherit !important;
+  border-bottom: 2px dashed color-mix(in srgb, var(--annotation-color, #fef036) 40%, transparent) !important;
+  border-radius: 4px;
+  padding: 0.12em 0.25em;
+  margin: 0 -0.05em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   cursor: pointer;
-  border-radius: 2px;
-  padding: 0 1px;
-  transition: background 0.15s;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.wikios-annotation-mark:hover {
-  background: color-mix(in srgb, var(--annotation-color, #fbbf24) 40%, transparent);
+mark.wikios-annotation-mark:hover,
+mark.wikios-annotation-mark[data-selected="true"],
+mark.wikios-annotation-mark.wikios-anchor-highlighted,
+.wikios-annotation-mark:hover,
+.wikios-annotation-mark[data-selected="true"],
+.wikios-annotation-mark.wikios-anchor-highlighted {
+  outline: none !important;
+  background-color: color-mix(in srgb, var(--annotation-color, #fef036) 26%, transparent) !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--annotation-color, #fef036) 80%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--annotation-color, #fef036) 35%, transparent),
+              0 0 16px color-mix(in srgb, var(--annotation-color, #fef036) 24%, transparent) !important;
+}
+
+/* Dark Mode Tuning for Apple Books Contrast */
+.dark mark.wikios-annotation-mark,
+[data-theme="dark"] mark.wikios-annotation-mark,
+html:not([data-theme="light"]) mark.wikios-annotation-mark,
+.dark .wikios-annotation-mark,
+[data-theme="dark"] .wikios-annotation-mark,
+html:not([data-theme="light"]) .wikios-annotation-mark {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-bottom: 2px dashed color-mix(in srgb, var(--annotation-color, #fef036) 45%, transparent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.dark mark.wikios-annotation-mark:hover,
+.dark mark.wikios-annotation-mark[data-selected="true"],
+.dark mark.wikios-annotation-mark.wikios-anchor-highlighted,
+[data-theme="dark"] mark.wikios-annotation-mark:hover,
+[data-theme="dark"] mark.wikios-annotation-mark[data-selected="true"],
+[data-theme="dark"] mark.wikios-annotation-mark.wikios-anchor-highlighted,
+html:not([data-theme="light"]) mark.wikios-annotation-mark:hover,
+html:not([data-theme="light"]) mark.wikios-annotation-mark[data-selected="true"],
+html:not([data-theme="light"]) mark.wikios-annotation-mark.wikios-anchor-highlighted,
+.dark .wikios-annotation-mark:hover,
+.dark .wikios-annotation-mark[data-selected="true"],
+.dark .wikios-annotation-mark.wikios-anchor-highlighted,
+[data-theme="dark"] .wikios-annotation-mark:hover,
+[data-theme="dark"] .wikios-annotation-mark[data-selected="true"],
+[data-theme="dark"] .wikios-annotation-mark.wikios-anchor-highlighted,
+html:not([data-theme="light"]) .wikios-annotation-mark:hover,
+html:not([data-theme="light"]) .wikios-annotation-mark[data-selected="true"],
+html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted {
+  outline: none !important;
+  background-color: color-mix(in srgb, var(--annotation-color, #fef036) 28%, transparent) !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--annotation-color, #fef036) 85%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--annotation-color, #fef036) 45%, transparent),
+              0 0 18px color-mix(in srgb, var(--annotation-color, #fef036) 30%, transparent) !important;
+}
+
+/* Light Mode Tuning */
+[data-theme="light"] mark.wikios-annotation-mark,
+[data-theme="light"] .wikios-annotation-mark {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-bottom: 2px dashed color-mix(in srgb, var(--annotation-color, #facc15) 75%, transparent) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+[data-theme="light"] mark.wikios-annotation-mark:hover,
+[data-theme="light"] mark.wikios-annotation-mark[data-selected="true"],
+[data-theme="light"] mark.wikios-annotation-mark.wikios-anchor-highlighted,
+[data-theme="light"] .wikios-annotation-mark:hover,
+[data-theme="light"] .wikios-annotation-mark[data-selected="true"],
+[data-theme="light"] .wikios-annotation-mark.wikios-anchor-highlighted {
+  outline: none !important;
+  background-color: color-mix(in srgb, var(--annotation-color, #fef036) 42%, transparent) !important;
+  color: #18181b !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--annotation-color, #facc15) 90%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--annotation-color, #facc15) 50%, transparent),
+              0 0 14px color-mix(in srgb, var(--annotation-color, #fef036) 30%, transparent) !important;
+}
+
+/* Margin Theme Utility Helpers */
+.text-margin-accent {
+  color: var(--margin-accent-text, #fef036);
+}
+
+.bg-margin-accent-subtle {
+  background-color: var(--margin-accent-bg, rgba(254, 240, 54, 0.15));
+}
+
+.border-margin-accent-subtle {
+  border-color: var(--margin-accent-border, rgba(254, 240, 54, 0.35));
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // src/components/wiki-os/margin/SelectionCapsule.tsx
-// Origin-aware floating selection capsule for inline markup, stash, and discussions.
-// Full Apple Design & Theme Compliance.
+// Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
+// Full Apple Design & Emil Kowalski motion compliance.
 
 "use client";
 
@@ -11,16 +11,20 @@ import {
   Bookmark,
   Check,
   Copy,
+  DesignPencil as Edit3,
+  ShareAndroid as Share2,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 
 export const HIGHLIGHT_PALETTE = [
-  { color: "#fbbf24", label: "Amber" },
-  { color: "#34d399", label: "Emerald" },
-  { color: "#60a5fa", label: "Blue" },
-  { color: "#f472b6", label: "Rose" },
+  { color: "#fef036", label: "Yellow (Purpose)" },
+  { color: "#4ade80", label: "Green (Geography)" },
+  { color: "#38bdf8", label: "Blue (History)" },
+  { color: "#fb7185", label: "Pink (Critical)" },
+  { color: "#fb923c", label: "Orange (Customs)" },
+  { color: "#c084fc", label: "Lavender (Figures)" },
 ];
 
 export interface SelectionPayload {
@@ -36,7 +40,9 @@ interface SelectionCapsuleProps {
   contentRef: React.RefObject<HTMLDivElement | null>;
   onAddHighlight?: (payload: SelectionPayload, color: string) => void;
   onOpenThreadDraft?: (payload: SelectionPayload) => void;
+  onSuggestEdit?: (payload: SelectionPayload) => void;
   onStashQuote?: (payload: SelectionPayload) => void;
+  onShareQuote?: (payload: SelectionPayload) => void;
   isAuthenticated: boolean;
 }
 
@@ -44,7 +50,9 @@ export function SelectionCapsule({
   contentRef,
   onAddHighlight,
   onOpenThreadDraft,
+  onSuggestEdit,
   onStashQuote,
+  onShareQuote,
   isAuthenticated,
 }: SelectionCapsuleProps) {
   const [selectionData, setSelectionData] = useState<SelectionPayload | null>(null);
@@ -127,11 +135,28 @@ export function SelectionCapsule({
     clearSelection();
   };
 
+  const handleSuggest = () => {
+    if (!selectionData) return;
+    soundEffects.press();
+    if (onSuggestEdit) {
+      onSuggestEdit(selectionData);
+    } else {
+      onOpenThreadDraft?.(selectionData);
+    }
+    clearSelection();
+  };
+
   const handleStash = () => {
     if (!selectionData) return;
-    soundEffects.success();
+    soundEffects.press();
     onStashQuote?.(selectionData);
-    notify.success("Quote saved to Stash");
+    clearSelection();
+  };
+
+  const handleShare = () => {
+    if (!selectionData) return;
+    soundEffects.press();
+    onShareQuote?.(selectionData);
     clearSelection();
   };
 
@@ -171,21 +196,21 @@ export function SelectionCapsule({
       ref={capsuleRef}
       style={style}
       className={cn(
-        "flex items-center gap-1.5 p-1.5 rounded-2xl border border-[var(--wikios-border)] shadow-[0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur-2xl transition-all duration-200 select-none animate-in fade-in zoom-in-95",
+        "flex items-center gap-1 p-1 rounded-2xl border border-[var(--wikios-border)] shadow-[0_12px_36px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-transform duration-100 select-none animate-in fade-in zoom-in-95",
         "bg-[var(--wikios-surface)]/95 text-[var(--wikios-text)]"
       )}
     >
       {/* Highlight Color Palette */}
       {isAuthenticated && (
-        <div className="flex items-center gap-1 pr-1.5 border-r border-[var(--wikios-border)]">
+        <div className="flex items-center gap-1 pr-1.5 border-r border-[var(--wikios-border)] pl-0.5">
           {HIGHLIGHT_PALETTE.map((p) => (
             <button
               key={p.color}
               type="button"
               onClick={() => handleHighlight(p.color)}
-              className="w-5 h-5 rounded-full border border-white/20 transition-transform active:scale-90 hover:scale-110 cursor-pointer shadow-xs"
+              className="w-4.5 h-4.5 rounded-full border border-white/25 transition-transform duration-100 active:scale-85 hover:scale-110 cursor-pointer shadow-xs"
               style={{ backgroundColor: p.color }}
-              title={`Note in Margin (${p.label})`}
+              title={`Highlight (${p.label})`}
             />
           ))}
         </div>
@@ -195,32 +220,55 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-[0.97] transition-all cursor-pointer"
-        title="Discuss in Margin"
+        className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        title="Discuss"
       >
-        <MessageSquare className="w-3.5 h-3.5 text-[var(--wikios-accent)]" />
+        <MessageSquare className="w-3.5 h-3.5 text-[#fef036]" />
         <span>Discuss</span>
       </button>
+
+      {/* Action: Suggest Edit */}
+      {isAuthenticated && (
+        <button
+          type="button"
+          onClick={handleSuggest}
+          className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+          title="Suggest edit"
+        >
+          <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Suggest edit</span>
+        </button>
+      )}
 
       {/* Action: Stash Quote */}
       {isAuthenticated && (
         <button
           type="button"
           onClick={handleStash}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-[0.97] transition-all cursor-pointer"
-          title="Clip quote to Stash"
+          className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+          title="Save quote"
         >
           <Bookmark className="w-3.5 h-3.5 text-rose-400" />
           <span>Stash</span>
         </button>
       )}
 
+      {/* Action: Share / Dispatch */}
+      <button
+        type="button"
+        onClick={handleShare}
+        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-[#fef036] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        title="Share quote"
+      >
+        <Share2 className="w-3.5 h-3.5" />
+      </button>
+
       {/* Action: Copy Text */}
       <button
         type="button"
         onClick={handleCopy}
-        className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-[0.97] transition-all cursor-pointer"
-        title="Copy quote"
+        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        title="Copy text"
       >
         {copied ? (
           <Check className="w-3.5 h-3.5 text-emerald-400" />

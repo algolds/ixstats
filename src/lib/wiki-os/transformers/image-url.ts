@@ -174,22 +174,24 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
     url = "https:" + url;
   }
 
-  // Relative path on IxWiki
-  if (url.startsWith("/")) {
-    if (url.startsWith("/images/")) {
-      url = "https://ixwiki.com" + url;
-    } else if (url.startsWith("/thumb/")) {
-      url = "https://ixwiki.com/images" + url;
-    } else if (url.startsWith("/wiki/Special:FilePath/")) {
-      url = "https://ixwiki.com" + url;
-    } else {
-      url = "https://ixwiki.com" + url;
-    }
-  }
-
   // Handle Wikimedia Commons proxying
   if (isWikimediaCommonsUrl(url)) {
     return getCommonsProxyUrl(url);
+  }
+
+  // Proxy ixwiki images to avoid direct hotlinking/CORS failures
+  if (url.startsWith("https://ixwiki.com/") || url.startsWith("http://ixwiki.com/")) {
+    const subpath = url.replace(/^https?:\/\/ixwiki\.com\//i, "");
+    return withBasePath(`/api/mediawiki/ixwiki/${subpath}`);
+  }
+
+  // Relative path on IxWiki
+  if (url.startsWith("/")) {
+    if (url.startsWith("/api/mediawiki/")) {
+      return url;
+    }
+    const cleanPath = url.replace(/^\/+/, "");
+    return withBasePath(`/api/mediawiki/ixwiki/${cleanPath}`);
   }
 
   return url;

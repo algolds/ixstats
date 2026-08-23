@@ -43,6 +43,7 @@ import {
   WikiMarginDrawer,
   MarginGutterPins,
   SelectionCapsule,
+  MarginShareModal,
   type SelectionPayload,
   type MarginTab,
 } from "~/components/wiki-os/margin";
@@ -152,6 +153,7 @@ export function ArticleRenderer({
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const [draftQuote, setDraftQuote] = useState<string | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const utils = api.useUtils();
 
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
@@ -208,8 +210,9 @@ export function ArticleRenderer({
   const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
     onSuccess: () => {
       soundEffects.success();
-      notify.success("Highlight saved to Margin Markup");
       void utils.wikios.getAnnotations.invalidate({ pageTitle: title });
+      void utils.wikios.getStashItems.invalidate();
+      void utils.wikios.getStashes.invalidate();
       void refetchAnnotations();
     },
     onError: (err: { message?: string }) => {
@@ -219,10 +222,9 @@ export function ArticleRenderer({
 
   const stashPageMutation = api.wikios.stashPage.useMutation({
     onSuccess: () => {
-      soundEffects.success();
-      notify.success("Saved to Lore Stash");
       void utils.wikios.isStashed.invalidate({ pageTitle: title });
       void utils.wikios.getStashes.invalidate();
+      void utils.wikios.getStashItems.invalidate();
     },
     onError: (err: { message?: string }) => {
       notify.error(err.message || "Failed to stash page");
@@ -230,11 +232,18 @@ export function ArticleRenderer({
   });
 
   const handleAddHighlight = (payload: SelectionPayload, color: string) => {
-    addAnnotationMutation.mutate({
-      pageTitle: title,
-      selectedText: payload.text,
-      color,
-    });
+    addAnnotationMutation.mutate(
+      {
+        pageTitle: title,
+        selectedText: payload.text,
+        color,
+      },
+      {
+        onSuccess: () => {
+          notify.success("Highlight saved to Margin Markup");
+        },
+      }
+    );
   };
 
   const handleOpenThreadDraft = (payload: SelectionPayload) => {
@@ -245,13 +254,33 @@ export function ArticleRenderer({
   };
 
   const handleStashQuote = (payload: SelectionPayload) => {
-    addAnnotationMutation.mutate({
-      pageTitle: title,
-      selectedText: payload.text,
-      comment: "Saved quote",
-      color: "#f472b6",
-    });
-    stashPageMutation.mutate({ pageTitle: title });
+    addAnnotationMutation.mutate(
+      {
+        pageTitle: title,
+        selectedText: payload.text,
+        comment: "Saved quote",
+        color: "#f472b6",
+      },
+      {
+        onSuccess: () => {
+          notify.success("Quote saved to Stash & Margin");
+          stashPageMutation.mutate({ pageTitle: title });
+        },
+      }
+    );
+  };
+
+  const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
+
+  const handleSuggestEdit = (payload: SelectionPayload) => {
+    setActiveAnchor(null);
+    setDraftQuote(payload.text);
+    setMarginTab("threads");
+    setMarginOpen(true);
+  };
+
+  const handleShareQuote = (payload: SelectionPayload) => {
+    setSharePayload(payload);
   };
 
   // --- Portal & Dynamic Widgets Setup ---
@@ -485,18 +514,22 @@ export function ArticleRenderer({
 
   const lightboxPortal = useImageLightbox(contentRef);
 
-  const stashQuery = api.wikios.isStashed.useQuery(
+  const _stashQuery = api.wikios.isStashed.useQuery(
     { pageTitle: title },
     { enabled: isAuthenticated, retry: false }
   );
-  const isStashed = stashQuery.data?.stashed ?? false;
 
-  const { toolbarPortal, annotationPopover } = useAnnotationOverlay(
+  useAnnotationOverlay({
     contentRef,
-    title,
-    isAuthenticated,
-    isStashed
-  );
+    annotations: (annotationsData as any) || [],
+    selectedAnnotationId,
+    onSelectAnnotation: (id) => {
+      setSelectedAnnotationId(id);
+      setSelectedThreadId(null);
+      setMarginTab("markup");
+      setMarginOpen(true);
+    },
+  });
 
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
@@ -610,6 +643,27 @@ export function ArticleRenderer({
 
           {categories.length > 0 && <CategoriesBar categories={categories} />}
           <ArticleFooter title={title} lastModified={lastModified} />
+
+          {/* Margin Suite: Gutter Pins aligned to article text */}
+          <MarginGutterPins
+            contentRef={contentRef}
+            threads={(marginData?.threads as any) || []}
+            annotations={(annotationsData as any) || []}
+            themeColors={themeColors}
+            isMarginOpen={marginOpen}
+            onSelectAnchor={(anchor, id, tab) => {
+              setActiveAnchor(anchor);
+              if (tab === "markup") {
+                setSelectedAnnotationId(id || null);
+                setSelectedThreadId(null);
+              } else {
+                setSelectedThreadId(id || null);
+                setSelectedAnnotationId(null);
+              }
+              setMarginTab(tab || "threads");
+            }}
+            onOpenDrawer={() => setMarginOpen(true)}
+          />
         </div>
 
         {/* Desktop sticky TOC (autocollapses when Margin is open) */}
@@ -631,8 +685,6 @@ export function ArticleRenderer({
       />
 
       {lightboxPortal}
-      {toolbarPortal}
-      {annotationPopover}
       {citeTooltipPortal}
 
       {/* Quick action modals */}
@@ -643,26 +695,14 @@ export function ArticleRenderer({
         <QuickBacklinksModal title={title} slug={slug} onClose={() => setActiveModal(null)} />
       )}
 
-      {/* Margin Suite: Gutter Pins, Selection Capsule & Split-Canvas Drawer */}
-      <MarginGutterPins
-        contentRef={contentRef}
-        threads={(marginData?.threads as any) || []}
-        annotations={(annotationsData as any) || []}
-        themeColors={themeColors}
-        onSelectAnchor={(anchor, threadId, tab) => {
-          setActiveAnchor(anchor);
-          setSelectedThreadId(threadId || null);
-          setMarginTab(tab || "threads");
-        }}
-        onOpenDrawer={() => setMarginOpen(true)}
-      />
-
       <SelectionCapsule
         contentRef={contentRef}
         isAuthenticated={isAuthenticated}
         onAddHighlight={handleAddHighlight}
         onOpenThreadDraft={handleOpenThreadDraft}
+        onSuggestEdit={handleSuggestEdit}
         onStashQuote={handleStashQuote}
+        onShareQuote={handleShareQuote}
       />
 
       <WikiMarginDrawer
@@ -675,12 +715,24 @@ export function ArticleRenderer({
         onClearDraftQuote={() => setDraftQuote(null)}
         selectedThreadId={selectedThreadId}
         onSelectThread={setSelectedThreadId}
+        selectedAnnotationId={selectedAnnotationId}
+        onSelectAnnotation={setSelectedAnnotationId}
         contentRef={contentRef}
         isAuthenticated={isAuthenticated}
         themeColors={themeColors}
         onExpandedChange={setMarginExpanded}
       />
+
+      {/* Share Modal Dialog */}
+      {sharePayload && (
+        <MarginShareModal
+          isOpen={!!sharePayload}
+          onClose={() => setSharePayload(null)}
+          articleTitle={title}
+          quoteText={sharePayload.text}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
     </div>
   );
 }
-
