@@ -24,18 +24,7 @@ import {
 } from "~/components/ui/dialog";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  Package,
-  EyeOff,
-  Coins,
-  Layers,
-  Star,
-  ImageIcon,
-} from "lucide-react";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Search, Package, EyeClosed as EyeOff, Coins, Component as Layers, Star, MediaImage as ImageIcon } from "iconoir-react";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 
 // ─── Pack types & rarity options ─────────────────────────────────
@@ -273,7 +262,7 @@ export function CardPacksAdmin() {
           },
           { label: "Total Cards", value: stats.totalCards, icon: Layers, color: "text-purple-400" },
         ].map((s) => (
-          <Card key={s.label} className="glass-hierarchy-child p-4">
+          <Card key={s.label} className="facet-hierarchy-child p-4">
             <div className="flex items-center gap-2">
               <s.icon className={`h-4 w-4 ${s.color}`} />
               <p className="text-muted-foreground text-sm">{s.label}</p>
@@ -290,7 +279,7 @@ export function CardPacksAdmin() {
           <p className="text-muted-foreground">Loading packs...</p>
         </div>
       ) : filteredPacks.length === 0 ? (
-        <Card className="glass-hierarchy-parent p-12 text-center">
+        <Card className="facet-hierarchy-parent p-12 text-center">
           <Package className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
           <p className="text-muted-foreground">No packs found</p>
         </Card>
@@ -301,7 +290,7 @@ export function CardPacksAdmin() {
             return (
               <Card
                 key={pack.id}
-                className={`glass-hierarchy-child border p-4 transition-all hover:border-amber-400/50 ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
+                className={`facet-hierarchy-child border p-4 transition-all hover:border-amber-400/50 ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex min-w-0 flex-1 items-start gap-3">

@@ -303,7 +303,7 @@ export default function OnomaGlyphsDevPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-[#0091ff]/10 text-[#0091ff] border border-[#0091ff]/20">
+              <div className="p-2 rounded-xl bg-onoma-primary/10 text-onoma-primary border border-onoma-primary/20">
                 <OnomaGlyph name="emerge-engine" size="lg" />
               </div>
               <div>
@@ -332,7 +332,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="rounded-2xl border border-border/50 bg-secondary/20 p-4 sm:p-6 backdrop-blur-xl space-y-4 shadow-xs">
           <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-mono text-muted-foreground">
-              <RiEqualizerLine className="h-4 w-4 text-[#0091ff]" />
+              <RiEqualizerLine className="h-4 w-4 text-onoma-primary" />
               <span>Live Testing Controls</span>
             </div>
             <span className="text-xs font-mono text-muted-foreground">
@@ -350,7 +350,7 @@ export default function OnomaGlyphsDevPage() {
                 placeholder="Search glyph name, IPA notation, or concept..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-border/60 bg-background/80 pl-9 pr-3 py-2 text-xs font-mono focus:border-[#0091ff] focus:outline-none transition-all placeholder:text-muted-foreground/60"
+                className="w-full rounded-xl border border-border/60 bg-background/80 pl-9 pr-3 py-2 text-xs font-mono focus:border-onoma-primary focus:outline-none transition-all placeholder:text-muted-foreground/60"
               />
             </div>
 
@@ -388,7 +388,7 @@ export default function OnomaGlyphsDevPage() {
                     className={cn(
                       "flex-1 py-1 text-[10px] font-mono font-bold rounded-lg cursor-pointer transition-all",
                       selectedSize === sz
-                        ? "bg-[#0091ff] text-white shadow-xs"
+                        ? "bg-onoma-primary text-white shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -435,7 +435,7 @@ export default function OnomaGlyphsDevPage() {
                   step="0.25"
                   value={selectedStroke}
                   onChange={(e) => setSelectedStroke(parseFloat(e.target.value))}
-                  className="w-full cursor-pointer accent-[#0091ff]"
+                  className="w-full cursor-pointer accent-onoma-primary"
                 />
               </div>
             </div>
@@ -544,7 +544,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="rounded-2xl border border-border/50 bg-secondary/20 p-6 space-y-6">
           <div className="border-b border-border/40 pb-3">
             <h2 className="text-lg font-bold font-mono tracking-tight flex items-center gap-2">
-              <RiStackLine className="h-4 w-4 text-[#0091ff]" />
+              <RiStackLine className="h-4 w-4 text-onoma-primary" />
               <span>Special Linguistic Notation Variants</span>
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -590,7 +590,7 @@ export default function OnomaGlyphsDevPage() {
         <div className="rounded-2xl border border-border/50 bg-secondary/20 p-6 space-y-4">
           <div className="border-b border-border/40 pb-3">
             <h2 className="text-lg font-bold font-mono tracking-tight flex items-center gap-2">
-              <RiGridLine className="h-4 w-4 text-[#0091ff]" />
+              <RiGridLine className="h-4 w-4 text-onoma-primary" />
               <span>Optical Scale Verification Matrix</span>
             </h2>
             <p className="text-xs text-muted-foreground">

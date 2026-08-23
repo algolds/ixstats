@@ -3,19 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Sliders,
-  RefreshCw,
-  Save,
-  ShieldCheck,
-  ShoppingBag,
-  Gift,
-  Clock,
-  Sparkles,
-  Layers,
-  Trash2,
-  Image,
-} from "lucide-react";
+import { ControlSlider as Sliders, Refresh as RefreshCw, FloppyDisk as Save, ShieldCheck, ShoppingBag, Gift, Clock, Sparks as Sparkles, Component as Layers, Trash as Trash2, MediaImage as Image } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";

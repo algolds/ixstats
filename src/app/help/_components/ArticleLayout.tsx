@@ -1,11 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, type LucideIcon } from "lucide-react";
+import { ArrowLeft } from "iconoir-react";
 
 interface ArticleLayoutProps {
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconColor?: string;
   children: React.ReactNode;
   prevLink?: { href: string; label: string };

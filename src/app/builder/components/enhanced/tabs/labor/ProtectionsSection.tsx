@@ -2,7 +2,7 @@
 
 import React from "react";
 import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
-import { Shield, Heart } from "lucide-react";
+import { Shield, Heart } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
 

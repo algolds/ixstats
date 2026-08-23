@@ -11,7 +11,7 @@ import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check } from "iconoir-react";
 import { COMPONENT_CATEGORIES, type AtomicEconomicComponent } from "~/lib/economy/atomic-data";
 import { formatCurrency } from "~/lib/economy/atomic-utils";
 

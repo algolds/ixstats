@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Ruler, Trash2 } from "lucide-react";
+import { Ruler, Trash as Trash2 } from "iconoir-react";
 import { formatDistanceMetrics } from "~/lib/maps/geo-analytics";
 import {
   ToolLabel,

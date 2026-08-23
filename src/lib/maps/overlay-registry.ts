@@ -15,23 +15,7 @@
  */
 
 import { lazy } from "react";
-import {
-  Building2,
-  MapPin,
-  LandPlot,
-  BookOpen,
-  Tag,
-  TrendingUp,
-  Users,
-  Network,
-  AlertTriangle,
-  Truck,
-  Activity,
-  Gauge,
-  Heart,
-  Scale,
-  Flame,
-} from "lucide-react";
+import { City as Building2, MapPin, Map as LandPlot, OpenBook as BookOpen, Label as Tag, StatUp as TrendingUp, Group as Users, Network, WarningTriangle as AlertTriangle, DeliveryTruck as Truck, Activity, Dashboard as Gauge, Heart, ScaleFrameEnlarge as Scale, FireFlame as Flame } from "iconoir-react";
 import type { FeatureCollection } from "geojson";
 import type {
   OverlayLegend,

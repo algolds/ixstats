@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, ChevronDown, Check } from "lucide-react";
+import { Search, NavArrowDown as ChevronDown, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { SectionId } from "./types";

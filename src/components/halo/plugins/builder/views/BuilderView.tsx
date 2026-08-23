@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  X,
-  HelpCircle,
-  Crown,
-  Bell,
-  Settings,
-} from "lucide-react";
+import { Search, ControlSlider as SlidersHorizontal, Xmark as X, HelpCircle, Crown, Bell, Settings } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { cn } from "~/lib/utils";

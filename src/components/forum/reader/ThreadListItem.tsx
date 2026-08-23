@@ -4,10 +4,10 @@
 "use client";
 
 import Link from "next/link";
-import { Pin, Lock, Eye, MessageSquare } from "lucide-react";
+import { Pin, Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 
 interface ThreadListItemProps {
@@ -59,7 +59,7 @@ export function ThreadListItem({
     currentForumUserId != null && authorId != null && currentForumUserId === authorId;
 
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   return (
     <div

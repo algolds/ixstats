@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 
 interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;

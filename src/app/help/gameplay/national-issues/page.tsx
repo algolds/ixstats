@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, AlertTriangle, CheckCircle, Cog } from "lucide-react";
+import { Bell, WarningTriangle as AlertTriangle, CheckCircle, Settings as Cog } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

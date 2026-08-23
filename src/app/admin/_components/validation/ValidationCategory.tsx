@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import type { ValidationCategory as ValidationCategoryType } from "~/lib/system/system-validation";

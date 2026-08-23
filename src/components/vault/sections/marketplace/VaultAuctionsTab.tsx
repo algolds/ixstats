@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { cn } from "~/lib/utils";
-import { ShoppingCart, Plus, Clock, Store, Gavel, TrendingUp, History, Filter } from "lucide-react";
+import { Cart as ShoppingCart, Plus, Clock, Shop as Store, Hammer as Gavel, StatUp as TrendingUp, ClockRotateRight as History, Filter } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
@@ -189,7 +189,7 @@ export function VaultAuctionsTab() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="glass-surface glass-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
+            className="facet-surface facet-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
           >
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
@@ -282,7 +282,7 @@ export function VaultAuctionsTab() {
       </div>
 
       {/* Tabs */}
-      <Card className="glass-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
+      <Card className="facet-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
             <TabsTrigger
@@ -449,7 +449,7 @@ export function VaultAuctionsTab() {
                   return (
                     <div
                       key={auction.id}
-                      className="glass-surface flex items-center justify-between rounded-lg border border-amber-500/25 bg-black/5 p-3 dark:bg-black/20"
+                      className="facet-surface flex items-center justify-between rounded-lg border border-amber-500/25 bg-black/5 p-3 dark:bg-black/20"
                     >
                       <div className="flex items-center gap-2.5">
                         <Store className="h-4 w-4 text-amber-600 dark:text-amber-500" />
@@ -518,7 +518,7 @@ export function VaultAuctionsTab() {
                   return (
                     <div
                       key={auction.id}
-                      className="glass-surface flex items-center justify-between rounded-lg border border-blue-500/25 bg-black/5 p-3 dark:bg-black/20"
+                      className="facet-surface flex items-center justify-between rounded-lg border border-blue-500/25 bg-black/5 p-3 dark:bg-black/20"
                     >
                       <div className="flex items-center gap-2.5">
                         <Gavel className="h-4 w-4 text-blue-500 dark:text-blue-400" />
@@ -584,7 +584,7 @@ export function VaultAuctionsTab() {
                   return (
                     <div
                       key={auction.id}
-                      className="glass-surface flex items-center justify-between rounded-lg border border-green-500/15 bg-black/5 p-3 dark:bg-black/20"
+                      className="facet-surface flex items-center justify-between rounded-lg border border-green-500/15 bg-black/5 p-3 dark:bg-black/20"
                     >
                       <div className="flex items-center gap-2.5">
                         <History className="h-4 w-4 text-green-500 dark:text-green-400" />

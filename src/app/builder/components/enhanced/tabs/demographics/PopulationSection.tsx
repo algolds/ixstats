@@ -3,7 +3,7 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Users, TrendingUp, TrendingDown, Globe } from "lucide-react";
+import { Group as Users, StatUp as TrendingUp, StatDown as TrendingDown, Globe } from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface PopulationSectionProps {

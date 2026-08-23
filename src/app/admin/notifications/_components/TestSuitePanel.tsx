@@ -13,20 +13,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Badge } from "~/components/ui/badge";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
-import {
-  Shield,
-  DollarSign,
-  Globe,
-  Trophy,
-  Zap,
-  Sparkles,
-  AlertTriangle,
-  ShieldAlert,
-  Award,
-  Play,
-  Bell,
-  FlaskConical,
-} from "lucide-react";
+import { Shield, Dollar as DollarSign, Globe, Trophy, Flash as Zap, Sparks as Sparkles, WarningTriangle as AlertTriangle, ShieldAlert, Trophy as Award, Play, Bell, Flask as FlaskConical } from "iconoir-react";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },

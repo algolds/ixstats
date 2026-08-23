@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, Waves, TrendingDown, Users } from "lucide-react";
+import { WarningTriangle as AlertTriangle, SeaWaves as Waves, StatDown as TrendingDown, Group as Users } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

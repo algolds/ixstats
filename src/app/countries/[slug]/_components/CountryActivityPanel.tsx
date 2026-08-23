@@ -5,20 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  Activity,
-  TrendingUp,
-  Trophy,
-  MessageSquare,
-  Heart,
-  Share2,
-  Clock,
-  Globe,
-  Zap,
-  ChevronDown,
-  Rss,
-  BookOpen,
-} from "lucide-react";
+import { Activity, StatUp as TrendingUp, Trophy, ChatBubble as MessageSquare, Heart, ShareAndroid as Share2, Clock, Globe, Flash as Zap, NavArrowDown as ChevronDown, RssFeed as Rss, OpenBook as BookOpen } from "iconoir-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";

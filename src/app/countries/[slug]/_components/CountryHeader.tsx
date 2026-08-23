@@ -7,18 +7,7 @@ import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetCard } from "~/components/ui/facet-container";
-import {
-  Users,
-  TrendingUp,
-  MapPin,
-  Globe,
-  Camera,
-  Check,
-  Image as ImageIcon,
-  Flag,
-  Sparkles,
-  Palette,
-} from "lucide-react";
+import { Group as Users, StatUp as TrendingUp, MapPin, Globe, Camera, Check, MediaImage as ImageIcon, WhiteFlag as Flag, Sparks as Sparkles, Palette } from "iconoir-react";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { cn } from "~/lib/utils";

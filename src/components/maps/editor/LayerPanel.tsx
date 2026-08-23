@@ -1,24 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import {
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  ChevronDown,
-  ChevronRight,
-  Crown,
-  Pencil,
-  Trash2,
-  MapPin,
-  Hexagon,
-  Landmark,
-  BookMarked,
-  Type,
-  Route,
-  Ruler,
-} from "lucide-react";
+import { Eye, EyeClosed as EyeOff, Lock, LockSlash as Unlock, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Crown, EditPencil as Pencil, Trash as Trash2, MapPin, Hexagon, Bank as Landmark, Bookmark as BookMarked, Type, Navigator as Route, Ruler } from "iconoir-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 
 export interface LayerState {

@@ -16,7 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Target, FileSpreadsheet, Download } from "lucide-react";
+import { Archery as Target, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -33,7 +33,7 @@ interface EconomicHealthRadarProps {
 export const EconomicHealthRadar = React.memo<EconomicHealthRadarProps>(
   ({ data, formatPercent, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="economic-health-chart">
+      <Card className="facet-hierarchy-child" id="economic-health-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

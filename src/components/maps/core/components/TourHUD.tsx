@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause, ChevronRight, ChevronLeft, X, MapPin, Users, TrendingUp } from "lucide-react";
+import { Play, Pause, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Xmark as X, MapPin, Group as Users, StatUp as TrendingUp } from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { TourStep, TourState } from "../hooks/useMapTour";
 

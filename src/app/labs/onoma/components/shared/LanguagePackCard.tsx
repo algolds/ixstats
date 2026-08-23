@@ -5,7 +5,7 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Star, GitFork, BookOpen, ExternalLink } from "lucide-react";
+import { Star, GitFork, OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
@@ -89,10 +89,10 @@ const FAMILY_THEMES: Record<
     text: "text-purple-400",
   },
   default: {
-    border: "border-[#0091ff]/40",
+    border: "border-onoma-primary/40",
     glow: "rgba(0, 145, 255, 0.25)",
-    bg: "from-[#0091ff]/10 via-[#0091ff]/5 to-transparent",
-    text: "text-[#0091ff]",
+    bg: "from-onoma-primary/10 via-onoma-primary/5 to-transparent",
+    text: "text-onoma-primary",
   },
 };
 
@@ -264,7 +264,7 @@ export function LanguagePackCard({
               e.stopPropagation();
               onFork?.(pack);
             }}
-            className="bg-[#0091ff] hover:bg-[#33a7ff] text-white h-8 flex-1 text-xs font-bold rounded-xl shadow-sm active:scale-95 transition-all"
+            className="bg-onoma-primary hover:bg-onoma-primary-light text-white h-8 flex-1 text-xs font-bold rounded-xl shadow-sm active:scale-95 transition-all"
           >
             <RiGitForkLine className="h-3.5 w-3.5 mr-1" />
             <span>Fork Pack</span>

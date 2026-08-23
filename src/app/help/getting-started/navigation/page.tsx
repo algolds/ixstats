@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Navigation, LayoutDashboard, Menu } from "lucide-react";
+import { Navigator as Navigation, Dashboard as LayoutDashboard, Menu } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function NavigationArticle() {

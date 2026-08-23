@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleDollarSign, TrendingUp, ShoppingCart, Clock } from "lucide-react";
+import { Dollar as CircleDollarSign, StatUp as TrendingUp, Cart as ShoppingCart, Clock } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

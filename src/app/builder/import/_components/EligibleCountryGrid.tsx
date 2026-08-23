@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Globe, Search } from "lucide-react";
+import { Globe, Search } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { BlurFade } from "~/components/ui/magicui/blur-fade";
 import { formatPopulation } from "~/lib/utils";
@@ -283,7 +283,7 @@ const EligibleCountryCard = React.memo(function EligibleCountryCard({
 
   return (
     <motion.div
-      className={`glass-floating glass-refraction relative h-48 overflow-hidden rounded-xl${onClick ? "cursor-pointer" : ""}`}
+      className={`facet-floating facet-refraction relative h-48 overflow-hidden rounded-xl${onClick ? "cursor-pointer" : ""}`}
       whileHover={{ scale: 1.05, y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onClick={onClick}

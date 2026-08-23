@@ -2,19 +2,19 @@
 
 import React, { useMemo } from "react";
 import {
-  Users,
-  Briefcase,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  LineChart,
+  Group as Users,
+  Suitcase as Briefcase,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
   Globe,
-  Info,
-  Target,
+  InfoCircle as Info,
+  Archery as Target,
   Activity,
-  DollarSign,
+  Dollar as DollarSign,
   Calculator,
-} from "lucide-react";
+} from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";

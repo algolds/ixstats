@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, type Easing } from "motion/react";
-import { Crown, Globe } from "lucide-react";
+import { Crown, Globe } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 

@@ -6,7 +6,7 @@
 
 import React from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import type { ValidationErrors } from "~/lib/government/builder-validation";
 
 export interface ValidationAlertProps {

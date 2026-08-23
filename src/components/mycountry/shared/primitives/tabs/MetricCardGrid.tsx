@@ -2,14 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import type { LucideIcon } from "lucide-react";
+
 import { MetricCard } from "~/components/ui/shared/data-display/MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Button } from "~/components/ui/button";
-import { Edit2, ImageIcon, Loader2 } from "lucide-react";
+import { EditPencil as Edit2, MediaImage as ImageIcon, SystemRestart as Loader2 } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
 import { getCardImagePreset, getFallbackGradient, type CardImageType } from "~/lib/cards/image-presets";
@@ -64,7 +64,7 @@ export interface MetricGridItem {
   title: string;
   value: string | number;
   description?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   trend?: {
     direction: "up" | "down" | "stable";
     value?: number;

@@ -4,19 +4,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Plane,
-  Ship,
-  Truck,
-  Radio,
-  Target,
-  CheckCircle2,
-  Search,
-  Image,
-} from "lucide-react";
+import { Plus, EditPencil as Edit, Trash as Trash2, Airplane as Plane, DeliveryTruck as Ship, DeliveryTruck as Truck, AntennaSignal as Radio, Archery as Target, CheckCircle as CheckCircle2, Search, MediaImage as Image } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

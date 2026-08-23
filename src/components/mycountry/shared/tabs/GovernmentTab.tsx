@@ -4,8 +4,8 @@ import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { Building, DollarSign, Crown } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import { Building, Dollar as DollarSign, Crown } from "iconoir-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -47,7 +47,7 @@ export function GovernmentTab({
   };
 
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-government border-border relative overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-government border-border relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -120,7 +120,7 @@ export function GovernmentTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground max-w-full truncate text-sm font-bold tracking-tight"
                     >
                       {metricView.structure === "government"
@@ -162,7 +162,7 @@ export function GovernmentTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-base font-bold tracking-tight hover:underline"
                     >
                       {metricView.budget === "percentage"
@@ -208,7 +208,7 @@ export function GovernmentTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.debt === "ratio"
@@ -256,7 +256,7 @@ export function GovernmentTab({
                 <span>State Structure</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "structure" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -266,7 +266,7 @@ export function GovernmentTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "structure" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "structure"
                   ? "border border-white/10"
@@ -407,7 +407,7 @@ export function GovernmentTab({
                     <span>Cabinet</span>
                     <motion.div
                       animate={{ rotate: cabinetOpen ? 90 : 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="ml-1"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
@@ -419,7 +419,7 @@ export function GovernmentTab({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+                        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
                         className="overflow-hidden"
                       >
                         <div className="p-3 pt-0">
@@ -450,7 +450,7 @@ export function GovernmentTab({
                 <span>Public Budget</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "spending" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -460,7 +460,7 @@ export function GovernmentTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "spending" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "spending"
                   ? "border border-white/10"
@@ -615,7 +615,7 @@ export function GovernmentTab({
                 <span>Fiscal Policy</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "fiscal" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -625,7 +625,7 @@ export function GovernmentTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "fiscal" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "fiscal"
                   ? "border border-white/10"

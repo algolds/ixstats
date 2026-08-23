@@ -4,7 +4,7 @@ import React from "react";
 import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 
 const POI_CATEGORIES = [
   "landmark",

@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Network } from "lucide-react";
+import { Network } from "iconoir-react";
 import { EmbassyNetworkChart, GlassTooltip } from "~/components/analytics/charts";
 import type { NetworkGrowthEntry } from "~/hooks/useDiplomaticAnalytics";
 
@@ -22,7 +22,7 @@ interface EmbassyNetworkVisualizationProps {
 export const EmbassyNetworkVisualization = React.memo<EmbassyNetworkVisualizationProps>(
   ({ data }) => {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Network className="h-5 w-5 text-purple-600" />

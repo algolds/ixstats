@@ -4,7 +4,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon } from "lucide-react";
+import { Bold, Italic, Underline, List, NumberedListLeft as ListOrdered, Link as LinkIcon } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";

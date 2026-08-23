@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, Image, Shield } from "lucide-react";
+import { CheckCircle as CheckCircle2, MediaImage as Image, Shield } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Play, Sparkles, AlertTriangle, ShieldAlert, Award } from "lucide-react";
+import { Bell, Play, Sparks as Sparkles, WarningTriangle as AlertTriangle, ShieldAlert, Trophy as Award } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -149,7 +149,7 @@ export function NotificationTestCard() {
   };
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">

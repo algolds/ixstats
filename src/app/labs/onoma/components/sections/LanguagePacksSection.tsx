@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, RefreshCw, ExternalLink, X, BookOpen, Volume2 } from "lucide-react";
+import { Search, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Xmark as X, OpenBook as BookOpen, SoundHigh as Volume2 } from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
@@ -147,14 +147,14 @@ export function LanguagePacksSection({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search language packs by name, culture, or tags..."
-            className="bg-background/80 border-border/60 text-foreground placeholder:text-muted-foreground/60 w-full rounded-xl border py-2 pr-4 pl-9 text-xs font-medium focus:border-[#0091ff]/60 focus:outline-none backdrop-blur-md"
+            className="bg-background/80 border-border/60 text-foreground placeholder:text-muted-foreground/60 w-full rounded-xl border py-2 pr-4 pl-9 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none backdrop-blur-md"
           />
         </div>
 
         <select
           value={familyFilter}
           onChange={(e) => setFamilyFilter(e.target.value)}
-          className="bg-background/80 border-border/60 text-foreground rounded-xl border px-3 py-2 text-xs font-medium focus:border-[#0091ff]/60 focus:outline-none backdrop-blur-md cursor-pointer"
+          className="bg-background/80 border-border/60 text-foreground rounded-xl border px-3 py-2 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none backdrop-blur-md cursor-pointer"
         >
           {FAMILIES.map((fam) => (
             <option key={fam.value} value={fam.value}>
@@ -179,11 +179,11 @@ export function LanguagePacksSection({
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
-              <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin text-[#0091ff]" />
+              <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin text-onoma-primary" />
             </div>
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
             <FacetMaterial material="satin" className="border-border/30 border p-12 text-center rounded-2xl">
-              <RiBookMarkedLine className="text-muted-foreground mx-auto mb-3 h-12 w-12 opacity-30 text-[#0091ff]" />
+              <RiBookMarkedLine className="text-muted-foreground mx-auto mb-3 h-12 w-12 opacity-30 text-onoma-primary" />
               <h4 className="text-foreground text-sm font-bold">No Language Packs Found</h4>
               <p className="text-muted-foreground mt-1 text-xs">
                 Try adjusting your search terms or language family filters.
@@ -325,7 +325,7 @@ export function LanguagePacksSection({
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="w-full bg-[#0091ff] hover:bg-[#33a7ff] text-white font-bold h-9 rounded-xl shadow-md cursor-pointer active:scale-[0.97] transition-all"
+                    className="w-full bg-onoma-primary hover:bg-onoma-primary-light text-white font-bold h-9 rounded-xl shadow-md cursor-pointer active:scale-[0.97] transition-all"
                   >
                     <RiGitForkLine className="h-4 w-4 mr-1.5" />
                     <span>Fork Pack to My Studio</span>
@@ -382,7 +382,7 @@ export function LanguagePacksSection({
                       onChange={(e) => setReviewComment(e.target.value)}
                       placeholder="Optional feedback about this language pack..."
                       rows={2}
-                      className="border-border/60 bg-secondary/15 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-[#0091ff]/60 focus:outline-none"
+                      className="border-border/60 bg-secondary/15 text-foreground placeholder:text-muted-foreground/60 w-full resize-none rounded-lg border p-2 text-xs focus:border-onoma-primary/60 focus:outline-none"
                     />
 
                     <Button

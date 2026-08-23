@@ -3,7 +3,7 @@
 import React from "react";
 import type { ImageContext } from "~/lib/media";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
+
 
 /** Map accent color names to gradient classes */
 const ACCENT_GRADIENTS: Record<string, string> = {
@@ -34,7 +34,7 @@ interface TabHeroBannerProps {
   context: ImageContext;
   title: string;
   subtitle?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   /** Height class. Default: "h-20 sm:h-24" */
   heightClass?: string;
   /** Overlay darkness. Default 0.75 (kept for API compat, now ignored) */

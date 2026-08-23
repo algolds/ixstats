@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X } from "lucide-react";
+import { Menu, Xmark as X } from "iconoir-react";
 import { CommandPalette } from "~/components/halo";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -234,13 +234,6 @@ export function Navigation() {
             maxWidth: "100%",
           }}
         >
-          {/* Ambient glow around DI when navbar is visible, fading cleanly to 0 on scroll */}
-          <div
-            className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl transition-opacity duration-300"
-            style={{
-              opacity: isNavVisible && !activeIsSticky ? 0.6 : 0,
-            }}
-          />
           <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
         </motion.div>
       )}

@@ -82,85 +82,85 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               <SelectItem
                 value="none"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 None
               </SelectItem>
               <SelectItem
                 value="King"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 King
               </SelectItem>
               <SelectItem
                 value="Queen"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Queen
               </SelectItem>
               <SelectItem
                 value="Prince"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Prince
               </SelectItem>
               <SelectItem
                 value="Princess"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Princess
               </SelectItem>
               <SelectItem
                 value="Lord"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Lord
               </SelectItem>
               <SelectItem
                 value="Lady"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Lady
               </SelectItem>
               <SelectItem
                 value="Sir"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Sir
               </SelectItem>
               <SelectItem
                 value="General"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 General
               </SelectItem>
               <SelectItem
                 value="President"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 President
               </SelectItem>
               <SelectItem
                 value="Governor"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Governor
               </SelectItem>
               <SelectItem
                 value="Minister"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Minister
               </SelectItem>
               <SelectItem
                 value="Dr."
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Dr.
               </SelectItem>
               <SelectItem
                 value="custom"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Custom Prefix...
               </SelectItem>
@@ -195,67 +195,67 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               <SelectItem
                 value="none"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 None
               </SelectItem>
               <SelectItem
                 value="Association"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Association
               </SelectItem>
               <SelectItem
                 value="Committee"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Committee
               </SelectItem>
               <SelectItem
                 value="Society"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Society
               </SelectItem>
               <SelectItem
                 value="Alliance"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Alliance
               </SelectItem>
               <SelectItem
                 value="Union"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Union
               </SelectItem>
               <SelectItem
                 value="Club"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Club
               </SelectItem>
               <SelectItem
                 value="Company"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Company
               </SelectItem>
               <SelectItem
                 value="Party"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Party
               </SelectItem>
               <SelectItem
                 value="Organization"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Organization
               </SelectItem>
               <SelectItem
                 value="custom"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Custom Suffix...
               </SelectItem>

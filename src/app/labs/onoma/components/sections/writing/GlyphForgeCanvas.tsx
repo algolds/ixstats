@@ -3,18 +3,7 @@
 // Philosophy: Apple SF Symbols × Emil Design Engineering × Pro Audio/Vector Studio
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import {
-  Undo2,
-  Redo2,
-  RotateCcw,
-  Shapes,
-  Plus,
-  Grid3X3,
-  Check,
-  PenTool,
-  Sliders,
-  Sparkle,
-} from "lucide-react";
+import { Undo as Undo2, Redo as Redo2, Undo as RotateCcw, Component as Shapes, Plus, ViewGrid as Grid3X3, Check, EditPencil as PenTool, ControlSlider as Sliders, Sparks as Sparkle } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
@@ -38,7 +27,7 @@ const INK_PRESETS: Record<
     label: "Onoma Blue",
     stroke: "#0091ff",
     glow: "rgba(0, 145, 255, 0.35)",
-    bg: "bg-[#0091ff]",
+    bg: "bg-onoma-primary",
   },
   mono: {
     label: "Ink Black",
@@ -344,7 +333,7 @@ export function GlyphForgeCanvas({
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
       <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#0091ff]/10 text-[#0091ff]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-onoma-primary/10 text-onoma-primary">
             <PenTool className="h-3.5 w-3.5" />
           </div>
           <div>
@@ -422,7 +411,7 @@ export function GlyphForgeCanvas({
             className={cn(
               "flex h-6.5 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95",
               guides.guideLevel !== "none"
-                ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff]"
+                ? "border-onoma-primary/30 bg-onoma-primary/10 text-onoma-primary"
                 : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
             )}
           >
@@ -652,7 +641,7 @@ export function GlyphForgeCanvas({
                   "relative flex h-4.5 w-4.5 cursor-pointer items-center justify-center rounded-full transition-all active:scale-85",
                   preset.bg,
                   isSelected
-                    ? "ring-2 ring-[#0091ff] ring-offset-2 ring-offset-background scale-110 shadow-2xs"
+                    ? "ring-2 ring-onoma-primary ring-offset-2 ring-offset-background scale-110 shadow-2xs"
                     : "opacity-60 hover:opacity-100 hover:scale-105"
                 )}
               />
@@ -669,7 +658,7 @@ export function GlyphForgeCanvas({
           className={cn(
             "flex h-6 items-center gap-1 rounded-lg px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95 shrink-0",
             showStampDrawer
-              ? "border border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+              ? "border border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
               : "text-muted-foreground hover:text-foreground hover:bg-background/40"
           )}
         >
@@ -707,11 +696,11 @@ export function GlyphForgeCanvas({
                   type="button"
                   onClick={() => handleApplyStamp(stamp)}
                   title={stamp.description}
-                  className="border-border/30 bg-background/60 hover:border-[#0091ff]/50 hover:bg-[#0091ff]/5 group flex flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all cursor-pointer active:scale-95"
+                  className="border-border/30 bg-background/60 hover:border-onoma-primary/50 hover:bg-onoma-primary/5 group flex flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all cursor-pointer active:scale-95"
                 >
                   <svg
                     viewBox="0 0 128 128"
-                    className="stroke-foreground group-hover:stroke-[#0091ff] h-6 w-6 fill-none transition-colors"
+                    className="stroke-foreground group-hover:stroke-onoma-primary h-6 w-6 fill-none transition-colors"
                   >
                     <path
                       d={stamp.path}
@@ -741,7 +730,7 @@ export function GlyphForgeCanvas({
               value={grapheme}
               onChange={(e) => setGrapheme(e.target.value)}
               placeholder="Grapheme (e.g. sh, a)"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-[#0091ff]/60 focus:ring-2 focus:ring-[#0091ff]/15 h-8.5 w-full rounded-xl border pr-9 pl-3 text-xs font-mono transition-all outline-none"
+              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 focus:ring-2 focus:ring-onoma-primary/15 h-8.5 w-full rounded-xl border pr-9 pl-3 text-xs font-mono transition-all outline-none"
             />
             <button
               type="button"
@@ -750,8 +739,8 @@ export function GlyphForgeCanvas({
               className={cn(
                 "absolute top-1/2 right-1.5 -translate-y-1/2 rounded px-1.5 py-0.5 text-[9px] font-bold transition-all cursor-pointer",
                 showIpaDrawer
-                  ? "bg-[#0091ff]/15 text-[#0091ff]"
-                  : "text-muted-foreground hover:text-[#0091ff]"
+                  ? "bg-onoma-primary/15 text-onoma-primary"
+                  : "text-muted-foreground hover:text-onoma-primary"
               )}
             >
               IPA
@@ -765,7 +754,7 @@ export function GlyphForgeCanvas({
               value={unicodeSymbol}
               onChange={(e) => setUnicodeSymbol(e.target.value)}
               placeholder="U+Code"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-[#0091ff]/60 h-8.5 w-full rounded-xl border px-2 text-center text-xs font-mono transition-all outline-none"
+              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/60 h-8.5 w-full rounded-xl border px-2 text-center text-xs font-mono transition-all outline-none"
             />
           </div>
 
@@ -776,8 +765,8 @@ export function GlyphForgeCanvas({
             className={cn(
               "flex h-8.5 cursor-pointer items-center justify-center gap-1 rounded-xl px-3.5 text-xs font-medium text-white transition-all active:scale-[0.97] disabled:opacity-35 disabled:pointer-events-none shrink-0 shadow-xs",
               isExisting
-                ? "bg-[#0091ff]/90 hover:bg-[#0091ff]"
-                : "bg-[#0091ff] hover:bg-[#0080e6]"
+                ? "bg-onoma-primary/90 hover:bg-onoma-primary"
+                : "bg-onoma-primary hover:bg-onoma-primary-hover"
             )}
           >
             {editingGlyph ? (
@@ -814,7 +803,7 @@ export function GlyphForgeCanvas({
                     setUnicodeSymbol(item.symbol);
                   }}
                   title={item.name}
-                  className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/30 bg-background/60 rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors cursor-pointer active:scale-95"
+                  className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/30 bg-background/60 rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors cursor-pointer active:scale-95"
                 >
                   {item.symbol}
                 </button>

@@ -3,14 +3,7 @@
 // Philosophy: Apple Settings × Emil Design Engineering
 
 import React from "react";
-import {
-  Feather,
-  Trash2,
-  Save,
-  Plus,
-  Compass,
-  Check,
-} from "lucide-react";
+import { DesignPencil as Feather, Trash as Trash2, FloppyDisk as Save, Plus, Compass, Check } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { ScriptTypology, ScriptDirection, Glyph } from "./types";
@@ -69,7 +62,7 @@ export function ScriptSettingsPanel({
       >
         <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#0091ff]/10 text-[#0091ff] dark:bg-[#0091ff]/15">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-onoma-primary/10 text-onoma-primary dark:bg-onoma-primary/15">
               <Feather className="h-4 w-4" />
             </div>
             <div>
@@ -84,7 +77,7 @@ export function ScriptSettingsPanel({
           <button
             type="button"
             onClick={() => onSelectSystem(null)}
-            className="hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 border-border/40 bg-secondary/20 flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-bold text-[#0091ff] transition-all cursor-pointer active:scale-[0.97]"
+            className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-bold text-onoma-primary transition-all cursor-pointer active:scale-[0.97]"
           >
             <Plus className="h-3 w-3" />
             <span>New Script</span>
@@ -111,7 +104,7 @@ export function ScriptSettingsPanel({
                   className={cn(
                     "flex items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer active:scale-[0.98]",
                     isSelected
-                      ? "border-[#0091ff]/50 bg-[#0091ff]/10 text-[#0091ff] shadow-xs font-semibold"
+                      ? "border-onoma-primary/50 bg-onoma-primary/10 text-onoma-primary shadow-xs font-semibold"
                       : "border-border/30 bg-background/50 hover:bg-secondary/20 text-foreground"
                   )}
                 >
@@ -176,7 +169,7 @@ export function ScriptSettingsPanel({
               value={systemName}
               onChange={(e) => onSystemNameChange(e.target.value)}
               placeholder="e.g. High Elvish Tengwar, Eldritch Runes"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 focus:ring-2 focus:ring-[#0091ff]/20 w-full rounded-xl border px-3.5 py-2 text-xs font-medium transition-all outline-none"
+              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 focus:ring-2 focus:ring-onoma-primary/20 w-full rounded-xl border px-3.5 py-2 text-xs font-medium transition-all outline-none"
             />
           </div>
 
@@ -196,13 +189,13 @@ export function ScriptSettingsPanel({
                     className={cn(
                       "flex flex-col rounded-xl border p-2.5 text-left transition-all cursor-pointer active:scale-[0.97]",
                       isSelected
-                        ? "border-[#0091ff]/60 bg-[#0091ff]/10 text-foreground shadow-xs font-semibold"
+                        ? "border-onoma-primary/60 bg-onoma-primary/10 text-foreground shadow-xs font-semibold"
                         : "border-border/30 bg-background/50 hover:bg-secondary/20 text-muted-foreground"
                     )}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-foreground">{opt.label}</span>
-                      {isSelected && <Check className="h-3 w-3 text-[#0091ff]" />}
+                      {isSelected && <Check className="h-3 w-3 text-onoma-primary" />}
                     </div>
                     <span className="text-[9px] opacity-75 mt-0.5">{opt.desc}</span>
                   </button>
@@ -261,7 +254,7 @@ export function ScriptSettingsPanel({
             type="button"
             onClick={onSaveSystem}
             disabled={isSaving || !systemName.trim()}
-            className="bg-[#0091ff] hover:bg-[#0080e6] disabled:opacity-40 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97]"
+            className="bg-onoma-primary hover:bg-onoma-primary-hover disabled:opacity-40 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97]"
           >
             <Save className="h-4 w-4" />
             <span>{isSaving ? "Saving System..." : "Save Writing System"}</span>

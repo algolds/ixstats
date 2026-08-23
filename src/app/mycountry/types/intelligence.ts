@@ -1,7 +1,7 @@
 // Core types for the enhanced MyCountry intelligence system
 // Designed for optimal performance and type safety
 
-import type { LucideIcon } from "lucide-react";
+
 
 // Import and re-export unified types for backward compatibility
 import type { StandardPriority, StandardTrend, StandardTimeframe } from "~/types/base";
@@ -60,7 +60,7 @@ export interface TrendingInsight {
   title: string;
   description: string;
   category: "performance" | "ranking" | "opportunity" | "comparison";
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   trend: TrendDirection;
   significance: "major" | "moderate" | "minor";
   metrics: IntelligenceMetric[];

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
-import { Reply, X, BookmarkPlus, Send, Loader2 } from "lucide-react";
+import { Reply, Xmark as X, Bookmark as BookmarkPlus, Send, SystemRestart as Loader2 } from "iconoir-react";
 import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

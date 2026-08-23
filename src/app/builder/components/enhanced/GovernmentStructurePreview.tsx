@@ -5,20 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
-import {
-  Building2,
-  Crown,
-  Users,
-  DollarSign,
-  Scale,
-  Landmark,
-  Target,
-  Briefcase,
-  BarChart3,
-  Eye,
-  ChevronsDownUp,
-  ChevronsUpDown,
-} from "lucide-react";
+import { City as Building2, Crown, Group as Users, Dollar as DollarSign, ScaleFrameEnlarge as Scale, Bank as Landmark, Archery as Target, Suitcase as Briefcase, StatsReport as BarChart3, Eye, ArrowSeparateVertical as ChevronsDownUp, ArrowSeparateVertical as ChevronsUpDown } from "iconoir-react";
 import type { GovernmentStructure, GovernmentBuilderState } from "~/types/government";
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { formatCurrency } from "~/lib/utils";

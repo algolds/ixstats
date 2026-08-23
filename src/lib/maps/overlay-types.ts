@@ -8,7 +8,7 @@
  * See `docs/systems/map-overlay-framework.md` for the design rationale.
  */
 
-import type { LucideIcon } from "lucide-react";
+
 import type { ComponentType, LazyExoticComponent } from "react";
 
 type MapLibreMap = import("maplibre-gl").Map;
@@ -84,7 +84,7 @@ export interface OverlayPluginDefinition {
   /** Control-panel label. */
   label: string;
   category: OverlayCategory;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   /** Whether the overlay is visible on first load. */
   defaultVisible?: boolean;
   /**

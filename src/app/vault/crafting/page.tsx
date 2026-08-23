@@ -45,7 +45,7 @@ export default function VaultCraftingPage() {
   return (
     <div className="space-y-4">
       {/* Recipe list */}
-      <div className="glass-hierarchy-child space-y-2 rounded-xl border p-4">
+      <div className="facet-hierarchy-child space-y-2 rounded-xl border p-4">
         <h3 className="text-sm font-bold text-white">Select Crafting Recipe</h3>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {recipes?.map((recipe) => (

@@ -7,7 +7,7 @@ import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, SystemRestart as Loader2 } from "iconoir-react";
 import { toast } from "sonner";
 
 interface PollOptionData {
@@ -173,7 +173,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     }));
 
     return (
-      <div className="glass-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
+      <div className="facet-hierarchy-child/40 mt-4 rounded-xl border p-4 sm:p-5">
         <PollWidget
           question={poll.question}
           description={poll.description || undefined}
@@ -216,7 +216,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // 3. Feature Voting Render
   return (
-    <div className="glass-hierarchy-child/40 mt-4 space-y-4 rounded-xl border p-4 sm:p-5">
+    <div className="facet-hierarchy-child/40 mt-4 space-y-4 rounded-xl border p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <h3 className="text-foreground text-base font-semibold sm:text-lg">{poll.question}</h3>
         {poll.description && (

@@ -6,13 +6,13 @@ export const dynamic = "force-dynamic";
  */
 
 import dynamicImport from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 
 const MapEditorOverlay = dynamicImport(() => import("~/components/maps/editor/MapEditorOverlay"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a1628]">
+    <div className="flex h-screen w-screen items-center justify-center bg-map-ocean">
       <div className="text-center">
         <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-emerald-500" />
         <p className="text-sm font-medium text-white/60">Loading World Editor...</p>

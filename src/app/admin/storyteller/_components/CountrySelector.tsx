@@ -9,7 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-import { Search, X, Globe, CheckCircle2 } from "lucide-react";
+import { Search, Xmark as X, Globe, CheckCircle as CheckCircle2 } from "iconoir-react";
 
 interface CountrySelectorProps {
   selectedIds: string[];

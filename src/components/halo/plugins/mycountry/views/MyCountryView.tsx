@@ -1,21 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Crown,
-  Globe,
-  User,
-  ChevronRight,
-  LogOut,
-  X,
-  Shield,
-  Map,
-  MessageSquare,
-  Handshake,
-  BookOpen,
-  Scale,
-  Edit3,
-} from "lucide-react";
+import { Crown, Globe, User, NavArrowRight as ChevronRight, LogOut, Xmark as X, Shield, Map, ChatBubble as MessageSquare, Community as Handshake, OpenBook as BookOpen, ScaleFrameEnlarge as Scale, EditPencil as Edit3 } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";

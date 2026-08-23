@@ -3,26 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Bot,
-  Pause,
-  Play,
-  RotateCcw,
-  AlertTriangle,
-  RefreshCw,
-  Loader2,
-  Terminal,
-  Sliders,
-  Shield,
-  Activity,
-  Cpu,
-  Layers,
-  ChevronRight,
-  Info,
-  CheckCircle2,
-  XCircle,
-  FileCode,
-} from "lucide-react";
+import { Cpu as Bot, Pause, Play, Undo as RotateCcw, WarningTriangle as AlertTriangle, Refresh as RefreshCw, SystemRestart as Loader2, Terminal, ControlSlider as Sliders, Shield, Activity, Cpu, Component as Layers, NavArrowRight as ChevronRight, InfoCircle as Info, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Code as FileCode } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -300,7 +281,7 @@ export function BotControlCard({
   const isAvailable = botStatus?.botHealth?.available;
 
   return (
-    <Card className="glass-surface border-border/40 flex h-full flex-col">
+    <Card className="facet-surface border-border/40 flex h-full flex-col">
       <CardHeader className="shrink-0 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
@@ -791,14 +772,14 @@ export function BotControlCard({
                           ) : (
                             <div className="space-y-2">
                               {simulationResult.success === false ? (
-                                <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-semibold text-red-500">
+<div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-semibold text-red-500">
                                   <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                   <span>{simulationResult.error || "Simulation error"}</span>
                                 </div>
                               ) : simulationResult.payload ? (
                                 <div className="space-y-2.5">
                                   {/* Discord mockup window */}
-                                  <div className="space-y-4 rounded-lg border border-black/20 bg-[#313338] p-4 font-sans text-xs text-[#dbdee1] md:text-sm">
+                                  <div className="space-y-4 rounded-lg border border-black/20 bg-zinc-800 p-4 font-sans text-xs text-zinc-300 md:text-sm">
                                     {/* Message */}
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 font-sans text-xs font-bold text-white uppercase shadow-sm select-none">
@@ -806,13 +787,13 @@ export function BotControlCard({
                                       </div>
                                       <div className="min-w-0 flex-1 space-y-1">
                                         <div className="flex flex-wrap items-center">
-                                          <span className="cursor-pointer font-bold text-[#f2f3f5] hover:underline">
+                                          <span className="cursor-pointer font-bold text-zinc-100 hover:underline">
                                             IxTimeBot
                                           </span>
-                                          <span className="ml-1.5 rounded bg-[#5865F2] px-1 py-0.5 text-[8px] leading-none font-bold text-white uppercase select-none">
+                                          <span className="ml-1.5 rounded bg-discord px-1 py-0.5 text-[8px] leading-none font-bold text-white uppercase select-none">
                                             BOT
                                           </span>
-                                          <span className="ml-2 text-[10px] text-[#949ba4] select-none">
+                                          <span className="ml-2 text-[10px] text-zinc-400 select-none">
                                             Today at{" "}
                                             {new Date().toLocaleTimeString([], {
                                               hour: "2-digit",
@@ -823,13 +804,13 @@ export function BotControlCard({
 
                                         {/* Message Content */}
                                         {typeof simulationResult.payload === "string" ? (
-                                          <div className="break-words whitespace-pre-wrap text-[#dbdee1]">
+                                          <div className="break-words whitespace-pre-wrap text-zinc-300">
                                             {simulationResult.payload}
                                           </div>
                                         ) : (
                                           <>
                                             {simulationResult.payload.content && (
-                                              <div className="mb-1 break-words whitespace-pre-wrap text-[#dbdee1]">
+                                              <div className="mb-1 break-words whitespace-pre-wrap text-zinc-300">
                                                 {simulationResult.payload.content}
                                               </div>
                                             )}
@@ -840,7 +821,7 @@ export function BotControlCard({
                                                 (embed: any, idx: number) => (
                                                   <div
                                                     key={idx}
-                                                    className="mt-1.5 max-w-[520px] space-y-2 rounded-r border-l-4 bg-[#2b2d31] p-3 shadow-sm"
+                                                    className="mt-1.5 max-w-[520px] space-y-2 rounded-r border-l-4 bg-zinc-900 p-3 shadow-sm"
                                                     style={{
                                                       borderLeftColor: getEmbedColor(embed.color),
                                                     }}
@@ -867,7 +848,7 @@ export function BotControlCard({
                                                     )}
 
                                                     {embed.description && (
-                                                      <div className="text-[11px] leading-relaxed break-words whitespace-pre-wrap text-[#dbdee1]">
+                                                      <div className="text-[11px] leading-relaxed break-words whitespace-pre-wrap text-zinc-300">
                                                         {embed.description}
                                                       </div>
                                                     )}
@@ -886,7 +867,7 @@ export function BotControlCard({
                                                               <div className="text-[10px] font-bold tracking-wide text-white uppercase opacity-90">
                                                                 {f.name}
                                                               </div>
-                                                              <div className="text-[11px] break-words whitespace-pre-wrap text-[#dbdee1]">
+                                                              <div className="text-[11px] break-words whitespace-pre-wrap text-zinc-300">
                                                                 {f.value}
                                                               </div>
                                                             </div>
@@ -896,7 +877,7 @@ export function BotControlCard({
                                                     )}
 
                                                     {embed.footer && (
-                                                      <div className="flex items-center gap-1 pt-1 text-[9px] text-[#949ba4] select-none">
+                                                      <div className="flex items-center gap-1 pt-1 text-[9px] text-zinc-400 select-none">
                                                         {embed.footer.icon_url && (
                                                           <img
                                                             src={embed.footer.icon_url}
@@ -1119,7 +1100,7 @@ export function BotControlCard({
                 <FileCode className="h-3 w-3" />
                 <span>50 lines</span>
               </div>
-              <div className="max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border border-[#2b2d31] bg-[#1e1e24] p-4 font-mono text-[10px] leading-relaxed text-zinc-300 md:text-[11px]">
+              <div className="max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border border-border/60 bg-zinc-950 p-4 font-mono text-[10px] leading-relaxed text-zinc-300 md:text-[11px]">
                 {logs && logs.length > 0 ? (
                   <pre className="flex flex-col gap-0.5 whitespace-pre select-text">
                     {logs.map((line, idx) => (

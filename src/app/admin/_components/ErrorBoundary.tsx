@@ -2,7 +2,7 @@
 "use client";
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Refresh as RefreshCw, HomeSimple as Home } from "iconoir-react";
 
 interface Props {
   children: ReactNode;

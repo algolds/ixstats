@@ -2,17 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  MoreHorizontal,
-  Pin,
-  Bookmark,
-  Flag,
-  Edit,
-  Trash2,
-  Crown,
-  Newspaper,
-  Users,
-} from "lucide-react";
+import { MoreHoriz as MoreHorizontal, Pin, Bookmark, WhiteFlag as Flag, EditPencil as Edit, Trash as Trash2, Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {
@@ -46,6 +36,7 @@ export interface HeroPostViewProps {
   onRepost?: (postId: string) => void;
   onReply?: (postId: string) => void;
   onShare?: (postId: string) => void;
+  onReaction?: (postId: string, reactionType: string) => void;
   onAccountClick?: (accountId: string) => void;
   blurbMeta: any;
   cleanPostContent: string;
@@ -79,6 +70,7 @@ export function HeroPostView({
   onRepost,
   onReply,
   onShare,
+  onReaction,
   onAccountClick,
   blurbMeta,
   cleanPostContent,
@@ -103,7 +95,7 @@ export function HeroPostView({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="relative space-y-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40 p-6 shadow-xl backdrop-blur-xl"
+      className="group relative space-y-4 overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-5 shadow-sm backdrop-blur-2xl transition-all duration-200 hover:border-border hover:bg-card/95 hover:shadow-md"
     >
       {/* Header section */}
       <div className="flex items-center justify-between">
@@ -112,7 +104,7 @@ export function HeroPostView({
             onClick={() => onAccountClick?.(post.account.id)}
             className="shrink-0 transition-transform hover:scale-105"
           >
-            <Avatar className="h-12 w-12 border border-white/10">
+            <Avatar className="border-border/40 h-12 w-12 border">
               <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
               <AvatarFallback
                 className={`text-sm font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
@@ -142,7 +134,7 @@ export function HeroPostView({
                 </span>
               )}
               {post.account.country && (
-                <span className="inline-flex items-center gap-1 rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[11px] font-medium text-slate-300">
+                <span className="border-border/40 bg-muted/40 text-muted-foreground inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium">
                   {post.account.country.flag && (
                     <img
                       src={normalizeFlagUrl(post.account.country.flag) ?? undefined}
@@ -158,8 +150,8 @@ export function HeroPostView({
               )}
             </div>
             <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-sm text-slate-400">@{post.account.username}</span>
-              <span className="text-xs text-slate-600">·</span>
+              <span className="text-muted-foreground text-sm">@{post.account.username}</span>
+              <span className="text-muted-foreground/60 text-xs">·</span>
               <div
                 className={cn(
                   "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase",
@@ -186,17 +178,17 @@ export function HeroPostView({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                className="text-muted-foreground hover:bg-accent/20 hover:text-foreground h-9 w-9 rounded-full"
               >
                 <MoreHorizontal className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 border-white/10 bg-slate-900/90 backdrop-blur-xl"
+              className="border-border/60 bg-card/95 w-56 backdrop-blur-xl"
             >
               {canEdit && (
-                <DropdownMenuItem onClick={handleEdit} className="text-slate-200 hover:bg-white/10">
+                <DropdownMenuItem onClick={handleEdit} className="text-foreground hover:bg-accent/20">
                   <Edit className="mr-2 h-4 w-4" />
                   <span>Edit Post</span>
                 </DropdownMenuItem>
@@ -205,14 +197,14 @@ export function HeroPostView({
                 <>
                   <DropdownMenuItem
                     onClick={handlePin}
-                    className="text-slate-200 hover:bg-white/10"
+                    className="text-foreground hover:bg-accent/20"
                   >
                     <Pin className="mr-2 h-4 w-4" />
                     <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleBookmark}
-                    className="text-slate-200 hover:bg-white/10"
+                    className="text-foreground hover:bg-accent/20"
                   >
                     <Bookmark className="mr-2 h-4 w-4" />
                     <span>Bookmark Post</span>
@@ -230,7 +222,7 @@ export function HeroPostView({
               )}
               {canDelete && (
                 <>
-                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuSeparator className="bg-border/40" />
                   <DropdownMenuItem
                     onClick={handleDelete}
                     className="font-medium text-red-500 hover:bg-red-500/20 hover:text-red-400"
@@ -304,7 +296,7 @@ export function HeroPostView({
       )}
 
       {/* Timestamp Row */}
-      <div className="py-1 text-sm text-slate-400">
+      <div className="text-muted-foreground py-1 text-sm">
         {new Date(post.timestamp).toLocaleTimeString(undefined, {
           hour: "2-digit",
           minute: "2-digit",
@@ -319,18 +311,18 @@ export function HeroPostView({
       </div>
 
       {/* Status Counters Row */}
-      <div className="flex gap-4 border-t border-b border-white/5 py-3 text-sm font-medium text-slate-300">
+      <div className="border-border/40 text-muted-foreground flex gap-4 border-t border-b py-3 text-sm font-medium">
         <div>
-          <span className="font-bold text-slate-100">{post.likeCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Likes</span>
+          <span className="text-foreground font-bold">{post.likeCount || 0}</span>
+          <span className="text-muted-foreground ml-1 font-normal">Likes</span>
         </div>
         <div>
-          <span className="font-bold text-slate-100">{post.repostCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Reposts</span>
+          <span className="text-foreground font-bold">{post.repostCount || 0}</span>
+          <span className="text-muted-foreground ml-1 font-normal">Reposts</span>
         </div>
         <div>
-          <span className="font-bold text-slate-100">{post.replyCount || 0}</span>
-          <span className="ml-1 font-normal text-slate-400">Replies</span>
+          <span className="text-foreground font-bold">{post.replyCount || 0}</span>
+          <span className="text-muted-foreground ml-1 font-normal">Replies</span>
         </div>
       </div>
 
@@ -368,6 +360,7 @@ export function HeroPostView({
           onRepost={onRepost}
           onReply={onReply}
           onShare={onShare}
+          onReaction={onReaction}
           showCounts={false}
           size="lg"
           className="w-full justify-around"

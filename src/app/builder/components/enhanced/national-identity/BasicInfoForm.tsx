@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useCallback } from "react";
-import {
-  Globe,
-  Crown,
-  Building,
-  MapPin,
-  Users,
-  BarChart3,
-  DollarSign,
-  Percent,
-  Link2,
-  Link2Off,
-} from "lucide-react";
+import { Globe, Crown, Building, MapPin, Group as Users, StatsReport as BarChart3, Dollar as DollarSign, Percentage as Percent, Link as Link2, LinkSlash as Link2Off } from "iconoir-react";
 import { GlassSelectBox, SliderWithDirectInput } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";

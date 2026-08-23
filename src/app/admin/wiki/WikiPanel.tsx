@@ -10,7 +10,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import {
   WikiLinkStatusSection,
   ManualLinkEditorSection,

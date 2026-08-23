@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, Database, Shield, BarChart3 } from "lucide-react";
+import { Settings, Database, Shield, StatsReport as BarChart3 } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

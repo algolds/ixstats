@@ -115,6 +115,7 @@ const ThinkpagesPostComponent = ({
         onRepost={onRepost}
         onReply={onReply}
         onShare={onShare}
+        onReaction={onReaction}
         onAccountClick={onAccountClick}
         blurbMeta={blurbMeta}
         cleanPostContent={cleanPostContent}

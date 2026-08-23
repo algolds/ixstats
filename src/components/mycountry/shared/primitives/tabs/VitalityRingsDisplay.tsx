@@ -4,10 +4,10 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Activity, DollarSign, Users, Globe, Building, Heart, Shield, Zap } from "lucide-react";
+import { Activity, Dollar as DollarSign, Group as Users, Globe, Building, Heart, Shield, Flash as Zap } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
+
 import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
 
 export interface VitalityRing {
@@ -16,7 +16,7 @@ export interface VitalityRing {
   value: number; // 0-100
   target?: number;
   color: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   description?: string;
   onClick?: () => void;
 }
@@ -137,7 +137,7 @@ export function VitalityRingsDisplay({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   return (
-    <Card className={cn("glass-hierarchy-child", className)}>
+    <Card className={cn("facet-hierarchy-child", className)}>
       {(title || subtitle) && (
         <CardHeader className="pb-2">
           {title && (
@@ -174,9 +174,8 @@ export function VitalityRingsDisplay({
                       }}
                     >
                       <IconComponent
-                        className="opacity-60"
+                        className={cn("opacity-60", size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4")}
                         style={{ color: ring.color }}
-                        size={size === "sm" ? 14 : size === "lg" ? 20 : 16}
                       />
                     </div>
                   )}

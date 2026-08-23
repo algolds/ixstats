@@ -3,17 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  CheckCircle2,
-  Circle,
-  Users,
-  Crown,
-  Vote,
-  Shield,
-  BookOpen,
-  ChevronDown,
-  X,
-} from "lucide-react";
+import { CheckCircle as CheckCircle2, Circle, Group as Users, Crown, CheckSquare as Vote, Shield, OpenBook as BookOpen, NavArrowDown as ChevronDown, Xmark as X } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";

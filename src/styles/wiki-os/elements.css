@@ -353,7 +353,7 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-search-close:hover {
 /* Inline text search highlighting */
 .wikios-search-match {
   background: rgba(245, 158, 11, 0.25);
-  color: #f59e0b;
+  color: var(--color-warning);
   border-bottom: 2px solid #f59e0b;
   border-radius: 2px;
   padding: 0 1px;
@@ -1369,8 +1369,8 @@ html:not([data-theme="dark"]) .wikios-link-preview {
 .wikios-article-content a.new:hover,
 .wikios-infobox a.wikios-redlink:hover,
 .wikios-infobox a.new:hover {
-  color: #ef4444;
-  border-bottom-color: #ef4444;
+  color: var(--color-error);
+  border-bottom-color: var(--color-error);
 }
 
 @keyframes wikios-fade-in {
@@ -1607,10 +1607,10 @@ button.wikios-rc-expand-btn:hover {
 }
 
 .wikios-rc-delta--pos {
-  color: #22c55e;
+  color: var(--color-success);
 }
 .wikios-rc-delta--neg {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-rc-delta--sm {
@@ -1800,10 +1800,10 @@ button.wikios-rc-expand-btn:hover {
 }
 
 .wikios-size-pos {
-  color: #22c55e;
+  color: var(--color-success);
 }
 .wikios-size-neg {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-history-minor {

@@ -17,7 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, FileSpreadsheet, Download } from "lucide-react";
+import { StatUp as TrendingUp, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -54,7 +54,7 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
             : "1 year";
 
     return (
-      <Card className="glass-hierarchy-child" id="gdp-projections-chart">
+      <Card className="facet-hierarchy-child" id="gdp-projections-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

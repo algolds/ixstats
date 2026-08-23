@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useUser } from "~/context/auth-context";
-import { Save, Plus, Trash2, Settings, Bell, BellOff, AlertCircle } from "lucide-react";
+import { FloppyDisk as Save, Plus, Trash as Trash2, Settings, Bell, BellOff, WarningCircle as AlertCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";

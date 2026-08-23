@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Radio } from "lucide-react";
+import { AntennaSignal as Radio } from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";

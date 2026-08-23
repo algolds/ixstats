@@ -3,17 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import {
-  Flame,
-  Zap,
-  Cpu,
-  ShieldCheck,
-  Search,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Layers,
-} from "lucide-react";
+import { FireFlame as Flame, Flash as Zap, Cpu, ShieldCheck, Search, Calendar, CheckCircle as CheckCircle2, NavArrowRight as ChevronRight, Component as Layers } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
@@ -108,7 +98,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
   return (
     <>
       {/* Search & Category Filter Controls */}
-      <div className="glass-surface border-border/40 mb-10 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
+      <div className="facet-surface border-border/40 mb-10 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -159,7 +149,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
       {/* Release Timeline */}
       {filteredReleases.length === 0 ? (
-        <div className="glass-surface border-border/30 rounded-2xl border p-12 text-center">
+        <div className="facet-surface border-border/30 rounded-2xl border p-12 text-center">
           <Search className="text-muted-foreground/40 mx-auto h-8 w-8" />
           <h3 className="text-foreground mt-3 text-base font-semibold">No matching updates found</h3>
           <p className="text-muted-foreground mt-1 text-xs">
@@ -217,7 +207,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group glass-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs transition-all duration-200 hover:shadow-md backdrop-blur-xl"
+                      className="group facet-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs transition-all duration-200 hover:shadow-md backdrop-blur-xl"
                     >
                       <div className="space-y-3">
                         {/* Item Category Header */}

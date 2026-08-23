@@ -8,7 +8,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Loader2, AlertCircle } from "lucide-react";
+import { SystemRestart as Loader2, WarningCircle as AlertCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { CardDisplay } from "./CardDisplay";
 import type { CardInstance, CardFilters, CardSort, CardDisplaySize } from "~/types/cards-display";
@@ -45,7 +45,7 @@ export interface CardGridProps {
  * Loading skeleton component
  */
 const CardSkeleton = React.memo(() => (
-  <div className="glass-hierarchy-child aspect-[2.5/3.5] w-full animate-pulse rounded-2xl">
+  <div className="facet-hierarchy-child aspect-[2.5/3.5] w-full animate-pulse rounded-2xl">
     <div className="h-full w-full rounded-2xl bg-gradient-to-br from-white/10 to-white/5" />
   </div>
 ));
@@ -171,7 +171,7 @@ export const CardGrid = React.memo<CardGridProps>(
     if (!loading && cards.length === 0) {
       return (
         <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-          <div className="glass-hierarchy-child rounded-full p-6">
+          <div className="facet-hierarchy-child rounded-full p-6">
             <svg
               className="h-16 w-16 text-white/40"
               fill="none"

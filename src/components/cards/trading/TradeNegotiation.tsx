@@ -8,15 +8,7 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import {
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  Clock,
-  Coins,
-  ArrowRightLeft,
-  AlertCircle,
-} from "lucide-react";
+import { CheckCircle, XmarkCircle as XCircle, ChatBubble as MessageSquare, Clock, Coins, ArrowSeparate as ArrowRightLeft, WarningCircle as AlertCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -107,7 +99,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
     if (isLoading) {
       return (
-        <div className="glass-hierarchy-child rounded-lg p-8">
+        <div className="facet-hierarchy-child rounded-lg p-8">
           <div className="flex items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
           </div>
@@ -117,7 +109,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
     if (!trade) {
       return (
-        <div className="glass-hierarchy-child rounded-lg p-8 text-center">
+        <div className="facet-hierarchy-child rounded-lg p-8 text-center">
           <AlertCircle className="mx-auto mb-3 h-12 w-12 text-amber-400" />
           <p className="text-white/80">Trade not found</p>
         </div>
@@ -140,7 +132,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     return (
       <div className="space-y-4">
         {/* Header */}
-        <div className="glass-hierarchy-child rounded-lg p-4">
+        <div className="facet-hierarchy-child rounded-lg p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
@@ -168,7 +160,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
         {/* Trade display */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Your side */}
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <h4 className="mb-3 text-base font-semibold text-blue-400">
               You {isRecipient ? "Receive" : "Offer"}
             </h4>
@@ -228,7 +220,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
           </div>
 
           {/* Their side */}
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <h4 className="mb-3 text-base font-semibold text-green-400">
               They {isRecipient ? "Offer" : "Receive"}
             </h4>
@@ -290,7 +282,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
         {/* Actions */}
         {trade.status === "PENDING" && !isExpired && (
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             {isRecipient ? (
               <div className="flex flex-wrap justify-end gap-3">
                 <Button
@@ -302,7 +294,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   }
                   disabled={respondToTrade.isPending}
                   variant="outline"
-                  className="glass-hierarchy-child hover:bg-red-500/20"
+                  className="facet-hierarchy-child hover:bg-red-500/20"
                 >
                   <XCircle className="mr-2 h-4 w-4" />
                   Decline
@@ -342,7 +334,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   onClick={() => cancelTrade.mutate({ tradeId })}
                   disabled={cancelTrade.isPending}
                   variant="outline"
-                  className="glass-hierarchy-child hover:bg-red-500/20"
+                  className="facet-hierarchy-child hover:bg-red-500/20"
                 >
                   <XCircle className="mr-2 h-4 w-4" />
                   Cancel Trade
@@ -354,7 +346,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
         {/* Expired warning */}
         {isExpired && trade.status === "PENDING" && (
-          <div className="glass-hierarchy-child rounded-lg border border-amber-400/30 p-4">
+          <div className="facet-hierarchy-child rounded-lg border border-amber-400/30 p-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-400" />
               <div>

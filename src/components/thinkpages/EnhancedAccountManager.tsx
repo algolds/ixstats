@@ -3,19 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import {
-  Crown,
-  Newspaper,
-  Users,
-  Plus,
-  Settings,
-  Eye,
-  EyeOff,
-  Star,
-  MoreHorizontal,
-  TrendingUp,
-  MessageSquare,
-} from "lucide-react";
+import { Crown, Journal as Newspaper, Group as Users, Plus, Settings, Eye, EyeClosed as EyeOff, Star, MoreHoriz as MoreHorizontal, StatUp as TrendingUp, ChatBubble as MessageSquare } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -342,7 +330,7 @@ export function EnhancedAccountManager({
   }
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Account Manager</CardTitle>

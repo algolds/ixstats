@@ -3,7 +3,7 @@
 import * as React from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Layers, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import { Component as Layers, Expand as Maximize2, Compress as Minimize2, Undo as RotateCcw } from "iconoir-react";
 import { LabControlPanel } from "./_components/LabControlPanel";
 import { LabSandbox } from "./_components/LabSandbox";
 import { SnippetExporter } from "./_components/SnippetExporter";

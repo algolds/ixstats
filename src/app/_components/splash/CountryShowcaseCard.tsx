@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { TrendingUp, Users, BarChart3, Crown, Activity, Sparkles } from "lucide-react";
-import { ExternalLink } from "lucide-react";
+import { StatUp as TrendingUp, Group as Users, StatsReport as BarChart3, Crown, Activity, Sparks as Sparkles } from "iconoir-react";
+import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
@@ -126,7 +126,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
           {coatOfArmsUrl && (
-            <div className="glass-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
+            <div className="facet-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
               <img
                 src={coatOfArmsUrl}
                 alt={`${displayName} coat of arms`}
@@ -139,7 +139,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {identity && (identity.capitalCity || identity.currency || identity.demonym) && (
-          <div className="glass-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
+          <div className="facet-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
             {identity.capitalCity && (
               <div className="text-center">
                 <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
@@ -172,7 +172,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         )}
 
         {wikiIntro && (
-          <div className="glass-hierarchy-child space-y-3 rounded-xl p-4">
+          <div className="facet-hierarchy-child space-y-3 rounded-xl p-4">
             <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
               {wikiIntro}
             </p>
@@ -197,7 +197,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
                 <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
@@ -208,7 +208,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 {formatCurrency(currentTotalGdp)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
                 <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
@@ -219,7 +219,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 {formatPopulation(currentPopulation)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
                 <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
@@ -230,7 +230,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 {formatCurrency(currentGdpPerCapita)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
@@ -248,7 +248,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
 
-          <div className="glass-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
+          <div className="facet-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
             {landArea != null && (
               <div className="text-center">
                 <div className="text-muted-foreground text-[10px]">Land Area</div>
@@ -289,7 +289,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {(leader || identity?.motto) && (
-          <div className="glass-hierarchy-child rounded-xl p-3">
+          <div className="facet-hierarchy-child rounded-xl p-3">
             {leader && (
               <div className="flex items-center gap-2">
                 <Crown className="text-muted-foreground h-3.5 w-3.5" />
@@ -360,7 +360,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           ];
 
           return (
-            <div className={`glass-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
+            <div className={`facet-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="text-muted-foreground h-4 w-4" />

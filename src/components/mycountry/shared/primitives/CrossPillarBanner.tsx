@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ArrowRight, TrendingUp, TrendingDown, AlertTriangle, Zap } from "lucide-react";
+import { ArrowRight, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, Flash as Zap } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import {

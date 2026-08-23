@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Dumbbell, TrendingUp } from "lucide-react";
+import { SystemRestart as Loader2, Gym as Dumbbell, StatUp as TrendingUp } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LineChart, Brain, Repeat } from "lucide-react";
+import { GraphUp as LineChart, Brain, Refresh as Repeat } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function EconomicModelingArticle() {

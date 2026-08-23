@@ -3,7 +3,7 @@
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { Medal, Swords } from "lucide-react";
+import { Medal, Tournament as Swords } from "iconoir-react";
 
 interface BracketViewProps {
   brackets: Array<{

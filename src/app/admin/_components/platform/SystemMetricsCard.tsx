@@ -1,7 +1,7 @@
 // src/app/admin/_components/platform/SystemMetricsCard.tsx
 "use client";
 
-import { Database, Activity, Globe, Clock, Server, RefreshCw } from "lucide-react";
+import { Database, Activity, Globe, Clock, Server, Refresh as RefreshCw } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -27,7 +27,7 @@ export function SystemMetricsCard() {
 
   if (!systemStatus || !systemHealth) {
     return (
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="h-5 w-5 text-purple-500" />
@@ -47,7 +47,7 @@ export function SystemMetricsCard() {
   }
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="space-y-1">

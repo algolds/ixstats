@@ -81,7 +81,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           </button>
         </div>
 
-        <div className="glass-hierarchy-child rounded-lg border border-green-500/30 p-4">
+        <div className="facet-hierarchy-child rounded-lg border border-green-500/30 p-4">
           <div className="mb-1 text-sm text-[--intel-silver]">Contributing to:</div>
           <div className="text-foreground font-medium">{exchangeTitle}</div>
         </div>

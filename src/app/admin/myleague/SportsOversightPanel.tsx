@@ -28,19 +28,7 @@ import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
-import {
-  Trophy,
-  Plus,
-  Trash2,
-  Eye,
-  Loader2,
-  AlertTriangle,
-  Shield,
-  ArrowLeft,
-  Sparkles,
-  Settings,
-  Star,
-} from "lucide-react";
+import { Trophy, Plus, Trash as Trash2, Eye, SystemRestart as Loader2, WarningTriangle as AlertTriangle, Shield, ArrowLeft, Sparks as Sparkles, Settings, Star } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
 

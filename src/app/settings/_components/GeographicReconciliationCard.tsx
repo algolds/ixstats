@@ -3,7 +3,7 @@
 import React, { useTransition } from "react";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { RefreshCw, Info, Scale, TrendingUp, MapPin } from "lucide-react";
+import { Refresh as RefreshCw, InfoCircle as Info, ScaleFrameEnlarge as Scale, StatUp as TrendingUp, MapPin } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
@@ -100,7 +100,7 @@ export function GeographicReconciliationCard({ countryId }: GeographicReconcilia
   const isLoading = isPending || updateModeMutation.isPending || rebaseMutation.isPending;
 
   return (
-    <Card className="glass-surface glass-refraction border-border/40 mt-4 overflow-hidden shadow-lg">
+    <Card className="facet-surface facet-refraction border-border/40 mt-4 overflow-hidden shadow-lg">
       <CardContent className="space-y-5 p-5">
         {/* Header Title */}
         <div className="flex items-center justify-between">

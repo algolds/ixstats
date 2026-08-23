@@ -4,22 +4,7 @@
 // Onoma Custom Studio Workshop — Saved Dictionary Card Component
 
 import { useState, useEffect, useRef } from "react";
-import {
-  BookOpen,
-  Globe,
-  Lock,
-  ChevronUp,
-  ChevronDown,
-  Wrench,
-  FolderPlus,
-  Pencil,
-  Download,
-  Trash2,
-  Loader2,
-  AudioLines,
-  GitFork,
-  Sparkles,
-} from "lucide-react";
+import { OpenBook as BookOpen, Globe, Lock, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown, Wrench, FolderPlus, EditPencil as Pencil, Download, Trash as Trash2, SystemRestart as Loader2, SoundHigh as AudioLines, GitFork, Sparks as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
@@ -152,7 +137,7 @@ export function SavedDictionaryCard({
               )}
             </span>
             {dict.role && (
-              <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#0091ff] capitalize">
+              <span className="rounded bg-onoma-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-onoma-primary capitalize">
                 {dict.role}
                 {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
               </span>
@@ -165,7 +150,7 @@ export function SavedDictionaryCard({
             {dict.clonedFromId && (
               <>
                 <span>•</span>
-                <span className="font-semibold text-[#0091ff]/80">Cloned</span>
+                <span className="font-semibold text-onoma-primary/80">Cloned</span>
               </>
             )}
             {dict.stashName && (
@@ -207,7 +192,7 @@ export function SavedDictionaryCard({
             {onLoadToStudio && (
               <button
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-[#0091ff]/10 px-2 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 active:scale-[0.97] transition-all"
+                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-onoma-primary/10 px-2 text-[11px] font-semibold text-onoma-primary hover:bg-onoma-primary/20 active:scale-[0.97] transition-all"
                 title="Load into Studio Workshop"
               >
                 <Wrench className="h-3 w-3" />
@@ -259,7 +244,7 @@ export function SavedDictionaryCard({
                   "flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-all active:scale-[0.97]",
                   isStashingThis
                     ? "bg-indigo-500/10 text-indigo-500"
-                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-[#0091ff]"
+                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-onoma-primary"
                 )}
                 title="Move dictionary to another Stash folder"
               >
@@ -325,7 +310,7 @@ export function SavedDictionaryCard({
             {/* Edit (rename / re-tag) */}
             <button
               onClick={() => onEdit(dict)}
-              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-onoma-primary/10 hover:text-onoma-primary"
               title="Edit dictionary (rename, role, set)"
             >
               <Pencil className="h-3.5 w-3.5" />

@@ -3,7 +3,7 @@
 import React from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Progress } from "~/components/ui/progress";
-import { Users, Heart } from "lucide-react";
+import { Group as Users, Heart } from "iconoir-react";
 import type { LaborSummary, DemographicsSummary } from "../utils/previewCalculations";
 
 interface LaborDemographicsSummaryProps {

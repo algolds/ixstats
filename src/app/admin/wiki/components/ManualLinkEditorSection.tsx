@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Globe, Loader2, CheckCircle, XCircle, ExternalLink, Save } from "lucide-react";
+import { Globe, SystemRestart as Loader2, CheckCircle, XmarkCircle as XCircle, OpenNewWindow as ExternalLink, FloppyDisk as Save } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function ManualLinkEditorSection({ countriesData }: { countriesData: any }) {

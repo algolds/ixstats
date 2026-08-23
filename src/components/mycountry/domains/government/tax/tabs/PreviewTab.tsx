@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, Info, BarChart3, Lightbulb } from "lucide-react";
+import { StatUp as TrendingUp, InfoCircle as Info, StatsReport as BarChart3, LightBulb } from "iconoir-react";
 import { TaxEconomySyncDisplay } from "../TaxEconomySyncDisplay";
 import { UnifiedTaxEffectivenessDisplay } from "../UnifiedTaxEffectivenessDisplay";
 import type { TaxSystem } from "~/types/tax-system";
@@ -99,7 +99,7 @@ export function PreviewTab({
       {showAtomicIntegration && selectedAtomicTaxComponents.length > 0 && economicData && (
         <div className="space-y-4 rounded-xl border border-white/5 bg-white/[0.01] p-5">
           <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-            <Lightbulb className="h-5 w-5" />
+            <LightBulb className="h-5 w-5" />
             Component Synergies & Effectiveness
           </h3>
           <UnifiedTaxEffectivenessDisplay

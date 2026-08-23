@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { TableCell, TableHead, TableRow } from "~/components/ui/table";
-import { Search } from "lucide-react";
+import { Search } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
 import { TableVirtuoso } from "react-virtuoso";

@@ -8,24 +8,7 @@
  */
 
 import { useState } from "react";
-import {
-  X,
-  Train,
-  Car,
-  Ship,
-  Plane,
-  Droplets,
-  MapPin,
-  Gauge,
-  Mountain,
-  Calendar,
-  Loader2,
-  Trash2,
-  Pencil,
-  Check,
-  Coins,
-  Route,
-} from "lucide-react";
+import { Xmark as X, Train, Car, DeliveryTruck as Ship, Airplane as Plane, Droplet as Droplets, MapPin, Dashboard as Gauge, ModernTv as Mountain, Calendar, SystemRestart as Loader2, Trash as Trash2, EditPencil as Pencil, Check, Coins, Navigator as Route } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface RouteInfoPanelProps {

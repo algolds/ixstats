@@ -85,7 +85,7 @@ export default function GovernmentComponentsPage() {
             <p className="text-muted-foreground">Loading components...</p>
           </div>
         ) : admin.filteredComponents.length === 0 ? (
-          <Card className="glass-card-parent p-12 text-center">
+          <Card className="facet-card-parent p-12 text-center">
             <p className="text-[--intel-silver]">No components found matching your filters</p>
           </Card>
         ) : (

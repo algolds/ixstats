@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plane, CheckCircle, AlertCircle, MapPin, Clock } from "lucide-react";
+import { Airplane as Plane, CheckCircle, WarningCircle as AlertCircle, MapPin, Clock } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

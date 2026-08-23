@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Factory, Settings, Search, RefreshCw, AlertCircle, CheckCircle, Info } from "lucide-react";
+import { Industry as Factory, Settings, Search, Refresh as RefreshCw, WarningCircle as AlertCircle, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";

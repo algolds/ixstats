@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { motion } from "motion/react";
-import { Activity, TrendingUp, Zap, RefreshCw, Filter } from "lucide-react";
+import { Activity, StatUp as TrendingUp, Flash as Zap, Refresh as RefreshCw, Filter } from "iconoir-react";
 import { ActivityFeedItem } from "./ActivityFeedItem";
 import { ActivityFilters } from "./ActivityFilters";
 import { TrendingTopics } from "./TrendingTopics";
@@ -83,31 +83,31 @@ export function ActivityFeedContainer() {
         {/* Stats Bar */}
         {stats && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-            <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Total Activities</div>
               <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {stats.totalActivities}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Likes</div>
               <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {stats.totalLikes}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Comments</div>
               <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {stats.totalComments}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Shares</div>
               <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {stats.totalShares}
               </div>
             </div>
-            <div className="glass-hierarchy-child col-span-2 rounded-lg p-3 sm:col-span-1 sm:p-4">
+            <div className="facet-hierarchy-child col-span-2 rounded-lg p-3 sm:col-span-1 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Views</div>
               <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {(stats.totalViews / 1000).toFixed(1)}k
@@ -157,7 +157,7 @@ export function ActivityFeedContainer() {
             {isLoading ? (
               // Loading skeletons
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="glass-hierarchy-child animate-pulse rounded-lg p-6">
+                <div key={i} className="facet-hierarchy-child animate-pulse rounded-lg p-6">
                   <div className="flex items-start gap-4">
                     <Skeleton className="h-12 w-12 rounded-full" />
                     <div className="flex-1 space-y-3">
@@ -170,7 +170,7 @@ export function ActivityFeedContainer() {
               ))
             ) : activities.length === 0 ? (
               // Empty state
-              <div className="glass-hierarchy-child rounded-lg p-12 text-center">
+              <div className="facet-hierarchy-child rounded-lg p-12 text-center">
                 <Activity className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
                 <h3 className="text-foreground mb-2 text-xl font-semibold">No activities yet</h3>
                 <p className="text-muted-foreground">
@@ -207,7 +207,7 @@ export function ActivityFeedContainer() {
           <TrendingTopics />
 
           {/* Auto-Refresh Toggle */}
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-foreground text-sm font-medium">Auto-Refresh</span>
               <button
@@ -227,7 +227,7 @@ export function ActivityFeedContainer() {
           </div>
 
           {/* Quick Stats */}
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <div className="mb-3 flex items-center gap-2">
               <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               <h3 className="text-foreground font-semibold">Platform Pulse</h3>

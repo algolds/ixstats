@@ -8,46 +8,7 @@
  */
 
 import { ComponentType } from "@prisma/client";
-import {
-  Settings,
-  Building2,
-  Users,
-  Shield,
-  Crown,
-  Vote,
-  Clock,
-  TrendingUp,
-  Star,
-  Cross,
-  Briefcase,
-  Scale,
-  Flag,
-  Cpu,
-  Eye,
-  DollarSign,
-  Target,
-  BarChart3,
-  Heart,
-  Leaf,
-  Brain,
-  Monitor,
-  Globe,
-  Network,
-  Award,
-  CheckCircle,
-  AlertTriangle,
-  GraduationCap,
-  BookOpen,
-  Handshake,
-  Microscope,
-  Lightbulb,
-  ArrowRightLeft,
-  Copyright,
-  Zap,
-  Wifi,
-  MessageSquare,
-  RefreshCw,
-} from "lucide-react";
+import { Settings, City as Building2, Group as Users, Shield, Crown, CheckSquare as Vote, Clock, StatUp as TrendingUp, Star, PharmacyCrossCircle as Cross, Suitcase as Briefcase, ScaleFrameEnlarge as Scale, WhiteFlag as Flag, Cpu, Eye, Dollar as DollarSign, Archery as Target, StatsReport as BarChart3, Heart, Leaf, Brain, ModernTv as Monitor, Globe, Network, Trophy as Award, CheckCircle, WarningTriangle as AlertTriangle, GraduationCap, OpenBook as BookOpen, Community as Handshake, Microscope, LightBulb as Lightbulb, ArrowSeparate as ArrowRightLeft, Copyright, Flash as Zap, Wifi, ChatBubble as MessageSquare, Refresh as RefreshCw } from "iconoir-react";
 
 /**
  * Atomic Government Component Definition

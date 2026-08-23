@@ -5,7 +5,7 @@
 
 import { useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Edit, Send, Loader2 } from "lucide-react";
+import { EditPencil as Edit, Send, SystemRestart as Loader2 } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";

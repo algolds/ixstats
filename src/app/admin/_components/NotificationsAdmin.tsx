@@ -5,7 +5,7 @@ import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Bell, ListTree, ScanEye, Send } from "lucide-react";
+import { Bell, NumberedListLeft as ListTree, ScanQrCode as ScanEye, Send } from "iconoir-react";
 import {
   EventsRegistryPanel,
   NotificationBrowser,

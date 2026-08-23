@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Building2, Crown, Scale, Users, Briefcase, Link2, Link2Off } from "lucide-react";
+import { City as Building2, Crown, ScaleFrameEnlarge as Scale, Group as Users, Suitcase as Briefcase, Link as Link2, LinkSlash as Link2Off } from "iconoir-react";
 import type { GovernmentStructureInput, GovernmentType } from "~/types/government";
 import { safeFormatCurrency } from "~/lib/utils";
 import { CurrencySelector } from "~/components/ui/currency-selector";

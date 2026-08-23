@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Mail, TrendingUp, AlertTriangle, Globe, Settings, Loader2 } from "lucide-react";
+import { Bell, Mail, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Globe, Settings, SystemRestart as Loader2 } from "iconoir-react";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -100,7 +100,7 @@ export function NotificationSettingsCard({ userId }: NotificationSettingsCardPro
 
   if (isLoading) {
     return (
-      <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+      <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1">
         <div className="flex min-h-[400px] items-center justify-center rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
         </div>
@@ -109,7 +109,7 @@ export function NotificationSettingsCard({ userId }: NotificationSettingsCardPro
   }
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="diagonal" opacity={0.03} />
 

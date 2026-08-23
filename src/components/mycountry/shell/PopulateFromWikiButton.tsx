@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Compass, Loader2, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { Compass, SystemRestart as Loader2, WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { EntityKind, ParseWikiResult } from "~/lib/wiki-os/adapters/ixstates/entity-parser";
 

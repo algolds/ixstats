@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IssueCard } from "~/components/executive/issues";
 
@@ -37,7 +37,7 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
   }, [issueData]);
 
   return (
-    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="facet-hierarchy-child border-border space-y-3 rounded-xl border p-4">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600" />
         <span className="text-sm font-semibold">Governance Issues</span>

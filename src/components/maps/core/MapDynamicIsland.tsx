@@ -17,7 +17,7 @@
  */
 
 import { AnimatePresence, motion } from "motion/react";
-import { Search, X, Globe, Loader2, MessageCircle, Bell, HelpCircle } from "lucide-react";
+import { Search, Xmark as X, Globe, SystemRestart as Loader2, ChatBubble as MessageCircle, Bell, HelpCircle } from "iconoir-react";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { useIsMobile } from "~/hooks/useIsMobile";
@@ -196,62 +196,41 @@ export function MapDynamicIsland({
 
   const desktopPill = (
     <div className="relative">
-      {/* Outer glow — multi-layer halos for depth */}
-      <motion.div
-        layout
-        transition={SPRING}
-        className={cn(
-          "absolute inset-0 rounded-full transition-opacity duration-500",
-          isFlashing ? "opacity-100" : "opacity-60"
+      {/* Outer alert glow on new notification / flashing mode */}
+      <AnimatePresence>
+        {isFlashing && (
+          <motion.div
+            layout
+            transition={SPRING}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 rounded-full"
+            style={{ willChange: "width, height" }}
+          >
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+          </motion.div>
         )}
-        style={{ willChange: "width, height" }}
-      >
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full blur-xl transition-colors duration-500",
-            isFlashing
-              ? "bg-red-500/50"
-              : "bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30"
-          )}
-        />
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full blur-lg transition-colors duration-500",
-            isFlashing
-              ? "bg-orange-400/40"
-              : "bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20"
-          )}
-        />
-      </motion.div>
+      </AnimatePresence>
 
-      {/* Main glass pill */}
+      {/* Main glass pill — Apple HIG Acrylic Shell */}
       <motion.div
         layout
         transition={SPRING}
         animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
         data-expanded={searchOpen ? "true" : undefined}
         className={cn(
-          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-500",
-          isFlashing && "!border-red-500/50 !bg-red-500/20"
+          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-300",
+          isFlashing && "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]"
         )}
         style={{
           willChange: "width, height",
         }}
       >
-        {/* Inner refraction edges */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
-          {/* Inner shimmer */}
-          <div
-            className={cn(
-              "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent will-change-transform dark:via-white/10",
-              isFlashing && "bg-red-500/10"
-            )}
-            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-          />
+        {/* Specular edge highlight (Apple physical acrylic top lip) */}
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/20" />
         </div>
 
         {/* Content */}

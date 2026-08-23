@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
-import { FolderHeart, Save, Check, Database, Sparkles, RefreshCw } from "lucide-react";
+import { Folder as FolderHeart, FloppyDisk as Save, Check, Database, Sparks as Sparkles, Refresh as RefreshCw } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 
@@ -53,7 +53,7 @@ export function StashSettingsContent() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Stats */}
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
               <Database className="h-6 w-6" />
@@ -67,7 +67,7 @@ export function StashSettingsContent() {
           </CardContent>
         </Card>
 
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-purple-500/10 p-3 text-purple-500">
               <Sparkles className="h-6 w-6" />
@@ -81,7 +81,7 @@ export function StashSettingsContent() {
           </CardContent>
         </Card>
 
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-emerald-500/10 p-3 text-emerald-500">
               <RefreshCw className="h-6 w-6" />
@@ -94,7 +94,7 @@ export function StashSettingsContent() {
         </Card>
       </div>
 
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardHeader>
           <CardTitle className="text-base font-bold">Stash Configuration Parameters</CardTitle>
         </CardHeader>

@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface MentionMenuPortalProps {

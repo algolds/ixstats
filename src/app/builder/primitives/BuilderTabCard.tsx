@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import type { LucideIcon } from "lucide-react";
+
 import { cn } from "~/lib/utils";
 import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
 import { CutoutCard } from "~/components/ui/cutout-card";
@@ -10,7 +10,7 @@ import { CutoutCard } from "~/components/ui/cutout-card";
 export interface TabDefinition {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 interface BuilderTabCardProps {
@@ -95,7 +95,7 @@ export function BuilderTabCard({
       {!hideTabList && (
         <div
           role="tablist"
-          className="glass-surface glass-refraction bg-card/50 relative flex gap-1 rounded-xl border p-1 shadow-md"
+          className="facet-surface facet-refraction bg-card/50 relative flex gap-1 rounded-xl border p-1 shadow-md"
         >
           {/* Sliding indicator behind active tab */}
           {activeIndex !== -1 && (

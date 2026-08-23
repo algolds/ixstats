@@ -2,24 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import {
-  Star,
-  Trophy,
-  DollarSign,
-  Users,
-  Gauge,
-  Map,
-  TrendingUp,
-  Briefcase,
-  GraduationCap,
-  Heart,
-  Landmark,
-  Search,
-  Crown,
-  Medal,
-  Award,
-  Loader2,
-} from "lucide-react";
+import { Star, Trophy, Dollar as DollarSign, Group as Users, Dashboard as Gauge, Map, StatUp as TrendingUp, Suitcase as Briefcase, GraduationCap, Heart, Bank as Landmark, Search, Crown, Medal, Trophy as Award, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";

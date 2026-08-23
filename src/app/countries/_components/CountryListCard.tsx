@@ -3,23 +3,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Users,
-  TrendingUp,
-  Globe as GlobeIcon,
-  ArrowRight,
-  Scaling,
-  LocateFixed,
-  Flag as FlagIcon,
-  ExternalLink,
-  BookOpen,
-} from "lucide-react";
+import { Group as Users, StatUp as TrendingUp, Globe as GlobeIcon, ArrowRight, Expand as Scaling, Pin as LocateFixed, WhiteFlag as FlagIcon, OpenNewWindow as ExternalLink, OpenBook as BookOpen } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { CardFooter } from "~/components/ui/card";
+import { Card, CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { GlassCard } from "~/components/ui/enhanced-card";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
@@ -101,11 +90,9 @@ export function CountryListCard({
   };
 
   return (
-    <GlassCard
-      variant="diplomatic"
-      hover="none"
+    <Card
       className={cn(
-        "group glass-floating glass-refraction glass-interactive flex h-full cursor-pointer flex-col overflow-hidden transition-all duration-200",
+        "group facet-card relative flex h-full cursor-pointer flex-col overflow-hidden transition-all duration-200 hover:shadow-lg active:scale-[0.98]",
         dominantColor && "border-l-2"
       )}
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
@@ -235,13 +222,13 @@ export function CountryListCard({
         }
 
         /* Hover enhancements for flag and color overlays */
-        .glass-interactive:hover .flag-background-accent {
+        .facet-interactive:hover .flag-background-accent {
           opacity: 0.5;
         }
-        .glass-interactive:hover .color-accent-overlay {
+        .facet-interactive:hover .color-accent-overlay {
           opacity: 0.7;
         }
       `}</style>
-    </GlassCard>
+    </Card>
   );
 }

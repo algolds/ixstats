@@ -1,15 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  TrendingUp,
-  Globe,
-  BarChart3,
-  Loader2,
-  Users,
-  Briefcase,
-  Activity,
-} from "lucide-react";
+import { StatUp as TrendingUp, Globe, StatsReport as BarChart3, SystemRestart as Loader2, Group as Users, Suitcase as Briefcase, Activity } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
@@ -147,7 +139,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-blue-500/20 bg-blue-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-blue-500/30 dark:bg-blue-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-blue-500/20 bg-blue-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-blue-500/30 dark:bg-blue-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -196,7 +188,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     }));
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-purple-500/20 bg-purple-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30 dark:bg-purple-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-purple-500/20 bg-purple-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-purple-500/30 dark:bg-purple-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -240,7 +232,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     const netTrade = activeTrade.exports - activeTrade.imports;
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-orange-500/20 bg-orange-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-orange-500/30 dark:bg-orange-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-orange-500/20 bg-orange-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-orange-500/30 dark:bg-orange-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -297,7 +289,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 dark:bg-emerald-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-emerald-500/20 bg-emerald-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-emerald-500/30 dark:bg-emerald-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -346,7 +338,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-teal-500/20 bg-teal-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30 dark:bg-teal-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-teal-500/20 bg-teal-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-teal-500/30 dark:bg-teal-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -392,7 +384,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-amber-500/20 bg-amber-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-amber-500/30 dark:bg-amber-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-amber-500/20 bg-amber-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-amber-500/30 dark:bg-amber-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-3 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -445,7 +437,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-cyan-500/20 bg-cyan-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-cyan-500/30 dark:bg-cyan-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
@@ -495,7 +487,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
     ];
 
     return (
-      <Card className="glass-hierarchy-child relative overflow-hidden border-red-500/20 bg-red-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-red-500/30 dark:bg-red-950/10">
+      <Card className="facet-hierarchy-child relative overflow-hidden border-red-500/20 bg-red-500/5 p-3 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:border-red-500/30 dark:bg-red-950/10">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="mb-2.5 flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-xs font-semibold">

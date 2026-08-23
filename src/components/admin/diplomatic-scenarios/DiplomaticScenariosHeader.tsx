@@ -11,12 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  ArrowLeft,
-  Globe,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ArrowLeft, Globe, Plus, Search } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,
@@ -56,7 +51,7 @@ export function DiplomaticScenariosHeader({
   onOpenAddDialog,
 }: DiplomaticScenariosHeaderProps) {
   return (
-    <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+    <div className="facet-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/admin">

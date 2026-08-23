@@ -8,7 +8,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BarChart3 } from "lucide-react";
+import { StatsReport as BarChart3 } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import type { ComparativeBenchmark } from "~/lib/utils";
 
@@ -19,7 +19,7 @@ interface ComparativeBenchmarkingCardProps {
 export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCardProps>(
   ({ data }) => {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-indigo-600" />

@@ -1,20 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { PreText } from "~/components/ui/pretext";
-import {
-  Globe,
-  Sparkles,
-  Database,
-  Users,
-  DollarSign,
-  MapPin,
-  Building,
-  Crown,
-  CheckCircle2,
-  Loader2,
-  ArrowRight,
-  ShieldCheck,
-} from "lucide-react";
+import { Globe, Sparks as Sparkles, Database, Group as Users, Dollar as DollarSign, MapPin, Building, Crown, CheckCircle as CheckCircle2, SystemRestart as Loader2, ArrowRight, ShieldCheck } from "iconoir-react";
 
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calculator, Sigma, TrendingUp, BarChart3, Gauge, ArrowUpRight } from "lucide-react";
+import { Calculator, Calculator as Sigma, StatUp as TrendingUp, StatsReport as BarChart3, Dashboard as Gauge, ArrowUpRight } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

@@ -8,8 +8,8 @@ import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { useCountryImage } from "~/hooks/useCountryImage";
 import { useCountryData } from "../CountryDataProvider";
@@ -23,7 +23,7 @@ export interface SectorData {
   color: string; // Tailwind color name (e.g., "green", "blue")
   trend?: "up" | "down" | "stable";
   trendValue?: number;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   description?: string;
   /** ImageContext key for contextual background image (e.g., "sector_agriculture") */
   imageKeyword?: string;
@@ -382,7 +382,7 @@ export function SectorBreakdownCard({
     );
   }
 
-  return <Card className={cn("glass-hierarchy-child", className)}>{cardInner}</Card>;
+  return <Card className={cn("facet-hierarchy-child", className)}>{cardInner}</Card>;
 }
 
 /**

@@ -2,15 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  Globe,
-  Building2,
-  TrendingUp,
-  CheckCircle,
-  Check,
-  Lock,
-  type LucideIcon,
-} from "lucide-react";
+import { Globe, City as Building2, StatUp as TrendingUp, CheckCircle, Check, Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   HEADER_NAV_STEPS,
@@ -22,7 +14,7 @@ import {
 
 // ─── Icon mapping for header nav steps ───
 
-const STEP_ICONS: Record<string, LucideIcon> = {
+const STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   foundation: Globe,
   government: Building2,
   economics: TrendingUp,
@@ -159,9 +151,8 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
 
                   {/* Icon */}
                   <Icon
-                    size={14}
                     className={cn(
-                      "shrink-0 transition-transform duration-150",
+                      "h-3.5 w-3.5 shrink-0 transition-transform duration-150",
                       !active && accessible && "group-hover:scale-110"
                     )}
                   />

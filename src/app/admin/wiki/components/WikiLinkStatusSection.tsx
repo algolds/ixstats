@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Search, Link2, CheckCircle, XCircle } from "lucide-react";
+import { Search, Link as Link2, CheckCircle, XmarkCircle as XCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { FilterTab } from "./types";
 

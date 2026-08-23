@@ -3,14 +3,7 @@
 // Philosophy: Apple SF Symbols × Emil Design Engineering
 
 import React, { useState } from "react";
-import {
-  Type,
-  Trash2,
-  Search,
-  Library,
-  Copy,
-  Check,
-} from "lucide-react";
+import { Type, Trash as Trash2, Search, BookStack as Library, Copy, Check } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
@@ -90,7 +83,7 @@ export function GlyphMapRegistry({
           className={cn(
             "flex h-6.5 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer active:scale-95 shrink-0",
             showPackDrawer
-              ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+              ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
               : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
           )}
         >
@@ -130,7 +123,7 @@ export function GlyphMapRegistry({
                     onLoadStarterPack(pack);
                     setShowPackDrawer(false);
                   }}
-                  className="border-border/30 bg-background/60 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/5 flex flex-col rounded-xl border p-2.5 text-left transition-all cursor-pointer active:scale-[0.97]"
+                  className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/5 flex flex-col rounded-xl border p-2.5 text-left transition-all cursor-pointer active:scale-[0.97]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-foreground text-xs font-bold">{pack.name}</span>
@@ -157,7 +150,7 @@ export function GlyphMapRegistry({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search glyphs by phoneme..."
-            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-[#0091ff]/50 focus:ring-2 focus:ring-[#0091ff]/15 h-8 w-full rounded-xl border pr-3 pl-8 text-xs transition-all outline-none"
+            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/50 focus:ring-2 focus:ring-onoma-primary/15 h-8 w-full rounded-xl border pr-3 pl-8 text-xs transition-all outline-none"
           />
         </div>
       )}
@@ -193,8 +186,8 @@ export function GlyphMapRegistry({
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   className={cn(
-                    "border-border/30 bg-secondary/15 hover:bg-secondary/25 hover:border-[#0091ff]/40 group relative flex flex-col items-center justify-between rounded-xl border p-2.5 transition-all select-none",
-                    isSelected && "border-[#0091ff]/60 bg-[#0091ff]/10 shadow-xs"
+                    "border-border/30 bg-secondary/15 hover:bg-secondary/25 hover:border-onoma-primary/40 group relative flex flex-col items-center justify-between rounded-xl border p-2.5 transition-all select-none",
+                    isSelected && "border-onoma-primary/60 bg-onoma-primary/10 shadow-xs"
                   )}
                 >
                   {/* Action Bar (Top Right Hover) */}

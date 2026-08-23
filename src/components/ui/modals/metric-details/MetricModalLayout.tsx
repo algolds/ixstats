@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { ArrowUpRight, ArrowDownRight, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
@@ -94,7 +94,7 @@ interface StatCardProps {
   suffix?: string;
   decimalPlaces?: number;
   trend?: number;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   variant?: MetricThemeVariant;
   className?: string;
 }

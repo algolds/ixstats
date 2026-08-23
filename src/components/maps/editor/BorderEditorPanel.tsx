@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Layers, AlertTriangle, Users, Crosshair } from "lucide-react";
+import { MapPin, Component as Layers, WarningTriangle as AlertTriangle, Group as Users, Archery as Crosshair } from "iconoir-react";
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/maps/border-editor";
 

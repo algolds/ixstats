@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crosshair, Navigation } from "lucide-react";
+import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
 
 export const btnClass =
   "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground transition-all duration-100 ease-out active:scale-95 hover:bg-accent hover:text-foreground";

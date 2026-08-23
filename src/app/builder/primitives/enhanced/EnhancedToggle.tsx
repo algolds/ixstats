@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Check, X } from "lucide-react";
+import { Check, Xmark as X } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { MOTION_VARIANTS } from "./animation-utils";

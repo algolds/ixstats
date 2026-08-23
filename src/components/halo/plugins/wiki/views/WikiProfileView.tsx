@@ -4,29 +4,12 @@ import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
-import {
-  BookOpen,
-  User,
-  Trophy,
-  Flame,
-  ChevronRight,
-  X,
-  FileText,
-  Crown,
-  History,
-  ArrowLeft,
-  Building2,
-  ScrollText,
-  Handshake,
-  Map,
-  Wallet,
-  Scale,
-} from "lucide-react";
+import { OpenBook as BookOpen, User, Trophy, FireFlame as Flame, NavArrowRight as ChevronRight, Xmark as X, Page as FileText, Crown, ClockRotateRight as History, ArrowLeft, City as Building2, Page as ScrollText, Community as Handshake, Map, Wallet, ScaleFrameEnlarge as Scale } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PausedSession } from "../types";
 
@@ -46,7 +29,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
   // Active cosmetics
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge?.icon ?? ""] || Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge?.icon ?? ""] || Crown;
 
   // API query
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {

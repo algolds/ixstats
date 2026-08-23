@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Globe } from "iconoir-react";
 import { Pagination } from "~/components/ui/pagination";
 import { CountryListCard } from "./CountryListCard";
 import { Skeleton } from "~/components/ui/skeleton";

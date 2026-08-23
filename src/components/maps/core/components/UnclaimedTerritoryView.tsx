@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin, Globe, BookOpen } from "lucide-react";
+import { MapPin, Globe, OpenBook as BookOpen } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";

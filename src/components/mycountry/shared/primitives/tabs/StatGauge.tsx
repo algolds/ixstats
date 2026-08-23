@@ -7,8 +7,8 @@ import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
+
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, InfoCircle as Info } from "iconoir-react";
 
 export interface StatGaugeProps {
   label: string;
@@ -16,7 +16,7 @@ export interface StatGaugeProps {
   max?: number;
   unit?: string;
   description?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   trend?: {
     direction: "up" | "down" | "stable";
     value?: number;

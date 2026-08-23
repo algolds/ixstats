@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Grid3x3, ShoppingCart, Download } from "lucide-react";
+import { HomeSimple as Home, ViewGrid as Grid3x3, Cart as ShoppingCart, Download } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
@@ -159,7 +159,7 @@ export function VaultSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="facet-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {filteredNavItems.map((item) => {
             const isActive = item.id === activeId;

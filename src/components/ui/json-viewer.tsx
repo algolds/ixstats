@@ -18,20 +18,20 @@
  * - colorTheme?: shiki theme name or custom JsonColorTheme object
  * - className?: additional CSS classes
  *
- * Dependencies: lucide-react
+ * Dependencies: iconoir-react
  */
 
 import * as React from "react";
 import {
   Check,
-  ChevronRight,
+  NavArrowRight as ChevronRight,
   Copy,
-  CopyPlus,
+  Copy as CopyPlus,
   Search,
-  UnfoldHorizontal,
-  FoldHorizontal,
-  X,
-} from "lucide-react";
+  ExpandLines as UnfoldHorizontal,
+  CompressLines as FoldHorizontal,
+  Xmark as X,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { jsonThemes, type JsonColorTheme, type ShikiThemeName } from "~/lib/themes";
 

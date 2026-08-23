@@ -12,7 +12,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { Calendar } from "iconoir-react";
 import type { TimelineEvent } from "~/hooks/useDiplomaticAnalytics";
 
 interface DiplomaticTimelineProps {
@@ -21,7 +21,7 @@ interface DiplomaticTimelineProps {
 
 export const DiplomaticTimeline = React.memo<DiplomaticTimelineProps>(({ events }) => {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-blue-600" />

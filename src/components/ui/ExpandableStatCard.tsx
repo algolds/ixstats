@@ -6,7 +6,7 @@ import { NumberFlowDisplay } from "./number-flow";
 import { HealthRing } from "./health-ring";
 
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion";
-import { ChevronDown, ChevronUp, Users, BarChart3, CheckCircle } from "lucide-react";
+import { NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Group as Users, StatsReport as BarChart3, CheckCircle } from "iconoir-react";
 import { formatCurrency } from "~/lib/utils";
 
 interface ExpandableStatCardProps {

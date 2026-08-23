@@ -4,7 +4,7 @@
 // Onoma Lab — User Voice Settings, Interactive Sandbox, & Local Browser Data Manager
 
 import React, { useState, useEffect } from "react";
-import { Sliders } from "lucide-react";
+import { ControlSlider as Sliders } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {

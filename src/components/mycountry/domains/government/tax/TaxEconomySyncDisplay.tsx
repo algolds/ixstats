@@ -9,22 +9,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  RefreshCw,
-  Target,
-  Scale,
-  Users,
-  Building2,
-  ShoppingCart,
-  Lightbulb,
-  AlertCircle,
-  Activity,
-} from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, Refresh as RefreshCw, Archery as Target, ScaleFrameEnlarge as Scale, Group as Users, City as Building2, Cart as ShoppingCart, LightBulb, WarningCircle as AlertCircle, Activity } from "iconoir-react";
 
 import type { TaxSystem } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";
@@ -672,7 +657,7 @@ export function TaxEconomySyncDisplay({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" />
+                <LightBulb className="h-5 w-5" />
                 Tier-Based Policy Recommendations
               </CardTitle>
             </CardHeader>

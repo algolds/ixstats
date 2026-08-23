@@ -2,7 +2,7 @@
 
 import React from "react";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Users } from "lucide-react";
+import { Group as Users } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
 

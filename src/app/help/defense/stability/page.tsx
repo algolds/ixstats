@@ -1,4 +1,4 @@
-import { ShieldAlert, AlertOctagon, LayoutList } from "lucide-react";
+import { ShieldAlert, WarningTriangle as AlertOctagon, List as LayoutList } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

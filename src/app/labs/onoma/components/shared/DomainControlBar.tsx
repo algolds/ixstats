@@ -4,7 +4,7 @@
 // Onoma Lab — Modular Domain Synthesis Control Bar (Horizontal Surface Layout)
 
 import React from "react";
-import { SlidersHorizontal, Loader2, ChevronDown } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, SystemRestart as Loader2, NavArrowDown as ChevronDown } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
@@ -62,7 +62,7 @@ export function DomainControlBar({
               className={cn(
                 "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
                 showAdvanced
-                  ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+                  ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
                   : "border-border/60 bg-background/80 text-muted-foreground hover:text-foreground"
               )}
               title="Toggle advanced conlang constraints"
@@ -78,7 +78,7 @@ export function DomainControlBar({
             value={category}
             onValueChange={(val) => onCategoryChange?.(val as NameCategory)}
           >
-            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-onoma-primary/60 focus:outline-none shadow-2xs">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
@@ -86,7 +86,7 @@ export function DomainControlBar({
                 <SelectItem
                   key={cat.id}
                   value={cat.id}
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer font-medium"
+                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer font-medium"
                 >
                   {cat.label}
                 </SelectItem>
@@ -110,7 +110,7 @@ export function DomainControlBar({
                 className={cn(
                   "flex cursor-pointer items-center gap-1 text-xs font-medium tracking-tight transition-all px-2.5 py-0.5 rounded-lg border shadow-2xs active:scale-95",
                   showAdvanced
-                    ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff]"
+                    ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
                     : "border-border/60 bg-background/80 text-muted-foreground hover:text-foreground"
                 )}
                 title="Toggle advanced conlang constraints"
@@ -127,7 +127,7 @@ export function DomainControlBar({
             value={gen.subType}
             onValueChange={(val) => gen.setSubType(val)}
           >
-            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+            <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium tracking-tight transition-all focus:border-onoma-primary/60 focus:outline-none shadow-2xs">
               <SelectValue placeholder="Select variant" />
             </SelectTrigger>
             <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
@@ -139,7 +139,7 @@ export function DomainControlBar({
                   <SelectItem
                     key={st.value}
                     value={st.value}
-                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer font-medium"
+                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer font-medium"
                   >
                     {st.label}
                   </SelectItem>
@@ -156,54 +156,54 @@ export function DomainControlBar({
           Cultural Seed
         </label>
         <Select value={gen.culture} onValueChange={gen.setCulture}>
-          <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-[#0091ff]/60 focus:outline-none shadow-2xs">
+          <SelectTrigger className="border-border/60 bg-background/80 hover:bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium transition-all focus:border-onoma-primary/60 focus:outline-none shadow-2xs">
             <SelectValue placeholder="Select culture family" />
           </SelectTrigger>
           <SelectContent className="border-border/40 bg-popover/95 max-h-[300px] backdrop-blur-xl">
-            <SelectItem value="any" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+            <SelectItem value="any" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
               Any / Mixed Profile
             </SelectItem>
             <SelectGroup>
               <SelectLabel className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 Linguistic Families
               </SelectLabel>
-              <SelectItem value="latin" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="latin" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Latin / Romance
               </SelectItem>
-              <SelectItem value="germanic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="germanic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Germanic / Norse
               </SelectItem>
-              <SelectItem value="celtic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="celtic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Celtic / Gaelic
               </SelectItem>
-              <SelectItem value="slavic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="slavic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Slavic / Eastern European
               </SelectItem>
-              <SelectItem value="arabic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="arabic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Arabic / Semitic
               </SelectItem>
-              <SelectItem value="persian" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="persian" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Persian / Iranian
               </SelectItem>
-              <SelectItem value="turkic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="turkic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Turkic / Central Asian
               </SelectItem>
-              <SelectItem value="indic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="indic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Indic / South Asian
               </SelectItem>
-              <SelectItem value="east-asian" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="east-asian" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 East Asian / Romanized
               </SelectItem>
-              <SelectItem value="austronesian" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="austronesian" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Austronesian / Polynesian
               </SelectItem>
-              <SelectItem value="african" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="african" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 African / Sub-Saharan
               </SelectItem>
-              <SelectItem value="uralic" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="uralic" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Uralic / Finno-Ugric
               </SelectItem>
-              <SelectItem value="constructed" className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer">
+              <SelectItem value="constructed" className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer">
                 Constructed / High Fantasy
               </SelectItem>
             </SelectGroup>
@@ -226,7 +226,7 @@ export function DomainControlBar({
                 className={cn(
                   "cursor-pointer rounded-lg border py-1 text-center text-xs font-semibold capitalize transition-all active:scale-95 tracking-tight",
                   gen.gender === g
-                    ? "border-[#0091ff]/40 bg-[#0091ff]/15 font-bold text-[#0091ff]"
+                    ? "border-onoma-primary/40 bg-onoma-primary/15 font-bold text-onoma-primary"
                     : "border-border/60 bg-background/80 text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
                 )}
               >
@@ -238,7 +238,7 @@ export function DomainControlBar({
       )}
 
       {/* 4. Unified Generate Action & Quantity Pill */}
-      <div className="relative flex h-11 w-full items-center rounded-xl bg-[#0091ff] hover:bg-[#0086eb] active:bg-[#007cdb] shadow-md shadow-[#0091ff]/25 border border-white/20 select-none overflow-hidden transition-all group">
+      <div className="relative flex h-11 w-full items-center rounded-xl bg-onoma-primary hover:bg-onoma-primary-hover active:bg-onoma-primary-active shadow-md shadow-onoma-primary/25 border border-white/20 select-none overflow-hidden transition-all group">
         {/* Left / Center: Primary Generate Action Trigger */}
         <button
           type="button"

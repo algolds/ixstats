@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Radar, Globe, Shield, LayoutDashboard } from "lucide-react";
+import { Archery as Radar, Globe, Shield, Dashboard as LayoutDashboard } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function StrategicIntelligenceArticle() {

@@ -1,18 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import {
-  TrendingUp,
-  Landmark,
-  Users,
-  Shield,
-  Globe,
-  Building,
-  Leaf,
-  AlertTriangle,
-  Clock,
-  Flame,
-} from "lucide-react";
+import { StatUp as TrendingUp, Bank as Landmark, Group as Users, Shield, Globe, Building, Leaf, WarningTriangle as AlertTriangle, Clock, FireFlame as Flame } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { IxTime } from "~/lib/ixtime";
 

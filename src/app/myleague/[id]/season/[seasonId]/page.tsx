@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Trophy, Calendar, ArrowLeft, Swords, MapPin } from "lucide-react";
+import { Trophy, Calendar, ArrowLeft, Tournament as Swords, MapPin } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";

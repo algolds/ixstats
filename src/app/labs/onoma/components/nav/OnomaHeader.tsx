@@ -105,7 +105,7 @@ export function OnomaHeader({
             >
               <OnomaBrandLogo
                 variant="wordmark"
-                className="h-6 sm:h-6.5 w-auto text-foreground transition-colors duration-150 group-hover/brand:text-[#0091ff]"
+                className="h-6 sm:h-6.5 w-auto text-foreground transition-colors duration-150 group-hover/brand:text-onoma-primary"
               />
             </button>
             <Tooltip>
@@ -122,7 +122,7 @@ export function OnomaHeader({
                   <span className="relative inline-flex items-center justify-center">
                     {!hasInteractedPronunciation && (
                       <motion.span
-                        className="absolute -inset-1 rounded-full bg-[#0091ff]/40 pointer-events-none"
+                        className="absolute -inset-1 rounded-full bg-onoma-primary/40 pointer-events-none"
                         initial={{ scale: 0.8, opacity: 0.8 }}
                         animate={{ scale: [0.8, 1.6, 0.8], opacity: [0.8, 0, 0.8] }}
                         transition={{ duration: 1.2, repeat: 1, ease: "easeOut" }}
@@ -144,8 +144,8 @@ export function OnomaHeader({
                         className={cn(
                           "relative h-3 w-3 transition-transform duration-200",
                           !hasInteractedPronunciation
-                            ? "text-[#0091ff]"
-                            : "opacity-60 group-hover/audio:scale-110 group-hover/audio:opacity-100 group-hover/audio:text-[#0091ff]"
+                            ? "text-onoma-primary"
+                            : "opacity-60 group-hover/audio:scale-110 group-hover/audio:opacity-100 group-hover/audio:text-onoma-primary"
                         )}
                       />
                     </motion.span>
@@ -176,9 +176,9 @@ export function OnomaHeader({
             <Link
               href="/labs/onoma/glyphs"
               title="Open Onoma Glyphs Catalog (Dev Tools)"
-              className="border-border/40 bg-secondary/25 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]"
+              className="border-border/40 bg-secondary/25 text-muted-foreground hover:border-onoma-primary/30 hover:bg-onoma-primary/10 hover:text-onoma-primary flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]"
             >
-              <Code className="h-3.5 w-3.5 text-[#0091ff]" />
+              <Code className="h-3.5 w-3.5 text-onoma-primary" />
               <span className="hidden sm:inline font-mono">Glyphs</span>
             </Link>
           )}
@@ -219,8 +219,8 @@ export function OnomaHeader({
             className={cn(
               "flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all duration-100 active:scale-[0.96]",
               activeSection === "settings"
-                ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff] dark:text-[#33a7ff] font-bold"
-                : "border-border/40 bg-secondary/25 text-muted-foreground hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary dark:text-onoma-primary-light font-bold"
+                : "border-border/40 bg-secondary/25 text-muted-foreground hover:border-onoma-primary/30 hover:bg-onoma-primary/10 hover:text-onoma-primary"
             )}
             title="Configure Conlang & Voice Settings"
           >
@@ -246,7 +246,7 @@ export function OnomaHeader({
                 {/* Left: 1-Click Return Button */}
                 <button
                   onClick={handleReturn}
-                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/80 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0"
+                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/80 hover:bg-onoma-primary/10 hover:border-onoma-primary/40 text-foreground hover:text-onoma-primary flex h-8 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0"
                   title={`Return to ${returnLabel}`}
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
@@ -271,7 +271,7 @@ export function OnomaHeader({
                   ) : (
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0">
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Settings className="h-3.5 w-3.5 text-[#0091ff]" />
+                        <Settings className="h-3.5 w-3.5 text-onoma-primary" />
                         <span className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
                           Onoma Preferences & Sandbox
                         </span>
@@ -290,7 +290,7 @@ export function OnomaHeader({
                 <button
                   onClick={onOpenHelp}
                   title="Open Contextual Help"
-                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-muted-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0 self-end sm:self-auto"
+                  className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-onoma-primary/10 hover:border-onoma-primary/40 text-muted-foreground hover:text-onoma-primary flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all duration-100 cursor-pointer active:scale-[0.96] shrink-0 self-end sm:self-auto"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                   <span className="hidden md:inline">Help</span>
@@ -404,7 +404,7 @@ export function OnomaHeader({
                     <button
                       onClick={onOpenHelp}
                       title="Open Contextual Help & System Reference"
-                      className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-[#0091ff]/10 hover:border-[#0091ff]/40 text-muted-foreground hover:text-[#0091ff] flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95 shrink-0"
+                      className="border-zinc-300/80 dark:border-zinc-700/80 bg-background/60 hover:bg-onoma-primary/10 hover:border-onoma-primary/40 text-muted-foreground hover:text-onoma-primary flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-95 shrink-0"
                     >
                       <HelpCircle className="h-3.5 w-3.5" />
                       <span className="hidden md:inline">Help</span>

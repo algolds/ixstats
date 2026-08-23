@@ -20,7 +20,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Activity, Target, Info, CheckCircle, Zap, Globe } from "lucide-react";
+import { Activity, Archery as Target, InfoCircle as Info, CheckCircle, Flash as Zap, Globe } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -68,7 +68,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
   // Premium/permission fallback
   if (analytics.analyticsError) {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle>Analytics Unavailable</CardTitle>
           <CardDescription>Advanced analytics require MyCountry Premium access.</CardDescription>
@@ -159,7 +159,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         {/* Diplomatic Analytics Section */}
         <TabsContent value="diplomatic" className="space-y-4">
           {/* Diplomatic Network Power Card */}
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-purple-600" />
@@ -234,7 +234,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
 
           {/* Mission Success Rates & Cultural Exchange */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card className="glass-hierarchy-child">
+            <Card className="facet-hierarchy-child">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
@@ -268,7 +268,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
               </CardContent>
             </Card>
 
-            <Card className="glass-hierarchy-child">
+            <Card className="facet-hierarchy-child">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-yellow-600" />
@@ -308,7 +308,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         {/* Forecasting Section */}
         <TabsContent value="forecasting" className="space-y-4">
           {/* Scenario Selector */}
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-purple-600" />
@@ -362,7 +362,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="glass-hierarchy-child">
+                  <Card className="facet-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="text-lg capitalize">
                         {scenario.scenario} Scenario
@@ -396,7 +396,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
           </div>
 
           {/* Methodology */}
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-blue-600" />

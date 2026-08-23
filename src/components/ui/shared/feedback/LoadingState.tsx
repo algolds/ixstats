@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
-import { Loader2 } from "lucide-react";
 import { IOSActivityIndicator } from "~/components/ui/loader";
 
 export interface LoadingStateProps {
@@ -125,7 +124,7 @@ export function LoadingState({
 // Skeleton loading patterns
 export function SkeletonCard() {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="mt-2 h-4 w-1/2" />

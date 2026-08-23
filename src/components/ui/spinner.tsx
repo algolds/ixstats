@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface SpinnerProps extends React.SVGAttributes<SVGSVGElement> {

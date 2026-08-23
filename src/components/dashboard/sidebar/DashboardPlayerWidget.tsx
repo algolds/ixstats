@@ -3,21 +3,21 @@
 import Link from "next/link";
 import {
   Mail,
-  AlertTriangle,
-  ChevronUp,
-  ClipboardList,
+  WarningTriangle as AlertTriangle,
+  NavArrowUp as ChevronUp,
+  TaskList as ClipboardList,
   CalendarCheck,
-  Users,
-  DollarSign,
+  Group as Users,
+  Dollar as DollarSign,
   Map as MapIcon,
-} from "lucide-react";
+} from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
@@ -41,7 +41,7 @@ interface DashboardPlayerWidgetProps {
 export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: DashboardPlayerWidgetProps) {
   const { user, isSignedIn } = useUser();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,

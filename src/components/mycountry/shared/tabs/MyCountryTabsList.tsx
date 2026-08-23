@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BarChart3, TrendingUp, Building, MapPin, History } from "lucide-react";
+import { StatsReport as BarChart3, StatUp as TrendingUp, Building, MapPin, ClockRotateRight as History } from "iconoir-react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { FacetTabs } from "~/components/ui/facet";

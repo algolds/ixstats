@@ -6,16 +6,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  ChevronDown,
-  ChevronUp,
-  Info,
-  ExternalLink,
-} from "lucide-react";
+
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, InfoCircle as Info, OpenNewWindow as ExternalLink } from "iconoir-react";
 
 export interface InteractiveMetricProps {
   value: number;
@@ -26,7 +18,7 @@ export interface InteractiveMetricProps {
   suffix?: string;
   description?: string;
   tooltip?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   trend?: {
     direction: "up" | "down" | "stable";
     value?: number;

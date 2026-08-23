@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, Bookmark, Users, Compass } from "lucide-react";
+import { OpenBook as BookOpen, Bookmark, Group as Users, Compass } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import {

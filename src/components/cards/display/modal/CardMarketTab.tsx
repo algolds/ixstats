@@ -2,16 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  BarChart3,
-  History,
-  Package,
-  Award,
-  Gift,
-  ArrowRightLeft,
-  ShoppingBag,
-  Star,
-} from "lucide-react";
+import { StatsReport as BarChart3, ClockRotateRight as History, Package, Trophy as Award, Gift, ArrowSeparate as ArrowRightLeft, ShoppingBag, Star } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
@@ -44,7 +35,7 @@ export function CardMarketTab({
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="glass-hierarchy-child rounded-lg p-6">
+      <div className="facet-hierarchy-child rounded-lg p-6">
         <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
           <BarChart3 className="h-5 w-5" />
           Market History
@@ -52,20 +43,20 @@ export function CardMarketTab({
 
         {/* Market stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
             <p className={cn("flex items-baseline gap-1 text-2xl font-bold", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" variant="ic" />
               {card.marketValue.toLocaleString()}
             </p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Total Supply</p>
             <p className="text-foreground text-2xl font-bold">
               {card.totalSupply.toLocaleString()}
             </p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Last Trade</p>
             <p className="text-foreground text-sm font-semibold">
               {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
@@ -80,7 +71,7 @@ export function CardMarketTab({
       </div>
 
       {/* Provenance & Ownership Timeline */}
-      <div className="glass-hierarchy-child rounded-lg p-6">
+      <div className="facet-hierarchy-child rounded-lg p-6">
         <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
           <History className="h-5 w-5 text-amber-500" />
           Provenance & Ownership History

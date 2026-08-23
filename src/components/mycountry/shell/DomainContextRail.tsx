@@ -2,24 +2,23 @@
 
 import React, { useMemo } from "react";
 import {
-  Building2,
-  Handshake,
-  TrendingUp,
-  Scale,
-  Globe2,
-  Sword,
-  AlertTriangle,
+  City as Building2,
+  Community as Handshake,
+  StatUp as TrendingUp,
+  ScaleFrameEnlarge as Scale,
+  Globe as Globe2,
+  Tournament as Sword,
+  WarningTriangle as AlertTriangle,
   ShieldAlert,
   Shield,
-  Users,
-  Landmark,
+  Group as Users,
+  Bank as Landmark,
   CheckCircle,
-  BarChart3,
-  Vote,
+  StatsReport as BarChart3,
+  CheckSquare as Vote,
   Coins,
-  ScrollText,
-  type LucideIcon,
-} from "lucide-react";
+  Page as ScrollText,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -46,7 +45,7 @@ interface Kpi {
 
 interface ActivityEntry {
   id: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
   text: string;
   time: Date;
@@ -98,7 +97,7 @@ function DomainActivityCard({
 }: {
   domain: V2Domain;
   title: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   entries: ActivityEntry[];
   emptyMessage: string;
 }) {
@@ -150,7 +149,7 @@ function DomainWidget({
   title: string;
   kpis: Kpi[];
   activityTitle: string;
-  activityIcon: LucideIcon;
+  activityIcon: React.ComponentType<{ className?: string }>;
   entries: ActivityEntry[];
   emptyMessage: string;
 }) {

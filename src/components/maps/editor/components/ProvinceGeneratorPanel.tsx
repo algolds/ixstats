@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Dice5, Check, X, Grid3X3, Loader2 } from "lucide-react";
+import { DiceFive as Dice5, Check, Xmark as X, ViewGrid as Grid3X3, SystemRestart as Loader2 } from "iconoir-react";
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { api } from "~/trpc/react";
 import type { Polygon, MultiPolygon } from "geojson";

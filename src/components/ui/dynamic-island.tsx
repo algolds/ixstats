@@ -553,32 +553,25 @@ const DynamicIslandContent = ({
 
   return (
     <div className="relative">
-      {/* Outer glow — multi-layer halos for depth, matching maps DI */}
-      <motion.div
-        className="pointer-events-none absolute inset-0"
-        animate={{
-          borderRadius: currentSize.borderRadius,
-          opacity: isCompactSize(state.size) ? 0.6 : 0.15,
-        }}
-        transition={{
-          type: "spring",
-          stiffness,
-          damping,
-          mass,
-        }}
-      >
-        {isImpersonating ? (
-          <>
-            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
-            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-            <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
-          </>
-        )}
-      </motion.div>
+      {/* Outer impersonation warning ring (Admin mode only) */}
+      {isImpersonating && (
+        <motion.div
+          className="pointer-events-none absolute inset-0 rounded-[inherit]"
+          animate={{
+            borderRadius: currentSize.borderRadius,
+            opacity: isCompactSize(state.size) ? 0.8 : 0.3,
+          }}
+          transition={{
+            type: "spring",
+            stiffness,
+            damping,
+            mass,
+          }}
+        >
+          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
+          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+        </motion.div>
+      )}
 
       {/* Main dynamic island — Apple HIG Acrylic Shell */}
       <motion.div
@@ -612,27 +605,17 @@ const DynamicIslandContent = ({
         }}
         {...props}
       >
-        {/* Refraction edges */}
+        {/* Specular edge highlight (Apple physical acrylic top lip) */}
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/80 to-transparent dark:via-white/30" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/5 to-transparent dark:via-white/10" />
-          {/* Inner shimmer */}
-          {isCompact && (
-            <div
-              className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10"
-              style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-            />
-          )}
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/20" />
         </div>
 
-        {/* Local Backdrop Scrim Overlay for Expanded state */}
+        {/* Local Backdrop Scrim Overlay for Expanded state (contrast tint without nested blur) */}
         <AnimatePresence>
           {!isCompact && (
             <motion.div
               key="card-backdrop-scrim"
-              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-white/50 backdrop-blur-[6px] dark:bg-black/40"
+              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-slate-900/10 dark:bg-black/25"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

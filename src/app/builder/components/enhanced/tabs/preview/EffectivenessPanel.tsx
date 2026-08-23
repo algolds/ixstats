@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Zap, Gauge } from "lucide-react";
+import { Flash as Zap, Dashboard as Gauge } from "iconoir-react";
 import type { EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";

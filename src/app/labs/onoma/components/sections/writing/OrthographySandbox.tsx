@@ -3,15 +3,7 @@
 // Philosophy: Apple Typography × Emil Design Engineering
 
 import React, { useState, useMemo } from "react";
-import {
-  Eye,
-  AlignLeft,
-  AlignRight,
-  ArrowDown,
-  Copy,
-  Check,
-  Download,
-} from "lucide-react";
+import { Eye, AlignLeft, AlignRight, ArrowDown, Copy, Check, Download } from "iconoir-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
@@ -209,7 +201,7 @@ export function OrthographySandbox({
       {/* Header Bar with Direction Segmented Control */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#0091ff]/10 text-[#0091ff] dark:bg-[#0091ff]/15">
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-onoma-primary/10 text-onoma-primary dark:bg-onoma-primary/15">
             <Eye className="h-4 w-4" />
           </div>
           <div>
@@ -279,7 +271,7 @@ export function OrthographySandbox({
             value={testText}
             onChange={(e) => setTestText(e.target.value)}
             placeholder="Type phonetic text (e.g. kaelen voss sha tur)..."
-            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-[#0091ff]/60 focus:ring-2 focus:ring-[#0091ff]/20 flex-1 rounded-xl border px-3.5 py-2 text-sm font-mono transition-all outline-none"
+            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 focus:ring-2 focus:ring-onoma-primary/20 flex-1 rounded-xl border px-3.5 py-2 text-sm font-mono transition-all outline-none"
           />
 
           {/* Export & Copy Suite */}
@@ -288,7 +280,7 @@ export function OrthographySandbox({
               type="button"
               onClick={handleCopySvg}
               title="Copy Rendered SVG Markup"
-              className="hover:border-[#0091ff]/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold text-foreground transition-all cursor-pointer active:scale-[0.97]"
+              className="hover:border-onoma-primary/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold text-foreground transition-all cursor-pointer active:scale-[0.97]"
             >
               {copiedSvg ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">Copy SVG</span>
@@ -298,7 +290,7 @@ export function OrthographySandbox({
               type="button"
               onClick={handleDownloadSvg}
               title="Download SVG Vector File"
-              className="hover:border-[#0091ff]/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 flex h-9 w-9 items-center justify-center rounded-xl border text-foreground transition-all cursor-pointer active:scale-[0.97]"
+              className="hover:border-onoma-primary/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 flex h-9 w-9 items-center justify-center rounded-xl border text-foreground transition-all cursor-pointer active:scale-[0.97]"
             >
               <Download className="h-3.5 w-3.5" />
             </button>
@@ -314,7 +306,7 @@ export function OrthographySandbox({
                 key={sample.label}
                 type="button"
                 onClick={() => setTestText(sample.text)}
-                className="border-border/30 bg-background/60 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 text-muted-foreground hover:text-foreground rounded-lg border px-2.5 py-1 text-[10px] font-mono transition-colors cursor-pointer active:scale-[0.96]"
+                className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 text-muted-foreground hover:text-foreground rounded-lg border px-2.5 py-1 text-[10px] font-mono transition-colors cursor-pointer active:scale-[0.96]"
               >
                 {sample.label}
               </button>
@@ -381,8 +373,8 @@ export function OrthographySandbox({
                     onClick={() => setSelectedToken(tok)}
                     title={`⟨${tok.charOrPhoneme}⟩ — Click to inspect`}
                     className={cn(
-                      "border-border/10 bg-secondary/10 hover:border-[#0091ff]/50 hover:bg-[#0091ff]/10 group relative flex shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-colors",
-                      selectedToken?.id === tok.id && "border-[#0091ff] ring-2 ring-[#0091ff]/30 bg-[#0091ff]/15"
+                      "border-border/10 bg-secondary/10 hover:border-onoma-primary/50 hover:bg-onoma-primary/10 group relative flex shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-colors",
+                      selectedToken?.id === tok.id && "border-onoma-primary ring-2 ring-onoma-primary/30 bg-onoma-primary/15"
                     )}
                     style={{
                       width: glyphSize,
@@ -391,7 +383,7 @@ export function OrthographySandbox({
                   >
                     <svg
                       viewBox="0 0 128 128"
-                      className="stroke-foreground group-hover:stroke-[#0091ff] h-full w-full fill-none drop-shadow-2xs transition-colors"
+                      className="stroke-foreground group-hover:stroke-onoma-primary h-full w-full fill-none drop-shadow-2xs transition-colors"
                       style={{
                         strokeWidth: strokeWeight,
                         strokeLinecap: "round",
@@ -414,7 +406,7 @@ export function OrthographySandbox({
                     onForgeMissing?.(tok.charOrPhoneme);
                   }}
                   title={`Unmapped phoneme: '${tok.charOrPhoneme}' (Click to design)`}
-                  className="border-border/40 hover:border-[#0091ff]/60 hover:bg-[#0091ff]/10 text-muted-foreground hover:text-[#0091ff] flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-dashed font-mono text-xs font-bold transition-all active:scale-95"
+                  className="border-border/40 hover:border-onoma-primary/60 hover:bg-onoma-primary/10 text-muted-foreground hover:text-onoma-primary flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-dashed font-mono text-xs font-bold transition-all active:scale-95"
                   style={{
                     width: glyphSize,
                     height: glyphSize,
@@ -458,8 +450,8 @@ export function OrthographySandbox({
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-mono transition-all cursor-pointer active:scale-[0.96]",
                   tok.glyph
-                    ? "border-[#0091ff]/30 bg-[#0091ff]/10 text-[#0091ff] font-semibold shadow-2xs"
-                    : "border-[#0091ff]/40 bg-[#0091ff]/5 text-[#0091ff] border-dashed font-bold hover:bg-[#0091ff]/15"
+                    ? "border-onoma-primary/30 bg-onoma-primary/10 text-onoma-primary font-semibold shadow-2xs"
+                    : "border-onoma-primary/40 bg-onoma-primary/5 text-onoma-primary border-dashed font-bold hover:bg-onoma-primary/15"
                 )}
               >
                 <span>{tok.charOrPhoneme}</span>
@@ -489,7 +481,7 @@ export function OrthographySandbox({
             step={2}
             value={glyphSize}
             onChange={(e) => onGlyphSizeChange(Number(e.target.value))}
-            className="accent-[#0091ff] h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+            className="accent-onoma-primary h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
           />
         </div>
 
@@ -508,7 +500,7 @@ export function OrthographySandbox({
             step={1}
             value={letterSpacing}
             onChange={(e) => setLetterSpacing(Number(e.target.value))}
-            className="accent-[#0091ff] h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+            className="accent-onoma-primary h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
           />
         </div>
 
@@ -527,7 +519,7 @@ export function OrthographySandbox({
             step={2}
             value={wordSpacing}
             onChange={(e) => setWordSpacing(Number(e.target.value))}
-            className="accent-[#0091ff] h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+            className="accent-onoma-primary h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
           />
         </div>
 
@@ -546,7 +538,7 @@ export function OrthographySandbox({
             step={1}
             value={baselineOffset}
             onChange={(e) => onBaselineOffsetChange(Number(e.target.value))}
-            className="accent-[#0091ff] h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
+            className="accent-onoma-primary h-1.5 w-full cursor-pointer rounded-lg bg-secondary/40"
           />
         </div>
       </div>

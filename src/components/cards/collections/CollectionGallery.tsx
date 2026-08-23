@@ -8,7 +8,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Grid3x3, Trophy, Heart, Eye, Lock, Globe, Search, Filter } from "lucide-react";
+import { ViewGrid as Grid3x3, Trophy, Heart, Eye, Lock, Globe, Search, Filter } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
@@ -119,7 +119,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 placeholder="Search collections or users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="glass-hierarchy-child pl-10"
+                className="facet-hierarchy-child pl-10"
               />
             </div>
           </div>
@@ -130,7 +130,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="glass-hierarchy-child cursor-pointer rounded-lg border-none px-3 py-2 text-sm text-white outline-none"
+              className="facet-hierarchy-child cursor-pointer rounded-lg border-none px-3 py-2 text-sm text-white outline-none"
             >
               <option value="newest">Newest</option>
               <option value="mostValuable">Most Valuable</option>
@@ -146,7 +146,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-hierarchy-parent rounded-lg p-4 sm:p-6"
+          className="facet-hierarchy-parent rounded-lg p-4 sm:p-6"
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-xl font-bold text-white">
@@ -178,7 +178,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
               <Link
                 key={collection.id}
                 href={`/vault/collections/${collection.id}`}
-                className="glass-hierarchy-child rounded-lg p-3 transition-transform hover:scale-105"
+                className="facet-hierarchy-child rounded-lg p-3 transition-transform hover:scale-105"
               >
                 <div className="mb-2 flex items-start justify-between">
                   <span className="text-gold-400 text-xs font-bold">#{collection.rank}</span>
@@ -209,7 +209,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
           </div>
         </div>
       ) : filteredCollections.length === 0 ? (
-        <div className="glass-hierarchy-child rounded-lg p-12 text-center">
+        <div className="facet-hierarchy-child rounded-lg p-12 text-center">
           <Grid3x3 className="mx-auto mb-4 h-16 w-16 text-white/20" />
           <h3 className="mb-2 text-lg font-semibold text-white">No collections found</h3>
           <p className="text-sm text-white/60">
@@ -229,7 +229,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 <Link href={`/vault/collections/${collection.id}`}>
-                  <Card className="glass-hierarchy-child h-full cursor-pointer transition-all duration-300 hover:scale-105">
+                  <Card className="facet-hierarchy-child h-full cursor-pointer transition-all duration-300 hover:scale-105">
                     <CardContent className="space-y-3 p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">
@@ -291,7 +291,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 onClick={handlePrevPage}
                 disabled={currentPage === 0}
                 variant="outline"
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               >
                 Previous
               </Button>
@@ -300,7 +300,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 onClick={handleNextPage}
                 disabled={!hasMore}
                 variant="outline"
-                className="glass-hierarchy-child"
+                className="facet-hierarchy-child"
               >
                 Next
               </Button>

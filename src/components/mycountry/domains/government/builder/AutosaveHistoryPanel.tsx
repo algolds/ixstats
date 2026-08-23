@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { Check, X, Loader2, Clock, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import { Check, Xmark as X, SystemRestart as Loader2, Clock, Page as FileText, StatUp as TrendingUp, WarningCircle as AlertCircle } from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
 

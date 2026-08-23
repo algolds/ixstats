@@ -2,16 +2,7 @@
  * Pure transforms, constants, and utilities for Diplomatic Scenarios admin
  */
 
-import {
-  AlertTriangle,
-  TrendingUp,
-  Globe,
-  Shield,
-  Target,
-  DollarSign,
-  Zap,
-  FileText,
-} from "lucide-react";
+import { WarningTriangle as AlertTriangle, StatUp as TrendingUp, Globe, Shield, Archery as Target, Dollar as DollarSign, Flash as Zap, Page as FileText } from "iconoir-react";
 
 export const SCENARIO_TYPES = [
   { value: "border_dispute", label: "Border Dispute", icon: AlertTriangle },

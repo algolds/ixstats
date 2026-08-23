@@ -6,7 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import { BookOpen, Download } from "lucide-react";
+import { OpenBook as BookOpen, Download } from "iconoir-react";
 
 export interface StandingsRow {
   id: string;

@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { AlertTriangle, Lightbulb } from "lucide-react";
+import { WarningTriangle as AlertTriangle, LightBulb } from "iconoir-react";
 
 import type { SuggestionItem } from "~/types/builder/suggestions";
 export type { SuggestionItem };
@@ -27,7 +27,7 @@ export function SuggestionsPanel<T = any>({
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Lightbulb className="h-5 w-5" />
+          <LightBulb className="h-5 w-5" />
           Intelligent Suggestions
         </CardTitle>
       </CardHeader>

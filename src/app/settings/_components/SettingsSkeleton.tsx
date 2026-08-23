@@ -30,7 +30,7 @@ export function SettingsSkeleton() {
           {/* Main Content Area Skeletons */}
           <div className="space-y-8 lg:col-span-8">
             {/* Account Information Card Skeleton */}
-            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+            <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1">
               <div className="space-y-6 rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -53,7 +53,7 @@ export function SettingsSkeleton() {
             </div>
 
             {/* Country Information Card Skeleton */}
-            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+            <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1">
               <div className="space-y-6 rounded-[calc(1.5rem-1px)] bg-white/40 p-8 dark:bg-slate-900/40">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-xl" />
@@ -81,7 +81,7 @@ export function SettingsSkeleton() {
 
           {/* Quick Links Sidebar Skeletons */}
           <div className="space-y-6 lg:col-span-4">
-            <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1">
+            <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1">
               <div className="space-y-4 rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
                 <div className="mb-2 flex items-center gap-2">
                   <Skeleton className="h-5 w-5 rounded" />

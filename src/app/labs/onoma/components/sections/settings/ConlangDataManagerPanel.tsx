@@ -4,7 +4,7 @@
 // Local storage data management, backup export, restore import, cache clearer
 
 import React from "react";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { Download, Upload, Trash as Trash2 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   NAME_OVERRIDES_KEY,
@@ -184,7 +184,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
           onClick={handleExportData}
           className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer"
         >
-          <Download className="h-3.5 w-3.5 text-[#0091ff]" /> Export Backup File
+          <Download className="h-3.5 w-3.5 text-onoma-primary" /> Export Backup File
         </button>
 
         {/* Restore / Import */}

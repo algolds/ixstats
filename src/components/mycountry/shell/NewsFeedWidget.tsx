@@ -2,16 +2,15 @@
 
 import { useMemo } from "react";
 import {
-  Newspaper,
+  Journal as Newspaper,
   Globe,
-  Landmark,
-  Swords,
+  Bank as Landmark,
+  Tournament as Swords,
   Heart,
-  AlertTriangle,
-  Zap,
-  Gavel,
-  type LucideIcon,
-} from "lucide-react";
+  WarningTriangle as AlertTriangle,
+  Flash as Zap,
+  Hammer as Gavel,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { CutoutPanel } from "~/components/mycountry/cards";
 import { ACCENT_CLASSES } from "~/components/mycountry/shared/cards/accents";
@@ -21,7 +20,7 @@ interface NewsFeedWidgetProps {
   countryId: string;
 }
 
-const CATEGORY_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
+const CATEGORY_ICONS: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
   diplomatic: { icon: Globe, color: "text-cyan-500" },
   economic: { icon: Landmark, color: "text-emerald-500" },
   military: { icon: Swords, color: "text-red-500" },

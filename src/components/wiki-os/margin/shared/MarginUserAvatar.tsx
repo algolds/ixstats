@@ -55,7 +55,7 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
         className={cn(
           "rounded-full overflow-hidden flex items-center justify-center font-bold transition-transform duration-100 border shadow-xs",
           sizeClasses,
-          "border-yellow-400/60 bg-[#fef036] text-stone-950 font-black"
+          "border-yellow-400/60 bg-margin-accent text-stone-950 font-black"
         )}
       >
         {avatarUrl ? (

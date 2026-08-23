@@ -11,34 +11,7 @@
  */
 
 import React, { memo, useState } from "react";
-import {
-  Crown,
-  Trash2,
-  Copy,
-  MapPin,
-  Hexagon,
-  Landmark,
-  Type,
-  Route,
-  BookMarked,
-  Check,
-  Undo2,
-  Navigation,
-  ArrowLeftRight,
-  Magnet,
-  Eye,
-  Crosshair,
-  Scissors,
-  GitMerge,
-  Sliders,
-  Sparkles,
-  Hand,
-  LassoSelect,
-  Ruler,
-  PaintBucket,
-  Pipette,
-  Wand2,
-} from "lucide-react";
+import { Crown, Trash as Trash2, Copy, MapPin, Hexagon, Bank as Landmark, Type, Navigator as Route, Bookmark as BookMarked, Check, Undo as Undo2, Navigator as Navigation, ArrowSeparate as ArrowLeftRight, Magnet, Eye, Archery as Crosshair, Cut as Scissors, GitMerge, ControlSlider as Sliders, Sparks as Sparkles, HandBrake as Hand, SelectWindow as LassoSelect, Ruler, ColorPicker as PaintBucket, ColorPicker as Pipette, MagicWand as Wand2 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";

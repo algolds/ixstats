@@ -9,7 +9,7 @@
 import React from "react";
 import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { cn } from "~/lib/utils";
-import { AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle, StatUp as TrendingUp } from "iconoir-react";
 import { motion } from "motion/react";
 
 export interface BudgetMeterProps {

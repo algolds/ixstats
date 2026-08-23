@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, BookOpen, Activity } from "lucide-react";
+import { Eye, OpenBook as BookOpen, Activity } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
 import type { ProfileTabType } from "../_types";

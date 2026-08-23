@@ -23,15 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  FileText,
-  Settings2,
-  ChevronDown,
-  ChevronRight,
-  Sliders,
-  X,
-  AlertTriangle,
-} from "lucide-react";
+import { Page as FileText, Settings as Settings2, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, ControlSlider as Sliders, Xmark as X, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";
 

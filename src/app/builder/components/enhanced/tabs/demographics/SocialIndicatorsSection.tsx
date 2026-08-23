@@ -2,7 +2,7 @@
 
 import React from "react";
 import { SliderWithDirectInput, EnhancedNumberInput } from "../../../../primitives/enhanced";
-import { Heart, GraduationCap, Baby } from "lucide-react";
+import { Heart, GraduationCap, Lullaby as Baby } from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface SocialIndicatorsSectionProps {

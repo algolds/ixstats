@@ -10,7 +10,7 @@ import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
-import { Loader2, Settings, Sparkles, BookOpen } from "lucide-react";
+import { SystemRestart as Loader2, Settings, Sparks as Sparkles, OpenBook as BookOpen } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { AdminHeader } from "./AdminHeader";

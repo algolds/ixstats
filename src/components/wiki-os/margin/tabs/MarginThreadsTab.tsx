@@ -567,7 +567,7 @@ function ThreadCard({
                 <button
                   type="submit"
                   disabled={!replyText.trim() || postCommentMutation.isPending}
-                  className="rounded-xl px-3.5 py-1.5 text-xs font-bold text-stone-950 bg-[#fef036] hover:bg-[#fef036]/90 active:scale-95 transition-transform duration-100 disabled:opacity-40 cursor-pointer shadow-xs"
+                  className="rounded-xl px-3.5 py-1.5 text-xs font-bold text-stone-950 bg-margin-accent hover:bg-margin-accent/90 active:scale-95 transition-transform duration-100 disabled:opacity-40 cursor-pointer shadow-xs"
                 >
                   Reply
                 </button>
@@ -711,7 +711,7 @@ export function MarginThreadsTab({
             <button
               type="button"
               onClick={() => setShowNewThread((prev) => !prev)}
-              className="flex items-center gap-1.5 rounded-xl border border-yellow-400/50 bg-[#fef036] px-3 py-1 text-xs font-bold text-stone-950 hover:bg-[#fef036]/90 active:scale-95 transition-all duration-150 shadow-xs cursor-pointer shrink-0 select-none"
+              className="flex items-center gap-1.5 rounded-xl border border-yellow-400/50 bg-margin-accent px-3 py-1 text-xs font-bold text-stone-950 hover:bg-margin-accent/90 active:scale-95 transition-all duration-150 shadow-xs cursor-pointer shrink-0 select-none"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Thread</span>
@@ -771,7 +771,7 @@ export function MarginThreadsTab({
                 }}
                 className="text-[10.5px] font-semibold text-[var(--wikios-text)] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
               >
-                <HelpCircle className="w-3 h-3 text-yellow-600 dark:text-[#fef036]" />
+                <HelpCircle className="w-3 h-3 text-yellow-600 dark:text-margin-accent" />
                 <span>Category Guide</span>
               </button>
             </div>
@@ -786,7 +786,7 @@ export function MarginThreadsTab({
                     className={cn(
                       "flex flex-col items-center py-1.5 px-1 rounded-xl text-center border transition-[background-color,border-color,color,box-shadow] duration-100 cursor-pointer active:scale-95 select-none",
                       isSelected
-                        ? "border-yellow-400/60 shadow-xs ring-1 ring-yellow-400/40 bg-[#fef036]/20 text-[var(--wikios-text)] font-bold"
+                        ? "border-yellow-400/60 shadow-xs ring-1 ring-yellow-400/40 bg-margin-accent/20 text-[var(--wikios-text)] font-bold"
                         : "border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
                     )}
                     title={dim.desc}
@@ -800,7 +800,7 @@ export function MarginThreadsTab({
           </div>
 
           {draftQuote && (
-            <div className="p-2.5 rounded-xl bg-[#fef036]/15 border border-yellow-400/40 text-xs text-[var(--wikios-text-muted)] space-y-1">
+            <div className="p-2.5 rounded-xl bg-margin-accent/15 border border-yellow-400/40 text-xs text-[var(--wikios-text-muted)] space-y-1">
               <span className="text-[9.5px] font-bold text-[var(--wikios-text)] uppercase tracking-wider">
                 Referenced passage:
               </span>
@@ -834,16 +834,16 @@ export function MarginThreadsTab({
               className={cn(
                 "flex items-center gap-1.5 text-[10.5px] font-semibold px-2 py-1 rounded-lg border transition-[background-color,border-color,color] duration-100 cursor-pointer active:scale-95",
                 showNewSuggestEdit
-                  ? "border-yellow-400/50 bg-[#fef036]/20 text-[var(--wikios-text)] font-bold"
+                  ? "border-yellow-400/50 bg-margin-accent/20 text-[var(--wikios-text)] font-bold"
                   : "border-[var(--wikios-border)] text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
               )}
             >
-              <Edit3 className="w-3 h-3 text-yellow-600 dark:text-[#fef036]" />
+              <Edit3 className="w-3 h-3 text-yellow-600 dark:text-margin-accent" />
               <span>{showNewSuggestEdit ? "Include text diff" : "Suggest edit"}</span>
             </button>
 
             {showNewSuggestEdit && (
-              <div className="p-2.5 rounded-xl border border-yellow-400/40 bg-[#fef036]/10 space-y-2">
+              <div className="p-2.5 rounded-xl border border-yellow-400/40 bg-margin-accent/10 space-y-2">
                 <textarea
                   rows={2}
                   value={newSuggestedEdit}
@@ -879,7 +879,7 @@ export function MarginThreadsTab({
             <button
               type="submit"
               disabled={!newTitle.trim() || !newContent.trim() || createThreadMutation.isPending}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-stone-950 bg-[#fef036] hover:bg-[#fef036]/90 active:scale-95 disabled:opacity-40 shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-stone-950 bg-margin-accent hover:bg-margin-accent/90 active:scale-95 disabled:opacity-40 shadow-xs cursor-pointer"
             >
               {createThreadMutation.isPending ? "Posting..." : "Post thread"}
             </button>

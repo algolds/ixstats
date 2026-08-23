@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
 
 interface GrowthArrowProps {
   /** Signed percentage change, e.g. 2.4 or -1.1. */
@@ -37,7 +37,7 @@ export function GrowthArrow({
         className
       )}
     >
-      <Icon size={size} />
+      <Icon width={size} height={size} />
       {!iconOnly && (
         <span>
           {up ? "+" : ""}

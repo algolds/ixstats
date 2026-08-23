@@ -20,12 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Settings,
-  FileText,
-  List,
-  Target,
-} from "lucide-react";
+import { Settings, Page as FileText, List, Archery as Target } from "iconoir-react";
 import {
   type ScenarioFormData,
   type ChoiceFormData,

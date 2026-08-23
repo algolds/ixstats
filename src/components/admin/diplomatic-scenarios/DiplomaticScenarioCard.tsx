@@ -3,13 +3,7 @@
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  Globe,
-  Pencil,
-  Copy,
-  Trash2,
-  AlertTriangle,
-} from "lucide-react";
+import { Globe, EditPencil as Pencil, Copy, Trash as Trash2, WarningTriangle as AlertTriangle } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,
@@ -49,7 +43,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50 flex flex-col justify-between">
+    <Card className="facet-card-child p-4 transition-all hover:border-[--intel-gold]/50 flex flex-col justify-between">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">

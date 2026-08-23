@@ -25,7 +25,7 @@ import {
 } from "~/components/ui/table";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
-import { SlidersHorizontal, Plus, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, Plus, Trash as Trash2, Undo as RotateCcw, WarningTriangle as AlertTriangle } from "iconoir-react";
 
 interface ThresholdForm {
   id: string | undefined;

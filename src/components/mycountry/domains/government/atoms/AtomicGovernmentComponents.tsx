@@ -15,27 +15,14 @@
 
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
-import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import {
-  Save,
-  RotateCcw,
-  Info,
-  Blocks,
-  Zap,
-  AlertTriangle,
-  Package,
-  HelpCircle,
-  Target,
-  DollarSign,
-  TrendingUp,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FloppyDisk as Save, Undo as RotateCcw, InfoCircle as Info, Component as Blocks, Flash as Zap, WarningTriangle as AlertTriangle, Package, HelpCircle, Archery as Target, Dollar as DollarSign, StatUp as TrendingUp } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
 import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
 import { getCategories } from "~/lib/government/atomic-utils";
 import { useGovernmentComponentsData } from "~/hooks/useGovernmentComponentsData";
-import { GlassCard } from "~/components/ui/enhanced-card";
 import {
   ComponentLibrary,
   SelectedComponentsList,
@@ -245,9 +232,7 @@ export function AtomicGovernmentComponents({
 
         {/* Header Section */}
         {!standalone && (
-          <GlassCard
-            variant="glass"
-            glow={false}
+          <Card
             className="border-white/10 shadow-lg backdrop-blur-md"
           >
             <CardHeader>
@@ -260,36 +245,38 @@ export function AtomicGovernmentComponents({
                     <CardTitle className="flex items-center gap-2 text-2xl font-extrabold text-zinc-100">
                       Atomic Government Builder
                       <button
+                        type="button"
                         onClick={() => setWelcomeOpen(true)}
-                        className="cursor-pointer text-zinc-400 transition-colors hover:text-cyan-400"
-                        title="Open Help Guide"
+                        className="text-xs font-semibold text-purple-400 hover:text-purple-300 hover:underline"
                       >
-                        <HelpCircle className="h-5 w-5" />
+                        (Guide)
                       </button>
                     </CardTitle>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      Build your government from modular components
-                      {isUsingFallback && " (Local Mode)"}
+                    <p className="text-sm text-zinc-400">
+                      Assemble your governance structure from atomic principles
                     </p>
                   </div>
                 </div>
+
+                {/* Header Actions */}
                 {!isReadOnly && (
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={builder.clearSelection}
                       disabled={builder.selectedComponents.length === 0}
-                      className="border-white/10 text-zinc-300 hover:bg-white/5"
+                      className="border-white/10 bg-white/5 hover:bg-white/10"
                     >
                       <RotateCcw className="mr-2 h-4 w-4" />
                       Reset
                     </Button>
                     <Button
+                      variant="default"
                       size="sm"
                       onClick={handleSave}
                       disabled={!builder.validation.isValid}
-                      className="bg-cyan-600 font-bold text-white shadow-md shadow-cyan-500/10 hover:bg-cyan-500"
+                      className="bg-purple-600 font-bold hover:bg-purple-700"
                     >
                       <Save className="mr-2 h-4 w-4" />
                       Save Configuration
@@ -298,7 +285,7 @@ export function AtomicGovernmentComponents({
                 )}
               </div>
             </CardHeader>
-          </GlassCard>
+          </Card>
         )}
 
         {/* Info Alert */}
@@ -634,10 +621,8 @@ export function AtomicGovernmentComponents({
           </DialogContent>
         </Dialog>
 
-        {/* Main Workspace wrapped in a single premium GlassCard */}
-        <GlassCard
-          variant="glass"
-          glow={false}
+        {/* Main Workspace wrapped in a single premium Card */}
+        <Card
           className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
         >
           <div className="space-y-6 p-6">
@@ -708,7 +693,7 @@ export function AtomicGovernmentComponents({
               )}
             </div>
           </div>
-        </GlassCard>
+        </Card>
 
         {/* Save Button (Bottom) */}
         {!isReadOnly && !standalone && (

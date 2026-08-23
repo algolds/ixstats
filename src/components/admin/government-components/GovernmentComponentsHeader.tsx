@@ -12,14 +12,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  ArrowLeft,
-  Building2,
-  Plus,
-  Network,
-  BarChart3,
-  Search,
-} from "lucide-react";
+import { ArrowLeft, City as Building2, Plus, Network, StatsReport as BarChart3, Search } from "iconoir-react";
 import {
   COMPONENT_CATEGORIES,
   COMPLEXITY_LEVELS,
@@ -51,7 +44,7 @@ export function GovernmentComponentsHeader({
   onOpenSynergyMatrix,
 }: GovernmentComponentsHeaderProps) {
   return (
-    <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+    <div className="facet-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/admin">

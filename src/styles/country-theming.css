@@ -1,7 +1,7 @@
 /* === COUNTRY FLAG COLOR THEMING === */
 /* Apply to country pages to theme components based on flag colors */
 
-.country-themed .glass-card {
+.country-themed .facet-card {
   background: linear-gradient(135deg, 
     color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.95)) 0%,
     color-mix(in srgb, var(--country-primary) 15%, rgba(15, 23, 42, 0.98)) 50%,
@@ -15,7 +15,7 @@
     0 0 24px color-mix(in srgb, var(--country-primary) 8%, rgba(0, 0, 0, 0));
 }
 
-.country-themed .glass-card:hover {
+.country-themed .facet-card:hover {
   background: linear-gradient(135deg, 
     color-mix(in srgb, var(--country-primary) 25%, rgba(45, 56, 79, 0.95)) 0%,
     color-mix(in srgb, var(--country-primary) 20%, rgba(30, 41, 59, 0.98)) 50%,
@@ -29,7 +29,7 @@
     0 0 40px color-mix(in srgb, var(--country-primary) 12%, rgba(0, 0, 0, 0));
 }
 
-.country-themed .glass-card-economic {
+.country-themed .facet-card-economic {
   background: linear-gradient(135deg, 
     color-mix(in srgb, var(--country-secondary) 20%, rgba(30, 55, 39, 0.95)) 0%,
     color-mix(in srgb, var(--country-secondary) 15%, rgba(16, 40, 24, 0.98)) 50%,
@@ -43,7 +43,7 @@
     0 0 24px color-mix(in srgb, var(--country-secondary) 10%, rgba(0, 0, 0, 0));
 }
 
-.country-themed .glass-card-diplomatic {
+.country-themed .facet-card-diplomatic {
   background: linear-gradient(135deg, 
     color-mix(in srgb, var(--country-accent) 20%, rgba(30, 35, 55, 0.95)) 0%,
     color-mix(in srgb, var(--country-accent) 15%, rgba(16, 24, 40, 0.98)) 50%,
@@ -57,7 +57,7 @@
     0 0 24px color-mix(in srgb, var(--country-accent) 10%, rgba(0, 0, 0, 0));
 }
 
-.country-themed .glass-card-cultural {
+.country-themed .facet-card-cultural {
   background: linear-gradient(135deg, 
     color-mix(in srgb, var(--country-tertiary) 20%, rgba(39, 30, 55, 0.95)) 0%,
     color-mix(in srgb, var(--country-tertiary) 15%, rgba(24, 16, 40, 0.98)) 50%,

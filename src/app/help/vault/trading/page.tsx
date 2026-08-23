@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftRight, Gavel, Timer, Handshake } from "lucide-react";
+import { ArrowSeparate as ArrowLeftRight, Hammer as Gavel, Timer, Community as Handshake } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Coins, Layers, Star, Package } from "lucide-react";
+import { Coins, Component as Layers, Star, Package } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function VaultOverviewArticle() {

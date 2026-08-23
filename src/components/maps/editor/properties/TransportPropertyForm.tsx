@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { Sparkles, Route as RouteIcon, MapPin, X } from "lucide-react";
+import { Sparks as Sparkles, Navigator as RouteIcon, MapPin, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { RouteFilterList } from "./transport/RouteFilterList";
 import { RouteWaypointList } from "./transport/RouteWaypointList";

@@ -2,17 +2,17 @@
 
 import React, { useMemo } from "react";
 import {
-  Landmark,
-  DollarSign,
-  BarChart3,
-  LineChart,
+  Bank as Landmark,
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
   Globe,
-  Info,
-  AlertTriangle,
-  Scale,
+  InfoCircle as Info,
+  WarningTriangle as AlertTriangle,
+  ScaleFrameEnlarge as Scale,
   CreditCard,
-  Percent,
-} from "lucide-react";
+  Percentage as Percent,
+} from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

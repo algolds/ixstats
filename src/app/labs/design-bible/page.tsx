@@ -1,30 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import {
-  BookOpen,
-  Layers,
-  Calendar,
-  FileText,
-  GitBranch,
-  Sliders,
-  Cpu,
-  Sparkles,
-  Search,
-  Compass,
-  FileCode,
-  User,
-  History,
-  AlertOctagon,
-  Globe,
-  Activity,
-  Terminal,
-  Maximize2,
-  Minimize2,
-  Network,
-  Radar,
-  TrendingUp,
-} from "lucide-react";
+import { OpenBook as BookOpen, Component as Layers, Calendar, Page as FileText, GitBranch, ControlSlider as Sliders, Cpu, Sparks as Sparkles, Search, Compass, Code as FileCode, User, ClockRotateRight as History, WarningTriangle as AlertOctagon, Globe, Activity, Terminal, Expand as Maximize2, Compress as Minimize2, Network, Archery as Radar, StatUp as TrendingUp } from "iconoir-react";
 import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -2943,7 +2920,7 @@ export function detectAnomalies(current: number, historical: number[], metric: s
                   Facet Design System
                 </h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Facet is the custom glass-refraction design system of IxStates. It is built to
+                  Facet is the custom facet-refraction design system of IxStates. It is built to
                   create volumetric depth and physical material realism using glass blurs, HSL
                   transparency, and Apple-style spring scaling response profiles.
                 </p>

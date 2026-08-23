@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Download, ArrowRight, X } from "lucide-react";
+import { Download, ArrowRight, Xmark as X } from "iconoir-react";
 import { VaultCardHoldingsCard } from "./VaultCardHoldingsCard";
 import { VaultMilestonesCard } from "./VaultMilestonesCard";
 import type { CardInstance } from "~/types/cards-display";

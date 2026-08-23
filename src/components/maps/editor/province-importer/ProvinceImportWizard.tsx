@@ -1,17 +1,7 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
-import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Upload,
-  Tag,
-  Move,
-  Magnet,
-  CheckCircle,
-  Save,
-} from "lucide-react";
+import { Xmark as X, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Upload, Label as Tag, ArrowSeparate as Move, Magnet, CheckCircle, FloppyDisk as Save } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { UploadStep } from "./UploadStep";
 import { NameDetectionStep } from "./NameDetectionStep";

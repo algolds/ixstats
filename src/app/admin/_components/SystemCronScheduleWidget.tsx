@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { CronSchedule } from "~/components/ui/cron-schedule";
 import { cn } from "~/lib/utils";
-import { Gavel, Coins, LineChart, Sparkles, RefreshCw, Award, Clock } from "lucide-react";
+import { Hammer as Gavel, Coins, GraphUp as LineChart, Sparks as Sparkles, Refresh as RefreshCw, Trophy as Award, Clock } from "iconoir-react";
 
 const CRON_JOBS = [
   {
@@ -76,7 +76,7 @@ export function SystemCronScheduleWidget() {
         </span>
       </div>
 
-      <div className="glass-surface border-border/40 flex min-h-[380px] flex-1 flex-col gap-4 rounded-xl p-4 shadow-sm md:flex-row">
+      <div className="facet-surface border-border/40 flex min-h-[380px] flex-1 flex-col gap-4 rounded-xl p-4 shadow-sm md:flex-row">
         {/* Left Side: Cron List */}
         <div className="border-border/20 flex w-full flex-col gap-2 border-b pb-4 md:w-2/5 md:border-r md:border-b-0 md:pr-4 md:pb-0">
           <p className="text-muted-foreground mb-1 text-[10px] font-bold tracking-wider uppercase">

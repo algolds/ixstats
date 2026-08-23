@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash as Trash2 } from "iconoir-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { useMeasureToolState } from "./hooks/useMeasureToolState";
 import { formatDistance } from "./utils/measure-helpers";

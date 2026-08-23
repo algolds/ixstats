@@ -9,11 +9,11 @@
  * Client-side primitives for the CodeBlock component: copy button and
  * overflow wrapper (default, scrollable, collapsible).
  *
- * Dependencies: lucide-react
+ * Dependencies: iconoir-react
  */
 
 import * as React from "react"
-import { Check, ChevronDown, Copy } from "lucide-react"
+import { Check, NavArrowDown as ChevronDown, Copy } from "iconoir-react";
 import { cn } from "~/lib/utils"
 
 interface CodeBlockCopyButtonProps extends Omit<React.ComponentProps<"button">, "value"> {

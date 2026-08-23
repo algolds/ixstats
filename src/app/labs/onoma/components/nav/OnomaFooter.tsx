@@ -37,7 +37,7 @@ export function OnomaFooter({
       id: "generator",
       label: "Quick Generator",
       glyph: "emerge-synthesis" as const,
-      color: "hover:text-[#0091ff] hover:border-[#0091ff]/30 hover:bg-[#0091ff]/10",
+      color: "hover:text-onoma-primary hover:border-onoma-primary/30 hover:bg-onoma-primary/10",
       accent: "#0091ff",
       isPro: false,
       onClick: () => onNavigate("overview"),
@@ -93,7 +93,7 @@ export function OnomaFooter({
           variant="symbol"
           size="xl"
           tone="default"
-          className="h-full w-full object-contain text-[#0091ff]"
+          className="h-full w-full object-contain text-onoma-primary"
         />
         <div className="via-background/50 to-background absolute inset-0 bg-gradient-to-l from-transparent" />
       </div>
@@ -112,7 +112,7 @@ export function OnomaFooter({
             >
               <OnomaBrandLogo
                 variant="wordmark"
-                className="h-6.5 w-auto text-foreground transition-colors group-hover/brand:text-[#0091ff] sm:h-7"
+                className="h-6.5 w-auto text-foreground transition-colors group-hover/brand:text-onoma-primary sm:h-7"
               />
             </button>
             <span className="text-muted-foreground/60 font-mono text-xs">/ˈɒnəmə/</span>
@@ -182,7 +182,7 @@ export function OnomaFooter({
               href="https://github.com/alxgiraud/fantasygen"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/80 hover:text-[#0091ff] hover:decoration-[#0091ff] underline decoration-muted-foreground/40 underline-offset-2 transition-colors"
+              className="text-foreground/80 hover:text-onoma-primary hover:decoration-[#0091ff] underline decoration-muted-foreground/40 underline-offset-2 transition-colors"
             >
               fantasygen
             </a>

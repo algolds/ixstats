@@ -1,18 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Gem,
-  Flame,
-  CheckCircle,
-  Database,
-  TrendingUp,
-  Coins,
-  Cpu,
-  Crown,
-  BookOpen,
-  Calendar,
-  Lock,
-  ArrowUpRight,
-} from "lucide-react";
+import { Crown as Gem, FireFlame as Flame, CheckCircle, Database, StatUp as TrendingUp, Coins, Cpu, Crown, OpenBook as BookOpen, Calendar, Lock, ArrowUpRight } from "iconoir-react";
 import { useVaultBalance } from "~/hooks/vault/useVaultBalance";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -156,7 +143,7 @@ export function VaultSettingsCard() {
   };
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="halftone" opacity={0.03} />
 
@@ -174,7 +161,7 @@ export function VaultSettingsCard() {
           </div>
           <Link
             href="/vault/marketplace"
-            className="glass-interactive flex items-center gap-1 rounded-xl bg-white/50 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-amber-400 dark:hover:bg-slate-800"
+            className="facet-interactive flex items-center gap-1 rounded-xl bg-white/50 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-amber-400 dark:hover:bg-slate-800"
           >
             Vault Store <ArrowUpRight className="h-3 w-3" />
           </Link>
@@ -238,7 +225,7 @@ export function VaultSettingsCard() {
             <button
               onClick={() => claimDailyMutation.mutate()}
               disabled={claimDailyMutation.isPending}
-              className="glass-interactive flex items-center gap-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:scale-105 disabled:opacity-50"
+              className="facet-interactive flex items-center gap-1 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:scale-105 disabled:opacity-50"
             >
               <Calendar className="h-3.5 w-3.5" />
               {claimDailyMutation.isPending ? "Claiming..." : "Claim"}

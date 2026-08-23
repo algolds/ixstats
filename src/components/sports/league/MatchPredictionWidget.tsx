@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, Loader2, CheckCircle2 } from "lucide-react";
+import { Coins, SystemRestart as Loader2, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flag, ShieldCheck, EyeOff, Eye, ExternalLink, HelpCircle } from "lucide-react";
+import { WhiteFlag as Flag, ShieldCheck, EyeClosed as EyeOff, Eye, OpenNewWindow as ExternalLink, HelpCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -54,7 +54,7 @@ export function NSCardSettingsCard() {
   };
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-5 dark:bg-slate-900/40">
         <TextureOverlay texture="triangular" opacity={0.02} />
 

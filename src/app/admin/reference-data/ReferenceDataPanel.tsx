@@ -9,25 +9,8 @@ import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import {
-  Database,
-  Flag,
-  Drama,
-  Rocket,
-  UserCog,
-  Newspaper,
-  Building,
-  TrendingUp,
-  CreditCard,
-  BookOpen,
-  Layers,
-  FileText,
-  Swords,
-  Brain,
-  ExternalLink,
-  RefreshCw,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Database, WhiteFlag as Flag, Emoji as Drama, Rocket, User as UserCog, Journal as Newspaper, Building, StatUp as TrendingUp, CreditCard, OpenBook as BookOpen, Component as Layers, Page as FileText, Tournament as Swords, Brain, OpenNewWindow as ExternalLink, Refresh as RefreshCw } from "iconoir-react";
+
 
 // ── Data Type Registry ───────────────────────────────────────────────────────
 
@@ -35,7 +18,7 @@ interface DataTypeConfig {
   key: string;
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
   category: "diplomacy" | "military" | "governance" | "economy" | "content" | "system";
   color: string;
@@ -284,7 +267,7 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="glass-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
+                      className="facet-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">

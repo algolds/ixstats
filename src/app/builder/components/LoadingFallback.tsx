@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { Loader2, BarChart3, Users, Globe, DollarSign } from "lucide-react";
+import { SystemRestart as Loader2, StatsReport as BarChart3, Group as Users, Globe, Dollar as DollarSign } from "iconoir-react";
 
 /**
  * TabLoadingFallback - Skeleton loader for tab content

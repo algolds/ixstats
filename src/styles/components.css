@@ -424,14 +424,15 @@
 
 /* Dynamic Island (Halo) Apple Design Acrylic Shell with Interactive Physics */
 .dynamic-island-shell {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(248, 250, 252, 0.48) 100%) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 16px 36px -8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.03),
+    0 16px 36px -8px rgba(0, 0, 0, 0.12),
     0 4px 12px -2px rgba(0, 0, 0, 0.04) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   transition: 
     background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -443,25 +444,27 @@
 .dynamic-island-shell:focus-within,
 .dynamic-island-shell:active,
 .dynamic-island-shell[data-expanded="true"] {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.88) 100%) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   border-color: rgba(0, 0, 0, 0.12) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 1),
-    0 22px 48px -8px rgba(0, 0, 0, 0.14),
-    0 6px 16px -2px rgba(0, 0, 0, 0.06) !important;
-  backdrop-filter: blur(24px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 24px 52px -10px rgba(0, 0, 0, 0.16),
+    0 8px 18px -2px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
 }
 
 .dark .dynamic-island-shell {
-  background: linear-gradient(135deg, rgba(24, 27, 34, 0.58) 0%, rgba(12, 14, 18, 0.48) 100%) !important;
+  background: rgba(15, 17, 23, 0.88) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 20px 48px -10px rgba(0, 0, 0, 0.55),
-    0 8px 20px -4px rgba(0, 0, 0, 0.35) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 20px 48px -10px rgba(0, 0, 0, 0.65),
+    0 8px 20px -4px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   transition: 
     background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -473,12 +476,13 @@
 .dark .dynamic-island-shell:focus-within,
 .dark .dynamic-island-shell:active,
 .dark .dynamic-island-shell[data-expanded="true"] {
-  background: linear-gradient(135deg, rgba(24, 27, 34, 0.92) 0%, rgba(12, 14, 18, 0.95) 100%) !important;
+  background: rgba(18, 20, 28, 0.94) !important;
   border-color: rgba(255, 255, 255, 0.18) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 26px 56px -10px rgba(0, 0, 0, 0.75),
-    0 10px 24px -4px rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(24px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 28px 60px -12px rgba(0, 0, 0, 0.8),
+    0 12px 28px -4px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
 }

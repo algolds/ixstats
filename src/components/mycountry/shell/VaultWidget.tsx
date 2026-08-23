@@ -16,15 +16,15 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { stripBasePath } from "~/lib/base-path";
 import {
-  Home,
-  Grid3x3,
+  HomeSimple as Home,
+  ViewGrid as Grid3x3,
   Wallet,
   Package,
-  ArrowRightLeft,
+  ArrowSeparate as ArrowRightLeft,
   Download,
   Trophy,
-  ShoppingCart,
-} from "lucide-react";
+  Cart as ShoppingCart,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   CutoutCard,

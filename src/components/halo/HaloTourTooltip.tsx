@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { TOUR_STEPS } from "./HaloTourContext";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { Button } from "~/components/ui/button";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Xmark as X } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function HaloTourTooltip() {

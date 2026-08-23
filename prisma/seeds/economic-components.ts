@@ -8,13 +8,13 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "../../src/lib/atomic-economic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "../../src/lib/economy/atomic-data";
 
 const prisma = new PrismaClient();
 
 /**
  * Extract icon name from React component
- * Icons are from lucide-react, extract the component name
+ * Icons are from iconoir-react, extract the component name
  */
 function getIconName(iconComponent: React.ComponentType<{ className?: string }>): string {
   // Try to get the display name or function name

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
-import { Download, FilePlus } from "lucide-react";
+import { Download, PagePlus as FilePlus } from "iconoir-react";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { withBasePath } from "~/lib/base-path";
 import { CountryGrid } from "../../primitives/CountryGrid";

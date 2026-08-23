@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, MessageSquare, FileText } from "lucide-react";
+import { Search, ChatBubble as MessageSquare, Page as FileText } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { withBasePath } from "~/lib/base-path";

@@ -5,19 +5,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Trash2,
-  Volume2,
-  Volume1,
-  VolumeX,
-  Check,
-  Headphones,
-  ChevronDown,
-  Gauge,
-} from "lucide-react";
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, User, Trash as Trash2, SoundHigh as Volume2, SoundLow as Volume1, SoundOff as VolumeX, Check, Headset as Headphones, NavArrowDown as ChevronDown, Dashboard as Gauge } from "iconoir-react";
 import {
   AudioPlayer,
   AudioPlayerControlBar,

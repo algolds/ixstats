@@ -10,7 +10,7 @@
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { useTheme } from "~/context/theme-context";
-import { Plus, Users, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Group as Users, EditPencil as Edit2, Trash as Trash2, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
   DepartmentForm,
@@ -178,7 +178,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                               const IconComponent = resolveNamedDepartmentIcon(department.icon);
                               if (IconComponent) {
                                 return (
-                                  <IconComponent className="h-5 w-5" style={{ color: cardColor }} />
+                                  <span style={{ color: cardColor }} className="flex items-center justify-center">
+                                    <IconComponent className="h-5 w-5" />
+                                  </span>
                                 );
                               }
                               if (isImageIconSource(department.icon)) {
@@ -414,10 +416,9 @@ export const DepartmentList = React.memo(function DepartmentList({
                           const IconComponent = resolveNamedDepartmentIcon(currentEditingDept.icon);
                           if (IconComponent) {
                             return (
-                              <IconComponent
-                                className="h-4 w-4"
-                                style={{ color: currentEditingDept.color }}
-                              />
+                              <span style={{ color: currentEditingDept.color }} className="flex items-center justify-center">
+                                <IconComponent className="h-4 w-4" />
+                              </span>
                             );
                           }
                           if (isImageIconSource(currentEditingDept.icon)) {

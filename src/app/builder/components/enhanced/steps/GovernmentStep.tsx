@@ -5,19 +5,7 @@
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 
-import {
-  Shield,
-  Info,
-  HelpCircle,
-  Settings,
-  Crown,
-  Coins,
-  Eye,
-  AlertTriangle,
-  CheckCircle,
-  Users,
-  DollarSign,
-} from "lucide-react";
+import { Shield, InfoCircle as Info, HelpCircle, Settings, Crown, Coins, Eye, WarningTriangle as AlertTriangle, CheckCircle, Group as Users, Dollar as DollarSign } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";

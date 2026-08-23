@@ -7,7 +7,7 @@
  * Inspired by Photoshop/Figma status bars — always visible, compact, informational.
  */
 
-import { Mountain } from "lucide-react";
+import { ModernTv as Mountain } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 

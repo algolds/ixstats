@@ -11,7 +11,7 @@ import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
-import { Crown, Shield, ShieldAlert, TrendingUp, Radio, Sparkles, X, ExternalLink, BellRing, BookOpen } from "lucide-react";
+import { Crown, Shield, ShieldAlert, StatUp as TrendingUp, AntennaSignal as Radio, Sparks as Sparkles, Xmark as X, OpenNewWindow as ExternalLink, BellNotification as BellRing, OpenBook as BookOpen } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";

@@ -1,18 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Layers,
-  Search,
-  X,
-  Sparkles,
-  FileText,
-  Calendar,
-  Grid3x3,
-  List,
-  Maximize2,
-  Copy,
-} from "lucide-react";
+import { Component as Layers, Search, Xmark as X, Sparks as Sparkles, Page as FileText, Calendar, ViewGrid as Grid3x3, List, Expand as Maximize2, Copy } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Input } from "~/components/ui/input";

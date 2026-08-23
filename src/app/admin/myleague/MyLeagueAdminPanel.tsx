@@ -3,7 +3,7 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Trophy, FlaskConical, Database } from "lucide-react";
+import { Trophy, Flask as FlaskConical, Database } from "iconoir-react";
 import SportsOversightPanel from "./SportsOversightPanel";
 import SportsLabsPanel from "./SportsLabsPanel";
 import SportsSeederPanel from "./SportsSeederPanel";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Coins, Ticket, BadgeDollarSign, TrendingUp } from "lucide-react";
+import { SystemRestart as Loader2, Coins, Label as Ticket, Dollar as BadgeDollarSign, StatUp as TrendingUp } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

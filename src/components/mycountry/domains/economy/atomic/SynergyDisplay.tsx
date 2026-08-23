@@ -10,7 +10,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Zap, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Flash as Zap, WarningTriangle as AlertTriangle, StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
 import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 
 export interface SynergyDisplayProps {

@@ -3,21 +3,21 @@
 import { useState, useMemo, memo } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
+  WarningTriangle as AlertTriangle,
   Clock,
-  ExternalLink,
+  OpenNewWindow as ExternalLink,
   Globe,
-  Landmark,
+  Bank as Landmark,
   Map as MapIcon,
-  Rss,
+  RssFeed as Rss,
   Shield,
-  TrendingUp,
+  StatUp as TrendingUp,
   Trophy,
-  Users,
-  BookOpen,
-  MessageCircle,
-  ChevronDown,
-} from "lucide-react";
+  Group as Users,
+  OpenBook as BookOpen,
+  ChatBubble as MessageCircle,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
@@ -176,7 +176,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
   return (
-    <div className="group relative rounded-2xl border border-border/40 bg-card/60 p-3.5 shadow-xs transition-all duration-200 hover:border-border hover:bg-card/90 backdrop-blur-xl">
+    <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-4 shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80 hover:bg-card/95 hover:shadow-md">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div

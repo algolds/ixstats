@@ -5,7 +5,7 @@
  * These types ensure type safety across the entire MyCountry system.
  */
 
-import type { LucideIcon } from "lucide-react";
+
 import type { IntelligenceItem } from "./intelligence-unified";
 
 // Re-export from ixstats for consistency
@@ -155,7 +155,7 @@ export interface ActivityRing {
   value: number; // Current value (0-100)
   max: number; // Maximum value (usually 100)
   color: string; // CSS color
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   metrics: {
     primary: string;
     secondary: string;

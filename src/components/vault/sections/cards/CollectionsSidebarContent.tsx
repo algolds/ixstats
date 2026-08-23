@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, BookOpen } from "lucide-react";
+import { Plus, OpenBook as BookOpen } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 export function CollectionsSidebarContent({

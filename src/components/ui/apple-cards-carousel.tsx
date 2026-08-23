@@ -4,8 +4,8 @@ import { createPortal } from "react-dom";
 import {
   ArrowLeft as IconArrowNarrowLeft,
   ArrowRight as IconArrowNarrowRight,
-  X as IconX,
-} from "lucide-react";
+  Xmark as IconX,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";

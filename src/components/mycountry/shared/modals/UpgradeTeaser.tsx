@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowUp, Lock, Activity, Crown, BarChart3 } from "lucide-react";
+import { ArrowUp, Lock, Activity, Crown, StatsReport as BarChart3 } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

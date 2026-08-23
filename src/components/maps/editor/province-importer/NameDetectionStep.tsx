@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Check } from "lucide-react";
+import { Check } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface NameDetectionStepProps {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
-import { BookOpen, Clock, Globe, Map as MapIcon, Users } from "lucide-react";
+import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { createUrl } from "~/lib/utils";

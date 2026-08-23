@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/UseNameDialog.tsx
 // Onoma Lab — Dialog to handle "Use This Name" redirects
 
-import { X, ArrowRight, MapPin, Shield, BookOpen, Crown, Compass, Anchor } from "lucide-react";
+import { Xmark as X, ArrowRight, MapPin, Shield, OpenBook as BookOpen, Crown, Compass, SeaWaves as Anchor } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { NameCategory } from "~/lib/onoma/types";

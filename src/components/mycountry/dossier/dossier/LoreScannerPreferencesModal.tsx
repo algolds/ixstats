@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Settings, Sparkles, RefreshCw, Search, Check } from "lucide-react";
+import { Xmark as X, Settings, Sparks as Sparkles, Refresh as RefreshCw, Search, Check } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { WikiPageSearch } from "~/components/mycountry/dossier/WikiPageSearch";

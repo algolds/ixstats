@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo } from "react";
-import { MessageSquare } from "lucide-react";
+import { ChatBubble as MessageSquare } from "iconoir-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { ForumView } from "./views";

@@ -4,7 +4,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Search, X } from "lucide-react";
+import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { api } from "~/trpc/react";
 

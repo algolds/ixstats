@@ -3,16 +3,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import {
-  Database,
-  Table,
-  Search,
-  Download,
-  Edit3,
-  Eye,
-  RefreshCw,
-  AlertTriangle,
-} from "lucide-react";
+import { Database, Table, Search, Download, EditPencil as Edit3, Eye, Refresh as RefreshCw, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -404,7 +395,7 @@ export function DatabaseExplorer() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tables List */}
         <div className="lg:col-span-1">
-          <Card className="glass-surface border-border/40">
+          <Card className="facet-surface border-border/40">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-bold">
                 <Database className="h-4 w-4 text-indigo-500" />
@@ -462,7 +453,7 @@ export function DatabaseExplorer() {
 
             <TabsContent value="structure" className="space-y-4 outline-none">
               {selectedTableData ? (
-                <Card className="glass-surface border-border/40">
+                <Card className="facet-surface border-border/40">
                   <CardHeader>
                     <CardTitle className="text-base font-bold">
                       {selectedTableData.name} Table Structure
@@ -564,7 +555,7 @@ export function DatabaseExplorer() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="glass-surface border-border/40">
+                <Card className="facet-surface border-border/40">
                   <CardContent className="flex h-64 items-center justify-center">
                     <div className="text-center">
                       <Table className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
@@ -576,7 +567,7 @@ export function DatabaseExplorer() {
             </TabsContent>
 
             <TabsContent value="data" className="space-y-4 outline-none">
-              <Card className="glass-surface border-border/40">
+              <Card className="facet-surface border-border/40">
                 <CardHeader>
                   <CardTitle className="text-base font-bold">Table Data</CardTitle>
                   <p className="text-muted-foreground text-xs">
@@ -738,7 +729,7 @@ export function DatabaseExplorer() {
             </TabsContent>
 
             <TabsContent value="query" className="space-y-4 outline-none">
-              <Card className="glass-surface border-border/40">
+              <Card className="facet-surface border-border/40">
                 <CardHeader>
                   <CardTitle className="text-base font-bold">SQL Query Console</CardTitle>
                   <p className="text-muted-foreground text-sm">
@@ -781,7 +772,7 @@ export function DatabaseExplorer() {
                   )}
 
                   {queryResult && (
-                    <Card className="glass-surface border-border/30">
+                    <Card className="facet-surface border-border/30">
                       <CardHeader className="py-4">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-sm font-bold">Query Results</CardTitle>

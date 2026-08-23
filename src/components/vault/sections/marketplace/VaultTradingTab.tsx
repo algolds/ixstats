@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "~/lib/utils";
-import { ArrowRightLeft, Plus, History, TrendingUp, Inbox, Send } from "lucide-react";
+import { ArrowSeparate as ArrowRightLeft, Plus, ClockRotateRight as History, StatUp as TrendingUp, MailIn as Inbox, Send } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
@@ -91,7 +91,7 @@ export function VaultTradingTab() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="glass-surface glass-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
+            className="facet-surface facet-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
           >
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
@@ -113,7 +113,7 @@ export function VaultTradingTab() {
       </div>
 
       {/* Tabs */}
-      <Card className="glass-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
+      <Card className="facet-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
             <TabsTrigger

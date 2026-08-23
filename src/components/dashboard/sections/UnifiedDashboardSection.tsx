@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 
-import { Users, Rss, BookOpen, Settings, Globe } from "lucide-react";
+import { Group as Users, RssFeed as Rss, OpenBook as BookOpen, Settings, Globe } from "iconoir-react";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -146,10 +146,15 @@ export function UnifiedDashboardSection({
   const handleReply = useCallback(
     (_postId: string) => {
       if (!selectedAccount) {
-        notify.error("Please select an account first");
+        if (accounts.length === 0 && isCountryDataReady) {
+          setShowAccountCreation(true);
+        } else {
+          setIsAccountModalOpen(true);
+        }
+        notify.error("Please select or create an account first to reply");
       }
     },
-    [selectedAccount, notify]
+    [selectedAccount, accounts.length, isCountryDataReady, notify]
   );
 
   const handleShare = useCallback(
@@ -177,7 +182,7 @@ export function UnifiedDashboardSection({
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="space-y-5 md:space-y-7"
+      className="space-y-5 md:space-y-7 pb-16 sm:pb-20 md:pb-24"
     >
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
@@ -289,7 +294,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="facet-layout-sidebar-span-1 space-y-5 md:sticky md:top-6 md:self-start">
+          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-6 md:self-start">
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 

@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Info,
-  Loader2,
-  RefreshCw,
-  Shield,
-} from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle as CheckCircle2, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, InfoCircle as Info, SystemRestart as Loader2, Refresh as RefreshCw, Shield } from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo";
 

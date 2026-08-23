@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Info, ChevronDown, ChevronUp } from "lucide-react";
+import { InfoCircle as Info, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
 import { GlassCard, GlassCardContent } from "./GlassCard";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 

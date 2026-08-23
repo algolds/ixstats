@@ -9,20 +9,7 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Sparkles,
-  Settings,
-  Database,
-  Trash2,
-  Play,
-  Loader2,
-  Check,
-  ScrollText,
-  SlidersHorizontal,
-  FileCode2,
-  RefreshCw,
-  AlertTriangle,
-} from "lucide-react";
+import { Sparks as Sparkles, Settings, Database, Trash as Trash2, Play, SystemRestart as Loader2, Check, Page as ScrollText, ControlSlider as SlidersHorizontal, Code as FileCode2, Refresh as RefreshCw, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 
@@ -243,7 +230,7 @@ export function NarratorAdminPanel() {
       />
 
       <Tabs defaultValue="config" className="w-full">
-        <TabsList className="glass-surface border-border/40 grid w-full max-w-md grid-cols-3 p-1">
+        <TabsList className="facet-surface border-border/40 grid w-full max-w-md grid-cols-3 p-1">
           <TabsTrigger
             value="config"
             className="gap-2 py-1.5 text-xs font-bold data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950"
@@ -269,7 +256,7 @@ export function NarratorAdminPanel() {
 
         {/* Tab 1: API Configuration & Prompt Settings */}
         <TabsContent value="config" className="mt-6 space-y-6">
-          <Card className="glass-surface border-border/40 relative overflow-hidden">
+          <Card className="facet-surface border-border/40 relative overflow-hidden">
             <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-amber-500/5 blur-3xl" />
 
             <CardHeader>
@@ -459,7 +446,7 @@ export function NarratorAdminPanel() {
           <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
             {/* Input Config Panel (Left) */}
             <div className="space-y-4 xl:col-span-7">
-              <Card className="glass-surface border-border/40">
+              <Card className="facet-surface border-border/40">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-base font-extrabold">
                     <FileCode2 className="h-4.5 w-4.5 text-amber-500" />
@@ -681,7 +668,7 @@ export function NarratorAdminPanel() {
               )}
 
               {/* Event Context Snapshots Info */}
-              <Card className="glass-surface border-border/40 text-xs">
+              <Card className="facet-surface border-border/40 text-xs">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-foreground text-xs font-bold uppercase">
                     Immersion Snapshots
@@ -706,7 +693,7 @@ export function NarratorAdminPanel() {
         {/* Tab 3: Cache Management */}
         <TabsContent value="cache" className="mt-6 space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <Card className="glass-surface border-border/40">
+            <Card className="facet-surface border-border/40">
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="rounded-lg bg-amber-500/10 p-3 text-amber-500">
                   <ScrollText className="h-6 w-6" />
@@ -722,7 +709,7 @@ export function NarratorAdminPanel() {
               </CardContent>
             </Card>
 
-            <Card className="glass-surface border-border/40">
+            <Card className="facet-surface border-border/40">
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="rounded-lg bg-cyan-500/10 p-3 text-cyan-500">
                   <Check className="h-6 w-6" />
@@ -738,7 +725,7 @@ export function NarratorAdminPanel() {
               </CardContent>
             </Card>
 
-            <Card className="glass-surface border-border/40">
+            <Card className="facet-surface border-border/40">
               <CardContent className="flex items-center gap-4 p-5">
                 <div className="rounded-lg bg-emerald-500/10 p-3 text-emerald-500">
                   <RefreshCw className="h-6 w-6" />
@@ -755,7 +742,7 @@ export function NarratorAdminPanel() {
             </Card>
           </div>
 
-          <Card className="glass-surface border-border/40">
+          <Card className="facet-surface border-border/40">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-base font-extrabold">
                 <Database className="h-4.5 w-4.5 text-amber-500" />

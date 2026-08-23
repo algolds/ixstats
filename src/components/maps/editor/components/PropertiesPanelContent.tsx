@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Pencil, Grid3X3, Paintbrush } from "lucide-react";
+import { EditPencil as Pencil, ViewGrid as Grid3X3, ColorPicker as Paintbrush } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";

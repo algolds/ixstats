@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, Mic, Loader2, Play, Languages, RefreshCw, Zap, Activity } from "lucide-react";
+import { FloppyDisk as Save, Microphone as Mic, SystemRestart as Loader2, Play, Translate as Languages, Refresh as RefreshCw, Flash as Zap, Activity } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { AdminHeader } from "./AdminHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -65,7 +65,7 @@ function Slider({
     <div className="space-y-1">
       <div className="flex justify-between">
         <Label className="text-xs">{label}</Label>
-        <span className="font-mono text-xs text-[#0091ff]">
+        <span className="font-mono text-xs text-onoma-primary">
           {value}
           {suffix}
         </span>
@@ -77,7 +77,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full cursor-pointer accent-[#0091ff]"
+        className="w-full cursor-pointer accent-onoma-primary"
       />
     </div>
   );
@@ -234,7 +234,7 @@ export function OnomaAdminPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Mic className="h-4 w-4 text-[#0091ff]" /> Read Naturally (Kokoro)
+              <Mic className="h-4 w-4 text-onoma-primary" /> Read Naturally (Kokoro)
             </CardTitle>
             <CardDescription>
               Self-hosted Kokoro neural voice for the 🎙 Read Naturally button. kokoro-fastapi
@@ -254,7 +254,7 @@ export function OnomaAdminPanel() {
                 type="checkbox"
                 checked={kokoroEnabled}
                 onChange={(e) => setKokoroEnabled(e.target.checked)}
-                className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                className="border-border/60 h-4 w-4 cursor-pointer rounded accent-onoma-primary"
               />
             </div>
 
@@ -305,12 +305,12 @@ export function OnomaAdminPanel() {
                     onClick={handleWakeServer}
                     disabled={isWaking}
                     title="Send a wake-up ping to the Hugging Face / Kokoro server (up to 45s timeout for cold starts)"
-                    className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
+                    className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
                   >
                     {isWaking ? (
-                      <Loader2 className="h-2.5 w-2.5 animate-spin text-[#0091ff]" />
+                      <Loader2 className="h-2.5 w-2.5 animate-spin text-onoma-primary" />
                     ) : (
-                      <Zap className="h-2.5 w-2.5 text-[#0091ff]" />
+                      <Zap className="h-2.5 w-2.5 text-onoma-primary" />
                     )}
                     <span>{isWaking ? "Waking..." : "Ping / Wake Server"}</span>
                   </button>
@@ -318,7 +318,7 @@ export function OnomaAdminPanel() {
               </div>
               {wakeStatusMessage && (
                 <p className="text-muted-foreground flex items-center gap-1 font-mono text-[9px]">
-                  <Activity className="h-2.5 w-2.5 text-[#0091ff]" />
+                  <Activity className="h-2.5 w-2.5 text-onoma-primary" />
                   <span>{wakeStatusMessage}</span>
                 </p>
               )}

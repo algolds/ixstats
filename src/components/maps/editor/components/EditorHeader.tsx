@@ -1,26 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  ArrowLeft,
-  Map,
-  ChevronRight,
-  Undo2,
-  Redo2,
-  Grid3X3,
-  Crosshair,
-  Minimize2,
-  Droplets,
-  Mountain as MountainIcon,
-  Train,
-  RefreshCw,
-  Settings,
-  FileUp,
-  HelpCircle,
-  Network,
-  Magnet,
-  Eye,
-} from "lucide-react";
+import { ArrowLeft, Map, NavArrowRight as ChevronRight, Undo as Undo2, Redo as Redo2, ViewGrid as Grid3X3, Archery as Crosshair, Compress as Minimize2, Droplet as Droplets, ModernTv as MountainIcon, Train, Refresh as RefreshCw, Settings, Upload as FileUp, HelpCircle, Network, Magnet, Eye } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "~/components/ui/dialog";

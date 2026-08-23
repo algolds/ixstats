@@ -4,7 +4,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { AdminSidebarLayout } from "../_components/AdminSidebarLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Vote, PlusCircle, Settings } from "lucide-react";
+import { CheckSquare as Vote, PlusCircle, Settings } from "iconoir-react";
 import { PollComposer } from "./_components/PollComposer";
 import { PollManager } from "./_components/PollManager";
 import { useState } from "react";

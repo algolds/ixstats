@@ -3,22 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import {
-  BookOpen,
-  Crown,
-  Search,
-  Eye,
-  Bookmark,
-  ExternalLink,
-  History,
-  User,
-  Clock,
-  ArrowUpRight,
-  Filter,
-  CheckCircle,
-  FilePlus,
-  Edit3,
-} from "lucide-react";
+import { OpenBook as BookOpen, Crown, Search, Eye, Bookmark, OpenNewWindow as ExternalLink, ClockRotateRight as History, User, Clock, ArrowUpRight, Filter, CheckCircle, PagePlus as FilePlus, EditPencil as Edit3 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";

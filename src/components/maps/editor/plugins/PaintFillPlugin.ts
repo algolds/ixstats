@@ -1,4 +1,4 @@
-import { PaintBucket } from "lucide-react";
+import { ColorPicker as PaintBucket } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const PaintFillPlugin: MapEditorPlugin = {

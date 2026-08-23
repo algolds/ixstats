@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Sliders, GlassWater, Sun, Palette } from "lucide-react";
+import { ControlSlider as Sliders, GlassEmpty as GlassWater, SunLight as Sun, Palette } from "iconoir-react";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import {
   type LabConfig,

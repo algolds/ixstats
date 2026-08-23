@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gamepad2, Rocket, TrendingUp, Trophy } from "lucide-react";
+import { Gamepad as Gamepad2, Rocket, StatUp as TrendingUp, Trophy } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function GameplayOverviewArticle() {

@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Shield, Plus } from "lucide-react";
+import { Shield, Plus } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 
@@ -15,7 +15,7 @@ export const EmptyBranchState = React.memo(function EmptyBranchState({
   onCreateBranch,
 }: EmptyBranchStateProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardContent className="py-8 text-center">
         <Shield className="text-muted-foreground/50 mx-auto mb-3 h-10 w-10" />
         <h3 className="mb-2 text-sm font-semibold">No Military Branches</h3>

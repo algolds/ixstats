@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Loader2, RefreshCw, Database, Zap, AlertTriangle } from "lucide-react";
+import { SystemRestart as Loader2, Refresh as RefreshCw, Database, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
 interface CacheStats {

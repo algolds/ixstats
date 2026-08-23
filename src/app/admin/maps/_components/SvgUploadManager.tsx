@@ -23,18 +23,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  Upload,
-  FileUp,
-  Loader2,
-  RotateCcw,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertCircle,
-  Cog,
-} from "lucide-react";
+import { Upload, Upload as FileUp, SystemRestart as Loader2, Undo as RotateCcw, Trash as Trash2, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Clock, WarningCircle as AlertCircle, Settings as Cog } from "iconoir-react";
 import { SvgProcessingDialog } from "./SvgProcessingDialog";
 
 const LAYER_TYPES = [

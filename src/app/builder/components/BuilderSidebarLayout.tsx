@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import type { BuilderSection } from "../lib/builder-theme";
 import { BuilderPreviewWidget } from "./BuilderPreviewWidget";
 import { BuilderHelpWidget } from "./BuilderHelpWidget";
-import { RefreshCw, XCircle } from "lucide-react";
+import { Refresh as RefreshCw, XmarkCircle as XCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";

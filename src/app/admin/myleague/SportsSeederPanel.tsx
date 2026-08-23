@@ -9,7 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Database, RefreshCw, Trash2, Sparkles, Activity, Layers, Cpu, Trophy } from "lucide-react";
+import { Database, Refresh as RefreshCw, Trash as Trash2, Sparks as Sparkles, Activity, Component as Layers, Cpu, Trophy } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export default function SportsSeederPanel() {

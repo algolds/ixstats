@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { TrendingUp, DollarSign, Zap, AlertTriangle, Package, Target } from "lucide-react";
+import { StatUp as TrendingUp, Dollar as DollarSign, Flash as Zap, WarningTriangle as AlertTriangle, Package, Archery as Target } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface MetricsPanelProps {

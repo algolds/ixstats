@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ScrollText, Plus, FileText } from "lucide-react";
+import { Page as ScrollText, Plus, Page as FileText } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -62,7 +62,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
   const extraCount = (policies?.length ?? 0) - 6;
 
   return (
-    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="facet-hierarchy-child border-border space-y-3 rounded-xl border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ScrollText className="h-4 w-4 text-emerald-600" />

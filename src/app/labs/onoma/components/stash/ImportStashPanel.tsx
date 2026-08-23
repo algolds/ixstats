@@ -4,7 +4,7 @@
 // Onoma Custom Studio Workshop — Import Stash Panel Component
 
 import { useState } from "react";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { guessRoleGenderFromFilename } from "~/lib/onoma/name-sets";
 
@@ -64,7 +64,7 @@ export function ImportStashPanel() {
 
       {uploadStatus && (
         <div className="border-border/20 bg-secondary/15 flex items-center gap-2 rounded-xl border p-3 text-xs leading-normal">
-          <Loader2 className="h-4 w-4 animate-spin text-[#0091ff]" />
+          <Loader2 className="h-4 w-4 animate-spin text-onoma-primary" />
           <span>{uploadStatus}</span>
         </div>
       )}

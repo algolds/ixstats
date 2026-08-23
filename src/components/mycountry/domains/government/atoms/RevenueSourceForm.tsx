@@ -16,23 +16,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
-import {
-  Plus,
-  X,
-  DollarSign,
-  Receipt,
-  Building2,
-  FileText,
-  MoreHorizontal,
-  Zap,
-  Calculator,
-  CreditCard,
-  Shield,
-  FileCheck,
-  AlertTriangle,
-  Mountain,
-  Coins,
-} from "lucide-react";
+import { Plus, Xmark as X, Dollar as DollarSign, Page as Receipt, City as Building2, Page as FileText, MoreHoriz as MoreHorizontal, Flash as Zap, Calculator, CreditCard, Shield, PageSearch as FileCheck, WarningTriangle as AlertTriangle, ModernTv as Mountain, Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
   revenueTaxIntegrationService,

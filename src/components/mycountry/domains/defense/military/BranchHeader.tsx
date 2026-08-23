@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Shield, Plus, Info, HelpCircle } from "lucide-react";
+import { Shield, Plus, InfoCircle as Info, HelpCircle } from "iconoir-react";
 import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
@@ -22,7 +22,7 @@ export const BranchHeader = React.memo(function BranchHeader({
   onCreateBranch,
 }: BranchHeaderProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

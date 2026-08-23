@@ -5,15 +5,7 @@ import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import {
-  Globe,
-  Calendar,
-  Landmark,
-  Activity,
-  Handshake,
-  AlertCircle,
-  Sparkles,
-} from "lucide-react";
+import { Globe, Calendar, Bank as Landmark, Activity, Community as Handshake, WarningCircle as AlertCircle, Sparks as Sparkles } from "iconoir-react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { useUser } from "~/context/auth-context";
@@ -143,7 +135,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
           <div
             key={rel.id}
             data-focus-id={rel.targetCountryId ?? rel.id}
-            className="glass-hierarchy-child border-border/40 bg-card/40 flex flex-col justify-between rounded-xl border p-4 shadow-sm backdrop-blur-sm transition-all hover:scale-[1.01] hover:shadow-md"
+            className="facet-hierarchy-child border-border/40 bg-card/40 flex flex-col justify-between rounded-xl border p-4 shadow-sm backdrop-blur-sm transition-all hover:scale-[1.01] hover:shadow-md"
           >
             {/* Header info */}
             <div className="flex items-start justify-between gap-3">

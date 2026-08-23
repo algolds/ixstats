@@ -3,7 +3,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Vote, X, Info, Plus, Minus } from "lucide-react";
+import { CheckSquare as Vote, Xmark as X, InfoCircle as Info, Plus, Minus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";

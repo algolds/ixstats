@@ -3,21 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import {
-  Bell,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Globe,
-  Leaf,
-  Pause,
-  Play,
-  Scale,
-  Shield,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Bell, City as Building2, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Clock, Globe, Leaf, Pause, Play, ScaleFrameEnlarge as Scale, Shield, StatUp as TrendingUp, Group as Users } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { api } from "~/trpc/react";
@@ -106,7 +92,7 @@ export function SplashIssuesTeaser() {
       </div>
 
       <div
-        className={`glass-hierarchy-parent mb-8 rounded-2xl p-4 md:flex md:items-center md:gap-4 md:p-5 ${splashGold.subtlePanel}`}
+        className={`facet-hierarchy-parent mb-8 rounded-2xl p-4 md:flex md:items-center md:gap-4 md:p-5 ${splashGold.subtlePanel}`}
       >
         <motion.div
           className={`mx-auto mb-3 flex h-10 w-10 shrink-0 items-center justify-center md:mx-0 md:mb-0 ${splashGold.iconWrapSm}`}
@@ -178,7 +164,7 @@ export function SplashIssuesTeaser() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -28 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
-                className={`glass-hierarchy-child bg-card/30 dark:bg-card/15 min-h-[200px] rounded-xl border p-5 ${splashGold.border} ${splashGold.darkBorder}`}
+                className={`facet-hierarchy-child bg-card/30 dark:bg-card/15 min-h-[200px] rounded-xl border p-5 ${splashGold.border} ${splashGold.darkBorder}`}
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">

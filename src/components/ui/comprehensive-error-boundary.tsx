@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle, RefreshCw, Bug, ChevronDown, ChevronUp } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Refresh as RefreshCw, Bug, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
 import { Button } from "./button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 import { Badge } from "./badge";
@@ -183,7 +183,7 @@ export class ComprehensiveErrorBoundary extends Component<Props, State> {
 
       return (
         <div className={`${isolate ? "isolated-error-boundary" : ""} p-4`}>
-          <Card className="glass-hierarchy-parent border-destructive/50">
+          <Card className="facet-hierarchy-parent border-destructive/50">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, Activity, RefreshCw } from "lucide-react";
+import { Clock, Activity, Refresh as RefreshCw } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

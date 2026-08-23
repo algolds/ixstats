@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { Loader2, Pencil, Check, X, Globe, Lock, Eye } from "lucide-react";
+import { SystemRestart as Loader2, EditPencil as Pencil, Check, Xmark as X, Globe, Lock, Eye } from "iconoir-react";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-500/10 text-green-500 border-green-500/20",

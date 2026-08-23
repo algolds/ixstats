@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { DollarSign, Activity, BarChart } from "lucide-react";
+import { Dollar as DollarSign, Activity, StatsReport as BarChart } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
 import { getEconomicTier } from "../lib/economy-data-service";

@@ -12,7 +12,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Map, BookOpen, Image as ImageIcon, Database } from "lucide-react";
+import { Map, OpenBook as BookOpen, MediaImage as ImageIcon, Database } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 

@@ -11,7 +11,7 @@ import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { sportCoverUrl } from "~/lib/sports/league-covers";
-import { Trophy, Users, ArrowRight } from "lucide-react";
+import { Trophy, Group as Users, ArrowRight } from "iconoir-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [

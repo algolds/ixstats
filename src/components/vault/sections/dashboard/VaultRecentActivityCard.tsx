@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { History, ArrowUp, ArrowDown } from "lucide-react";
+import { ClockRotateRight as History, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextureOverlay } from "~/components/ui/texture-overlay";

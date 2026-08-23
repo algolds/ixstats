@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, memo } from "react";
-import {
-  TrendingDown,
-  DollarSign,
-  Building,
-  Building2,
-  CreditCard,
-  Shield,
-  PieChart,
-  Zap,
-} from "lucide-react";
+import { StatDown as TrendingDown, Dollar as DollarSign, Building, City as Building2, CreditCard, Shield, Reports as PieChart, Flash as Zap } from "iconoir-react";
 import { AtomicEconomicEffectivenessPanel } from "~/components/mycountry/domains/economy/atomic";
 import { api } from "~/trpc/react";
 import type { ComponentType } from "~/types/government";

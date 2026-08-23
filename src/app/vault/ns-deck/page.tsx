@@ -123,7 +123,7 @@ export default function NSImportPage() {
 
             <button
               onClick={() => setShowWizard(true)}
-              className="glass-interactive w-full rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/20"
+              className="facet-interactive w-full rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/20"
             >
               Start Import Wizard
             </button>

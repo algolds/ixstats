@@ -221,7 +221,7 @@ export function StashWelcomeModal({
             transition={{ type: "spring", stiffness: 450, damping: 30 }}
             className="fixed top-1/2 left-1/2 z-100 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 px-4 focus:outline-none select-none"
           >
-            <div className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#18181b] shadow-2xl text-stone-900 dark:text-stone-100">
+            <div className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/15 bg-white dark:bg-zinc-900 shadow-2xl text-stone-900 dark:text-stone-100">
               {/* Close button */}
               <button
                 onClick={handleClose}

@@ -1,30 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  HelpCircle,
-  Info,
-  TrendingUp,
-  DollarSign,
-  Building2,
-  Users,
-  Target,
-  AlertTriangle,
-  CheckCircle,
-  BookOpen,
-  Calculator,
-  BarChart3,
-  Settings,
-  Crown,
-  Globe,
-  Zap,
-  Heart,
-  Scale,
-  Sparkles,
-  Trees,
-  Eye,
-  Wifi,
-} from "lucide-react";
+import { HelpCircle, InfoCircle as Info, StatUp as TrendingUp, Dollar as DollarSign, City as Building2, Group as Users, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, OpenBook as BookOpen, Calculator, StatsReport as BarChart3, Settings, Crown, Globe, Flash as Zap, Heart, ScaleFrameEnlarge as Scale, Sparks as Sparkles, Tree as Trees, Eye, Wifi } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

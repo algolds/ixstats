@@ -212,6 +212,8 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       void utils.thinkpages.getFeed.invalidate();
+      void utils.activities.getGlobalFeed.invalidate();
+      void utils.activities.getFollowingFeed.invalidate();
       if (post.account?.clerkUserId) {
         void utils.thinkpages.getPostsByClerkUserId.invalidate({
           clerkUserId: post.account.clerkUserId,
@@ -373,18 +375,18 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!showReplyComposer) {
       const mentionText = `@${post.account?.username} `;
       setReplyText(mentionText);
-      setTimeout(() => {
-        const replyInput = document.querySelector("[data-reply-input]") as HTMLTextAreaElement;
-        if (replyInput) {
-          replyInput.focus();
-          replyInput.setSelectionRange(mentionText.length, mentionText.length);
-        }
-      }, 100);
     }
   }, [showReplyComposer, post.account?.username]);
 
   const handleSubmitReply = useCallback(async () => {
-    if (!replyText.trim() || !currentUserAccountId) return;
+    if (!currentUserAccountId) {
+      notify.error("Please select or create an account first to reply.");
+      return;
+    }
+    if (!replyText.trim()) {
+      notify.error("Please enter a reply.");
+      return;
+    }
 
     try {
       await createPostMutation.mutateAsync({
@@ -398,6 +400,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
       notify.success("Reply posted!");
       setReplyText("");
       setShowReplyComposer(false);
+      setShowReplies(true);
     } catch (error: any) {
       notify.error(error.message || "Failed to post reply");
     }

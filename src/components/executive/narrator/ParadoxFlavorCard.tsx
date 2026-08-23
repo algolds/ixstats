@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, ScrollText, EyeOff, Loader2 } from "lucide-react";
+import { Sparks as Sparkles, Page as ScrollText, EyeClosed as EyeOff, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface ParadoxFlavorCardProps {

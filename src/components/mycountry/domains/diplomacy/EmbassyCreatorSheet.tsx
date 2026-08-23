@@ -14,7 +14,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
-import { Building2, MapPin, User, DollarSign, Loader2, ChevronDown } from "lucide-react";
+import { City as Building2, MapPin, User, Dollar as DollarSign, SystemRestart as Loader2, NavArrowDown as ChevronDown } from "iconoir-react";
 
 interface EmbassyCreatorSheetProps {
   countryId: string;

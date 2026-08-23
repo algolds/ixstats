@@ -20,7 +20,7 @@ import { Badge } from "~/components/ui/badge";
 import { AdminHeader } from "../_components/AdminHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
-import { Trophy, Users, Calendar, Swords, Sliders, Database, FlaskConical } from "lucide-react";
+import { Trophy, Group as Users, Calendar, Tournament as Swords, ControlSlider as Sliders, Database, Flask as FlaskConical } from "iconoir-react";
 
 // Custom Node Component
 function PipelineNode({ data, selected }: NodeProps) {

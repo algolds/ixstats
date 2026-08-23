@@ -5,16 +5,7 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  Users,
-  Heart,
-  GraduationCap,
-  Building2,
-  UserCheck,
-  Info,
-  Baby,
-  MapPin,
-} from "lucide-react";
+import { Group as Users, Heart, GraduationCap, City as Building2, UserBadgeCheck as UserCheck, InfoCircle as Info, Lullaby as Baby, MapPin } from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type {
   EconomyBuilderState,

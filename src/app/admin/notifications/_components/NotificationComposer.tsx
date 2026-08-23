@@ -17,7 +17,7 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { useNotify } from "~/hooks/useNotify";
-import { Send, Plus, Bell, MessageSquare, Crown, Shield, Globe, Sparkles } from "lucide-react";
+import { Send, Plus, Bell, ChatBubble as MessageSquare, Crown, Shield, Globe, Sparks as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 type BroadcastMode = "platform_alert" | "system_message" | "direct_message";

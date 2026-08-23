@@ -3,33 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  RefreshCw,
-  Database,
-  Globe,
-  MapPin,
-  Search,
-  Users,
-  Play,
-  Pause,
-  Square,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Filter,
-  X,
-  Layers,
-  Calendar,
-  Clock,
-  ArrowRight,
-  Tag,
-  Eye,
-  Sparkles,
-  ExternalLink,
-  Image as ImageIcon,
-  FileText,
-  Check,
-} from "lucide-react";
+import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, StatUp as TrendingUp, WarningTriangle as AlertTriangle, CheckCircle, Filter, Xmark as X, Component as Layers, Calendar, Clock, ArrowRight, Label as Tag, Eye, Sparks as Sparkles, OpenNewWindow as ExternalLink, MediaImage as ImageIcon, Page as FileText, Check } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";

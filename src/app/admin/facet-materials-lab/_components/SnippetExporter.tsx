@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Button } from "~/components/ui/button";
-import { Code, Check, Copy } from "lucide-react";
+import { Code, Check, Copy } from "iconoir-react";
 import { type LabConfig } from "./types";
 
 interface SnippetExporterProps {

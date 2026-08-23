@@ -2,25 +2,7 @@
 
 import { api } from "~/trpc/react";
 import { useState, useCallback, memo } from "react";
-import {
-  TrendingUp,
-  Landmark,
-  Users,
-  Shield,
-  Globe,
-  Building,
-  Leaf,
-  Clock,
-  Flame,
-  CheckCircle,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  AlertTriangle,
-  X,
-  Sliders,
-  Calendar,
-} from "lucide-react";
+import { StatUp as TrendingUp, Bank as Landmark, Group as Users, Shield, Globe, Building, Leaf, Clock, FireFlame as Flame, CheckCircle, ArrowUp, ArrowDown, Minus, WarningTriangle as AlertTriangle, Xmark as X, ControlSlider as Sliders, Calendar } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

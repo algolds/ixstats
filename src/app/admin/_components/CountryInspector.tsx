@@ -20,23 +20,7 @@ const CountryFormulaFlow = dynamic(() => import("./CountryFormulaFlow"), {
 });
 
 
-import {
-  Search,
-  Globe,
-  Calculator,
-  TrendingUp,
-  Calendar,
-  Settings,
-  Zap,
-  Plus,
-  Trash2,
-  Info,
-  Loader2,
-  DollarSign,
-  Users,
-  Maximize2,
-  Minimize2,
-} from "lucide-react";
+import { Search, Globe, Calculator, StatUp as TrendingUp, Calendar, Settings, Flash as Zap, Plus, Trash as Trash2, InfoCircle as Info, SystemRestart as Loader2, Dollar as DollarSign, Group as Users, Expand as Maximize2, Compress as Minimize2 } from "iconoir-react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

@@ -2,27 +2,27 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
-  Globe2,
-  Ship,
-  TrendingUp,
-  TrendingDown,
+  Globe as Globe2,
+  DeliveryTruck as Ship,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
   ShieldCheck,
-  Percent,
+  Percentage as Percent,
   Lock,
-  Unlock,
-  Building2,
-  Handshake,
-  FileCheck,
-  Scale,
+  LockSlash as Unlock,
+  City as Building2,
+  Community as Handshake,
+  PageSearch as FileCheck,
+  ScaleFrameEnlarge as Scale,
   Activity,
   ArrowUpRight,
   Plus,
-  Trash2,
-  SlidersHorizontal,
-  X,
+  Trash as Trash2,
+  ControlSlider as SlidersHorizontal,
+  Xmark as X,
   Check,
-  RotateCcw,
-} from "lucide-react";
+  Undo as RotateCcw,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";

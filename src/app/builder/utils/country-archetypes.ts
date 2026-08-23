@@ -1,18 +1,4 @@
-import {
-  DollarSign,
-  TrendingUp,
-  BarChart3,
-  Crown, // For geographical
-  Building, // For government
-  Globe, // For continents
-  Users, // For population tiers
-  Banknote, // For region
-  Scale, // For legal systems
-  Shield, // For military/security
-  Vote, // For democratic systems
-  Gavel, // For judicial systems
-  BookOpen, // For legal codes
-} from "lucide-react";
+import { Dollar as DollarSign, StatUp as TrendingUp, StatsReport as BarChart3, Crown, Building, Globe, Group as Users, Dollar as Banknote, ScaleFrameEnlarge as Scale, Shield, CheckSquare as Vote, Hammer as Gavel, OpenBook as BookOpen } from "iconoir-react";
 import type { CountryArchetype } from "./country-selector-utils";
 import type { RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";

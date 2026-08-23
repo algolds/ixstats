@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { createPlateEditor, ParagraphPlugin } from "platejs/react";
 import { Transforms, Editor, Range, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
@@ -232,15 +232,19 @@ export function useGlassPlateEditor({
     return map;
   }, [resolvedImagesList]);
 
-  // Initial Slate state
+  const lastEmittedHtmlRef = useRef<string | null>(null);
+  const lastEmittedPlainRef = useRef<string | null>(null);
+
+  // Initial Slate state (computed once on initial mount)
   const initialValue = useMemo(() => {
     if (!value || value.trim() === "") {
       return [{ type: "p", children: [{ text: "" }] }];
     }
     return parsoidHtmlToSlate(value);
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Initialize Editor
+  // Initialize Editor once
   const editor = useMemo(() => {
     return createPlateEditor({
       plugins: [
@@ -260,11 +264,27 @@ export function useGlassPlateEditor({
     });
   }, [initialValue]);
 
-  // Sync editor if external value completely resets
+  // Sync editor if external value changes from outside (e.g. reset or prefilled)
   useEffect(() => {
     if (!value || value === "") {
-      editor.children = [{ type: "p", children: [{ text: "" }] }];
-      setVersion((v) => v + 1);
+      if (lastEmittedHtmlRef.current !== "" && lastEmittedPlainRef.current !== "") {
+        editor.children = [{ type: "p", children: [{ text: "" }] }];
+        lastEmittedHtmlRef.current = "";
+        lastEmittedPlainRef.current = "";
+        setVersion((v) => v + 1);
+      }
+      return;
+    }
+
+    if (value !== lastEmittedHtmlRef.current && value !== lastEmittedPlainRef.current) {
+      try {
+        const newNodes = parsoidHtmlToSlate(value);
+        editor.children = newNodes;
+        lastEmittedHtmlRef.current = value;
+        setVersion((v) => v + 1);
+      } catch (e) {
+        console.warn("Failed to sync external value to Plate editor:", e);
+      }
     }
   }, [value, editor]);
 
@@ -276,6 +296,9 @@ export function useGlassPlateEditor({
         .map((n: any) => SlateNode.string(n))
         .join("\n")
         .trim();
+
+      lastEmittedHtmlRef.current = html;
+      lastEmittedPlainRef.current = plainText;
 
       onChange?.(html, plainText);
       setVersion((v) => v + 1);

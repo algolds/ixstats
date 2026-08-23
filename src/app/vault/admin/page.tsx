@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, ArrowLeft } from "lucide-react";
+import { Shield, ArrowLeft } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";

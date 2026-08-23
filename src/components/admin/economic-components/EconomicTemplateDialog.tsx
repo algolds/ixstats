@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { FileText, Pencil, Activity, Plus } from "lucide-react";
+import { Page as FileText, EditPencil as Pencil, Activity, Plus } from "iconoir-react";
 
 interface EconomicTemplateDialogProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export function EconomicTemplateDialog({
         <div className="flex-1 overflow-auto p-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {templates.map((template, idx) => (
-              <Card key={idx} className="glass-card-child p-4">
+              <Card key={idx} className="facet-card-child p-4">
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-[--intel-gold]" />

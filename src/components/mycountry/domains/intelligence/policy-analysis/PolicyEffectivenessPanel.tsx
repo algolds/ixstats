@@ -14,7 +14,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Target, Activity } from "lucide-react";
+import { Archery as Target, Activity } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { PolicyEffectivenessData } from "~/hooks/usePolicyAnalytics";
 
@@ -34,7 +34,7 @@ export const PolicyEffectivenessPanel = React.memo(function PolicyEffectivenessP
   policyEffectiveness,
 }: PolicyEffectivenessPanelProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-purple-600" />

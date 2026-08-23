@@ -4,15 +4,7 @@ import React from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import {
-  AlertTriangle,
-  Building2,
-  ArrowRight,
-  Settings,
-  Users,
-  DollarSign,
-  Info,
-} from "lucide-react";
+import { WarningTriangle as AlertTriangle, City as Building2, ArrowRight, Settings, Group as Users, Dollar as DollarSign, InfoCircle as Info } from "iconoir-react";
 import type { GovernmentValidationResult } from "../utils/governmentValidation";
 import { createAbsoluteUrl } from "~/lib/utils";
 

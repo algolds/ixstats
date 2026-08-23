@@ -554,7 +554,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-hierarchy-child rounded-lg p-12 text-center"
+          className="facet-hierarchy-child rounded-lg p-12 text-center"
         >
           <div className="mb-4 text-5xl">🌍</div>
           <h4 className="text-foreground mb-2 text-lg font-semibold">

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Zap, Loader2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Globe, Flash as Zap, SystemRestart as Loader2, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, InfoCircle as Info } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -75,7 +75,7 @@ export function EconomicControlCard({
   const growthPercent = ((globalGrowthFactor - 1) * 100).toFixed(2);
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">

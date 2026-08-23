@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
-import { RefreshCw, Download, Trash2, Clock, CheckCircle, AlertCircle, Flag } from "lucide-react";
+import { Refresh as RefreshCw, Download, Trash as Trash2, Clock, CheckCircle, WarningCircle as AlertCircle, WhiteFlag as Flag } from "iconoir-react";
 
 export function FlagCacheManager() {
   const { stats, isLoading, error, updateAllFlags, initializeCache, clearCache, refreshStats } =

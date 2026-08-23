@@ -8,7 +8,7 @@ const MediaSearchModal = dynamic(
   () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-import { Globe, Landmark, Heart } from "lucide-react";
+import { Globe, Bank as Landmark, Heart } from "iconoir-react";
 import type {
   EconomicInputs,
   RealCountryData,

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookOpen, Globe, Flag, Sparkles, RefreshCw, Layers } from "lucide-react";
+import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Sparks as Sparkles, Refresh as RefreshCw, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { FacetContainer, FacetCard } from "~/components/ui/facet-container";

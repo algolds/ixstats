@@ -27,33 +27,9 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import {
-  Plus,
-  X,
-  Shield,
-  GraduationCap,
-  Heart,
-  Briefcase,
-  Truck,
-  Leaf,
-  Users,
-  Building,
-  Globe,
-  Zap,
-  Wifi,
-  Palette,
-  Beaker,
-  Home,
-  Medal,
-  Eye,
-  AlertTriangle,
-  MoreHorizontal,
-  Info,
-  CheckCircle,
-  Upload,
-} from "lucide-react";
-import * as LucideIcons from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Plus, Xmark as X, Shield, GraduationCap, Heart, Suitcase as Briefcase, DeliveryTruck as Truck, Leaf, Group as Users, Building, Globe, Flash as Zap, Wifi, Palette, Flask as Beaker, HomeSimple as Home, Medal, Eye, WarningTriangle as AlertTriangle, MoreHoriz as MoreHorizontal, InfoCircle as Info, CheckCircle, Upload } from "iconoir-react";
+import * as IconoirIcons from "iconoir-react";
+
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { checkGovernmentConflict } from "~/lib/government/atomic-utils";
@@ -80,10 +56,10 @@ export function isImageIconSource(value: string | undefined): value is string {
   );
 }
 
-export function resolveNamedDepartmentIcon(iconName: string | undefined): LucideIcon | null {
+export function resolveNamedDepartmentIcon(iconName: string | undefined): React.ComponentType<{ className?: string }> | null {
   if (!iconName || isImageIconSource(iconName)) return null;
-  const icon = (LucideIcons as Record<string, unknown>)[iconName];
-  return typeof icon === "function" ? (icon as LucideIcon) : null;
+  const icon = (IconoirIcons as Record<string, unknown>)[iconName];
+  return typeof icon === "function" ? (icon as React.ComponentType<{ className?: string }>) : null;
 }
 
 const departmentCategories: DepartmentCategory[] = [

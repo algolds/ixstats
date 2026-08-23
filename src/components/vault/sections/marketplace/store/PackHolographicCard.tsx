@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { Info, Star, Sparkles, Gift } from "lucide-react";
+import { InfoCircle as Info, Star, Sparks as Sparkles, Gift } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";

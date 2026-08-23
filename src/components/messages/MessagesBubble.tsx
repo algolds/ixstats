@@ -2,17 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import {
-  Heart,
-  Reply,
-  Edit,
-  Trash2,
-  Check,
-  CheckCheck,
-  X,
-  Shield,
-  Smile,
-} from "lucide-react";
+import { Heart, Reply, EditPencil as Edit, Trash as Trash2, Check, CheckCircle as CheckCheck, Xmark as X, Shield, Emoji as Smile } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";

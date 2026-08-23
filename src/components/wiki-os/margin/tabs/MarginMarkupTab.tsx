@@ -172,7 +172,7 @@ export function MarginMarkupTab({
           <button
             type="button"
             onClick={handleExportAllMarkdown}
-            className="flex items-center gap-1 text-[10.5px] font-bold text-stone-950 bg-[#fef036] hover:bg-[#fef036]/90 border border-yellow-400/50 px-2.5 py-0.5 rounded-lg active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
+            className="flex items-center gap-1 text-[10.5px] font-bold text-stone-950 bg-margin-accent hover:bg-margin-accent/90 border border-yellow-400/50 px-2.5 py-0.5 rounded-lg active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
           >
             {copiedAll ? (
               <>
@@ -202,7 +202,7 @@ export function MarginMarkupTab({
       {/* Empty State */}
       {!isLoading && annotations.length === 0 && (
         <div className="py-12 text-center text-[var(--wikios-text-muted)] space-y-1.5">
-          <div className="w-10 h-10 rounded-2xl bg-[#fef036]/20 border border-yellow-400/50 flex items-center justify-center mx-auto mb-2.5 text-yellow-600 dark:text-[#fef036] shadow-xs">
+          <div className="w-10 h-10 rounded-2xl bg-margin-accent/20 border border-yellow-400/50 flex items-center justify-center mx-auto mb-2.5 text-yellow-600 dark:text-margin-accent shadow-xs">
             <Highlighter className="w-5 h-5 opacity-90" />
           </div>
           <p className="text-xs font-bold text-[var(--wikios-text)] tracking-tight">No highlights yet</p>
@@ -317,7 +317,7 @@ export function MarginMarkupTab({
                 {ann.comment && !isStashedQuote && (
                   <div className="ml-1 p-2 rounded-xl bg-[var(--wikios-surface)]/80 border border-yellow-400/40 text-[11px] text-[var(--wikios-text-muted)] space-y-0.5 shadow-2xs">
                     <div className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--wikios-text)]">
-                      <MessageSquare className="w-2.5 h-2.5 text-yellow-600 dark:text-[#fef036]" />
+                      <MessageSquare className="w-2.5 h-2.5 text-yellow-600 dark:text-margin-accent" />
                       <span>Lore Significance</span>
                     </div>
                     <p className="italic leading-snug">{ann.comment}</p>
@@ -332,10 +332,10 @@ export function MarginMarkupTab({
                       e.stopPropagation();
                       handleJumpToText(ann.selectedText);
                     }}
-                    className="flex items-center gap-1 font-bold text-[var(--wikios-text)] hover:text-yellow-600 dark:hover:text-[#fef036] active:scale-95 transition-transform duration-100 cursor-pointer group/jump"
+                    className="flex items-center gap-1 font-bold text-[var(--wikios-text)] hover:text-yellow-600 dark:hover:text-margin-accent active:scale-95 transition-transform duration-100 cursor-pointer group/jump"
                   >
                     <span>Jump to text</span>
-                    <ArrowUpRight className="w-3 h-3 group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5 transition-transform text-yellow-600 dark:text-[#fef036]" />
+                    <ArrowUpRight className="w-3 h-3 group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5 transition-transform text-yellow-600 dark:text-margin-accent" />
                   </button>
 
                   <Link

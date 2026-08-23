@@ -1,13 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { type Metadata } from "next";
-import {
-  Book,
-  Target,
-  Crown,
-  Coins,
-  Gamepad2,
-} from "lucide-react";
+import { Book, Archery as Target, Crown, Coins, Gamepad as Gamepad2 } from "iconoir-react";
 import { HelpExplorer } from "./_components/HelpExplorer";
 
 export const metadata: Metadata = {

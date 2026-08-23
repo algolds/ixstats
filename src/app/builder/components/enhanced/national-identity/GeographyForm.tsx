@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { MapIcon, Clock, Phone, Wifi, Car, Calendar } from "lucide-react";
+import { Map as MapIcon, Clock, Phone, Wifi, Car, Calendar } from "iconoir-react";
 import { EnhancedNumberInput, EnhancedToggle, GlassSelectBox } from "../../../primitives/enhanced";
 import { GlassCard, GlassCardContent } from "../../glass/GlassCard";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";

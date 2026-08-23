@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { ArrowLeft, Plus, Filter, Grid3x3, Sparkles, MessageCircle } from "lucide-react";
+import { ArrowLeft, Plus, Filter, ViewGrid as Grid3x3, Sparks as Sparkles, ChatBubble as MessageCircle } from "iconoir-react";
 import { useCollections } from "~/hooks/vault/useCollections";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -71,7 +71,7 @@ export default function CollectionDetailPage() {
   if (!collection) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Card className="glass-hierarchy-child max-w-md">
+        <Card className="facet-hierarchy-child max-w-md">
           <CardContent className="p-8 text-center">
             <p className="mb-4 text-lg font-semibold text-white">Collection not found</p>
             <Button onClick={() => router.push("/vault/collections")}>Back to Collections</Button>
@@ -166,7 +166,7 @@ export default function CollectionDetailPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="glass-hierarchy-child gap-2">
+        <TabsList className="facet-hierarchy-child gap-2">
           <TabsTrigger
             value="grid"
             className={cn(
@@ -210,7 +210,7 @@ export default function CollectionDetailPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-white sm:text-2xl">Cards in Collection</h2>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="glass-hierarchy-child">
+                <Button variant="outline" size="sm" className="facet-hierarchy-child">
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                 </Button>
@@ -224,7 +224,7 @@ export default function CollectionDetailPage() {
               </div>
             </div>
 
-            <Card className="glass-hierarchy-child">
+            <Card className="facet-hierarchy-child">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Grid3x3 className="mb-4 h-16 w-16 text-white/20" />
                 <p className="mb-2 text-lg font-semibold text-white">CardGrid Component</p>

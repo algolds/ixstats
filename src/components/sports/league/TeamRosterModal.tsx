@@ -2,22 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  Loader2,
-  Trophy,
-  Users,
-  Shield,
-  MapPin,
-  Calendar,
-  Flame,
-  TrendingUp,
-  BadgeCheck,
-  UserPlus,
-  Wallet,
-  Settings,
-  ArrowRight,
-} from "lucide-react";
+import { Xmark as X, SystemRestart as Loader2, Trophy, Group as Users, Shield, MapPin, Calendar, FireFlame as Flame, StatUp as TrendingUp, CheckCircle as BadgeCheck, UserPlus, Wallet, Settings, ArrowRight } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";

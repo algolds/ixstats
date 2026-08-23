@@ -4,7 +4,7 @@
 // Onoma Lab — Side-by-Side Language Profile Comparator
 
 import { useState, useMemo } from "react";
-import { GitCompare, Volume2, AlertCircle } from "lucide-react";
+import { GitCompare, SoundHigh as Volume2, WarningCircle as AlertCircle } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { translateToIPA } from "~/lib/onoma/phonology";
@@ -246,14 +246,14 @@ export default function ComparatorSection({
           <div className="border-border/10 grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
             {/* Unique to A */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-[#0091ff] capitalize">
+              <span className="text-[11px] font-bold text-onoma-primary capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {comparison.uniqueToA.map((ph) => (
                   <span
                     key={ph}
-                    className="rounded border border-[#0091ff]/10 bg-[#0091ff]/10 px-2 py-0.5 font-mono text-sm text-[#0091ff]"
+                    className="rounded border border-onoma-primary/10 bg-onoma-primary/10 px-2 py-0.5 font-mono text-sm text-onoma-primary"
                   >
                     /{ph}/
                   </span>
@@ -313,7 +313,7 @@ export default function ComparatorSection({
                 </div>
                 <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-[#0091ff]"
+                    className="h-full rounded-full bg-onoma-primary"
                     style={{ width: `${Math.min(100, (comparison.entropyA / 4.7) * 100)}%` }}
                   />
                 </div>

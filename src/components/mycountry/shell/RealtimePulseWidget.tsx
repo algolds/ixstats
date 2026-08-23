@@ -4,19 +4,19 @@ import { useState, useMemo } from "react";
 import {
   Calendar,
   Clock,
-  Command,
+  KeyCommand as Command,
   ArrowUpRight,
   Shield,
-  Handshake,
-  Scale,
-  TrendingUp,
-  FileCheck,
-  CheckCircle2,
-  AlertCircle,
+  Community as Handshake,
+  ScaleFrameEnlarge as Scale,
+  StatUp as TrendingUp,
+  PageSearch as FileCheck,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
   Compass,
-  Sparkles,
-  ChevronRight,
-} from "lucide-react";
+  Sparks as Sparkles,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
   Dialog,

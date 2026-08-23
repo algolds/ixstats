@@ -47,7 +47,7 @@ export const getActiveColorClass = (itemId: string): string => {
     case "history":
       return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
     case "margin":
-      return "text-stone-950 border-yellow-400/60 bg-[#fef036] shadow-[0_0_12px_rgba(254,240,54,0.45)]";
+      return "text-stone-950 border-yellow-400/60 bg-margin-accent shadow-[0_0_12px_rgba(254,240,54,0.45)]";
     case "random":
       return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
     case "stashes":

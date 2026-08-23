@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { CheckCircle, User } from "lucide-react";
+import { CheckCircle, User } from "iconoir-react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { BlurbsNav } from "~/components/thinkpages/blurbs/BlurbsNav";
 
@@ -28,7 +28,7 @@ function SubmitPromptForm() {
 
   if (submitted) {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-400" />
           <h3 className="text-base font-semibold">Prompt Submitted</h3>
@@ -50,7 +50,7 @@ function SubmitPromptForm() {
 
   return (
     <div className="space-y-4">
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="space-y-4 p-5">
           <div>
             <label className="text-muted-foreground mb-1.5 block text-xs font-medium">Title</label>
@@ -132,7 +132,7 @@ export default function SubmitBlurbPage() {
         {isSignedIn ? (
           <SubmitPromptForm />
         ) : (
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign In Required</h3>

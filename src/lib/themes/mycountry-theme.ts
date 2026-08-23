@@ -262,7 +262,7 @@ export const getTabThemeClasses = (theme: TabTheme) => {
   return {
     content: `tab-content-${theme}`,
     interactive: "tab-interactive",
-    glass: "glass-card-themed",
+    glass: "facet-card-themed",
     icon: "tab-icon",
     metric: {
       primary: "tab-metric-primary",

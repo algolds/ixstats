@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Search, Sparkles, FileText } from "lucide-react";
+import { OpenBook as BookOpen, Search, Sparks as Sparkles, Page as FileText } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function LoreCardsArticle() {

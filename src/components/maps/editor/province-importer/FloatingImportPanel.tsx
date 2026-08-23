@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useRef, useCallback, memo, useEffect } from "react";
-import { GripVertical } from "lucide-react";
+import { Menu as GripVertical } from "iconoir-react";
 
 interface FloatingImportPanelProps {
   children: React.ReactNode;

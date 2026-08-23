@@ -1,4 +1,4 @@
-import { Hexagon, Droplet } from "lucide-react";
+import { Hexagon, Droplet } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const SubdivisionDrawPlugin: MapEditorPlugin = {

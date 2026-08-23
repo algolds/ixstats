@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useMemo, type ElementType } from "react";
-import {
-  Briefcase,
-  Users,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Shield,
-} from "lucide-react";
+import { Suitcase as Briefcase, Group as Users, Clock, Dollar as DollarSign, StatUp as TrendingUp, StatDown as TrendingDown, Shield } from "iconoir-react";
 import {
   EnhancedNumberInput,
   EnhancedToggle,

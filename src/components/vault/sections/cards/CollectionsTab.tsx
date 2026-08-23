@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Folder, Plus, Trash2, ChevronDown } from "lucide-react";
+import { Folder, Plus, Trash as Trash2, NavArrowDown as ChevronDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { api } from "~/trpc/react";
@@ -76,7 +76,7 @@ export function CollectionsTab({
           ))}
         </div>
       ) : !collections || collections.length === 0 ? (
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Folder className="text-muted-foreground/40 mb-3 h-10 w-10" />
             <p className="text-foreground/80 mb-1 text-sm font-bold">No Collections</p>
@@ -101,7 +101,7 @@ export function CollectionsTab({
               <button
                 onClick={() => setExpandedId(expandedId === collection.id ? null : collection.id)}
                 className={cn(
-                  "glass-hierarchy-child flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all",
+                  "facet-hierarchy-child flex w-full items-center justify-between rounded-lg border p-3 text-left transition-all",
                   expandedId === collection.id
                     ? "border-amber-400/30"
                     : "border-border hover:border-foreground/20"

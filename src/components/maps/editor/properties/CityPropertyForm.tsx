@@ -4,7 +4,7 @@ import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-import { MapPin, Mountain, Loader2 } from "lucide-react";
+import { MapPin, ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];

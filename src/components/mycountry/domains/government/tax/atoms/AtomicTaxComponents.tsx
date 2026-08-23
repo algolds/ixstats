@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Receipt } from "lucide-react";
+import { Page as Receipt } from "iconoir-react";
 import { UnifiedAtomicComponentSelector } from "~/components/ui/atomic/shared/UnifiedAtomicComponentSelector";
 import { TAX_THEME } from "~/components/ui/atomic/shared/themes";
 import {

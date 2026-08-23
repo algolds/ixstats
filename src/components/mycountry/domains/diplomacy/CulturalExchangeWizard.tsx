@@ -394,7 +394,7 @@ export function CulturalExchangeWizard({
                           setType(key as keyof typeof EXCHANGE_TYPES);
                         }}
                         className={cn(
-                          "glass-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
+                          "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
                           "pointer-events-auto cursor-pointer border hover:border-[rgb(202,138,4)]/40",
                           isSelected
                             ? "border-[rgb(202,138,4)] bg-[rgb(202,138,4)]/10 ring-2 ring-[rgb(202,138,4)]"
@@ -460,7 +460,7 @@ export function CulturalExchangeWizard({
                                   setType(key as keyof typeof EXCHANGE_TYPES);
                                 }}
                                 className={cn(
-                                  "glass-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
+                                  "facet-hierarchy-child rounded-lg p-2.5 transition-all duration-200",
                                   "pointer-events-auto cursor-pointer border hover:border-[rgb(202,138,4)]/40",
                                   isSelected
                                     ? "border-[rgb(202,138,4)] bg-[rgb(202,138,4)]/10 ring-2 ring-[rgb(202,138,4)]"
@@ -536,12 +536,12 @@ export function CulturalExchangeWizard({
                   {Array.from({ length: 5 }).map((_, i) => (
                     <div
                       key={i}
-                      className="glass-hierarchy-child bg-muted/50 h-16 animate-pulse rounded-lg p-3"
+                      className="facet-hierarchy-child bg-muted/50 h-16 animate-pulse rounded-lg p-3"
                     />
                   ))}
                 </div>
               ) : availableCountries.length === 0 ? (
-                <div className="glass-hierarchy-child rounded-lg p-6 text-center">
+                <div className="facet-hierarchy-child rounded-lg p-6 text-center">
                   <p className="text-muted-foreground text-sm">No countries found</p>
                 </div>
               ) : (
@@ -552,7 +552,7 @@ export function CulturalExchangeWizard({
                       key={country.id}
                       onClick={() => setParticipantCountryId(country.id)}
                       className={cn(
-                        "glass-hierarchy-child w-full rounded-lg p-3 transition-all duration-200",
+                        "facet-hierarchy-child w-full rounded-lg p-3 transition-all duration-200",
                         "cursor-pointer border text-left hover:border-[--intel-gold]/40",
                         isSelected
                           ? "border-[--intel-gold]/50 ring-2 ring-[--intel-gold]/50"
@@ -627,7 +627,7 @@ export function CulturalExchangeWizard({
                       key={objective}
                       onClick={() => toggleObjective(objective)}
                       className={cn(
-                        "glass-hierarchy-child rounded-lg p-3 transition-all duration-200",
+                        "facet-hierarchy-child rounded-lg p-3 transition-all duration-200",
                         "cursor-pointer border text-left hover:border-[--intel-gold]/40",
                         isSelected
                           ? "border-[--intel-gold]/50 ring-2 ring-[--intel-gold]/50"
@@ -721,7 +721,7 @@ export function CulturalExchangeWizard({
             </div>
 
             {/* Public/Private */}
-            <div className="glass-hierarchy-child rounded-lg p-4">
+            <div className="facet-hierarchy-child rounded-lg p-4">
               <div
                 onClick={() => setIsPublic(!isPublic)}
                 className="flex w-full cursor-pointer items-center justify-between"
@@ -761,7 +761,7 @@ export function CulturalExchangeWizard({
 
             <div className="space-y-5">
               {/* Type & Title */}
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   {React.createElement(EXCHANGE_TYPES[type].icon, {
                     className: cn("h-6 w-6 mt-1", EXCHANGE_TYPES[type].color),
@@ -775,7 +775,7 @@ export function CulturalExchangeWizard({
               </div>
 
               {/* Countries */}
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <h5 className="text-muted-foreground mb-3 text-sm font-semibold">
                   Participating Countries
                 </h5>
@@ -810,13 +810,13 @@ export function CulturalExchangeWizard({
               </div>
 
               {/* Narrative */}
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <h5 className="text-muted-foreground mb-2 text-sm font-semibold">Narrative</h5>
                 <p className="text-sm text-gray-300">{narrative}</p>
               </div>
 
               {/* Objectives */}
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Objectives</h5>
                 <div className="flex flex-wrap gap-2">
                   {objectives.map((obj) => (
@@ -831,7 +831,7 @@ export function CulturalExchangeWizard({
               </div>
 
               {/* Details */}
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <h5 className="text-muted-foreground mb-3 text-sm font-semibold">Details</h5>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

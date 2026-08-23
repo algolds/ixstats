@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { skipToken } from "@tanstack/react-query";
-import { ShieldAlert, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ShieldAlert, OpenNewWindow as ExternalLink, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, SystemRestart as Loader2 } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

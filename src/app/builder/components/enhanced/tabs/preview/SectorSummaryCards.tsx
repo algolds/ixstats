@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
-import { PieChart, BarChart3, Users } from "lucide-react";
+import { Reports as PieChart, StatsReport as BarChart3, Group as Users } from "iconoir-react";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
 import type { EconomyBuilderState } from "~/types/economy-builder";

@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Crown, ArrowRight } from "lucide-react";
+import { Crown, ArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { GlassButton } from "~/components/ui/glass-button";
+import { Button } from "~/components/ui/button";
 import { MyCountryEditModeProvider } from "~/context/MyCountryEditModeContext";
 import { GlassPanel } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
@@ -76,11 +76,16 @@ export function PremiumPreviewFrame({
               </div>
               <p className="text-muted-foreground truncate text-xs">{meta.blurb}</p>
             </div>
-            <GlassButton variant="primary" className="group shrink-0" onClick={handleUpgrade}>
+            <Button
+              variant="default"
+              size="sm"
+              className="group shrink-0 bg-amber-500 hover:bg-amber-600 text-white shadow-xs font-semibold"
+              onClick={handleUpgrade}
+            >
               <Crown className="mr-1.5 h-3.5 w-3.5" />
               Upgrade
               <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </GlassButton>
+            </Button>
           </div>
         </GlassPanel>
 

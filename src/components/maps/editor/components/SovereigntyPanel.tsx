@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, EditPencil as Edit, Trash as Trash2 } from "iconoir-react";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
 
 interface SovereigntyPanelProps {

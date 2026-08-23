@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { SystemRestart as Loader2, Sparks as Sparkles, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 const GENERATABLE_ROUTE_TYPES = [

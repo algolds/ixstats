@@ -2,34 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Settings,
-  Gamepad2,
-  Globe,
-  Map,
-  Users,
-  Database,
-  BookOpen,
-  Sparkles,
-  MessageCircle,
-  Bell,
-  Package,
-  Vote,
-  Coins,
-  Layers,
-  Cpu,
-  Bookmark,
-  FolderHeart,
-  Award,
-  Shield,
-  Terminal,
-  Trophy,
-  Search,
-  Newspaper,
-  Palette,
-  Languages,
-} from "lucide-react";
+import { Dashboard as LayoutDashboard, Settings, Gamepad as Gamepad2, Globe, Map, Group as Users, Database, OpenBook as BookOpen, Sparks as Sparkles, ChatBubble as MessageCircle, Bell, Package, CheckSquare as Vote, Coins, Component as Layers, Cpu, Bookmark, Folder as FolderHeart, Trophy as Award, Shield, Terminal, Trophy, Search, Journal as Newspaper, Palette, Translate as Languages } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 

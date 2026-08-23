@@ -3,26 +3,32 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Flame,
-  ExternalLink,
-  Rss,
-  Newspaper,
-  MessageCircle,
-  BookOpen,
-  Users,
+  FireFlame as Flame,
+  OpenNewWindow as ExternalLink,
+  RssFeed as Rss,
+  Journal as Newspaper,
+  ChatBubble as MessageCircle,
+  OpenBook as BookOpen,
+  Group as Users,
   Eye,
-  MessageSquare,
-  AlertTriangle,
+  ChatBubble as MessageSquare,
+  WarningTriangle as AlertTriangle,
   Heart,
   Activity,
-} from "lucide-react";
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
-const TRENDING_LIMIT = 5;
+const TRENDING_LIMIT = 3;
 
 type FilterTab = "all" | "forum" | "wiki";
 
@@ -210,18 +216,24 @@ export function TrendingSectionWidget() {
   }, [trendingData, activeFilter]);
 
   return (
-    <div
-      className={cn(
-        "no-wiki-tooltip relative space-y-3 overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-3 shadow-xs backdrop-blur-xl"
-      )}
+    <CutoutCard
+      className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip overflow-hidden rounded-xl")}
+      trackPointerHover={false}
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-foreground text-xs font-semibold tracking-tight">
-            Trending Topics
-          </span>
+      {/* Cutout tab header */}
+      <div className="relative bg-amber-500/10 px-4 pt-3 pb-5">
+        <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
+          <Flame className="h-4 w-4 text-amber-500" />
+          <span>Trending Topics</span>
         </div>
+        <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+        <CutoutCorner
+          className="text-card absolute right-0 -bottom-px -scale-x-100"
+          size={20}
+        />
+      </div>
 
+      <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
         {/* Category Segment Control Bar */}
         <div className="grid grid-cols-3 gap-1 rounded-xl border border-border/40 bg-accent/10 p-1 backdrop-blur-md">
           {(["all", "forum", "wiki"] as const).map((tab) => (
@@ -229,7 +241,7 @@ export function TrendingSectionWidget() {
               key={tab}
               onClick={() => setActiveFilter(tab)}
               className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150",
+                "cursor-pointer rounded-lg py-1 text-center text-[10px] font-medium capitalize transition-all duration-150 active:scale-[0.97]",
                 activeFilter === tab
                   ? "border border-border/60 bg-card font-semibold text-foreground shadow-xs"
                   : "text-muted-foreground hover:text-foreground font-medium hover:bg-accent/15"
@@ -239,154 +251,153 @@ export function TrendingSectionWidget() {
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="space-y-2 pt-1">
-        {isLoading && (
-          <div className="space-y-2 py-4">
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-            <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
-          </div>
-        )}
+        <div className="space-y-2 pt-1">
+          {isLoading && (
+            <div className="space-y-2 py-4">
+              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+              <div className="h-10 animate-pulse rounded-xl bg-muted/40" />
+            </div>
+          )}
 
-        {!isLoading && trendingItems.length === 0 && (
-          <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
-            No trending content found
-          </p>
-        )}
+          {!isLoading && trendingItems.length === 0 && (
+            <p className="text-muted-foreground py-6 text-center text-[11px] font-medium">
+              No trending content found
+            </p>
+          )}
 
-        {!isLoading &&
-          trendingItems.map((item: any) => {
-            const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
-            const SrcIcon = src.icon;
-            const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-            const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-            const wikiTitle = wikiMatch
-              ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
-              : null;
-            const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
+          {!isLoading &&
+            trendingItems.map((item: any) => {
+              const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
+              const SrcIcon = src.icon;
+              const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+              const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+              const wikiTitle = wikiMatch
+                ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
+                : null;
+              const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
-            const isWiki = !!wikiTitle;
-            const isForum = !!forumThreadId;
-            const wikiHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : undefined;
+              const isWiki = !!wikiTitle;
+              const isForum = !!forumThreadId;
 
-            let displayTitle = item.title;
-            if (displayTitle.includes("sports-bulletin:") || displayTitle.includes("<!--")) {
-              const match = displayTitle.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
-              if (match && match[1]) {
-                try {
-                  const data = JSON.parse(match[1].trim());
-                  displayTitle = `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
-                } catch (_e) {
-                  displayTitle = "⚽ Sports Bulletin";
+              let displayTitle = item.title;
+              if (displayTitle.includes("sports-bulletin:") || displayTitle.includes("<!--")) {
+                const match = displayTitle.match(/<!--\s*sports-bulletin:([\s\S]*?)-->/i);
+                if (match && match[1]) {
+                  try {
+                    const data = JSON.parse(match[1].trim());
+                    displayTitle = `${data.sportEmoji || "⚽"} ${data.league?.name || "League"} Matchday ${data.matchDay || ""}`;
+                  } catch (_e) {
+                    displayTitle = "⚽ Sports Bulletin";
+                  }
+                } else {
+                  displayTitle = item.author ? `@${item.author}` : "⚽ Sports Bulletin";
                 }
-              } else {
-                displayTitle = item.author ? `@${item.author}` : "⚽ Sports Bulletin";
               }
-            }
 
-            let displayExcerpt = (item.excerpt || "")
-              .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
-              .trim();
-            if (!displayExcerpt && item.source === "thinkpages") {
-              displayExcerpt = "Sports News & Matchday Bulletin";
-            }
+              let displayExcerpt = (item.excerpt || "")
+                .replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "")
+                .trim();
+              if (!displayExcerpt && item.source === "thinkpages") {
+                displayExcerpt = "Sports News & Matchday Bulletin";
+              }
 
-            const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
-            const isInternal = !!itemHref && itemHref.startsWith("/");
-            const W = isInternal ? Link : itemHref ? "a" : "div";
-            const linkProps = isInternal
-              ? { href: itemHref }
-              : itemHref
-                ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
-                : {};
+              const itemHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : item.url;
+              const isInternal = !!itemHref && itemHref.startsWith("/");
+              const W = isInternal ? Link : itemHref ? "a" : "div";
+              const linkProps = isInternal
+                ? { href: itemHref }
+                : itemHref
+                  ? { href: itemHref, target: "_blank", rel: "noopener noreferrer" }
+                  : {};
 
-            const el = (
-              <W
-                key={item.id}
-                {...(linkProps as any)}
-                className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-card/80 active:scale-[0.98]"
-              >
-                <div
-                  className={cn(
-                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
-                    src.bg
-                  )}
+              const el = (
+                <W
+                  key={item.id}
+                  {...(linkProps as any)}
+                  className="group/item flex cursor-pointer items-start gap-2.5 rounded-xl border border-border/40 bg-card/40 p-2.5 shadow-2xs transition-all duration-200 hover:border-amber-500/40 hover:bg-card/80 active:scale-[0.98]"
                 >
-                  <SrcIcon className={cn("h-3 w-3", src.color)} />
-                </div>
+                  <div
+                    className={cn(
+                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
+                      src.bg
+                    )}
+                  >
+                    <SrcIcon className={cn("h-3 w-3", src.color)} />
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
-                      {displayTitle}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
-                        src.color,
-                        src.bg
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-foreground truncate text-[11px] font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
+                        {displayTitle}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 border px-1.5 py-0 text-[8px] font-semibold tracking-wider uppercase",
+                          src.color,
+                          src.bg
+                        )}
+                      >
+                        {src.label}
+                      </Badge>
+                    </div>
+
+                    {displayExcerpt && (
+                      <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
+                        {displayExcerpt}
+                      </p>
+                    )}
+
+                    <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
+                      {item.engagement?.likes > 0 && (
+                        <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
+                          <Heart className="h-2.5 w-2.5 fill-current" />
+                          {item.engagement.likes}
+                        </span>
                       )}
-                    >
-                      {src.label}
-                    </Badge>
+                      {item.engagement?.replies > 0 && (
+                        <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          {item.engagement.replies}
+                        </span>
+                      )}
+                      {item.engagement?.views > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <Eye className="h-2.5 w-2.5" />
+                          {item.engagement.views}
+                        </span>
+                      )}
+                    </div>
                   </div>
-
-                  {displayExcerpt && (
-                    <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-[10px] leading-snug font-normal">
-                      {displayExcerpt}
-                    </p>
-                  )}
-
-                  <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-[9px] font-medium tabular-nums">
-                    {item.engagement?.likes > 0 && (
-                      <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400">
-                        <Heart className="h-2.5 w-2.5 fill-current" />
-                        {item.engagement.likes}
-                      </span>
-                    )}
-                    {item.engagement?.replies > 0 && (
-                      <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
-                        <MessageSquare className="h-2.5 w-2.5" />
-                        {item.engagement.replies}
-                      </span>
-                    )}
-                    {item.engagement?.views > 0 && (
-                      <span className="flex items-center gap-0.5">
-                        <Eye className="h-2.5 w-2.5" />
-                        {item.engagement.views}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </W>
-            );
-
-            if (isWiki)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
+                </W>
               );
-            if (isForum)
-              return (
-                <Tooltip
-                  key={item.id}
-                  content={<ForumPreviewContent threadId={forumThreadId!} />}
-                  containerClassName="block"
-                >
-                  {el}
-                </Tooltip>
-              );
-            return el;
-          })}
-      </div>
-    </div>
+
+              if (isWiki)
+                return (
+                  <Tooltip
+                    key={item.id}
+                    content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
+                    containerClassName="block"
+                  >
+                    {el}
+                  </Tooltip>
+                );
+              if (isForum)
+                return (
+                  <Tooltip
+                    key={item.id}
+                    content={<ForumPreviewContent threadId={forumThreadId!} />}
+                    containerClassName="block"
+                  >
+                    {el}
+                  </Tooltip>
+                );
+              return el;
+            })}
+        </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Users, Shield, Activity, Heart, Eye, AlertTriangle, HelpCircle, Info } from "lucide-react";
+import { Group as Users, Shield, Activity, Heart, Eye, WarningTriangle as AlertTriangle, HelpCircle, InfoCircle as Info } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import {

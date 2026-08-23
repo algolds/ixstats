@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Settings, Upload, Loader2, Trash2, ImageIcon, Download, RefreshCw } from "lucide-react";
+import { Settings, Upload, SystemRestart as Loader2, Trash as Trash2, MediaImage as ImageIcon, Download, Refresh as RefreshCw } from "iconoir-react";
 
 const MediaSearchModal = dynamic(
   () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),

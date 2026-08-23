@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, ChevronRight, Loader2, ExternalLink } from "lucide-react";
+import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {

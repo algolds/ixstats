@@ -7,7 +7,7 @@
 
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
-import { Calendar, AlertCircle, BarChart3 } from "lucide-react";
+import { Calendar, WarningCircle as AlertCircle, StatsReport as BarChart3 } from "iconoir-react";
 import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 import type { TimeRange } from "~/hooks/useHistoricalEconomicData";
 

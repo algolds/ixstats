@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/utils";
-import { TrendingUp, Users as UsersIcon } from "lucide-react";
+import { StatUp as TrendingUp, Group as UsersIcon } from "iconoir-react";
 import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 import { withBasePath } from "~/lib/base-path";
@@ -149,7 +149,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
       >
         <div
           className={cn(
-            "glass-floating glass-refraction bg-background/60 relative overflow-hidden rounded-2xl border border-white/15 shadow-lg transition-all duration-300",
+            "facet-floating facet-refraction bg-background/60 relative overflow-hidden rounded-2xl border border-white/15 shadow-lg transition-all duration-300",
             isExpanded
               ? "flex h-auto flex-col border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
               : isHovered
@@ -230,7 +230,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       className="flex items-center justify-between text-sm text-white/90"
                     >
                       <div className="flex items-center gap-2">
-                        <UsersIcon size={16} className="text-blue-400" />
+                        <UsersIcon className="h-4 w-4 text-blue-400" />
                         <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                           Population
                         </span>
@@ -286,7 +286,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                         className="flex items-center justify-between text-sm text-white/90"
                       >
                         <div className="flex items-center gap-2">
-                          <TrendingUp size={16} className="text-emerald-400" />
+                          <TrendingUp className="h-4 w-4 text-emerald-400" />
                           <span className="font-medium antialiased [text-shadow:0_0_8px_rgba(0,0,0,0.8)]">
                             Growth Rate
                           </span>

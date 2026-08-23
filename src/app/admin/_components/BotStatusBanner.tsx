@@ -1,7 +1,7 @@
 // src/app/admin/_components/BotStatusBanner.tsx
 "use client";
 
-import { Bot, ArrowLeftRight, RefreshCw } from "lucide-react";
+import { Cpu as Bot, ArrowSeparate as ArrowLeftRight, Refresh as RefreshCw } from "iconoir-react";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 interface BotStatusBannerProps {

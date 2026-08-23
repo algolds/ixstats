@@ -157,7 +157,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
       <div
         className={cn(
           "grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-          isRaw ? "" : "glass-surface overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm"
+          isRaw ? "" : "facet-surface overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm"
         )}
       >
         {visibleCountries.map((country, index) => {
@@ -194,7 +194,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
         <div className="mt-12">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="glass-floating glass-refraction h-48 animate-pulse">
+              <div key={i} className="facet-floating facet-refraction h-48 animate-pulse">
                 <div className="space-y-4 p-6">
                   <div className="h-6 rounded bg-white/10"></div>
                   <div className="h-4 w-2/3 rounded bg-white/5"></div>
@@ -215,7 +215,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
         visibleCount >= countries.length &&
         countries.length > 0 && (
           <div className="mt-12 text-center">
-            <div className="glass-floating glass-refraction inline-block px-6 py-4">
+            <div className="facet-floating facet-refraction inline-block px-6 py-4">
               <p className="text-muted-foreground">
                 You've viewed all {countries.length} countries
               </p>
@@ -225,7 +225,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
 
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction mx-auto max-w-md p-12">
+          <div className="facet-floating facet-refraction mx-auto max-w-md p-12">
             <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
             <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
             <p className="text-muted-foreground mb-4">

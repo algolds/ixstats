@@ -6,21 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
 import { Label } from "~/components/ui/label";
-import {
-  Factory,
-  Users,
-  Target,
-  AlertTriangle,
-  CheckCircle,
-  Zap,
-  Globe,
-  Eye,
-  Loader2,
-  Shield,
-  HelpCircle,
-  Landmark,
-  Receipt,
-} from "lucide-react";
+import { Industry as Factory, Group as Users, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, Flash as Zap, Globe, Eye, SystemRestart as Loader2, Shield, HelpCircle, Bank as Landmark, Page as Receipt } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { isEqual } from "~/lib/utils";

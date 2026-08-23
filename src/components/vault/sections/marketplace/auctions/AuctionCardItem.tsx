@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
@@ -43,7 +43,7 @@ export function AuctionCardItem({
   const theme = getRarityTheme(rarity);
 
   return (
-    <div className="glass-surface border-border/50 bg-muted/30 relative flex gap-3 overflow-hidden rounded-xl border p-3 backdrop-blur-md dark:bg-black/20">
+    <div className="facet-surface border-border/50 bg-muted/30 relative flex gap-3 overflow-hidden rounded-xl border p-3 backdrop-blur-md dark:bg-black/20">
       <TextureOverlay texture="dots" opacity={0.015} />
 
       {/* Artwork thumbnail — click to view details */}

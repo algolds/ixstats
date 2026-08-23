@@ -17,7 +17,7 @@ import {
 } from "react";
 import { useControllableState } from "~/hooks/useControllableState";
 import { cva } from "class-variance-authority";
-import { BarChart3Icon, CheckIcon, Vote } from "lucide-react";
+import { StatsReport as BarChart3Icon, Check as CheckIcon, CheckSquare as Vote } from "iconoir-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "~/lib/utils";

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useMemo } from "react";
 import { motion, useMotionValue, type PanInfo } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "iconoir-react";
 
 interface NumberPickerProps {
   value: number;

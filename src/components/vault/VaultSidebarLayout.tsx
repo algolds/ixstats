@@ -79,7 +79,7 @@ export function VaultSidebarLayout({
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
             <div className="mb-4 lg:hidden">
-              <div className="glass-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
+              <div className="facet-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
                 <div className="flex min-w-max gap-1.5">
                   {mobileNavItems.map((item) => {
                     const isActive =

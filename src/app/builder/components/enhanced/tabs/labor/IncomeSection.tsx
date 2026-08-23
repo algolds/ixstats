@@ -2,7 +2,7 @@
 
 import React from "react";
 import { EnhancedNumberInput, SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { DollarSign, Users, Shield } from "lucide-react";
+import { Dollar as DollarSign, Group as Users, Shield } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
 

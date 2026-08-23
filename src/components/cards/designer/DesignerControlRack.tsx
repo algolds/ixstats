@@ -9,22 +9,7 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import {
-  Library,
-  Gem,
-  BookOpen,
-  Search,
-  Coins,
-  Save,
-  Send,
-  ChevronDown,
-  Trash2,
-  FolderOpen,
-  Image as ImageIcon,
-  Palette,
-  Settings,
-  Pencil,
-} from "lucide-react";
+import { BookStack as Library, Crown as Gem, OpenBook as BookOpen, Search, Coins, FloppyDisk as Save, Send, NavArrowDown as ChevronDown, Trash as Trash2, Folder as FolderOpen, MediaImage as ImageIcon, Palette, Settings, EditPencil as Pencil } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";

@@ -1,16 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  BarChart3,
-  BookOpen,
-  Compass,
-  Crown,
-  Database,
-  Globe,
-  MessageSquare,
-  Trophy,
-} from "lucide-react";
+import { StatsReport as BarChart3, OpenBook as BookOpen, Compass, Crown, Database, Globe, ChatBubble as MessageSquare, Trophy } from "iconoir-react";
 import { FaWikipediaW } from "react-icons/fa";
 import { GiCardRandom } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";

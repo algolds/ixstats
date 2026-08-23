@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sword, Wrench, ClipboardList } from "lucide-react";
+import { Tournament as Sword, Wrench, TaskList as ClipboardList } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function DefenseUnitsArticle() {

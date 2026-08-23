@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Search, X } from "lucide-react";
+import { Search, Xmark as X } from "iconoir-react";
 import { TemplateSelector } from "./TemplateSelector";
 import type { GovernmentTemplate } from "./TemplateSelector";
 import { cn } from "~/lib/utils";

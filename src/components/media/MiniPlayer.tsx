@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useIxMedia } from "./MediaContext";
 import { FacetContainer } from "~/components/ui/facet-container";
-import { Play, Pause, SkipForward, Maximize2 } from "lucide-react";
+import { Play, Pause, FastArrowRight as SkipForward, Expand as Maximize2 } from "iconoir-react";
 import { FullPlayer } from "./FullPlayer";
 
 export function MiniPlayer() {

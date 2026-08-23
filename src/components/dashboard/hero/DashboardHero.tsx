@@ -3,8 +3,8 @@
 import { useState, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Crown, Calendar, Globe, Swords, ChevronUp, ChevronRight } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Crown, Calendar, Globe, Tournament as Swords, NavArrowUp as ChevronUp, NavArrowRight as ChevronRight } from "iconoir-react";
+import * as IconoirIcons from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -104,7 +104,7 @@ export function DashboardHeroComponent({
   const { user, isSignedIn } = useUser();
   const { isPremium } = usePremium();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as Record<string, any>)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as Record<string, any>)[chatBadge.icon] || IconoirIcons.Crown;
 
   const [activeModal, setActiveModal] = useState<
     "gdp" | "population" | "government" | "vitality" | null

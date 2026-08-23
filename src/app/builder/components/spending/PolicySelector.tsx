@@ -7,7 +7,7 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { CheckCircle, TrendingUp, Zap, Info } from "lucide-react";
+import { CheckCircle, StatUp as TrendingUp, Flash as Zap, InfoCircle as Info } from "iconoir-react";
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import {
   getApplicablePolicies,

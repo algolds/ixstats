@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, Disc, MessageSquare, BookOpen, Link } from "lucide-react";
+import { Eye, EyeClosed as EyeOff, CompactDisc as Disc, ChatBubble as MessageSquare, OpenBook as BookOpen, Link } from "iconoir-react";
 import { UserButton } from "~/context/auth-context";
 import type { UserResource } from "@clerk/types";
 import { api } from "~/trpc/react";
@@ -63,7 +63,7 @@ export function AccountInformationCard({
   };
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-5 dark:bg-slate-900/40">
         <TextureOverlay texture="dots" opacity={0.035} />
 
@@ -80,7 +80,7 @@ export function AccountInformationCard({
             <button
               onClick={handleToggle}
               disabled={animState === "blurring" || animState === "focusing"}
-              className="glass-interactive flex items-center gap-1.5 rounded-lg bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="facet-interactive flex items-center gap-1.5 rounded-lg bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               {showAccountInfo ? (
                 <>
@@ -195,7 +195,7 @@ export function AccountInformationCard({
             {/* Discord Status */}
             <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white/50 p-3 dark:border-slate-800 dark:bg-slate-900/30">
               <div className="flex min-w-0 items-center gap-2">
-                <Disc className="h-4 w-4 shrink-0 text-[#5865F2]" />
+                <Disc className="h-4 w-4 shrink-0 text-discord" />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Discord</p>
                   {ixnayStatus?.discord.linked && ixnayStatus.discord.lastSync && (

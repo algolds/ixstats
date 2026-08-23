@@ -4,8 +4,8 @@
 
 /* 
    THINKPAGES Z-INDEX HIERARCHY (Low to High):
-   z-1    → glass-hierarchy-parent (base cards)
-   z-2    → glass-hierarchy-child (account manager, nested cards)
+   z-1    → facet-hierarchy-parent (base cards)
+   z-2    → facet-hierarchy-child (account manager, nested cards)
    z-3    → glass-hierarchy-interactive (buttons, hover states)
    z-40   → tooltips, hover previews
    z-50   → post options menu
@@ -31,11 +31,11 @@
 }
 
 /* Glass hierarchy base z-indices (much lower than dropdowns) */
-.glass-hierarchy-parent {
+.facet-hierarchy-parent {
   z-index: 1;
 }
 
-.glass-hierarchy-child {
+.facet-hierarchy-child {
   z-index: 2;
 }
 

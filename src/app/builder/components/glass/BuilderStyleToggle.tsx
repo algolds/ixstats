@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Sparkles, Grid3X3, Zap, Settings } from "lucide-react";
+import { Sparks as Sparkles, ViewGrid as Grid3X3, Flash as Zap, Settings } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type BuilderStyle = "modern" | "classic";

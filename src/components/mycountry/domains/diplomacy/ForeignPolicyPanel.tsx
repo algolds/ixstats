@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Scale, Ban, Plus, ArrowRightLeft } from "lucide-react";
+import { ScaleFrameEnlarge as Scale, Prohibition as Ban, Plus, ArrowSeparate as ArrowRightLeft } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { ActivePoliciesList } from "./foreign-policy/ActivePoliciesList";
@@ -47,21 +47,21 @@ export function ForeignPolicyPanel({ countryId, focusId }: ForeignPolicyPanelPro
     <div className="space-y-4">
       {/* Stats Strip */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="glass-hierarchy-child rounded-lg p-2.5">
+        <div className="facet-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
             <Ban className="h-3.5 w-3.5 shrink-0 text-red-600" />
             <span className="text-muted-foreground text-xs font-medium">Active Policies</span>
           </div>
           <div className="mt-0.5 text-lg font-bold">{stats.active}</div>
         </div>
-        <div className="glass-hierarchy-child rounded-lg p-2.5">
+        <div className="facet-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
             <Scale className="h-3.5 w-3.5 shrink-0 text-amber-600" />
             <span className="text-muted-foreground text-xs font-medium">Proposed</span>
           </div>
           <div className="mt-0.5 text-lg font-bold">{stats.proposed}</div>
         </div>
-        <div className="glass-hierarchy-child rounded-lg p-2.5">
+        <div className="facet-hierarchy-child rounded-lg p-2.5">
           <div className="flex items-center gap-1.5">
             <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-cyan-600" />
             <span className="text-muted-foreground text-xs font-medium">Trade Partners</span>

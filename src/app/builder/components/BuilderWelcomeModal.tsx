@@ -9,19 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import {
-  X,
-  Globe,
-  Fingerprint,
-  Shield,
-  Coins,
-  Sparkles,
-  Info,
-  Zap,
-  BookOpen,
-  Save,
-  Smile,
-} from "lucide-react";
+import { Xmark as X, Globe, Fingerprint, Shield, Coins, Sparks as Sparkles, InfoCircle as Info, Flash as Zap, OpenBook as BookOpen, FloppyDisk as Save, Emoji as Smile } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 

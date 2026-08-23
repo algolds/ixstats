@@ -11,7 +11,7 @@ import React from "react";
 import { ComponentCard } from "./ComponentCard";
 import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Info } from "lucide-react";
+import { InfoCircle as Info } from "iconoir-react";
 
 export interface ComponentLibraryProps {
   components: EconomicComponentType[];

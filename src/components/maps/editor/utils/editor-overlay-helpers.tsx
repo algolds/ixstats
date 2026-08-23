@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Component, type ReactNode } from "react";
-import { Map, AlertCircle } from "lucide-react";
+import { Map, WarningCircle as AlertCircle } from "iconoir-react";
 
 // ── Editor Loading Screen ────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
   }, []);
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#0a1628]">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-map-ocean">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
 
       <div className="relative z-10 flex flex-col items-center gap-6 text-center">

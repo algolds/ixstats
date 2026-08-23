@@ -2,16 +2,16 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
-  Percent,
-  Landmark,
-  TrendingUp,
-  TrendingDown,
+  Percentage as Percent,
+  Bank as Landmark,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
   ShieldCheck,
-  BarChart3,
+  StatsReport as BarChart3,
   Activity,
   Lock,
-  Unlock,
-} from "lucide-react";
+  LockSlash as Unlock,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Slider } from "~/components/ui/slider";
 import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";

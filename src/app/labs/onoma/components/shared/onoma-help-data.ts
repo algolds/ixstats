@@ -2,20 +2,7 @@
 // Static documentation and guide metadata for the Onoma Help & Brand Walkthrough Modal
 
 import React from "react";
-import {
-  Compass,
-  Type,
-  Globe,
-  Layers,
-  Search,
-  Volume2,
-  GitBranch,
-  Split,
-  Binary,
-  Bookmark,
-  Library,
-  Activity,
-} from "lucide-react";
+import { Compass, Type, Globe, Component as Layers, Search, SoundHigh as Volume2, GitBranch, GitBranch as Split, Code as Binary, Bookmark, BookStack as Library, Activity } from "iconoir-react";
 
 export interface WalkthroughStep {
   title: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Dumbbell, Users } from "lucide-react";
+import { SystemRestart as Loader2, Gym as Dumbbell, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 

@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-import { Globe } from "lucide-react";
+import { Globe } from "iconoir-react";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 /**

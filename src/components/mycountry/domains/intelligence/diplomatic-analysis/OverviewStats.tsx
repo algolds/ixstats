@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
-import { Globe, TrendingUp, Network, Calendar } from "lucide-react";
+import { Globe, StatUp as TrendingUp, Network, Calendar } from "iconoir-react";
 import type { OverviewStatsData } from "~/hooks/useDiplomaticAnalytics";
 
 interface OverviewStatsProps {
@@ -21,7 +21,7 @@ interface OverviewStatsProps {
 export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -33,7 +33,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -45,7 +45,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -57,7 +57,7 @@ export const OverviewStats = React.memo<OverviewStatsProps>(({ stats }) => {
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <div>

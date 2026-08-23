@@ -1,4 +1,4 @@
-import { LayoutDashboard, Activity, BarChart3, Target } from "lucide-react";
+import { Dashboard as LayoutDashboard, Activity, StatsReport as BarChart3, Archery as Target } from "iconoir-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 

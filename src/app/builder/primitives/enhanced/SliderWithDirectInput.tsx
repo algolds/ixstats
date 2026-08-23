@@ -7,7 +7,7 @@ import { cn, debounce } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
-import { Edit3, Sliders } from "lucide-react";
+import { EditPencil as Edit3, ControlSlider as Sliders } from "iconoir-react";
 
 interface SliderWithDirectInputProps extends EnhancedInputProps {
   orientation?: "horizontal" | "vertical";

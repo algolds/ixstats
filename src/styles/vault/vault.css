@@ -2,19 +2,6 @@
    VAULT THEME - Complete Color System v2.0
    ========================================== */
 :root {
-  /* WikiOS color tokens (global so nav bar can reference them) */
-  --wikios-bg: #0f1114;
-  --wikios-surface: #16181d;
-  --wikios-border: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="light"] {
-  --wikios-bg: #fafafa;
-  --wikios-surface: #ffffff;
-  --wikios-border: rgba(0, 0, 0, 0.1);
-}
-
-:root {
   /* Vault Primary Colors */
   --vault-gold-start: #ffd700;
   --vault-gold-end: #ff8c00;
@@ -52,12 +39,12 @@
   --vault-holo-5: #4ecdc4;
 
   /* Card Rarity Colors */
-  --vault-rarity-common: #60a5fa; /* blue-400 */
-  --vault-rarity-uncommon: #4ade80; /* green-400 */
-  --vault-rarity-rare: #a855f7; /* purple-400 */
-  --vault-rarity-ultra-rare: #c084fc; /* purple-500 */
-  --vault-rarity-epic: #fbbf24; /* gold-400 */
-  --vault-rarity-legendary: #ffd700; /* gold with animated gradient */
+  --vault-rarity-common: var(--color-rarity-common);
+  --vault-rarity-uncommon: var(--color-rarity-uncommon);
+  --vault-rarity-rare: var(--color-rarity-rare);
+  --vault-rarity-ultra-rare: var(--color-rarity-ultra-rare);
+  --vault-rarity-epic: var(--color-rarity-epic);
+  --vault-rarity-legendary: var(--color-rarity-legendary);
 
   /* Vault Gradients */
   --vault-gradient-primary: linear-gradient(

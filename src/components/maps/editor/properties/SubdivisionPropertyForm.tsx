@@ -3,7 +3,7 @@
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
-import { Ruler } from "lucide-react";
+import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";

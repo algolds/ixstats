@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { BarChart3, Calendar, FileDown } from "lucide-react";
+import { StatsReport as BarChart3, Calendar, Download as FileDown } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
   Select,

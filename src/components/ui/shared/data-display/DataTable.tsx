@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ArrowSeparateVertical as ArrowUpDown, ArrowUp, ArrowDown, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 
 export interface Column<T> {
   key: string;
@@ -119,7 +119,7 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   return (
-    <Card className={cn("glass-hierarchy-child", className)}>
+    <Card className={cn("facet-hierarchy-child", className)}>
       {(title || description || searchable) && (
         <CardHeader>
           <div className="flex items-center justify-between">

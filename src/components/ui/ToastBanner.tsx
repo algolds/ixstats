@@ -13,19 +13,19 @@
 import React, { useEffect, useState } from "react";
 import {
   CheckCircle,
-  AlertCircle,
-  AlertTriangle,
-  Info,
-  X,
-  TrendingUp,
+  WarningCircle as AlertCircle,
+  WarningTriangle as AlertTriangle,
+  InfoCircle as Info,
+  Xmark as X,
+  StatUp as TrendingUp,
   Globe,
-  Users,
-  Building2,
+  Group as Users,
+  City as Building2,
   Shield,
   Trophy,
-  Zap,
-  Swords,
-} from "lucide-react";
+  Flash as Zap,
+  Tournament as Swords,
+} from "iconoir-react";
 import type { ToastQueueItem, ToastType } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
 

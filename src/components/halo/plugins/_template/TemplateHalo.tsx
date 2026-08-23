@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo } from "react";
-import { Sparkle } from "lucide-react";
+import { Sparks as Sparkle } from "iconoir-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { PreText } from "~/components/ui/pretext";
 import { TemplateView } from "./views";

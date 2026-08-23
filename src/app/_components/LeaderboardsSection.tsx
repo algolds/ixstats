@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Trophy, TrendingUp, DollarSign, Users, Crown, Medal, Award } from "lucide-react";
+import { Trophy, StatUp as TrendingUp, Dollar as DollarSign, Group as Users, Crown, Medal, Trophy as Award } from "iconoir-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";

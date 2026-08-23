@@ -368,7 +368,7 @@ export default function NPCPersonalitiesPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="glass-card-parent rounded-xl border-2 border-purple-500/20 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-500/10 p-6">
+        <div className="facet-card-parent rounded-xl border-2 border-purple-500/20 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-500/10 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-3">
@@ -396,7 +396,7 @@ export default function NPCPersonalitiesPage() {
         {/* Statistics Cards */}
         {stats && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Card className="glass-card-child border-purple-500/20">
+            <Card className="facet-card-child border-purple-500/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground text-2xl font-bold">
                   {stats.summary.totalPersonalities}
@@ -405,7 +405,7 @@ export default function NPCPersonalitiesPage() {
               </CardHeader>
             </Card>
 
-            <Card className="glass-card-child border-green-500/20">
+            <Card className="facet-card-child border-green-500/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-2xl font-bold text-green-400">
                   {stats.summary.activePersonalities}
@@ -414,7 +414,7 @@ export default function NPCPersonalitiesPage() {
               </CardHeader>
             </Card>
 
-            <Card className="glass-card-child border-blue-500/20">
+            <Card className="facet-card-child border-blue-500/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-2xl font-bold text-blue-400">
                   {stats.summary.totalAssignments}
@@ -423,7 +423,7 @@ export default function NPCPersonalitiesPage() {
               </CardHeader>
             </Card>
 
-            <Card className="glass-card-child border-purple-500/20">
+            <Card className="facet-card-child border-purple-500/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-2xl font-bold text-purple-400">
                   {stats.summary.averageUsage}
@@ -435,7 +435,7 @@ export default function NPCPersonalitiesPage() {
         )}
 
         {/* Filters */}
-        <Card className="glass-card-child border-purple-500/20">
+        <Card className="facet-card-child border-purple-500/20">
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-center gap-4">
               {/* Search */}
@@ -493,7 +493,7 @@ export default function NPCPersonalitiesPage() {
             {filteredPersonalities.map((personality) => (
               <Card
                 key={personality.id}
-                className="glass-card-interactive border-purple-500/20 transition-all hover:border-purple-500/40"
+                className="facet-card-interactive border-purple-500/20 transition-all hover:border-purple-500/40"
               >
                 <CardHeader>
                   <div className="mb-2 flex items-start justify-between">
@@ -657,7 +657,7 @@ export default function NPCPersonalitiesPage() {
 
         {/* Empty State */}
         {!isLoading && filteredPersonalities.length === 0 && (
-          <Card className="glass-card-child border-purple-500/20">
+          <Card className="facet-card-child border-purple-500/20">
             <CardContent className="py-12 text-center">
               <RiUser3Line className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
               <h3 className="text-foreground mb-2 text-xl font-bold">No Personalities Found</h3>

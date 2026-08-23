@@ -5,7 +5,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
 
 // Standard synchronous core sections for instant transitions
@@ -15,7 +15,7 @@ import CategoryDomainSection from "./sections/CategoryDomainSection";
 // Suspense loading fallback
 const SectionLoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
-    <Loader2 className="h-6 w-6 animate-spin text-[#0091ff]" />
+    <Loader2 className="h-6 w-6 animate-spin text-onoma-primary" />
   </div>
 );
 

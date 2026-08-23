@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Activity } from "lucide-react";
+import { Activity } from "iconoir-react";
 import {
   AreaChart,
   Area,
@@ -30,7 +30,7 @@ interface NetworkGrowthChartProps {
 
 export const NetworkGrowthChart = React.memo<NetworkGrowthChartProps>(({ data }) => {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-green-600" />

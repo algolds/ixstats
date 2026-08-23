@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Command,
-  Search,
-  CheckCircle2,
-  Zap,
-  AlertCircle,
-  Check,
-  Building2,
-  Layers,
-  X,
-  Sparkles,
-} from "lucide-react";
+import { KeyCommand as Command, Search, CheckCircle as CheckCircle2, Flash as Zap, WarningCircle as AlertCircle, Check, City as Building2, Component as Layers, Xmark as X, Sparks as Sparkles } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { cn } from "~/lib/utils";

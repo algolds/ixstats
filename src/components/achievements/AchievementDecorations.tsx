@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lock } from "lucide-react";
+import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";

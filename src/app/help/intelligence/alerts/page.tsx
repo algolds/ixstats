@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, Inbox, ShieldAlert, LayoutDashboard, Compass } from "lucide-react";
+import { BellNotification as BellRing, MailIn as Inbox, ShieldAlert, Dashboard as LayoutDashboard, Compass } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

@@ -6,19 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
-import {
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Target,
-  BarChart3,
-  DollarSign,
-  Activity,
-  Zap,
-  Info,
-  Lightbulb,
-} from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, Archery as Target, StatsReport as BarChart3, Dollar as DollarSign, Activity, Flash as Zap, InfoCircle as Info, LightBulb } from "iconoir-react";
 import type { ComponentType } from "~/types/government";
 import {
   calculateAtomicEconomicEffectiveness,
@@ -257,7 +245,7 @@ export function AtomicEconomicEffectivenessPanel({
                     key={index}
                     className="flex items-start gap-2 rounded bg-green-50 p-2 text-sm text-green-700"
                   >
-                    <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                    <LightBulb className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
                     <span>{opportunity}</span>
                   </li>
                 ))}

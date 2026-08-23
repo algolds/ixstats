@@ -1,7 +1,7 @@
 // Configuration file for Atomic Builder steps and constants
 // Extracted from AtomicBuilderPage.tsx for modularity
 
-import { Crown, Flag, Building2, TrendingUp, CheckCircle, type LucideIcon } from "lucide-react";
+import { Crown, WhiteFlag as Flag, City as Building2, StatUp as TrendingUp, CheckCircle } from "iconoir-react";
 
 export type BuilderStep = "foundation" | "core" | "government" | "economics" | "preview";
 
@@ -69,7 +69,7 @@ export const BUILDER_GOLD_HOVER = "hover:from-amber-600 hover:to-yellow-700";
 export interface StepConfig {
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bgGradient: string;
   borderColor: string;

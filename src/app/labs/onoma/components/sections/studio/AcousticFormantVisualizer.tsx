@@ -4,14 +4,7 @@
 // Onoma Lab — Real-Time IPA Formant & Acoustic Spectrogram Visualizer
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import {
-  Activity,
-  AudioWaveform,
-  Sliders,
-  Info,
-  Radio,
-  Eye,
-} from "lucide-react";
+import { Activity, SoundHigh as AudioWaveform, ControlSlider as Sliders, InfoCircle as Info, AntennaSignal as Radio, Eye } from "iconoir-react";
 import {
   IPA_VOWEL_FORMANTS,
   CARDINAL_VOWEL_GRID,
@@ -214,7 +207,7 @@ export function AcousticFormantVisualizer({
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
-            <Radio className="h-4 w-4 text-[#0091ff]" />
+            <Radio className="h-4 w-4 text-onoma-primary" />
             <h4 className="text-foreground text-sm font-bold tracking-tight">
               Acoustic Phonetics & Formant Space
             </h4>
@@ -429,7 +422,7 @@ export function AcousticFormantVisualizer({
               <div className="text-muted-foreground text-[10px] uppercase font-bold">
                 Acoustic Center
               </div>
-              <div className="text-[#0091ff] font-mono text-xs font-bold">
+              <div className="text-onoma-primary font-mono text-xs font-bold">
                 {acousticCenter ? `${acousticCenter.f1}Hz / ${acousticCenter.f2}Hz` : "—"}
               </div>
             </div>

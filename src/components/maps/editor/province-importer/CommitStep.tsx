@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { AlertTriangle, Replace } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Refresh as Replace } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface CommitStepProps {

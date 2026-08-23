@@ -4,7 +4,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { Target, Crown, ChevronDown, ChevronRight } from "lucide-react";
+import { Archery as Target, Crown, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { motion } from "motion/react";
 import type { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";

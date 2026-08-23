@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 
 export interface ThreadRepliesProps {
   post: any;
@@ -46,17 +46,24 @@ export function ThreadReplies({
   onAccountClick,
   ThinkpagesPostComponent,
 }: ThreadRepliesProps) {
-  if (!showThread || !post.replyCount || post.replyCount <= 0) return null;
+  const replyCount = post.replyCount ?? 0;
+  const loadedReplies = threadQuery.data?.replies ?? [];
+  const effectiveCount = Math.max(replyCount, loadedReplies.length);
+  const hasReplies = effectiveCount > 0;
+
+  if (!showThread || (!hasReplies && !showReplies)) return null;
 
   return (
     <>
-      <button
-        onClick={() => setShowReplies(!showReplies)}
-        className="mt-2 text-sm text-blue-500 hover:underline"
-      >
-        {showReplies ? "Hide" : "Show"} {post.replyCount}{" "}
-        {post.replyCount === 1 ? "reply" : "replies"}
-      </button>
+      {hasReplies && (
+        <button
+          onClick={() => setShowReplies(!showReplies)}
+          className="mt-2 text-sm text-blue-500 hover:underline"
+        >
+          {showReplies ? "Hide" : "Show"} {effectiveCount}{" "}
+          {effectiveCount === 1 ? "reply" : "replies"}
+        </button>
+      )}
 
       {showReplies && (
         <div className="relative mt-3 ml-5 space-y-3 border-l-2 border-white/10 pl-4 dark:border-white/10">

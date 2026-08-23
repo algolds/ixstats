@@ -93,7 +93,7 @@ export default function DiplomaticScenariosPage() {
             <p className="text-muted-foreground">Loading scenarios...</p>
           </div>
         ) : admin.filteredScenarios.length === 0 ? (
-          <Card className="glass-card-parent p-12 text-center">
+          <Card className="facet-card-parent p-12 text-center">
             <p className="text-[--intel-silver]">No scenarios found matching your filters</p>
           </Card>
         ) : (

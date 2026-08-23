@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { RefreshCw, BarChart3, TrendingUp, Globe, Info, X } from "lucide-react";
+import { Refresh as RefreshCw, StatsReport as BarChart3, StatUp as TrendingUp, Globe, InfoCircle as Info, Xmark as X } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
 import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";
@@ -26,7 +25,7 @@ import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";
 export interface MetricModalTab {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 export interface BaseMetricDetailsModalProps {
@@ -43,7 +42,7 @@ export interface BaseMetricDetailsModalProps {
   /** Modal description */
   description?: string;
   /** Title icon */
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   /** Icon color class */
   iconColor?: string;
   /** Tab configuration */

@@ -16,22 +16,7 @@
 
 import { useCallback, useMemo, useState, useRef } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import {
-  MousePointer2,
-  MapPin,
-  Hexagon,
-  Landmark,
-  FileUp,
-  Route,
-  BookMarked,
-  Type,
-  Hand,
-  LassoSelect,
-  Ruler,
-  PaintBucket,
-  Pipette,
-  Wand2,
-} from "lucide-react";
+import { CursorPointer as MousePointer2, MapPin, Hexagon, Bank as Landmark, Upload as FileUp, Navigator as Route, Bookmark as BookMarked, Type, HandBrake as Hand, SelectWindow as LassoSelect, Ruler, ColorPicker as PaintBucket, ColorPicker as Pipette, MagicWand as Wand2 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
 

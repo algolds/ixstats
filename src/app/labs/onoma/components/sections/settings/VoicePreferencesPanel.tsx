@@ -4,16 +4,7 @@
 // Voice Preferences, Species Presets, Inflection Tuning, and Culture Voice Mappings
 
 import React, { useState } from "react";
-import {
-  Volume2,
-  RotateCcw,
-  Sliders,
-  Loader2,
-  Zap,
-  Activity,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { SoundHigh as Volume2, Undo as RotateCcw, ControlSlider as Sliders, SystemRestart as Loader2, Flash as Zap, Activity, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import {
   Select,
   SelectContent,
@@ -233,12 +224,12 @@ export function VoicePreferencesPanel({
             onClick={handleWakeServer}
             disabled={isWaking}
             title="Send a wake ping to the Hugging Face space or Kokoro server container"
-            className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
+            className="border-border/50 bg-secondary/30 text-foreground/80 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-medium transition-all active:scale-95 disabled:opacity-50"
           >
             {isWaking ? (
-              <Loader2 className="h-2.5 w-2.5 animate-spin text-[#0091ff]" />
+              <Loader2 className="h-2.5 w-2.5 animate-spin text-onoma-primary" />
             ) : (
-              <Zap className="h-2.5 w-2.5 text-[#0091ff]" />
+              <Zap className="h-2.5 w-2.5 text-onoma-primary" />
             )}
             <span>{isWaking ? "Waking..." : "Ping / Wake"}</span>
           </button>
@@ -246,7 +237,7 @@ export function VoicePreferencesPanel({
       </div>
       {wakeStatusMsg && (
         <p className="text-muted-foreground flex items-center gap-1 font-mono text-[9px]">
-          <Activity className="h-2.5 w-2.5 text-[#0091ff]" />
+          <Activity className="h-2.5 w-2.5 text-onoma-primary" />
           <span>{wakeStatusMsg}</span>
         </p>
       )}
@@ -272,7 +263,7 @@ export function VoicePreferencesPanel({
             <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
               <SelectItem
                 value="default"
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 Use system default
               </SelectItem>
@@ -280,7 +271,7 @@ export function VoicePreferencesPanel({
                 <SelectItem
                   key={id}
                   value={id}
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                 >
                   {voiceLabel(id)}
                 </SelectItem>
@@ -294,7 +285,7 @@ export function VoicePreferencesPanel({
             <label className="text-muted-foreground text-[10px] font-bold uppercase">
               Personal Speed Override
             </label>
-            <span className="font-mono text-xs font-semibold text-[#0091ff]">
+            <span className="font-mono text-xs font-semibold text-onoma-primary">
               {personalSpeed}x
             </span>
           </div>
@@ -305,7 +296,7 @@ export function VoicePreferencesPanel({
             step={0.05}
             value={personalSpeed}
             onChange={(e) => onSavePreferences(personalVoice, Number(e.target.value))}
-            className="w-full cursor-pointer accent-[#0091ff]"
+            className="w-full cursor-pointer accent-onoma-primary"
           />
         </div>
 
@@ -314,10 +305,10 @@ export function VoicePreferencesPanel({
           <button
             type="button"
             onClick={() => setShowAdvancedVoice(!showAdvancedVoice)}
-            className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-[#0091ff]"
+            className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-onoma-primary"
           >
             <span className="flex items-center gap-1.5">
-              <Sliders className="h-3.5 w-3.5 text-[#0091ff]" /> Advanced Playback & Inflection
+              <Sliders className="h-3.5 w-3.5 text-onoma-primary" /> Advanced Playback & Inflection
             </span>
             {showAdvancedVoice ? (
               <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
@@ -358,7 +349,7 @@ export function VoicePreferencesPanel({
                   onChange={(e) =>
                     onUpdateAdvanced("onoma-personal-force-native", String(e.target.checked))
                   }
-                  className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                  className="border-border/60 h-4 w-4 cursor-pointer rounded accent-onoma-primary"
                 />
               </div>
 
@@ -366,7 +357,7 @@ export function VoicePreferencesPanel({
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[10px] font-bold uppercase">Local Playback Volume</span>
-                  <span className="font-mono text-xs font-semibold text-[#0091ff]">
+                  <span className="font-mono text-xs font-semibold text-onoma-primary">
                     {Math.round(personalVolume * 100)}%
                   </span>
                 </div>
@@ -377,7 +368,7 @@ export function VoicePreferencesPanel({
                   step={0.05}
                   value={personalVolume}
                   onChange={(e) => onUpdateAdvanced("onoma-personal-volume", e.target.value)}
-                  className="w-full cursor-pointer accent-[#0091ff]"
+                  className="w-full cursor-pointer accent-onoma-primary"
                 />
               </div>
 
@@ -385,7 +376,7 @@ export function VoicePreferencesPanel({
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-[10px] font-bold uppercase">Browser Speech Pitch</span>
-                  <span className="font-mono text-xs font-semibold text-[#0091ff]">
+                  <span className="font-mono text-xs font-semibold text-onoma-primary">
                     {personalPitch}x
                   </span>
                 </div>
@@ -396,7 +387,7 @@ export function VoicePreferencesPanel({
                   step={0.05}
                   value={personalPitch}
                   onChange={(e) => onUpdateAdvanced("onoma-personal-pitch", e.target.value)}
-                  className="w-full cursor-pointer accent-[#0091ff]"
+                  className="w-full cursor-pointer accent-onoma-primary"
                 />
               </div>
 
@@ -413,7 +404,7 @@ export function VoicePreferencesPanel({
                         String(e.target.checked)
                       )
                     }
-                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-onoma-primary"
                   />
                 </div>
                 {voiceBlendActive && (
@@ -485,7 +476,7 @@ export function VoicePreferencesPanel({
                     onChange={(e) =>
                       onUpdateAdvanced("onoma-personal-anglicize", String(e.target.checked))
                     }
-                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-onoma-primary"
                   />
                 </div>
 
@@ -497,7 +488,7 @@ export function VoicePreferencesPanel({
                     onChange={(e) =>
                       onUpdateAdvanced("onoma-personal-strip-stress", String(e.target.checked))
                     }
-                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-[#0091ff]"
+                    className="border-border/60 h-4 w-4 cursor-pointer rounded accent-onoma-primary"
                   />
                 </div>
 
@@ -528,7 +519,7 @@ export function VoicePreferencesPanel({
                     placeholder="e.g. model_q8f16"
                     value={personalModel}
                     onChange={(e) => onUpdateAdvanced("onoma-personal-model", e.target.value)}
-                    className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:border-[#0091ff] focus:outline-none"
+                    className="border-border/60 bg-background text-foreground w-full rounded border px-2 py-1 text-[11px] focus:border-onoma-primary focus:outline-none"
                   />
                 </div>
               </div>
@@ -541,10 +532,10 @@ export function VoicePreferencesPanel({
           <button
             type="button"
             onClick={() => setShowCultureMap(!showCultureMap)}
-            className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-[#0091ff]"
+            className="text-foreground flex w-full items-center justify-between py-1 text-xs font-bold transition-colors hover:text-onoma-primary"
           >
             <span className="flex items-center gap-1.5">
-              <Volume2 className="h-3.5 w-3.5 text-[#0091ff]" /> Culture-Specific Voices
+              <Volume2 className="h-3.5 w-3.5 text-onoma-primary" /> Culture-Specific Voices
             </span>
             {showCultureMap ? (
               <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />

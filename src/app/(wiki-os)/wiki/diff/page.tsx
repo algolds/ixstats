@@ -38,7 +38,7 @@ export default function DiffPage() {
         )}
 
         {error && (
-          <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
+          <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
             <p className="text-sm text-red-400">Failed to load diff: {error.message}</p>
           </div>
         )}

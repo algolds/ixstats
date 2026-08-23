@@ -20,7 +20,7 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Send, Target, Zap, BarChart3, Activity } from "lucide-react";
+import { Send, Archery as Target, Flash as Zap, StatsReport as BarChart3, Activity } from "iconoir-react";
 import { usePolicyAnalytics } from "~/hooks/usePolicyAnalytics";
 import {
   PolicyOverviewStats,

@@ -1,7 +1,7 @@
 // src/app/admin/_components/WarningPanel.tsx
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { WarningTriangle as AlertTriangle } from "iconoir-react";
 
 interface IxTimeStatus {
   isPaused: boolean;
@@ -31,7 +31,7 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
   if (!hasIsPaused(ixTime) || !ixTime.isPaused) return null;
 
   return (
-    <div className="glass-surface mt-6 rounded-xl border-red-500/25 bg-red-500/5 p-4.5 shadow-sm">
+    <div className="facet-surface mt-6 rounded-xl border-red-500/25 bg-red-500/5 p-4.5 shadow-sm">
       <div className="flex">
         <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" />
         <div className="ml-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 import type { Geometry } from "geojson";
 
 type LngLat = [number, number];

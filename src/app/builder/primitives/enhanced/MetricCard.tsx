@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, InfoCircle as Info } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, MOTION_VARIANTS } from "./animation-utils";

@@ -3,17 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Gift,
-  RefreshCw,
-  Save,
-  Sparkles,
-  UserCheck,
-  Globe,
-  Trophy,
-  Award,
-  CheckCircle2,
-} from "lucide-react";
+import { Gift, Refresh as RefreshCw, FloppyDisk as Save, Sparks as Sparkles, UserBadgeCheck as UserCheck, Globe, Trophy, Trophy as Award, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";

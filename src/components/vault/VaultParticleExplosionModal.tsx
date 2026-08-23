@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles } from "lucide-react";
+import { Sparks as Sparkles } from "iconoir-react";
 import { IxCreditsSymbol } from "./IxCreditsSymbol";
 
 export interface VaultParticle {

@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 
 export function RealmUsersTab() {
   const { data: users, isLoading } = api.studio.adminListUsers.useQuery();

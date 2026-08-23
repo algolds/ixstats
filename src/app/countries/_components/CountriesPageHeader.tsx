@@ -1,7 +1,7 @@
 // src/app/countries/_components/CountriesPageHeader.tsx
 "use client";
 
-import { Globe, BarChart3, Users } from "lucide-react";
+import { Globe, StatsReport as BarChart3, Group as Users } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { ExpandableStatCard } from "~/components/ui/ExpandableStatCard";
 import { useMemo } from "react";

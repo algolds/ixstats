@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ScrollText, Sparkles, Target, Network } from "lucide-react";
+import { Page as ScrollText, Sparks as Sparkles, Archery as Target, Network } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

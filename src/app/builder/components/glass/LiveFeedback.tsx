@@ -2,17 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users,
-  Building2,
-  Activity,
-  Zap,
-  Shield,
-  AlertTriangle,
-} from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Dollar as DollarSign, Group as Users, City as Building2, Activity, Flash as Zap, Shield, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "./GlassCard";
 import { BuilderVitalityRings } from "../BuilderVitalityRings";

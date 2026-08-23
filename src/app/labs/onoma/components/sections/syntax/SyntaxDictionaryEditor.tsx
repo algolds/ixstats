@@ -4,7 +4,7 @@
 // Vocabulary lookup and word pair manager for syntax conlang translation
 
 import React, { useState } from "react";
-import { FileText, Trash2, Plus } from "lucide-react";
+import { Page as FileText, Trash as Trash2, Plus } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 
 interface SyntaxDictionaryEditorProps {
@@ -31,7 +31,7 @@ export function SyntaxDictionaryEditor({
   return (
     <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
       <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[#d946ef]" /> Vocabulary Dictionary
+        <FileText className="h-4 w-4 text-fuchsia-500" /> Vocabulary Dictionary
       </h4>
 
       {/* Add Word Row */}
@@ -52,7 +52,7 @@ export function SyntaxDictionaryEditor({
         />
         <button
           onClick={handleAdd}
-          className="flex items-center gap-1 rounded bg-[#d946ef] px-3 py-1.5 font-bold text-white hover:bg-[#c026d3] transition-colors cursor-pointer"
+          className="flex items-center gap-1 rounded bg-fuchsia-500 px-3 py-1.5 font-bold text-white hover:bg-fuchsia-600 transition-colors cursor-pointer"
         >
           <Plus className="h-3.5 w-3.5" /> Add
         </button>

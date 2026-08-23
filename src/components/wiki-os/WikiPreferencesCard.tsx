@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { OpenBook as BookOpen, Compass } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
@@ -95,7 +96,7 @@ export function WikiSettingsCard() {
   }
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="dark:bg-card/60 relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6">
         <TextureOverlay texture="paperGrain" opacity={0.03} />
         <div className="relative z-10 mb-6 flex items-center justify-between">
@@ -151,7 +152,7 @@ export function WikiSettingsCard() {
                   onClick={() => handleUpdate({ wikiSourcePriority: option.value })}
                   disabled={updateMutation.isPending}
                   className={cn(
-                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
+                    "facet-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
                     localPrefs.wikiSourcePriority === option.value
                       ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
                       : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"
@@ -179,7 +180,7 @@ export function WikiSettingsCard() {
                   onClick={() => handleUpdate({ wikiDisplayMode: option.value })}
                   disabled={updateMutation.isPending}
                   className={cn(
-                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
+                    "facet-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150 cursor-pointer",
                     localPrefs.wikiDisplayMode === option.value
                       ? "dark:text-foreground border-indigo-500/50 bg-indigo-500/10 text-slate-900 shadow-inner shadow-indigo-500/5"
                       : "dark:border-border dark:bg-secondary/40 dark:text-muted-foreground dark:hover:bg-secondary border-slate-200 bg-white/30 text-slate-600 hover:bg-white"

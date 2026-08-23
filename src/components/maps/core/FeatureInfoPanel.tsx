@@ -8,16 +8,7 @@
  */
 
 import { memo } from "react";
-import {
-  X,
-  MapPin,
-  Users,
-  BookOpen,
-  Landmark,
-  ExternalLink,
-  BookMarked,
-  Calendar,
-} from "lucide-react";
+import { Xmark as X, MapPin, Group as Users, OpenBook as BookOpen, Bank as Landmark, OpenNewWindow as ExternalLink, Bookmark as BookMarked, Calendar } from "iconoir-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import type { SelectedFeature } from "./IxWorldMap";

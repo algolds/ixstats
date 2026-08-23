@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Users, Plus, ArrowRight } from "lucide-react";
+import { Group as Users, Plus, ArrowRight } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { useUser } from "~/context/auth-context";
@@ -55,7 +55,7 @@ function ThinkPagesAccountHubInner() {
   if (!isCountryReady) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-        <Card className="glass-hierarchy-parent">
+        <Card className="facet-hierarchy-parent">
           <CardContent className="p-8 text-center">
             <Users className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-semibold">Country Setup Required</h3>

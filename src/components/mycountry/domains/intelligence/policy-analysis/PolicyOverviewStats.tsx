@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
-import { Target, Zap, TrendingUp, Activity } from "lucide-react";
+import { Archery as Target, Flash as Zap, StatUp as TrendingUp, Activity } from "iconoir-react";
 import type { PolicyEffectivenessData } from "~/hooks/usePolicyAnalytics";
 
 interface PolicyOverviewStatsProps {
@@ -25,7 +25,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
 }: PolicyOverviewStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -37,7 +37,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -49,7 +49,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -61,7 +61,7 @@ export const PolicyOverviewStats = React.memo(function PolicyOverviewStats({
         </CardContent>
       </Card>
 
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>

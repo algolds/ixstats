@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Badge } from "~/components/ui/badge";
-import { CheckCircle, AlertCircle, TrendingUp, Clock, Users, Zap, Info } from "lucide-react";
+import { CheckCircle, WarningCircle as AlertCircle, StatUp as TrendingUp, Clock, Group as Users, Flash as Zap, InfoCircle as Info } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { UnifiedAtomicCardProps } from "./types";
 import {

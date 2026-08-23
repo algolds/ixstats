@@ -12,18 +12,7 @@ import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
 import { GlassCard } from "~/app/builder/components/glass/GlassCard";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Calculator,
-  ChevronDown,
-  ChevronRight,
-  HelpCircle,
-} from "lucide-react";
+import { Dollar as DollarSign, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, Clock, Calculator, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, HelpCircle } from "iconoir-react";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
 
 interface BudgetAllocationFormProps {

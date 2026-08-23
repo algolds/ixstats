@@ -1,6 +1,6 @@
 "use client";
 
-import { PipetteIcon } from "lucide-react";
+import { ColorPicker as PipetteIcon } from "iconoir-react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import {
   type ComponentProps,
@@ -482,7 +482,7 @@ export const ColorPickerEyeDropper = ({ className, ...props }: ColorPickerEyeDro
       variant="outline"
       {...props}
     >
-      <PipetteIcon size={16} />
+      <PipetteIcon className="size-4" />
     </Button>
   );
 };

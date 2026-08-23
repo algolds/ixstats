@@ -21,18 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import {
-  ArrowLeft,
-  ArrowUp,
-  ArrowDown,
-  Minus,
-  Trophy,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  BarChart3,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Minus, Trophy, Calendar, Clock, CheckCircle as CheckCircle2, StatsReport as BarChart3, Group as Users } from "iconoir-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",

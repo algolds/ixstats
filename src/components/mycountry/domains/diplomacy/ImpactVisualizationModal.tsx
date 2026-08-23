@@ -62,7 +62,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
           <div className="space-y-6">
             {/* Relationship State Changes */}
-            <div className="glass-hierarchy-child rounded-lg p-6">
+            <div className="facet-hierarchy-child rounded-lg p-6">
               <h4 className="text-foreground mb-4 font-semibold">Relationship State Evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
@@ -92,7 +92,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
             {/* Impact Metrics */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <RiArrowUpLine className="h-4 w-4 text-[--intel-gold]" />
                   <span className="text-foreground text-sm font-medium">Cultural Bonus</span>
@@ -101,7 +101,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   +{impact.culturalBonusDelta || 0}
                 </div>
               </div>
-              <div className="glass-hierarchy-child rounded-lg p-4">
+              <div className="facet-hierarchy-child rounded-lg p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <RiArrowUpLine className="h-4 w-4 text-blue-400" />
                   <span className="text-foreground text-sm font-medium">Diplomatic Bonus</span>
@@ -114,7 +114,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
             {/* Long-term Effects */}
             {impact.longTermEffects && (
-              <div className="glass-hierarchy-child rounded-lg p-6">
+              <div className="facet-hierarchy-child rounded-lg p-6">
                 <h4 className="text-foreground mb-4 font-semibold">Long-term Effects</h4>
                 <div className="space-y-4">
                   {impact.longTermEffects.culturalTiesStrength !== undefined && (

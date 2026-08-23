@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
-import { SortAsc, SortDesc, CheckCircle, Search } from "lucide-react";
+import { SortUp as SortAsc, SortDown as SortDesc, CheckCircle, Search } from "iconoir-react";
 
 const sortOptions = [
   { value: "name", label: "Country Name" },

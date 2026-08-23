@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ChevronUp, Globe, RotateCcw, Eye, X, ChevronDown, AlertTriangle } from "lucide-react";
+import { NavArrowUp as ChevronUp, Globe, Undo as RotateCcw, Eye, Xmark as X, NavArrowDown as ChevronDown, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";

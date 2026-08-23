@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { LucideIcon } from "lucide-react";
+
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -27,7 +27,7 @@ export interface CardBadge {
 }
 
 export interface CardMetric {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
 }
@@ -36,7 +36,7 @@ interface ExecutiveItemCardProps {
   /** Left accent border color */
   accentColor: string;
   /** Header icon */
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   /** Main title */
   title: string;
   /** Subtitle / metadata line (string or JSX) */

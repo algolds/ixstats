@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Briefcase, AlertTriangle, Clock, Check, TrendingUp, RotateCw } from "lucide-react";
+import { Suitcase as Briefcase, WarningTriangle as AlertTriangle, Clock, Check, StatUp as TrendingUp, Refresh as RotateCw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, RefreshCw, Layers, ShieldCheck, MapPin, Check, X, Compass } from "lucide-react";
+import { Play, Refresh as RefreshCw, Component as Layers, ShieldCheck, MapPin, Check, Xmark as X, Compass } from "iconoir-react";
 
 export interface MapGenConfig {
   seed: number;

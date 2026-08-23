@@ -2,7 +2,7 @@
 
 import { use, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { AlertTriangle, Users } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Group as Users } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
 import {

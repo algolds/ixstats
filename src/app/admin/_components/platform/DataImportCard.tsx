@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Database, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, InfoCircle as Info } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FileUpload } from "../FileUpload";
@@ -21,7 +21,7 @@ export function DataImportCard({
   importError,
 }: DataImportCardProps) {
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base font-bold">
           <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-1.5 text-cyan-500">

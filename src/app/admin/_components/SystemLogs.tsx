@@ -7,7 +7,7 @@ import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Activity, ExternalLink, Loader2 } from "lucide-react";
+import { Activity, OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
 import { toast } from "sonner";
 
 export function SystemLogs() {

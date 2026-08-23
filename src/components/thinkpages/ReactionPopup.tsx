@@ -2,7 +2,7 @@
 
 import React, { useState, type FC } from "react";
 import { motion } from "motion/react";
-import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus, Sparkles } from "lucide-react";
+import { Heart, Emoji as Smile, Emoji as Angry, ThumbsUp, ThumbsDown, FireFlame as Flame, Plus, Sparks as Sparkles } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 
@@ -46,11 +46,6 @@ interface ReactionPopupProps {
 }
 
 export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
-  console.log("🎭 ReactionPopup component rendered:", {
-    onSelectReaction: !!onSelectReaction,
-    postReactionCounts,
-  });
-
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   const [activeTab, setActiveTab] = useState<"reactions" | "discord">("reactions");
   const [discordError, setDiscordError] = useState<string | null>(null);

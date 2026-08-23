@@ -1,7 +1,7 @@
 // src/app/admin/_components/StatusCards.tsx
 "use client";
 
-import { Clock, Zap, TrendingUp, Server, Users, Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { Clock, Flash as Zap, StatUp as TrendingUp, Server, Group as Users, Wifi, WifiOff, WarningCircle as AlertCircle } from "iconoir-react";
 import type { AdminPageBotStatusView, SystemStatus } from "~/types/ixstats";
 
 interface StatusCardsProps {

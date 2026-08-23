@@ -2,14 +2,14 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { Handshake, Shield, Scale, TrendingUp, type LucideIcon } from "lucide-react";
+import { Community as Handshake, Shield, ScaleFrameEnlarge as Scale, StatUp as TrendingUp } from "iconoir-react";
 
 /**
  * ActionCardGraphic — Ambient gradient glow + large watermark glyph.
  *
  * Design rationale (Apple §16.6 Simplicity + §12 Materials & Depth):
  * - One soft radial gradient blob in the card's accent color (bottom-right).
- * - One large Lucide glyph rendered as a low-opacity stroke watermark.
+ * - One large Iconoir glyph rendered as a low-opacity stroke watermark.
  * - Single CSS transition on hover (brightening). Zero animation at rest.
  * - The glyph provides identity; the glow provides atmosphere.
  *   Nothing competes with the card's text content.
@@ -20,7 +20,7 @@ function ActionCardGraphic({
   glowColor,
 }: {
   className?: string;
-  Icon: LucideIcon;
+  Icon: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
   glowColor: string;
 }) {
   return (

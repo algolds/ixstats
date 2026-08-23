@@ -30,26 +30,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  ArrowLeft,
-  Filter,
-  Shield,
-  Target,
-  Crosshair,
-  Zap,
-  Settings,
-  Factory,
-  Globe,
-  Upload,
-  Image,
-  DollarSign,
-  Gauge,
-  EyeOff,
-} from "lucide-react";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Search, ArrowLeft, Filter, Shield, Archery as Target, Archery as Crosshair, Flash as Zap, Settings, Industry as Factory, Globe, Upload, MediaImage as Image, Dollar as DollarSign, Dashboard as Gauge, EyeClosed as EyeOff } from "iconoir-react";
 import Link from "next/link";
 
 // Equipment types with icons
@@ -464,7 +445,7 @@ export default function SmallArmsEquipmentPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-500/10 p-6">
+        <div className="facet-card-parent mb-6 rounded-xl border-2 border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-500/10 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
@@ -523,23 +504,23 @@ export default function SmallArmsEquipmentPage() {
             {/* Statistics */}
             {stats && (
               <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-                <Card className="glass-card-child p-4">
+                <Card className="facet-card-child p-4">
                   <p className="text-muted-foreground text-sm">Total Equipment</p>
                   <p className="text-foreground mt-2 text-3xl font-bold">{stats.totalEquipment}</p>
                 </Card>
-                <Card className="glass-card-child p-4">
+                <Card className="facet-card-child p-4">
                   <p className="text-muted-foreground text-sm">Equipment Types</p>
                   <p className="mt-2 text-3xl font-bold text-blue-400">
                     {stats.equipmentByType.length}
                   </p>
                 </Card>
-                <Card className="glass-card-child p-4">
+                <Card className="facet-card-child p-4">
                   <p className="text-muted-foreground text-sm">Manufacturers</p>
                   <p className="mt-2 text-3xl font-bold text-green-400">
                     {stats.totalManufacturers}
                   </p>
                 </Card>
-                <Card className="glass-card-child p-4">
+                <Card className="facet-card-child p-4">
                   <p className="text-muted-foreground text-sm">Eras</p>
                   <p className="mt-2 text-3xl font-bold text-purple-400">
                     {stats.equipmentByEra.length}
@@ -549,7 +530,7 @@ export default function SmallArmsEquipmentPage() {
             )}
 
             {/* Filters */}
-            <Card className="glass-card-parent mb-6 p-4">
+            <Card className="facet-card-parent mb-6 p-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                 <div className="relative md:col-span-2">
                   <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
@@ -609,7 +590,7 @@ export default function SmallArmsEquipmentPage() {
                 <p className="text-muted-foreground">Loading equipment...</p>
               </div>
             ) : filteredEquipment.length === 0 ? (
-              <Card className="glass-card-parent p-12 text-center">
+              <Card className="facet-card-parent p-12 text-center">
                 <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                 <p className="text-muted-foreground">No equipment found matching your filters</p>
               </Card>
@@ -657,7 +638,7 @@ export default function SmallArmsEquipmentPage() {
         )}
 
         {activeMainTab === "bulk-import" && (
-          <Card className="glass-card-parent p-6">
+          <Card className="facet-card-parent p-6">
             <h2 className="text-foreground mb-4 text-xl font-bold">Bulk Import Equipment</h2>
             <p className="text-muted-foreground mb-4 text-sm">
               Paste JSON array of equipment objects to import multiple items at once.
@@ -764,7 +745,7 @@ function EquipmentCard({ equipment, onEdit, onDelete }: EquipmentCardProps) {
   const Icon = typeData?.icon || Target;
 
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-orange-500/50">
+    <Card className="facet-card-child p-4 transition-all hover:border-orange-500/50">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
@@ -1321,7 +1302,7 @@ function ManufacturerCard({ manufacturer, onEdit }: ManufacturerCardProps) {
       : manufacturer.specialty || [];
 
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-orange-500/50">
+    <Card className="facet-card-child p-4 transition-all hover:border-orange-500/50">
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-1 flex items-center gap-2">

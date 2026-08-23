@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Shield, Users, Target, Activity, HelpCircle, Info } from "lucide-react";
+import { Shield, Group as Users, Archery as Target, Activity, HelpCircle, InfoCircle as Info } from "iconoir-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
@@ -39,7 +39,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   branches,
 }: ReadinessOverviewCardProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-red-600" />

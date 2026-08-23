@@ -7,7 +7,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Zap, FileText, TrendingUp, AlertCircle } from "lucide-react";
+import { Flash as Zap, Page as FileText, StatUp as TrendingUp, WarningCircle as AlertCircle } from "iconoir-react";
 import type { EconomicEvent } from "~/lib/economy/historical-transformers";
 
 interface EventDistributionCardProps {

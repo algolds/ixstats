@@ -16,7 +16,7 @@ import {
   Line,
 } from "recharts";
 import { api } from "~/trpc/react";
-import { Loader2, Target, Activity, CheckCircle, TrendingUp, AlertTriangle } from "lucide-react";
+import { SystemRestart as Loader2, Archery as Target, Activity, CheckCircle, StatUp as TrendingUp, WarningTriangle as AlertTriangle } from "iconoir-react";
 
 /**
  * Diplomatic Scenarios Analytics Dashboard

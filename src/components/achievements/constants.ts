@@ -1,15 +1,4 @@
-import {
-  Trophy,
-  Star,
-  Medal,
-  Crown,
-  Sparkles,
-  TrendingUp,
-  Shield,
-  Landmark,
-  BookOpen,
-  Globe,
-} from "lucide-react";
+import { Trophy, Star, Medal, Crown, Sparks as Sparkles, StatUp as TrendingUp, Shield, Bank as Landmark, OpenBook as BookOpen, Globe } from "iconoir-react";
 
 export const QUEST_PATHS = [
   {

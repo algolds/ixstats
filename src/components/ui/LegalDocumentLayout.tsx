@@ -4,28 +4,28 @@ import React, { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  FileText,
+  Page as FileText,
   Shield,
   Printer,
-  ChevronRight,
+  NavArrowRight as ChevronRight,
   ArrowLeft,
-  Share2,
+  ShareAndroid as Share2,
   Check,
   Calendar,
-  Layers,
-  UserCheck,
+  Component as Layers,
+  UserBadgeCheck as UserCheck,
   ShieldAlert,
-  Globe2,
+  Globe as Globe2,
   Coins,
-  Scale,
+  ScaleFrameEnlarge as Scale,
   Database,
-  EyeOff,
+  EyeClosed as EyeOff,
   Server,
   Cookie,
-  UserX,
+  UserXmark as UserX,
   Lock,
-  Sparkles,
-} from "lucide-react";
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";

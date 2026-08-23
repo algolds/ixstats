@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import { Search, ShoppingCart, Calendar } from "lucide-react";
+import { Search, Cart as ShoppingCart, Calendar } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export function VaultPurchaseLogs() {

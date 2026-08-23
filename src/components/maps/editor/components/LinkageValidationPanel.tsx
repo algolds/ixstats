@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { RefreshCw, Wand2 } from "lucide-react";
+import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface LinkageValidationPanelProps {

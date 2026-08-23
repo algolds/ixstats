@@ -2,18 +2,18 @@
 
 import React, { useMemo } from "react";
 import {
-  Users,
-  TrendingUp,
+  Group as Users,
+  StatUp as TrendingUp,
   Globe,
   Activity,
   ArrowUp,
   ArrowDown,
-  Equal,
+  Minus as Equal,
   MapPin,
-  BarChart3,
-  LineChart,
-  Info,
-} from "lucide-react";
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";

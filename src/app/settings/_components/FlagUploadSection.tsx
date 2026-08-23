@@ -1,4 +1,4 @@
-import { Flag, Upload } from "lucide-react";
+import { WhiteFlag as Flag, Upload } from "iconoir-react";
 
 interface FlagUploadSectionProps {
   uploadedFlagUrl: string | null;

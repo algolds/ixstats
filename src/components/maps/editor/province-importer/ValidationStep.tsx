@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useEffect } from "react";
-import { CheckCircle, AlertTriangle, XCircle, Wrench } from "lucide-react";
+import { CheckCircle, WarningTriangle as AlertTriangle, XmarkCircle as XCircle, Wrench } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 
 interface ValidationStepProps {

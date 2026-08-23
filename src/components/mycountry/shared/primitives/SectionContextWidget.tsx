@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import type { LucideIcon } from "lucide-react";
-import { ScrollText } from "lucide-react";
+
+import { Page as ScrollText } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { CutoutPanel } from "~/components/mycountry/cards";
@@ -17,7 +17,7 @@ export interface ContextStat {
 
 export interface ContextActivityEntry {
   id: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
   text: string;
   time: Date;
@@ -27,7 +27,7 @@ interface SectionContextWidgetProps {
   accent?: MyCountryAccent;
   /** Activity-log header title (default "Activity"). */
   title?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   /** Compact quick-stat snapshot rendered above the log. */
   stats?: ContextStat[];
   /** Recent-activity entries (latest first; only the first 5 are shown). */

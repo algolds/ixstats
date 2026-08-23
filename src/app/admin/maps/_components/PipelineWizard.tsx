@@ -21,28 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Upload,
-  FileUp,
-  FileImage,
-  Globe,
-  Eye,
-  Database,
-  Loader2,
-  CheckCircle,
-  CheckCircle2,
-  AlertTriangle,
-  Plus,
-  Minus,
-  Pencil,
-  Equal,
-  Link2,
-  RotateCcw,
-  ChevronDown,
-  ChevronRight,
-  Zap,
-  Settings2,
-} from "lucide-react";
+import { Upload, Upload as FileUp, MediaImage as FileImage, Globe, Eye, Database, SystemRestart as Loader2, CheckCircle, CheckCircle as CheckCircle2, WarningTriangle as AlertTriangle, Plus, Minus, EditPencil as Pencil, Minus as Equal, Link as Link2, Undo as RotateCcw, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Flash as Zap, Settings as Settings2 } from "iconoir-react";
 
 // ─── Quick Update Types & Helpers ───────────────────────────────────────────
 

@@ -7,7 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { Clock, User, FileText } from "lucide-react";
+import { Clock, User, Page as FileText } from "iconoir-react";
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE_WORLD_EVENT: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300",
@@ -74,7 +74,7 @@ export function StorytellerHistory() {
               return (
                 <div
                   key={log.id}
-                  className="glass-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
+                  className="facet-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

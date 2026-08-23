@@ -5,7 +5,7 @@
  * see where the data comes from and its licensing status.
  */
 import { NationStatesLogo } from "./NationStatesLogo";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "iconoir-react";
 
 export function NationStatesAttribution({
   className,

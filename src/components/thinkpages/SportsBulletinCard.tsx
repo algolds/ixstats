@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Trophy, ChevronRight, Shield, Sparkles } from "lucide-react";
+import { Trophy, NavArrowRight as ChevronRight, Shield, Sparks as Sparkles } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";

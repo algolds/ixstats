@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, memo } from "react";
-import { Bell, AlertTriangle, History, Inbox, Flame, CheckCircle } from "lucide-react";
+import { Bell, WarningTriangle as AlertTriangle, ClockRotateRight as History, MailIn as Inbox, FireFlame as Flame, CheckCircle } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { useNationalIssues } from "~/hooks/useNationalIssues";
@@ -330,6 +330,6 @@ function EmptyState({
 }
 
 // Import Shield here since it's used in the component
-import { Shield } from "lucide-react";
+import { Shield } from "iconoir-react";
 
 export const IssuesInbox = memo(IssuesInboxInner);

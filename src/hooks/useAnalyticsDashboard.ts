@@ -10,7 +10,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Activity, TrendingUp, Target, Globe, Zap, Building, Users, FileText } from "lucide-react";
+import { Activity, StatUp as TrendingUp, Archery as Target, Globe, Flash as Zap, Building, Group as Users, Page as FileText } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";

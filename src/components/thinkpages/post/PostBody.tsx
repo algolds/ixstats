@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/ui/FeedPollWidget";

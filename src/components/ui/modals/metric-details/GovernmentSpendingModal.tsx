@@ -3,16 +3,16 @@
 import React, { useMemo } from "react";
 import {
   Building,
-  DollarSign,
-  BarChart3,
-  LineChart,
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
   Globe,
-  PieChart,
+  Reports as PieChart,
   Wallet,
-  Scale,
-  Landmark,
-  Info,
-} from "lucide-react";
+  ScaleFrameEnlarge as Scale,
+  Bank as Landmark,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

@@ -457,7 +457,7 @@ export function WikiOSUnifiedSidebar({
               icon: Highlighter,
               title: isMarginOpen ? "Hide Margin" : "Show Margin",
               glowClass:
-                "rail-glow-highlighter rail-animate-wiggle border-yellow-400/50 bg-[#fef036]/15 text-[var(--wikios-text)] hover:bg-[#fef036]/25",
+                "rail-glow-highlighter rail-animate-wiggle border-yellow-400/50 bg-margin-accent/15 text-[var(--wikios-text)] hover:bg-margin-accent/25",
               isActive: isMarginOpen || activeId === "margin",
               badge: (
                 <kbd className="text-muted-foreground/60 rounded border border-white/5 bg-white/5 px-1 text-[8px] font-mono">

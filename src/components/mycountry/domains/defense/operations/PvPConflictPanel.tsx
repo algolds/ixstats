@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Swords, Check, X, Loader2, Trophy, Skull, HandshakeIcon } from "lucide-react";
+import { Tournament as Swords, Check, Xmark as X, SystemRestart as Loader2, Trophy, Emoji as Skull, Community as HandshakeIcon } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { HelpCircle, Info } from "lucide-react";
+import { HelpCircle, InfoCircle as Info } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 import { cn } from "~/lib/utils";
 

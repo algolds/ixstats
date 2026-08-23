@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ArrowSeparateVertical as ChevronsUpDown, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
 import { Badge } from "~/components/ui/badge";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, RefreshCw, Home, ArrowLeft } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Refresh as RefreshCw, HomeSimple as Home, ArrowLeft } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -88,7 +88,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
       // Default error UI
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="glass-hierarchy-parent mx-auto max-w-2xl">
+          <Card className="facet-hierarchy-parent mx-auto max-w-2xl">
             <CardHeader className="text-center">
               <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
               <CardTitle className="text-2xl font-bold text-red-700">Builder Error</CardTitle>

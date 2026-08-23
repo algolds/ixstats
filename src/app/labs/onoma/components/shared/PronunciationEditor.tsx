@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/PronunciationEditor.tsx
 // Onoma Custom Studio Workshop — Pronunciation Editor Component
 
-import { X, RotateCcw, Volume2 } from "lucide-react";
+import { Xmark as X, Undo as RotateCcw, SoundHigh as Volume2 } from "iconoir-react";
 import {
   Select,
   SelectContent,
@@ -52,7 +52,7 @@ export function PronunciationEditor({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-[#0091ff]/[0.02] p-3 text-left duration-200"
+      className="border-border/20 animate-in slide-in-from-top-1 relative z-10 w-full space-y-2.5 rounded-xl border bg-onoma-primary/[0.02] p-3 text-left duration-200"
     >
       <div className="flex items-center justify-between">
         <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
@@ -61,7 +61,7 @@ export function PronunciationEditor({
         <button
           onClick={onCancel}
           title="Close"
-          className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-[#0091ff]"
+          className="text-muted-foreground cursor-pointer rounded p-0.5 hover:text-onoma-primary"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -89,7 +89,7 @@ export function PronunciationEditor({
                 }
               }}
               disabled={suggestMutation.isPending}
-              className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-1 text-[8px] font-bold text-onoma-primary select-none hover:underline disabled:opacity-50"
             >
               {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
             </button>
@@ -130,7 +130,7 @@ export function PronunciationEditor({
           <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
             <SelectItem
               value="default"
-              className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+              className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
             >
               Default / culture voice
             </SelectItem>
@@ -138,7 +138,7 @@ export function PronunciationEditor({
               <SelectItem
                 key={v}
                 value={v}
-                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
               >
                 {v}
               </SelectItem>
@@ -164,7 +164,7 @@ export function PronunciationEditor({
           </button>
           <button
             onClick={onSave}
-            className="rounded bg-[#0091ff] px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-[#33a7ff]"
+            className="rounded bg-onoma-primary px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors hover:bg-onoma-primary-light"
           >
             Save
           </button>

@@ -3,9 +3,10 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
-import { Heart, MessageCircle, Repeat2, Share } from "lucide-react";
+import { Heart, ChatBubble as MessageCircle, Refresh as Repeat2, ShareAndroid as Share } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { withBasePath } from "~/lib/base-path";
 import { ReactionPopup } from "../ReactionPopup";
 import { RepostModal } from "../RepostModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -67,27 +68,9 @@ export function PostActions({
   className = "",
 }: PostActionsProps) {
   const notify = useNotify();
-  // Debug component initialization
-  console.log("🔧 PostActions component initialized:", {
-    postId,
-    currentUserAccountId,
-    isLiked,
-    likeCount,
-    reactionsCount: reactions?.length || 0,
-    reactions: reactions,
-    hasOnLike: !!onLike,
-    hasOnReaction: !!onReaction,
-    size,
-    showCounts,
-  });
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Debug popup state changes
-  useEffect(() => {
-    console.log("🎭 Reaction popup state changed:", { showReactionPopup, postId });
-  }, [showReactionPopup, postId]);
 
   // Close reaction popup when clicking outside
   useEffect(() => {
@@ -326,24 +309,13 @@ export function PostActions({
   });
 
   const handleLike = useCallback(async () => {
-    console.log("❤️ Heart button clicked!", {
-      currentUserAccountId,
-      postId,
-      isLiked,
-      reactions: reactions?.length || 0,
-      hasAccount: !!currentUserAccountId,
-      accountId: currentUserAccountId,
-    });
-
     if (!currentUserAccountId) {
       notify.error("Please select a ThinkPages account first to like posts");
-      console.warn("No currentUserAccountId provided to heart button");
       return;
     }
 
     if (!postId) {
       notify.error("Invalid post ID");
-      console.error("No postId provided to heart button");
       return;
     }
 
@@ -351,21 +323,13 @@ export function PostActions({
       (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
     );
 
-    console.log("🔍 Existing reaction check:", {
-      existingReaction: !!existingReaction,
-      reactionId: existingReaction?.id,
-      willRemove: !!existingReaction,
-    });
-
     try {
       if (existingReaction) {
-        console.log("🗑️ Removing like reaction for account:", currentUserAccountId);
         await removeReactionMutation.mutateAsync({
           postId,
           accountId: currentUserAccountId,
         });
       } else {
-        console.log("➕ Adding like reaction for account:", currentUserAccountId);
         await addReactionMutation.mutateAsync({
           postId,
           accountId: currentUserAccountId,
@@ -373,14 +337,10 @@ export function PostActions({
         });
       }
 
-      // Call the parent callback if provided
       onLike?.(postId);
-      console.log("✅ Heart button action completed successfully");
     } catch (error: any) {
-      console.error("❌ Error handling like:", error);
       notify.error(error.message || "Failed to update reaction");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     postId,
     currentUserAccountId,
@@ -388,7 +348,7 @@ export function PostActions({
     addReactionMutation,
     removeReactionMutation,
     onLike,
-    isLiked,
+    notify,
   ]);
 
   const handleRepost = useCallback(() => {
@@ -397,28 +357,16 @@ export function PostActions({
       return;
     }
     setShowRepostModal(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserAccountId]);
+  }, [currentUserAccountId, notify]);
 
   const handleReaction = useCallback(
     async (reactionType: string) => {
-      console.log("🎭 handleReaction called:", {
-        reactionType,
-        currentUserAccountId,
-        postId,
-        reactionsCount: reactions?.length || 0,
-        isAddPending: addReactionMutation.isPending,
-        isRemovePending: removeReactionMutation.isPending,
-      });
-
       if (!currentUserAccountId) {
-        console.warn("❌ No currentUserAccountId for reaction");
         notify.error("Please select an account to interact");
         return;
       }
 
       if (!postId) {
-        console.warn("❌ No postId for reaction");
         notify.error("Invalid post ID");
         return;
       }
@@ -435,61 +383,46 @@ export function PostActions({
       ];
       const isDiscordEmoji = reactionType.startsWith("discord:");
       if (!validReactionTypes.includes(reactionType) && !isDiscordEmoji) {
-        console.warn("❌ Invalid reaction type:", reactionType);
         notify.error("Invalid reaction type");
         return;
       }
 
-      // Check if already loading
       if (addReactionMutation.isPending || removeReactionMutation.isPending) {
-        console.warn("⏳ Reaction already in progress");
         notify.error("Please wait for the current reaction to complete");
         return;
       }
 
       const existingReaction = reactions.find((r: any) => r.accountId === currentUserAccountId);
 
-      console.log("🔍 Reaction analysis:", {
-        postId,
-        currentUserAccountId,
-        reactionType,
-        existingReaction,
-        allReactions: reactions,
-        willRemove: existingReaction && existingReaction.reactionType === reactionType,
-      });
-
-      // Close popup immediately for instant feedback
       setShowReactionPopup(false);
 
       try {
         if (existingReaction && existingReaction.reactionType === reactionType) {
-          console.log("🗑️ Removing existing reaction:", existingReaction);
           await removeReactionMutation.mutateAsync({
             postId,
             accountId: currentUserAccountId,
           });
         } else {
-          console.log("➕ Adding new reaction:", {
-            postId,
-            accountId: currentUserAccountId,
-            reactionType,
-          });
           await addReactionMutation.mutateAsync({
             postId,
             accountId: currentUserAccountId,
             reactionType: reactionType as
-              "like" | "laugh" | "angry" | "sad" | "fire" | "thumbsup" | "thumbsdown" | string,
+              | "like"
+              | "laugh"
+              | "angry"
+              | "sad"
+              | "fire"
+              | "thumbsup"
+              | "thumbsdown"
+              | string,
           });
         }
 
-        console.log("📞 Calling onReaction callback");
         onReaction?.(postId, reactionType);
       } catch (error: any) {
-        console.error("❌ Error in handleReaction:", error);
-        // Error handling is already done in mutation onError
+        // Handled in mutation onError
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       postId,
       currentUserAccountId,
@@ -497,12 +430,13 @@ export function PostActions({
       addReactionMutation,
       removeReactionMutation,
       onReaction,
+      notify,
     ]
   );
 
   const handleShare = useCallback(() => {
-    const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
-    if (navigator.share) {
+    const postUrl = `${window.location.origin}${withBasePath(`/thinkpages/post/${postId}`)}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
       navigator
         .share({
           title: "ThinkPages Post",
@@ -510,17 +444,15 @@ export function PostActions({
           url: postUrl,
         })
         .catch(() => {
-          // Fallback to clipboard if share fails
           navigator.clipboard.writeText(postUrl);
           notify.success("Post link copied to clipboard!");
         });
-    } else {
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(postUrl);
       notify.success("Post link copied to clipboard!");
     }
     onShare?.(postId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId, onShare]);
+  }, [postId, onShare, notify]);
 
   const iconSize = size === "sm" ? "h-3 w-3" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
   const buttonPadding = size === "sm" ? "p-1" : size === "lg" ? "p-3" : "p-2";
@@ -567,25 +499,11 @@ export function PostActions({
             ref={reactionButtonRef}
             onClick={(e) => {
               e.stopPropagation();
-              console.log(
-                "🖱️ Heart button clicked (single click), current state:",
-                showReactionPopup
-              );
-              // Show reaction popup on click
-              setShowReactionPopup(!showReactionPopup);
-              console.log("🖱️ Heart button clicked, setting popup to:", !showReactionPopup);
+              handleLike();
             }}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              // Show reaction popup on right-click
-              console.log("🖱️ Right-click detected, toggling reaction popup");
-              setShowReactionPopup(!showReactionPopup);
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              // Show reaction popup on double-click
-              console.log("🖱️ Double-click detected, toggling reaction popup");
               setShowReactionPopup(!showReactionPopup);
             }}
             className={cn(
@@ -596,7 +514,7 @@ export function PostActions({
             )}
             title={
               currentUserAccountId
-                ? "Click for reactions, right-click or double-click also work"
+                ? "Click to like (right-click for emoji reactions)"
                 : "Please select a ThinkPages account first"
             }
           >
@@ -609,16 +527,6 @@ export function PostActions({
             </div>
             {showCounts && likeCount > 0 && <span className="text-sm">{likeCount}</span>}
           </button>
-
-          {/* Debug indicator */}
-          {showReactionPopup && (
-            <div
-              className="absolute -top-8 left-0 rounded bg-red-500 px-2 py-1 text-xs text-white"
-              style={{ zIndex: 100000 }}
-            >
-              POPUP ACTIVE
-            </div>
-          )}
 
           {/* Reaction Popup */}
           {showReactionPopup &&

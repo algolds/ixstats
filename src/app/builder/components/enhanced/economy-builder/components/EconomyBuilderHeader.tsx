@@ -11,20 +11,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import {
-  HelpCircle,
-  Sparkles,
-  AlertTriangle,
-  Info,
-  Loader2,
-  Target,
-  Atom,
-  BarChart3,
-  Users,
-  TrendingUp,
-  DollarSign,
-  Gauge,
-} from "lucide-react";
+import { HelpCircle, Sparks as Sparkles, WarningTriangle as AlertTriangle, InfoCircle as Info, SystemRestart as Loader2, Archery as Target, Atom, StatsReport as BarChart3, Group as Users, StatUp as TrendingUp, Dollar as DollarSign, Dashboard as Gauge } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface EconomyBuilderHeaderProps {

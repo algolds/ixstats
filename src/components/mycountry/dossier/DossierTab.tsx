@@ -16,7 +16,7 @@ import { Button } from "~/components/ui/button";
 import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import Link from "next/link";
-import { BookOpen, Plus, Upload, Trash2, Edit3, Lock, Shield, Eye } from "lucide-react";
+import { OpenBook as BookOpen, Plus, Upload, Trash as Trash2, EditPencil as Edit3, Lock, Shield, Eye } from "iconoir-react";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
 import { FileImportDropzone } from "./dossier/FileImportDropzone";
 import { LoreScannerPreferencesModal } from "./dossier/LoreScannerPreferencesModal";
@@ -183,7 +183,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="p-8">
             <div className="space-y-4">
               <Skeleton className="h-12 w-12 rounded-lg" />
@@ -202,7 +202,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Error state
   if (wikiData.error) {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-8 text-center">
           <RiAlertLine className="mx-auto mb-4 h-12 w-12 text-red-600 dark:text-red-400" />
           <h3 className="mb-2 text-lg font-semibold">Wiki Intelligence Unavailable</h3>
@@ -298,7 +298,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                   </div>
                 </div>
               ) : (
-                <Card className="glass-surface border-border overflow-hidden">
+                <Card className="facet-surface border-border overflow-hidden">
                   <CardContent className="flex flex-col items-center justify-center p-12 text-center">
                     <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                       <BookOpen className="text-muted-foreground/60 h-8 w-8" />
@@ -366,7 +366,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 )}
 
                 {nativeDocs.length === 0 ? (
-                  <Card className="glass-surface overflow-hidden border-white/10">
+                  <Card className="facet-surface overflow-hidden border-white/10">
                     <CardContent className="flex flex-col items-center justify-center p-12 text-center">
                       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
                         <BookOpen className="h-8 w-8" />

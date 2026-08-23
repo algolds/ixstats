@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Layers, RefreshCw, Save } from "lucide-react";
+import { Component as Layers, Refresh as RefreshCw, FloppyDisk as Save } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
@@ -32,7 +32,7 @@ export function IxCardSeasonAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card-parent rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/10 p-6">
+      <div className="facet-card-parent rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/10 p-6">
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3">
             <Layers className="h-6 w-6 text-blue-400" />
@@ -83,7 +83,7 @@ export function IxCardSeasonAdmin() {
         </div>
       </div>
 
-      <div className="glass-card-parent rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-500/10 p-6">
+      <div className="facet-card-parent rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-transparent to-amber-500/10 p-6">
         <div className="flex items-center gap-3">
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
             <Layers className="h-6 w-6 text-amber-400" />

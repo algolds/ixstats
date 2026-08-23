@@ -3,16 +3,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Loader2,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Trophy,
-  RotateCcw,
-  ImageIcon,
-  Trash2,
-} from "lucide-react";
+import { SystemRestart as Loader2, ArrowLeft, ArrowRight, Check, Trophy, Undo as RotateCcw, MediaImage as ImageIcon, Trash as Trash2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

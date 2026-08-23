@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import type { ValidationStatus } from "../utils/previewCalculations";
 
 interface ValidationResultsProps {

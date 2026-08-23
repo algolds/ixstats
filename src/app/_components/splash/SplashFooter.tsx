@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, Sparkles, MessageCircle, BookOpen } from "lucide-react";
+import { Shield, Sparks as Sparkles, ChatBubble as MessageCircle, OpenBook as BookOpen } from "iconoir-react";
 import { VERSIONS } from "~/lib/buildVersion";
 
 export function SplashFooter() {

@@ -4,15 +4,7 @@
 // Onoma Lab — Etymology Web Section
 
 import { useState, useMemo } from "react";
-import {
-  GitFork,
-  Network,
-  Plus,
-  Trash2,
-  CornerDownRight,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { GitFork, Network, Plus, Trash as Trash2, CornerBottomRight as CornerDownRight, NavArrowRight as ChevronRight, NavArrowDown as ChevronDown } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

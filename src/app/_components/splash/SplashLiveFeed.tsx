@@ -4,15 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Activity,
-  BookOpen,
-  Globe,
-  MessageSquare,
-  TrendingUp,
-  Trophy,
-  ChevronRight,
-} from "lucide-react";
+import { Activity, OpenBook as BookOpen, Globe, ChatBubble as MessageSquare, StatUp as TrendingUp, Trophy, NavArrowRight as ChevronRight } from "iconoir-react";
 import { Marquee } from "~/components/ui/magicui/marquee";
 import { api } from "~/trpc/react";
 import { splashGold } from "~/lib/splash/mycountry-gold";

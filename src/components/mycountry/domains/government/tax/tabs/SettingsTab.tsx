@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Info,
-  AlertTriangle,
-  Settings as SettingsIcon,
-  List,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { InfoCircle as Info, WarningTriangle as AlertTriangle, Settings as SettingsIcon, List, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";

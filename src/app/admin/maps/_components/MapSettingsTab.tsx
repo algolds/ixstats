@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Palette, ExternalLink } from "lucide-react";
+import { SystemRestart as Loader2, Palette, OpenNewWindow as ExternalLink } from "iconoir-react";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { MapStatsDashboard } from "./MapStatsDashboard";

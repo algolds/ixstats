@@ -110,7 +110,7 @@ export function LinguisticProfile({
       {/* Header with Segmented Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-bold text-[#0091ff]">
+          <span className="font-mono text-xs font-bold text-onoma-primary">
             ⟨{name}⟩
           </span>
           <span className="text-muted-foreground text-[11px]">
@@ -151,7 +151,7 @@ export function LinguisticProfile({
       {(originLabel || savedAt) && (
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
           {originLabel && (
-            <span className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 font-bold text-[#0091ff] capitalize">
+            <span className="rounded bg-onoma-primary/10 px-1.5 py-0.5 font-bold text-onoma-primary capitalize">
               {originLabel}
             </span>
           )}
@@ -190,10 +190,10 @@ export function LinguisticProfile({
                     {declCase.descriptionSingular.split(" (")[0]}
                   </span>
                 </div>
-                <span className="col-span-4 font-mono text-xs font-semibold text-[#0091ff] break-all">
+                <span className="col-span-4 font-mono text-xs font-semibold text-onoma-primary break-all">
                   {declCase.singular}
                 </span>
-                <span className="col-span-4 font-mono text-xs font-semibold text-[#0091ff] break-all">
+                <span className="col-span-4 font-mono text-xs font-semibold text-onoma-primary break-all">
                   {declCase.plural}
                 </span>
               </div>
@@ -212,7 +212,7 @@ export function LinguisticProfile({
             {!isEditingDef && definition && (
               <button
                 onClick={() => setIsEditingDef(true)}
-                className="cursor-pointer text-[10px] font-semibold text-[#0091ff] hover:underline"
+                className="cursor-pointer text-[10px] font-semibold text-onoma-primary hover:underline"
               >
                 Edit Definition
               </button>
@@ -239,7 +239,7 @@ export function LinguisticProfile({
                         <SelectItem
                           key={pos}
                           value={pos}
-                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10 cursor-pointer"
+                          className="focus:text-foreground text-xs focus:bg-onoma-primary/10 cursor-pointer"
                         >
                           {pos}
                         </SelectItem>
@@ -256,7 +256,7 @@ export function LinguisticProfile({
                     placeholder="e.g. *ver- (water)"
                     value={editRoot}
                     onChange={(e) => setEditRoot(e.target.value)}
-                    className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/60 focus:outline-none"
+                    className="border-border/60 bg-background text-foreground font-mono w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/60 focus:outline-none"
                   />
                 </div>
               </div>
@@ -269,7 +269,7 @@ export function LinguisticProfile({
                   placeholder="Define semantic meaning..."
                   value={editMeaning}
                   onChange={(e) => setEditMeaning(e.target.value)}
-                  className="border-border/60 bg-background text-foreground h-14 w-full rounded-lg border px-2.5 py-1.5 text-xs focus:border-[#0091ff]/60 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground h-14 w-full rounded-lg border px-2.5 py-1.5 text-xs focus:border-onoma-primary/60 focus:outline-none"
                 />
               </div>
               <div className="space-y-1">
@@ -281,7 +281,7 @@ export function LinguisticProfile({
                   placeholder="e.g. Derived from archaic High Caphirian"
                   value={editOrigin}
                   onChange={(e) => setEditOrigin(e.target.value)}
-                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:border-[#0091ff]/60 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-xs focus:border-onoma-primary/60 focus:outline-none"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
@@ -296,7 +296,7 @@ export function LinguisticProfile({
                 )}
                 <button
                   type="submit"
-                  className="rounded-lg bg-[#0091ff] px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-[#33a7ff]"
+                  className="rounded-lg bg-onoma-primary px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-onoma-primary-light"
                 >
                   Save Definition
                 </button>
@@ -305,7 +305,7 @@ export function LinguisticProfile({
           ) : (
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="rounded-md bg-[#0091ff]/15 font-mono px-2 py-0.5 text-[10px] font-bold text-[#0091ff] uppercase">
+                <span className="rounded-md bg-onoma-primary/15 font-mono px-2 py-0.5 text-[10px] font-bold text-onoma-primary uppercase">
                   {definition.partOfSpeech}
                 </span>
                 {definition.root && (

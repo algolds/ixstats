@@ -22,21 +22,7 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
-import {
-  Settings,
-  DollarSign,
-  Network,
-  TrendingUp,
-  Target,
-  Users,
-  Award,
-  Palette,
-  Briefcase,
-  Zap,
-  Factory,
-  Leaf,
-  Building2,
-} from "lucide-react";
+import { Settings, Dollar as DollarSign, Network, StatUp as TrendingUp, Archery as Target, Group as Users, Trophy as Award, Palette, Suitcase as Briefcase, Flash as Zap, Industry as Factory, Leaf, City as Building2 } from "iconoir-react";
 import { EconomicComponentType, ComponentType } from "~/lib/enums";
 import {
   type ComponentFormData,
@@ -693,7 +679,7 @@ function AppearanceTab({
           onChange={(e) => setFormData((prev) => ({ ...prev, icon: e.target.value }))}
           placeholder="e.g., Factory, Building2, Users"
         />
-        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from lucide-react library</p>
+        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from iconoir-react library</p>
       </div>
     </div>
   );

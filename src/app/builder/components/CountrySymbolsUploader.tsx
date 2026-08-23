@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Flag,
-  Shield,
-  Image as ImageIcon,
-  ChevronDown,
-  Sparkles,
-  Upload,
-  Loader2,
-} from "lucide-react";
+import { WhiteFlag as Flag, Shield, MediaImage as ImageIcon, NavArrowDown as ChevronDown, Sparks as Sparkles, Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";

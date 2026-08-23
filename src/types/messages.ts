@@ -5,7 +5,7 @@
  * contextual identity resolution, and cross-system message sources.
  */
 
-import type { LucideIcon } from "lucide-react";
+
 import type { ThinkShareConversation } from "./thinkshare";
 
 // ─── Folder System ───────────────────────────────────────────────
@@ -19,7 +19,7 @@ export const LOREBOT_CONVERSATION_ID = "lorebot_feed";
 
 export interface MessageFolderConfig {
   id: MessageFolder;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   /** Accent color class for the icon, e.g. "text-blue-500" */
@@ -35,7 +35,7 @@ export interface MessageFolderConfig {
 export interface ResolvedIdentity {
   displayName: string;
   avatar: string | null;
-  badgeIcon?: LucideIcon;
+  badgeIcon?: React.ComponentType<{ className?: string }>;
   badgeColor?: string;
   /** Source system label, e.g. "Wiki", "Forum", "Diplomatic" */
   sourceLabel?: string;

@@ -11,7 +11,7 @@ import { WorldTimeline } from "./_components/WorldTimeline";
 import { ActiveInterventions } from "./_components/ActiveInterventions";
 import { StorytellerHistory } from "./_components/StorytellerHistory";
 import { SandboxMode } from "./_components/SandboxMode";
-import { Gamepad2, Wand2, Clock, Zap, History, FlaskConical } from "lucide-react";
+import { Gamepad as Gamepad2, MagicWand as Wand2, Clock, Flash as Zap, ClockRotateRight as History, Flask as FlaskConical } from "iconoir-react";
 
 type StorytellerTab = "wizard" | "timeline" | "interventions" | "sandbox" | "history";
 
@@ -36,7 +36,7 @@ export default function StorytellerPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="glass-surface border-border/40 flex gap-1.5 overflow-x-auto rounded-xl p-1.5 shadow-sm">
+      <div className="facet-surface border-border/40 flex gap-1.5 overflow-x-auto rounded-xl p-1.5 shadow-sm">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -58,7 +58,7 @@ export default function StorytellerPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="glass-surface border-border/40 rounded-xl p-6 shadow-sm">
+      <div className="facet-surface border-border/40 rounded-xl p-6 shadow-sm">
         {activeTab === "wizard" && <EventWizard />}
         {activeTab === "timeline" && <WorldTimeline />}
         {activeTab === "interventions" && <ActiveInterventions />}

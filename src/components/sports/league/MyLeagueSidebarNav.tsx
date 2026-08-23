@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Users, Shield, ArrowLeftRight, Landmark } from "lucide-react";
+import { Dashboard as LayoutDashboard, Group as Users, Shield, ArrowSeparate as ArrowLeftRight, Bank as Landmark } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type MyLeagueSection = "overview" | "roster" | "tactics" | "transfers" | "management";
@@ -75,7 +75,7 @@ export function MyLeagueSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="facet-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;

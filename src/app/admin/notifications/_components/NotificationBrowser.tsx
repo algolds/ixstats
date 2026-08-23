@@ -15,24 +15,7 @@ import {
 } from "~/components/ui/select";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Search,
-  Trash2,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  AlertCircle,
-  Users,
-  Globe,
-  Zap,
-  Bell,
-  Eye,
-  EyeOff,
-  X,
-} from "lucide-react";
+import { Search, Trash as Trash2, Undo as RotateCcw, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, WarningCircle as AlertCircle, Group as Users, Globe, Flash as Zap, Bell, Eye, EyeClosed as EyeOff, Xmark as X } from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
 import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/ui/facet/swipeable";

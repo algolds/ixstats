@@ -4,19 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Virtuoso } from "react-virtuoso";
-import {
-  X,
-  Heart,
-  Smile,
-  Angry,
-  Flame,
-  ThumbsUp,
-  ThumbsDown,
-  Crown,
-  Newspaper,
-  Users,
-  MessageSquare,
-} from "lucide-react";
+import { Xmark as X, Heart, Emoji as Smile, Emoji as Angry, FireFlame as Flame, ThumbsUp, ThumbsDown, Crown, Journal as Newspaper, Group as Users, ChatBubble as MessageSquare } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";

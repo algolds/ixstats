@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { SlidersHorizontal, Layers, Sparkles, Building2, Coins } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, Component as Layers, Sparks as Sparkles, City as Building2, Coins } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface DirectiveTuningControlsProps {

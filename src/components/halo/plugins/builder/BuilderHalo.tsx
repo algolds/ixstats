@@ -17,7 +17,7 @@ import type { DIViewProps } from "~/components/halo/types";
 import { PreText } from "~/components/ui/pretext";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { notifyFromStore } from "~/hooks/useNotify";
-import { AlertCircle, Save } from "lucide-react";
+import { WarningCircle as AlertCircle, FloppyDisk as Save } from "iconoir-react";
 
 function BuilderCompactLabel() {
   return (

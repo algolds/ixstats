@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Zap, ArrowRight, Shield, Heart, Scale, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Flash as Zap, ArrowRight, Shield, Heart, ScaleFrameEnlarge as Scale, StatUp as TrendingUp, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface ProjectedDiff {

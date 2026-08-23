@@ -2,26 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Calculator,
-  Save,
-  Play,
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  DollarSign,
-  Users,
-  Globe,
-  Edit3,
-  History,
-  Shield,
-  HandshakeIcon,
-  Scale,
-  Loader2,
-  Code,
-  Terminal,
-  Search,
-} from "lucide-react";
+import { Calculator, FloppyDisk as Save, Play, WarningTriangle as AlertTriangle, CheckCircle, StatUp as TrendingUp, Dollar as DollarSign, Group as Users, Globe, EditPencil as Edit3, ClockRotateRight as History, Shield, Community as HandshakeIcon, ScaleFrameEnlarge as Scale, SystemRestart as Loader2, Code, Terminal, Search } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -826,7 +807,7 @@ export function CalculationEditor() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Module List Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="glass-surface border-border/40">
+          <Card className="facet-surface border-border/40">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base font-bold">
                 <Calculator className="h-4 w-4 text-indigo-500" />
@@ -911,7 +892,7 @@ export function CalculationEditor() {
             <div className="animate-in fade-in grid grid-cols-1 gap-6 duration-200 xl:grid-cols-3">
               {/* Left Column: Code Editor & Formula Spec (width: 2/3) */}
               <div className="space-y-6 xl:col-span-2">
-                <Card className="glass-surface border-border/40">
+                <Card className="facet-surface border-border/40">
                   <CardHeader className="border-border/10 border-b pb-3">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="space-y-1">
@@ -1054,7 +1035,7 @@ export function CalculationEditor() {
 
                 {/* Edit Mode Variables configuration */}
                 {isEditing && (
-                  <Card className="glass-surface border-border/40">
+                  <Card className="facet-surface border-border/40">
                     <CardHeader className="border-border/10 border-b pb-3">
                       <CardTitle className="text-sm font-bold">Edit Default Variables</CardTitle>
                     </CardHeader>
@@ -1116,7 +1097,7 @@ export function CalculationEditor() {
               {/* Right Column: Sandbox & Test Suite (width: 1/3) */}
               <div className="space-y-6 xl:col-span-1">
                 {/* Sandbox Simulator */}
-                <Card className="glass-surface border-border/40">
+                <Card className="facet-surface border-border/40">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-1.5 text-sm font-bold">
                       <Play className="h-4 w-4 fill-indigo-500/20 text-indigo-500" />
@@ -1248,7 +1229,7 @@ export function CalculationEditor() {
                 </Card>
 
                 {/* Integrated Unit Tests */}
-                <Card className="glass-surface border-border/40">
+                <Card className="facet-surface border-border/40">
                   <CardHeader className="border-border/10 flex flex-row items-center justify-between border-b pb-3">
                     <CardTitle className="flex items-center gap-1.5 text-sm font-bold">
                       <CheckCircle className="h-4 w-4 text-emerald-500" />
@@ -1324,7 +1305,7 @@ export function CalculationEditor() {
             </div>
           ) : (
             /* Home Landing Dashboard */
-            <Card className="glass-surface border-border/40 animate-in fade-in duration-200">
+            <Card className="facet-surface border-border/40 animate-in fade-in duration-200">
               <CardContent className="space-y-6 pt-8 pb-8">
                 <div className="mx-auto max-w-md space-y-3 text-center">
                   <div className="inline-block rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-indigo-500">

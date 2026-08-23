@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Plus, Crown, Pin, BookOpen } from "lucide-react";
+import { Search, Plus, Crown, Pin, OpenBook as BookOpen } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { motion } from "motion/react";

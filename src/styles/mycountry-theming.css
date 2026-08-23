@@ -231,7 +231,7 @@
 /* === THEMED GLASS COMPONENTS === */
 
 /* Tab-themed glass cards */
-.glass-card-themed {
+.facet-card-themed {
   background: linear-gradient(135deg, 
     rgba(30, 41, 59, 0.95) 0%,
     rgba(15, 23, 42, 0.98) 50%,
@@ -246,7 +246,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-card-themed:hover {
+.facet-card-themed:hover {
   background: linear-gradient(135deg, 
     rgba(45, 56, 79, 0.95) 0%,
     rgba(30, 41, 59, 0.98) 50%,
@@ -406,7 +406,7 @@
     --space-glass-xl: 1.5rem;
   }
   
-  .glass-card-themed {
+  .facet-card-themed {
     /* Simplified glass effects for performance */
     backdrop-filter: blur(8px) saturate(120%);
     box-shadow: 
@@ -423,7 +423,7 @@
 
 /* Tablet optimizations */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .glass-card-themed {
+  .facet-card-themed {
     backdrop-filter: blur(12px) saturate(140%);
   }
   
@@ -434,7 +434,7 @@
 
 /* Desktop enhancements */
 @media (min-width: 1025px) {
-  .glass-card-themed:hover {
+  .facet-card-themed:hover {
     backdrop-filter: blur(20px) saturate(160%);
   }
   
@@ -473,7 +473,7 @@
   --tab-modeling-bg: rgba(30, 64, 175, 0.15);
 }
 
-[data-theme="dark"] .glass-card-themed {
+[data-theme="dark"] .facet-card-themed {
   background: linear-gradient(135deg,
     rgba(15, 23, 42, 0.95) 0%,
     rgba(8, 16, 36, 0.98) 50%,
@@ -516,7 +516,7 @@
   --tab-modeling-glow: rgba(30, 64, 175, 0.25);
 }
 
-[data-theme="light"] .glass-card-themed {
+[data-theme="light"] .facet-card-themed {
   background: linear-gradient(135deg,
     rgba(255, 255, 255, 0.95) 0%,
     rgba(248, 250, 252, 0.98) 50%,
@@ -534,7 +534,7 @@
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .tab-interactive,
-  .glass-card-themed,
+  .facet-card-themed,
   .tab-shimmer::before {
     transition: opacity 0.2s ease, background-color 0.2s ease;
     animation: none;
@@ -560,7 +560,7 @@
     outline-offset: 3px;
   }
   
-  .glass-card-themed {
+  .facet-card-themed {
     border-width: 2px;
   }
 }

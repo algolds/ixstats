@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, SunDim } from "lucide-react";
+import { HalfMoon as Moon, SunLight as SunDim } from "iconoir-react";
 import { useRef } from "react";
 import { flushSync } from "react-dom";
 import { cn } from "~/lib/utils";

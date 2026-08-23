@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { AlertCircle, Loader2, X } from "lucide-react";
+import { WarningCircle as AlertCircle, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
@@ -94,7 +94,7 @@ function ImportDeckTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="glass-hierarchy-parent relative overflow-hidden border border-white/10">
+        <Card className="facet-hierarchy-parent relative overflow-hidden border border-white/10">
           {/* NS Header Banner */}
           <div
             style={{

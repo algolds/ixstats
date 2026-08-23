@@ -19,7 +19,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { LineChart } from "lucide-react";
+import { GraphUp as LineChart } from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 import type { ChartDataPoint, EventMarker } from "~/lib/economy/historical-transformers";
 

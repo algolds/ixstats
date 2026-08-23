@@ -1,15 +1,5 @@
 import { useState } from "react";
-import {
-  Image as ImageIcon,
-  Type as TypeIcon,
-  Save,
-  X,
-  Activity,
-  ArrowLeftRight,
-  TrendingUp,
-  Users,
-  DollarSign,
-} from "lucide-react";
+import { MediaImage as ImageIcon, Type as TypeIcon, FloppyDisk as Save, Xmark as X, Activity, ArrowSeparate as ArrowLeftRight, StatUp as TrendingUp, Group as Users, Dollar as DollarSign } from "iconoir-react";
 import Link from "next/link";
 import { getCountryPath } from "~/lib/utils";
 import { FlagUploadSection } from "./FlagUploadSection";
@@ -80,7 +70,7 @@ export function CountryInformationCard({
   });
 
   return (
-    <div className="glass-surface glass-refraction group overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction group overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="grid" opacity={0.025} />
         <div className="relative z-10 mb-8 flex items-center justify-between">
@@ -93,7 +83,7 @@ export function CountryInformationCard({
           </div>
           <Link
             href={countryPath}
-            className="glass-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
+            className="facet-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
           >
             View MyCountry
           </Link>

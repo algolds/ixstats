@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Receipt, Calculator, Settings, BarChart3 } from "lucide-react";
+import { Page as Receipt, Calculator, Settings, StatsReport as BarChart3 } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 const linkClass = "text-blue-600 hover:underline dark:text-blue-400";

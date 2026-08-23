@@ -1,4 +1,4 @@
-import { Ruler } from "lucide-react";
+import { Ruler } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const RulerGuidesPlugin: MapEditorPlugin = {

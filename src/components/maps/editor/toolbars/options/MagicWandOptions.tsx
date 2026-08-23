@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Wand2 } from "lucide-react";
+import { MagicWand as Wand2 } from "iconoir-react";
 import {
   ToolLabel,
   dividerClass,

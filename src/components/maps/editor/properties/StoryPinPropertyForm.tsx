@@ -1,24 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
-import {
-  Download,
-  ChevronDown,
-  Loader2,
-  Bold,
-  Italic,
-  Heading2,
-  Heading3,
-  Link2,
-  List,
-  ImageIcon,
-  Eye,
-  EyeOff,
-  X,
-  Plus,
-  Sparkles,
-  Search,
-} from "lucide-react";
+import { Download, NavArrowDown as ChevronDown, SystemRestart as Loader2, Bold, Italic, TextSize as Heading2, TextSize as Heading3, Link as Link2, List, MediaImage as ImageIcon, Eye, EyeClosed as EyeOff, Xmark as X, Plus, Sparks as Sparkles, Search } from "iconoir-react";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
 
@@ -493,7 +476,7 @@ function WikiAutoPopulate({
   );
 }
 
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 
 // ─── Main Form ───────────────────────────────────────────────────────────────
 

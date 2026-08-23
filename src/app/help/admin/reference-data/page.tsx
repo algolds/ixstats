@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderTree, Edit } from "lucide-react";
+import { Folder as FolderTree, EditPencil as Edit } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ReferenceDataArticle() {

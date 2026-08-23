@@ -113,7 +113,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
           <ProgressiveBlur>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="glass-surface glass-refraction h-60 animate-pulse md:h-80">
+                <div key={i} className="facet-surface facet-refraction h-60 animate-pulse md:h-80">
                   <div className="space-y-4 p-6">
                     <div className="bg-muted/30 h-6 rounded"></div>
                     <div className="bg-muted/20 h-4 w-2/3 rounded"></div>
@@ -144,7 +144,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction inline-block px-6 py-4">
+          <div className="facet-floating facet-refraction inline-block px-6 py-4">
             <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction mx-auto max-w-md p-12">
+          <div className="facet-floating facet-refraction mx-auto max-w-md p-12">
             <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
             <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
             <p className="text-muted-foreground mb-4">

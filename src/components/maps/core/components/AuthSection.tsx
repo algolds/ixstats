@@ -1,6 +1,6 @@
 "use client";
 
-import { LogIn, User, LayoutDashboard, Crown } from "lucide-react";
+import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { getNationUrl } from "~/lib/utils";

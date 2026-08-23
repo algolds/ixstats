@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, Copy, Bookmark, Loader2, Plus, LayoutGrid, Table } from "lucide-react";
+import { Check, Copy, Bookmark, SystemRestart as Loader2, Plus, ViewGrid as LayoutGrid, Table } from "iconoir-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "./NameResultCard";
@@ -248,7 +248,7 @@ export function SynthesisResultsGrid({
                 {copiedBatch ? (
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 text-[#0091ff]" />
+                  <Copy className="h-3.5 w-3.5 text-onoma-primary" />
                 )}
                 <span>{copiedBatch ? "Copied" : "Copy All"}</span>
               </button>
@@ -268,7 +268,7 @@ export function SynthesisResultsGrid({
           {showSaveDictForm && (
             <form
               onSubmit={handleSaveBatchAsDictionary}
-              className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-[#0091ff]/30 bg-[#0091ff]/5 p-3 duration-200"
+              className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-onoma-primary/30 bg-onoma-primary/5 p-3 duration-200"
             >
               <input
                 type="text"
@@ -276,12 +276,12 @@ export function SynthesisResultsGrid({
                 required
                 value={dictionaryTitle}
                 onChange={(e) => setDictionaryTitle(e.target.value)}
-                className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium focus:border-[#0091ff]/60 focus:outline-none"
+                className="border-border/60 bg-background text-foreground flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium focus:border-onoma-primary/60 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={isSavingDict}
-                className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#33a7ff] active:scale-95 disabled:opacity-50"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-onoma-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-onoma-primary-light active:scale-95 disabled:opacity-50"
               >
                 {isSavingDict ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -369,15 +369,15 @@ export function SynthesisResultsGrid({
         </div>
       ) : (
         <FacetCard className="border-border/40 bg-secondary/5 flex min-h-[260px] flex-col items-center justify-center p-8 text-center rounded-2xl">
-          <div className="border-border/40 bg-secondary/20 mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border text-[#0091ff]">
-            <OnomaGlyph name="emerge-synthesis" size="sm" className="text-[#0091ff]" />
+          <div className="border-border/40 bg-secondary/20 mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border text-onoma-primary">
+            <OnomaGlyph name="emerge-synthesis" size="sm" className="text-onoma-primary" />
           </div>
           <h4 className="text-foreground text-sm font-bold tracking-tight">
             Ready to Generate
           </h4>
           <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
             Select a preset and culture above, then click{" "}
-            <span className="font-semibold text-[#0091ff]">Generate Names</span>{" "}
+            <span className="font-semibold text-onoma-primary">Generate Names</span>{" "}
             to produce vocabulary for this category.
           </p>
         </FacetCard>

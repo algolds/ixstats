@@ -12,7 +12,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle, Xmark as X } from "iconoir-react";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 
@@ -49,10 +49,10 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     tag: "Recommended",
     description: "Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion.",
     color: "#0091ff",
-    textClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    bgClassName: "bg-[#0091ff]/10 dark:bg-[#0091ff]/15",
-    borderClassName: "border-[#0091ff]/30",
-    dotClassName: "bg-[#0091ff]",
+    textClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    bgClassName: "bg-onoma-primary/10 dark:bg-onoma-primary/15",
+    borderClassName: "border-onoma-primary/30",
+    dotClassName: "bg-onoma-primary",
   },
   {
     depth: 3,
@@ -245,8 +245,8 @@ export function PatternDepthControl({
                   <span>High variation</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#0091ff]" />
-                  <span className="text-[#0091ff] font-semibold">2 Organic:</span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-onoma-primary" />
+                  <span className="text-onoma-primary font-semibold">2 Organic:</span>
                   <span>Natural flow (★)</span>
                 </div>
                 <div className="flex items-center gap-1.5">

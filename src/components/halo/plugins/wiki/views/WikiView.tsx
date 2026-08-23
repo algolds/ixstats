@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, X, Bell, Settings, Bookmark, Loader2 } from "lucide-react";
+import { Search, Xmark as X, Bell, Settings, Bookmark, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";

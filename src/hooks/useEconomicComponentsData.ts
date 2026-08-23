@@ -16,39 +16,8 @@
  */
 
 import { useMemo } from "react";
-import {
-  DollarSign,
-  BarChart3,
-  Building2,
-  Target,
-  Heart,
-  Brain,
-  Lightbulb,
-  Wrench,
-  Leaf,
-  Factory,
-  Users,
-  Zap,
-  Unlock,
-  Shield,
-  Briefcase,
-  GraduationCap,
-  Globe,
-  Lock,
-  ArrowUpDown,
-  BriefcaseBusiness,
-  PieChart,
-  Activity,
-  HelpCircle,
-  TrendingUp,
-  Crown,
-  Network,
-  Landmark,
-  Scale,
-  BookOpen,
-  Cpu,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Archery as Target, Heart, Brain, LightBulb as Lightbulb, Wrench, Leaf, Industry as Factory, Group as Users, Flash as Zap, LockSlash as Unlock, Shield, Suitcase as Briefcase, GraduationCap, Globe, Lock, ArrowSeparateVertical as ArrowUpDown, Suitcase as BriefcaseBusiness, Reports as PieChart, Activity, HelpCircle, StatUp as TrendingUp, Crown, Network, Bank as Landmark, ScaleFrameEnlarge as Scale, OpenBook as BookOpen, Cpu } from "iconoir-react";
+
 import { api } from "~/trpc/react";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
@@ -57,8 +26,8 @@ import {
 } from "~/lib/economy/atomic-data";
 
 // Manual icon registry — only the ~30 icons used by economic components.
-// Avoids `import * from "lucide-react"` which pulls all 3,824 icons (~40MB) into the module graph.
-const ICON_REGISTRY: Record<string, LucideIcon> = {
+// Avoids `import * from "iconoir-react"` which pulls all icons into the module graph.
+const ICON_REGISTRY: Record<string, React.ComponentType<{ className?: string }>> = {
   DollarSign,
   BarChart3,
   Building2,
@@ -92,7 +61,7 @@ const ICON_REGISTRY: Record<string, LucideIcon> = {
 };
 const DEFAULT_COMPONENT_ICON = BriefcaseBusiness;
 
-function resolveComponentIcon(iconName?: string | null): LucideIcon {
+function resolveComponentIcon(iconName?: string | null): React.ComponentType<{ className?: string }> {
   if (!iconName) return DEFAULT_COMPONENT_ICON;
 
   const candidates = [iconName, iconName.charAt(0).toUpperCase() + iconName.slice(1)];

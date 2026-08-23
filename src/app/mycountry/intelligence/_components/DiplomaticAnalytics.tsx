@@ -13,14 +13,7 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Globe,
-  TrendingUp,
-  Network,
-  PieChart as PieChartIcon,
-  Calendar,
-  Activity,
-} from "lucide-react";
+import { Globe, StatUp as TrendingUp, Network, Reports as PieChartIcon, Calendar, Activity } from "iconoir-react";
 import { useDiplomaticAnalytics } from "~/hooks/useDiplomaticAnalytics";
 import {
   OverviewStats,
@@ -62,7 +55,7 @@ export function DiplomaticAnalytics({ countryId }: DiplomaticAnalyticsProps) {
 
   if (!hasRelationships) {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="flex min-h-[300px] items-center justify-center">
           <div className="space-y-4 text-center">
             <Globe className="text-muted-foreground mx-auto h-16 w-16 opacity-50" />

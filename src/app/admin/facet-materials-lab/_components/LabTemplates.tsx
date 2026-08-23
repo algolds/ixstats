@@ -1,23 +1,7 @@
 import * as React from "react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
-import {
-  Layers,
-  Sparkles,
-  Shield,
-  Activity,
-  BarChart3,
-  Globe,
-  Menu,
-  Star,
-  Hexagon,
-  Box,
-  Heart,
-  Zap,
-  Bell,
-  ChevronRight,
-  Code,
-} from "lucide-react";
+import { Component as Layers, Sparks as Sparkles, Shield, Activity, StatsReport as BarChart3, Globe, Menu, Star, Hexagon, Package as Box, Heart, Flash as Zap, Bell, NavArrowRight as ChevronRight, Code } from "iconoir-react";
 import { type LabConfig } from "./types";
 
 interface TemplateRendererProps {

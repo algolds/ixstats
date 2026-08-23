@@ -2,20 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  MoreHorizontal,
-  Pin,
-  Bookmark,
-  BookOpen,
-  Flag,
-  Edit,
-  Trash2,
-  Crown,
-  Newspaper,
-  Users,
-  Repeat2,
-  MessageCircle,
-} from "lucide-react";
+import { MoreHoriz as MoreHorizontal, Pin, Bookmark, OpenBook as BookOpen, WhiteFlag as Flag, EditPencil as Edit, Trash as Trash2, Crown, Journal as Newspaper, Group as Users, Refresh as Repeat2, ChatBubble as MessageCircle } from "iconoir-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -193,10 +180,10 @@ export function StandardPostView({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "glass-hierarchy-child hover:glass-hierarchy-interactive shadow-sm transition-all duration-300 hover:bg-white/5 dark:hover:bg-white/5",
+        "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 backdrop-blur-xl shadow-xs transition-all duration-200 hover:border-border/80 hover:bg-card/95 hover:shadow-md",
         compact ? "p-3" : "p-4",
         post.pinned &&
-          "border-amber-500/30 bg-amber-500/5 dark:border-amber-500/20 dark:bg-amber-500/5"
+          "border-amber-500/40 bg-amber-500/5 shadow-amber-500/5 dark:border-amber-500/30 dark:bg-amber-500/5"
       )}
     >
       {post.pinned && (
@@ -435,25 +422,7 @@ export function StandardPostView({
             onLike={onLike}
             onRepost={onRepost}
             onReply={() => handleReply()}
-            onShare={() => {
-              const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
-              if (navigator.share) {
-                navigator
-                  .share({
-                    title: `Post by @${post.account?.username}`,
-                    text: post.content.substring(0, 100),
-                    url: postUrl,
-                  })
-                  .catch(() => {
-                    navigator.clipboard.writeText(postUrl);
-                    notify.success("Post link copied to clipboard!");
-                  });
-              } else {
-                navigator.clipboard.writeText(postUrl);
-                notify.success("Post link copied to clipboard!");
-              }
-              onShare?.(post.id);
-            }}
+            onShare={onShare}
             onReaction={onReaction}
             showCounts={true}
             size="md"

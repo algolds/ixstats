@@ -15,15 +15,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  MessageSquare,
-  ChevronDown,
-  ChevronUp,
+  ChatBubble as MessageSquare,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
   Terminal,
   Globe,
-  Info,
-  Loader2,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
   Cpu,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface FeedbackModalProps {

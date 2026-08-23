@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Rss, Users } from "lucide-react";
+import { RssFeed as Rss, Group as Users } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -267,13 +267,11 @@ export function UnifiedFeedContent({
   if (filteredFeed.length === 0) {
     const label = activeTab === "community" ? "community updates" : "activity";
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
-          <p className="text-muted-foreground text-xs">Check back later for updates.</p>
-        </CardContent>
-      </Card>
+      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+        <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
+        <p className="text-muted-foreground text-xs">Check back later for updates.</p>
+      </div>
     );
   }
 
@@ -369,32 +367,28 @@ export function FollowingFeedContent({
 
   if (followingCount === 0) {
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
-          <p className="text-muted-foreground text-xs">
-            Follow countries to see their activity here.
-          </p>
-          <Link href={"/countries"}>
-            <Button size="sm" variant="outline" className="mt-3 text-xs">
-              Explore Countries
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
+        <p className="text-muted-foreground text-xs">
+          Follow countries to see their activity here.
+        </p>
+        <Link href={"/countries"}>
+          <Button size="sm" variant="outline" className="mt-3 text-xs">
+            Explore Countries
+          </Button>
+        </Link>
+      </div>
     );
   }
 
   if (processedActivities.length === 0) {
     return (
-      <Card className="glass-surface glass-refraction border-border/40">
-        <CardContent className="p-8 text-center">
-          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
-          <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
-          <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
-        </CardContent>
-      </Card>
+      <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/75 p-8 text-center shadow-xs backdrop-blur-xl transition-all duration-200 hover:border-border/80">
+        <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
+        <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
+        <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
+      </div>
     );
   }
 

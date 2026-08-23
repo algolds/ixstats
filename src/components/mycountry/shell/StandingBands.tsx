@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { Activity, Users, DollarSign, Heart, Scale, Zap } from "lucide-react";
+import { Activity, Group as Users, Dollar as DollarSign, Heart, ScaleFrameEnlarge as Scale, Flash as Zap } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";

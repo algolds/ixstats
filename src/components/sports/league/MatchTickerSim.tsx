@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { Play, Pause, RotateCcw, Flame, Shield, Users, Activity, HelpCircle } from "lucide-react";
+import { Play, Pause, Undo as RotateCcw, FireFlame as Flame, Shield, Group as Users, Activity, HelpCircle } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 

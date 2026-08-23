@@ -3,16 +3,16 @@
 import React, { useMemo } from "react";
 import {
   Heart,
-  BarChart3,
-  LineChart,
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
   Globe,
-  Info,
+  InfoCircle as Info,
   Activity,
-  Baby,
+  Lullaby as Baby,
   Clock,
-  Stethoscope,
-  TrendingUp,
-} from "lucide-react";
+  Healthcare as Stethoscope,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

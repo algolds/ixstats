@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { BarChart2 } from "lucide-react";
+import { StatsReport as BarChart2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 interface GovernmentMetricsEditorProps {
@@ -87,7 +87,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   };
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-violet-600" />

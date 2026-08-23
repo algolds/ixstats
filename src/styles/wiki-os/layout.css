@@ -727,7 +727,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
 }
 
 .wikios-main-stat-featured {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-size: 8px;
   background: rgba(251, 191, 36, 0.12);
   border: 1px solid rgba(251, 191, 36, 0.25);
@@ -875,7 +875,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
   height: 36px;
   padding: 0 16px;
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-error);
   border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 8px;
   font-size: 13px;

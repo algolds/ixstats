@@ -204,7 +204,7 @@ export function PreviewSection() {
         {state.previewLayers ? (
           <div ref={mapContainerRef} className="h-[500px] w-full" />
         ) : (
-          <div className="flex h-[500px] items-center justify-center bg-gradient-to-b from-[#b3cde0]/20 to-slate-900/50">
+          <div className="flex h-[500px] items-center justify-center bg-gradient-to-b from-sky-200/20 to-slate-900/50">
             <div className="text-center">
               <p className="text-5xl">🌍</p>
               <p className="mt-3 text-sm font-medium text-white/50">

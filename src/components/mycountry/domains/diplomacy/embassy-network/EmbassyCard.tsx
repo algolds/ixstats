@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { Building2, ShieldCheck, ChevronRight, CreditCard } from "lucide-react";
+import { City as Building2, ShieldCheck, NavArrowRight as ChevronRight, CreditCard } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import Link from "next/link";

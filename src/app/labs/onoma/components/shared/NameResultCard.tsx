@@ -5,16 +5,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Copy,
-  Check,
-  Bookmark,
-  ArrowUpRight,
-  Loader2,
-  Volume2,
-  Languages,
-  Pencil,
-} from "lucide-react";
+import { Copy, Check, Bookmark, ArrowUpRight, SystemRestart as Loader2, SoundHigh as Volume2, Translate as Languages, EditPencil as Pencil } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -246,7 +237,7 @@ export function NameResultCard({
               fitColor === "amber" && "border-amber-500/35 shadow-amber-500/5 ring-amber-500/20",
               fitColor === "rose" && "border-rose-500/25 shadow-rose-500/5 ring-rose-500/10",
               !fitColor &&
-                "border-[#0091ff]/30 bg-[#0091ff]/[0.01] shadow-[#0091ff]/5 ring-[#0091ff]/10"
+                "border-onoma-primary/30 bg-onoma-primary/[0.01] shadow-onoma-primary/5 ring-onoma-primary/10"
             )
           : cn(
               "z-10 col-span-1",
@@ -257,7 +248,7 @@ export function NameResultCard({
               fitColor === "rose" &&
                 "hover:border-rose-500/35 hover:shadow-[0_0_14px_rgba(244,63,94,0.1)] dark:hover:border-rose-500/25 dark:hover:shadow-[0_0_18px_rgba(244,63,94,0.15)]",
               !fitColor &&
-                "hover:border-[#0091ff]/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-[#0091ff]/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
+                "hover:border-onoma-primary/45 hover:shadow-[0_0_12px_rgba(0,145,255,0.08)] dark:hover:border-onoma-primary/35 dark:hover:shadow-[0_0_16px_rgba(0,145,255,0.15)]"
             )
       )}
     >
@@ -313,7 +304,7 @@ export function NameResultCard({
         {/* Name Display Stack */}
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
           <span
-            className="text-foreground w-full whitespace-nowrap font-bold tracking-tight leading-none transition-colors duration-300 group-hover:text-[#0091ff]"
+            className="text-foreground w-full whitespace-nowrap font-bold tracking-tight leading-none transition-colors duration-300 group-hover:text-onoma-primary"
             style={{ fontSize: dynamicFontSize }}
             title={name}
           >
@@ -328,13 +319,13 @@ export function NameResultCard({
                   onClick={handlePlayPronunciation}
                   title="Click to hear phonetic pronunciation"
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/15 flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]",
+                    "text-muted-foreground border-border/40 bg-secondary/15 flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none hover:bg-onoma-primary/10 hover:text-onoma-primary active:scale-[0.94]",
                     allowCustomize ? "rounded-l-full" : "rounded-full",
-                    hasOverride && "border-[#0091ff]/40 text-[#0091ff]"
+                    hasOverride && "border-onoma-primary/40 text-onoma-primary"
                   )}
                   style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="h-3 w-3 flex-shrink-0 text-[#0091ff]" />
+                  <Volume2 className="h-3 w-3 flex-shrink-0 text-onoma-primary" />
                   <span className="whitespace-nowrap">{ipa}</span>
                 </button>
                 {allowCustomize && (
@@ -343,7 +334,7 @@ export function NameResultCard({
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
                     className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/15 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-[0.94]"
+                      "text-muted-foreground border-border/40 bg-secondary/15 flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none hover:bg-onoma-primary/10 hover:text-onoma-primary active:scale-[0.94]"
                     )}
                   >
                     <Pencil className="h-2.5 w-2.5" />
@@ -373,8 +364,8 @@ export function NameResultCard({
             className={cn(
               "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92]",
               showDetailsModal
-                ? "bg-[#0091ff]/20 text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1 ring-[#0091ff]/30"
-                : "text-muted-foreground hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                ? "bg-onoma-primary/20 text-onoma-primary shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1 ring-onoma-primary/30"
+                : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
             )}
           >
             <Languages className="h-4 w-4" />
@@ -402,15 +393,15 @@ export function NameResultCard({
               className={cn(
                 "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92] disabled:opacity-50",
                 localSaved
-                  ? "scale-105 bg-[#0091ff]/20 text-[#0091ff] shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-[#0091ff]/30"
-                  : "text-muted-foreground hover:bg-[#0091ff]/10 hover:text-[#0091ff]"
+                  ? "scale-105 bg-onoma-primary/20 text-onoma-primary shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1 ring-onoma-primary/30"
+                  : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
               )}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Bookmark
-                  className={cn("h-4 w-4", localSaved && "fill-[#0091ff] text-[#0091ff]")}
+                  className={cn("h-4 w-4", localSaved && "fill-onoma-primary text-onoma-primary")}
                 />
               )}
             </button>

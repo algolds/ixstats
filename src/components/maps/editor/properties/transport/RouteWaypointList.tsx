@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Check, Undo2, Trash2, MapPin, Loader2 } from "lucide-react";
+import { Check, Undo as Undo2, Trash as Trash2, MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 interface RouteWaypointListProps {

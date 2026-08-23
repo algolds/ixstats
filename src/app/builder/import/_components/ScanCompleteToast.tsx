@@ -2,21 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Building2,
-  TrendingUp,
-  Users,
-  Globe,
-  Shield,
-  DollarSign,
-  ArrowRight,
-  Info,
-} from "lucide-react";
+import { CheckCircle as CheckCircle2, WarningTriangle as AlertTriangle, Xmark as X, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, City as Building2, StatUp as TrendingUp, Group as Users, Globe, Shield, Dollar as DollarSign, ArrowRight, InfoCircle as Info } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";

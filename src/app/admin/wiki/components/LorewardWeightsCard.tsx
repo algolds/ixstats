@@ -10,7 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { SlidersHorizontal, Save, Loader2 } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, FloppyDisk as Save, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function LorewardWeightsCard() {

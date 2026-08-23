@@ -8,27 +8,7 @@ import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import {
-  Search,
-  RefreshCw,
-  Loader2,
-  AlertTriangle,
-  Play,
-  Square,
-  Terminal,
-  Sliders,
-  Database,
-  Trash2,
-  Award,
-  Info,
-  Zap,
-  Calendar,
-  Shield,
-  ChevronsUpDown,
-  Ban,
-  Save,
-  CheckCircle,
-} from "lucide-react";
+import { Search, Refresh as RefreshCw, SystemRestart as Loader2, WarningTriangle as AlertTriangle, Play, Square, Terminal, ControlSlider as Sliders, Database, Trash as Trash2, Trophy as Award, InfoCircle as Info, Flash as Zap, Calendar, Shield, ArrowSeparateVertical as ChevronsUpDown, Prohibition as Ban, FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {

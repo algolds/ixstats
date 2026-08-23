@@ -1,4 +1,4 @@
-import { Globe2, Shield, Landmark, TrendingUp } from "lucide-react";
+import { Globe as Globe2, Shield, Bank as Landmark, StatUp as TrendingUp } from "iconoir-react";
 
 /**
  * Single source of truth for the four v2 domain drill-downs.

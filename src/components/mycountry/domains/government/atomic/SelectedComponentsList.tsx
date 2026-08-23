@@ -10,7 +10,7 @@
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { X, Package, Check, AlertTriangle } from "lucide-react";
+import { Xmark as X, Package, Check, WarningTriangle as AlertTriangle } from "iconoir-react";
 import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";

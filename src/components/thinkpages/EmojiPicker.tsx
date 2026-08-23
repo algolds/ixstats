@@ -1,18 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import {
-  Smile,
-  Search,
-  Loader2,
-  Cat,
-  Pizza,
-  Trophy,
-  Plane,
-  Lightbulb,
-  Heart,
-  Flag,
-} from "lucide-react";
+import { Emoji as Smile, Search, SystemRestart as Loader2, Emoji as Cat, Shop as Pizza, Trophy, Airplane as Plane, LightBulb as Lightbulb, Heart, WhiteFlag as Flag } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";

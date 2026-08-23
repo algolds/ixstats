@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Flag } from "lucide-react";
+import { WhiteFlag as Flag } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
 interface UnifiedCountryFlagProps {

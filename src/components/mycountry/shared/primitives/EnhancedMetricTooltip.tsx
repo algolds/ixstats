@@ -2,16 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  MousePointerClick,
-  ArrowUpRight,
-  ArrowDownRight,
-  Globe,
-  Map,
-} from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, CursorPointer as MousePointerClick, ArrowUpRight, ArrowDownRight, Globe, Map } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 

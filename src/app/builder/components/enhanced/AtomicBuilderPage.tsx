@@ -5,7 +5,7 @@ import { isEqual } from "~/lib/utils";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock as UnlockIcon, Shield, AlertTriangle, Info, CheckCircle } from "lucide-react";
+import { Lock, LockSlash as UnlockIcon, Shield, WarningTriangle as AlertTriangle, InfoCircle as Info, CheckCircle } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

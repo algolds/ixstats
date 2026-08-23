@@ -6,18 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import {
-  Trash2,
-  Plus,
-  Calendar,
-  Globe,
-  Users,
-  BarChart3,
-  CheckCircle2,
-  Clock,
-  Send,
-  Loader2,
-} from "lucide-react";
+import { Trash as Trash2, Plus, Calendar, Globe, Group as Users, StatsReport as BarChart3, CheckCircle as CheckCircle2, Clock, Send, SystemRestart as Loader2 } from "iconoir-react";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 
@@ -92,8 +81,8 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
   if (!polls || polls.length === 0) {
     return (
       <Card className="border-border/60 bg-card/20 flex flex-col items-center justify-center border border-dashed p-10 text-center backdrop-blur-md">
-        <div className="mb-4 rounded-full bg-[#ff8a65]/10 p-4">
-          <BarChart3 className="h-8 w-8 text-[#ff8a65]" />
+        <div className="mb-4 rounded-full bg-poll/10 p-4">
+          <BarChart3 className="h-8 w-8 text-poll" />
         </div>
         <CardTitle className="text-xl font-bold">No polls configured</CardTitle>
         <CardDescription className="text-muted-foreground mt-2 mb-6 max-w-md text-sm">
@@ -102,7 +91,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
         </CardDescription>
         <Button
           onClick={onCreateNew}
-          className="cursor-pointer gap-1.5 bg-[#ff8a65] font-semibold text-white hover:bg-[#ff8a65]/90"
+          className="cursor-pointer gap-1.5 bg-poll font-semibold text-white hover:bg-poll/90"
         >
           <Plus className="h-4 w-4" /> Create First Poll
         </Button>
@@ -232,7 +221,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                       variant="outline"
                       onClick={() => handlePublishToDiscord(poll.id)}
                       disabled={publishToDiscordMutation.isPending}
-                      className="h-7 cursor-pointer gap-1 border-[#ff8a65]/35 text-[10px] font-semibold text-[#ff8a65] transition-all duration-200 hover:bg-[#ff8a65]/10"
+                      className="h-7 cursor-pointer gap-1 border-poll/35 text-[10px] font-semibold text-poll transition-all duration-200 hover:bg-poll/10"
                       size="sm"
                     >
                       {publishToDiscordMutation.isPending ? (
@@ -261,7 +250,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   <div className="flex items-center gap-1">
                     {poll.countryId ? (
                       <>
-                        <Users className="h-3.5 w-3.5 text-[#ff8a65]" />
+                        <Users className="h-3.5 w-3.5 text-poll" />
                         <span>
                           Target: <span className="text-foreground">{countryName}</span>
                         </span>
@@ -310,7 +299,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     return (
                       <div key={opt.id} className="group/opt space-y-1.5">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-foreground transition-colors group-hover/opt:text-[#ff8a65]">
+                          <span className="text-foreground transition-colors group-hover/opt:text-poll">
                             {opt.label}
                           </span>
                           <span className="text-muted-foreground">
@@ -321,7 +310,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                         {/* Linear Progress Bar */}
                         <div className="bg-muted/35 relative h-2 w-full overflow-hidden rounded-full">
                           <div
-                            className="h-full rounded-full bg-[#ff8a65] transition-all duration-500"
+                            className="h-full rounded-full bg-poll transition-all duration-500"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -332,7 +321,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                 <div className="border-border/20 text-muted-foreground/70 mt-4 flex justify-between border-t pt-3 text-[10px] font-bold tracking-tight uppercase">
                   <span>Total Option Votes Cast: {votesCount}</span>
                   {poll.multiple && (
-                    <span className="text-[#ff8a65]">Multiple selection enabled</span>
+                    <span className="text-poll">Multiple selection enabled</span>
                   )}
                 </div>
               </CardContent>

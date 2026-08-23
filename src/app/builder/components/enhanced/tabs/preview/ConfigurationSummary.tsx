@@ -3,7 +3,7 @@
 import React from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
-import { Building2 } from "lucide-react";
+import { City as Building2 } from "iconoir-react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../../../lib/economy-data-service";
 

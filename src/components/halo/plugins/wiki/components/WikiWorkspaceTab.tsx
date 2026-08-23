@@ -5,15 +5,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FileEdit,
-  History,
-  Link2,
-  Clock,
-  ExternalLink,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { PageEdit as FileEdit, ClockRotateRight as History, Link as Link2, Clock, OpenNewWindow as ExternalLink, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";

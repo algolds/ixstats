@@ -3,8 +3,8 @@
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { TrendingUp, Briefcase, Users, DollarSign } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import { StatUp as TrendingUp, Suitcase as Briefcase, Group as Users, Dollar as DollarSign } from "iconoir-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -42,7 +42,7 @@ export function LaborTab({
   };
 
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-labor border-border relative overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-labor border-border relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -123,7 +123,7 @@ export function LaborTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground flex items-center text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.workforce === "participation"
@@ -168,7 +168,7 @@ export function LaborTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.employment === "employed"
@@ -220,7 +220,7 @@ export function LaborTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.compensation === "minimum"
@@ -264,7 +264,7 @@ export function LaborTab({
                 <span>Workforce Overview</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "workforce" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -274,7 +274,7 @@ export function LaborTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "workforce" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "workforce"
                   ? "border border-white/10"
@@ -397,7 +397,7 @@ export function LaborTab({
                 <span>Compensation & Wages</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "compensation" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -407,7 +407,7 @@ export function LaborTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "compensation" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "compensation"
                   ? "border border-white/10"
@@ -527,7 +527,7 @@ export function LaborTab({
                 <span>Human Capital & Skills</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "human-capital" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -537,7 +537,7 @@ export function LaborTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "human-capital" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "human-capital"
                   ? "border border-white/10"

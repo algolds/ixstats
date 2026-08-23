@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Star, Zap } from "lucide-react";
+import { Star, Flash as Zap } from "iconoir-react";
 import type { CardInstance, FormattedStats } from "~/types/cards-display";
 
 export interface CardStatsTabProps {
@@ -16,7 +16,7 @@ export function CardStatsTab({ card, stats }: CardStatsTabProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="glass-hierarchy-child rounded-lg p-6"
+      className="facet-hierarchy-child rounded-lg p-6"
     >
       <h3 className="text-foreground mb-2 flex items-center gap-2 text-lg font-semibold">
         <Star className="h-5 w-5" />

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Brain, Users2, TrendingUp, Target } from "lucide-react";
+import { Brain, Group as Users2, StatUp as TrendingUp, Archery as Target } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

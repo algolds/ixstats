@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { PenSquare, CheckCheck } from "lucide-react";
+import { EditPencil as PenSquare, CheckCircle as CheckCheck } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";

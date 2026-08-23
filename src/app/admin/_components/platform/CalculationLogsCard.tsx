@@ -1,7 +1,7 @@
 // src/app/admin/_components/platform/CalculationLogsCard.tsx
 "use client";
 
-import { Database, AlertCircle, Clock, Zap } from "lucide-react";
+import { Database, WarningCircle as AlertCircle, Clock, Flash as Zap } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -16,7 +16,7 @@ interface CalculationLogsCardProps {
 
 export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsCardProps) {
   return (
-    <Card className="glass-surface glass-refraction border-border/40">
+    <Card className="facet-surface facet-refraction border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Database className="h-5 w-5 text-indigo-500" />
@@ -61,7 +61,7 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="glass-hierarchy-child border-border/30 rounded-lg border p-3"
+                className="facet-hierarchy-child border-border/30 rounded-lg border p-3"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

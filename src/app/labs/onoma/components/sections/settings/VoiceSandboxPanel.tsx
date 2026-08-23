@@ -4,7 +4,7 @@
 // Interactive audio sandbox, IPA synthesis testbed, G2P phoneme suggester
 
 import React, { useState, useEffect } from "react";
-import { Volume2, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { SoundHigh as Volume2, WarningTriangle as AlertTriangle, SystemRestart as Loader2, Refresh as RefreshCw } from "iconoir-react";
 import {
   Select,
   SelectContent,
@@ -117,7 +117,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
               <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                 <SelectItem
                   value="default"
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                 >
                   Default voice
                 </SelectItem>
@@ -125,7 +125,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
                   <SelectItem
                     key={id}
                     value={id}
-                    className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                    className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                   >
                     {voiceLabel(id)}
                   </SelectItem>
@@ -146,7 +146,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
                   type="button"
                   onClick={handleSuggestSandboxIpa}
                   disabled={suggestMutation.isPending}
-                  className="flex cursor-pointer items-center gap-1 text-[9px] font-bold text-[#0091ff] select-none hover:underline disabled:opacity-50"
+                  className="flex cursor-pointer items-center gap-1 text-[9px] font-bold text-onoma-primary select-none hover:underline disabled:opacity-50"
                 >
                   {suggestMutation.isPending ? (
                     <Loader2 className="h-2 w-2 animate-spin" />
@@ -183,7 +183,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
         <button
           onClick={handlePlaySandbox}
           disabled={isPlayingSandbox || !sandboxText}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0091ff] px-3 py-1.5 text-xs font-bold text-white transition-colors select-none hover:bg-[#33a7ff] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-onoma-primary px-3 py-1.5 text-xs font-bold text-white transition-colors select-none hover:bg-onoma-primary-light disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
           {isPlayingSandbox ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />

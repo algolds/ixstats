@@ -4,21 +4,7 @@
 
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Database,
-  CheckCircle,
-  TrendingUp,
-  AlertTriangle,
-  Globe,
-  Layers,
-  Search,
-  BookOpen,
-  Sliders,
-  FileText,
-  Sparkles,
-  Palette,
-  RefreshCw,
-} from "lucide-react";
+import { Database, CheckCircle, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Globe, Component as Layers, Search, OpenBook as BookOpen, ControlSlider as Sliders, Page as FileText, Sparks as Sparkles, Palette, Refresh as RefreshCw } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";

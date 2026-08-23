@@ -9,7 +9,7 @@
 import React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "motion/react";
-import { CheckCircle, XCircle, Clock, ArrowRightLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XmarkCircle as XCircle, Clock, ArrowSeparate as ArrowRightLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -108,7 +108,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="glass-hierarchy-child animate-pulse rounded-lg p-4">
+          <div key={i} className="facet-hierarchy-child animate-pulse rounded-lg p-4">
             <div className="h-20 rounded bg-white/5" />
           </div>
         ))}
@@ -118,7 +118,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
   if (filteredTrades.length === 0) {
     return (
-      <div className="glass-hierarchy-child rounded-lg p-8 text-center">
+      <div className="facet-hierarchy-child rounded-lg p-8 text-center">
         <ArrowRightLeft className="mx-auto mb-3 h-12 w-12 text-white/20" />
         <p className="text-white/60">No trade history yet</p>
         {filterStatus && (
@@ -145,7 +145,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "glass-hierarchy-child cursor-pointer rounded-lg p-4 transition-all hover:scale-[1.01]",
+              "facet-hierarchy-child cursor-pointer rounded-lg p-4 transition-all hover:scale-[1.01]",
               onTradeClick && "hover:bg-white/5"
             )}
             onClick={() => onTradeClick?.(trade.id)}
@@ -251,7 +251,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             variant="outline"
-            className="glass-hierarchy-child"
+            className="facet-hierarchy-child"
           >
             Previous
           </Button>
@@ -260,7 +260,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore}
             variant="outline"
-            className="glass-hierarchy-child"
+            className="facet-hierarchy-child"
           >
             Next
           </Button>

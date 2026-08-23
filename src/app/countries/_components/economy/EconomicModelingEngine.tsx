@@ -1,23 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Calculator,
-  TrendingUp,
-  BarChart3,
-  Zap,
-  Settings,
-  Eye,
-  Pencil,
-  Save,
-  RotateCcw,
-  HelpCircle,
-  Activity,
-  PlayCircle,
-  PauseCircle,
-  Plus,
-  Minus,
-  Info,
-} from "lucide-react";
+import { Calculator, StatUp as TrendingUp, StatsReport as BarChart3, Flash as Zap, Settings, Eye, EditPencil as Pencil, FloppyDisk as Save, Undo as RotateCcw, HelpCircle, Activity, Play as PlayCircle, Pause as PauseCircle, Plus, Minus, InfoCircle as Info } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";

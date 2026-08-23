@@ -5,21 +5,21 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Calendar,
   Clock,
-  Command,
+  KeyCommand as Command,
   ArrowUpRight,
   Shield,
-  Handshake,
-  Scale,
-  TrendingUp,
+  Community as Handshake,
+  ScaleFrameEnlarge as Scale,
+  StatUp as TrendingUp,
   Compass,
-  Gavel,
+  Hammer as Gavel,
   Crown,
   ShieldAlert,
   Heart,
-  CalendarClock,
+  CalendarRotate as CalendarClock,
   Filter,
-  AlertCircle,
-} from "lucide-react";
+  WarningCircle as AlertCircle,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
   Dialog,

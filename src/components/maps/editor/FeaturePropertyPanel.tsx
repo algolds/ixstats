@@ -7,7 +7,7 @@ import React from "react";
  * based on the current editor mode.
  */
 
-import { Loader2, Check, CheckCircle2 } from "lucide-react";
+import { SystemRestart as Loader2, Check, CheckCircle as CheckCircle2 } from "iconoir-react";
 import type {
   EditorMode,
   CityFormData,

@@ -15,16 +15,7 @@ import { api } from "~/trpc/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
-import {
-  Activity,
-  TrendingUp,
-  AlertTriangle,
-  Users,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Clock,
-} from "lucide-react";
+import { Activity, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Group as Users, CheckCircle, XmarkCircle as XCircle, Refresh as RefreshCw, Clock } from "iconoir-react";
 import {
   LineChart,
   Line,

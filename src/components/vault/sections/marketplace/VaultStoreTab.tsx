@@ -3,48 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Package,
-  Sparkles,
-  Star,
-  Gift,
-  Store,
-  Crown,
-  Cpu,
-  BookOpen,
-  Database,
-  TrendingUp,
-  Award,
-  Flame,
-  Shield,
-  Zap,
-  Coins,
-  Heart,
-  Palette,
-  Wrench,
-  Gauge,
-  Lock,
-  Compass,
-  Trophy,
-  Gem,
-  Sword,
-  Target,
-  Flag,
-  Ghost,
-  Skull,
-  Key,
-  Lightbulb,
-  Terminal,
-  Music,
-  Ticket,
-  Gamepad2,
-  Anchor,
-  Sun,
-  Moon,
-  Hammer,
-  Eye,
-  User,
-} from "lucide-react";
+import { Package, Sparks as Sparkles, Star, Gift, Shop as Store, Crown, Cpu, OpenBook as BookOpen, Database, StatUp as TrendingUp, Trophy as Award, FireFlame as Flame, Shield, Flash as Zap, Coins, Heart, Palette, Wrench, Dashboard as Gauge, Lock, Compass, Trophy, Crown as Gem, Tournament as Sword, Archery as Target, WhiteFlag as Flag, Sparks as Ghost, Emoji as Skull, Key, LightBulb as Lightbulb, Terminal, MusicDoubleNote as Music, Label as Ticket, Gamepad as Gamepad2, SeaWaves as Anchor, SunLight as Sun, HalfMoon as Moon, Hammer, Eye, User } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -301,7 +260,7 @@ export function VaultStoreTab() {
   return (
     <div className="pb-10">
       {/* Large Storefront Showcase Window */}
-      <div className="glass-surface glass-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
+      <div className="facet-surface facet-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
         <TextureOverlay texture="dots" opacity={0.03} />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
 

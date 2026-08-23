@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Trophy, Sparkles } from "lucide-react";
+import { Trophy, Sparks as Sparkles } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";

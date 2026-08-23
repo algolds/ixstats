@@ -5,19 +5,9 @@ import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/context/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
-import {
-  RefreshCw,
-  Clock,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Building2,
-  MapPin,
-  Activity,
-  Target,
-} from "lucide-react";
+import { Refresh as RefreshCw, Clock, StatUp as TrendingUp, Group as Users, Dollar as DollarSign, City as Building2, MapPin, Activity, Archery as Target } from "iconoir-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
-import { GlassCard } from "~/components/ui/enhanced-card";
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 
 interface LiveGameBannerProps {
@@ -202,9 +192,8 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* GlassCard overlay for main info/time block */}
         <div className="relative z-10 mx-auto mb-6 max-w-2xl">
-          <GlassCard
-            variant="glass"
-            className="animate-fade-in flex flex-col items-center justify-between gap-4 p-6 shadow-xl lg:flex-row"
+          <Card
+            className="facet-card animate-fade-in flex flex-col items-center justify-between gap-4 p-6 shadow-xl lg:flex-row bg-white/10 dark:bg-black/30 backdrop-blur-md border-white/20"
           >
             {/* Game Time Section */}
             <div className="flex items-center gap-6">
@@ -223,13 +212,13 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
                 onClick={handleRefresh}
                 disabled={isLoading}
                 size="sm"
-                className="glass-button border-white/30 text-white transition-all duration-250"
+                className="border border-white/30 bg-white/10 text-white hover:bg-white/20 active:scale-95 transition-all duration-150"
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                 Refresh All
               </Button>
             </div>
-          </GlassCard>
+          </Card>
           {/* Aurora/animated background effect (optional, subtle) */}
           <div className="aurora-bg pointer-events-none absolute inset-0 z-0 rounded-2xl" />
         </div>

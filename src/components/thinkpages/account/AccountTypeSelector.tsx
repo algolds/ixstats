@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Newspaper, Users } from "lucide-react";
+import { Crown, Journal as Newspaper, Group as Users } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type AccountType = "government" | "media" | "citizen";

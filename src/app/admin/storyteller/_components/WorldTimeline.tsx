@@ -8,23 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow, format } from "date-fns";
-import {
-  TrendingDown,
-  Swords,
-  Wind,
-  Scale,
-  Cpu,
-  Heart,
-  Flame,
-  Wand2,
-  Sparkles,
-  Clock,
-  Users,
-  ChevronDown,
-  ChevronUp,
-  Power,
-  PowerOff,
-} from "lucide-react";
+import { StatDown as TrendingDown, Tournament as Swords, Wind, ScaleFrameEnlarge as Scale, Cpu, Heart, FireFlame as Flame, MagicWand as Wand2, Sparks as Sparkles, Clock, Group as Users, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, OffTag as Power, OffTag as PowerOff } from "iconoir-react";
 import { useState } from "react";
 
 const EVENT_ICONS: Record<string, typeof TrendingDown> = {

@@ -196,7 +196,7 @@ export function WikiMarginDrawer({
             {/* Header Lockup (Matches Left Sidebar Profile / Nav Header Parity) */}
             <div className="flex items-center justify-between p-3 border-b border-[var(--wikios-border)] shrink-0 bg-[var(--wikios-surface)]/80 backdrop-blur-xl">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/60 bg-[#fef036] text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.45)] shrink-0 font-bold">
+                <div className="wikios-sidebar-icon-box flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/60 bg-margin-accent text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.45)] shrink-0 font-bold">
                   <Highlighter className="h-4 w-4" />
                 </div>
                 <div className="flex flex-col min-w-0">
@@ -212,7 +212,7 @@ export function WikiMarginDrawer({
                 <button
                   type="button"
                   onClick={() => setHelpOpen(true)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:border-yellow-400/50 hover:bg-[#fef036]/15 active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)] hover:border-yellow-400/50 hover:bg-margin-accent/15 active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
                   title="Margin Guide & Shortcuts"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
@@ -278,13 +278,13 @@ export function WikiMarginDrawer({
                       <Icon
                         className={cn(
                           "w-3.5 h-3.5 relative z-10 transition-colors",
-                          isActive ? "text-yellow-600 dark:text-[#fef036]" : "text-[var(--wikios-text-dim)]"
+                          isActive ? "text-yellow-600 dark:text-margin-accent" : "text-[var(--wikios-text-dim)]"
                         )}
                       />
                       <span className="relative z-10">{tab.label}</span>
                       {tab.badge !== undefined && (
                         <span
-                          className="relative z-10 ml-0.5 px-1.5 py-0.2 rounded-full text-[8.5px] font-black text-stone-950 leading-none bg-[#fef036] shadow-xs"
+                          className="relative z-10 ml-0.5 px-1.5 py-0.2 rounded-full text-[8.5px] font-black text-stone-950 leading-none bg-margin-accent shadow-xs"
                         >
                           {tab.badge}
                         </span>
@@ -345,10 +345,10 @@ export function WikiMarginDrawer({
                   onClick={() => {
                     setActiveModal("history");
                   }}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-lg border border-[var(--wikios-border)] bg-white/5 hover:bg-[#fef036]/15 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-lg border border-[var(--wikios-border)] bg-white/5 hover:bg-margin-accent/15 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
                   title="Revision History"
                 >
-                  <Clock className="w-3 h-3 text-yellow-600 dark:text-[#fef036]" />
+                  <Clock className="w-3 h-3 text-yellow-600 dark:text-margin-accent" />
                   <span>History</span>
                 </button>
                 <button

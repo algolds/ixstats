@@ -12,23 +12,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
-import {
-  FileText,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  DollarSign,
-  Target,
-  Calendar,
-  Layers,
-  Play,
-  Pause,
-  Sliders,
-  AlertTriangle,
-} from "lucide-react";
+import { Page as FileText, CheckCircle, Clock, WarningCircle as AlertCircle, StatUp as TrendingUp, StatDown as TrendingDown, Minus, Dollar as DollarSign, Archery as Target, Calendar, Component as Layers, Play, Pause, ControlSlider as Sliders, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { ParadoxFlavorCard } from "~/components/executive/narrator/ParadoxFlavorCard";
 import { PREDEFINED_DECRETALS } from "~/lib/policies/registry";

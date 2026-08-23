@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Info } from "lucide-react";
+import { InfoCircle as Info } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import dynamic from "next/dynamic";
 import { LexiconExplorer } from "../LexiconExplorer";
@@ -48,7 +48,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="space-y-1">
-            <h3 className="text-sm font-bold tracking-tight text-[#0091ff]">
+            <h3 className="text-sm font-bold tracking-tight text-onoma-primary">
               Interactive Path Workshop
             </h3>
             <p className="text-muted-foreground text-xs leading-normal">
@@ -79,7 +79,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
           />
         ) : (
           <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex h-full min-h-[300px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-            <Info className="mb-3 h-8 w-8 text-[#0091ff]/40" />
+            <Info className="mb-3 h-8 w-8 text-onoma-primary/40" />
             <p className="font-semibold">Interactive visualizer is inactive</p>
             <p className="text-muted-foreground mt-1 text-xs">
               Select a corpus or provide training seeds to build the Markov transition trie.
@@ -91,7 +91,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       {/* Lexicon Explorer & Health Panel */}
       <div className="h-full space-y-4">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold tracking-tight text-[#10b981]">
+          <h3 className="text-sm font-bold tracking-tight text-emerald-500">
             Lexicon & Syllable Analysis
           </h3>
           <p className="text-muted-foreground text-xs leading-normal">

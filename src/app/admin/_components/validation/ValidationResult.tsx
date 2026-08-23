@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle, AlertTriangle, XCircle, Loader2, Clock } from "lucide-react";
+import { CheckCircle, WarningTriangle as AlertTriangle, XmarkCircle as XCircle, SystemRestart as Loader2, Clock } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import type { CheckStatus, ValidationCheck } from "~/lib/system/system-validation";
 import { getStatusColor } from "~/lib/system/system-validation";

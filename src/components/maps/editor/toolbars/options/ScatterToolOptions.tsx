@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Move } from "lucide-react";
+import { Sparks as Sparkles, ArrowSeparate as Move } from "iconoir-react";
 import { PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 

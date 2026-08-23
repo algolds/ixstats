@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Send, Activity } from "lucide-react";
+import { Send, Activity } from "iconoir-react";
 import type { ScenarioDefinition } from "~/hooks/usePolicyAnalytics";
 
 interface ScenarioPlanningPanelProps {
@@ -85,7 +85,7 @@ export const ScenarioPlanningPanel = React.memo(function ScenarioPlanningPanel({
   const data = scenarioData[selectedScenario] || scenarioData.baseline!;
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-purple-600" />

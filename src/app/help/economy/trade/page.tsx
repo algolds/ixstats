@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeftRight, Ship, Factory, TrendingUp, Handshake } from "lucide-react";
+import { ArrowSeparate as ArrowLeftRight, DeliveryTruck as Ship, Industry as Factory, StatUp as TrendingUp, Community as Handshake } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function TradeArticle() {

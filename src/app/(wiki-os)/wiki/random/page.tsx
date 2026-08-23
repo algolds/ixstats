@@ -29,7 +29,7 @@ export default function RandomPage() {
           <p className="mt-4 text-sm text-zinc-400">Finding a random page...</p>
         </div>
       ) : (
-        <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
+        <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
           <p className="text-sm text-zinc-400">Could not fetch a random page.</p>
           <button onClick={() => refetch()} className="wikios-action-btn mt-3">
             Try again

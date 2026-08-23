@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 
 interface ShortcutEntry {
   keys: string;

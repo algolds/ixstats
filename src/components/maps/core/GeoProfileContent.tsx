@@ -10,25 +10,7 @@
  */
 
 import { useState } from "react";
-import {
-  Thermometer,
-  Mountain,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Wheat,
-  Anchor,
-  TreePine,
-  Gem,
-  Fuel,
-  Fish,
-  Droplet,
-  MapPin,
-  AlertTriangle,
-  Loader2,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Dashboard as Thermometer, ModernTv as Mountain, StatUp as TrendingUp, StatDown as TrendingDown, Minus, Farm as Wheat, SeaWaves as Anchor, Tree as TreePine, Crown as Gem, Gas as Fuel, Fish, Droplet, MapPin, WarningTriangle as AlertTriangle, SystemRestart as Loader2, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ELEVATION_ZONES } from "~/lib/maps/geo-analytics";
 

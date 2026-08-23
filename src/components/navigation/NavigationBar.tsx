@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { NavArrowDown as ChevronDown } from "iconoir-react";
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -66,7 +66,7 @@ const DesktopNavItem = React.memo(function DesktopNavItem({
             </span>
             <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align={dropdownAlign} className="glass-panel w-56">
+          <DropdownMenuContent align={dropdownAlign} className="facet-panel w-56">
             {item.dropdownItems.map((subItem, index) => {
               const SubIcon = subItem.icon;
               const isMessages = subItem.href === "/messages";

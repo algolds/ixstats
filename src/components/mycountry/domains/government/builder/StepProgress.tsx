@@ -5,13 +5,13 @@
  */
 
 import React from "react";
-import { CheckCircle, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
+import { CheckCircle, WarningTriangle as AlertTriangle, ArrowRight } from "iconoir-react";
 import type { ValidationErrors } from "~/lib/government/builder-validation";
 
 export interface Step {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 export interface StepProgressProps {

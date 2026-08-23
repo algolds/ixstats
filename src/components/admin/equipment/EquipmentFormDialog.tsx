@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Settings, FileText, Rocket, DollarSign, Image } from "lucide-react";
+import { Settings, Page as FileText, Rocket, Dollar as DollarSign, MediaImage as Image } from "iconoir-react";
 import {
   CATEGORIES,
   SUBCATEGORIES,

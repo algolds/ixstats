@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ThumbsUp,
-  ThumbsDown,
-  MinusCircle,
-  Plus,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-} from "lucide-react";
+import { ThumbsUp, ThumbsDown, MinusCircle, Plus, SystemRestart as Loader2, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Clock } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";

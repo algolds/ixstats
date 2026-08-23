@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MessagesSquare, Send } from "lucide-react";
+import { Group as Users, ChatLines as MessagesSquare, Send } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ThinkTanksArticle() {

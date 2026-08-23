@@ -9,7 +9,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { Building2, Users, DollarSign, Receipt } from "lucide-react";
+import { City as Building2, Group as Users, Dollar as DollarSign, Page as Receipt } from "iconoir-react";
 import {
   ConflictWarningDialog,
   SyncStatusIndicator,

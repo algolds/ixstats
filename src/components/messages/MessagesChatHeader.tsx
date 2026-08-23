@@ -12,7 +12,7 @@ import {
   Shield,
   Refresh,
 } from "iconoir-react";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";

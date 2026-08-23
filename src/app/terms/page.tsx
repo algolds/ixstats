@@ -1,17 +1,7 @@
 import React from "react";
 import { type Metadata } from "next";
 import Link from "next/link";
-import {
-  UserCheck,
-  Sparkles,
-  ShieldAlert,
-  Globe2,
-  Coins,
-  Scale,
-  Mail,
-  Info,
-  AlertTriangle,
-} from "lucide-react";
+import { UserBadgeCheck as UserCheck, Sparks as Sparkles, ShieldAlert, Globe as Globe2, Coins, ScaleFrameEnlarge as Scale, Mail, InfoCircle as Info, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { LegalDocumentLayout, type LegalSectionItem } from "~/components/ui/LegalDocumentLayout";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 

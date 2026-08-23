@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { GlassButton } from "~/components/ui/glass-button";
-import { Crown, User, Check, AlertCircle } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Crown, User, Check, WarningCircle as AlertCircle } from "iconoir-react";
 
 export default function MembershipAdminPage() {
   const { user } = useUser();
@@ -48,7 +48,7 @@ export default function MembershipAdminPage() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <div className="glass-panel space-y-6 p-8">
+      <div className="facet-panel space-y-6 p-8">
         {/* Header */}
         <div className="space-y-4 text-center">
           <div className="flex justify-center">
@@ -63,12 +63,16 @@ export default function MembershipAdminPage() {
           <h2 className="text-xl font-semibold text-white">Quick Actions</h2>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <GlassButton variant="primary" onClick={upgradeSelf} className="flex-1">
+            <Button
+              variant="default"
+              onClick={upgradeSelf}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
+            >
               <Crown className="mr-2 h-4 w-4" />
               Upgrade Myself to Premium
-            </GlassButton>
+            </Button>
 
-            <GlassButton
+            <Button
               variant="secondary"
               onClick={() => {
                 if (user?.id) {
@@ -76,11 +80,11 @@ export default function MembershipAdminPage() {
                   setTier("basic");
                 }
               }}
-              className="flex-1"
+              className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold"
             >
               <User className="mr-2 h-4 w-4" />
               Downgrade Myself to Basic
-            </GlassButton>
+            </Button>
           </div>
         </div>
 
@@ -119,11 +123,11 @@ export default function MembershipAdminPage() {
               </select>
             </div>
 
-            <GlassButton
-              variant="primary"
+            <Button
+              variant="default"
               onClick={handleUpdateMembership}
               disabled={isLoading}
-              className="w-full"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm"
             >
               {isLoading ? (
                 <>
@@ -136,7 +140,7 @@ export default function MembershipAdminPage() {
                   Update Membership Tier
                 </>
               )}
-            </GlassButton>
+            </Button>
           </div>
         </div>
 

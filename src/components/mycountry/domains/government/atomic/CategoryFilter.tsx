@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface CategoryFilterProps {

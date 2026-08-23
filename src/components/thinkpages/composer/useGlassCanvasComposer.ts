@@ -160,6 +160,8 @@ export function useGlassCanvasComposer({
       setPollDraft(null);
       setPostToDiscord(true);
       void utils.thinkpages.getFeed.invalidate();
+      void utils.activities.getGlobalFeed.invalidate();
+      void utils.activities.getFollowingFeed.invalidate();
       if (account?.clerkUserId) {
         void utils.thinkpages.getPostsByClerkUserId.invalidate({
           clerkUserId: account.clerkUserId,

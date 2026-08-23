@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightLeft, TrendingDown, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowSeparate as ArrowRightLeft, StatDown as TrendingDown, StatUp as TrendingUp, SystemRestart as Loader2 } from "iconoir-react";
 import {
   Select,
   SelectContent,

@@ -9,21 +9,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
-import {
-  UserPlus,
-  UserMinus,
-  MessageSquare,
-  Building2,
-  Handshake,
-  Shield,
-  Scale,
-  Swords,
-  Loader2,
-  Globe,
-  ExternalLink,
-  Crown,
-  Calendar,
-} from "lucide-react";
+import { UserPlus, UserXmark as UserMinus, ChatBubble as MessageSquare, City as Building2, Community as Handshake, Shield, ScaleFrameEnlarge as Scale, Tournament as Swords, SystemRestart as Loader2, Globe, OpenNewWindow as ExternalLink, Crown, Calendar } from "iconoir-react";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { type CountryCardData } from "./CountryFocusCard";
 

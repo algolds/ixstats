@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Save, Lock, Shield, Eye, FileText, Sparkles } from "lucide-react";
+import { Xmark as X, FloppyDisk as Save, Lock, Shield, Eye, Page as FileText, Sparks as Sparkles } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { WikiVisualEditor } from "~/components/wiki-os/editor/WikiVisualEditor";

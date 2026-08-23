@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Eye, RotateCcw } from "lucide-react";
+import { Eye, Undo as RotateCcw } from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";

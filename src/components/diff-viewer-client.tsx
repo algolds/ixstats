@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Copy } from "lucide-react"
+import { Check, Copy } from "iconoir-react";
 import { cn } from "~/lib/utils"
 
 interface DiffViewerCopyButtonProps extends Omit<React.ComponentProps<"button">, "value"> {

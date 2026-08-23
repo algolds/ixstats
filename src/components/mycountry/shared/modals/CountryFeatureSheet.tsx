@@ -14,7 +14,7 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Landmark, Loader2, MapPin, Save } from "lucide-react";
+import { City as Building2, Bank as Landmark, SystemRestart as Loader2, MapPin, FloppyDisk as Save } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

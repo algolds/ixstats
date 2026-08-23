@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Building2,
-  Globe,
-  Users,
-  Handshake,
-  FileText,
-  Palette,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { City as Building2, Globe, Group as Users, Community as Handshake, Page as FileText, Palette, Plus, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -389,7 +378,7 @@ function StatCell({
   color: string;
 }) {
   return (
-    <div className="glass-hierarchy-child rounded-lg p-2.5">
+    <div className="facet-hierarchy-child rounded-lg p-2.5">
       <div className="flex items-center gap-1.5">
         <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
         <span className="text-muted-foreground text-xs font-medium">{label}</span>

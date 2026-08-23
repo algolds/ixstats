@@ -4,14 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  BarChart3,
-  Compass,
-  Crown,
-  Globe,
-  MessageSquare,
-  MoreHorizontal,
-} from "lucide-react";
+import { StatsReport as BarChart3, Compass, Crown, Globe, ChatBubble as MessageSquare, MoreHoriz as MoreHorizontal } from "iconoir-react";
 import { FaWikipediaW } from "react-icons/fa";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";

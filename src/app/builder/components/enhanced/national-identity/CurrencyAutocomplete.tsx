@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Coins } from "lucide-react";
+import { Coins } from "iconoir-react";
 import { CurrencySelector, CurrencyInput } from "~/components/ui/currency-selector";
 import { api } from "~/trpc/react";
 import { getAvailableCurrencies, getCurrencyInfo, isValidCurrency } from "~/lib/utils";

@@ -59,7 +59,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
 
           <div className="space-y-6">
             {/* Scenario Details */}
-            <div className="glass-hierarchy-child rounded-lg p-6">
+            <div className="facet-hierarchy-child rounded-lg p-6">
               <h4 className="text-foreground mb-4 text-lg font-bold">{scenario.title}</h4>
               <div className="prose prose-invert max-w-none">
                 <p className="whitespace-pre-line text-[--intel-silver]">{scenario.narrative}</p>
@@ -73,7 +73,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                 {scenario.responseOptions.map((option: ResponseOption, index: number) => (
                   <div
                     key={option.id || index}
-                    className="glass-hierarchy-child cursor-pointer rounded-lg border border-white/10 p-4 transition-colors hover:border-cyan-500/30"
+                    className="facet-hierarchy-child cursor-pointer rounded-lg border border-white/10 p-4 transition-colors hover:border-cyan-500/30"
                   >
                     <div className="mb-3 flex items-start justify-between">
                       <div>

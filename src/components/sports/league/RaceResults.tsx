@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
-import { Clock, Cloud, Flag, MapPin, Zap } from "lucide-react";
+import { Clock, Cloud, WhiteFlag as Flag, MapPin, Flash as Zap } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface RaceResultsProps {

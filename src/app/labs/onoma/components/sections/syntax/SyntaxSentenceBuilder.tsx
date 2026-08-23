@@ -4,7 +4,7 @@
 // Sentence generator and live translation preview engine
 
 import React from "react";
-import { Cpu, ArrowRight } from "lucide-react";
+import { Cpu, ArrowRight } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 
 interface SyntaxSentenceBuilderProps {
@@ -142,18 +142,18 @@ export function SyntaxSentenceBuilder({
   return (
     <FacetMaterial material="satin" className="rounded-xl border border-border/40 p-5 shadow-sm space-y-4 text-left">
       <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-        <Cpu className="h-4 w-4 text-[#d946ef]" /> Live Sentence Generator
+        <Cpu className="h-4 w-4 text-fuchsia-500" /> Live Sentence Generator
       </h4>
 
       {/* Translation Output Banner */}
-      <div className="rounded-lg border border-[#d946ef]/20 bg-[#d946ef]/5 p-4 space-y-2">
+      <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 space-y-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
           <span>Source (English):</span>
           <span className="text-foreground italic">{englishSentence}</span>
         </div>
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <ArrowRight className="h-4 w-4 text-[#d946ef]" />
-          <span className="font-mono text-[#d946ef] text-base">{sentence}.</span>
+          <ArrowRight className="h-4 w-4 text-fuchsia-500" />
+          <span className="font-mono text-fuchsia-500 text-base">{sentence}.</span>
         </div>
       </div>
 
@@ -182,7 +182,7 @@ export function SyntaxSentenceBuilder({
                 type="checkbox"
                 checked={subjectPlural}
                 onChange={(e) => setSubjectPlural(e.target.checked)}
-                className="accent-[#d946ef]"
+                className="accent-fuchsia-500"
               />{" "}
               Plural
             </label>
@@ -191,7 +191,7 @@ export function SyntaxSentenceBuilder({
                 type="checkbox"
                 checked={subjectDefinite}
                 onChange={(e) => setSubjectDefinite(e.target.checked)}
-                className="accent-[#d946ef]"
+                className="accent-fuchsia-500"
               />{" "}
               Definite
             </label>
@@ -242,7 +242,7 @@ export function SyntaxSentenceBuilder({
                 type="checkbox"
                 checked={objectPlural}
                 onChange={(e) => setObjectPlural(e.target.checked)}
-                className="accent-[#d946ef]"
+                className="accent-fuchsia-500"
               />{" "}
               Plural
             </label>
@@ -251,7 +251,7 @@ export function SyntaxSentenceBuilder({
                 type="checkbox"
                 checked={objectDefinite}
                 onChange={(e) => setObjectDefinite(e.target.checked)}
-                className="accent-[#d946ef]"
+                className="accent-fuchsia-500"
               />{" "}
               Definite
             </label>

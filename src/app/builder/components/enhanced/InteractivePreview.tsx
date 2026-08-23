@@ -2,29 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  FastForward,
-  ChevronLeft,
-  Calendar,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  DollarSign,
-  Zap,
-  Flag,
-  Crown,
-  Heart,
-  Shield,
-  Activity,
-  CheckCircle,
-  Clock,
-  Target,
-  Rocket,
-} from "lucide-react";
+import { Play, Pause, Undo as RotateCcw, FastArrowRight as FastForward, NavArrowLeft as ChevronLeft, Calendar, StatsReport as BarChart3, StatUp as TrendingUp, StatDown as TrendingDown, Group as Users, Dollar as DollarSign, Flash as Zap, WhiteFlag as Flag, Crown, Heart, Shield, Activity, CheckCircle, Clock, Archery as Target, Rocket } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../glass/GlassCard";
 import { Button } from "~/components/ui/button";

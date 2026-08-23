@@ -38,7 +38,7 @@ export function BlurbPromptList() {
           <Link
             key={prompt.id}
             href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20 sm:p-5"
+            className="facet-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20 sm:p-5"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">

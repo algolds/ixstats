@@ -5,27 +5,27 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
-  Command,
-  Globe2,
+  KeyCommand as Command,
+  Globe as Globe2,
   Shield,
-  Landmark,
-  TrendingUp,
+  Bank as Landmark,
+  StatUp as TrendingUp,
   Heart,
-  AlertTriangle,
-  Scale,
-  FileClock,
+  WarningTriangle as AlertTriangle,
+  ScaleFrameEnlarge as Scale,
+  ClockRotateRight as FileClock,
   ArrowUpRight,
-  Handshake,
-  ChevronDown,
-  ChevronUp,
+  Community as Handshake,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
   ArrowUp,
   ArrowDown,
   Clock,
-  Maximize2,
-  Minimize2,
+  Expand as Maximize2,
+  Compress as Minimize2,
   MapPin,
-  Edit3,
-} from "lucide-react";
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";

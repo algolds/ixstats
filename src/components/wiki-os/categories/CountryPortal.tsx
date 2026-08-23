@@ -196,7 +196,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
         {/* Right column (sidebar) */}
         <div className="wikios-portal-sidebar">
           {/* Map */}
-          <div className="wikios-portal-map glass-hierarchy-child">
+          <div className="wikios-portal-map facet-hierarchy-child">
             <CountryMapEmbed
               countryId={country.id}
               height="h-56"
@@ -208,7 +208,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
           {/* Blurbs */}
           {blurbs.length > 0 && (
-            <div className="wikios-portal-blurbs glass-hierarchy-child">
+            <div className="wikios-portal-blurbs facet-hierarchy-child">
               <h3 className="wikios-portal-blurbs-title">Country Voices</h3>
               {blurbs.map((r) => (
                 <Link
@@ -237,7 +237,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
 function VitalityCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="wikios-portal-vitality-card glass-hierarchy-child">
+    <div className="wikios-portal-vitality-card facet-hierarchy-child">
       <span className="wikios-portal-vitality-value" style={{ color }}>
         {Math.round(value)}
       </span>
@@ -256,7 +256,7 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <div className="wikios-portal-metric glass-hierarchy-child">
+    <div className="wikios-portal-metric facet-hierarchy-child">
       <div className="wikios-portal-metric-icon">{icon}</div>
       <div>
         <div className="wikios-portal-metric-value">{value}</div>

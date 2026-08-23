@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Loader2, Shirt, Star, Check } from "lucide-react";
+import { SystemRestart as Loader2, Shop as Shirt, Star, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

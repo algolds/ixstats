@@ -3,15 +3,15 @@
 import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-  TrendingUp,
-  Landmark,
+  StatUp as TrendingUp,
+  Bank as Landmark,
   Coins,
-  Globe2,
-  Loader2,
-  Briefcase,
-  PieChart,
-  Scale,
-} from "lucide-react";
+  Globe as Globe2,
+  SystemRestart as Loader2,
+  Suitcase as Briefcase,
+  Reports as PieChart,
+  ScaleFrameEnlarge as Scale,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";

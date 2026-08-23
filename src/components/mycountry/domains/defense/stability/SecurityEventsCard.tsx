@@ -3,7 +3,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import { WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -37,7 +37,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
   getSeverityColor,
 }: SecurityEventsCardProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-orange-600" />

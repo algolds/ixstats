@@ -12,22 +12,7 @@ export const dynamic = "force-dynamic";
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 import { IxTime } from "~/lib/ixtime";
-import {
-  Database,
-  Plus,
-  Trash2,
-  Edit3,
-  Zap,
-  TrendingDown,
-  TrendingUp,
-  AlertTriangle,
-  Clock,
-  Target,
-  Activity,
-  Save,
-  XCircle,
-  Users,
-} from "lucide-react";
+import { Database, Plus, Trash as Trash2, EditPencil as Edit3, Flash as Zap, StatDown as TrendingDown, StatUp as TrendingUp, WarningTriangle as AlertTriangle, Clock, Archery as Target, Activity, FloppyDisk as Save, XmarkCircle as XCircle, Group as Users } from "iconoir-react";
 
 import { createUrl } from "~/lib/utils";
 

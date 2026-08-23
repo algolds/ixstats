@@ -3,15 +3,15 @@
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid,
-  Command,
-  Handshake,
+  ViewGrid as LayoutGrid,
+  KeyCommand as Command,
+  Community as Handshake,
   Shield,
-  Scale,
-  TrendingUp,
+  ScaleFrameEnlarge as Scale,
+  StatUp as TrendingUp,
   User,
-  Edit3,
-} from "lucide-react";
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";

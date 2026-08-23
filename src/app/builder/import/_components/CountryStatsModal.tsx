@@ -2,24 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  MapPin,
-  Users,
-  TrendingUp,
-  Building2,
-  Shield,
-  Languages,
-  Coins,
-  Globe,
-  Ruler,
-  Phone,
-  Flag,
-  ChevronDown,
-  ChevronRight,
-  Landmark,
-  PieChart,
-} from "lucide-react";
+import { Xmark as X, MapPin, Group as Users, StatUp as TrendingUp, City as Building2, Shield, Translate as Languages, Coins, Globe, Ruler, Phone, WhiteFlag as Flag, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Bank as Landmark, Reports as PieChart } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 interface EligibleCountry {

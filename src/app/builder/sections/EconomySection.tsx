@@ -1,19 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, type ElementType } from "react";
-import {
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  Building2,
-  Gauge,
-  Target,
-  AlertTriangle,
-  CheckCircle,
-  TrendingDown,
-  Settings,
-  Play,
-} from "lucide-react";
+import { StatUp as TrendingUp, Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Dashboard as Gauge, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, StatDown as TrendingDown, Settings, Play } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";

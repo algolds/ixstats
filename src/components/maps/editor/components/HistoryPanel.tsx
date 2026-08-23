@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { History, Undo, Redo, Map } from "lucide-react";
+import { ClockRotateRight as History, Undo, Redo, Map } from "iconoir-react";
 
 interface EditorAction {
   type: "create" | "delete" | "update";

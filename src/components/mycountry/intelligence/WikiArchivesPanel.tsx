@@ -11,20 +11,8 @@
 import { memo, useState } from "react";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Clock,
-  Shield,
-  Landmark,
-  Globe2,
-  Scroll,
-  Users,
-  Loader2,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { OpenBook as BookOpen, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, OpenNewWindow as ExternalLink, Clock, Shield, Bank as Landmark, Globe as Globe2, Page as Scroll, Group as Users, SystemRestart as Loader2 } from "iconoir-react";
+
 import { api } from "~/trpc/react";
 
 interface WikiArchivesPanelProps {
@@ -33,7 +21,7 @@ interface WikiArchivesPanelProps {
 }
 
 // Section type classification based on heading keywords
-const SECTION_TYPES: Array<{ pattern: RegExp; label: string; icon: LucideIcon; color: string }> = [
+const SECTION_TYPES: Array<{ pattern: RegExp; label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = [
   {
     pattern: /^history|^early|^medieval|^modern|^ancient|^prehistory|^contemporary|^classical/i,
     label: "History",
@@ -78,7 +66,7 @@ const SECTION_TYPES: Array<{ pattern: RegExp; label: string; icon: LucideIcon; c
   },
 ];
 
-function classifySection(title: string): { label: string; icon: LucideIcon; color: string } {
+function classifySection(title: string): { label: string; icon: React.ComponentType<{ className?: string }>; color: string } {
   for (const type of SECTION_TYPES) {
     if (type.pattern.test(title)) return type;
   }

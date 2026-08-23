@@ -33,20 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  FileText,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  MessageSquare,
-  TrendingUp,
-  TrendingDown,
-  History,
-  Filter,
-  Eye,
-  Sparkles,
-} from "lucide-react";
+import { Page as FileText, Clock, WarningCircle as AlertCircle, CheckCircle, XmarkCircle as XCircle, ChatBubble as MessageSquare, StatUp as TrendingUp, StatDown as TrendingDown, ClockRotateRight as History, Filter, Eye, Sparks as Sparkles } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
@@ -347,7 +334,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -359,7 +346,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
           </CardContent>
         </Card>
 
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -376,7 +363,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
           </CardContent>
         </Card>
 
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -416,7 +403,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                 return (
                   <Card
                     key={event.id}
-                    className="glass-hierarchy-child transition-shadow hover:shadow-lg"
+                    className="facet-hierarchy-child transition-shadow hover:shadow-lg"
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
@@ -474,7 +461,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               })}
             </div>
           ) : (
-            <Card className="glass-hierarchy-child">
+            <Card className="facet-hierarchy-child">
               <CardContent className="flex min-h-[300px] items-center justify-center">
                 <div className="space-y-4 text-center">
                   <CheckCircle className="mx-auto h-16 w-16 text-green-600 opacity-50" />
@@ -526,7 +513,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                 };
 
                 return (
-                  <Card key={event.id} className="glass-hierarchy-child">
+                  <Card key={event.id} className="facet-hierarchy-child">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
@@ -556,7 +543,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               })}
             </div>
           ) : (
-            <Card className="glass-hierarchy-child">
+            <Card className="facet-hierarchy-child">
               <CardContent className="flex min-h-[200px] items-center justify-center">
                 <div className="space-y-2 text-center">
                   <History className="text-muted-foreground mx-auto h-12 w-12 opacity-50" />

@@ -1,20 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Crown,
-  Landmark,
-  Layers,
-  Mail,
-  Shield,
-  Brain,
-  Vote,
-  Handshake,
-  Check,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
+import { Crown, Bank as Landmark, Component as Layers, Mail, Shield, Brain, CheckSquare as Vote, Community as Handshake, Check, NavArrowRight as ChevronRight, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 

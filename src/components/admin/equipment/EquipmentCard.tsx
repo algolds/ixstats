@@ -6,7 +6,7 @@
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Pencil, Copy, Trash2, EyeOff, Rocket } from "lucide-react";
+import { EditPencil as Pencil, Copy, Trash as Trash2, EyeClosed as EyeOff, Rocket } from "iconoir-react";
 import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 
 interface EquipmentCardProps {
@@ -30,7 +30,7 @@ export function EquipmentCard({
 
   return (
     <Card
-      className={`glass-card-child p-4 transition-all hover:border-red-500/50 ${isSelected ? "ring-2 ring-red-500" : ""}`}
+      className={`facet-card-child p-4 transition-all hover:border-red-500/50 ${isSelected ? "ring-2 ring-red-500" : ""}`}
     >
       {/* Selection & Image */}
       <div className="mb-3 flex items-start justify-between">

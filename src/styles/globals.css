@@ -42,6 +42,52 @@
   --color-wiki: var(--color-wiki);
   --color-wiki-hover: var(--color-wiki-hover);
   --color-map-ocean: var(--color-map-ocean);
+  --color-forum-accent: var(--color-forum-accent);
+  --color-forum-accent-hover: var(--color-forum-accent-hover);
+  --color-forum-accent-active: var(--color-forum-accent-active);
+
+  /* Executive Theme Accent Colors */
+  --color-theme-gold: var(--color-theme-gold);
+  --color-theme-ocean: var(--color-theme-ocean);
+  --color-theme-emerald: var(--color-theme-emerald);
+  --color-theme-crimson: var(--color-theme-crimson);
+  --color-theme-amethyst: var(--color-theme-amethyst);
+  --color-theme-slate: var(--color-theme-slate);
+
+  /* Vault Card Rarity Tokens */
+  --color-rarity-common: var(--color-rarity-common);
+  --color-rarity-uncommon: var(--color-rarity-uncommon);
+  --color-rarity-rare: var(--color-rarity-rare);
+  --color-rarity-ultra-rare: var(--color-rarity-ultra-rare);
+  --color-rarity-epic: var(--color-rarity-epic);
+  --color-rarity-legendary: var(--color-rarity-legendary);
+
+  /* Onoma Conlang Laboratory Tokens */
+  --color-onoma-primary: var(--color-onoma-primary);
+  --color-onoma-primary-light: var(--color-onoma-primary-light);
+  --color-onoma-primary-hover: var(--color-onoma-primary-hover);
+  --color-onoma-primary-active: var(--color-onoma-primary-active);
+  --color-onoma-primary-muted: var(--color-onoma-primary-muted);
+  --color-onoma-accent: var(--color-onoma-accent);
+  --color-onoma-accent-hover: var(--color-onoma-accent-hover);
+  --color-onoma-accent-muted: var(--color-onoma-accent-muted);
+  --color-onoma-surface: var(--color-onoma-surface);
+  --color-onoma-surface-hover: var(--color-onoma-surface-hover);
+  --color-onoma-surface-active: var(--color-onoma-surface-active);
+  --color-onoma-accent-surface: var(--color-onoma-accent-surface);
+  --color-onoma-border: var(--color-onoma-border);
+  --color-onoma-border-hover: var(--color-onoma-border-hover);
+  --color-onoma-border-active: var(--color-onoma-border-active);
+  --color-onoma-accent-border: var(--color-onoma-accent-border);
+  --color-onoma-glow: var(--color-onoma-glow);
+  --color-onoma-accent-glow: var(--color-onoma-accent-glow);
+
+  /* WikiOS Margin & Highlighter Suite Tokens */
+  --color-margin-accent: var(--margin-accent);
+  --color-margin-accent-hover: var(--margin-accent-hover);
+  --color-margin-bg: var(--margin-accent-bg);
+  --color-margin-border: var(--margin-accent-border);
+  --color-margin-glow: var(--margin-accent-glow);
 
   /* Gold Theme Colors */
   --color-gold-50: #fffbeb;
@@ -94,6 +140,7 @@
 @import "./layout/navigation.css";
 @import "./layout/z-index.css";
 @import "./layout/scrollbars.css";
+@import "./onoma.css";
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 

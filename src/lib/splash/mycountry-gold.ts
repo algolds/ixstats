@@ -24,7 +24,7 @@ export const splashGold = {
   iconWrapSm: `flex shrink-0 items-center justify-center rounded-lg border ${ov.border} bg-gradient-to-br ${ov.gradient} [&>svg]:text-white`,
   headline: `bg-gradient-to-r ${ov.gradient} bg-clip-text font-bold tracking-tight text-transparent`,
   link: "font-medium text-amber-700 underline underline-offset-4 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300",
-  statCard: `glass-hierarchy-child rounded-xl border ${ov.border} p-3 md:p-4`,
+  statCard: `facet-hierarchy-child rounded-xl border ${ov.border} p-3 md:p-4`,
   statValue: `text-2xl font-bold md:text-3xl ${ov.text}`,
   pulseDot: "h-2 w-2 animate-pulse rounded-full bg-amber-500 shadow-sm shadow-amber-500/50",
   divider: `bg-gradient-to-r from-transparent via-amber-500/40 to-transparent`,

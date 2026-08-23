@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { Badge } from "~/components/ui/badge";
-import { PieChart, BarChart3, Zap } from "lucide-react";
+import { Reports as PieChart, StatsReport as BarChart3, Flash as Zap } from "iconoir-react";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { getColorsFromData } from "~/lib/themes";
 import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";

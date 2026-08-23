@@ -6,23 +6,8 @@ import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import {
-  Check,
-  X,
-  AlertCircle,
-  Shield,
-  Heart,
-  GraduationCap,
-  Leaf,
-  Train,
-  Home,
-  Zap,
-  Building,
-  Coins,
-  Users,
-  Globe,
-} from "lucide-react";
+
+import { Check, Xmark as X, WarningCircle as AlertCircle, Shield, Heart, GraduationCap, Leaf, Train, HomeSimple as Home, Flash as Zap, Building, Coins, Group as Users, Globe } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 
 export interface PolicyBadge {
@@ -31,7 +16,7 @@ export interface PolicyBadge {
   label: string;
   description: string;
   enabled: boolean;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   category?: "social" | "economic" | "environmental" | "infrastructure";
 }
 
@@ -256,7 +241,7 @@ export function PolicyBadgeGrid({
   };
 
   return (
-    <Card className={cn("glass-hierarchy-child", className)}>
+    <Card className={cn("facet-hierarchy-child", className)}>
       {(title || subtitle) && (
         <CardHeader className="pb-2">
           {title && <CardTitle className="text-base">{title}</CardTitle>}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Trophy, Star, Bell, Coins } from "lucide-react";
+import { Trophy, Star, Bell, Coins } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function AchievementsArticle() {

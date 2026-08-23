@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Search, Pencil, Trash2, Route, Mountain, Gauge } from "lucide-react";
+import { Search, EditPencil as Pencil, Trash as Trash2, Navigator as Route, ModernTv as Mountain, Dashboard as Gauge } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 
 interface RouteItem {

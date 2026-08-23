@@ -35,36 +35,7 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import {
-  ChevronDown,
-  Plus,
-  Edit2,
-  Trash2,
-  History,
-  Sparkles,
-  Cpu,
-  Crown,
-  BookOpen,
-  Database,
-  TrendingUp,
-  Award,
-  Flame,
-  Shield,
-  Star,
-  Zap,
-  Gift,
-  Coins,
-  Heart,
-  Palette,
-  Wrench,
-  Gauge,
-  Lock,
-  Compass,
-  Trophy,
-  Loader2,
-  ToggleLeft,
-  ToggleRight,
-} from "lucide-react";
+import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, Trash as Trash2, ClockRotateRight as History, Sparks as Sparkles, Cpu, Crown, OpenBook as BookOpen, Database, StatUp as TrendingUp, Trophy as Award, FireFlame as Flame, Shield, Star, Flash as Zap, Gift, Coins, Heart, Palette, Wrench, Dashboard as Gauge, Lock, Compass, Trophy, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export function VaultStoreControl() {

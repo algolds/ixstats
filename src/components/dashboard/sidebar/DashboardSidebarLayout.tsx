@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { DashboardPlayerWidget } from "./DashboardPlayerWidget";
 import { DashboardQuickLinks } from "./DashboardQuickLinks";
 import { VaultWidget } from "~/components/mycountry/shell/VaultWidget";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface SidebarContextProps {

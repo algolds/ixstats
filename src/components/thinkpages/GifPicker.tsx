@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, SystemRestart as Loader2 } from "iconoir-react";
 import { MdGif as GifIcon } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";

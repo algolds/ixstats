@@ -11,7 +11,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
 export interface CoordinatesMapEmbedProps {
   lat: number;
@@ -212,13 +212,13 @@ export function CoordinatesMapEmbed({
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed glass-hierarchy-child relative overflow-hidden rounded-xl border border-white/10 bg-[#0a1628]/40 backdrop-blur-md"
+      className="wikios-ixworld-embed facet-hierarchy-child relative overflow-hidden rounded-xl border border-white/10 bg-map-ocean/40 backdrop-blur-md"
       style={{ height: heightVal }}
     >
       {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
 
       {!mapReady && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a1628]/60 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-map-ocean/60 backdrop-blur-sm">
           <Loader2 className="mb-2 h-6 w-6 animate-spin text-blue-400" />
           <span className="text-xs font-medium text-zinc-400">Loading map...</span>
         </div>
@@ -227,7 +227,7 @@ export function CoordinatesMapEmbed({
       {/* Floating control bar or details overlay */}
       {mapReady && (
         <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-[10px] text-zinc-300 backdrop-blur-md select-none">
-          <MapPin size={10} className="text-blue-400" />
+          <MapPin className="h-2.5 w-2.5 text-blue-400" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
           <span className="font-mono text-[9px] text-zinc-500">
             ({lat.toFixed(3)}, {lng.toFixed(3)})

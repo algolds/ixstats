@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { BarChart3, Users, DollarSign, Activity, Percent } from "lucide-react";
+import { StatsReport as BarChart3, Group as Users, Dollar as DollarSign, Activity, Percentage as Percent } from "iconoir-react";
 import { SliderWithDirectInput } from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/ui/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";

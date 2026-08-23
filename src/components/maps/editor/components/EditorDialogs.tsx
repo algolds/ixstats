@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ShieldAlert, Loader2, AlertCircle } from "lucide-react";
+import { ShieldAlert, SystemRestart as Loader2, WarningCircle as AlertCircle } from "iconoir-react";
 import { SplitMergeDialog } from "~/components/maps/editor/SplitMergeDialog";
 
 interface EditorDialogsProps {

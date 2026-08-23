@@ -103,7 +103,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         <Popover>
           <PopoverTrigger
             className={cn(
-              "glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left transition-all",
+              "facet-surface facet-interactive w-full cursor-pointer rounded-lg p-4 text-left transition-all",
               continentFilter && "ring-1 ring-blue-400/40"
             )}
           >
@@ -174,7 +174,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.1, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger className="facet-surface facet-interactive w-full cursor-pointer rounded-lg p-4 text-left">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-green-500/10 p-2">
@@ -228,7 +228,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.2, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger className="facet-surface facet-interactive w-full cursor-pointer rounded-lg p-4 text-left">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-purple-500/10 p-2">
@@ -280,7 +280,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
         transition={{ delay: 0.3, duration: 0.4 }}
       >
         <Popover>
-          <PopoverTrigger className="glass-surface glass-interactive w-full cursor-pointer rounded-lg p-4 text-left">
+          <PopoverTrigger className="facet-surface facet-interactive w-full cursor-pointer rounded-lg p-4 text-left">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-lg bg-orange-500/10 p-2">

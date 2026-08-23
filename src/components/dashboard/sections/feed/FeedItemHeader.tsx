@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, ExternalLink, Rss } from "lucide-react";
+import { Clock, OpenNewWindow as ExternalLink, RssFeed as Rss } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { formatTimeAgo } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";

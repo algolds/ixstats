@@ -5,15 +5,7 @@ import { api } from "~/trpc/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import {
-  Activity,
-  BarChart3,
-  Heart,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  GitFork,
-} from "lucide-react";
+import { Activity, StatsReport as BarChart3, Heart, Shield, WarningTriangle as AlertTriangle, CheckCircle, GitFork } from "iconoir-react";
 
 const RING_META = [
   { key: "economicVitality", label: "Economic", color: "#22c55e", icon: BarChart3 },

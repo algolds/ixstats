@@ -4,7 +4,7 @@
 // Results data table with sorting, search filtering, audio synthesis, and bulk stash actions
 
 import React, { useState } from "react";
-import { Volume2, Bookmark, FileDown, Copy, Check, HelpCircle } from "lucide-react";
+import { SoundHigh as Volume2, Bookmark, Download as FileDown, Copy, Check, HelpCircle } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import type { BatchNameResult } from "./batch-constants";
 
@@ -101,9 +101,9 @@ export function BatchResultsTable({
               max={100}
               value={perplexityFilter}
               onChange={(e) => onPerplexityChange(Number(e.target.value))}
-              className="w-20 accent-[#0091ff]"
+              className="w-20 accent-onoma-primary"
             />
-            <span className="font-mono text-[11px] font-semibold text-[#0091ff]">
+            <span className="font-mono text-[11px] font-semibold text-onoma-primary">
               {perplexityFilter > 0 ? `< ${perplexityFilter}` : "All"}
             </span>
           </div>
@@ -143,19 +143,19 @@ export function BatchResultsTable({
                   type="checkbox"
                   checked={results.length > 0 && selectedNames.size === results.length}
                   onChange={onSelectAll}
-                  className="rounded border-border/60 accent-[#0091ff] cursor-pointer"
+                  className="rounded border-border/60 accent-onoma-primary cursor-pointer"
                 />
               </th>
               <th
                 onClick={() => onSort("name")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#0091ff]"
+                className="p-2 font-bold text-foreground cursor-pointer hover:text-onoma-primary"
               >
                 Name {sorting.column === "name" && (sorting.direction === "asc" ? "↑" : "↓")}
               </th>
               <th className="p-2 font-bold text-foreground">IPA Transcription</th>
               <th
                 onClick={() => onSort("syllables")}
-                className="p-2 font-bold text-foreground cursor-pointer hover:text-[#0091ff]"
+                className="p-2 font-bold text-foreground cursor-pointer hover:text-onoma-primary"
               >
                 Syllables{" "}
                 {sorting.column === "syllables" && (sorting.direction === "asc" ? "↑" : "↓")}
@@ -164,7 +164,7 @@ export function BatchResultsTable({
                 <div className="flex items-center gap-1">
                   <span
                     onClick={() => onSort("perplexity")}
-                    className="cursor-pointer hover:text-[#0091ff]"
+                    className="cursor-pointer hover:text-onoma-primary"
                   >
                     Perplexity{" "}
                     {sorting.column === "perplexity" && (sorting.direction === "asc" ? "↑" : "↓")}
@@ -206,7 +206,7 @@ export function BatchResultsTable({
                 <tr
                   key={r.name + i}
                   className={`hover:bg-secondary/20 transition-colors ${
-                    isSelected ? "bg-[#0091ff]/5" : ""
+                    isSelected ? "bg-onoma-primary/5" : ""
                   }`}
                 >
                   <td className="p-2 text-center">
@@ -214,7 +214,7 @@ export function BatchResultsTable({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onSelectName(r.name)}
-                      className="rounded border-border/60 accent-[#0091ff] cursor-pointer"
+                      className="rounded border-border/60 accent-onoma-primary cursor-pointer"
                     />
                   </td>
                   <td className="p-2 font-semibold text-foreground">{r.name}</td>
@@ -238,7 +238,7 @@ export function BatchResultsTable({
                       <button
                         onClick={() => onPlayName(r.name, r.ipa)}
                         title="Listen to pronunciation"
-                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-[#0091ff] transition-colors cursor-pointer"
+                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-onoma-primary transition-colors cursor-pointer"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
                       </button>

@@ -3,7 +3,7 @@
 import React from "react";
 import { useIxMedia } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Play, Trash2, XCircle } from "lucide-react";
+import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
 
 export function QueuePanel() {
   const { queue, currentIndex, playTrack, removeFromQueue, clearQueue } = useIxMedia();

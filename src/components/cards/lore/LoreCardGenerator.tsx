@@ -178,7 +178,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       <button
         onClick={handleSubmitRequest}
         disabled={!selectedArticle || requestLoreCardMutation.isPending}
-        className="glass-interactive w-full rounded-lg px-6 py-4 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+        className="facet-interactive w-full rounded-lg px-6 py-4 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {requestLoreCardMutation.isPending ? (
           "Submitting..."

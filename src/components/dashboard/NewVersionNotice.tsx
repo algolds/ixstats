@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { X, ArrowRight } from "lucide-react";
+import { Xmark as X, ArrowRight } from "iconoir-react";
 import { MdBrowserUpdated } from "react-icons/md";
 import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -32,7 +32,7 @@ export function NewVersionNotice() {
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+      className="facet-surface flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
     >
       <TextureOverlay texture="chevron" opacity={0.06} />
       <div className="relative z-10 flex items-center gap-2.5">

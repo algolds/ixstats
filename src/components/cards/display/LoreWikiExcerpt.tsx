@@ -8,7 +8,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { ExternalLink, BookOpen, Loader2 } from "lucide-react";
+import { OpenNewWindow as ExternalLink, OpenBook as BookOpen, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -42,7 +42,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const parsedHtml = useMemo(() => parseWikitextToHtml(excerptText, source), [excerptText, source]);
 
   return (
-    <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+    <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
       <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
         <BookOpen className="text-primary h-4 w-4" />
         {card.wikiArticleTitle?.replace(/_/g, " ") || card.title}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Hammer, Layers, Upload, Rocket } from "lucide-react";
+import { Hammer, Component as Layers, Upload, Rocket } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

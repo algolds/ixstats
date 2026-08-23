@@ -5,7 +5,7 @@
 "use client";
 
 import React from "react";
-import { Headphones, BookOpen, X, ShieldAlert } from "lucide-react";
+import { Headset as Headphones, OpenBook as BookOpen, Xmark as X, ShieldAlert } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";

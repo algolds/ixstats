@@ -563,7 +563,7 @@
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  color: #60a5fa;
+  color: var(--color-info-light);
   text-decoration: none;
   transition: color 120ms ease;
 }
@@ -895,7 +895,7 @@
 
 .wikios-stash-remove:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* Popover empty state */
@@ -944,13 +944,13 @@
 
 .wikios-stash-feedback-success {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--color-success);
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .wikios-stash-feedback-error {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-error);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
@@ -975,7 +975,7 @@
   border-radius: 6px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--color-error);
   font-size: 11px;
 }
 
@@ -1462,7 +1462,7 @@
 .wikios-watchlist-mark-seen:hover {
   background: rgba(34, 197, 94, 0.1);
   border-color: rgba(34, 197, 94, 0.3);
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .wikios-watchlist-group {
@@ -1542,10 +1542,10 @@
 }
 
 .wikios-diff-positive {
-  color: #22c55e;
+  color: var(--color-success);
 }
 .wikios-diff-negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 .wikios-diff-neutral {
   color: var(--wikios-text-dim);
@@ -1600,7 +1600,7 @@
 }
 
 .wikios-watchlist-unwatch:hover {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1726,11 +1726,11 @@
 
 .wikios-ti-badge-infobox {
   background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  color: var(--color-info-light);
 }
 .wikios-ti-badge-navigation {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--color-success);
 }
 .wikios-ti-badge-citation {
   background: rgba(168, 85, 247, 0.15);
@@ -1738,7 +1738,7 @@
 }
 .wikios-ti-badge-maintenance {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .wikios-ti-loading,
@@ -1802,7 +1802,7 @@
 }
 
 .wikios-ti-required {
-  color: #ef4444;
+  color: var(--color-error);
   margin-left: 2px;
 }
 
@@ -2118,7 +2118,7 @@
 }
 
 .wikios-stash-sidebar-delete:hover {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-stash-edit-inline {
@@ -2268,7 +2268,7 @@
 
 .wikios-stash-card-remove:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2327,7 +2327,7 @@
   border-radius: 8px;
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--color-error);
   font-size: 13px;
 }
 
@@ -2340,7 +2340,7 @@
   height: 20px;
   border: none;
   background: transparent;
-  color: #ef4444;
+  color: var(--color-error);
   cursor: pointer;
   border-radius: 4px;
   transition: background 0.15s;
@@ -2595,7 +2595,7 @@
 
 .wikios-stash-confirm-yes {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-stash-confirm-yes:hover {
@@ -2876,7 +2876,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted
   border-radius: 6px;
   border: 1px solid rgba(251, 191, 36, 0.3);
   background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -2964,7 +2964,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted
 
 .wikios-annotation-popover-delete:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-annotation-popover-close {
@@ -3116,7 +3116,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted
 
 .wikios-stash-item-badge-highlight {
   background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
+  color: var(--color-gold-400);
 }
 
 .wikios-stash-item-badge-note {
@@ -3173,7 +3173,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted
 
 .wikios-stash-item-remove:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* Stashed Image Cards */
@@ -3863,7 +3863,7 @@ html:not([data-theme="light"]) .wikios-annotation-mark.wikios-anchor-highlighted
 
 .wikios-img-modal-tab-btn.tab-search-active {
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: var(--color-info-light);
 }
 
 .wikios-img-modal-tab-btn.tab-upload-active {

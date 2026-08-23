@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Plus } from "lucide-react";
+import { ChatBubble as MessageSquare, Plus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import type { MessageFolder } from "~/types/messages";
 import { MESSAGE_FOLDERS } from "./MessagesFolderNav";

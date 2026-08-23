@@ -16,15 +16,15 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Volume2, RotateCcw, HelpCircle } from "lucide-react";
+import { SoundHigh as Volume2, Undo as RotateCcw, HelpCircle } from "iconoir-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { speakBrowserNative } from "~/lib/onoma/browser-speech";
 
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
   return (
-    <div className="text-foreground animate-in scale-in flex min-w-[125px] flex-col items-center gap-0.5 rounded-2xl border-2 border-[#0091ff] bg-[#0091ff]/15 px-5 py-3 text-center font-bold shadow-xl shadow-[#0091ff]/10 backdrop-blur-md duration-200 select-none">
-      <span className="text-[9px] font-extrabold tracking-wider text-[#0091ff] uppercase">
+    <div className="text-foreground animate-in scale-in flex min-w-[125px] flex-col items-center gap-0.5 rounded-2xl border-2 border-onoma-primary bg-onoma-primary/15 px-5 py-3 text-center font-bold shadow-xl shadow-onoma-primary/10 backdrop-blur-md duration-200 select-none">
+      <span className="text-[9px] font-extrabold tracking-wider text-onoma-primary uppercase">
         Active State
       </span>
       <span className="font-mono text-base leading-tight tracking-wide">
@@ -65,12 +65,12 @@ function NeighborNode({
 }) {
   return (
     <div className="group relative">
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#0091ff]/25 to-[#00d2ff]/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
+      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-onoma-primary/25 to-cyan-400/25 opacity-0 blur-sm transition-all duration-300 group-hover:opacity-100" />
       <button
         onClick={data.onClick}
-        className="border-border/80 bg-background/95 text-foreground relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 font-mono text-xs font-bold shadow-md backdrop-blur-md transition-all select-none hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 active:scale-95"
+        className="border-border/80 bg-background/95 text-foreground relative flex min-w-[85px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 font-mono text-xs font-bold shadow-md backdrop-blur-md transition-all select-none hover:border-onoma-primary/40 hover:bg-onoma-primary/10 active:scale-95"
       >
-        <span className="font-mono font-extrabold text-[#0091ff]">+{data.label}</span>
+        <span className="font-mono font-extrabold text-onoma-primary">+{data.label}</span>
         <span className="text-muted-foreground font-sans text-[9px] font-semibold">
           ({(data.probability * 100).toFixed(0)}%)
         </span>
@@ -294,7 +294,7 @@ export function MarkovVisualizerInner({
       {/* Control panel bar */}
       <div className="border-border/30 bg-secondary/5 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#0091ff]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-onoma-primary" />
           <h3 className="text-foreground text-xs font-bold tracking-wide uppercase">
             Markov Path Visualizer
           </h3>
@@ -310,13 +310,13 @@ export function MarkovVisualizerInner({
             value={activePrefix}
             onChange={(e) => onChangePrefix(e.target.value.toLowerCase())}
             placeholder="Type prefix or click nodes..."
-            className="border-border/60 bg-background/80 text-foreground placeholder-muted-foreground flex-1 rounded-lg border px-2.5 py-1 font-mono text-xs focus:border-[#0091ff]/50 focus:outline-none sm:max-w-[200px]"
+            className="border-border/60 bg-background/80 text-foreground placeholder-muted-foreground flex-1 rounded-lg border px-2.5 py-1 font-mono text-xs focus:border-onoma-primary/50 focus:outline-none sm:max-w-[200px]"
           />
 
           <button
             onClick={handleSpeak}
             disabled={!activePrefix}
-            className="border-border/60 bg-background/50 text-muted-foreground cursor-pointer rounded-md border p-1 transition-all hover:border-[#0091ff]/40 hover:bg-[#0091ff]/10 hover:text-[#0091ff] disabled:opacity-40"
+            className="border-border/60 bg-background/50 text-muted-foreground cursor-pointer rounded-md border p-1 transition-all hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary disabled:opacity-40"
             title="Pronounce name"
           >
             <Volume2 className="h-3.5 w-3.5" />
@@ -327,7 +327,7 @@ export function MarkovVisualizerInner({
         <div className="flex items-center gap-2">
           <button
             onClick={handleDerivePath}
-            className="flex cursor-pointer items-center justify-center rounded-lg border border-[#0091ff]/30 bg-[#0091ff]/5 px-2.5 py-1 text-xs font-semibold text-[#0091ff] transition-all hover:bg-[#0091ff]/10 active:scale-95"
+            className="flex cursor-pointer items-center justify-center rounded-lg border border-onoma-primary/30 bg-onoma-primary/5 px-2.5 py-1 text-xs font-semibold text-onoma-primary transition-all hover:bg-onoma-primary/10 active:scale-95"
             title="Derive remaining path to end"
           >
             <span>Derive Path</span>
@@ -366,7 +366,7 @@ export function MarkovVisualizerInner({
 
         {/* Help tip overlay */}
         <div className="bg-background/85 border-border/40 text-muted-foreground pointer-events-none absolute right-3 bottom-3 z-20 flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] shadow-sm backdrop-blur-sm select-none">
-          <HelpCircle className="h-3 w-3 text-[#0091ff]/80" />
+          <HelpCircle className="h-3 w-3 text-onoma-primary/80" />
           <span>Click neighbor nodes to grow the name token-by-token</span>
         </div>
       </div>

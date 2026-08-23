@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building, Gavel, Users } from "lucide-react";
+import { Building, Hammer as Gavel, Group as Users } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function TraditionalGovernmentArticle() {

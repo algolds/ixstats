@@ -5,7 +5,7 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { Progress } from "~/components/ui/progress";
 import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import { PieChart, BarChart3, GraduationCap, MapPin, Gauge } from "lucide-react";
+import { Reports as PieChart, StatsReport as BarChart3, GraduationCap, MapPin, Dashboard as Gauge } from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

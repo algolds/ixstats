@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkle, X } from "lucide-react";
+import { Sparks as Sparkle, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";

@@ -10,7 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Database, SlidersHorizontal, Sliders, Trash2, Loader2, AlertTriangle, Save } from "lucide-react";
+import { Database, ControlSlider as SlidersHorizontal, ControlSlider as Sliders, Trash as Trash2, SystemRestart as Loader2, WarningTriangle as AlertTriangle, FloppyDisk as Save } from "iconoir-react";
 import { LorewardWeightsCard } from "./LorewardWeightsCard";
 
 export function SystemTuningSection() {

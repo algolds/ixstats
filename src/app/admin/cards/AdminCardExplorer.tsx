@@ -1,23 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Search,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Eye,
-  EyeOff,
-  ChevronLeft,
-  ChevronRight,
-  Layers,
-  Globe,
-  SlidersHorizontal,
-  X,
-  ArrowUpDown,
-  Edit2,
-  Check,
-} from "lucide-react";
+import { Search, Refresh as RefreshCw, WarningTriangle as AlertTriangle, CheckCircle, Eye, EyeClosed as EyeOff, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, Component as Layers, Globe, ControlSlider as SlidersHorizontal, Xmark as X, ArrowSeparateVertical as ArrowUpDown, EditPencil as Edit2, Check } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

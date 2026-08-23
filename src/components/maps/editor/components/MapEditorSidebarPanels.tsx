@@ -1,16 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Globe,
-  Hexagon,
-  MapPin,
-  Landmark,
-  BookMarked,
-  Type as TypeIcon,
-  Route,
-  CloudSun,
-} from "lucide-react";
+import { Globe, Hexagon, MapPin, Bank as Landmark, Bookmark as BookMarked, Type as TypeIcon, Navigator as Route, CloudSunny as CloudSun } from "iconoir-react";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";

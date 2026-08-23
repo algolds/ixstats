@@ -2,17 +2,7 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import {
-  Crown,
-  Flag,
-  Building2,
-  TrendingUp,
-  CheckCircle,
-  Sparkles,
-  Lock,
-  ArrowRight,
-  Download,
-} from "lucide-react";
+import { Crown, WhiteFlag as Flag, City as Building2, StatUp as TrendingUp, CheckCircle, Sparks as Sparkles, Lock, ArrowRight, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { BUILD_STEPS, BUILDER_THEME, type BuilderSection } from "~/app/builder/lib/builder-theme";
@@ -65,7 +55,7 @@ export function NationBuilderShowcase() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div
-        className={`glass-hierarchy-parent relative overflow-hidden p-5 md:p-8 ${splashGold.panel}`}
+        className={`facet-hierarchy-parent relative overflow-hidden p-5 md:p-8 ${splashGold.panel}`}
       >
         <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-amber-500/5 to-transparent dark:from-amber-400/5" />
 
@@ -140,7 +130,7 @@ export function NationBuilderShowcase() {
                 return (
                   <li key={section} className="relative">
                     <motion.div
-                      className={`glass-hierarchy-child bg-card/40 flex h-full flex-col rounded-xl border p-3 text-left md:p-4 ${splashGold.border} dark:bg-card/20`}
+                      className={`facet-hierarchy-child bg-card/40 flex h-full flex-col rounded-xl border p-3 text-left md:p-4 ${splashGold.border} dark:bg-card/20`}
                       initial="rest"
                       whileHover="hover"
                       variants={{ rest: {}, hover: {} }}

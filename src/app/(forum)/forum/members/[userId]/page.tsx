@@ -4,7 +4,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Calendar, MessageSquare, Heart, Trophy, MapPin } from "lucide-react";
+import { Calendar, ChatBubble as MessageSquare, Heart, Trophy, MapPin } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { api } from "~/trpc/react";

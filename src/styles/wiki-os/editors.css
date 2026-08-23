@@ -1060,7 +1060,7 @@
 
 .wikios-ve-template-remove:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .wikios-ve-template-dialog-actions {

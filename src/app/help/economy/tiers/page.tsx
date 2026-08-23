@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp, BarChart3, Gauge } from "lucide-react";
+import { StatUp as TrendingUp, StatsReport as BarChart3, Dashboard as Gauge } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function EconomicTiersArticle() {

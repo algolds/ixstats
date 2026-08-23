@@ -13,7 +13,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
-import { Loader2, Check } from "lucide-react";
+import { SystemRestart as Loader2, Check } from "iconoir-react";
 import { useRef } from "react";
 
 interface WikiSearchProps {

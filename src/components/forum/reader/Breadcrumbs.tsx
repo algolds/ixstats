@@ -4,7 +4,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
 interface BreadcrumbItem {

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
-import { Globe, Check } from "lucide-react";
+import { Globe, Check } from "iconoir-react";
 
 export interface CountryCardData {
   id: string;
@@ -96,7 +96,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         >
           <div
             className={cn(
-              "glass-floating glass-refraction glass-interactive relative h-full w-full overflow-hidden rounded-xl border transition-all duration-500 ease-out",
+              "facet-floating facet-refraction facet-interactive relative h-full w-full overflow-hidden rounded-xl border transition-all duration-500 ease-out",
               isHovered
                 ? "shadow-2xl shadow-black/25 brightness-105 saturate-110 backdrop-blur-md dark:shadow-black/60"
                 : "shadow-md shadow-black/10 dark:shadow-black/35",

@@ -34,18 +34,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Flag,
-  Plus,
-  Trash2,
-  Check,
-  X,
-  Search,
-  Filter,
-  ToggleLeft,
-  ToggleRight,
-  ArrowLeft,
-} from "lucide-react";
+import { WhiteFlag as Flag, Plus, Trash as Trash2, Check, Xmark as X, Search, Filter, SwitchOff as ToggleLeft, SwitchOn as ToggleRight, ArrowLeft } from "iconoir-react";
 import Link from "next/link";
 
 type DiplomaticOptionType = "strategic_priority" | "partnership_goal" | "key_achievement";
@@ -297,7 +286,7 @@ export default function DiplomaticOptionsPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent border-primary/20 from-primary/5 to-primary/10 mb-6 rounded-xl border-2 bg-gradient-to-br via-transparent p-6">
+        <div className="facet-card-parent border-primary/20 from-primary/5 to-primary/10 mb-6 rounded-xl border-2 bg-gradient-to-br via-transparent p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
@@ -404,7 +393,7 @@ export default function DiplomaticOptionsPage() {
         </div>
 
         {/* Table */}
-        <div className="glass-card-child border-border/50 overflow-hidden rounded-xl border">
+        <div className="facet-card-child border-border/50 overflow-hidden rounded-xl border">
           {isLoading ? (
             <div className="px-6 py-12 text-center">
               <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
@@ -507,21 +496,21 @@ export default function DiplomaticOptionsPage() {
 
         {/* Stats */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+          <div className="facet-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">{options?.length || 0}</div>
             <div className="text-muted-foreground text-sm">Total Options</div>
           </div>
-          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+          <div className="facet-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">
               {options?.filter((o) => o.isActive).length || 0}
             </div>
             <div className="text-muted-foreground text-sm">Active Options</div>
           </div>
-          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+          <div className="facet-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">{filteredOptions.length}</div>
             <div className="text-muted-foreground text-sm">Filtered Results</div>
           </div>
-          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+          <div className="facet-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">
               {new Set(options?.map((o) => o.category).filter(Boolean)).size}
             </div>

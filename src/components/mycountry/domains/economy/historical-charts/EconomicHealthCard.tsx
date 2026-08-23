@@ -8,7 +8,7 @@
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
-import { Activity, HelpCircle } from "lucide-react";
+import { Activity, HelpCircle } from "iconoir-react";
 import type { EconomicTrend } from "~/lib/economy/historical-transformers";
 
 interface EconomicHealthCardProps {

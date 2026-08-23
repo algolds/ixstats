@@ -74,6 +74,25 @@
   --color-wiki: #1d4e89;              /* Wiki blue */
   --color-wiki-hover: #184275;        /* Wiki blue hover */
   --color-map-ocean: #0a1628;         /* Map dark oceanic / spatial canvas */
+  --color-forum-accent: #f97316;      /* Forum brand orange */
+  --color-forum-accent-hover: #fb923c;
+  --color-forum-accent-active: #ea580c;
+
+  /* Executive Theme Accent Colors */
+  --color-theme-gold: #b45309;
+  --color-theme-ocean: #0369a1;
+  --color-theme-emerald: #047857;
+  --color-theme-crimson: #b91c1c;
+  --color-theme-amethyst: #7e22ce;
+  --color-theme-slate: #334155;
+
+  /* Vault Card Rarity Tokens */
+  --color-rarity-common: #60a5fa;
+  --color-rarity-uncommon: #34d399;
+  --color-rarity-rare: #a855f7;
+  --color-rarity-ultra-rare: #c084fc;
+  --color-rarity-epic: #fbbf24;
+  --color-rarity-legendary: #ffd700;
 
   /* Component Specific Colors */
   --color-input-bg: #1e2028;
@@ -94,6 +113,19 @@
   --color-tier-developed: #3b82f6;    /* blue-500 */
   --color-tier-emerging: #10b981;     /* green-500 */
   --color-tier-developing: #f59e0b;   /* yellow-500 */
+
+  /* Global Layering & Z-Index Scale */
+  --z-background: -1;
+  --z-surface: 0;
+  --z-floating: 100;
+  --z-overlay: 1000;
+  --z-navigation: 5000;
+  --z-backdrop: 100000;
+  --z-modal: 100001;
+  --z-popover: 100010;
+  --z-tooltip: 100020;
+  --z-toast: 100050;
+  --z-command: 110000;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
@@ -142,7 +174,7 @@
   --glass-social-hover: rgba(40, 24, 16, 0.2);
   --glass-security: rgba(16, 16, 40, 0.15);
   --glass-security-hover: rgba(16, 16, 40, 0.2);
-  /* Blur Levels — values synchronized with glass-refraction.css */
+  /* Blur Levels — values synchronized with facet-refraction.css */
   --blur-dramatic: 24px;
   /* Glow Effects - Toned down soft shadows and inset border highlights */
   --glow-diplomatic: 0 4px 12px rgba(99, 102, 241, 0.1), inset 0 0 0 1px rgba(99, 102, 241, 0.15);
@@ -170,12 +202,12 @@
   --country-text-muted: #e5e7eb;   /* Default light gray */
 
   /* Satin Glass Volumetric System */
-  --glass-refraction-bg-start: rgba(22, 24, 29, 0.85);
-  --glass-refraction-bg-end: rgba(15, 17, 20, 0.92);
-  --glass-refraction-border: rgba(255, 255, 255, 0.08);
-  --glass-refraction-shadow-inset: rgba(255, 255, 255, 0.08);
-  --glass-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.35);
-  --glass-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.2);
+  --facet-refraction-bg-start: rgba(22, 24, 29, 0.85);
+  --facet-refraction-bg-end: rgba(15, 17, 20, 0.92);
+  --facet-refraction-border: rgba(255, 255, 255, 0.08);
+  --facet-refraction-shadow-inset: rgba(255, 255, 255, 0.08);
+  --facet-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.35);
+  --facet-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.2);
   --refraction-opacity-base: 0.08;
   --refraction-opacity-hover: 0.15;
 
@@ -256,6 +288,25 @@
   --color-wiki: #1d4e89;
   --color-wiki-hover: #184275;
   --color-map-ocean: #0a1628;
+  --color-forum-accent: #ea580c;
+  --color-forum-accent-hover: #c2410c;
+  --color-forum-accent-active: #9a3412;
+
+  /* Executive Theme Accent Colors (Light Mode) */
+  --color-theme-gold: #92400e;
+  --color-theme-ocean: #0284c7;
+  --color-theme-emerald: #059669;
+  --color-theme-crimson: #dc2626;
+  --color-theme-amethyst: #9333ea;
+  --color-theme-slate: #475569;
+
+  /* Vault Card Rarity Tokens (Light Mode) */
+  --color-rarity-common: #3b82f6;
+  --color-rarity-uncommon: #10b981;
+  --color-rarity-rare: #8b5cf6;
+  --color-rarity-ultra-rare: #a855f7;
+  --color-rarity-epic: #d97706;
+  --color-rarity-legendary: #b45309;
 
   --color-input-bg: #ffffff;
   --color-input-border: rgba(0, 0, 0, 0.1);
@@ -301,12 +352,12 @@
   --ring: var(--color-brand-primary);
 
   /* Satin Glass Volumetric System */
-  --glass-refraction-bg-start: rgba(255, 255, 255, 0.88);
-  --glass-refraction-bg-end: rgba(248, 250, 252, 0.82);
-  --glass-refraction-border: rgba(0, 0, 0, 0.08);
-  --glass-refraction-shadow-inset: rgba(255, 255, 255, 1);
-  --glass-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.04);
-  --glass-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.02);
+  --facet-refraction-bg-start: rgba(255, 255, 255, 0.88);
+  --facet-refraction-bg-end: rgba(248, 250, 252, 0.82);
+  --facet-refraction-border: rgba(0, 0, 0, 0.08);
+  --facet-refraction-shadow-inset: rgba(255, 255, 255, 1);
+  --facet-refraction-shadow-ambient-1: rgba(0, 0, 0, 0.04);
+  --facet-refraction-shadow-ambient-2: rgba(0, 0, 0, 0.02);
   --refraction-opacity-base: 0.2;
   --refraction-opacity-hover: 0.4;
 

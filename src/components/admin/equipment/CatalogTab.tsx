@@ -16,7 +16,7 @@ import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Plus, Search, Check, X, Filter, Rocket } from "lucide-react";
+import { Plus, Search, Check, Xmark as X, Filter, Rocket } from "iconoir-react";
 import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { EquipmentCard } from "./EquipmentCard";
 
@@ -81,7 +81,7 @@ export function CatalogTab({
 }: CatalogTabProps) {
   return (
     <div className="space-y-6">
-      <div className="glass-card-parent rounded-xl border border-white/10 p-4">
+      <div className="facet-card-parent rounded-xl border border-white/10 p-4">
         {/* Category Tabs */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-4">
           <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
@@ -209,21 +209,21 @@ export function CatalogTab({
 
       {/* Stats Bar */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="glass-card-child p-4">
+        <Card className="facet-card-child p-4">
           <p className="text-muted-foreground text-sm">Total Equipment</p>
           <p className="text-foreground mt-2 text-3xl font-bold">{equipmentData?.length || 0}</p>
         </Card>
-        <Card className="glass-card-child p-4">
+        <Card className="facet-card-child p-4">
           <p className="text-muted-foreground text-sm">Active Equipment</p>
           <p className="mt-2 text-3xl font-bold text-green-400">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
         </Card>
-        <Card className="glass-card-child p-4">
+        <Card className="facet-card-child p-4">
           <p className="text-muted-foreground text-sm">Filtered Results</p>
           <p className="mt-2 text-3xl font-bold text-blue-400">{filteredEquipment.length}</p>
         </Card>
-        <Card className="glass-card-child p-4">
+        <Card className="facet-card-child p-4">
           <p className="text-muted-foreground text-sm">Manufacturers</p>
           <p className="mt-2 text-3xl font-bold text-purple-400">{manufacturers?.length || 0}</p>
         </Card>
@@ -236,7 +236,7 @@ export function CatalogTab({
           <p className="text-muted-foreground">Loading equipment catalog...</p>
         </div>
       ) : filteredEquipment.length === 0 ? (
-        <Card className="glass-card-parent p-12 text-center">
+        <Card className="facet-card-parent p-12 text-center">
           <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <p className="text-muted-foreground">No equipment found matching your filters</p>
           <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>

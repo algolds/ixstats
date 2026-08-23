@@ -8,7 +8,7 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
 // Extracted subcomponents, hooks, and helpers
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";

@@ -1,4 +1,4 @@
-import { Brain, BarChart3, Search, Bell } from "lucide-react";
+import { Brain, StatsReport as BarChart3, Search, Bell } from "iconoir-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 

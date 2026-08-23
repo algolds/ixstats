@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 
 function formatRemaining(ms: number): string {

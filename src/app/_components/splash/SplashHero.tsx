@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Globe, TrendingUp, Crown, ArrowRight, Hammer } from "lucide-react";
+import { Globe, StatUp as TrendingUp, Crown, ArrowRight, Hammer } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
@@ -64,7 +64,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={`glass-hierarchy-parent mb-6 flex flex-col items-center gap-3 rounded-2xl border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-3.5 ${splashGold.border} ${splashGold.darkBorder}`}
+        className={`facet-hierarchy-parent mb-6 flex flex-col items-center gap-3 rounded-2xl border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-3.5 ${splashGold.border} ${splashGold.darkBorder}`}
       >
         <div className="flex items-center gap-2">
           <div className={splashGold.pulseDot} aria-hidden />

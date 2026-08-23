@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
 import { Button } from "~/components/ui/button";

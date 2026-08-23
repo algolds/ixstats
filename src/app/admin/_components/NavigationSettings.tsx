@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
-import { Loader2, Navigation, Eye, EyeOff, Save, Check, Shield } from "lucide-react";
+import { SystemRestart as Loader2, Navigator as Navigation, Eye, EyeClosed as EyeOff, FloppyDisk as Save, Check, Shield } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -78,7 +78,7 @@ export function NavigationSettings() {
 
   if (isLoading) {
     return (
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
@@ -95,7 +95,7 @@ export function NavigationSettings() {
   }
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5" />

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock as UnlockIcon, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react";
+import { Lock, LockSlash as UnlockIcon, ArrowLeft, ArrowRight, NavArrowRight as ChevronRight } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";

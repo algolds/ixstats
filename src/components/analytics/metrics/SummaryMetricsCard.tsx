@@ -8,7 +8,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import type { SummaryMetric } from "~/lib/utils";
@@ -25,7 +25,7 @@ export const SummaryMetricsCard = React.memo<SummaryMetricsCardProps>(({ metric,
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardContent className="p-6">
           <div className="mb-2 flex items-center justify-between">
             <div className={cn("rounded-lg p-2", metric.bg)}>

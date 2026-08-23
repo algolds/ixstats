@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Shield,
-  Globe,
-  AlertTriangle,
-  Users,
-  Anchor,
-  Crosshair,
-  ArrowRightLeft,
-} from "lucide-react";
+import { Shield, Globe, WarningTriangle as AlertTriangle, Group as Users, SeaWaves as Anchor, Archery as Crosshair, ArrowSeparate as ArrowRightLeft } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";

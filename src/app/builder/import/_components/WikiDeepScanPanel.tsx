@@ -2,15 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import {
-  Search,
-  Loader2,
-  CheckCircle2,
-  ChevronRight,
-  FileText,
-  Database,
-  Settings2,
-} from "lucide-react";
+import { Search, SystemRestart as Loader2, CheckCircle as CheckCircle2, NavArrowRight as ChevronRight, Page as FileText, Database, Settings as Settings2 } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";

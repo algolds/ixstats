@@ -1,7 +1,7 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
-import { Activity, DollarSign, Users, Shield, Building } from "lucide-react";
+
+import { Activity, Dollar as DollarSign, Group as Users, Shield, Building } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -20,7 +20,7 @@ export interface RingConfig {
   label: string;
   subtitle: string;
   color: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   value: number;
   target?: number; // ring fill target (default 100)
   displayValue?: string; // custom text (e.g. "5 active", "72/100") — replaces auto "%"
@@ -100,7 +100,7 @@ export function VitalityRings({
       return (
         <div
           key={ring.key ?? index}
-          className="glass-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102"
+          className="facet-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102"
           onClick={ring.onClick}
           role={isClickable ? "button" : undefined}
           tabIndex={isClickable ? 0 : undefined}
@@ -175,7 +175,7 @@ export function VitalityRings({
     return (
       <div
         key={ring.key ?? index}
-        className={`glass-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
+        className={`facet-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
         onClick={ring.onClick}
         role={isClickable ? "button" : undefined}
         tabIndex={isClickable ? 0 : undefined}

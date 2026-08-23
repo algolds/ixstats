@@ -12,7 +12,7 @@ import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
-import { Globe2, Loader2, Palette, ExternalLink } from "lucide-react";
+import { Globe as Globe2, SystemRestart as Loader2, Palette, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";

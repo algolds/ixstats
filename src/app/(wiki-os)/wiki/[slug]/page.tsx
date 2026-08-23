@@ -148,7 +148,7 @@ export default function WikiOSArticlePage() {
               </div>
             )}
             {error && !data && (
-              <div className="wikios-error glass-hierarchy-child rounded-lg p-6">
+              <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
                 <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
                 <p className="text-sm text-zinc-400">
                   The page &ldquo;{title}&rdquo; does not exist on IxWiki.

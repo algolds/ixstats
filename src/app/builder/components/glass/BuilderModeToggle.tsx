@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Zap, Settings } from "lucide-react";
+import { Flash as Zap, Settings } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface BuilderModeToggleProps {

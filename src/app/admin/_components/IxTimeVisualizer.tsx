@@ -5,22 +5,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  Clock,
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Play,
-  Pause,
-  Zap,
-  Target,
-  ArrowRightLeft,
-  ChevronDown,
-  ChevronUp,
-  Timer,
-} from "lucide-react";
+import { Clock, Activity, WarningTriangle as AlertTriangle, CheckCircle, XmarkCircle as XCircle, Refresh as RefreshCw, Play, Pause, Flash as Zap, Archery as Target, ArrowSeparate as ArrowRightLeft, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Timer } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -247,7 +232,7 @@ export function IxTimeVisualizer() {
   }
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2 text-base font-bold">

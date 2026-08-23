@@ -1,20 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { api } from "~/trpc/react";
-import {
-  Search,
-  Loader2,
-  X,
-  CheckCircle,
-  ChevronDown,
-  ExternalLink,
-  Globe,
-  Users,
-  DollarSign,
-  MapPin,
-  Building,
-  Filter,
-} from "lucide-react";
+import { Search, SystemRestart as Loader2, Xmark as X, CheckCircle, NavArrowDown as ChevronDown, OpenNewWindow as ExternalLink, Globe, Group as Users, Dollar as DollarSign, MapPin, Building, Filter } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { sanitizeWikiContent } from "~/lib/utils";

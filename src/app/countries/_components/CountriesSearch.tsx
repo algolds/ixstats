@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter as FilterIcon, X, SortAsc, SortDesc, CheckCircle } from "lucide-react";
+import { Search, Filter as FilterIcon, Xmark as X, SortUp as SortAsc, SortDown as SortDesc, CheckCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {

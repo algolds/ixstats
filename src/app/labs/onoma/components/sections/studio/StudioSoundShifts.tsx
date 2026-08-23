@@ -4,25 +4,7 @@
 // Onoma Lab — Historical Sound Change & Language Evolution Studio
 
 import { useState, useMemo } from "react";
-import {
-  GitFork,
-  Plus,
-  Trash2,
-  Volume2,
-  RotateCcw,
-  ArrowRight,
-  HelpCircle,
-  Copy,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Layers,
-  ArrowUp,
-  ArrowDown,
-  Bookmark,
-  Globe2,
-  FolderDown,
-} from "lucide-react";
+import { GitFork, Plus, Trash as Trash2, SoundHigh as Volume2, Undo as RotateCcw, ArrowRight, HelpCircle, Copy, Check, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Component as Layers, ArrowUp, ArrowDown, Bookmark, Globe as Globe2, Folder as FolderDown } from "iconoir-react";
 import {
   SOUND_SHIFT_PRESETS,
   applySoundShifts,

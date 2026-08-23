@@ -12,7 +12,7 @@
  */
 
 import { useState, useRef, useCallback } from "react";
-import { Search, Link2, Unlink, Loader2, Check, ExternalLink, AlertTriangle } from "lucide-react";
+import { Search, Link as Link2, LinkSlash as Unlink, SystemRestart as Loader2, Check, OpenNewWindow as ExternalLink, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
 

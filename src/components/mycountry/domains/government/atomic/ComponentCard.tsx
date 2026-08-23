@@ -10,7 +10,7 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Plus, Minus, Zap, AlertTriangle, Check } from "lucide-react";
+import { Plus, Minus, Flash as Zap, WarningTriangle as AlertTriangle, Check } from "iconoir-react";
 import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";

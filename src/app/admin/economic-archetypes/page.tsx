@@ -32,23 +32,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Copy,
-  Search,
-  BarChart3,
-  EyeOff,
-  ArrowLeft,
-  Sparkles,
-  TrendingUp,
-  Building2,
-  DollarSign,
-  Users,
-  Activity,
-  Award,
-} from "lucide-react";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Copy, Search, StatsReport as BarChart3, EyeClosed as EyeOff, ArrowLeft, Sparks as Sparkles, StatUp as TrendingUp, City as Building2, Dollar as DollarSign, Group as Users, Activity, Trophy as Award } from "iconoir-react";
 import Link from "next/link";
 
 // Import component types
@@ -392,7 +376,7 @@ export default function EconomicArchetypesPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+        <div className="facet-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
@@ -497,21 +481,21 @@ export default function EconomicArchetypesPage() {
         {/* Statistics */}
         {stats && (
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Card className="glass-card-child p-4">
+            <Card className="facet-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Archetypes</p>
               <p className="text-foreground mt-2 text-3xl font-bold">{stats.totalArchetypes}</p>
             </Card>
-            <Card className="glass-card-child p-4">
+            <Card className="facet-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active</p>
               <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
                 {stats.activeArchetypes}
               </p>
             </Card>
-            <Card className="glass-card-child p-4">
+            <Card className="facet-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Selectable</p>
               <p className="mt-2 text-3xl font-bold text-blue-400">{stats.selectableArchetypes}</p>
             </Card>
-            <Card className="glass-card-child p-4">
+            <Card className="facet-card-child p-4">
               <p className="text-sm text-[--intel-silver]">User Selections</p>
               <p className="mt-2 text-3xl font-bold text-green-400">{stats.userSelections}</p>
             </Card>
@@ -525,7 +509,7 @@ export default function EconomicArchetypesPage() {
             <p className="text-muted-foreground">Loading archetypes...</p>
           </div>
         ) : filteredArchetypes.length === 0 ? (
-          <Card className="glass-card-parent p-12 text-center">
+          <Card className="facet-card-parent p-12 text-center">
             <p className="text-[--intel-silver]">No archetypes found matching your filters</p>
           </Card>
         ) : (
@@ -575,7 +559,7 @@ interface ArchetypeCardProps {
 
 function ArchetypeCard({ archetype, onEdit, onDelete, onClone }: ArchetypeCardProps) {
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50">
+    <Card className="facet-card-child p-4 transition-all hover:border-[--intel-gold]/50">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">

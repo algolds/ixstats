@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Command, Plus, ArrowUpRight } from "lucide-react";
+import { KeyCommand as Command, Plus, ArrowUpRight } from "iconoir-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Loader2, Award, ExternalLink } from "lucide-react";
+import { SystemRestart as Loader2, Trophy as Award, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { TextureOverlay } from "~/components/ui/texture-overlay";

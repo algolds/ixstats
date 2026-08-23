@@ -152,7 +152,7 @@ export function MarginShareModal({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#fef036]/15 border border-[#fef036]/30 text-[#fef036] shadow-[0_0_10px_rgba(254,240,54,0.35)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-margin-bg border border-margin-border text-margin-accent shadow-[0_0_10px_var(--margin-accent-glow)]">
                 <Share2 className="h-4 w-4" />
               </div>
               <div>
@@ -178,7 +178,7 @@ export function MarginShareModal({
           </div>
 
           {/* Quote Snippet Preview */}
-          <div className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3 text-xs italic text-[var(--wikios-text-muted)] line-clamp-3 leading-relaxed border-l-3 border-[#fef036]">
+          <div className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3 text-xs italic text-[var(--wikios-text-muted)] line-clamp-3 leading-relaxed border-l-3 border-margin-accent">
             &ldquo;{cleanQuote}&rdquo;
           </div>
 
@@ -187,7 +187,7 @@ export function MarginShareModal({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold text-[var(--wikios-text-muted)]">
                 <span>Send to conversation</span>
-                <span className="text-[10px] text-[#fef036] font-semibold">Recent chats</span>
+                <span className="text-[10px] text-margin-accent font-semibold">Recent chats</span>
               </div>
               <div className="max-h-36 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                 {conversationsData?.conversations.slice(0, 4).map((c: any) => {
@@ -201,15 +201,15 @@ export function MarginShareModal({
                       type="button"
                       disabled={isSending}
                       onClick={() => handleDispatchToChat(c.id)}
-                      className="w-full flex items-center justify-between p-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-[#fef036]/10 hover:border-[#fef036]/30 text-left active:scale-[0.98] transition-all cursor-pointer text-xs group"
+                      className="w-full flex items-center justify-between p-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-margin-bg hover:border-margin-border text-left active:scale-[0.98] transition-all cursor-pointer text-xs group"
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <MessageSquare className="h-3.5 w-3.5 text-[#fef036] shrink-0" />
-                        <span className="font-semibold text-[var(--wikios-text)] group-hover:text-[#fef036] truncate">
+                        <MessageSquare className="h-3.5 w-3.5 text-margin-accent shrink-0" />
+                        <span className="font-semibold text-[var(--wikios-text)] group-hover:text-margin-accent truncate">
                           {participantName}
                         </span>
                       </div>
-                      <span className="flex items-center gap-1 text-[10.5px] font-bold text-[#fef036] group-hover:translate-x-0.5 transition-transform shrink-0">
+                      <span className="flex items-center gap-1 text-[10.5px] font-bold text-margin-accent group-hover:translate-x-0.5 transition-transform shrink-0">
                         <Send className="h-3 w-3" />
                         <span>Send</span>
                       </span>
@@ -234,14 +234,14 @@ export function MarginShareModal({
                     key={fmt.id}
                     type="button"
                     onClick={() => handleCopy(fmt.id, fmt.getContent())}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-[#fef036]/10 hover:border-[#fef036]/30 active:scale-[0.98] transition-all cursor-pointer text-left group"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 hover:bg-margin-bg hover:border-margin-border active:scale-[0.98] transition-all cursor-pointer text-left group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--wikios-surface)] border border-[var(--wikios-border)] text-[#fef036] group-hover:border-[#fef036]/40">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--wikios-surface)] border border-[var(--wikios-border)] text-margin-accent group-hover:border-margin-border">
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-[var(--wikios-text)] group-hover:text-[#fef036]">
+                        <div className="text-xs font-bold text-[var(--wikios-text)] group-hover:text-margin-accent">
                           {fmt.name}
                         </div>
                         <div className="text-[10px] text-[var(--wikios-text-dim)]">
@@ -250,7 +250,7 @@ export function MarginShareModal({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-xs text-[var(--wikios-text-dim)] group-hover:text-[#fef036]">
+                    <div className="flex items-center gap-1 text-xs text-[var(--wikios-text-dim)] group-hover:text-margin-accent">
                       {isCopied ? (
                         <>
                           <Check className="h-3.5 w-3.5 text-emerald-400" />

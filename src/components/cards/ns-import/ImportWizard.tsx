@@ -207,7 +207,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             <button
               onClick={handleRequestVerification}
               disabled={requestVerificationMutation.isPending}
-              className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
+              className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
             >
               {requestVerificationMutation.isPending ? "Requesting..." : "Request Verification"}
             </button>
@@ -236,7 +236,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               <button
                 onClick={handleCheckVerification}
                 disabled={checkVerificationMutation.isPending}
-                className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
+                className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
               >
                 {checkVerificationMutation.isPending ? "Verifying..." : "Verify & Continue"}
               </button>
@@ -300,7 +300,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </button>
             <button
               onClick={handleProceedToOptions}
-              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
+              className="facet-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
             >
               Continue
             </button>
@@ -378,7 +378,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             <button
               onClick={handleStartImport}
               disabled={!hasGrantedConsent || importDeckMutation.isPending}
-              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="facet-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {importDeckMutation.isPending ? "Importing..." : "Start Import"}
             </button>
@@ -426,7 +426,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
           <button
             onClick={handleComplete}
-            className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
+            className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
           >
             View My Collection
           </button>

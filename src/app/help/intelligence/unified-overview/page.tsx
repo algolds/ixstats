@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircuitBoard, LayoutDashboard, GaugeCircle, BellRing, Compass } from "lucide-react";
+import { Cpu as CircuitBoard, Dashboard as LayoutDashboard, Dashboard as GaugeCircle, BellNotification as BellRing, Compass } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function IntelligenceSystemOverviewArticle() {

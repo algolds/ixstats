@@ -5,23 +5,22 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
   Coins,
-  Users,
+  Group as Users,
   Map as MapIcon,
   Bell,
-  FileText,
-  Layers,
-  Building2,
-  Handshake,
+  Page as FileText,
+  Component as Layers,
+  City as Building2,
+  Community as Handshake,
   Globe,
-  AlertTriangle,
-  Sword,
-  Target,
+  WarningTriangle as AlertTriangle,
+  Tournament as Sword,
+  Archery as Target,
   Activity,
   Heart,
-  Scale,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+  ScaleFrameEnlarge as Scale,
+  Flash as Zap,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -39,7 +38,7 @@ export function StatPill({
   value,
   color,
 }: {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string | number;
   color: string;

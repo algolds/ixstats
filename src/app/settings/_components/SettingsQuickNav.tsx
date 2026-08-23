@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  Coins,
-  Gem,
-  Shield,
-  Scale,
-  Palette,
-  Bell,
-  Link2,
-  Flag,
-  BookOpen,
-  User,
-  Settings,
-} from "lucide-react";
+import { Coins, Crown as Gem, Shield, ScaleFrameEnlarge as Scale, Palette, Bell, Link as Link2, WhiteFlag as Flag, OpenBook as BookOpen, User, Settings } from "iconoir-react";
 import {
   CutoutCard,
   CutoutCardContent,

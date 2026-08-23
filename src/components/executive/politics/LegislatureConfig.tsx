@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Landmark, Save, CheckCircle } from "lucide-react";
+import { Bank as Landmark, FloppyDisk as Save, CheckCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 type SelectionMethod =
@@ -270,7 +270,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   const isMultiChamber = formData.chamberType !== "unicameral";
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Landmark className="h-4 w-4 text-amber-600" />

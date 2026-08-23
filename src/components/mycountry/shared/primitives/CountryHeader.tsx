@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, BarChart3, Edit } from "lucide-react";
+import { Crown, StatsReport as BarChart3, EditPencil as Edit } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { createUrl } from "~/lib/utils";

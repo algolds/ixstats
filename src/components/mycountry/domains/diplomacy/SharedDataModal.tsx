@@ -4,27 +4,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import {
-  X,
-  TrendingUp,
-  Eye,
-  Beaker,
-  Palette,
-  FileText,
-  Share2,
-  Lock,
-  Unlock,
-  BarChart3,
-  Users,
-  Building2,
-  Award,
-  Calendar,
-  AlertCircle,
-  CheckCircle,
-  Info,
-  Database,
-  CreditCard,
-} from "lucide-react";
+import { Xmark as X, StatUp as TrendingUp, Eye, Flask as Beaker, Palette, Page as FileText, ShareAndroid as Share2, Lock, LockSlash as Unlock, StatsReport as BarChart3, Group as Users, City as Building2, Trophy as Award, Calendar, WarningCircle as AlertCircle, CheckCircle, InfoCircle as Info, Database, CreditCard } from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -249,7 +229,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
               <div className="space-y-6">
                 {/* Embassy Overview */}
                 {embassy && (
-                  <Card className="glass-hierarchy-child border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
+                  <Card className="facet-hierarchy-child border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-blue-500" />
@@ -295,7 +275,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                 >
                   <TabsList
                     className={cn(
-                      "glass-hierarchy-child",
+                      "facet-hierarchy-child",
                       hasDataAccess ? "grid w-full grid-cols-7" : "flex w-full justify-center"
                     )}
                   >
@@ -315,7 +295,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                   <div className="mt-6">
                     {/* Overview Tab */}
                     <TabsContent value="overview" className="space-y-6">
-                      <Card className="glass-hierarchy-child border-primary/20 from-primary/5 bg-gradient-to-br to-blue-500/5">
+                      <Card className="facet-hierarchy-child border-primary/20 from-primary/5 bg-gradient-to-br to-blue-500/5">
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
@@ -535,7 +515,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       {hasDataAccess && embassy && (
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           {/* Host Country Data Access */}
-                          <Card className="glass-hierarchy-child border-blue-500/20 transition-colors hover:border-blue-500/40">
+                          <Card className="facet-hierarchy-child border-blue-500/20 transition-colors hover:border-blue-500/40">
                             <CardHeader className="pb-3">
                               <CardTitle className="flex items-center gap-2 text-base">
                                 <Building2 className="h-4 w-4 text-blue-500" />
@@ -582,7 +562,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                           </Card>
 
                           {/* Guest Country Data Access */}
-                          <Card className="glass-hierarchy-child border-purple-500/20 transition-colors hover:border-purple-500/40">
+                          <Card className="facet-hierarchy-child border-purple-500/20 transition-colors hover:border-purple-500/40">
                             <CardHeader className="pb-3">
                               <CardTitle className="flex items-center gap-2 text-base">
                                 <Building2 className="h-4 w-4 text-purple-500" />
@@ -632,7 +612,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
                       {/* Access Denied Message for Non-Members */}
                       {!hasDataAccess && (
-                        <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
+                        <Card className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
                           <CardContent className="py-8">
                             <div className="space-y-3 text-center">
                               <Lock className="mx-auto h-12 w-12 text-amber-500" />
@@ -675,7 +655,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
                 {/* Action Buttons (Owner Only with Data Access) */}
                 {isOwner && hasDataAccess && (
-                  <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
+                  <Card className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -761,7 +741,7 @@ function renderEconomicData(data: any) {
   if (!data) return <EmptyState type="economic" />;
 
   return (
-    <Card className="glass-hierarchy-child border-green-500/20 bg-green-500/5">
+    <Card className="facet-hierarchy-child border-green-500/20 bg-green-500/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-green-500" />
@@ -799,7 +779,7 @@ function renderIntelligenceData(data: any[] | undefined, isOwner: boolean) {
   return (
     <>
       {data.map((report, idx) => (
-        <Card key={idx} className="glass-hierarchy-child border-blue-500/20 bg-blue-500/5">
+        <Card key={idx} className="facet-hierarchy-child border-blue-500/20 bg-blue-500/5">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -845,7 +825,7 @@ function renderResearchData(data: any[] | undefined) {
   return (
     <>
       {data.map((project, idx) => (
-        <Card key={idx} className="glass-hierarchy-child border-purple-500/20 bg-purple-500/5">
+        <Card key={idx} className="facet-hierarchy-child border-purple-500/20 bg-purple-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Beaker className="h-5 w-5 text-purple-500" />
@@ -877,7 +857,7 @@ function renderCulturalData(data: any) {
   if (!data) return <EmptyState type="cultural" />;
 
   return (
-    <Card className="glass-hierarchy-child border-pink-500/20 bg-pink-500/5">
+    <Card className="facet-hierarchy-child border-pink-500/20 bg-pink-500/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Palette className="h-5 w-5 text-pink-500" />
@@ -917,7 +897,7 @@ function renderPolicyData(data: any[] | undefined) {
   return (
     <>
       {data.map((policy, idx) => (
-        <Card key={idx} className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
+        <Card key={idx} className="facet-hierarchy-child border-amber-500/20 bg-amber-500/5">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>

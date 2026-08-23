@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Flame, Clock, Home as HomeIcon } from "lucide-react";
+import { FireFlame as Flame, Clock, HomeSimple as HomeIcon } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumCategoryCard } from "~/components/forum/reader/ForumCategoryCard";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";

@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Pause, Play, RotateCcw, Loader2, Calendar } from "lucide-react";
+import { Clock, Pause, Play, Undo as RotateCcw, SystemRestart as Loader2, Calendar } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -106,7 +106,7 @@ export function TimeControlCard({
   };
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">

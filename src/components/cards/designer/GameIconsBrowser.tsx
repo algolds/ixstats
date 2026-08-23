@@ -8,25 +8,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  Search,
-  X,
-  Check,
-  Shield,
-  Crown,
-  Scroll,
-  Coins,
-  Sun,
-  Compass,
-  FlaskConical,
-  BookOpen,
-  Flag,
-  Hourglass,
-  Users as UsersIcon,
-  Wand2,
-  Layers,
-  Loader2,
-} from "lucide-react";
+import { Search, Xmark as X, Check, Shield, Crown, Page as Scroll, Coins, SunLight as Sun, Compass, Flask as FlaskConical, OpenBook as BookOpen, WhiteFlag as Flag, Hourglass, Group as UsersIcon, MagicWand as Wand2, Component as Layers, SystemRestart as Loader2 } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

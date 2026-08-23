@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { Loader2, Check, Image as ImageIcon, Trash2 } from "lucide-react";
+import { SystemRestart as Loader2, Check, MediaImage as ImageIcon, Trash as Trash2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,

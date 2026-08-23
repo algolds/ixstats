@@ -1,25 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Newspaper,
-  Plus,
-  Search,
-  Play,
-  Eye,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  BarChart3,
-  RefreshCw,
-  Send,
-  Sliders,
-  Database,
-  Upload,
-  BookOpen,
-  Calendar,
-  CheckCircle,
-} from "lucide-react";
+import { Journal as Newspaper, Plus, Search, Play, Eye, Trash as Trash2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight, StatsReport as BarChart3, Refresh as RefreshCw, Send, ControlSlider as Sliders, Database, Upload, OpenBook as BookOpen, Calendar, CheckCircle } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

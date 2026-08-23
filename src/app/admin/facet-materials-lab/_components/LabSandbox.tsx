@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
-import { Sun, Moon, Sparkles, Bug } from "lucide-react";
+import { SunLight as Sun, HalfMoon as Moon, Sparks as Sparkles, Bug } from "iconoir-react";
 import { type LabConfig, type BgStyleType } from "./types";
 import { LabTemplates } from "./LabTemplates";
 

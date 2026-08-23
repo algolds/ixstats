@@ -1,4 +1,4 @@
-import { MousePointer2, Hand, LassoSelect } from "lucide-react";
+import { CursorPointer as MousePointer2, HandBrake as Hand, SelectWindow as LassoSelect } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const SelectPlugin: MapEditorPlugin = {

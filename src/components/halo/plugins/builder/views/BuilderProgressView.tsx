@@ -1,16 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Circle,
-  RefreshCw,
-  Crown,
-  Coins,
-  Building2,
-  Globe,
-} from "lucide-react";
+import { ArrowRight, CheckCircle as CheckCircle2, Circle, Refresh as RefreshCw, Crown, Coins, City as Building2, Globe } from "iconoir-react";
 import { motion } from "motion/react";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 import { cn, toTitleCase } from "~/lib/utils";

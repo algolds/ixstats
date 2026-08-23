@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Search, RotateCcw } from "lucide-react";
+import { Search, Undo as RotateCcw } from "iconoir-react";
 import type { TimeRange, MetricType } from "~/hooks/useHistoricalEconomicData";
 
 interface FilterControlsProps {

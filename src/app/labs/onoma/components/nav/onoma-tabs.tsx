@@ -95,11 +95,11 @@ export const ONOMA_PILLAR_TABS = [
     label: "Create",
     icon: createGlyphAdapter("emerge-synthesis"),
     themeColor: "#0091ff",
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "bg-onoma-primary/20 dark:bg-onoma-primary/10",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff] font-semibold",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light font-semibold",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "studio",
@@ -189,11 +189,11 @@ export const ONOMA_TABS = [
     icon: createGlyphAdapter("emerge-engine"),
     themeColor: "#0091ff",
 
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "bg-onoma-primary/20 dark:bg-onoma-primary/10",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-2xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   ...CREATE_DOMAIN_TABS,
 ];
@@ -220,11 +220,11 @@ export const getStudioTabs = () => [
     notation: "Graph",
     icon: createGlyphAdapter("struct-syntax"),
     themeColor: "#0091ff",
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "bg-onoma-primary/20 dark:bg-onoma-primary/10",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-2xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "namesets",

@@ -16,7 +16,7 @@ import {
   Line,
 } from "recharts";
 import { api } from "~/trpc/react";
-import { Loader2, TrendingUp, TrendingDown, BarChart3, PieChartIcon, Activity } from "lucide-react";
+import { SystemRestart as Loader2, StatUp as TrendingUp, StatDown as TrendingDown, StatsReport as BarChart3, Reports as PieChartIcon, Activity } from "iconoir-react";
 
 /**
  * Diplomatic Options Analytics Dashboard

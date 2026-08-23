@@ -1,6 +1,6 @@
 "use client";
 
-import { Command } from "lucide-react";
+import { KeyCommand as Command } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { IntentComposer } from "~/components/mycountry/shared/primitives/IntentComposer";
 import { FacetCard } from "~/components/ui/facet-container";

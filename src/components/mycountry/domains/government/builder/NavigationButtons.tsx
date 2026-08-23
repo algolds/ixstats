@@ -7,7 +7,7 @@
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle, WarningTriangle as AlertTriangle } from "iconoir-react";
 import type { ValidationResult } from "~/lib/government/builder-validation";
 
 export interface NavigationButtonsProps {

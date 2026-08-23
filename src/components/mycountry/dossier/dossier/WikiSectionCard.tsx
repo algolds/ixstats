@@ -9,15 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { FacetCard } from "~/components/ui/facet-container";
-import {
-  ChevronDown,
-  ArrowRight,
-  ExternalLink,
-  Image as ImageIcon,
-  Sparkles,
-  Maximize2,
-  FileText,
-} from "lucide-react";
+import { NavArrowDown as ChevronDown, ArrowRight, OpenNewWindow as ExternalLink, MediaImage as ImageIcon, Sparks as Sparkles, Expand as Maximize2, Page as FileText } from "iconoir-react";
 import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/builder";
 import type { WikiSection } from "~/lib/builder";

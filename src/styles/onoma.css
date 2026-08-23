@@ -1,0 +1,72 @@
+/**
+ * onoma.css — Onoma Conlang & Linguistic Laboratory Design System
+ * 
+ * Centralized dynamic design tokens and theme variables for Onoma.
+ * Provides dark and light mode color hierarchies, interactive hover states,
+ * focus rings, and surface materials.
+ */
+
+:root {
+  /* Onoma Electric Azure Primary Palette */
+  --color-onoma-primary: #0091ff;
+  --color-onoma-primary-light: #33a7ff;
+  --color-onoma-primary-hover: #0080e6;
+  --color-onoma-primary-active: #006ec4;
+  --color-onoma-primary-muted: rgba(0, 145, 255, 0.6);
+
+  /* Onoma Luminous Yellow Accent Palette */
+  --color-onoma-accent: #fef036;
+  --color-onoma-accent-hover: #e5d82f;
+  --color-onoma-accent-muted: rgba(254, 240, 54, 0.6);
+
+  /* Onoma Surface & Container Tokens */
+  --color-onoma-surface: rgba(0, 145, 255, 0.06);
+  --color-onoma-surface-hover: rgba(0, 145, 255, 0.12);
+  --color-onoma-surface-active: rgba(0, 145, 255, 0.18);
+  --color-onoma-accent-surface: rgba(254, 240, 54, 0.08);
+
+  /* Onoma Borders & Outlines */
+  --color-onoma-border: rgba(0, 145, 255, 0.25);
+  --color-onoma-border-hover: rgba(0, 145, 255, 0.45);
+  --color-onoma-border-active: rgba(0, 145, 255, 0.65);
+  --color-onoma-accent-border: rgba(254, 240, 54, 0.3);
+
+  /* Onoma Glow & Lighting */
+  --color-onoma-glow: rgba(0, 145, 255, 0.35);
+  --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
+}
+
+/* Light Theme Overrides (WCAG AA Compliant contrast) */
+.light {
+  --color-onoma-primary: #0077d6;
+  --color-onoma-primary-light: #0088f0;
+  --color-onoma-primary-hover: #0066b8;
+  --color-onoma-primary-active: #005599;
+  --color-onoma-primary-muted: rgba(0, 119, 214, 0.7);
+
+  --color-onoma-accent: #d4a700;
+  --color-onoma-accent-hover: #ba9300;
+  --color-onoma-accent-muted: rgba(212, 167, 0, 0.7);
+
+  --color-onoma-surface: rgba(0, 119, 214, 0.05);
+  --color-onoma-surface-hover: rgba(0, 119, 214, 0.1);
+  --color-onoma-surface-active: rgba(0, 119, 214, 0.15);
+  --color-onoma-accent-surface: rgba(212, 167, 0, 0.06);
+
+  --color-onoma-border: rgba(0, 119, 214, 0.22);
+  --color-onoma-border-hover: rgba(0, 119, 214, 0.4);
+  --color-onoma-border-active: rgba(0, 119, 214, 0.6);
+  --color-onoma-accent-border: rgba(212, 167, 0, 0.28);
+
+  --color-onoma-glow: rgba(0, 119, 214, 0.2);
+  --color-onoma-accent-glow: rgba(212, 167, 0, 0.2);
+}
+
+/* Onoma Component Classes */
+.onoma-glow {
+  box-shadow: 0 0 16px var(--color-onoma-glow);
+}
+
+.onoma-accent-glow {
+  box-shadow: 0 0 16px var(--color-onoma-accent-glow);
+}

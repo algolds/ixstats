@@ -1,5 +1,5 @@
-import { Landmark, MapPin, Globe2, DollarSign, Users, Globe, Clock } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Bank as Landmark, MapPin, Globe as Globe2, Dollar as DollarSign, Group as Users, Globe, Clock } from "iconoir-react";
+
 import { toTitleCase } from "~/lib/utils";
 
 /**
@@ -11,7 +11,7 @@ import { toTitleCase } from "~/lib/utils";
 export const OVERVIEW_IDENTITY_FIELDS: Array<{
   key: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   getValue: (ni: any) => string | null;
 }> = [

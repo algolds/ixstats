@@ -95,7 +95,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                       })}
                     </span>
                     {annotations.length > 0 && (
-                      <span className="flex items-center gap-1 px-2 py-0.2 rounded-md bg-[#fef036]/15 border border-yellow-400/40 text-stone-950 dark:text-[#fef036] font-bold text-[10px]">
+                      <span className="flex items-center gap-1 px-2 py-0.2 rounded-md bg-margin-accent/15 border border-yellow-400/40 text-stone-950 dark:text-margin-accent font-bold text-[10px]">
                         <Highlighter className="h-2.5 w-2.5" />
                         {annotations.length} highlight{annotations.length !== 1 ? "s" : ""}
                       </span>

@@ -1,4 +1,4 @@
-import { Route, Waves } from "lucide-react";
+import { Navigator as Route, SeaWaves as Waves } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const RouteEditPlugin: MapEditorPlugin = {

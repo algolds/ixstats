@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { NavArrowDown as ChevronDown } from "iconoir-react";
 import { formatTimeAgo } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 

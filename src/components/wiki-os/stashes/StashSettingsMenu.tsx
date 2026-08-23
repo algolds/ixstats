@@ -161,7 +161,7 @@ export function StashSettingsMenu({
             style={{ transformOrigin: "top right" }}
             className={cn(
               "absolute right-0 top-full mt-2 w-76 z-50 rounded-2xl p-3 space-y-2.5 text-xs select-none",
-              "bg-white dark:bg-[#18181b] text-stone-900 dark:text-stone-100",
+              "bg-white dark:bg-zinc-900 text-stone-900 dark:text-stone-100",
               "border border-black/10 dark:border-white/12 ring-1 ring-black/5 dark:ring-white/5",
               "shadow-[0_20px_50px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.12)]",
               "overflow-hidden"

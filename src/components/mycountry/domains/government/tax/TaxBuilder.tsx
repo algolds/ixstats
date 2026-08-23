@@ -4,9 +4,9 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { createPortal } from "react-dom";
 import { isEqual } from "~/lib/utils";
 import { Badge as UIBadge } from "~/components/ui/badge";
-import { Calculator, X, AlertTriangle, Settings, BarChart3 } from "lucide-react";
+import { Calculator, Xmark as X, WarningTriangle as AlertTriangle, Settings, StatsReport as BarChart3 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 import { useTaxBuilderAutoSync } from "~/hooks/useBuilderAutoSync";
-import { GlassCard } from "~/components/ui/enhanced-card";
 import {
   ConflictWarningDialog,
   SyncStatusIndicator,
@@ -510,9 +510,7 @@ export function TaxBuilder({
           )}
         </div>
       ) : (
-        <GlassCard
-          variant="glass"
-          glow={false}
+        <Card
           className="border-white/10 bg-white/[0.01] shadow-2xl backdrop-blur-xl dark:bg-black/20"
         >
           <div className="space-y-6 p-6">
@@ -579,7 +577,7 @@ export function TaxBuilder({
               </div>
             )}
           </div>
-        </GlassCard>
+        </Card>
       )}
 
       {/* Template Modal */}

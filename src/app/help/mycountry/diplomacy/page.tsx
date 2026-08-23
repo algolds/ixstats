@@ -1,4 +1,4 @@
-import { Globe, Building, MessageSquare, FileText } from "lucide-react";
+import { Globe, Building, ChatBubble as MessageSquare, Page as FileText } from "iconoir-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 

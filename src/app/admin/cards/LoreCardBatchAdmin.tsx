@@ -16,42 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import {
-  Download,
-  Search,
-  X,
-  AlertCircle,
-  AlertTriangle,
-  BookOpen,
-  Globe,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Coins,
-  Upload,
-  UserCheck,
-  Sliders,
-  Layers,
-  FileText,
-  Trash2,
-  Play,
-  Shield,
-  Compass,
-  Crown,
-  Scroll,
-  Landmark,
-  Sparkles,
-  Scale,
-  History,
-  Building,
-  ImageIcon,
-  Eye,
-  Copy,
-  ExternalLink,
-  RotateCcw,
-  Info,
-} from "lucide-react";
+import { Download, Search, Xmark as X, WarningCircle as AlertCircle, WarningTriangle as AlertTriangle, OpenBook as BookOpen, Globe, SystemRestart as Loader2, CheckCircle as CheckCircle2, XmarkCircle as XCircle, Clock, Coins, Upload, UserBadgeCheck as UserCheck, ControlSlider as Sliders, Component as Layers, Page as FileText, Trash as Trash2, Play, Shield, Compass, Crown, Page as Scroll, Bank as Landmark, Sparks as Sparkles, ScaleFrameEnlarge as Scale, ClockRotateRight as History, Building, MediaImage as ImageIcon, Eye, Copy, OpenNewWindow as ExternalLink, Undo as RotateCcw, InfoCircle as Info } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { IIWikiBadge } from "~/components/cards/display";

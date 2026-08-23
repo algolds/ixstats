@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Building2, Crown, Users, DollarSign, Info } from "lucide-react";
+import { City as Building2, Crown, Group as Users, Dollar as DollarSign, InfoCircle as Info } from "iconoir-react";
 import { GovernmentBuilder } from "~/components/mycountry/domains/government/GovernmentBuilder";
 import type { SectionContentProps } from "../types/builder";
 import type { EconomicInputs } from "../lib/economy-data-service";

@@ -76,7 +76,7 @@ export function CorpusSelector({
         </label>
       )}
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="border-border/60 bg-background/60 hover:bg-background/90 text-foreground flex h-9.5 w-full items-center justify-between rounded-xl border px-3 text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-[#0091ff]">
+        <SelectTrigger className="border-border/60 bg-background/60 hover:bg-background/90 text-foreground flex h-9.5 w-full items-center justify-between rounded-xl border px-3 text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-onoma-primary">
           <SelectValue placeholder="Select language profile or corpus…" />
         </SelectTrigger>
         <SelectContent className="border-border/40 bg-background/95 max-h-[340px] rounded-2xl border shadow-xl backdrop-blur-2xl">
@@ -127,14 +127,14 @@ export function CorpusSelector({
 
           {/* Natural Language Profiles */}
           <div>
-            <div className="text-[#0091ff] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
               Natural Language Profiles ({NATURAL_PROFILES.length})
             </div>
             {NATURAL_PROFILES.map((p) => (
               <SelectItem
                 key={p.value}
                 value={p.value}
-                className="focus:bg-[#0091ff]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:bg-onoma-primary/10 focus:text-foreground text-xs cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="sound-acoustic" size="xs" accentColor="#0091ff" />
@@ -146,14 +146,14 @@ export function CorpusSelector({
 
           {/* Fantasy & Lineage Templates */}
           <div className="border-t border-border/30 pt-1">
-            <div className="text-[#8b5cf6] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="text-purple-500 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
               Fantasy & Lineage Templates ({templateProfiles.length})
             </div>
             {templateProfiles.map((t) => (
               <SelectItem
                 key={t.id}
                 value={t.id}
-                className="focus:bg-[#8b5cf6]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:bg-purple-500/10 focus:text-foreground text-xs cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="emerge-branch" size="xs" accentColor="#8b5cf6" />

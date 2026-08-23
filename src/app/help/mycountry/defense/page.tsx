@@ -1,4 +1,4 @@
-import { Shield, Swords, Crosshair, Settings } from "lucide-react";
+import { Shield, Tournament as Swords, Archery as Crosshair, Settings } from "iconoir-react";
 import Link from "next/link";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 

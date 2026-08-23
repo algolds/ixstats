@@ -12,28 +12,8 @@
  * - Template presets for common economic configurations
  */
 
-import {
-  Building2,
-  Factory,
-  Users,
-  Target,
-  DollarSign,
-  Globe,
-  Zap,
-  Leaf,
-  Brain,
-  Wrench,
-  Briefcase,
-  GraduationCap,
-  Heart,
-  Lightbulb,
-  Lock,
-  Unlock,
-  ArrowUpDown,
-  BarChart3,
-  Shield,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { City as Building2, Industry as Factory, Group as Users, Archery as Target, Dollar as DollarSign, Globe, Flash as Zap, Leaf, Brain, Wrench, Suitcase as Briefcase, GraduationCap, Heart, LightBulb as Lightbulb, Lock, LockSlash as Unlock, ArrowSeparateVertical as ArrowUpDown, StatsReport as BarChart3, Shield } from "iconoir-react";
+
 
 /**
  * Format component type to display name
@@ -178,7 +158,7 @@ export interface AtomicEconomicComponent {
   maintenanceCost: number;
   requiredCapacity: number;
   category: EconomicCategory;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   metadata: {
     complexity: "Low" | "Medium" | "High";
@@ -194,7 +174,7 @@ export interface AtomicEconomicComponent {
 export interface EconomicCategoryDefinition {
   name: string;
   description: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   components: EconomicComponentType[];
 }
 
@@ -1851,7 +1831,7 @@ export interface EconomicTemplate {
   name: string;
   description: string;
   components: EconomicComponentType[];
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 /**

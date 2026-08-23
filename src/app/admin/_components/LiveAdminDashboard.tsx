@@ -11,21 +11,7 @@ import { SystemLogs } from "./SystemLogs";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
-import {
-  LayoutDashboard,
-  Settings,
-  Gamepad2,
-  Users,
-  Package,
-  Layers,
-  Coins,
-  BookOpen,
-  Database,
-  Activity,
-  Vote,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Dashboard as LayoutDashboard, Settings, Gamepad as Gamepad2, Group as Users, Package, Component as Layers, Coins, OpenBook as BookOpen, Database, Activity, CheckSquare as Vote, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp } from "iconoir-react";
 
 interface LiveAdminDashboardProps {
   onNavigate?: (section: string) => void;
@@ -175,7 +161,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
         <TooltipProvider delayDuration={150}>
           {quickActionsCollapsed ? (
-            <div className="glass-surface border-border/40 flex flex-wrap items-center gap-3.5 rounded-xl p-3.5 shadow-sm">
+            <div className="facet-surface border-border/40 flex flex-wrap items-center gap-3.5 rounded-xl p-3.5 shadow-sm">
               {QUICK_ACTIONS.map((action) => (
                 <Tooltip key={action.label}>
                   <TooltipTrigger asChild>
@@ -204,7 +190,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="glass-surface border-border/40 hover:border-primary/30 group flex items-center justify-between rounded-xl p-4 transition-all duration-250 hover:scale-[1.015] hover:shadow-md"
+                  className="facet-surface border-border/40 hover:border-primary/30 group flex items-center justify-between rounded-xl p-4 transition-all duration-250 hover:scale-[1.015] hover:shadow-md"
                 >
                   <div className="flex items-center gap-3.5">
                     <div className="bg-primary/5 border-border/30 group-hover:bg-primary/10 rounded-xl border p-2.5 transition-colors">

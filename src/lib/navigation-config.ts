@@ -2,27 +2,8 @@
  * Navigation configuration: types, color theming, contextual (mobile) menus, and
  * the path -> context-key resolver. Extracted from navigation.tsx (audit C3).
  */
-import {
-  Activity,
-  BarChart3,
-  Brain,
-  Command,
-  Compass,
-  Crown,
-  Database,
-  Globe,
-  Layers,
-  MessageSquare,
-  Rss,
-  Send,
-  Settings,
-  SlidersHorizontal,
-  Trophy,
-  Users,
-  Vote,
-  Zap,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Activity, StatsReport as BarChart3, Brain, KeyCommand as Command, Compass, Crown, Database, Globe, Component as Layers, ChatBubble as MessageSquare, RssFeed as Rss, Send, Settings, ControlSlider as SlidersHorizontal, Trophy, Group as Users, CheckSquare as Vote, Flash as Zap } from "iconoir-react";
+
 
 export interface NavigationItem {
   name: string;
@@ -48,7 +29,7 @@ export interface DropdownItem {
 export interface ContextualMenuItem {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   description?: string;
 }
 

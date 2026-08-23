@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, MapPin, Settings } from "lucide-react";
+import { Globe, MapPin, Settings } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function FirstCountryArticle() {

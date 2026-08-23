@@ -4,7 +4,7 @@
 // Onoma Lab — Syntax & Sentence Builder Section
 
 import React, { useState, useEffect } from "react";
-import { SlidersHorizontal, Trash2, Cpu, FileText } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, Trash as Trash2, Cpu, Page as FileText } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -207,7 +207,7 @@ export default function SyntaxSection() {
             <button
               onClick={handleSave}
               disabled={saveProfileMutation.isPending}
-              className="rounded-md bg-[#0091ff] px-3.5 py-1 text-xs font-bold text-white shadow hover:bg-[#007cdb] transition-all cursor-pointer active:scale-[0.97] disabled:opacity-50"
+              className="rounded-md bg-onoma-primary px-3.5 py-1 text-xs font-bold text-white shadow hover:bg-onoma-primary-active transition-all cursor-pointer active:scale-[0.97] disabled:opacity-50"
             >
               {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
             </button>

@@ -3,16 +3,7 @@
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import {
-  MessageSquare,
-  Globe,
-  Activity,
-  TrendingUp,
-  Network,
-  Building2,
-  MessageCircle,
-  Blocks,
-} from "lucide-react";
+import { ChatBubble as MessageSquare, Globe, Activity, StatUp as TrendingUp, Network, City as Building2, ChatBubble as MessageCircle, Component as Blocks } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -137,7 +128,7 @@ export function SplashFold() {
 
         <TabsContent value="thinkpages">
           <div
-            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+            className={`facet-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
           >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
@@ -182,19 +173,19 @@ export function SplashFold() {
             </div>
 
             <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4 text-center">
                 <div className="text-foreground mb-1 text-3xl font-bold">
                   {atomicCounts.government}
                 </div>
                 <div className="text-muted-foreground text-sm">Government &amp; legitimacy</div>
               </div>
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4 text-center">
                 <div className="text-foreground mb-1 text-3xl font-bold">
                   {atomicCounts.economicSocial}
                 </div>
                 <div className="text-muted-foreground text-sm">Economic &amp; social policy</div>
               </div>
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4 text-center">
                 <div className="text-foreground mb-1 text-3xl font-bold">
                   {atomicCounts.administration}
                 </div>
@@ -211,7 +202,7 @@ export function SplashFold() {
                   return (
                     <Card
                       key={`${component.id}-${idx}`}
-                      className="glass-hierarchy-child border-border hover:bg-muted/30 w-80 shrink-0 border transition-colors"
+                      className="facet-hierarchy-child border-border hover:bg-muted/30 w-80 shrink-0 border transition-colors"
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
@@ -241,19 +232,19 @@ export function SplashFold() {
             </div>
 
             <div className="mx-auto max-w-4xl space-y-4">
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   <strong className="text-foreground font-medium">Interactions:</strong> Components
                   combine for synergy — or clash for story tension.
                 </p>
               </div>
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   <strong className="text-foreground font-medium">Economy:</strong> Policy mixes
                   change GDP, employment, and welfare trajectories over time.
                 </p>
               </div>
-              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+              <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   <strong className="text-foreground font-medium">Systems:</strong> Governance,
                   taxes, and social outcomes interact in one model.
@@ -265,7 +256,7 @@ export function SplashFold() {
 
         <TabsContent value="world">
           <div
-            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+            className={`facet-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
           >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
@@ -287,7 +278,7 @@ export function SplashFold() {
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Activity className="text-foreground h-6 w-6" />
@@ -300,7 +291,7 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <TrendingUp className="text-foreground h-6 w-6" />
@@ -313,7 +304,7 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Network className="text-foreground h-6 w-6" />
@@ -332,7 +323,7 @@ export function SplashFold() {
 
         <TabsContent value="diplomacy">
           <div
-            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+            className={`facet-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
           >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
@@ -354,7 +345,7 @@ export function SplashFold() {
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Building2 className="text-foreground h-6 w-6" />
@@ -366,7 +357,7 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <MessageSquare className="text-foreground h-6 w-6" />
@@ -378,7 +369,7 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
+                <div className="facet-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Network className="text-foreground h-6 w-6" />
@@ -397,7 +388,7 @@ export function SplashFold() {
         <TabsContent value="community">
           <div className="space-y-8">
             <div
-              className={`glass-hierarchy-parent mx-auto max-w-4xl rounded-2xl border p-6 text-center md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+              className={`facet-hierarchy-parent mx-auto max-w-4xl rounded-2xl border p-6 text-center md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
             >
               <h3 className={`mb-4 text-2xl font-bold md:text-4xl ${splashGold.headline}`}>
                 Community
@@ -419,7 +410,7 @@ export function SplashFold() {
             </div>
 
             <div
-              className={`glass-hierarchy-child mx-auto max-w-4xl rounded-xl border p-5 text-center md:p-6 ${splashGold.subtlePanel}`}
+              className={`facet-hierarchy-child mx-auto max-w-4xl rounded-xl border p-5 text-center md:p-6 ${splashGold.subtlePanel}`}
             >
               <p className="text-muted-foreground text-sm md:text-base">
                 Import collectible decks through{" "}

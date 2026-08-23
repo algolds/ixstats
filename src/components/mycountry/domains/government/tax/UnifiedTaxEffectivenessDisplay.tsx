@@ -10,28 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import {
-  Target,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Zap,
-  Shield,
-  DollarSign,
-  BarChart3,
-  Users,
-  Building2,
-  ArrowUpDown,
-  Lightbulb,
-  Eye,
-  AlertCircle,
-  Sparkles,
-  Activity,
-  PieChart,
-  Scale,
-} from "lucide-react";
+import { Archery as Target, StatUp as TrendingUp, StatDown as TrendingDown, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info, Flash as Zap, Shield, Dollar as DollarSign, StatsReport as BarChart3, Group as Users, City as Building2, ArrowSeparateVertical as ArrowUpDown, LightBulb, Eye, WarningCircle as AlertCircle, Sparks as Sparkles, Activity, Reports as PieChart, ScaleFrameEnlarge as Scale } from "iconoir-react";
 
 import type { TaxSystem } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
@@ -435,7 +414,7 @@ export function UnifiedTaxEffectivenessDisplay({
                   <>
                     <Separator className="my-4" />
                     <Alert>
-                      <Lightbulb className="h-4 w-4" />
+                      <LightBulb className="h-4 w-4" />
                       <AlertDescription>
                         <strong>Recommendation:</strong> Review conflicting government components
                         and consider adjusting your system to maximize synergies. Components like

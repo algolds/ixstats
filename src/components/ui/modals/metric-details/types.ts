@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react";
-import { BarChart3, LineChart, Globe, Info } from "lucide-react";
+import type React from "react";
+import { StatsReport as BarChart3, GraphUp as LineChart, Globe, InfoCircle as Info } from "iconoir-react";
 
 /**
  * Tab configuration for metric detail modals
@@ -7,7 +7,7 @@ import { BarChart3, LineChart, Globe, Info } from "lucide-react";
 export interface MetricModalTab {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 /**
@@ -75,7 +75,7 @@ export interface StatCardData {
   id: string;
   title: string;
   value: string | number;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   trend?: {
     direction: "up" | "down" | "stable";
     value?: number;

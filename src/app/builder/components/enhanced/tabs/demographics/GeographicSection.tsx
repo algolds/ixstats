@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from "lucide-react";
+import { City as Building2, MapPin, Plus, Minus, Settings, Group as Users, Archery as Target } from "iconoir-react";
 import type { DemographicsConfiguration, RegionDistribution } from "~/types/economy-builder";
 import { Input } from "~/components/ui/input";
 

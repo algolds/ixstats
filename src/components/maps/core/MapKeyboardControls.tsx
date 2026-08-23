@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
-import { Keyboard, X } from "lucide-react";
+import { Keyframe as Keyboard, Xmark as X } from "iconoir-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 

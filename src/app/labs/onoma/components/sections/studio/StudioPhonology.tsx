@@ -6,7 +6,7 @@
 // (localStorage) via ~/lib/onoma/ipa-overrides.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Volume2, Save, RotateCcw, AudioLines, X, GitCompare } from "lucide-react";
+import { Plus, Trash as Trash2, SoundHigh as Volume2, FloppyDisk as Save, Undo as RotateCcw, SoundHigh as AudioLines, Xmark as X, GitCompare } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA, getCultureRules, segmentGraphemes } from "~/lib/onoma/phonology";
@@ -197,7 +197,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <AudioLines className="h-3.5 w-3.5 text-[#8b5cf6]" />
+            <AudioLines className="h-3.5 w-3.5 text-purple-500" />
             <span>IPA Matrix & Formants</span>
           </button>
           <button
@@ -210,7 +210,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <GitCompare className="h-3.5 w-3.5 text-[#8b5cf6]" />
+            <GitCompare className="h-3.5 w-3.5 text-purple-500" />
             <span>Profile Comparison</span>
           </button>
         </div>
@@ -245,7 +245,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 <SelectItem
                   key={c}
                   value={c}
-                  className="focus:text-foreground text-xs capitalize focus:bg-[#0091ff]/10"
+                  className="focus:text-foreground text-xs capitalize focus:bg-onoma-primary/10"
                 >
                   {c}
                 </SelectItem>
@@ -257,7 +257,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 <SelectItem
                   key={t.id}
                   value={t.id}
-                  className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                  className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                 >
                   {t.name}
                 </SelectItem>
@@ -317,9 +317,9 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                       className={cn(
                         "flex h-14 min-w-10 cursor-pointer flex-col items-center justify-center rounded-xl border px-3 py-1.5 text-center transition-all duration-200 active:scale-95",
                         isOverridden
-                          ? "text-foreground border-[#8b5cf6]/40 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20"
+                          ? "text-foreground border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20"
                           : "border-border/50 bg-background text-foreground hover:bg-secondary/40",
-                        isActive && "border-transparent ring-2 ring-[#8b5cf6]"
+                        isActive && "border-transparent ring-2 ring-purple-500"
                       )}
                     >
                       <span className="font-mono text-sm font-bold capitalize">{seg.grapheme}</span>
@@ -333,7 +333,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                         <div className="border-border/40 mb-2.5 flex items-center justify-between border-b pb-2">
                           <span className="text-foreground text-[10px] font-bold uppercase">
                             Map segment:{" "}
-                            <span className="font-mono font-bold text-[#8b5cf6]">
+                            <span className="font-mono font-bold text-purple-500">
                               "{seg.grapheme}"
                             </span>
                           </span>
@@ -354,7 +354,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               className={cn(
                                 "flex-1 cursor-pointer rounded-md py-1 text-[9px] font-bold capitalize uppercase transition-all",
                                 soundboardTab === tab
-                                  ? "bg-[#8b5cf6] text-white"
+                                  ? "bg-purple-500 text-white"
                                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/10"
                               )}
                             >
@@ -388,15 +388,15 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                                 className={cn(
                                   "relative flex h-8 cursor-pointer items-center justify-center rounded-lg border font-mono text-xs font-bold transition-all hover:scale-105 active:scale-95",
                                   isSelected
-                                    ? "text-foreground border-[#8b5cf6] bg-[#8b5cf6]/20 ring-1 ring-[#8b5cf6]"
+                                    ? "text-foreground border-purple-500 bg-purple-500/20 ring-1 ring-purple-500"
                                     : isKokoro
-                                      ? "border-[#0091ff]/30 bg-[#0091ff]/5 text-[#0091ff] hover:bg-[#0091ff]/15"
+                                      ? "border-onoma-primary/30 bg-onoma-primary/5 text-onoma-primary hover:bg-onoma-primary/15"
                                       : "border-border/60 bg-background hover:bg-secondary/30 text-foreground"
                                 )}
                               >
                                 {sym}
                                 {isKokoro && (
-                                  <span className="absolute top-1 right-1 h-1 w-1 rounded-full bg-[#0091ff]" />
+                                  <span className="absolute top-1 right-1 h-1 w-1 rounded-full bg-onoma-primary" />
                                 )}
                               </button>
                             );
@@ -415,7 +415,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                             </button>
                             <button
                               onClick={() => mapGrapheme(seg.grapheme, selectedSound)}
-                              className="cursor-pointer rounded-lg bg-[#8b5cf6] px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+                              className="cursor-pointer rounded-lg bg-purple-500 px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90"
                             >
                               Confirm Map
                             </button>

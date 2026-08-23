@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { BarChart3 } from "lucide-react";
+import { StatsReport as BarChart3 } from "iconoir-react";
 import {
   BarChart,
   Bar,
@@ -32,7 +32,7 @@ export const ComparativeAnalysisChart = React.memo(function ComparativeAnalysisC
   comparativeData,
 }: ComparativeAnalysisChartProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-blue-600" />

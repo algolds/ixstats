@@ -358,7 +358,7 @@ export function MarginGutterPins({
                 {isCluster ? (
                   <>
                     <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--wikios-text)] border-b border-[var(--wikios-border)] pb-1">
-                      <span className="px-1.5 py-0.2 rounded bg-[#fef036] text-stone-950 font-bold text-[9px]">Cluster</span>
+                      <span className="px-1.5 py-0.2 rounded bg-margin-accent text-stone-950 font-bold text-[9px]">Cluster</span>
                       <span>({pin.count} items)</span>
                       <span className="opacity-50">·</span>
                       <span>💬 {pin.threadCount || 0}</span>
@@ -374,7 +374,7 @@ export function MarginGutterPins({
                   </>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-[#fef036] text-stone-950">
+                    <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-margin-accent text-stone-950">
                       {isAnnotation ? "Note" : "Thread"}
                     </span>
                     <span className="opacity-40">·</span>
@@ -391,7 +391,7 @@ export function MarginGutterPins({
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "flex items-center justify-center rounded-full border border-yellow-400/60 bg-[#fef036] text-stone-950 cursor-pointer shadow-md active:scale-95 transition-all duration-150 backdrop-blur-md font-bold",
+                  "flex items-center justify-center rounded-full border border-yellow-400/60 bg-margin-accent text-stone-950 cursor-pointer shadow-md active:scale-95 transition-all duration-150 backdrop-blur-md font-bold",
                   isHovered
                     ? "scale-110 z-40 shadow-[0_0_14px_rgba(254,240,54,0.5)] border-yellow-400"
                     : isCluster

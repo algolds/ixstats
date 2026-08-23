@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { X, Plus, BarChart3 } from "lucide-react";
+import { Xmark as X, Plus, StatsReport as BarChart3 } from "iconoir-react";
 import { ComparisonCharts } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

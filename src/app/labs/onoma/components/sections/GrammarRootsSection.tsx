@@ -4,7 +4,7 @@
 // Onoma Lab — Unified Grammar & Roots (Root Word Derivations & Syntactic Sentence Builder)
 
 import React, { useState } from "react";
-import { GitFork, SlidersHorizontal } from "lucide-react";
+import { GitFork, ControlSlider as SlidersHorizontal } from "iconoir-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import EtymologySection from "./EtymologySection";

@@ -6,7 +6,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 
 interface MatchEvent {
   id: string;

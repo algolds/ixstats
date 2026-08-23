@@ -5,11 +5,11 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Heart, Quote, Reply, Bookmark, Pencil, Trash2, X, Check, Send } from "lucide-react";
+import { Heart, Quote, Reply, Bookmark, EditPencil as Pencil, Trash as Trash2, Xmark as X, Check, Send } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { sanitizeHtml } from "~/lib/utils";
 
@@ -92,7 +92,7 @@ export function PostCard({
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   const reactMutation = api.forum.reactToPost.useMutation({
     onMutate: () => {

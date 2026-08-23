@@ -7,7 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
-import { CheckCircle, Info, Minus, Search } from "lucide-react";
+import { CheckCircle, InfoCircle as Info, Minus, Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { UnifiedAtomicComponentSelectorProps } from "./types";
 import { UnifiedAtomicCard } from "./UnifiedAtomicCard";
@@ -101,7 +101,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
   }, [currentCategory, searchQuery, categories, components]);
 
   return (
-    <Card className="glass-card-parent w-full">
+    <Card className="facet-card-parent w-full">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">

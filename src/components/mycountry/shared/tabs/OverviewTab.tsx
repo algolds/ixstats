@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown, Activity, ChevronRight, BookOpen } from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Activity, NavArrowRight as ChevronRight, OpenBook as BookOpen } from "iconoir-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
@@ -37,7 +37,7 @@ export function OverviewTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
 }) {
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-overview border-border overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-overview border-border overflow-hidden">
       <CardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>
@@ -70,7 +70,7 @@ export function OverviewTab({
                     if (gdpGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <TrendingUp size={14} className="inline-flex" />
+                          <TrendingUp className="inline-flex h-3.5 w-3.5" />
                           <span className="text-[10px] font-semibold">
                             +{gdpGrowth.toFixed(1)}%
                           </span>
@@ -79,7 +79,7 @@ export function OverviewTab({
                     if (gdpGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <TrendingDown size={14} className="inline-flex" />
+                          <TrendingDown className="inline-flex h-3.5 w-3.5" />
                           <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
@@ -117,7 +117,7 @@ export function OverviewTab({
                     if (popGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <TrendingUp size={14} className="inline-flex" />
+                          <TrendingUp className="inline-flex h-3.5 w-3.5" />
                           <span className="text-[10px] font-semibold">
                             +{popGrowth.toFixed(1)}%
                           </span>
@@ -126,7 +126,7 @@ export function OverviewTab({
                     if (popGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <TrendingDown size={14} className="inline-flex" />
+                          <TrendingDown className="inline-flex h-3.5 w-3.5" />
                           <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
                       );

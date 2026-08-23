@@ -2,7 +2,7 @@
 
 import React, { use, useState, useRef } from "react";
 import { useUser } from "~/context/auth-context";
-import { ArrowLeft, Loader2, ArrowUp } from "lucide-react";
+import { ArrowLeft, SystemRestart as Loader2, ArrowUp } from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";

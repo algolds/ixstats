@@ -5,22 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  ChevronRight,
-  ChevronLeft,
-  ChevronUp,
-  ChevronDown,
-  Settings2,
-  Layers,
-  List,
-  BookOpen,
-  Search,
-  Globe,
-  Link as LinkIcon,
-  Layout,
-  History,
-  Inbox,
-} from "lucide-react";
+import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown, Settings as Settings2, Component as Layers, List, OpenBook as BookOpen, Search, Globe, Link as LinkIcon, ViewGrid as Layout, ClockRotateRight as History, MailIn as Inbox } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
 

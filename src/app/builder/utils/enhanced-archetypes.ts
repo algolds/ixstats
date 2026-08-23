@@ -1,19 +1,5 @@
 import React from "react";
-import {
-  DollarSign,
-  TrendingUp,
-  Crown,
-  Factory,
-  Coins,
-  Building2,
-  Vote,
-  Globe2,
-  Heart,
-  Mountain,
-  Waves,
-  Sun,
-  Zap,
-} from "lucide-react";
+import { Dollar as DollarSign, StatUp as TrendingUp, Crown, Industry as Factory, Coins, City as Building2, CheckSquare as Vote, Globe as Globe2, Heart, ModernTv as Mountain, SeaWaves as Waves, SunLight as Sun, Flash as Zap } from "iconoir-react";
 import {
   archetypeCategories,
   enhancedArchetypes as baseArchetypes,

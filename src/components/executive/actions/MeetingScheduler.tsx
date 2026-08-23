@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-import { Calendar, Plus, X, Layers } from "lucide-react";
+import { Calendar, Plus, Xmark as X, Component as Layers } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";

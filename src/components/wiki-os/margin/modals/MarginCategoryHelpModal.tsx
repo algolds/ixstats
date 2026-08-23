@@ -76,7 +76,7 @@ export function MarginCategoryHelpModal({
             {/* Header */}
             <div className="flex items-center justify-between p-4.5 border-b border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/40">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/60 bg-[#fef036] text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.4)] font-bold">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/60 bg-margin-accent text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.4)] font-bold">
                   <Compass className="h-5 w-5" />
                 </div>
                 <div>
@@ -144,7 +144,7 @@ export function MarginCategoryHelpModal({
                   soundEffects.press();
                   onClose();
                 }}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-stone-950 bg-[#fef036] hover:bg-[#fef036]/90 active:scale-95 transition-all shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-stone-950 bg-margin-accent hover:bg-margin-accent/90 active:scale-95 transition-all shadow-md cursor-pointer"
               >
                 Got it
               </button>

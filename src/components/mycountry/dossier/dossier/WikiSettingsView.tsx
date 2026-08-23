@@ -96,7 +96,7 @@ export function WikiSettingsView({
 
   return (
     <div className="space-y-6">
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RiSettings3Line className="h-5 w-5 text-blue-400" />

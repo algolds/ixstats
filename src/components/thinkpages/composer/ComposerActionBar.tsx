@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BarChart3, Image, Loader2, Send, Vote } from "lucide-react";
+import { StatsReport as BarChart3, MediaImage as Image, SystemRestart as Loader2, Send, CheckSquare as Vote } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";

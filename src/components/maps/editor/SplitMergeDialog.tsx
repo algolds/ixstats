@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Scissors, Merge, X } from "lucide-react";
+import { Cut as Scissors, GitMerge as Merge, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 

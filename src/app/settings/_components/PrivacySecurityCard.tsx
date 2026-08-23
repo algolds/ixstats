@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Shield, Lock, RefreshCw, Database, Key, FileText, ExternalLink } from "lucide-react";
+import { Shield, Lock, Refresh as RefreshCw, Database, Key, Page as FileText, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
@@ -109,7 +109,7 @@ export function PrivacySecurityCard({
   };
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-5 dark:bg-slate-900/40">
         <TextureOverlay texture="triangular" opacity={0.02} />
 
@@ -233,7 +233,7 @@ export function PrivacySecurityCard({
             </div>
             <button
               onClick={() => clerk.openUserProfile()}
-              className="glass-interactive flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="facet-interactive flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               <Key className="h-3.5 w-3.5" />
               Open Console
@@ -254,14 +254,14 @@ export function PrivacySecurityCard({
             <div className="flex shrink-0 items-center gap-2">
               <Link
                 href="/terms"
-                className="glass-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="facet-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <FileText className="h-3.5 w-3.5 text-amber-500" />
                 Terms
               </Link>
               <Link
                 href="/privacy"
-                className="glass-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="facet-interactive inline-flex items-center gap-1 rounded-lg border border-slate-200/50 bg-white/50 px-3 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white dark:border-slate-700/50 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 <Shield className="h-3.5 w-3.5 text-purple-500" />
                 Privacy
@@ -283,7 +283,7 @@ export function PrivacySecurityCard({
             </div>
             <button
               onClick={handleClearCache}
-              className="glass-interactive flex items-center gap-1.5 rounded-lg border border-red-200/50 bg-red-500/5 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-500/10 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/20"
+              className="facet-interactive flex items-center gap-1.5 rounded-lg border border-red-200/50 bg-red-500/5 px-3 py-1.5 text-xs font-bold text-red-600 transition-all hover:bg-red-500/10 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/20"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Reset Cache

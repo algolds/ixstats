@@ -132,12 +132,12 @@ export function MarginInspectTab({
       <div className="rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 space-y-3 backdrop-blur-md shadow-xs">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-[#fef036]" />
+            <Compass className="w-4 h-4 text-margin-accent" />
             <h4 className="text-xs font-bold text-[var(--wikios-text)] tracking-tight">
               Article Topology
             </h4>
           </div>
-          <span className="text-[10px] font-bold text-stone-950 bg-[#fef036] px-2 py-0.5 rounded-full shadow-xs">
+          <span className="text-[10px] font-bold text-stone-950 bg-margin-accent px-2 py-0.5 rounded-full shadow-xs">
             {pageTierInfo.title}
           </span>
         </div>
@@ -168,7 +168,7 @@ export function MarginInspectTab({
         </p>
 
         <div className="p-2.5 rounded-xl bg-[var(--wikios-surface)]/70 border border-[var(--wikios-border)]/70 text-[11px] text-[var(--wikios-text-muted)] space-y-1">
-          <span className="text-[9.5px] font-bold text-[#fef036] uppercase tracking-wider block">
+          <span className="text-[9.5px] font-bold text-margin-accent uppercase tracking-wider block">
             Linkage Recommendation
           </span>
           <p className="leading-snug text-[var(--wikios-text-dim)]">
@@ -180,7 +180,7 @@ export function MarginInspectTab({
       {/* 2. Simulation Registry & Live Telemetry */}
       {isLoading && (
         <div className="p-6 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 flex items-center justify-center gap-2 text-xs text-[var(--wikios-text-muted)] backdrop-blur-md">
-          <RefreshCw className="w-4 h-4 animate-spin text-[#fef036]" />
+          <RefreshCw className="w-4 h-4 animate-spin text-margin-accent" />
           <span>Querying simulation registry...</span>
         </div>
       )}
@@ -197,7 +197,7 @@ export function MarginInspectTab({
                   className="w-8 h-6 object-cover rounded border border-[var(--wikios-border)] shadow-xs"
                 />
               ) : (
-                <div className="w-8 h-6 rounded bg-[#fef036]/15 border border-[#fef036]/30 flex items-center justify-center text-xs font-bold text-[#fef036]">
+                <div className="w-8 h-6 rounded bg-margin-accent/15 border border-margin-accent/30 flex items-center justify-center text-xs font-bold text-margin-accent">
                   {matchedCountry.name.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -214,7 +214,7 @@ export function MarginInspectTab({
 
             <Link
               href={`/countries/${matchedCountry.id}`}
-              className="flex items-center gap-1 text-[10.5px] font-bold text-[#fef036] hover:text-[#fef036]/90 transition-colors p-1"
+              className="flex items-center gap-1 text-[10.5px] font-bold text-margin-accent hover:text-margin-accent/90 transition-colors p-1"
               title="Open sovereign dossier"
             >
               <span>Profile</span>
@@ -270,7 +270,7 @@ export function MarginInspectTab({
             <button
               type="button"
               onClick={handleGenerateFactDiff}
-              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#fef036] hover:bg-[#fef036]/90 text-stone-950 text-xs font-bold shadow-xs active:scale-[0.98] transition-transform cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-margin-accent hover:bg-margin-accent/90 text-stone-950 text-xs font-bold shadow-xs active:scale-[0.98] transition-transform cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Propose edit with live stats</span>

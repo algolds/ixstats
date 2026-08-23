@@ -3,15 +3,15 @@
 import React, { useMemo } from "react";
 import { formatCompactCurrency } from "~/lib/utils";
 import {
-  DollarSign,
+  Dollar as DollarSign,
   Calculator,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  LineChart,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  StatsReport as BarChart3,
+  GraphUp as LineChart,
   Globe,
-  Info,
-} from "lucide-react";
+  InfoCircle as Info,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";

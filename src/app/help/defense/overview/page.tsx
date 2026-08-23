@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield, Crosshair, Siren } from "lucide-react";
+import { Shield, Archery as Crosshair, BellNotification as Siren } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function DefenseOverviewArticle() {

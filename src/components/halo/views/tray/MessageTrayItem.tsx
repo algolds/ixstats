@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageCircle, ChevronRight, Globe, X } from "lucide-react";
+import { ChatBubble as MessageCircle, NavArrowRight as ChevronRight, Globe, Xmark as X } from "iconoir-react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";

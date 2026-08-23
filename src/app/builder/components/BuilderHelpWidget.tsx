@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen } from "lucide-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { type BuilderSection } from "../lib/builder-theme";

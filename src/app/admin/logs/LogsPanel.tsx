@@ -17,16 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Terminal,
-  Activity,
-  User,
-  AlertOctagon,
-  RefreshCw,
-  Trash2,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { Terminal, Activity, User, WarningTriangle as AlertOctagon, Refresh as RefreshCw, Trash as Trash2, Search, SystemRestart as Loader2 } from "iconoir-react";
 import { toast } from "sonner";
 
 export default function DedicatedLogsPage() {

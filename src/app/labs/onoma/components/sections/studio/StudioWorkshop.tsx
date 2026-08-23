@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx
 // Onoma Custom Studio Workshop View
 
-import { SlidersHorizontal, Bookmark, Loader2, Info, Upload } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, Bookmark, SystemRestart as Loader2, InfoCircle as Info, Upload } from "iconoir-react";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -68,7 +68,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <div className="flex items-center justify-between">
                 <label className="text-muted-foreground text-xs font-bold">Training Seeds</label>
                 <div className="flex items-center gap-2">
-                  <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-2 py-0.5 text-[10px] font-bold text-[#0091ff] transition-all duration-200 hover:bg-[#0091ff]/10 hover:text-[#0091ff] active:scale-95">
+                  <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-onoma-primary/20 bg-onoma-primary/5 px-2 py-0.5 text-[10px] font-bold text-onoma-primary transition-all duration-200 hover:bg-onoma-primary/10 hover:text-onoma-primary active:scale-95">
                     <Upload className="h-3 w-3" />
                     <span>Upload .txt</span>
                     <input
@@ -83,7 +83,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     {trainingWords.length} words loaded
                   </span>
                   {classifiedCulture !== "any" && (
-                    <span className="animate-in fade-in rounded-md border border-[#0091ff]/20 bg-[#0091ff]/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#0091ff] uppercase duration-200">
+                    <span className="animate-in fade-in rounded-md border border-onoma-primary/20 bg-onoma-primary/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-onoma-primary uppercase duration-200">
                       Classified: {classifiedCulture}
                     </span>
                   )}
@@ -96,13 +96,13 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     value={selectedDictId || "none"}
                     onValueChange={(val) => handleLoadSavedDictionary(val === "none" ? "" : val)}
                   >
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-[#0091ff]/50 focus:outline-none">
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-onoma-primary/50 focus:outline-none">
                       <SelectValue placeholder="-- Load a saved dictionary --" />
                     </SelectTrigger>
                     <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
                       <SelectItem
                         value="none"
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         -- Load a saved dictionary --
                       </SelectItem>
@@ -110,7 +110,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                         <SelectItem
                           key={dict.id}
                           value={dict.id}
-                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                          className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                         >
                           {dict.title} ({dict.values.length} words)
                         </SelectItem>
@@ -124,12 +124,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Paste words separated by commas or newlines, or upload .txt files..."
-                className="border-border/60 bg-background text-foreground placeholder-muted-foreground h-32 w-full rounded-xl border p-3 text-sm focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
+                className="border-border/60 bg-background text-foreground placeholder-muted-foreground h-32 w-full rounded-xl border p-3 text-sm focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none"
               />
             </div>
 
             {uploadStatus && (
-              <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-1.5 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/10 px-3.5 py-2 text-xs font-medium text-[#0091ff] duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-1.5 rounded-lg border border-onoma-primary/20 bg-onoma-primary/10 px-3.5 py-2 text-xs font-medium text-onoma-primary duration-200">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>{uploadStatus}</span>
               </div>
@@ -139,7 +139,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
-                className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-[#0091ff]/25 bg-[#0091ff]/5 p-3.5 duration-300"
+                className="animate-in slide-in-from-top-2 flex items-center gap-2 rounded-xl border border-onoma-primary/25 bg-onoma-primary/5 p-3.5 duration-300"
               >
                 <input
                   type="text"
@@ -152,7 +152,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 <button
                   type="submit"
                   disabled={isSaving || trainingWords.length === 0}
-                  className="flex items-center gap-1 rounded-lg bg-[#0091ff] px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#33a7ff] disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-lg bg-onoma-primary px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-onoma-primary-light disabled:opacity-50"
                 >
                   {isSaving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -269,19 +269,19 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
                       <SelectItem
                         value="none"
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         None (Standard)
                       </SelectItem>
                       <SelectItem
                         value="front"
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         Front Harmony (e, i, y, ä, ö, ü)
                       </SelectItem>
                       <SelectItem
                         value="back"
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         Back Harmony (a, o, u)
                       </SelectItem>
@@ -296,7 +296,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       <label className="text-muted-foreground text-[9px] font-bold uppercase">
                         Max Consonant Cluster
                       </label>
-                      <span className="text-[9px] font-bold text-[#0091ff]">
+                      <span className="text-[9px] font-bold text-onoma-primary">
                         {options.maxConsonantCluster ?? 3}
                       </span>
                     </div>
@@ -309,7 +309,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={(e) =>
                         setOptions({ ...options, maxConsonantCluster: parseInt(e.target.value) })
                       }
-                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-[#0091ff]"
+                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-onoma-primary"
                     />
                   </div>
                   <div className="space-y-1">
@@ -317,7 +317,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       <label className="text-muted-foreground text-[9px] font-bold uppercase">
                         Max Vowel Cluster
                       </label>
-                      <span className="text-[9px] font-bold text-[#0091ff]">
+                      <span className="text-[9px] font-bold text-onoma-primary">
                         {options.maxVowelCluster ?? 3}
                       </span>
                     </div>
@@ -330,7 +330,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={(e) =>
                         setOptions({ ...options, maxVowelCluster: parseInt(e.target.value) })
                       }
-                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-[#0091ff]"
+                      className="bg-secondary/80 h-1 w-full cursor-pointer rounded-lg accent-onoma-primary"
                     />
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     onChange={(e) =>
                       setOptions({ ...options, allowDoubleLetters: e.target.checked })
                     }
-                    className="border-border/60 bg-background h-3.5 w-3.5 rounded text-[#0091ff] focus:ring-[#0091ff]"
+                    className="border-border/60 bg-background h-3.5 w-3.5 rounded text-onoma-primary focus:ring-onoma-primary"
                   />
                 </div>
 
@@ -360,7 +360,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <button
                     type="button"
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-[#0091ff] transition-opacity hover:opacity-85"
+                    className="flex items-center gap-1.5 text-xs font-bold text-onoma-primary transition-opacity hover:opacity-85"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     <span>
@@ -543,7 +543,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               <button
                 onClick={() => generateNames()}
                 disabled={trainingWords.length === 0}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#0091ff]/10 transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-onoma-primary px-4 py-2 text-sm font-bold text-white shadow-md shadow-onoma-primary/10 transition-all hover:bg-onoma-primary-light active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 <span>Assemble Seeds</span>
               </button>
@@ -587,7 +587,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             </FacetCard>
           ) : (
             <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm">
-              <Info className="mx-auto mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
+              <Info className="mx-auto mb-3 h-8 w-8 animate-pulse text-onoma-primary/40" />
               <p className="font-semibold">Generate name candidates</p>
               <p className="text-muted-foreground mt-1 text-xs">
                 Enter your seed list (comma or newline separated) in the training box, and click

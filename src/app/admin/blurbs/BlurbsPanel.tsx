@@ -9,16 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
-import {
-  MessageCircle,
-  Plus,
-  Star,
-  StarOff,
-  Archive,
-  CheckCircle,
-  Clock,
-  FileText,
-} from "lucide-react";
+import { ChatBubble as MessageCircle, Plus, Star, Star as StarOff, Archive, CheckCircle, Clock, Page as FileText } from "iconoir-react";
 
 // ── Create / Edit Prompt Form ────────────────────────────────────────────────
 

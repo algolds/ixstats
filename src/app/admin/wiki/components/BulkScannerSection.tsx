@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { RefreshCw, Search, Link2, Loader2, AlertTriangle } from "lucide-react";
+import { Refresh as RefreshCw, Search, Link as Link2, SystemRestart as Loader2, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ScanResult } from "./types";
 

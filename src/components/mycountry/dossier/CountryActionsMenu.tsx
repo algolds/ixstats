@@ -3,30 +3,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  UserPlus,
-  UserMinus,
-  MessageSquare,
-  Building2,
-  Heart,
-  X,
-  Loader2,
-  Sparkles,
-  Handshake,
-  Shield,
-  Scale,
-  Globe,
-  ExternalLink,
-  Share2,
-  Copy,
-  Check,
-  ScrollText,
-  Swords,
-  Map,
-  Wallet,
-  Trophy,
-  Calendar,
-} from "lucide-react";
+import { UserPlus, UserXmark as UserMinus, ChatBubble as MessageSquare, City as Building2, Heart, Xmark as X, SystemRestart as Loader2, Sparks as Sparkles, Community as Handshake, Shield, ScaleFrameEnlarge as Scale, Globe, OpenNewWindow as ExternalLink, ShareAndroid as Share2, Copy, Check, Page as ScrollText, Tournament as Swords, Map, Wallet, Trophy, Calendar } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";

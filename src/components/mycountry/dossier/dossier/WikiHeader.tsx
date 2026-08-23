@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { RiBookOpenLine, RiSettings3Line } from "react-icons/ri";
-import { Settings } from "lucide-react";
+import { Settings } from "iconoir-react";
 
 /**
  * WikiHeader Component — Apple-Design Dossier Header

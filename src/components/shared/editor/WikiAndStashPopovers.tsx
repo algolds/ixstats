@@ -3,7 +3,7 @@
 
 "use client";
 
-import { Sparkles, Bookmark, Loader2, Plus } from "lucide-react";
+import { Sparks as Sparkles, Bookmark, SystemRestart as Loader2, Plus } from "iconoir-react";
 import { FaWikipediaW } from "react-icons/fa";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

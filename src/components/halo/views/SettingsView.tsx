@@ -10,26 +10,7 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
-import {
-  Settings,
-  X,
-  Moon,
-  Sun,
-  User,
-  Layout,
-  RefreshCw,
-  LogOut,
-  ChevronRight,
-  BookOpen,
-  MessageSquare,
-  List,
-  ExternalLink,
-  Search,
-  Volume2,
-  VolumeX,
-  SunMoon,
-  Square,
-} from "lucide-react";
+import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundHigh as Volume2, SoundOff as VolumeX, HalfMoon as SunMoon, Square } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";

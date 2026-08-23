@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { TrendingUp } from "lucide-react";
+import { StatUp as TrendingUp } from "iconoir-react";
 import {
   LineChart,
   Line,
@@ -31,7 +31,7 @@ interface RelationshipTrendsChartProps {
 
 export const RelationshipTrendsChart = React.memo<RelationshipTrendsChartProps>(({ trends }) => {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />

@@ -9,7 +9,7 @@
  */
 
 import { memo } from "react";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";

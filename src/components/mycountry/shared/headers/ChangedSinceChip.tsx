@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { Flash as Zap } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 /**

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Layers, Globe, MapPin, Loader2, ChevronDown } from "lucide-react";
+import { Component as Layers, Globe, MapPin, SystemRestart as Loader2, NavArrowDown as ChevronDown } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -211,7 +211,7 @@ export function CardGalleryTab({
           ))}
         </div>
       ) : displayCards.length === 0 ? (
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Globe className="text-muted-foreground/40 mb-3 h-10 w-10" />
             <p className="text-foreground/80 mb-1 text-sm font-bold">No Cards Found</p>

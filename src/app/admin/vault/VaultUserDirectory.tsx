@@ -39,19 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Wallet,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Gift,
-  ArrowUpDown,
-  MoreHorizontal,
-  Flame,
-  History,
-  Gem,
-} from "lucide-react";
+import { Wallet, Search, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
 
 export function VaultUserDirectory() {
   const notify = useNotify();

@@ -9,16 +9,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
 import { useUser } from "~/context/auth-context";
-import {
-  Bell,
-  BellRing,
-  X,
-  CheckCircle,
-  ChevronRight,
-  Maximize2,
-  Minimize2,
-  MessageCircle,
-} from "lucide-react";
+import { Bell, BellNotification as BellRing, Xmark as X, CheckCircle, NavArrowRight as ChevronRight, Expand as Maximize2, Compress as Minimize2, ChatBubble as MessageCircle } from "iconoir-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Activity, Layers } from "lucide-react";
+import { Activity, Component as Layers } from "iconoir-react";
 import type { NormalizedCountryPayload } from "~/lib/maps/pipeline/azgaar-normalizer";
 import type {
   GeoProfilePayload,

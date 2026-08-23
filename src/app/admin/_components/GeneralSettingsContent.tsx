@@ -13,7 +13,7 @@ import { DatabaseExplorer } from "./DatabaseExplorer";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
-import { Settings, Clock, TrendingUp, HeartPulse, Navigation, Database } from "lucide-react";
+import { Settings, Clock, StatUp as TrendingUp, Heart as HeartPulse, Navigator as Navigation, Database } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 import { TimeControlCard } from "./platform/TimeControlCard";
@@ -135,7 +135,7 @@ export function GeneralSettingsContent() {
       />
 
       {/* Premium Tab Switcher */}
-      <div className="glass-surface border-border/40 mb-6 flex w-full max-w-full flex-wrap justify-start gap-2 rounded-xl p-1.5 shadow-sm backdrop-blur-md">
+      <div className="facet-surface border-border/40 mb-6 flex w-full max-w-full flex-wrap justify-start gap-2 rounded-xl p-1.5 shadow-sm backdrop-blur-md">
         {[
           {
             id: "general",

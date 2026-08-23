@@ -183,7 +183,7 @@ function CollapsibleNationGrid({
           <Link
             key={c.id}
             href={withBasePath(getCountryDomainLink(c.name ?? ""))}
-            className="wikios-domain-country-card glass-hierarchy-child"
+            className="wikios-domain-country-card facet-hierarchy-child"
             title={`${domain} of ${c.name}`}
           >
             {c.flagUrl && (

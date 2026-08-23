@@ -6,16 +6,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import {
-  X,
-  TrendingUp,
-  BarChart3,
-  Info,
-  BookOpen,
-  ArrowRightLeft,
-  Share2,
-  Download,
-} from "lucide-react";
+import { Xmark as X, StatUp as TrendingUp, StatsReport as BarChart3, InfoCircle as Info, OpenBook as BookOpen, ArrowSeparate as ArrowRightLeft, ShareAndroid as Share2, Download } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";

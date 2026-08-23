@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles, Compass, Globe2 } from "lucide-react";
+import { Sparks as Sparkles, Compass, Globe as Globe2 } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function WelcomeArticle() {

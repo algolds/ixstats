@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { X, MapPin, Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import { Xmark as X, MapPin, SystemRestart as Loader2, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Button } from "~/components/ui/button";
@@ -281,7 +281,7 @@ export function MapPickerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="glass-surface glass-refraction flex h-[550px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+      <div className="facet-surface facet-refraction flex h-[550px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4 dark:bg-black/20">
           <h3 className="flex items-center gap-2 text-lg font-bold text-white">
@@ -297,14 +297,14 @@ export function MapPickerModal({
         </div>
 
         {/* Content */}
-        <div className="relative flex-1 bg-[#0a1628]">
+        <div className="relative flex-1 bg-map-ocean">
           {isLoading ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0a1628] text-white">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-map-ocean text-white">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
               <p className="text-sm text-white/60">Loading map data...</p>
             </div>
           ) : !geometry ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0a1628] p-6 text-center text-white">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-map-ocean p-6 text-center text-white">
               <AlertTriangle className="h-10 w-10 text-amber-500" />
               <p className="text-sm font-semibold">No map boundary linked</p>
               <p className="max-w-xs text-xs text-white/50">
@@ -321,7 +321,7 @@ export function MapPickerModal({
               <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
                 {selectedCoords ? (
                   isValid ? (
-                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg backdrop-blur-md">
+                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-950/80 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg backdrop-blur-md">
                       <CheckCircle className="h-4 w-4 shrink-0" />
                       <span>
                         Valid Location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
@@ -329,13 +329,13 @@ export function MapPickerModal({
                       </span>
                     </div>
                   ) : (
-                    <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 shadow-lg backdrop-blur-md">
+                    <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-950/80 px-3 py-2 text-xs font-semibold text-red-400 shadow-lg backdrop-blur-md">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span>Warning: Coordinates lie outside your country borders!</span>
                     </div>
                   )
                 ) : (
-                  <div className="glass-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur-md">
+                  <div className="facet-surface inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur-md">
                     <MapPin className="h-4 w-4 shrink-0 animate-bounce" />
                     <span>Click on the map inside your borders to select a point</span>
                   </div>

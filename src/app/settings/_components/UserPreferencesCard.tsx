@@ -1,16 +1,5 @@
 import { useState } from "react";
-import {
-  Sun,
-  Moon,
-  Monitor,
-  ChevronDown,
-  ChevronUp,
-  Zap,
-  Gem,
-  Layers,
-  Minimize2,
-  Download,
-} from "lucide-react";
+import { SunLight as Sun, HalfMoon as Moon, ModernTv as Monitor, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Flash as Zap, Crown as Gem, Component as Layers, Compress as Minimize2, Download } from "iconoir-react";
 import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Switch } from "~/components/ui/switch";
@@ -50,7 +39,7 @@ export function UserPreferencesCard({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="diagonal" opacity={0.03} />
 
@@ -77,7 +66,7 @@ export function UserPreferencesCard({
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => handleThemeChange("light")}
-                className={`glass-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
+                className={`facet-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
                   activeTheme === "light"
                     ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
                     : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
@@ -88,7 +77,7 @@ export function UserPreferencesCard({
               </button>
               <button
                 onClick={() => handleThemeChange("dark")}
-                className={`glass-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
+                className={`facet-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
                   activeTheme === "dark"
                     ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
                     : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
@@ -99,7 +88,7 @@ export function UserPreferencesCard({
               </button>
               <button
                 onClick={() => handleThemeChange("system")}
-                className={`glass-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
+                className={`facet-interactive flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 transition-all ${
                   activeTheme === "system"
                     ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
                     : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"

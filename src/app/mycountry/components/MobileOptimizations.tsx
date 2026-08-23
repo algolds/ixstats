@@ -42,11 +42,11 @@ export function MobileOptimizationStyles() {
           padding: 12px 16px;
         }
 
-        .mobile-optimized .glass-hierarchy-child {
+        .mobile-optimized .facet-hierarchy-child {
           border-radius: 12px;
         }
 
-        .mobile-optimized .glass-hierarchy-parent {
+        .mobile-optimized .facet-hierarchy-parent {
           border-radius: 16px;
         }
 
@@ -139,7 +139,7 @@ export function MobileOptimizationStyles() {
 
       /* Battery optimization */
       @media (max-width: 768px) {
-        .mobile-optimized .glass-hierarchy-parent {
+        .mobile-optimized .facet-hierarchy-parent {
           /* Reduce blur effects on mobile */
           backdrop-filter: blur(8px) !important;
           -webkit-backdrop-filter: blur(8px) !important;

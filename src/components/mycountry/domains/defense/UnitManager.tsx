@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import { Plus, Edit, Trash2, Users, MapPin, Shield, Star, CheckCircle2 } from "lucide-react";
+import { Plus, EditPencil as Edit, Trash as Trash2, Group as Users, MapPin, Shield, Star, CheckCircle as CheckCircle2 } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

@@ -20,7 +20,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { AlertTriangle, Info, AlertCircle, Database, CheckCircle2 } from "lucide-react";
+import { WarningTriangle as AlertTriangle, InfoCircle as Info, WarningCircle as AlertCircle, Database, CheckCircle as CheckCircle2 } from "iconoir-react";
 import type { ConflictWarning } from "~/server/services/builderIntegrationService";
 
 interface ConflictWarningDialogProps {

@@ -625,7 +625,7 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 
 | Library                        | Package                    | Usage                                                                        |
 | ------------------------------ | -------------------------- | ---------------------------------------------------------------------------- |
-| **Lucide React**               | `lucide-react`             | Primary icon set — nav, sidebar, UI elements                                 |
+| **Iconoir**                     | `iconoir-react`            | Primary icon set — nav, sidebar, UI elements                                 |
 | **React Icons (Font Awesome)** | `react-icons/fa`           | Wiki nav (FaWikipediaW), Labs (FaLanguage)                                   |
 | **React Icons (Game Icons)**   | `react-icons/gi`           | Cards nav (GiCardRandom), Labs (GiSoapExperiment), Vexel (GiVibratingShield) |
 | **React Icons (Remix)**        | `react-icons/ri`           | Country wiki section labels                                                  |

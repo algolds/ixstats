@@ -15,7 +15,7 @@
  * - LogViewerMinimal — simple scrolling log lines for compact contexts
  * - LogViewerFilterable — includes level filtering (info/warn/error/debug)
  *
- * Dependencies: lucide-react
+ * Dependencies: iconoir-react
  */
 
 import * as React from "react";
@@ -30,9 +30,9 @@ import {
   Play,
   Search,
   Terminal,
-  Trash2,
-  X,
-} from "lucide-react";
+  Trash as Trash2,
+  Xmark as X,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 // Types

@@ -2,23 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  MousePointer2,
-  Pencil,
-  Scissors,
-  Merge,
-  Undo2,
-  Redo2,
-  Wrench,
-  Spline,
-  Waves,
-  Minimize2,
-  Save,
-  Check,
-  X,
-  Paintbrush,
-  RefreshCw,
-} from "lucide-react";
+import { CursorPointer as MousePointer2, EditPencil as Pencil, Cut as Scissors, GitMerge as Merge, Undo as Undo2, Redo as Redo2, Wrench, GraphUp as Spline, SeaWaves as Waves, Compress as Minimize2, FloppyDisk as Save, Check, Xmark as X, ColorPicker as Paintbrush, Refresh as RefreshCw } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
@@ -691,7 +675,7 @@ export default function MapEditorOverlay({
             panelB={renderPanel("panelB")}
           >
             {isWorldMode && activeEditorMode === "border_edit" && borderState.isLoading && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0a1628]/80 backdrop-blur-sm">
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-map-ocean/80 backdrop-blur-sm">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
                 <div className="relative z-10 flex flex-col items-center gap-4 text-center">
                   <div className="relative h-16 w-16">

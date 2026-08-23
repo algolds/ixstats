@@ -8,7 +8,7 @@
 
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Users, FileSpreadsheet, Download } from "lucide-react";
+import { Group as Users, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import type { RelationshipDistribution } from "~/lib/utils";
@@ -23,7 +23,7 @@ interface RelationshipDistributionChartProps {
 export const RelationshipDistributionChart = React.memo<RelationshipDistributionChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="relationship-distribution-chart">
+      <Card className="facet-hierarchy-child" id="relationship-distribution-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

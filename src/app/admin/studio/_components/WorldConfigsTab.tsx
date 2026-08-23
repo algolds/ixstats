@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { Loader2, Pencil, Check, X } from "lucide-react";
+import { SystemRestart as Loader2, EditPencil as Pencil, Check, Xmark as X } from "iconoir-react";
 
 export function WorldConfigsTab() {
   const { data: configs, isLoading, refetch } = api.studio.adminListWorldConfigs.useQuery();

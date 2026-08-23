@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Globe } from "iconoir-react";
 import type { MessageFolder } from "~/types/messages";
 import type { ResolvedIdentity } from "~/types/messages";
 

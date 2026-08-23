@@ -2,16 +2,7 @@
 
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import {
-  Factory,
-  EyeOff,
-  DollarSign,
-  Target,
-  Users,
-  Pencil,
-  Network,
-  Trash2,
-} from "lucide-react";
+import { Industry as Factory, EyeClosed as EyeOff, Dollar as DollarSign, Archery as Target, Group as Users, EditPencil as Pencil, Network, Trash as Trash2 } from "iconoir-react";
 import { COMPLEXITY_COLORS } from "~/lib/admin/economic-component-transforms";
 
 interface EconomicComponentCardProps {
@@ -41,7 +32,7 @@ export function EconomicComponentCard({
       component.employmentImpact.wageGrowthModifier !== 1.0);
 
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50">
+    <Card className="facet-card-child p-4 transition-all hover:border-[--intel-gold]/50">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">

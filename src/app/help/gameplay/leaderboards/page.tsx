@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Medal, BarChart3, TrendingUp, Users } from "lucide-react";
+import { Medal, StatsReport as BarChart3, StatUp as TrendingUp, Group as Users } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function LeaderboardsArticle() {

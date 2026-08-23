@@ -1,6 +1,6 @@
 // Section configuration data
 
-import { Flag, BarChart3, Users, Coins, Building2, Heart, Crown, TrendingUp } from "lucide-react";
+import { WhiteFlag as Flag, StatsReport as BarChart3, Group as Users, Coins, City as Building2, Heart, Crown, StatUp as TrendingUp } from "iconoir-react";
 import type { Section } from "../types/builder";
 
 export const sections: Section[] = [

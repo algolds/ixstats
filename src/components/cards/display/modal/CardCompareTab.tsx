@@ -23,7 +23,7 @@ export function CardCompareTab({
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Original card */}
-        <div className="glass-hierarchy-child rounded-lg p-4">
+        <div className="facet-hierarchy-child rounded-lg p-4">
           <h4 className="text-foreground mb-4 text-sm font-semibold">{card.title}</h4>
           <div className="space-y-3">
             {Object.entries(stats.base).map(([key, stat]) => (
@@ -38,7 +38,7 @@ export function CardCompareTab({
         </div>
 
         {/* Comparison card */}
-        <div className="glass-hierarchy-child rounded-lg p-4">
+        <div className="facet-hierarchy-child rounded-lg p-4">
           <h4 className="text-foreground mb-4 text-sm font-semibold">{comparisonCard.title}</h4>
           <div className="space-y-3">
             {Object.entries(comparisonStats.base).map(([key, stat]) => (

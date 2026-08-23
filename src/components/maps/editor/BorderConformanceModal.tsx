@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { AlertTriangle, Check, MapPin } from "lucide-react";
+import { WarningTriangle as AlertTriangle, Check, MapPin } from "iconoir-react";
 import {
   Dialog,
   DialogContent,

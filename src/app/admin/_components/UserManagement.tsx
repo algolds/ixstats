@@ -45,23 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import {
-  Users,
-  Unlink,
-  Link as LinkIcon,
-  Crown,
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Loader2,
-  Shield,
-  Plus,
-  Search,
-  Settings,
-  Sparkles,
-  Map,
-  Calculator,
-} from "lucide-react";
+import { Group as Users, LinkSlash as Unlink, Link as LinkIcon, Crown, User, WarningTriangle as AlertTriangle, CheckCircle, SystemRestart as Loader2, Shield, Plus, Search, Settings, Sparks as Sparkles, Map, Calculator } from "iconoir-react";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import { useAbility, Can } from "~/components/providers/AbilityProvider";

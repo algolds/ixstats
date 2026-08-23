@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
-import {
-  User,
-  Globe,
-  AlertCircle,
-  BarChart3,
-} from "lucide-react";
+import { User, Globe, WarningCircle as AlertCircle, StatsReport as BarChart3 } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";

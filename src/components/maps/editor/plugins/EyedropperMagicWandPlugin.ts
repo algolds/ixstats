@@ -1,4 +1,4 @@
-import { Pipette, Wand2 } from "lucide-react";
+import { ColorPicker as Pipette, MagicWand as Wand2 } from "iconoir-react";
 import type { MapEditorPlugin, MapEditorContextType } from "./types";
 
 export const EyedropperMagicWandPlugin: MapEditorPlugin = {

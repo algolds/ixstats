@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Coins } from "lucide-react";
+import { Coins } from "iconoir-react";
 
 interface CardPriceHistoryChartProps {
   cardId: string;

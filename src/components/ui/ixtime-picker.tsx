@@ -6,7 +6,7 @@ import { IxTime } from "~/lib/ixtime";
 import { Label } from "./label";
 import { Input } from "./input";
 import { Button } from "./button";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock } from "iconoir-react";
 import { format } from "date-fns";
 
 interface IxTimePickerProps {

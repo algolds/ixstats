@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Command, Dices, Search, Tag, Sparkles, Check } from "lucide-react";
+import { KeyCommand as Command, DiceSix as Dices, Search, Label as Tag, Sparks as Sparkles, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface DomesticSuggestion {

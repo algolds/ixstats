@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Landmark, DollarSign, Shield, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { Bank as Landmark, Dollar as DollarSign, Shield, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import { GlassCard, GlassCardContent } from "../../../glass/GlassCard";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";

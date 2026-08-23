@@ -410,9 +410,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       highlightedElementRef.current.classList.remove(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
+        "bg-onoma-primary/5",
         "transition-all",
         "duration-300"
       );
@@ -427,9 +427,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       el.classList.add(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
+        "bg-onoma-primary/5",
         "transition-all",
         "duration-300"
       );

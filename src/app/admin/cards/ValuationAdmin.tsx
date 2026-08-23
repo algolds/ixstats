@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Coins, RefreshCw, Save } from "lucide-react";
+import { Coins, Refresh as RefreshCw, FloppyDisk as Save } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
@@ -50,7 +50,7 @@ export function ValuationAdmin() {
   const busy = saveMutation.isPending || recomputeMutation.isPending;
 
   return (
-    <div className="glass-card-child rounded-xl border border-amber-500/20 p-6">
+    <div className="facet-card-child rounded-xl border border-amber-500/20 p-6">
       <div className="mb-1 flex items-center gap-2">
         <Coins className="h-6 w-6 text-amber-400" />
         <h2 className="text-foreground text-xl font-semibold">Card Valuation</h2>

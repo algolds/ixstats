@@ -4,7 +4,7 @@
 // Onoma Lab — Stash Section (Facet Rebuild — Side-by-Side)
 
 import { useState, useRef, useEffect } from "react";
-import { Trash2, Search, FolderPlus, Loader2 } from "lucide-react";
+import { Trash as Trash2, Search, FolderPlus, SystemRestart as Loader2 } from "iconoir-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { NameResultCard } from "../shared/NameResultCard";
 import { UseNameDialog } from "../shared/UseNameDialog";
@@ -206,7 +206,7 @@ export function StashSection({
               className={cn(
                 "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
                 stashTab === "saved"
-                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff] font-bold"
+                  ? "bg-onoma-primary/10 text-onoma-primary shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-onoma-primary-light font-bold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -228,7 +228,7 @@ export function StashSection({
               className={cn(
                 "rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
                 stashTab === "history"
-                  ? "bg-[#0091ff]/10 text-[#0091ff] shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-[#33a7ff] font-bold"
+                  ? "bg-onoma-primary/10 text-onoma-primary shadow-[inset_0_1px_0_rgba(0,145,255,0.15)] dark:text-onoma-primary-light font-bold"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -244,13 +244,13 @@ export function StashSection({
               {/* Folder filter dropdown */}
               <div className="relative w-full sm:w-44">
                 <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none">
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none">
                     <SelectValue placeholder="All Folders" />
                   </SelectTrigger>
                   <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
                     <SelectItem
                       value="all"
-                      className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                      className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                     >
                       📁 All Folders
                     </SelectItem>
@@ -258,7 +258,7 @@ export function StashSection({
                       <SelectItem
                         key={s.id}
                         value={s.id}
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         📁 {s.name}
                       </SelectItem>
@@ -275,7 +275,7 @@ export function StashSection({
                   placeholder="Search saved items..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-2 pr-4 pl-9 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
+                  className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-2 pr-4 pl-9 text-xs focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none"
                 />
               </div>
             </div>

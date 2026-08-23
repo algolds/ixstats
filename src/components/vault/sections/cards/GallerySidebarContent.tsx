@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, X, Calendar, Sparkles, BookOpen } from "lucide-react";
+import { Search, Xmark as X, Calendar, Sparks as Sparkles, OpenBook as BookOpen } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";

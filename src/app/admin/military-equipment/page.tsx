@@ -12,7 +12,7 @@ import { SignInButton, useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Plus, ArrowLeft, Rocket, Factory, BarChart3, Target } from "lucide-react";
+import { Plus, ArrowLeft, Rocket, Industry as Factory, StatsReport as BarChart3, Archery as Target } from "iconoir-react";
 
 import { useEquipmentCatalog } from "~/hooks/useEquipmentCatalog";
 import { useManufacturerManagement } from "~/hooks/useManufacturerManagement";
@@ -90,7 +90,7 @@ export default function MilitaryEquipmentPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header - Outside tabs, always visible */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-red-500/20 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/10 p-6">
+        <div className="facet-card-parent mb-6 rounded-xl border-2 border-red-500/20 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/10 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
@@ -127,7 +127,7 @@ export default function MilitaryEquipmentPage() {
 
         {/* Main Tabs */}
         <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-6">
-          <TabsList className="glass-card-parent flex w-full gap-2 overflow-x-auto border-b border-white/10 p-2">
+          <TabsList className="facet-card-parent flex w-full gap-2 overflow-x-auto border-b border-white/10 p-2">
             <TabsTrigger value="catalog" className="flex items-center gap-2">
               <Rocket className="h-4 w-4" />
               Equipment Catalog

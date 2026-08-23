@@ -16,7 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import { Send, TrendingUp, TrendingDown, Activity, AlertCircle, CheckCircle } from "lucide-react";
+import { Send, StatUp as TrendingUp, StatDown as TrendingDown, Activity, WarningCircle as AlertCircle, CheckCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { SimulatedImpactData } from "~/hooks/usePolicyAnalytics";
 
@@ -44,7 +44,7 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
   simulatedImpact,
 }: PolicyForecastingPanelProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Send className="h-5 w-5 text-indigo-600" />

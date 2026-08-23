@@ -1,4 +1,4 @@
-import { Vote, Users, Scale, BarChart3 } from "lucide-react";
+import { CheckSquare as Vote, Group as Users, ScaleFrameEnlarge as Scale, StatsReport as BarChart3 } from "iconoir-react";
 import Link from "next/link";
 import {
   ArticleLayout,

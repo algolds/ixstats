@@ -4,7 +4,7 @@
 // Small Arms tab: statistics cards and equipment availability summary.
 
 import { Card } from "~/components/ui/card";
-import { Filter } from "lucide-react";
+import { Filter } from "iconoir-react";
 
 interface SmallArmsTabProps {
   smallArmsEquipment: any;
@@ -19,7 +19,7 @@ export function SmallArmsTab({
 }: SmallArmsTabProps) {
   return (
     <div className="space-y-6">
-      <div className="glass-card-parent rounded-xl border border-white/10 p-6">
+      <div className="facet-card-parent rounded-xl border border-white/10 p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-foreground text-xl font-bold">Small Arms Equipment</h2>
           <p className="text-muted-foreground text-sm">
@@ -38,25 +38,25 @@ export function SmallArmsTab({
           {/* Statistics */}
           {smallArmsStats && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <Card className="glass-card-child p-4">
+              <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Total Equipment</p>
                 <p className="text-foreground mt-2 text-3xl font-bold">
                   {smallArmsStats.totalEquipment}
                 </p>
               </Card>
-              <Card className="glass-card-child p-4">
+              <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Equipment Types</p>
                 <p className="mt-2 text-3xl font-bold text-blue-400">
                   {smallArmsStats.equipmentByType.length}
                 </p>
               </Card>
-              <Card className="glass-card-child p-4">
+              <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Manufacturers</p>
                 <p className="mt-2 text-3xl font-bold text-green-400">
                   {smallArmsStats.totalManufacturers}
                 </p>
               </Card>
-              <Card className="glass-card-child p-4">
+              <Card className="facet-card-child p-4">
                 <p className="text-muted-foreground text-sm">Eras</p>
                 <p className="mt-2 text-3xl font-bold text-purple-400">
                   {smallArmsStats.equipmentByEra.length}
@@ -69,13 +69,13 @@ export function SmallArmsTab({
           {smallArmsEquipment &&
           smallArmsEquipment.equipment &&
           smallArmsEquipment.equipment.length > 0 ? (
-            <div className="glass-card-child rounded-xl border border-white/10 p-6">
+            <div className="facet-card-child rounded-xl border border-white/10 p-6">
               <p className="text-foreground text-sm">
                 {smallArmsEquipment.equipment.length} equipment items available
               </p>
             </div>
           ) : (
-            <Card className="glass-card-parent p-12 text-center">
+            <Card className="facet-card-parent p-12 text-center">
               <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <p className="text-muted-foreground">No small arms equipment found</p>
             </Card>

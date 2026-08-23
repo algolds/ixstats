@@ -7,18 +7,7 @@
 import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Home,
-  Flame,
-  Clock,
-  Search,
-  Bookmark,
-  MessageCircle,
-  Bell,
-  Reply,
-  Share2,
-  PenSquare,
-} from "lucide-react";
+import { HomeSimple as Home, FireFlame as Flame, Clock, Search, Bookmark, ChatBubble as MessageCircle, Bell, Reply, ShareAndroid as Share2, EditPencil as PenSquare } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";

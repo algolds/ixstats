@@ -15,7 +15,7 @@
  */
 
 import { useRef, useCallback, useState } from "react";
-import { Settings2, List, BookOpen } from "lucide-react";
+import { Settings as Settings2, List, OpenBook as BookOpen } from "iconoir-react";
 
 type MobileTab = "properties" | "features";
 

@@ -12,7 +12,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Zap, CheckCircle, AlertCircle } from "lucide-react";
+import { Flash as Zap, CheckCircle, WarningCircle as AlertCircle } from "iconoir-react";
 import {
   RadarChart,
   PolarGrid,
@@ -32,7 +32,7 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
   synergyAnalysis,
 }: SynergyAnalysisPanelProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-yellow-600" />

@@ -4,7 +4,7 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Clock } from "lucide-react";
+import { ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 
 interface ForumCategoryCardProps {

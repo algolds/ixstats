@@ -82,8 +82,8 @@ export function WikiOSArticleToolbarWidget({
           className={cn(
             "rail-glow-highlighter rail-animate-wiggle flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer",
             isMarginOpen
-              ? "border-[#fef036] bg-[#fef036]/25 text-[#fef036] ring-2 ring-[#fef036]/40 shadow-[#fef036]/20"
-              : "border-[#fef036]/20 bg-[#fef036]/10 text-[#fef036] hover:bg-[#fef036]/20"
+              ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-2 ring-margin-accent/40 shadow-[#fef036]/20"
+              : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
           )}
           title={isMarginOpen ? "Hide Margin (T)" : "Show Margin (Threads, Markup) [T]"}
         >
@@ -144,12 +144,12 @@ export function WikiOSArticleToolbarWidget({
           className={cn(
             "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold transition-all cursor-pointer",
             isMarginOpen
-              ? "bg-[#fef036]/20 text-[#fef036] font-bold"
+              ? "bg-margin-accent/20 text-margin-accent font-bold"
               : "text-muted-foreground hover:text-foreground hover:bg-white/5"
           )}
         >
           <div className="flex items-center gap-2">
-            <Highlighter className="h-3.5 w-3.5 shrink-0 text-[#fef036]" />
+            <Highlighter className="h-3.5 w-3.5 shrink-0 text-margin-accent" />
             <span>{isMarginOpen ? "Hide Margin" : "Show Margin"}</span>
           </div>
           <kbd className="text-[9px] font-mono text-slate-400 px-1 py-0.2 rounded bg-white/5 border border-white/10">

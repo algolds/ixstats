@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Building2 } from "lucide-react";
+import { City as Building2 } from "iconoir-react";
 
 /**
  * Props for EmptyState component

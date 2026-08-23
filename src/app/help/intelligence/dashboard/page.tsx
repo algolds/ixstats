@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Radar, Globe, Compass } from "lucide-react";
+import { Dashboard as LayoutDashboard, Archery as Radar, Globe, Compass } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function IntelligenceDashboardArticle() {

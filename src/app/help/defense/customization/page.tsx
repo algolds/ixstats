@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SlidersHorizontal, Palette, CheckSquare } from "lucide-react";
+import { ControlSlider as SlidersHorizontal, Palette, CheckSquare } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function DefenseCustomizationArticle() {

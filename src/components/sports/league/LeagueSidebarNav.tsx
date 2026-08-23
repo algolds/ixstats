@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  LayoutDashboard,
-  Trophy,
-  Calendar,
-  Swords,
-  MapPin,
-  Users,
-  Shield,
-  Medal,
-} from "lucide-react";
+import { Dashboard as LayoutDashboard, Trophy, Calendar, Tournament as Swords, MapPin, Group as Users, Shield, Medal } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { getSportEmoji } from "~/lib/sports/presets";
 import { Progress } from "~/components/ui/progress";
@@ -130,7 +121,7 @@ export function LeagueSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="facet-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {filteredItems.map((item) => {
             const isActive = item.id === activeId;

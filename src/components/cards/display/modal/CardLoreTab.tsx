@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Globe, PenTool } from "lucide-react";
+import { Globe, EditPencil as PenTool } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
@@ -114,7 +114,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
           { historicalSignificance?: number; culturalImpact?: number } | undefined;
         if (!loreStats) return null;
         return (
-          <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+          <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
             <h4 className="text-foreground text-muted-foreground/80 text-xs font-bold tracking-wider uppercase">
               Historical Metrics
             </h4>

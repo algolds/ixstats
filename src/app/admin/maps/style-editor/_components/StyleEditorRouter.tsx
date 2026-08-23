@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, RefreshCw, Layers } from "lucide-react";
+import { ArrowLeft, Refresh as RefreshCw, Component as Layers } from "iconoir-react";
 
 type ThemeType = "standard" | "dark" | "paper";
 

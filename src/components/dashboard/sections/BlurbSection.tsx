@@ -3,18 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  MessageCircle,
-  ExternalLink,
-  ChevronRight,
+  ChatBubble as MessageCircle,
+  OpenNewWindow as ExternalLink,
+  NavArrowRight as ChevronRight,
   Send,
-  CheckCircle2,
+  CheckCircle as CheckCircle2,
   Compass,
   Quote,
-  Loader2,
-} from "lucide-react";
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import {
+  CutoutCard,
+  CutoutCardContent,
+  CutoutCorner,
+  cutoutCardSurfaceClassName,
+} from "~/components/ui/cutout-card";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -65,62 +71,67 @@ export function BlurbSection() {
 
   return (
     <>
-      <div
+      <CutoutCard
         onClick={() => setModalOpen(true)}
-        className="no-wiki-tooltip group relative flex cursor-pointer flex-col justify-between space-y-3.5 overflow-hidden rounded-2xl border border-indigo-500/20 bg-card/70 p-4 shadow-xs backdrop-blur-2xl transition-all duration-200 hover:border-indigo-500/40 hover:bg-card/90 active:scale-[0.99]"
+        className={cn(
+          cutoutCardSurfaceClassName,
+          "no-wiki-tooltip group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl"
+        )}
+        trackPointerHover={false}
       >
-        {/* Subtle Ambient Specular Glow */}
-        <div className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-transparent blur-2xl dark:from-indigo-400/20 dark:via-violet-400/10" />
-
-        {/* Top Header */}
-        <div className="relative z-10 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
-              <Quote className="h-3 w-3" />
-            </div>
-            <span className="text-foreground text-xs font-semibold tracking-tight">
-              Blurb of the Day
-            </span>
+        {/* Cutout tab header */}
+        <div className="relative flex items-center justify-between bg-indigo-500/10 px-4 pt-3 pb-5">
+          <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
+            <Quote className="h-4 w-4 text-indigo-500" />
+            <span>Blurb of the Day</span>
           </div>
 
           <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-wider text-indigo-700 uppercase dark:border-indigo-400/25 dark:bg-indigo-500/20 dark:text-indigo-300">
             <Compass className="h-2.5 w-2.5 text-indigo-600 dark:text-indigo-400" />
             Daily Prompt
           </span>
+
+          <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
+          <CutoutCorner
+            className="text-card absolute right-0 -bottom-px -scale-x-100"
+            size={20}
+          />
         </div>
 
-        {/* Prompt Question Body */}
-        <div className="relative z-10 space-y-1">
-          {prompt.title && (
-            <p className="text-[11px] font-medium tracking-tight text-indigo-600/90 dark:text-indigo-400/90">
-              {prompt.title}
-            </p>
-          )}
-          <blockquote className="text-foreground/90 dark:text-zinc-200 text-[13px] font-normal leading-relaxed tracking-normal select-text">
-            &ldquo;{prompt.question}&rdquo;
-          </blockquote>
-        </div>
+        <CutoutCardContent className="space-y-3.5 px-4 pt-0 pb-4">
+          {/* Prompt Question Body */}
+          <div className="space-y-1">
+            {prompt.title && (
+              <p className="text-[11px] font-medium tracking-tight text-indigo-600/90 dark:text-indigo-400/90">
+                {prompt.title}
+              </p>
+            )}
+            <blockquote className="text-foreground/90 dark:text-zinc-200 line-clamp-3 text-[13px] font-normal leading-relaxed tracking-normal select-text">
+              &ldquo;{prompt.question}&rdquo;
+            </blockquote>
+          </div>
 
-        {/* Footer Meta & Tactile CTA */}
-        <div className="relative z-10 flex items-center justify-between pt-1">
-          <span className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px] font-medium tabular-nums">
-            <MessageCircle className="h-3.5 w-3.5 text-indigo-500/70 dark:text-indigo-400/70" />
-            {responseCount} {responseCount === 1 ? "response" : "responses"}
-          </span>
+          {/* Footer Meta & Tactile CTA */}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-muted-foreground/80 flex items-center gap-1.5 text-[11px] font-medium tabular-nums">
+              <MessageCircle className="h-3.5 w-3.5 text-indigo-500/70 dark:text-indigo-400/70" />
+              {responseCount} {responseCount === 1 ? "response" : "responses"}
+            </span>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setModalOpen(true);
-            }}
-            className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
-          >
-            <span>Respond</span>
-            <ChevronRight className="h-3 w-3 shrink-0 text-indigo-600/80 transition-transform duration-150 group-hover/btn:translate-x-0.5 dark:text-indigo-300/80" />
-          </button>
-        </div>
-      </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setModalOpen(true);
+              }}
+              className="group/btn inline-flex cursor-pointer items-center gap-1 rounded-full border border-indigo-500/25 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-medium text-indigo-700 shadow-2xs transition-all duration-150 hover:border-indigo-500/40 hover:bg-indigo-500/20 active:scale-95 dark:border-indigo-400/25 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:border-indigo-400/40 dark:hover:bg-indigo-500/25"
+            >
+              <span>Respond</span>
+              <ChevronRight className="h-3 w-3 shrink-0 text-indigo-600/80 transition-transform duration-150 group-hover/btn:translate-x-0.5 dark:text-indigo-300/80" />
+            </button>
+          </div>
+        </CutoutCardContent>
+      </CutoutCard>
 
       <BlurbResponseModal
         open={modalOpen}

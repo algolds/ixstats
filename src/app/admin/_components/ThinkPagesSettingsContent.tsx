@@ -12,22 +12,7 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Globe,
-  Save,
-  Check,
-  MessageSquare,
-  Flame,
-  TrendingUp,
-  Rss,
-  Send,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Hash,
-  Users,
-  ShieldCheck,
-} from "lucide-react";
+import { Globe, FloppyDisk as Save, Check, ChatBubble as MessageSquare, FireFlame as Flame, StatUp as TrendingUp, RssFeed as Rss, Send, CheckCircle as CheckCircle2, XmarkCircle as XCircle, SystemRestart as Loader2, Hashtag as Hash, Group as Users, ShieldCheck } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -44,7 +29,7 @@ export function ThinkPagesSettingsContent() {
       />
 
       <Tabs defaultValue="platform" className="w-full">
-        <TabsList className="glass-surface border-border/40 grid w-full max-w-md grid-cols-2 p-1">
+        <TabsList className="facet-surface border-border/40 grid w-full max-w-md grid-cols-2 p-1">
           <TabsTrigger value="platform" className="text-xs md:text-sm">
             Platform Settings
           </TabsTrigger>
@@ -103,7 +88,7 @@ function PlatformSettingsTab() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-indigo-500/10 p-3 text-indigo-500">
               <MessageSquare className="h-6 w-6" />
@@ -117,7 +102,7 @@ function PlatformSettingsTab() {
           </CardContent>
         </Card>
 
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-pink-500/10 p-3 text-pink-500">
               <Flame className="h-6 w-6" />
@@ -131,7 +116,7 @@ function PlatformSettingsTab() {
           </CardContent>
         </Card>
 
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-4 p-5">
             <div className="rounded-lg bg-cyan-500/10 p-3 text-cyan-500">
               <TrendingUp className="h-6 w-6" />
@@ -147,7 +132,7 @@ function PlatformSettingsTab() {
       </div>
 
       {/* Settings Form */}
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardHeader>
           <CardTitle className="text-base font-bold">ThinkPages Platform Settings</CardTitle>
         </CardHeader>
@@ -383,7 +368,7 @@ function DiscordMirrorTab() {
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-3 p-4">
             <CheckCircle2 className="h-6 w-6 text-emerald-500" />
             <div>
@@ -392,7 +377,7 @@ function DiscordMirrorTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-3 p-4">
             <XCircle className="h-6 w-6 text-red-500" />
             <div>
@@ -401,7 +386,7 @@ function DiscordMirrorTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="flex items-center gap-3 p-4">
             <Rss className="h-6 w-6 text-indigo-500" />
             <div>
@@ -418,7 +403,7 @@ function DiscordMirrorTab() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Connection */}
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Rss className="h-4 w-4 text-indigo-500" /> Channel & Status
@@ -459,7 +444,7 @@ function DiscordMirrorTab() {
         </Card>
 
         {/* Filters */}
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-4 w-4 text-indigo-500" /> Account & Quality Filters
@@ -524,7 +509,7 @@ function DiscordMirrorTab() {
         </Card>
 
         {/* Account lists */}
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <ShieldCheck className="h-4 w-4 text-indigo-500" /> Account Allow / Block
@@ -558,7 +543,7 @@ function DiscordMirrorTab() {
         </Card>
 
         {/* Hashtag lists */}
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Hash className="h-4 w-4 text-indigo-500" /> Hashtag Rules
@@ -609,7 +594,7 @@ function DiscordMirrorTab() {
       </div>
 
       {/* Live preview */}
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardHeader>
           <CardTitle className="text-base">
             Preview — would these recent posts be mirrored?

@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldAlert, RefreshCw, CheckCircle, RotateCcw } from "lucide-react";
+import { ShieldAlert, Refresh as RefreshCw, CheckCircle, Undo as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";

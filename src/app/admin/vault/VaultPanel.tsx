@@ -5,16 +5,7 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Shield,
-  ArrowLeft,
-  Users,
-  ShoppingBag,
-  History,
-  Settings,
-  Coins,
-  Gift,
-} from "lucide-react";
+import { Shield, ArrowLeft, Group as Users, ShoppingBag, ClockRotateRight as History, Settings, Coins, Gift } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";

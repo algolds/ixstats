@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from "react";
-import { X, MapPin, Mountain, Cloud, Flag, Map } from "lucide-react";
+import { Xmark as X, MapPin, ModernTv as Mountain, Cloud, WhiteFlag as Flag, Map } from "iconoir-react";
 import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
 import { getZoneByColor } from "~/lib/maps/elevation-config";

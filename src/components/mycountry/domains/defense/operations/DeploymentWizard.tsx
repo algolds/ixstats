@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Crosshair, Shield, Anchor, Swords, GraduationCap, AlertTriangle } from "lucide-react";
+import { Archery as Crosshair, Shield, SeaWaves as Anchor, Tournament as Swords, GraduationCap, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";

@@ -8,7 +8,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { CardDisplay } from "./CardDisplay";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";

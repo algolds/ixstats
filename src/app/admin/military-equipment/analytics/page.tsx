@@ -16,7 +16,7 @@ import {
   Line,
 } from "recharts";
 import { api } from "~/trpc/react";
-import { Loader2, Shield, Activity, Factory, TrendingUp, AlertTriangle } from "lucide-react";
+import { SystemRestart as Loader2, Shield, Activity, Industry as Factory, StatUp as TrendingUp, WarningTriangle as AlertTriangle } from "iconoir-react";
 
 /**
  * Military Equipment Analytics Dashboard

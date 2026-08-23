@@ -15,16 +15,7 @@ import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Autocomplete } from "~/components/ui/autocomplete";
-import {
-  Calculator,
-  Building,
-  Calendar,
-  TrendingUp,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-} from "lucide-react";
+import { Calculator, Building, Calendar, StatUp as TrendingUp, Shield, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import type { TaxSystemInput } from "~/types/tax-system";
 import { api } from "~/trpc/react";
 

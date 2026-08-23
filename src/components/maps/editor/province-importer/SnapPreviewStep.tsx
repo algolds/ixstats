@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useMemo } from "react";
-import { Magnet, Minimize2 } from "lucide-react";
+import { Magnet, Compress as Minimize2 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { Polygon, MultiPolygon, Position } from "geojson";
 

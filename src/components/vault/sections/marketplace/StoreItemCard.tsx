@@ -3,7 +3,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { Cart as ShoppingCart } from "iconoir-react";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 
 export interface StoreItem {
@@ -106,7 +106,7 @@ export function StoreItemCard({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "glass-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
+          "facet-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
           colors.border,
           isPreviewing && "border-cyan-500/60 shadow-[0_0_15px_var(--glow)]"
         )}

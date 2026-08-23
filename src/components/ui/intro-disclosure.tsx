@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useAnimation, type PanInfo } from "motion/react";
-import { CheckIcon, ExternalLinkIcon } from "lucide-react";
+import { Check as CheckIcon, OpenNewWindow as ExternalLinkIcon } from "iconoir-react";
 
 import { cn } from "~/lib/utils";
 // AspectRatio removed - using CSS aspect-video class instead

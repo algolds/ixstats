@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Crosshair, Package, Factory } from "lucide-react";
+import { Archery as Crosshair, Package, Industry as Factory } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function MilitaryEquipmentArticle() {

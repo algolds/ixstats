@@ -3,7 +3,7 @@
 import React from "react";
 import { Progress } from "~/components/ui/progress";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Baby, UserCheck, Heart } from "lucide-react";
+import { Lullaby as Baby, UserBadgeCheck as UserCheck, Heart } from "iconoir-react";
 import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface AgeDistributionSectionProps {

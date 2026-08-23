@@ -377,7 +377,7 @@ src/types/
 - `framer-motion`: Animations
 - `next/image`: Optimized images
 - `@radix-ui/react-dialog`: Modal primitives
-- `lucide-react`: Icons
+- `iconoir-react`: Icons
 - `tailwindcss`: Styling
 - `@prisma/client`: Card enums
 

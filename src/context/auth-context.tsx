@@ -9,7 +9,7 @@ import {
   UserButton as ClerkUserButton,
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
-import { Link2 } from "lucide-react";
+import { Link as Link2 } from "iconoir-react";
 import { IxnayIDCard } from "~/app/settings/_components/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/logging";
 

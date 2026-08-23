@@ -166,7 +166,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
 
                 {/* Narrative */}
                 {(exchange as any).narrative && (
-                  <div className="glass-hierarchy-child rounded-lg border border-white/10 p-4">
+                  <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
                     <div className="mb-2 flex items-center gap-2">
                       <RiQuillPenLine className="h-4 w-4 text-purple-400" />
                       <h6 className="text-foreground font-medium">Exchange Narrative</h6>
@@ -180,7 +180,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 {/* Objectives */}
                 {(exchange as any).objectives &&
                   JSON.parse((exchange as any).objectives || "[]").length > 0 && (
-                    <div className="glass-hierarchy-child rounded-lg border border-white/10 p-4">
+                    <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
                       <div className="mb-3 flex items-center gap-2">
                         <RiFlagLine className="h-4 w-4 text-green-400" />
                         <h6 className="text-foreground font-medium">Program Objectives</h6>
@@ -199,7 +199,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   )}
 
                 {/* AI Diplomatic Analysis */}
-                <div className="glass-hierarchy-child rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-4">
+                <div className="facet-hierarchy-child rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <RiBrainLine className="h-4 w-4 text-cyan-400" />
                     <h6 className="text-foreground font-medium">Diplomatic Analysis</h6>
@@ -259,7 +259,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 </div>
 
                 {/* Schedule & Settings */}
-                <div className="glass-hierarchy-child rounded-lg border border-white/10 p-4">
+                <div className="facet-hierarchy-child rounded-lg border border-white/10 p-4">
                   <h6 className="text-foreground mb-3 flex items-center gap-2 font-medium">
                     <RiSettings4Line className="h-4 w-4" />
                     Program Details
@@ -314,7 +314,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                           npcResponses.map((response) => (
                             <div
                               key={response.countryId}
-                              className="glass-hierarchy-child rounded-lg border border-white/10 p-3"
+                              className="facet-hierarchy-child rounded-lg border border-white/10 p-3"
                             >
                               <div className="mb-2 flex items-center gap-2">
                                 {response.flagUrl && (
@@ -425,7 +425,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                           exchange.participatingCountries.map((country) => (
                             <div
                               key={country.id}
-                              className="glass-hierarchy-child rounded-lg border border-white/10 p-3"
+                              className="facet-hierarchy-child rounded-lg border border-white/10 p-3"
                             >
                               <div className="mb-2 flex items-center gap-2">
                                 {country.flagUrl && (

@@ -4,14 +4,14 @@ import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import {
   Shield,
-  Handshake,
-  Scale,
-  TrendingUp,
-  Command,
+  Community as Handshake,
+  ScaleFrameEnlarge as Scale,
+  StatUp as TrendingUp,
+  KeyCommand as Command,
   ArrowUpRight,
   Compass,
-  AlertTriangle,
-} from "lucide-react";
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";

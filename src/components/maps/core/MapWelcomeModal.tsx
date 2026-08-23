@@ -10,18 +10,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X,
-  Globe,
-  Layers,
-  Ruler,
-  MapPin,
-  Keyboard,
-  ChevronRight,
-  ChevronLeft,
-  Compass,
-  Navigation,
-} from "lucide-react";
+import { Xmark as X, Globe, Component as Layers, Ruler, MapPin, Keyframe as Keyboard, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Compass, Navigator as Navigation } from "iconoir-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";

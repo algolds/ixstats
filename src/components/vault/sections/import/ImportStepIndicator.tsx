@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Globe, ShieldCheck, CheckCircle, Download, Sparkles, Check } from "lucide-react";
+import { Globe, ShieldCheck, CheckCircle, Download, Sparks as Sparkles, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type WizardStep = "intro" | "verify" | "preview" | "importing" | "complete";

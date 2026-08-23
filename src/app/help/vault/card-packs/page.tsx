@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Sparkles, Eye, Zap } from "lucide-react";
+import { Package, Sparks as Sparkles, Eye, Flash as Zap } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

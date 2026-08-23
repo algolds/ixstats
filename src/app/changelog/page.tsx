@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { type Metadata } from "next";
-import { Flame, ArrowLeft } from "lucide-react";
+import { FireFlame as Flame, ArrowLeft } from "iconoir-react";
 import {
   PLATFORM_VERSION,
   RELEASE_NAME,

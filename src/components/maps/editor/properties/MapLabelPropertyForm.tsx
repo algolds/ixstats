@@ -24,7 +24,7 @@ const inputClasses =
 const selectClasses =
   "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 
 interface MapLabelPropertyFormProps {
   form: MapLabelFormData;

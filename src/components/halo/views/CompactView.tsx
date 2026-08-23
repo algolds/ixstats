@@ -5,7 +5,7 @@ import { DynamicContainer } from "~/components/ui/dynamic-island";
 import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, Settings } from "lucide-react";
+import { Search, Bell, Settings } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useUser } from "~/context/auth-context";
 import { useIxTimeStore } from "~/stores/ixtime-store";

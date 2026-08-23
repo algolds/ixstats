@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
-import { Coins, Sparkles, Trophy, Flame } from "lucide-react";
+import { Coins, Sparks as Sparkles, Trophy, FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { vaultNotify } from "~/lib/vault/vault-notifications";

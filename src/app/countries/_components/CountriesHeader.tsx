@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, X, Dices, Globe } from "lucide-react";
+import { Search, Xmark as X, DiceSix as Dices, Globe } from "iconoir-react";
 
 interface CountriesHeaderProps {
   searchInput?: string;
@@ -34,7 +34,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 
         {/* Prominent Inline Search Bar with Halo / Dynamic Island Pill Feeling Lucky Button */}
         <div className="relative z-10 mb-3">
-          <div className="glass-surface glass-interactive group relative flex items-center rounded-xl border border-white/10 bg-black/20 px-3.5 py-2 backdrop-blur-md transition-all focus-within:border-purple-400/50 focus-within:ring-2 focus-within:ring-purple-500/30">
+          <div className="facet-surface facet-interactive group relative flex items-center rounded-xl border border-white/10 bg-black/20 px-3.5 py-2 backdrop-blur-md transition-all focus-within:border-purple-400/50 focus-within:ring-2 focus-within:ring-purple-500/30">
             <Search className="h-4 w-4 shrink-0 text-purple-400 transition-colors group-focus-within:text-purple-300" />
             <input
               type="text"

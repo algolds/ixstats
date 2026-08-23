@@ -5,30 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Shield,
-  LayoutDashboard,
-  Settings,
-  Gamepad2,
-  Globe,
-  Map,
-  Users,
-  Database,
-  BookOpen,
-  Sparkles,
-  Languages,
-  MessageCircle,
-  Menu,
-  Wallet,
-  Package,
-  Bell,
-  Vote,
-  Coins,
-  Terminal,
-  Newspaper,
-  Rss,
-  Palette,
-} from "lucide-react";
+import { Shield, Dashboard as LayoutDashboard, Settings, Gamepad as Gamepad2, Globe, Map, Group as Users, Database, OpenBook as BookOpen, Sparks as Sparkles, Translate as Languages, ChatBubble as MessageCircle, Menu, Wallet, Package, Bell, CheckSquare as Vote, Coins, Terminal, Journal as Newspaper, RssFeed as Rss, Palette } from "iconoir-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";

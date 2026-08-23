@@ -1,19 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  Globe,
-  Users,
-  DollarSign,
-  Landmark,
-  MapPin,
-  ChevronDown,
-  Flag,
-  TrendingUp,
-  Building2,
-  Coins,
-  Activity,
-} from "lucide-react";
+import { Globe, Group as Users, Dollar as DollarSign, Bank as Landmark, MapPin, NavArrowDown as ChevronDown, WhiteFlag as Flag, StatUp as TrendingUp, City as Building2, Coins, Activity } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";

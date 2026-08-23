@@ -2,33 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
 import {
   Brain,
   Shield,
   Crown,
   Crown as CrownIcon,
-  Users,
-  Vote,
+  Group as Users,
+  CheckSquare as Vote,
   Lock,
-  Edit2,
-  TrendingUp,
-  LayoutDashboard,
+  EditPencil as Edit2,
+  StatUp as TrendingUp,
+  Dashboard as LayoutDashboard,
   ShieldCheck,
   Map,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 
-/** Renders the standard Lucide icon for a section */
+/** Renders the standard Iconoir icon for a section */
 function NavIcon({
   fallback: Fallback,
   className,
 }: {
   id?: string;
-  fallback: LucideIcon;
+  fallback: React.ComponentType<{ className?: string }>;
   className?: string;
   size?: number;
 }) {
@@ -143,7 +142,7 @@ export function MyCountrySidebarNav({
 
     const mobileLogoContent = (
       <>
-        <CrownIcon size={14} className="shrink-0 text-amber-500" />
+        <CrownIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="whitespace-nowrap">Overview</span>
         {isPremium && (
           <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[9px] font-bold tracking-wider text-amber-500/90 uppercase">
@@ -177,12 +176,12 @@ export function MyCountrySidebarNav({
         className="text-muted-foreground/60 rounded p-1 transition-all duration-150 hover:text-amber-500 active:scale-95"
         title="Edit Country Profile"
       >
-        <Edit2 size={12} className="shrink-0" />
+        <Edit2 className="h-3 w-3 shrink-0" />
       </Link>
     );
 
     return (
-      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="facet-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {mobileLogo}
           {mobileEditButton}
@@ -264,7 +263,7 @@ export function MyCountrySidebarNav({
 
     const logoLinkContent = (
       <>
-        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <CrownIcon className="h-4 w-4 shrink-0 text-amber-500" />
         <span className="truncate font-semibold">MyCountry</span>
         {isPremium && (
           <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
@@ -296,7 +295,7 @@ export function MyCountrySidebarNav({
         className="text-muted-foreground/60 rounded-md p-1.5 transition-all duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
         title="Edit Country Profile"
       >
-        <Edit2 size={13} className="shrink-0" />
+        <Edit2 className="h-3.5 w-3.5 shrink-0" />
       </Link>
     );
 
@@ -384,7 +383,7 @@ export function MyCountrySidebarNav({
 
   const logoRailContent = (
     <>
-      <CrownIcon size={16} className="text-amber-500 transition-transform duration-150" />
+      <CrownIcon className="h-4 w-4 text-amber-500 transition-transform duration-150" />
       {/* Tooltip ── appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
         <span>Overview</span>
@@ -423,7 +422,7 @@ export function MyCountrySidebarNav({
       className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 hover:text-amber-500"
       aria-label="Edit Country Profile"
     >
-      <Edit2 size={16} className="transition-transform duration-150 group-hover/edit:scale-110" />
+      <Edit2 className="h-4 w-4 transition-transform duration-150 group-hover/edit:scale-110" />
       {/* Tooltip — appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/edit:opacity-100">
         Edit Profile

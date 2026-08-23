@@ -2,19 +2,7 @@
 
 import React, { memo, useCallback, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Globe,
-  Flag,
-  BarChart3,
-  Info,
-  Building2,
-  Settings,
-  Crown,
-  Coins,
-  Eye,
-  HelpCircle,
-  CheckCircle,
-} from "lucide-react";
+import { Globe, WhiteFlag as Flag, StatsReport as BarChart3, InfoCircle as Info, City as Building2, Settings, Crown, Coins, Eye, HelpCircle, CheckCircle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";

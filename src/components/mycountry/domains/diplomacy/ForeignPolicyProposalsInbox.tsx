@@ -11,7 +11,7 @@
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
-import { Handshake, Check, X } from "lucide-react";
+import { Community as Handshake, Check, Xmark as X } from "iconoir-react";
 
 const ACTION_LABEL: Record<string, string> = {
   free_trade: "Free Trade Agreement",
@@ -46,7 +46,7 @@ export function ForeignPolicyProposalsInbox({
   if (!proposals || proposals.length === 0) return null;
 
   return (
-    <div className="glass-hierarchy-child rounded-lg border border-amber-500/20 p-3">
+    <div className="facet-hierarchy-child rounded-lg border border-amber-500/20 p-3">
       <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
         <Handshake className="h-3.5 w-3.5 text-amber-500" />
         Incoming Proposals ({proposals.length})

@@ -2,21 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Book,
-  Search,
-  Users,
-  TrendingUp,
-  Shield,
-  Settings,
-  Zap,
-  ChevronRight,
-  FileText,
-  Sparkles,
-  Crown,
-  Coins,
-  Gamepad2,
-} from "lucide-react";
+import { Book, Search, Group as Users, StatUp as TrendingUp, Shield, Settings, Flash as Zap, NavArrowRight as ChevronRight, Page as FileText, Sparks as Sparkles, Crown, Coins, Gamepad as Gamepad2 } from "iconoir-react";
 
 export interface HelpArticle {
   id: string;

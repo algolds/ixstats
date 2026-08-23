@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Link2,
-  Unlink,
-  MessageSquare,
-  BookOpen,
-  Loader2,
-  Check,
-  Search,
-  ExternalLink,
-} from "lucide-react";
+import { Link as Link2, LinkSlash as Unlink, ChatBubble as MessageSquare, OpenBook as BookOpen, SystemRestart as Loader2, Check, Search, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { FaDiscord } from "react-icons/fa";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -43,7 +34,7 @@ function ServiceRow({
   isUnlinking,
 }: ServiceRowProps) {
   return (
-    <div className="glass-hierarchy-child group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 transition-all duration-300 hover:bg-white/50 dark:border-slate-700/50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40">
+    <div className="facet-hierarchy-child group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 transition-all duration-300 hover:bg-white/50 dark:border-slate-700/50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40">
       <div
         className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner ${color}`}
       >
@@ -93,7 +84,7 @@ function ServiceRow({
           <button
             onClick={onLink}
             disabled={isLinking}
-            className="glass-interactive flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700"
+            className="facet-interactive flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700"
           >
             {isLinking ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -225,7 +216,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   return (
     <div
       id="ixnayid-card"
-      className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl"
+      className="facet-surface facet-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl"
     >
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="noise" opacity={0.04} />
@@ -408,7 +399,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           {/* Discord */}
           <ServiceRow
             name="Discord Global"
-            icon={<FaDiscord className="h-6 w-6 text-[#5865F2]" />}
+            icon={<FaDiscord className="h-6 w-6 text-discord" />}
             color="bg-indigo-100 dark:bg-indigo-900/30"
             linked={status?.discord.linked ?? false}
             username={status?.discord.username ?? null}

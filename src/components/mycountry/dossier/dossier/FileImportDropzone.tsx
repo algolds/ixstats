@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Upload, FileText, Check, AlertCircle, Sparkles, X } from "lucide-react";
+import { Upload, Page as FileText, Check, WarningCircle as AlertCircle, Sparks as Sparkles, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";

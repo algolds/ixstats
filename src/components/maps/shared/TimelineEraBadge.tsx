@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Clock, Calendar } from "lucide-react";
+import { Clock, Calendar } from "iconoir-react";
 
 interface TimelineEraBadgeProps {
   eraLabel?: string;

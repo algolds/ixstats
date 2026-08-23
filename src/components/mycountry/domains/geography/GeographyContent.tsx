@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Building2, Pin, Save, Loader2, Tag } from "lucide-react";
+import { MapPin, City as Building2, Pin, FloppyDisk as Save, SystemRestart as Loader2, Label as Tag } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { SearchableList } from "~/components/mycountry/shared/primitives";
@@ -62,7 +62,7 @@ export function GeographyContent() {
   if (!bundle.geometry) {
     return (
       <div className="space-y-4">
-        <Card className="glass-surface border-border overflow-hidden">
+        <Card className="facet-surface border-border overflow-hidden">
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <MapPin className="text-muted-foreground/60 h-8 w-8" />

@@ -33,6 +33,34 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🎨 Universal Iconoir Migration & Facet Design Token Cleanup
+
+- **Comprehensive Iconoir-React Icon Modernization**:
+  - Replaced legacy Lucide icons across 200+ components, pages, navigation rails, and modal dialogs with official `iconoir-react` stroke icons.
+  - Standardized icon aliases and stroke aesthetics across Dashboard, ThinkPages, Vault, MyCountry, WikiOS, Map Editor, Forum, and Admin suites.
+  - Created automated AST and migration scripts (`scripts/migrate-lucide-to-iconoir.ts`) archived in `scripts/archive/migrations/`.
+- **Hardcoded Hex Code Elimination & Design System Token Harmonization**:
+  - Refactored arbitrary raw hex color strings (`#...`) across CSS stylesheets and components to use canonical Facet design tokens (`--facet-*`), Tailwind CSS variables (`text-foreground`, `bg-card`, `border-border`), and theme-aware semantic tokens.
+  - Enhanced theme consistency and visual clarity across both light and dark modes.
+
+### ⚡ Dashboard & ThinkPages Feed Interaction, Comment/Reply, Repost & Reactions Overhaul
+
+- **Keystroke-Stable GlassPlateEditor & Comment/Reply Pipeline**:
+  - Stabilized `useGlassPlateEditor` by decoupling the Plate editor instance from dynamic `initialValue` dependency arrays, eliminating editor recreation on every keystroke.
+  - Added external change synchronization via internal change tracking refs, preserving caret position, active mentions, and focus during typing.
+  - Fixed silent reply submission failures by adding explicit account validation and guiding unauthenticated users to account creation.
+  - Resolved cache invalidation gaps by invalidating `activities.getGlobalFeed` and `activities.getFollowingFeed` alongside `thinkpages.getPost` on reply creation.
+  - Updated `ThreadReplies.tsx` rendering logic to immediately show newly submitted replies without requiring manual page reload.
+- **Instant Like & Optimistic Reaction System**:
+  - Resolved `PostActions.tsx` single-click interaction so clicking the heart icon immediately toggles likes, with right-click or long-press triggering the expanded `ReactionPopup`.
+  - Extended `ReactionCacheUpdater.ts` with Activity Feed array support (`activities.getGlobalFeed`, `activities.getFollowingFeed`), enabling instant, zero-latency optimistic updates in dashboard feeds.
+  - Purged noisy debug `console.log` statements and eliminated the debug `POPUP ACTIVE` UI overlay artifact.
+  - Verified and cleaned up Discord custom emoji rendering and selection in `ReactionPopup.tsx`.
+- **Reposting & Canonical Share Link Permalinks**:
+  - Wired `onReaction` properly across `HeroPostView.tsx`, `StandardPostView.tsx`, and `ThinkpagesPost.tsx`.
+  - Standardized permalink generation using `withBasePath` in `handleShare` across standalone and subpath deployments with native Web Share API and clipboard fallbacks.
+  - Added global and following feed cache invalidation to `useGlassCanvasComposer.ts` upon submitting quote reposts.
+
 ### 📑 Stash Research Vault & Apple Design Overhaul (STASH_VERSION: 1)
 
 - **Primary Brand Slogan & Architecture**:

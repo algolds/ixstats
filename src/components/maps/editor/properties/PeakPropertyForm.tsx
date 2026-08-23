@@ -3,7 +3,7 @@
 import React from "react";
 import type { PeakFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 
 const inputClasses =
   "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";

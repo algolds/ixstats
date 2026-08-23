@@ -19,19 +19,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import {
-  FileText,
-  FlaskConical,
-  Globe2,
-  Heart,
-  Landmark,
-  LifeBuoy,
-  ChevronDown,
-  ChevronRight,
-  Shield,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+import { Page as FileText, Flask as FlaskConical, Globe as Globe2, Heart, Bank as Landmark, HelpCircle as LifeBuoy, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Shield, StatUp as TrendingUp } from "iconoir-react";
 import { ComponentType } from "~/lib/enums";
 
 export interface GovernmentTemplate {
@@ -52,7 +40,7 @@ type TemplateGroupId =
 interface TemplateGroupConfig {
   id: TemplateGroupId;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconClassName: string;
   keywords: string[];
 }

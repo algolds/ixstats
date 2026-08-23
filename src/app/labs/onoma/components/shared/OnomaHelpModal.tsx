@@ -7,12 +7,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  BookOpen,
-} from "lucide-react";
+import { Xmark as X, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, OpenBook as BookOpen } from "iconoir-react";
 import { OnomaBrandLogo } from "./OnomaBrandLogo";
 import { cn } from "~/lib/utils";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
@@ -181,18 +176,18 @@ export function OnomaHelpModal({
                       </p>
                     </div>
 
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0091ff]/10 text-[#0091ff] shadow-xs">
-                      <OnomaBrandLogo variant="symbol" className="h-6 w-6 text-[#0091ff]" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-onoma-primary/10 text-onoma-primary shadow-xs">
+                      <OnomaBrandLogo variant="symbol" className="h-6 w-6 text-onoma-primary" />
                     </div>
                   </div>
 
                   {currentWalkthrough.quote && (
-                    <div className="border-[#0091ff]/20 bg-[#0091ff]/5 rounded-xl border p-3 text-center space-y-1">
+                    <div className="border-onoma-primary/20 bg-onoma-primary/5 rounded-xl border p-3 text-center space-y-1">
                       <p className="text-foreground text-xs italic font-medium">
                         “{currentWalkthrough.quote}”
                       </p>
                       {currentWalkthrough.progression && (
-                        <p className="text-[#0091ff] font-mono text-[10px] font-semibold">
+                        <p className="text-onoma-primary font-mono text-[10px] font-semibold">
                           {currentWalkthrough.progression}
                         </p>
                       )}
@@ -206,7 +201,7 @@ export function OnomaHelpModal({
                   <div className="border-border/30 bg-secondary/15 space-y-2 rounded-2xl border p-3.5">
                     {currentWalkthrough.features.map((feat, idx) => (
                       <div key={idx} className="flex items-start gap-2 text-xs">
-                        <span className="text-[#0091ff] font-bold shrink-0">›</span>
+                        <span className="text-onoma-primary font-bold shrink-0">›</span>
                         <span className="text-foreground/90 leading-relaxed font-medium">
                           {feat}
                         </span>
@@ -235,7 +230,7 @@ export function OnomaHelpModal({
                         className={cn(
                           "h-1.5 rounded-full transition-all duration-300 cursor-pointer",
                           idx === activeWalkthroughStep
-                            ? "w-5 bg-[#0091ff]"
+                            ? "w-5 bg-onoma-primary"
                             : "bg-border/80 hover:bg-muted-foreground w-1.5"
                         )}
                       />
@@ -264,7 +259,7 @@ export function OnomaHelpModal({
                           handleDismissWalkthrough();
                         }
                       }}
-                      className="bg-[#0091ff] hover:bg-[#0080e6] flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                      className="bg-onoma-primary hover:bg-onoma-primary-hover flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
                       <span>
                         {activeWalkthroughStep === WALKTHROUGH_STEPS.length - 1 ? "Begin" : "Next"}
@@ -285,7 +280,7 @@ export function OnomaHelpModal({
                     className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-all cursor-pointer select-none active:scale-[0.98] shrink-0 sm:shrink mb-1 text-muted-foreground hover:text-foreground hover:bg-secondary/20 border border-transparent"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#0091ff]" />
+                      <BookOpen className="h-3.5 w-3.5 shrink-0 text-onoma-primary" />
                       <span className="truncate text-[11px] font-medium">Welcome to Onoma</span>
                     </div>
                   </button>
@@ -305,7 +300,7 @@ export function OnomaHelpModal({
                         className={cn(
                           "flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-all cursor-pointer select-none active:scale-[0.98] shrink-0 sm:shrink",
                           isSelected
-                            ? "border-[#0091ff]/40 bg-[#0091ff]/10 text-[#0091ff] border shadow-2xs font-semibold"
+                            ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary border shadow-2xs font-semibold"
                             : "text-muted-foreground hover:text-foreground hover:bg-secondary/20 border border-transparent"
                         )}
                       >
@@ -331,14 +326,14 @@ export function OnomaHelpModal({
                         </p>
                       </div>
 
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0091ff]/10 text-[#0091ff] shadow-xs">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-onoma-primary/10 text-onoma-primary shadow-xs">
                         {React.createElement(currentGuide.icon, { className: "h-5 w-5" })}
                       </div>
                     </div>
 
                     {currentGuide.formula && (
-                      <div className="border-[#0091ff]/20 bg-[#0091ff]/5 rounded-xl border p-2.5 text-center">
-                        <span className="text-[#0091ff] font-mono text-[10px] font-semibold tracking-tight">
+                      <div className="border-onoma-primary/20 bg-onoma-primary/5 rounded-xl border p-2.5 text-center">
+                        <span className="text-onoma-primary font-mono text-[10px] font-semibold tracking-tight">
                           {currentGuide.formula}
                         </span>
                       </div>
@@ -375,7 +370,7 @@ export function OnomaHelpModal({
                               key={idx}
                               className="border-border/30 bg-secondary/10 flex items-start gap-2.5 rounded-xl border p-2.5 text-xs"
                             >
-                              <span className="text-[#0091ff] mt-0.5 font-bold shrink-0">›</span>
+                              <span className="text-onoma-primary mt-0.5 font-bold shrink-0">›</span>
                               <span className="text-foreground/90 text-[11px] leading-relaxed">
                                 {tip}
                               </span>
@@ -390,7 +385,7 @@ export function OnomaHelpModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="bg-[#0091ff] hover:bg-[#0080e6] flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                      className="bg-onoma-primary hover:bg-onoma-primary-hover flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 cursor-pointer"
                     >
                       <span>Got it</span>
                     </button>

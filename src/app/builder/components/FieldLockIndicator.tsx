@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, LockSlash as Unlock } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import type { FieldLockConfig } from "./enhanced/builderConfig";

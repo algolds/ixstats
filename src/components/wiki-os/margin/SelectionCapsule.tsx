@@ -223,7 +223,7 @@ export function SelectionCapsule({
         className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
         title="Discuss"
       >
-        <MessageSquare className="w-3.5 h-3.5 text-[#fef036]" />
+        <MessageSquare className="w-3.5 h-3.5 text-margin-accent" />
         <span>Discuss</span>
       </button>
 
@@ -257,7 +257,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleShare}
-        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-[#fef036] hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
+        className="p-1 rounded-xl text-[var(--wikios-text-dim)] hover:text-margin-accent hover:bg-[var(--wikios-border)] active:scale-95 transition-transform duration-100 cursor-pointer"
         title="Share quote"
       >
         <Share2 className="w-3.5 h-3.5" />

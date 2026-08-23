@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trophy, Globe, TrendingUp, MessageSquare, Activity } from "lucide-react";
+import { Trophy, Globe, StatUp as TrendingUp, ChatBubble as MessageSquare, Activity } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
@@ -39,7 +39,7 @@ export function ActivityFilters({
   onCategoryChange,
 }: ActivityFiltersProps) {
   return (
-    <div className="glass-hierarchy-child space-y-4 rounded-lg p-3 sm:p-4">
+    <div className="facet-hierarchy-child space-y-4 rounded-lg p-3 sm:p-4">
       {/* Activity Type Filters */}
       <div>
         <h3 className="text-foreground mb-2 text-xs font-semibold sm:mb-3 sm:text-sm">

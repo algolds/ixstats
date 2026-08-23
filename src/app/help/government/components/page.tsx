@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ListTree, Puzzle, BookOpen, Coins, Search } from "lucide-react";
+import { NumberedListLeft as ListTree, Puzzle, OpenBook as BookOpen, Coins, Search } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function AtomicComponentCatalogArticle() {

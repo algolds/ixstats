@@ -2,19 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Clock,
-  Star,
-  ChevronDown,
-  BarChart3,
-  RefreshCw,
-  Copy,
-  Check,
-  Hash,
-  Wrench,
-  BookmarkPlus,
-  Search,
-} from "lucide-react";
+import { Clock, Star, NavArrowDown as ChevronDown, StatsReport as BarChart3, Refresh as RefreshCw, Copy, Check, Hashtag as Hash, Wrench, Bookmark as BookmarkPlus, Search } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -209,7 +197,7 @@ export default function HistorySection({
             placeholder="Search run hash or name..."
             value={hashFilter}
             onChange={(e) => setHashFilter(e.target.value)}
-            className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:border-[#0091ff]/50 focus:ring-1 focus:ring-[#0091ff]/50 focus:outline-none"
+            className="border-border/60 bg-background text-foreground placeholder-muted-foreground w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:border-onoma-primary/50 focus:ring-1 focus:ring-onoma-primary/50 focus:outline-none"
           />
         </div>
 
@@ -296,7 +284,7 @@ export default function HistorySection({
                                 setCopiedHash(event.sessionId!);
                                 setTimeout(() => setCopiedHash(null), 1500);
                               }}
-                              className="flex items-center gap-1 font-mono text-[10px] bg-[#0091ff]/10 text-[#0091ff] hover:bg-[#0091ff]/20 px-2 py-0.5 rounded transition-colors"
+                              className="flex items-center gap-1 font-mono text-[10px] bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 px-2 py-0.5 rounded transition-colors"
                               title="Click to copy unique run hash"
                             >
                               <Hash className="h-2.5 w-2.5" />
@@ -361,7 +349,7 @@ export default function HistorySection({
                                           event.sessionId ? `Run ${event.sessionId}` : `${event.category} batch`
                                         )
                                       }
-                                      className="flex cursor-pointer items-center gap-1 rounded bg-[#0091ff]/10 px-2 py-1 text-[11px] font-semibold text-[#0091ff] hover:bg-[#0091ff]/20 active:scale-95 transition-all"
+                                      className="flex cursor-pointer items-center gap-1 rounded bg-onoma-primary/10 px-2 py-1 text-[11px] font-semibold text-onoma-primary hover:bg-onoma-primary/20 active:scale-95 transition-all"
                                       title="Load entire run into Studio Workshop"
                                     >
                                       <Wrench className="h-3 w-3" />

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import type { LucideIcon } from "lucide-react";
-import { ChevronRight, Plus, HelpCircle } from "lucide-react";
+
+import { NavArrowRight as ChevronRight, Plus, HelpCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -50,7 +50,7 @@ export interface PanelStat {
 
 interface CommandPanelProps {
   title: string;
-  icon: LucideIcon | React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ className?: string }> | React.ComponentType<{ size?: number; className?: string }>;
   accentColor: string;
   stats?: PanelStat[];
   /** Primary CTA button */
@@ -62,7 +62,7 @@ interface CommandPanelProps {
   /** Number of total items (shown in footer) */
   totalCount?: number;
   /** Empty state message (used as the title when emptyTitle is not provided) */
-  emptyIcon?: LucideIcon;
+  emptyIcon?: React.ComponentType<{ className?: string }>;
   emptyMessage?: string;
   /** Richer empty state: bold title + supporting description. Falls back to emptyMessage. */
   emptyTitle?: string;
@@ -101,7 +101,7 @@ export const CommandPanel = React.memo(function CommandPanel({
   return (
     <div
       className={cn(
-        "glass-hierarchy-child flex flex-col overflow-hidden rounded-xl border",
+        "facet-hierarchy-child flex flex-col overflow-hidden rounded-xl border",
         theme.border,
         className
       )}
@@ -124,7 +124,7 @@ export const CommandPanel = React.memo(function CommandPanel({
               className="text-muted-foreground hover:text-foreground shrink-0 rounded p-0.5 transition-colors hover:bg-white/10"
               title="Help"
             >
-              <HelpCircle size={14} />
+              <HelpCircle className="h-3.5 w-3.5" />
             </button>
           )}
         </div>

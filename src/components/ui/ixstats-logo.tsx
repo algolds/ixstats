@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, type Easing } from "motion/react";
-import { TrendingUp, Crown, Globe } from "lucide-react";
+import { StatUp as TrendingUp, Crown, Globe } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface IxStatsLogoProps {

@@ -3,15 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import {
-  Landmark,
-  BarChart2,
-  ScrollText,
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { Bank as Landmark, StatsReport as BarChart2, Page as ScrollText, WarningTriangle as AlertTriangle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";

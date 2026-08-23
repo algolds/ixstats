@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { PieChart as PieChartIcon } from "lucide-react";
+import { Reports as PieChartIcon } from "iconoir-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { InfluenceEntry } from "~/hooks/useDiplomaticAnalytics";
 import { COLORS, STATUS_COLORS } from "~/hooks/useDiplomaticAnalytics";
@@ -23,7 +23,7 @@ interface InfluenceDistributionChartProps {
 export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartProps>(
   ({ data }) => {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PieChartIcon className="h-5 w-5 text-orange-600" />

@@ -14,7 +14,7 @@
   border-radius: 8px;
   background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(217, 119, 6, 0.06));
   border: 1px solid rgba(234, 179, 8, 0.25);
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-size: 13px;
   font-weight: 500;
   backdrop-filter: blur(8px);
@@ -239,11 +239,11 @@
 
 .wikios-award-type-daily {
   background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
+  color: var(--color-gold-400);
 }
 .wikios-award-type-weekly {
   background: rgba(96, 165, 250, 0.12);
-  color: #60a5fa;
+  color: var(--color-info-light);
 }
 .wikios-award-type-monthly {
   background: rgba(167, 139, 250, 0.12);
@@ -255,7 +255,7 @@
   min-width: 80px;
 }
 .wikios-award-winner {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-weight: 600;
 }
 .wikios-award-runner {
@@ -329,7 +329,7 @@
   font-weight: 600;
 }
 .wikios-profile-edit-new {
-  color: #22c55e;
+  color: var(--color-success);
   font-weight: 600;
 }
 .wikios-profile-edit-minor {
@@ -455,7 +455,7 @@
 
 .wikios-streak-win {
   background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-weight: 600;
   border: 1px solid rgba(251, 191, 36, 0.3);
 }
@@ -617,8 +617,8 @@
 }
 
 .wikios-lw-main-tab-active {
-  color: #fbbf24;
-  border-bottom-color: #fbbf24;
+  color: var(--color-gold-400);
+  border-bottom-color: var(--color-gold-400);
 }
 
 .wikios-lw-section {
@@ -650,7 +650,7 @@
 .wikios-lorewards-tab-active {
   background: rgba(251, 191, 36, 0.1);
   border-color: rgba(251, 191, 36, 0.25);
-  color: #fbbf24;
+  color: var(--color-gold-400);
 }
 
 /* Podium — top 3 */
@@ -845,7 +845,7 @@
   font-size: 12px;
 }
 .wikios-lw-td-score {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-weight: 600;
 }
 
@@ -971,7 +971,7 @@
 }
 
 .wikios-lw-faq-icon {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   flex-shrink: 0;
 }
 
@@ -1042,7 +1042,7 @@
 }
 
 .wikios-lw-signal-icon {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -1077,7 +1077,7 @@
 .wikios-lw-faq-formula code {
   background: none;
   padding: 0;
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -1127,7 +1127,7 @@
   color: var(--wikios-text);
 }
 .wikios-lw-medal-pts {
-  color: #fbbf24;
+  color: var(--color-gold-400);
   font-weight: 600;
   text-align: right;
 }

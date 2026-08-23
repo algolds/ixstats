@@ -30,23 +30,7 @@ import {
   type LeagueSection,
 } from "~/components/sports/league/LeagueSidebarNav";
 import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
-import {
-  ArrowLeft,
-  Play,
-  Eye,
-  Trophy,
-  Users,
-  Calendar,
-  Medal,
-  Swords,
-  MapPin,
-  Shield,
-  Settings,
-  ArrowRight,
-  Loader2,
-  Activity,
-  FastForward,
-} from "lucide-react";
+import { ArrowLeft, Play, Eye, Trophy, Group as Users, Calendar, Medal, Tournament as Swords, MapPin, Shield, Settings, ArrowRight, SystemRestart as Loader2, Activity, FastArrowRight as FastForward } from "iconoir-react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";

@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Globe, Lock, Heart, Share2, Edit2, Trash2 } from "lucide-react";
+import { Globe, Lock, Heart, ShareAndroid as Share2, EditPencil as Edit2, Trash as Trash2 } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
 export interface CollectionStats {
@@ -35,7 +35,7 @@ export function CollectionHeaderStats({
   onDelete,
 }: CollectionHeaderStatsProps) {
   return (
-    <Card className="glass-hierarchy-parent">
+    <Card className="facet-hierarchy-parent">
       <CardHeader>
         <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
           <div className="flex-1">
@@ -50,15 +50,15 @@ export function CollectionHeaderStats({
             <p className="text-sm text-white/70 sm:text-base">{description || "No description"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onLike} className="glass-hierarchy-child">
+            <Button variant="outline" size="sm" onClick={onLike} className="facet-hierarchy-child">
               <Heart className="mr-2 h-4 w-4 text-pink-400" />
               Like
             </Button>
-            <Button variant="outline" size="sm" onClick={onShare} className="glass-hierarchy-child">
+            <Button variant="outline" size="sm" onClick={onShare} className="facet-hierarchy-child">
               <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
-            <Button variant="outline" size="sm" onClick={onEdit} className="glass-hierarchy-child">
+            <Button variant="outline" size="sm" onClick={onEdit} className="facet-hierarchy-child">
               <Edit2 className="mr-2 h-4 w-4" />
               Edit
             </Button>
@@ -66,7 +66,7 @@ export function CollectionHeaderStats({
               variant="outline"
               size="sm"
               onClick={onDelete}
-              className="glass-hierarchy-child text-red-400 hover:bg-red-500/10"
+              className="facet-hierarchy-child text-red-400 hover:bg-red-500/10"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
@@ -76,22 +76,22 @@ export function CollectionHeaderStats({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Card Count</p>
             <p className="text-xl font-bold text-white sm:text-2xl">{stats.cardCount}</p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Total Value</p>
             <p className="flex items-center gap-1 text-xl font-bold text-green-400 sm:text-2xl">
               <IxCreditsSymbol className="h-5 w-5 shrink-0" />
               {stats.totalValue.toLocaleString()}
             </p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Likes</p>
             <p className="text-xl font-bold text-pink-400 sm:text-2xl">{stats.likes}</p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
+          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
             <p className="mb-1 text-xs text-white/60">Comments</p>
             <p className="text-xl font-bold text-blue-400 sm:text-2xl">{stats.comments}</p>
           </div>

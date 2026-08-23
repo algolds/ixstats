@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
+import { CheckCircle, WarningCircle as AlertCircle, WarningTriangle as AlertTriangle, InfoCircle as Info, Xmark as X } from "iconoir-react";
 
 export interface ValidationMessage {
   field?: string;

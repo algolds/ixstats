@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Shield, Target, Swords, Flame, Users, Loader2 } from "lucide-react";
+import { Shield, Archery as Target, Tournament as Swords, FireFlame as Flame, Group as Users, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 // Lazy-load heavy panels per active tab

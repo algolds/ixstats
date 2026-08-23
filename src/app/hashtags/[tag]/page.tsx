@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 
 export default function HashtagPage() {

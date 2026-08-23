@@ -22,13 +22,7 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
-import {
-  Settings,
-  DollarSign,
-  Network,
-  Award,
-  Palette,
-} from "lucide-react";
+import { Settings, Dollar as DollarSign, Network, Trophy as Award, Palette } from "iconoir-react";
 import { ComponentType } from "~/lib/enums";
 import {
   type ComponentFormData,
@@ -437,7 +431,7 @@ function AppearanceTab({
           onChange={(e) => setFormData((prev) => ({ ...prev, icon: e.target.value }))}
           placeholder="e.g., Building2, Users, Shield"
         />
-        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from lucide-react library</p>
+        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from iconoir-react library</p>
       </div>
     </div>
   );

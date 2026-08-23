@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { JsonViewer } from "~/components/ui/json-viewer";
-import { Plus, Pencil, Trash2, Check } from "lucide-react";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Check } from "iconoir-react";
 import {
   type ChoiceFormData,
   RISK_LEVELS,
@@ -73,7 +73,7 @@ export function DiplomaticChoiceEditor({
         ) : (
           <div className="space-y-2">
             {responseOptions.map((choice, index) => (
-              <Card key={choice.id || index} className="glass-card-child p-3">
+              <Card key={choice.id || index} className="facet-card-child p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
@@ -166,7 +166,7 @@ export function DiplomaticChoiceEditor({
 
       {/* Choice Editor Sub-Card */}
       {editingChoiceIndex !== null && (
-        <Card className="glass-card-parent border-2 border-red-500/30 p-4">
+        <Card className="facet-card-parent border-2 border-red-500/30 p-4">
           <h4 className="text-foreground mb-3 text-sm font-medium">
             {editingChoiceIndex < responseOptions.length ? "Edit Choice" : "Add New Choice"}
           </h4>

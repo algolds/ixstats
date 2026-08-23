@@ -4,7 +4,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { X, Repeat2, Newspaper, Vote } from "lucide-react";
+import { Xmark as X, Refresh as Repeat2, Journal as Newspaper, CheckSquare as Vote } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -139,7 +139,7 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <Card className="glass-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
+      <Card className="facet-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
@@ -170,7 +170,7 @@ export function GlassCanvasComposer({
 
   if (!hasCountry || !account) {
     return (
-      <Card className="glass-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
+      <Card className="facet-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="mb-4 flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-white/10" />

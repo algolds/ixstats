@@ -3,16 +3,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  ChevronDown,
-  ChevronRight,
-  Edit,
-  Trash2,
-  Users,
-  Target,
-  DollarSign,
-  Shield,
-} from "lucide-react";
+import { NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, EditPencil as Edit, Trash as Trash2, Group as Users, Archery as Target, Dollar as DollarSign, Shield } from "iconoir-react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -47,7 +38,7 @@ export const BranchCard = React.memo(function BranchCard({
   const Icon = config?.icon ?? Shield;
 
   return (
-    <Card className="glass-hierarchy-child border-border border-2">
+    <Card className="facet-hierarchy-child border-border border-2">
       <CardHeader
         className="hover:bg-accent/50 cursor-pointer transition-colors"
         onClick={onToggle}

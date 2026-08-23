@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Copy, Trash2, MapPin, ExternalLink, BookOpen, Plus, Scissors } from "lucide-react";
+import { EditPencil as Pencil, Copy, Trash as Trash2, MapPin, OpenNewWindow as ExternalLink, OpenBook as BookOpen, Plus, Cut as Scissors } from "iconoir-react";
 
 interface FeatureContextMenuProps {
   x: number;

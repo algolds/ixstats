@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { ChevronRight, X } from "lucide-react";
+import { NavArrowRight as ChevronRight, Xmark as X } from "iconoir-react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
 import { cn } from "~/lib/utils";
 import type { NotificationItem } from "./types";

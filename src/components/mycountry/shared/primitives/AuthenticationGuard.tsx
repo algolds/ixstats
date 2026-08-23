@@ -2,7 +2,7 @@
 
 import { useUser } from "~/context/auth-context";
 import { useEffect } from "react";
-import { Crown, Globe, Activity } from "lucide-react";
+import { Crown, Globe, Activity } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
@@ -30,7 +30,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isClerkConfigured) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="glass-hierarchy-parent mx-auto max-w-2xl">
+        <Card className="facet-hierarchy-parent mx-auto max-w-2xl">
           <CardHeader className="text-center">
             <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <CardTitle className="text-2xl font-bold">Authentication Not Configured</CardTitle>

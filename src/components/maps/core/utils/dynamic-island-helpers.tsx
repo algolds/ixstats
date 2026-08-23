@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, MapPin, Hexagon, Landmark } from "lucide-react";
+import { Globe, MapPin, Hexagon, Bank as Landmark } from "iconoir-react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 
 export const getGreeting = (ixTime: number): string => {

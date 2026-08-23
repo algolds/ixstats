@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
 import { TrendIndicator as TrendIndicatorUI } from "~/components/ui/trend-indicator";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 
@@ -13,7 +12,7 @@ export interface MetricCardProps {
   title: string;
   value: string | number;
   description?: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   trend?: {
     direction: "up" | "down" | "stable";
     value?: number;

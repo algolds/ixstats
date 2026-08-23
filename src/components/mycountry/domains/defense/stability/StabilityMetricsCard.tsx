@@ -3,7 +3,7 @@
 
 import React from "react";
 import type { ReactNode } from "react";
-import { Users, Shield, Activity, Heart, Eye } from "lucide-react";
+import { Group as Users, Shield, Activity, Heart, Eye } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -48,7 +48,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   return (
     <Card
       className={cn(
-        "glass-hierarchy-child border-2",
+        "facet-hierarchy-child border-2",
         metrics ? getStabilityBg(metrics.stabilityScore) : ""
       )}
     >

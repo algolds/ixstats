@@ -5,7 +5,7 @@
 // (role + gender) via a configurable template, Markov-generating each part.
 
 import { useMemo, useState, useEffect } from "react";
-import { Info, Plus, Trash2, Users, HelpCircle } from "lucide-react";
+import { InfoCircle as Info, Plus, Trash as Trash2, Group as Users, HelpCircle } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -243,7 +243,7 @@ export function StudioNameSets() {
             {setNameKeys.length > 0 ? (
               <>
                 <Select value={selectedSet} onValueChange={setSelectedSet}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:border-[#0091ff]/50 focus:outline-none">
+                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:border-onoma-primary/50 focus:outline-none">
                     <SelectValue placeholder="Select name set" />
                   </SelectTrigger>
                   <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
@@ -251,7 +251,7 @@ export function StudioNameSets() {
                       <SelectItem
                         key={s}
                         value={s}
-                        className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                        className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                       >
                         {s} ({sets.get(s)?.length} dicts)
                       </SelectItem>
@@ -264,7 +264,7 @@ export function StudioNameSets() {
                     Naming Convention Preset
                   </label>
                   <Select value={presetKey} onValueChange={handlePresetChange}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:border-[#0091ff]/50 focus:outline-none">
+                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:border-onoma-primary/50 focus:outline-none">
                       <SelectValue placeholder="Select preset" />
                     </SelectTrigger>
                     <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
@@ -272,7 +272,7 @@ export function StudioNameSets() {
                         <SelectItem
                           key={p.key}
                           value={p.key}
-                          className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                          className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                         >
                           {p.name}
                         </SelectItem>
@@ -282,8 +282,8 @@ export function StudioNameSets() {
                 </div>
 
                 {presetKey !== "custom" && (
-                  <div className="animate-in fade-in flex items-start gap-2 rounded-xl border border-[#8b5cf6]/20 bg-[#8b5cf6]/5 p-3 text-xs duration-200">
-                    <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8b5cf6]" />
+                  <div className="animate-in fade-in flex items-start gap-2 rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 text-xs duration-200">
+                    <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-500" />
                     <div className="space-y-1">
                       <span className="text-foreground font-bold">Convention Lore & Rules:</span>
                       <p className="text-muted-foreground text-[11px] leading-relaxed">
@@ -357,7 +357,7 @@ export function StudioNameSets() {
                 {activeDicts.map((d, i) => (
                   <span
                     key={i}
-                    className="rounded bg-[#0091ff]/10 px-1.5 py-0.5 font-bold text-[#0091ff] capitalize"
+                    className="rounded bg-onoma-primary/10 px-1.5 py-0.5 font-bold text-onoma-primary capitalize"
                   >
                     {d.role}
                     {d.gender !== "any" ? ` · ${d.gender}` : ""} ({d.values.length})
@@ -393,7 +393,7 @@ export function StudioNameSets() {
                               <SelectItem
                                 key={r.value}
                                 value={r.value}
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 {r.label}
                               </SelectItem>
@@ -413,7 +413,7 @@ export function StudioNameSets() {
                               <SelectItem
                                 key={g.value}
                                 value={g.value}
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 {g.label}
                               </SelectItem>
@@ -462,25 +462,25 @@ export function StudioNameSets() {
                             <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
                               <SelectItem
                                 value="none"
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 None / Static
                               </SelectItem>
                               <SelectItem
                                 value="hendalarsk-matronymic"
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 Hendalarsk matronymic
                               </SelectItem>
                               <SelectItem
                                 value="yonderian-patronymic"
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 Yonderian patronymic
                               </SelectItem>
                               <SelectItem
                                 value="caphirian-lineage"
-                                className="focus:text-foreground text-xs focus:bg-[#0091ff]/10"
+                                className="focus:text-foreground text-xs focus:bg-onoma-primary/10"
                               >
                                 Caphirian lineage
                               </SelectItem>
@@ -514,7 +514,7 @@ export function StudioNameSets() {
                                   genderMode: e.target.checked ? "aligned" : "fixed",
                                 })
                               }
-                              className="border-border/60 rounded text-[#8b5cf6] focus:ring-[#8b5cf6]"
+                              className="border-border/60 rounded text-purple-500 focus:ring-purple-500"
                             />
                             <span className="text-muted-foreground font-bold tracking-wider uppercase">
                               Align with unified full-name gender
@@ -527,7 +527,7 @@ export function StudioNameSets() {
                 })}
                 <button
                   onClick={addSlot}
-                  className="flex items-center gap-1 rounded-lg border border-[#0091ff]/20 bg-[#0091ff]/5 px-2.5 py-1 text-[11px] font-bold text-[#0091ff] hover:bg-[#0091ff]/10"
+                  className="flex items-center gap-1 rounded-lg border border-onoma-primary/20 bg-onoma-primary/5 px-2.5 py-1 text-[11px] font-bold text-onoma-primary hover:bg-onoma-primary/10"
                 >
                   <Plus className="h-3 w-3" /> Add slot
                 </button>
@@ -571,7 +571,7 @@ export function StudioNameSets() {
                 <button
                   onClick={generate}
                   disabled={slots.length === 0}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0091ff] px-4 py-2 text-sm font-bold text-white transition-all hover:bg-[#33a7ff] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-onoma-primary px-4 py-2 text-sm font-bold text-white transition-all hover:bg-onoma-primary-light active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
                   <span>Generate Full Names</span>
                 </button>
@@ -611,7 +611,7 @@ export function StudioNameSets() {
           </FacetCard>
         ) : (
           <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm">
-            <Info className="mx-auto mb-3 h-8 w-8 animate-pulse text-[#0091ff]/40" />
+            <Info className="mx-auto mb-3 h-8 w-8 animate-pulse text-onoma-primary/40" />
             <p className="font-semibold">Generate full names</p>
             <p className="text-muted-foreground mt-1 text-xs">
               Pick a Name Set, arrange the template (e.g. Given + Surname), and generate.

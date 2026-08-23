@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Atom } from "lucide-react";
+import { Atom } from "iconoir-react";
 import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function AtomicGovernmentArticle() {

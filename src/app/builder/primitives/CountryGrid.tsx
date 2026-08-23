@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { Globe } from "lucide-react";
+import { Globe } from "iconoir-react";
 import { CountriesFocusGridModularBuilder } from "../components/CountriesFocusGridModularBuilder";
 import type { RealCountryData } from "../lib/economy-data-service";
 import type { CountryCardData } from "../components/CountryFocusCardBuilder";

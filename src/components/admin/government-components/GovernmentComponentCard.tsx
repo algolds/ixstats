@@ -2,13 +2,7 @@
 
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import {
-  Building2,
-  EyeOff,
-  Pencil,
-  Network,
-  Trash2,
-} from "lucide-react";
+import { City as Building2, EyeClosed as EyeOff, EditPencil as Pencil, Network, Trash as Trash2 } from "iconoir-react";
 import { COMPLEXITY_COLORS } from "~/lib/admin/government-component-transforms";
 
 interface GovernmentComponentCardProps {
@@ -23,7 +17,7 @@ export function GovernmentComponentCard({
   onDelete,
 }: GovernmentComponentCardProps) {
   return (
-    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50">
+    <Card className="facet-card-child p-4 transition-all hover:border-[--intel-gold]/50">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">

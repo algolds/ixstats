@@ -10,22 +10,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import {
-  Calculator,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  PieChart,
-  BarChart3,
-  Lightbulb,
-  AlertCircle,
-  CheckCircle2,
-  Minus,
-  Building,
-  Info,
-  Loader2,
-  Zap,
-} from "lucide-react";
+import { Calculator, Dollar as DollarSign, StatUp as TrendingUp, StatDown as TrendingDown, Reports as PieChart, StatsReport as BarChart3, LightBulb, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Minus, Building, InfoCircle as Info, SystemRestart as Loader2, Flash as Zap } from "iconoir-react";
 
 import type {
   TaxSystem,
@@ -773,7 +758,7 @@ export function TaxCalculator({
               (liveCalculationResult?.atomicModifiers && enableLiveCalculation)) && (
               <Card className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 dark:from-purple-950/20 dark:to-blue-950/20">
                 <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                  <Lightbulb className="h-4 w-4 text-purple-600" />
+                  <LightBulb className="h-4 w-4 text-purple-600" />
                   Atomic Component Impact {enableLiveCalculation && "(Live)"}
                 </h4>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -1077,7 +1062,7 @@ export function TaxCalculator({
           <TabsContent value="suggestions" className="space-y-6">
             <div className="space-y-4">
               <h4 className="flex items-center gap-2 text-lg font-semibold">
-                <Lightbulb className="h-5 w-5" />
+                <LightBulb className="h-5 w-5" />
                 Tax Optimization Suggestions
               </h4>
 
@@ -1085,7 +1070,7 @@ export function TaxCalculator({
                 <div className="space-y-3">
                   {suggestions.map((suggestion, index) => (
                     <Alert key={index}>
-                      <Lightbulb className="h-4 w-4" />
+                      <LightBulb className="h-4 w-4" />
                       <AlertDescription>{suggestion}</AlertDescription>
                     </Alert>
                   ))}

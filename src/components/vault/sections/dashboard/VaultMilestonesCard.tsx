@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trophy, Award } from "lucide-react";
+import { Trophy, Trophy as Award } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";

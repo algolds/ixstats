@@ -3,8 +3,8 @@
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { TrendingUp, TrendingDown, Briefcase, Building, Globe } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Suitcase as Briefcase, Building, Globe } from "iconoir-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -43,7 +43,7 @@ export function EconomyTab({
   };
 
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-economy border-border relative overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-economy border-border relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -126,7 +126,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground flex items-center text-base font-bold tracking-tight hover:underline"
                     >
                       {metricView.economyGdp === "perCapita"
@@ -187,7 +187,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.fiscal === "balance"
@@ -235,7 +235,7 @@ export function EconomyTab({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                       className="text-foreground text-lg font-bold tracking-tight hover:underline"
                     >
                       {metricView.trade === "imports"
@@ -282,7 +282,7 @@ export function EconomyTab({
                 <span>Sectors & Distribution</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -292,7 +292,7 @@ export function EconomyTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "sectors"
                   ? "border border-white/10"
@@ -381,7 +381,7 @@ export function EconomyTab({
                 <span>Trade Flows & Balance</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "trade" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -391,7 +391,7 @@ export function EconomyTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "trade" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "trade" ? "border border-white/10" : "border border-transparent"
               }`}
@@ -575,7 +575,7 @@ export function EconomyTab({
                 <span>Business & Innovation Climate</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "business" ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -585,7 +585,7 @@ export function EconomyTab({
             <motion.div
               initial={false}
               animate={{ height: expandedSection === "business" ? "auto" : 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               className={`relative overflow-hidden rounded-tr-xl rounded-b-xl bg-white/10 backdrop-blur-xs transition-colors duration-200 dark:bg-white/[0.03] ${
                 expandedSection === "business"
                   ? "border border-white/10"

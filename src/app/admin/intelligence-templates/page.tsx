@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import { FileText, Plus, Pencil, Trash2, Eye, ArrowLeft, X } from "lucide-react";
+import { Page as FileText, Plus, EditPencil as Pencil, Trash as Trash2, Eye, ArrowLeft, Xmark as X } from "iconoir-react";
 import Link from "next/link";
 
 interface IntelligenceTemplate {
@@ -158,7 +158,7 @@ export default function IntelligenceTemplatesPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+        <div className="facet-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
@@ -199,7 +199,7 @@ export default function IntelligenceTemplatesPage() {
               <p className="text-[--intel-silver]">Loading templates...</p>
             </div>
           ) : templates && templates.length === 0 ? (
-            <Card className="glass-card-parent border-border/50 border p-12 text-center">
+            <Card className="facet-card-parent border-border/50 border p-12 text-center">
               <FileText className="mx-auto mb-4 h-12 w-12 text-[--intel-silver]" />
               <p className="mb-4 text-[--intel-silver]">No intelligence templates found</p>
               <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -211,7 +211,7 @@ export default function IntelligenceTemplatesPage() {
             templates?.map((template) => (
               <Card
                 key={template.id}
-                className="glass-card-parent border-border/50 border p-6 transition-all hover:border-[--intel-gold]/50"
+                className="facet-card-parent border-border/50 border p-6 transition-all hover:border-[--intel-gold]/50"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -280,17 +280,17 @@ export default function IntelligenceTemplatesPage() {
 
         {/* Stats */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="glass-card-child border-border/50 border p-4">
+          <Card className="facet-card-child border-border/50 border p-4">
             <div className="text-foreground text-2xl font-bold">{templates?.length || 0}</div>
             <div className="text-sm text-[--intel-silver]">Total Templates</div>
           </Card>
-          <Card className="glass-card-child border-border/50 border p-4">
+          <Card className="facet-card-child border-border/50 border p-4">
             <div className="text-2xl font-bold text-[--intel-gold]">
               {templates?.filter((t) => t.isActive).length || 0}
             </div>
             <div className="text-sm text-[--intel-silver]">Active Templates</div>
           </Card>
-          <Card className="glass-card-child border-border/50 border p-4">
+          <Card className="facet-card-child border-border/50 border p-4">
             <div className="text-2xl font-bold text-green-400">
               {templates?.filter((t) => t.classification === "PUBLIC").length || 0}
             </div>
@@ -565,7 +565,7 @@ function TemplatePreviewDialog({ template, isOpen, onClose }: TemplatePreviewDia
         </DialogHeader>
 
         <div className="py-4">
-          <Card className="glass-card-child border-border/50 border p-6">
+          <Card className="facet-card-child border-border/50 border p-6">
             {/* Header */}
             <div className="mb-4 flex items-center gap-3">
               <span className="text-3xl">{REPORT_TYPE_ICONS[template.reportType] || "📄"}</span>

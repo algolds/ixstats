@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckSquare, Folder, ShoppingBag, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import { CheckSquare, Folder, ShoppingBag, Trash as Trash2, WarningCircle as AlertCircle, SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { api } from "~/trpc/react";
@@ -157,7 +157,7 @@ export function InventoryTab({
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="glass-hierarchy-child border-amber-500/30 bg-amber-500/5">
+            <Card className="facet-hierarchy-child border-amber-500/30 bg-amber-500/5">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="h-5 w-5 text-amber-400" />
@@ -245,7 +245,7 @@ export function InventoryTab({
             ))}
           </div>
         ) : filteredCards.length === 0 ? (
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardContent className="flex flex-col items-center justify-center py-8">
               <AlertCircle className="text-muted-foreground/40 mb-3 h-10 w-10" />
               <p className="text-foreground/80 mb-1 text-sm font-bold">No cards found</p>

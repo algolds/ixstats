@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Check, AlertTriangle, FileCode } from "lucide-react";
+import { Xmark as X, Check, WarningTriangle as AlertTriangle, Code as FileCode } from "iconoir-react";
 import {
   Sheet,
   SheetContent,

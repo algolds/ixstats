@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PenSquare, Users } from "lucide-react";
+import { EditPencil as PenSquare, Group as Users } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

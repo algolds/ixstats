@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { BarChart3, Loader2, RefreshCw, Settings } from "lucide-react";
+import { StatsReport as BarChart3, SystemRestart as Loader2, Refresh as RefreshCw, Settings } from "iconoir-react";
 import {
   Dialog,
   DialogContent,
