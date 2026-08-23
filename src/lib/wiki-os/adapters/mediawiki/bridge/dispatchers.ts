@@ -336,6 +336,9 @@ export async function searchWithFallback(
 // Wikitext Processing Helpers
 // ──────────────────────────────────────────────
 
+import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+export { cleanWikiMarkup };
+
 /**
  * Extract the intro paragraph from raw wikitext.
  * Takes text before the first == heading, strips templates/markup.
@@ -346,49 +349,4 @@ export function extractIntroFromWikitext(wikitext: string): string {
     headingIndex > 0 ? wikitext.substring(0, headingIndex) : wikitext.substring(0, 2000);
 
   return cleanWikiMarkup(intro);
-}
-
-/**
- * Strip wiki markup to produce plaintext.
- */
-export function cleanWikiMarkup(text: string): string {
-  let clean = text;
-
-  let depth = 0;
-  let result = "";
-  let i = 0;
-  while (i < clean.length) {
-    if (clean[i] === "{" && clean[i + 1] === "{") {
-      depth++;
-      i += 2;
-    } else if (clean[i] === "}" && clean[i + 1] === "}") {
-      depth = Math.max(0, depth - 1);
-      i += 2;
-    } else if (depth === 0) {
-      result += clean[i];
-      i++;
-    } else {
-      i++;
-    }
-  }
-
-  if (depth > 0 && !result.trim()) {
-    clean = text.replace(/^\{\{[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi, "");
-  } else {
-    clean = result;
-  }
-
-  clean = clean.replace(/<[^>]+>/g, "");
-  clean = clean.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
-  clean = clean.replace(/\[https?:\/\/[^\s\]]+ ([^\]]+)\]/g, "$1");
-  clean = clean.replace(/\[https?:\/\/[^\]]+\]/g, "");
-  clean = clean.replace(/'{2,5}/g, "");
-  clean = clean.replace(/\[\[(?:Category|File|Image|Template):[^\]]+\]\]/gi, "");
-  clean = clean.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
-  clean = clean.replace(/<ref[^>]*\/>/g, "");
-  clean = clean.replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "");
-  clean = clean.replace(/\n{3,}/g, "\n\n");
-  clean = clean.trim();
-
-  return clean;
 }

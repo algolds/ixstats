@@ -7,14 +7,6 @@ export type WikiSlug = Brand<string, "WikiSlug">;
 export type MediaWikiTitle = Brand<string, "MediaWikiTitle">;
 export type ArticleMode = "reading" | "source" | "visual";
 
-export function toWikiSlug(slug: string): WikiSlug {
-  return slug as WikiSlug;
-}
-
-export function toMediaWikiTitle(title: string): MediaWikiTitle {
-  return title as MediaWikiTitle;
-}
-
 export interface CachedArticleData {
   title: string;
   contentHtml: string;

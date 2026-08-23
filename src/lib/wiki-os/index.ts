@@ -27,8 +27,5 @@ export * from "./templates/index";
 // Editor State & Embeds
 export * from "./editor/index";
 
-// Ingestion & Migration Engine
-export * from "./migration/index";
-
 // External Adapters (Namespaced to avoid symbol collision)
 export * as MediaWikiAdapter from "./adapters/mediawiki/index";

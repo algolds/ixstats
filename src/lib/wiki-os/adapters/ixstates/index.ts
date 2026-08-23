@@ -20,7 +20,6 @@ export {
 export * from "./content-analyzer";
 export * from "./entity-parser";
 export * from "./roster-parser";
-export * from "./prose-generator";
 export * from "./user-sync";
 export * from "./factbook-routes";
 export * from "./integration";

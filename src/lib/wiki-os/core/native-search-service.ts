@@ -153,49 +153,8 @@ export class NativeSearchService {
 /**
  * Extracts a clean introductory plain-text snippet from wikitext.
  */
-export function extractIntroFromWikitext(wikitext: string): string {
-  if (!wikitext) return "";
-
-  let text = wikitext.trim();
-
-  // Strip infoboxes and multiline templates
-  let depth = 0;
-  let result = "";
-  let i = 0;
-  while (i < text.length) {
-    if (text.startsWith("{{", i)) {
-      depth++;
-      i += 2;
-    } else if (text.startsWith("}}", i)) {
-      if (depth > 0) depth--;
-      i += 2;
-    } else if (depth === 0) {
-      result += text[i];
-      i++;
-    } else {
-      i++;
-    }
-  }
-
-  let clean = depth > 0 && !result.trim() ? text.replace(/^\{\{[\s\S]*?(?=\n\n[A-Z0-9'"]|\n==|$)/gi, "") : result;
-
-  // Clean remaining wiki markup
-  clean = clean
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<ref[^>]*\/>/g, "")
-    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\[\[(?:Category|File|Image|Template):[^\]]+\]\]/gi, "")
-    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-    .replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1")
-    .replace(/\[https?:\/\/[^\]]+\]/g, "")
-    .replace(/^==+[^=]+==+/gm, "")
-    .replace(/'{2,5}/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  return clean;
-}
+import { extractIntroFromWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers";
+export { extractIntroFromWikitext };
 
 /**
  * Retrieves summary/intro for an article from PostgreSQL or direct MariaDB fast-path.

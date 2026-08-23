@@ -1,6 +1,4 @@
-// src/lib/wiki-os/resolve-highres-image.ts
-// Utility to extract the highest-resolution original asset URL from MediaWiki thumbnail elements.
-// De-thumbnails `/images/thumb/` paths, recovers vector `.svg` source files, and resolves `Special:FilePath`.
+import { safeDecodeURI } from "./safe-decode";
 
 export interface HighResWikiImageResult {
   highResSrc: string;
@@ -15,11 +13,7 @@ export interface HighResWikiImageResult {
  * Clean and decode a filename or URL component.
  */
 function cleanFileName(raw: string): string {
-  try {
-    return decodeURIComponent(raw).replace(/_/g, " ").trim();
-  } catch {
-    return raw.replace(/_/g, " ").trim();
-  }
+  return safeDecodeURI(raw).replace(/_/g, " ").trim();
 }
 
 /**

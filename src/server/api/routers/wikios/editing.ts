@@ -14,7 +14,7 @@ import {
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/sync-worker";
+import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import { resolveWikiUsername } from "~/lib/wiki-os/auth";
 

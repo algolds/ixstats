@@ -15,6 +15,7 @@ import {
   OpenBook as BookOpen,
 } from "iconoir-react";
 import type { ComponentType, SVGProps } from "react";
+import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 export type WikiSectionIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -106,15 +107,9 @@ export function extractWikiSectionRawContent(sectionContent: unknown): string | 
  * no raw content.
  */
 export function cleanWikiSectionContent(rawContent: string | null): string | null {
-  return rawContent
-    ? rawContent
-        .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
-        .replace(/\{\{[^}]*\}\}/g, "")
-        .replace(/<[^>]*>/g, "")
-        .replace(/'{2,3}/g, "")
-        .trim()
-        .slice(0, 600)
-    : null;
+  if (!rawContent) return null;
+  const cleaned = cleanWikiMarkup(rawContent, 600);
+  return cleaned || null;
 }
 
 // ─── Wiki section classification ─────────────────────────────────────────────
