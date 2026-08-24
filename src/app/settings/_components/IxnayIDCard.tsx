@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Link as Link2, LinkSlash as Unlink, ChatBubble as MessageSquare, OpenBook as BookOpen, SystemRestart as Loader2, Check, Search, OpenNewWindow as ExternalLink, Discord, User as UserIcon } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { Input } from "~/components/ui/input";
 
 interface ServiceRowProps {
   name: string;
@@ -261,7 +262,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           {showForumInput && !status?.forum.linked && (
             <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={forumInput}
                   onChange={(e) => {
@@ -269,7 +270,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                     setForumLookup(null);
                   }}
                   placeholder="Forum username..."
-                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  className="flex-1"
                   onKeyDown={(e) => e.key === "Enter" && handleForumLookup()}
                 />
                 <button
@@ -349,7 +350,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                 Claim a legacy MediaWiki account to preserve your historical edits and contributions.
               </div>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={wikiInput}
                   onChange={(e) => {
@@ -357,7 +358,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
                     setWikiLookup(null);
                   }}
                   placeholder="Legacy wiki username..."
-                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  className="flex-1"
                   onKeyDown={(e) => e.key === "Enter" && handleWikiLookup()}
                 />
                 <button

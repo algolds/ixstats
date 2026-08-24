@@ -233,7 +233,7 @@ export function LanguagePacksSection({
 
         {/* Detailed Inspection Drawer */}
         {activePack && (
-          <div className="space-y-4 lg:col-span-5 sticky top-6">
+          <div className="space-y-4 lg:col-span-5 sticky top-20">
             <FacetMaterial material="satin" className="border-border/40 space-y-4 rounded-2xl border p-5 shadow-xl backdrop-blur-xl">
               {/* Drawer Header */}
               <div className="border-border/30 flex items-start justify-between border-b pb-3">

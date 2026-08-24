@@ -354,7 +354,7 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-search-close:hover {
 .wikios-search-match {
   background: rgba(245, 158, 11, 0.25);
   color: var(--color-warning);
-  border-bottom: 2px solid #f59e0b;
+  border-bottom: 2px solid var(--color-warning);
   border-radius: 2px;
   padding: 0 1px;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
@@ -363,8 +363,8 @@ html:not([data-theme="dark"]) .wikios-sticky-toc-search-close:hover {
 [data-theme="light"] .wikios-search-match,
 html:not([data-theme="dark"]) .wikios-search-match {
   background: rgba(245, 158, 11, 0.2);
-  color: #d97706;
-  border-bottom-color: #d97706;
+  color: var(--color-warning-dark);
+  border-bottom-color: var(--color-warning-dark);
   box-shadow: 0 0 4px rgba(217, 119, 6, 0.2);
 }
 
@@ -375,7 +375,7 @@ html:not([data-theme="dark"]) .wikios-search-match {
   border-bottom: 2px solid #ffffff !important;
   box-shadow:
     0 0 10px rgba(245, 158, 11, 0.6),
-    0 0 0 1px #f59e0b !important;
+    0 0 0 1px var(--color-warning) !important;
 }
 
 [data-theme="light"] .wikios-search-match--active,
@@ -385,7 +385,7 @@ html:not([data-theme="dark"]) .wikios-search-match--active {
   border-bottom-color: #000000 !important;
   box-shadow:
     0 0 8px rgba(217, 119, 6, 0.5),
-    0 0 0 1px #d97706 !important;
+    0 0 0 1px var(--color-warning-dark) !important;
 }
 
 .wikios-sticky-toc-toggle {
@@ -1361,7 +1361,7 @@ html:not([data-theme="dark"]) .wikios-link-preview {
 .wikios-article-content a.new,
 .wikios-infobox a.wikios-redlink,
 .wikios-infobox a.new {
-  color: #dc2626;
+  color: var(--color-error);
   border-bottom-color: rgba(220, 38, 38, 0.3);
 }
 
@@ -2953,7 +2953,7 @@ button.wikios-rc-expand-btn:hover {
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #a78bfa;
+  color: var(--color-chart-1);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -2991,7 +2991,7 @@ button.wikios-rc-expand-btn:hover {
 }
 
 .wikios-template-block-key {
-  color: #a78bfa;
+  color: var(--color-chart-1);
   min-width: 80px;
   font-weight: 500;
 }

@@ -59,7 +59,7 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
   const suggestions = wikiSuggestions[selectedSite.name] || wikiSuggestions.ixwiki!;
 
   return (
-    <div className="sticky top-6 w-56 space-y-4">
+    <div className="sticky top-20 w-56 space-y-4">
       {/* ─── Idle state ─── */}
       {!isActive && !isParsing && !isParsed && (
         <motion.div

@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runStrictStages, VerificationStage } from "../../../scripts/verification/verify-strict";
+import { runStrictStages, type VerificationStage } from "../../../scripts/verification/verify-strict";
 
 describe("verification-gates", () => {
   const rootDir = path.resolve(__dirname, "../../..");

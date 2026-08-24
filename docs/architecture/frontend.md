@@ -181,3 +181,35 @@ To ensure optimal initial load times and eliminate client-side waterfalls, route
 2. **Targeted `<Suspense>` Streaming**: Interactive data feeds and heavy client trees are wrapped in `<Suspense fallback={<Skeleton />}>`, streaming instant server HTML and hydrating asynchronously.
 3. **Dynamic Library Code-Splitting**: Heavy client rendering engines (`maplibre-gl`, `recharts`, `@xyflow/react`) are dynamically imported via `next/dynamic` with SSR disabled (`{ ssr: false }`) and lightweight placeholder skeletons, preventing heavy canvas/chart code from bloating static entrypoints.
 
+---
+
+## 7. Unified 3-Mode Navigation & Dynamic Repulsion Physics
+
+All frontend routes map to one of three standardized navigation modes:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Mode 1: DEFAULT (Global Scroll-Hide & Morph)                                │
+│ • Standard pages: Home, MyCountry, Dashboard, Vault, ThinkPages, Forum,     │
+│   Countries, Admin, Sports, Settings, Changelog, Studio.                    │
+│ • Sits in top anchor zone (<50px). Morphs tabs inwards (40px → 100px).     │
+│ • Scroll down hides with cubic-bezier / spring; scroll up reveals instantly.│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 2: HIDDEN (Immersion & Canvas Focus)                                   │
+│ • Canvas & focus surfaces: /messages, /builder, /mycountry/editor,          │
+│   /wiki/*, /blurbs/*                                                        │
+│ • Starts with navbar translated out of view (translateY(-100%)).           │
+│ • Reveals smoothly on upward scroll (>10px) or top-edge hover (<=16px).    │
+│ • WikiHalo or Halo floating capsules remain interactive.                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 3: MAPS (Chromeless Standalone Exception)                              │
+│ • Maps & spatial workflows: /maps.                                          │
+│ • Global <Navigation /> returns null; MapDynamicIsland handles controls.    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Dynamic Repulsion Physics & Rail Standards:
+- **Repulsion Progress**: $\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$ drives center branding glides, action button tucks, and ambient refraction glows under the Halo pill via `useNavigationScroll`.
+- **Desktop Sticky Rails Clearance**: Desktop sidebars must use `lg:sticky lg:top-20` (80px) to maintain a clean 16px buffer beneath the 64px floating navbar. Never use `top-6` or `top-0` on page-level sidebars.
+- **Zero Raw Arbitrary Hex Codes**: 100% of styles must utilize semantic Tailwind v4 tokens (`text-foreground`, `bg-card`, `border-border/40`, `text-wiki`, `text-onoma-primary`, `bg-map-ocean`, etc.). Arbitrary `[#...]` classes and inline hex colors are strictly forbidden.
+

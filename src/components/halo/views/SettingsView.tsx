@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
-import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundHigh as Volume2, SoundOff as VolumeX, HalfMoon as SunMoon, Square } from "iconoir-react";
+import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundHigh as Volume2, SoundOff as VolumeX, HalfMoon as SunMoon, Square, Globe } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -26,6 +26,7 @@ import {
   SectionLabel,
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
+import { InlineRealmSwitcher } from "./settings/InlineRealmSwitcher";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -291,6 +292,9 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 </div>
                 <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
               </button>
+
+              {/* Active Realm */}
+              <InlineRealmSwitcher onClose={onClose} />
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
               <div className="border-border/40 dark:border-white/10 mt-1 border-t pt-2 flex items-center justify-between">

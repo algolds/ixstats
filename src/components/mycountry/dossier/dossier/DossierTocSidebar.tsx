@@ -245,7 +245,7 @@ export function DossierTocSidebar({
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="sticky top-6 space-y-4">
+    <div className="sticky top-20 space-y-4">
       {/* Searchable Dynamic Dossier Table of Contents */}
       <FacetCard
         depth={1}

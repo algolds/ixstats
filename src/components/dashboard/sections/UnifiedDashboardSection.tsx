@@ -294,7 +294,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-6 md:self-start">
+          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-20 md:self-start">
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 

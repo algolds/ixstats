@@ -670,7 +670,7 @@ export function DemographicsHealthModal({
                         >
                           <div
                             className="text-base font-semibold"
-                            style={{ color: level.color || "#06b6d4" }}
+                            style={{ color: level.color || "var(--color-chart-2)" }}
                           >
                             {(level.percentage || level.percent || 0).toFixed(0)}%
                           </div>

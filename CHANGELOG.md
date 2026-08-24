@@ -33,6 +33,26 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🧭 Unified 3-Mode Navigation, Dynamic Repulsion Physics & Apple Design (Plan 179)
+
+- **3-Mode Navigation Architecture**:
+  - **Mode 1: DEFAULT (Global Scroll-Hide & Morph)**: Standard pages (Home, MyCountry, Dashboard, Vault, ThinkPages, Forum, Countries, Admin, Sports, Settings) sit in top anchor zone (<50px) and smoothly hide on downward scroll with cubic-bezier/spring transitions, revealing instantly on upward scroll.
+  - **Mode 2: HIDDEN (Immersion & Canvas Focus)**: Surfaces requiring distraction-free focus (`/messages`, `/builder`, `/mycountry/editor`, `/wiki/*`, `/blurbs/*`) start with navbar translated `-100%`, revealing smoothly on upward scroll (>10px) or top-edge hover (<=16px) while the dedicated `WikiHalo` or `Halo` pill remains interactive.
+  - **Mode 3: MAPS (Chromeless Standalone)**: Standalone spatial surfaces (`/maps`) cleanly bypass global navigation chrome, handing off navigation and wayfinding entirely to `MapDynamicIsland`.
+- **Global Dynamic Repulsion Physics Primitive**:
+  - Promoted repulsion physics to a universal design-system primitive: $\text{repulsionProgress} = \text{clamp}(\text{scrollY} / 56, 0, 1)$.
+  - Coordinates sub-headers, mode toggles, and toolbars under the sticky Halo with center branding glides, action tucks, and ambient refraction glows without jittery unthrottled scroll listeners.
+- **Synchronized Desktop Sticky Rail Clearances (`top-20` / 80px)**:
+  - Standardized all 11 desktop sticky sidebars across Settings, Dashboard, Vault, Sports Leagues, MyCountry Dossier, Citizen Profile, Admin, Builder Import, and Onoma from `sticky top-6` to `sticky top-20` (80px), guaranteeing a clean 16px buffer beneath the 64px floating/sticky header.
+
+### 🎨 Complete Platform Color System & Hardcoded Hex Elimination (Plan 185)
+
+- **100% Elimination of Arbitrary Hex Codes**:
+  - Remediated all arbitrary Tailwind hex classes (`[#...]`) and inline style hex fallbacks (`style={{ color: "#..." }}`) across 20+ TSX components and 4 core stylesheets (`layout.css`, `components.css`, `elements.css`, `lorewards.css`).
+  - Standardized all brand, chart, status, and theme colors on semantic Tailwind v4 tokens (`text-wiki`, `text-onoma-primary`, `bg-map-ocean`, `text-discord`, `border-border/40`, `text-foreground`, `bg-card`).
+- **Semantic CSS Variable Architecture**:
+  - Standardized color fallbacks to use CSS custom properties (`var(--color-...)`, `var(--wikios-...)`, `var(--onoma-...)`) ensuring WCAG AA contrast compliance across both dark and light modes.
+
 ### 👤 Unified IxnayID Account Profile System & Universal Resolver (Plan 181)
 
 - **Consolidated `api.ixnayid.getUnifiedProfile` Backend Resolver**:

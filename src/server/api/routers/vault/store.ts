@@ -106,6 +106,18 @@ export const vaultStoreRouter = createTRPCRouter({
         }
       }
 
+      // Also ensure any currently equipped cosmetics are marked as owned
+      const vault = await ctx.db.myVault.findUnique({
+        where: { userId },
+        select: { equippedCosmetics: true },
+      });
+      if (vault?.equippedCosmetics) {
+        for (const id of vault.equippedCosmetics.split(",").filter(Boolean)) {
+          purchasedItemIds.add(id);
+          purchaseCounts[id] = Math.max(purchaseCounts[id] || 0, 1);
+        }
+      }
+
       return {
         success: true,
         purchasedItemIds: Array.from(purchasedItemIds),
@@ -291,10 +303,6 @@ export const vaultStoreRouter = createTRPCRouter({
           return meta && typeof meta === "object" && (meta as any).itemId === input.itemId;
         });
 
-        if (!ownsItem) {
-          throw new Error("You do not own this cosmetic item");
-        }
-
         // 2. Fetch current equipped list
         const vault = await ctx.db.myVault.findUnique({
           where: { userId },
@@ -303,6 +311,14 @@ export const vaultStoreRouter = createTRPCRouter({
 
         if (!vault) {
           throw new Error("Vault not found");
+        }
+
+        const isCurrentlyEquipped = vault.equippedCosmetics
+          ? vault.equippedCosmetics.split(",").includes(input.itemId)
+          : false;
+
+        if (!ownsItem && !isCurrentlyEquipped) {
+          throw new Error("You do not own this cosmetic item");
         }
 
         let equipped = vault.equippedCosmetics

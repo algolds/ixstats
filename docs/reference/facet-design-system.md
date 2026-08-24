@@ -247,7 +247,36 @@ Pressable elements must provide instant mechanical confirmation on `:active`:
 
 ---
 
-## 9. Domain Themes & Semantic Palette
+## 9. 3-Mode Navigation Architecture & Dynamic Repulsion Physics
+
+All pages in IxStates conform to one of three universal navigation modes:
+
+1. **Mode 1: DEFAULT (Global Scroll-Hide & Morph)**: Standard pages (Home, MyCountry, Dashboard, Vault, ThinkPages, Forum, Countries, Admin, Sports, Settings) sit in the top anchor zone (<50px). Morphs tabs inwards (40px → 100px), scroll down hides with cubic-bezier/spring transitions, and scroll up reveals instantly.
+2. **Mode 2: HIDDEN (Immersion & Canvas Focus)**: Surfaces requiring distraction-free focus (`/messages`, `/builder`, `/mycountry/editor`, `/wiki/*`, `/blurbs/*`) start with navbar translated `-100%`, revealing smoothly on upward scroll (>10px) or top-edge hover (<=16px) while the dedicated `WikiHalo` or `Halo` pill remains interactive.
+3. **Mode 3: MAPS (Chromeless Standalone)**: Standalone spatial surfaces (`/maps`) cleanly bypass global navigation chrome, handing off navigation and wayfinding entirely to `MapDynamicIsland`.
+
+### Dynamic Repulsion Physics Formula
+When any sub-header, toolbar, or filter strip sits below the sticky Halo:
+$$\text{repulsionProgress} = \text{clamp}\left(\frac{\text{scrollY}}{56}, 0, 1\right)$$
+
+- **Center Branding Glide**: Translates `y: -repulsionProgress * 40px`, scales `scale(1 - repulsionProgress * 0.1)`, and fades `opacity: 1 - repulsionProgress`.
+- **Seamless Action Tuck**: Action buttons slide inward directly beneath the floating Halo pill.
+- **Ambient Refraction Glow**: Subtle blue/purple radial glow appears during transition (`0 0 (1 - repulsionProgress) * 12px`).
+- **Desktop Sticky Rails Clearance**: All page sidebars and rails must use `lg:sticky lg:top-20` (80px) to guarantee a clean 16px buffer beneath the 64px floating/sticky header. Never use `top-6` or `top-0` on page-level sidebars.
+
+---
+
+## 10. Zero-Hex Color System & Semantic Tokens
+
+IxStates strictly bans raw, arbitrary hex codes (`[#...]` or `style={{ color: "#..." }}`) across all components and stylesheets:
+
+- **100% Semantic Token Rule**: All colors must use Tailwind v4 semantic utility classes (`text-foreground`, `bg-card`, `border-border/40`, `text-muted-foreground`, `text-primary`, `bg-popover`, `text-destructive`).
+- **Domain Accents**: Domain-specific accents use semantic CSS variables (`var(--color-amber-500)`, `var(--wikios-accent)`, `var(--onoma-primary)`).
+- **Light/Dark Contrast**: Every color pair must meet WCAG AA contrast standards across both light and dark themes without manual `dark:` overrides.
+
+---
+
+## 11. Domain Themes & Semantic Palette
 
 IxStates applies distinctive ambient color accents across its major platform pillars:
 
@@ -262,7 +291,7 @@ IxStates applies distinctive ambient color accents across its major platform pil
 
 ---
 
-## 10. Developer Cookbook & Component Recipes
+## 12. Developer Cookbook & Component Recipes
 
 ### 1. Standard Interactive Facet Card
 ```tsx

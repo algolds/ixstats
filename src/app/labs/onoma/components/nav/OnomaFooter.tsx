@@ -182,7 +182,7 @@ export function OnomaFooter({
               href="https://github.com/alxgiraud/fantasygen"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-foreground/80 hover:text-onoma-primary hover:decoration-[#0091ff] underline decoration-muted-foreground/40 underline-offset-2 transition-colors"
+              className="text-foreground/80 hover:text-onoma-primary hover:decoration-onoma-primary underline decoration-muted-foreground/40 underline-offset-2 transition-colors"
             >
               fantasygen
             </a>

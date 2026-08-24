@@ -172,7 +172,7 @@ export function MyStashTab({
               <span className="text-foreground flex items-center gap-1.5 font-semibold">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedStashColor || "#3b82f6" }}
+                  style={{ backgroundColor: selectedStashColor || "var(--color-info)" }}
                 />
                 {selectedStashName}
               </span>

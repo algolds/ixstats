@@ -76,7 +76,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
             filter: "blur(12px)",
             transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
           }}
-          className="fixed inset-0 z-50 flex select-none items-center justify-center bg-background/85 backdrop-blur-2xl transition-colors dark:bg-[#070b14]/90"
+          className="fixed inset-0 z-50 flex select-none items-center justify-center bg-background/85 backdrop-blur-2xl transition-colors dark:bg-map-ocean/90"
         >
           {/* Ambient spatial gradient lighting */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(59,130,246,0.12)_0%,_transparent_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(56,189,248,0.1)_0%,_transparent_70%)]" />

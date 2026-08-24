@@ -86,8 +86,8 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   setTicketPrice.mutate({ teamId: team.id, price: newPrice });
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
-                style={{ backgroundColor: team.color, color: "#ffffff" }}
-                className="font-semibold transition-all hover:opacity-90"
+                style={{ backgroundColor: team.color }}
+                className="font-semibold text-white transition-all hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
               </Button>

@@ -87,7 +87,7 @@ export function AdminSidebarLayout({
         <div className="flex gap-6 lg:gap-8">
           {/* Desktop: Sticky rail (hidden in fullscreen mode) */}
           {!sidebarHidden && (
-            <div className="sticky top-6 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
+            <div className="sticky top-20 z-30 hidden w-72 shrink-0 space-y-4 self-start lg:block">
               <SystemStatusWidget />
               <AdminSidebarNavWidget onNavigate={onNavigate} activeSection={activeSection} />
             </div>

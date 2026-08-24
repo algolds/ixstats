@@ -221,7 +221,7 @@ export function DraftPicksView({
                   <div className="flex items-center gap-2">
                     <div
                       className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: pick.team.color ?? "#aaa" }}
+                      style={{ backgroundColor: pick.team.color ?? "var(--color-text-muted)" }}
                     />
                     <button
                       onClick={() => onTeamClick?.(pick.team.id)}

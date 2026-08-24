@@ -1,0 +1,299 @@
+/* ==========================================================================
+   CLERK THEME COMPLIANCE & FACET DESIGN SYSTEM INTEGRATION
+   Ensures all Clerk components seamlessly adapt to active theme CSS variables
+   (Light Mode, Dark Mode, Accent Themes, and Facet Volumetric Glass)
+   ========================================================================== */
+
+/* Universal Clerk Root & Containers */
+.cl-rootBox {
+  font-family: var(--font-geist-sans), var(--font-sans), system-ui, sans-serif !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cl-card,
+.cl-userProfile-root,
+.cl-organizationProfile-root,
+.cl-signIn-root,
+.cl-signUp-root {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 1rem !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-shadow: var(--facet-shadow-2, 0 16px 40px -8px rgba(0, 0, 0, 0.4)) !important;
+}
+
+/* Popover Cards (OrganizationSwitcher, UserButton) */
+.cl-organizationSwitcher-popoverCard,
+.cl-userButton-popoverCard,
+.cl-popoverCard {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 1rem !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-shadow: var(--facet-shadow-3, 0 20px 48px -8px rgba(0, 0, 0, 0.5)) !important;
+  padding: 0.5rem !important;
+}
+
+/* Force All Popover Text & Identifiers to Theme Colors */
+.cl-organizationSwitcher-popoverCard *,
+.cl-userButton-popoverCard * {
+  color: inherit;
+}
+
+.cl-organizationPreview,
+.cl-userPreview {
+  color: var(--color-text-primary) !important;
+}
+
+.cl-organizationPreviewMainIdentifier,
+.cl-userPreviewMainIdentifier {
+  color: var(--color-text-primary) !important;
+  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+}
+
+.cl-organizationPreviewSecondaryIdentifier,
+.cl-userPreviewSecondaryIdentifier,
+.cl-organizationPreviewAvatarBox + div span:last-child,
+.cl-userPreviewAvatarBox + div span:last-child {
+  color: var(--color-text-muted) !important;
+  font-size: 0.75rem !important;
+}
+
+/* Organization Switcher Action Buttons & Items */
+.cl-organizationSwitcherPopoverActionButton,
+.cl-userButtonPopoverActionButton,
+.cl-userButtonPopoverCustomItemButton,
+.cl-organizationSwitcherPopoverActionButton__personalWorkspace,
+.cl-organizationSwitcherPopoverActionButton__createOrganization,
+.cl-organizationSwitcherPopoverActionButton__manageOrganization {
+  color: var(--color-text-primary) !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 0.625rem !important;
+  transition: all 120ms ease !important;
+}
+
+.cl-organizationSwitcherPopoverActionButtonText,
+.cl-userButtonPopoverActionButtonText {
+  color: var(--color-text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.cl-organizationSwitcherPopoverActionButtonIcon,
+.cl-userButtonPopoverActionButtonIcon,
+.cl-organizationSwitcherPopoverActionButtonIcon svg,
+.cl-userButtonPopoverActionButtonIcon svg {
+  color: var(--color-text-muted) !important;
+  stroke: currentColor !important;
+}
+
+.cl-organizationSwitcherPopoverActionButton:hover,
+.cl-userButtonPopoverActionButton:hover,
+.cl-userButtonPopoverCustomItemButton:hover {
+  background-color: var(--color-bg-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cl-organizationSwitcherPopoverActionButton:hover *,
+.cl-userButtonPopoverActionButton:hover * {
+  color: var(--color-text-primary) !important;
+}
+
+.cl-organizationSwitcherPopoverActionButton:active,
+.cl-userButtonPopoverActionButton:active {
+  transform: scale(0.98) !important;
+}
+
+/* Manage Organization Button */
+.cl-organizationSwitcherPopoverManageButton {
+  color: var(--color-text-primary) !important;
+  background-color: var(--color-bg-tertiary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.25rem 0.5rem !important;
+  transition: all 120ms ease !important;
+}
+
+.cl-organizationSwitcherPopoverManageButton:hover {
+  background-color: var(--color-bg-hover) !important;
+}
+
+.cl-organizationSwitcherPopoverManageButton:active {
+  transform: scale(0.98) !important;
+}
+
+/* Organization Switcher Trigger Button (Navbar) */
+.cl-organizationSwitcherTrigger {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  transition: all 150ms ease !important;
+}
+
+.cl-organizationSwitcherTrigger * {
+  color: var(--color-text-primary) !important;
+}
+
+.cl-organizationSwitcherTriggerIcon {
+  color: var(--color-text-muted) !important;
+}
+
+.cl-organizationSwitcherTrigger:hover {
+  background-color: var(--color-bg-hover) !important;
+}
+
+.cl-organizationSwitcherTrigger:active {
+  transform: scale(0.98) !important;
+}
+
+/* Avatars */
+.cl-userButtonAvatarBox,
+.cl-organizationSwitcherTriggerAvatarBox,
+.cl-organizationPreviewAvatarBox,
+.cl-userPreviewAvatarBox {
+  border-radius: 0.625rem !important;
+  border: 1px solid var(--color-border-primary) !important;
+  overflow: hidden !important;
+}
+
+/* Popover Footers & Secured by Clerk */
+.cl-userButtonPopoverFooter,
+.cl-organizationSwitcherPopoverFooter {
+  border-top: 1px solid var(--color-border-primary) !important;
+  padding-top: 0.375rem !important;
+  margin-top: 0.375rem !important;
+}
+
+.cl-userButtonPopoverFooter *,
+.cl-organizationSwitcherPopoverFooter *,
+.cl-internal-b3fm6y {
+  color: var(--color-text-muted) !important;
+}
+
+/* Navigation Bar inside UserProfile / OrganizationProfile */
+.cl-navbar {
+  background-color: var(--color-bg-tertiary) !important;
+  border-right: 1px solid var(--color-border-primary) !important;
+}
+
+.cl-navbarButton {
+  color: var(--color-text-muted) !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  transition: all 150ms ease !important;
+}
+
+.cl-navbarButton:hover {
+  background-color: var(--color-bg-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cl-navbarButton:active {
+  transform: scale(0.98) !important;
+}
+
+.cl-navbarButton[data-active="true"],
+.cl-navbarButton[aria-current="page"] {
+  background-color: var(--color-bg-accent) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Headers & Typography */
+.cl-headerTitle {
+  color: var(--color-text-primary) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.cl-headerSubtitle {
+  color: var(--color-text-muted) !important;
+  font-size: 0.75rem !important;
+}
+
+/* Form Inputs & Fields */
+.cl-formFieldInput {
+  background-color: var(--color-input-bg, var(--color-bg-tertiary)) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.8125rem !important;
+  transition: all 150ms ease !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: var(--color-brand-primary) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+.cl-formFieldLabel {
+  color: var(--color-text-secondary) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+/* Primary Action Buttons */
+.cl-formButtonPrimary {
+  background-color: var(--color-brand-primary) !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: var(--color-brand-dark, #4f46e5) !important;
+  filter: brightness(1.05) !important;
+}
+
+.cl-formButtonPrimary:active {
+  transform: scale(0.98) !important;
+}
+
+/* Badges & Divider */
+.cl-badge {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-muted) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+}
+
+.cl-dividerLine {
+  background-color: var(--color-border-primary) !important;
+}
+
+.cl-dividerText {
+  color: var(--color-text-muted) !important;
+  font-size: 0.6875rem !important;
+}
+
+.cl-socialButtonsBlockButton {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: 0.75rem !important;
+  transition: all 150ms ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: var(--color-bg-hover) !important;
+}
+
+.cl-socialButtonsBlockButton:active {
+  transform: scale(0.98) !important;
+}

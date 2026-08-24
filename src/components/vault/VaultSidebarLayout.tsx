@@ -68,7 +68,7 @@ export function VaultSidebarLayout({
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed sidebar widgets */}
           <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-6 space-y-4">
+            <div className="sticky top-20 space-y-4">
               <DashboardPlayerWidget />
               <VaultWidget />
               <DashboardQuickLinks />

@@ -203,7 +203,7 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
           </div>
 
           {/* Right Sidebar Column (4 cols) — Sticky Citizen Dossier */}
-          <div className="space-y-5 lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
+          <div className="space-y-5 lg:col-span-4 lg:sticky lg:top-20 lg:self-start">
             {/* Citizen Stature Card */}
             <CitizenStatureWidget data={data} cleanUsername={cleanUsername} />
 

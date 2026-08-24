@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { motion, AnimatePresence } from "motion/react";
@@ -8,28 +8,31 @@ import type { DossierTabProps } from "~/types/dossier";
 import { useDossier } from "~/hooks/useDossier";
 import { WikiHeader } from "./dossier/WikiHeader";
 import { WikiSectionCard } from "./dossier/WikiSectionCard";
-import { DossierTocSidebar } from "./dossier/DossierTocSidebar";
+import { DossierTocSidebar, type TocItem } from "./dossier/DossierTocSidebar";
 import WikiContentModal from "./dossier/WikiContentModal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
+import {
+  WarningTriangle as AlertTriangle,
+  Refresh as RefreshCw,
+  OpenBook as BookOpen,
+  Plus,
+  Upload,
+  Trash as Trash2,
+  EditPencil as Edit3,
+} from "iconoir-react";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import Link from "next/link";
-import { OpenBook as BookOpen, Plus, Upload, Trash as Trash2, EditPencil as Edit3, Lock, Shield, Eye } from "iconoir-react";
 import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
-import { FileImportDropzone } from "./dossier/FileImportDropzone";
-import { LoreScannerPreferencesModal } from "./dossier/LoreScannerPreferencesModal";
-import { WikiSettingsView } from "./dossier/WikiSettingsView";
+import { FileImportDropzone, type ParsedLoreSection } from "./dossier/FileImportDropzone";
 
 /**
  * DossierTab Component
  *
- * Displays national dossier data for a country with multiple views:
+ * Displays national dossier data for a country with two primary modes:
  * - Sections (Wiki Synced Dossier): Main wiki content organized by topic
  * - Native Lore: Custom canvas documents & file imports
- * - Conflicts (Data Analysis): Data discrepancies between wiki and IxStats
- * - Settings: Configuration for dossier data discovery
  */
 export const DossierTab: React.FC<DossierTabProps> = ({
   countryName,
@@ -40,11 +43,18 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   const router = useRouter();
 
   // State for active view
-  const [activeView, setActiveView] = useState<"sections" | "native_lore" | "settings">("sections");
+  const [activeView, setActiveView] = useState<"sections" | "native_lore">("sections");
 
-  // State for Canvas editor, file import & settings modals
+  // State for collapsible sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+
+  const toggleSection = (id: string) => {
+    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // State for Canvas editor and file import
   const [isCanvasModalOpen, setIsCanvasModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [showFileImport, setShowFileImport] = useState(false);
   const [editingLoreDoc, setEditingLoreDoc] = useState<{
     id?: string;
@@ -110,15 +120,9 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     setEditingLoreDoc(null);
   };
 
-  const handleImportSections = (
-    sections: Array<{
-      title: string;
-      content: string;
-      classification: "PUBLIC" | "ALLIANCE" | "PRIVATE";
-    }>
-  ) => {
+  const handleImportSections = (sections: ParsedLoreSection[]) => {
     const imported = sections.map((s, idx) => ({
-      id: `imported_${Date.now()}_${idx}`,
+      id: `lore_imported_${Date.now()}_${idx}`,
       title: s.title,
       content: s.content,
       clearance: s.classification,
@@ -126,27 +130,25 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     }));
     saveNativeDocs([...imported, ...nativeDocs]);
     setShowFileImport(false);
-    setActiveView("native_lore");
   };
 
-  // State for modal
+  const handleDeleteNativeDoc = (id: string) => {
+    saveNativeDocs(nativeDocs.filter((d) => d.id !== id));
+  };
+
+  // State for content modal (full-screen section reading)
   const [modalSection, setModalSection] = useState<{
     title: string;
     content: string;
     id: string;
+    sourcePage?: string;
   } | null>(null);
 
-  // Use custom hook for data management
+  // Use the useDossier hook for data management
   const {
     wikiData,
-    dataConflicts,
-    wikiSettings,
-    setWikiSettings,
-    openSections,
-    toggleSection,
-    handleRefresh,
     isLoading,
-    isRefreshing,
+    handleRefresh,
     hasAccess,
   } = useDossier({
     countryName,
@@ -156,7 +158,6 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Handle wiki link clicks
   const handleWikiLinkClick = useCallback(
     (pageName: string) => {
-      console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
       const source = wikiData.wikiSource ?? "ixwiki";
       if (source === "ixwiki") {
         router.push(titleToWikiOSPath(pageName));
@@ -171,13 +172,6 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     },
     [wikiData.wikiSource, router]
   );
-
-  // Handle settings apply
-  const handleApplySettings = useCallback(async () => {
-    console.log("[WikiIntelligence] Applying advanced settings:", wikiSettings);
-    console.log("[WikiIntelligence] Custom pages:", wikiSettings.customPages);
-    await handleRefresh();
-  }, [wikiSettings, handleRefresh]);
 
   // Loading state
   if (isLoading) {
@@ -204,11 +198,11 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     return (
       <Card className="facet-hierarchy-child">
         <CardContent className="p-8 text-center">
-          <RiAlertLine className="mx-auto mb-4 h-12 w-12 text-red-600 dark:text-red-400" />
+          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-rose-500" />
           <h3 className="mb-2 text-lg font-semibold">Wiki Intelligence Unavailable</h3>
           <p className="text-muted-foreground mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
-            <RiRefreshLine className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </CardContent>
@@ -226,6 +220,30 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     (section) => hasAccess(section.classification) && section.id !== "overview"
   );
 
+  const tocSections: TocItem[] = activeSections.map((s) => ({
+    id: s.id,
+    title: s.title,
+    source: "wiki",
+    pageTitle: s.sourcePage,
+    classification: s.classification as any,
+  }));
+
+  const nativeTocItems: TocItem[] = nativeDocs.map((d) => ({
+    id: d.id,
+    title: d.title,
+    source: "native",
+    classification: d.clearance,
+  }));
+
+  const handleSelectTocSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    setOpenSections((prev) => ({ ...prev, [sectionId]: true }));
+    const el = document.getElementById(`dossier-section-${sectionId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -234,7 +252,6 @@ export const DossierTab: React.FC<DossierTabProps> = ({
           countryName={countryName}
           activeView={activeView}
           setActiveView={setActiveView}
-          onOpenSettings={() => setIsSettingsModalOpen(true)}
           viewerClearanceLevel={viewerClearanceLevel}
           flagImageUrl={flagImageUrl}
         />
@@ -248,101 +265,102 @@ export const DossierTab: React.FC<DossierTabProps> = ({
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Sections View (Dossier) */}
-            {activeView === "sections" &&
-              (activeSections.length > 0 || wikiData.infobox ? (
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
-                  {/* Main Content - Dossier Sections */}
-                  <div className="space-y-4 xl:col-span-3">
-                    {activeSections.map((section) => (
+            {/* Sections View (Wiki Synced Dossier) */}
+            {activeView === "sections" && (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                {/* Main Content Area */}
+                <div className="space-y-6 lg:col-span-8">
+                  {/* Empty state: No sections returned from wiki */}
+                  {wikiData.sections.length === 0 && (
+                    <Card className="facet-hierarchy-child border-dashed">
+                      <CardContent className="p-8 text-center">
+                        <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                        <h3 className="mb-2 text-lg font-semibold">No Wiki Sections Found</h3>
+                        <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+                          There is no active WikiOS database entry for <strong>{countryName}</strong>.
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-3">
+                          <Button
+                            asChild
+                            className="bg-blue-600 font-bold text-white hover:bg-blue-700"
+                          >
+                            <Link href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}>
+                              Create Page on WikiOS
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setEditingLoreDoc({
+                                title: `${countryName} National Briefing`,
+                                content: `Executive briefing and lore summary for ${countryName}.`,
+                                clearance: "PUBLIC",
+                              });
+                              setIsCanvasModalOpen(true);
+                            }}
+                          >
+                            Create Native Lore Document
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Section Cards */}
+                  {activeSections.map((section, idx) => (
+                    <div key={section.id} id={`dossier-section-${section.id}`}>
                       <WikiSectionCard
-                        key={section.id}
                         section={section}
-                        isOpen={openSections[section.id] ?? true}
+                        isOpen={openSections[section.id] ?? idx === 0}
                         onToggle={() => toggleSection(section.id)}
-                        onShowFullContent={setModalSection}
+                        onShowFullContent={(sec) => setModalSection(sec)}
                         handleWikiLinkClick={handleWikiLinkClick}
                         flagColors={flagColors}
                         countryName={countryName}
                         wikiSource={wikiData.wikiSource}
                       />
-                    ))}
-                  </div>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Right Sidebar - Dossier Table of Contents & Infobox */}
-                  <div className="xl:col-span-1">
+                {/* Right Sticky TOC Sidebar */}
+                <div className="lg:col-span-4">
+                  <div className="sticky top-20">
                     <DossierTocSidebar
                       countryName={countryName}
                       infobox={wikiData.infobox}
-                      sections={activeSections.map((s) => ({
-                        id: s.id,
-                        title: s.title,
-                        source: "wiki",
-                        classification: s.classification,
-                      }))}
-                      nativeDocs={nativeDocs.map((d) => ({
-                        id: d.id,
-                        title: d.title,
-                        source: "native",
-                        classification: d.clearance,
-                      }))}
-                      onSelectSection={(id) => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth" });
-                        }
-                      }}
+                      sections={tocSections}
+                      nativeDocs={nativeTocItems}
+                      activeSectionId={activeSectionId}
+                      onSelectSection={handleSelectTocSection}
                       flagColors={flagColors}
                       wikiSource={wikiData.wikiSource}
                     />
                   </div>
                 </div>
-              ) : (
-                <Card className="facet-surface border-border overflow-hidden">
-                  <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                    <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                      <BookOpen className="text-muted-foreground/60 h-8 w-8" />
-                    </div>
-                    <h3 className="text-foreground mb-2 text-lg font-semibold">Dossier Pending</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md text-xs leading-relaxed">
-                      There is no active WikiOS database entry for <strong>{countryName}</strong>.
-                      Under standard diplomatic protocols, a public dossier is generated once a wiki
-                      article is initialized.
-                    </p>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
-                    >
-                      <Link href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}>
-                        Create Page on WikiOS
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              </div>
+            )}
 
-            {/* Native Canvas Lore View */}
+            {/* Native Lore View */}
             {activeView === "native_lore" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between gap-3">
+                {/* Action Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-foreground text-sm font-extrabold tracking-wider uppercase">
-                      Native Canvas Lore Hub
-                    </h3>
+                    <h3 className="text-foreground text-sm font-bold">Native Lore Documents</h3>
                     <p className="text-muted-foreground text-xs">
-                      Direct non-wiki documents created via WikiOS Canvas Editor or file import
+                      Custom dossier documents created via the WikiOS Canvas Editor or file import.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
-                      size="sm"
                       variant="outline"
+                      size="sm"
                       onClick={() => setShowFileImport(!showFileImport)}
-                      className="gap-1.5 border-white/10 text-xs font-bold"
+                      className="gap-1.5 text-xs font-semibold"
                     >
                       <Upload className="h-3.5 w-3.5" />
-                      Import File (.md)
+                      {showFileImport ? "Hide Import" : "Import Files"}
                     </Button>
                     <Button
                       size="sm"
@@ -350,14 +368,15 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         setEditingLoreDoc(null);
                         setIsCanvasModalOpen(true);
                       }}
-                      className="gap-1.5 bg-blue-600 text-xs font-bold text-white shadow-md hover:bg-blue-500"
+                      className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-700"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      New Canvas Document
+                      New Document
                     </Button>
                   </div>
                 </div>
 
+                {/* File Import Dropzone Area */}
                 {showFileImport && (
                   <FileImportDropzone
                     onImportSections={handleImportSections}
@@ -365,33 +384,25 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                   />
                 )}
 
+                {/* Document Grid / Empty State */}
                 {nativeDocs.length === 0 ? (
-                  <Card className="facet-surface overflow-hidden border-white/10">
-                    <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
-                        <BookOpen className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-foreground mb-2 text-lg font-semibold">
-                        No Native Lore Documents
-                      </h3>
-                      <p className="text-muted-foreground mb-6 max-w-md text-xs leading-relaxed">
+                  <Card className="facet-hierarchy-child border-dashed">
+                    <CardContent className="p-8 text-center">
+                      <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                      <h3 className="mb-2 text-lg font-semibold">No Native Lore Documents</h3>
+                      <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
                         Create custom dossier documents directly using the WikiOS Canvas Editor or
-                        import Markdown files to store non-wiki lore for{" "}
-                        <strong>{countryName}</strong>.
+                        import existing markdown/text files.
                       </p>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setEditingLoreDoc(null);
-                            setIsCanvasModalOpen(true);
-                          }}
-                          className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Create First Canvas Document
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => {
+                          setEditingLoreDoc(null);
+                          setIsCanvasModalOpen(true);
+                        }}
+                        className="bg-blue-600 font-bold text-white hover:bg-blue-700"
+                      >
+                        Create First Document
+                      </Button>
                     </CardContent>
                   </Card>
                 ) : (
@@ -399,88 +410,63 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                     {nativeDocs.map((doc) => (
                       <div
                         key={doc.id}
-                        className="group bg-card/30 relative flex flex-col justify-between rounded-xl border border-white/10 p-4 backdrop-blur-md transition-all hover:border-white/20 hover:bg-white/[0.05]"
+                        className="rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-md transition-all hover:border-white/20 hover:bg-black/30"
                       >
-                        <div>
-                          <div className="mb-2 flex items-center justify-between">
-                            <span
-                              className={`rounded px-2 py-0.5 text-[9px] font-extrabold tracking-wider uppercase ${
-                                doc.clearance === "PUBLIC"
-                                  ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
-                                  : doc.clearance === "ALLIANCE"
-                                    ? "border border-amber-500/30 bg-amber-500/20 text-amber-400"
-                                    : "border border-red-500/30 bg-red-500/20 text-red-400"
-                              }`}
-                            >
-                              {doc.clearance}
-                            </span>
-
-                            <div className="flex items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingLoreDoc(doc);
-                                  setIsCanvasModalOpen(true);
-                                }}
-                                className="h-7 w-7 p-0"
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-foreground truncate text-sm font-bold">
+                                {doc.title}
+                              </h4>
+                              <span
+                                className={`rounded-md border px-1.5 py-0.5 text-[9px] font-bold ${
+                                  doc.clearance === "PUBLIC"
+                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                                    : doc.clearance === "ALLIANCE"
+                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                      : "border-rose-500/30 bg-rose-500/10 text-rose-400"
+                                }`}
                               >
-                                <Edit3 className="text-muted-foreground hover:text-foreground h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  saveNativeDocs(nativeDocs.filter((d) => d.id !== doc.id));
-                                }}
-                                className="h-7 w-7 p-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                                {doc.clearance}
+                              </span>
                             </div>
+                            <p className="text-muted-foreground mt-1 line-clamp-3 text-xs">
+                              {doc.content.replace(/<[^>]*>/g, "").slice(0, 150)}...
+                            </p>
                           </div>
-
-                          <h4 className="text-foreground mb-1 text-sm font-bold transition-colors group-hover:text-blue-400">
-                            {doc.title}
-                          </h4>
-                          <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed">
-                            {doc.content.replace(/<[^>]*>?/gm, "").slice(0, 200)}...
-                          </p>
                         </div>
 
-                        <div className="text-muted-foreground mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[10px]">
-                          <span>Updated {new Date(doc.updatedAt).toLocaleDateString()}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setModalSection({
-                                id: doc.id,
-                                title: doc.title,
-                                content: doc.content,
-                              });
-                            }}
-                            className="h-6 text-[10px] font-semibold text-blue-400 hover:text-blue-300"
-                          >
-                            Read Full Document →
-                          </Button>
+                        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                          <span className="text-muted-foreground text-[10px]">
+                            Updated {new Date(doc.updatedAt).toLocaleDateString()}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLoreDoc(doc);
+                                setIsCanvasModalOpen(true);
+                              }}
+                              className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-lg hover:bg-white/5"
+                              title="Edit Document"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNativeDoc(doc.id)}
+                              className="text-muted-foreground hover:text-rose-400 flex h-7 w-7 items-center justify-center rounded-lg hover:bg-rose-500/10"
+                              title="Delete Document"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Settings View */}
-            {activeView === "settings" && (
-              <WikiSettingsView
-                wikiSettings={wikiSettings}
-                setWikiSettings={setWikiSettings}
-                countryName={countryName}
-                onApplySettings={handleApplySettings}
-                isApplying={isRefreshing}
-              />
             )}
           </motion.div>
         </AnimatePresence>
@@ -499,19 +485,6 @@ export const DossierTab: React.FC<DossierTabProps> = ({
             initialClearance={editingLoreDoc?.clearance}
           />
         )}
-
-        {/* LoreScanner Preferences Modal */}
-        {isSettingsModalOpen && (
-          <LoreScannerPreferencesModal
-            isOpen={isSettingsModalOpen}
-            onClose={() => setIsSettingsModalOpen(false)}
-            wikiSettings={wikiSettings}
-            setWikiSettings={setWikiSettings}
-            countryName={countryName}
-            onApplySettings={handleApplySettings}
-            isApplying={isRefreshing}
-          />
-        )}
       </div>
 
       {/* Full Content Modal */}
@@ -521,7 +494,6 @@ export const DossierTab: React.FC<DossierTabProps> = ({
         section={modalSection}
         handleWikiLinkClick={handleWikiLinkClick}
         flagColors={flagColors}
-        enableIxWiki={wikiSettings.enableIxWiki}
       />
     </>
   );

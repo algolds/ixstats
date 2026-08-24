@@ -111,7 +111,7 @@ export default function MatchDetailModal({
                   ) : (
                     <div
                       className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ backgroundColor: match.homeTeam.color ?? "#3b82f6" }}
+                      style={{ backgroundColor: match.homeTeam.color ?? "var(--color-info)" }}
                     >
                       {match.homeTeam.shortName || match.homeTeam.name.slice(0, 2).toUpperCase()}
                     </div>
@@ -155,7 +155,7 @@ export default function MatchDetailModal({
                   ) : (
                     <div
                       className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ backgroundColor: match.awayTeam.color ?? "#ef4444" }}
+                      style={{ backgroundColor: match.awayTeam.color ?? "var(--color-destructive)" }}
                     >
                       {match.awayTeam.shortName || match.awayTeam.name.slice(0, 2).toUpperCase()}
                     </div>

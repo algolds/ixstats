@@ -141,6 +141,7 @@
 @import "./layout/z-index.css";
 @import "./layout/scrollbars.css";
 @import "./onoma.css";
+@import "./clerk.css";
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 

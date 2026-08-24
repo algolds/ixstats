@@ -43,7 +43,7 @@ export function MyClubInlinePreview({ teamId }: { teamId: string }) {
   return (
     <div className="group/preview mt-2 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-2.5 shadow-sm transition-all duration-150 hover:border-blue-500/35 hover:bg-blue-500/[0.08]">
       <div className="flex min-w-0 items-center gap-2.5">
-        <span className="text-base" style={{ color: teamData?.color || "#3b82f6" }}>
+        <span className="text-base" style={{ color: teamData?.color || "var(--color-info)" }}>
           🛡️
         </span>
         <div className="min-w-0">

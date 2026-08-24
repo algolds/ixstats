@@ -194,7 +194,7 @@ export function EditorialMastheadHero({
             {/* The Canonical Laurel Sphere Logo - Monumental NYT/WaPo Scale */}
             <IxWikiLogo
               size={104}
-              className="relative z-10 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 text-[#1d4e89] dark:text-[#60a5fa] drop-shadow-[0_4px_20px_rgba(29,78,137,0.22)] dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.4)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03]"
+              className="relative z-10 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 text-wiki dark:text-blue-400 drop-shadow-[0_4px_20px_rgba(29,78,137,0.22)] dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.4)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03]"
             />
           </motion.div>
           <div className="flex flex-col justify-center my-auto">

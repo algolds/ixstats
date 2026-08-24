@@ -32,7 +32,9 @@ export function Navigation() {
   const { user, isLoaded } = useUser();
   const isImmersionPage =
     normalizedPathname.startsWith("/builder") ||
-    normalizedPathname.startsWith("/mycountry/editor");
+    normalizedPathname.startsWith("/mycountry/editor") ||
+    normalizedPathname.startsWith("/messages") ||
+    isWikiPage;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const { scrollY, isSticky, isNavVisible, onNavMouseEnter, onNavMouseLeave } = useNavigationScroll({
     mode: isImmersionPage ? "hidden" : "default",
@@ -111,7 +113,7 @@ export function Navigation() {
   const contextMenu = contextualMenus[contextKey] ?? contextualMenus.default;
 
   // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
-  if (pathname?.startsWith("/maps")) return null;
+  if (normalizedPathname.startsWith("/maps")) return null;
 
   return (
     <>

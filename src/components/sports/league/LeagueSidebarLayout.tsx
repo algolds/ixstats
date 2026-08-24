@@ -112,7 +112,7 @@ export function LeagueSidebarLayout({
               hasSidebarExtra ? "w-72" : "w-12"
             )}
           >
-            <div className="sticky top-6 space-y-3">
+            <div className="sticky top-20 space-y-3">
               <LeagueSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}

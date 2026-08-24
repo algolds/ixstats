@@ -1011,7 +1011,7 @@ export default function MyClubTeamDetailPage() {
                           cy="32"
                           r="26"
                           className="fill-none transition-all duration-500"
-                          style={{ stroke: team.color || "#10b981" }}
+                          style={{ stroke: team.color || "var(--color-success)" }}
                           strokeWidth="6"
                           strokeDasharray="163.3"
                           strokeDashoffset={

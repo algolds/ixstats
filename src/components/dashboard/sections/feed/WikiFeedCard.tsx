@@ -615,7 +615,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               className="h-2.5 w-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: stash.color || "#3b82f6" }}
+                              style={{ backgroundColor: stash.color || "var(--color-info)" }}
                             />
                             <span className="truncate text-xs">{stash.name}</span>
                           </div>

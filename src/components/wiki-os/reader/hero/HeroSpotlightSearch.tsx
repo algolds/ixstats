@@ -179,7 +179,7 @@ export function HeroSpotlightSearch({
         )}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <Search className={cn("h-4 w-4 shrink-0 transition-colors", isOpen ? "text-blue-500" : "text-[#1d4e89] dark:text-[#60a5fa]")} />
+          <Search className={cn("h-4 w-4 shrink-0 transition-colors", isOpen ? "text-blue-500" : "text-wiki dark:text-blue-400")} />
           <div className="relative flex-1 min-w-0 flex items-center">
             <input
               ref={inputRef}

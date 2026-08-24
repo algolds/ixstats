@@ -155,11 +155,11 @@ export const CountryWireframe = React.memo(function CountryWireframe({
             cx={d.x}
             cy={d.y}
             r={d.capital ? 7 : 4}
-            fill={d.capital ? "#fbbf24" : color}
+            fill={d.capital ? "var(--color-warning-light)" : color}
             stroke="currentColor"
             className="text-card"
             strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0 0 4px ${d.capital ? "#fbbf24" : color})` }}
+            style={{ filter: `drop-shadow(0 0 4px ${d.capital ? "var(--color-warning-light)" : color})` }}
           />
         ))}
       </svg>

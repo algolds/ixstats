@@ -276,7 +276,7 @@ html:not([data-theme="dark"]) .wikios-sticky-toc {
   height: 44px;
   padding: 0 24px;
   background: var(--wikios-accent);
-  color: #fff;
+  color: var(--color-bg-primary);
   border: none;
   font-weight: 600;
   font-size: 14px;
@@ -442,7 +442,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
 .wikios-fa-text h3 a:visited,
 .wikios-main-featured-content h3 a,
 .wikios-main-featured-content h3 a:visited {
-  color: var(--foreground, #ffffff) !important;
+  color: var(--foreground) !important;
   text-decoration: none;
   font-weight: 700;
   transition: color 0.15s;
@@ -450,7 +450,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
 
 .wikios-fa-text h3 a:hover,
 .wikios-main-featured-content h3 a:hover {
-  color: #f59e0b !important;
+  color: var(--color-warning) !important;
   text-decoration: none;
 }
 
@@ -458,12 +458,12 @@ html:not([data-theme="light"]) .wikios-fa-image {
 [data-theme="light"] .wikios-fa-text h3 a:visited,
 [data-theme="light"] .wikios-main-featured-content h3 a,
 [data-theme="light"] .wikios-main-featured-content h3 a:visited {
-  color: #18181b !important;
+  color: var(--wikios-text) !important;
 }
 
 [data-theme="light"] .wikios-fa-text h3 a:hover,
 [data-theme="light"] .wikios-main-featured-content h3 a:hover {
-  color: #d97706 !important;
+  color: var(--color-warning-dark) !important;
 }
 
 .wikios-fa-text p {
@@ -717,7 +717,7 @@ html:not([data-theme="light"]) .wikios-fa-image {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #c084fc;
+  color: var(--color-chart-1);
   background: rgba(168, 85, 247, 0.12);
   border: 1px solid rgba(168, 85, 247, 0.2);
   border-radius: 4px;

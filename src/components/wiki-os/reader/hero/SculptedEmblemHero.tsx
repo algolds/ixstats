@@ -194,7 +194,7 @@ export function SculptedEmblemHero({
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
           <IxWikiLogo
             size={96}
-            className="relative z-10 h-22 w-22 sm:h-26 sm:w-26 lg:h-28 lg:w-28 text-[#1d4e89] dark:text-[#60a5fa] drop-shadow-[0_4px_20px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.38)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03]"
+            className="relative z-10 h-22 w-22 sm:h-26 sm:w-26 lg:h-28 lg:w-28 text-wiki dark:text-blue-400 drop-shadow-[0_4px_20px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.38)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03]"
           />
         </motion.div>
 

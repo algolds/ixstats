@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 import { Geist, Playfair_Display } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
@@ -130,6 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             signInUrl={signInPath}
             signUpUrl={signUpPath}
             signInFallbackRedirectUrl={dashboardPath}
+            appearance={facetClerkAppearance}
           >
             <AuthProvider>
               <MediaContextProvider>

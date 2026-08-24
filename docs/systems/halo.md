@@ -132,6 +132,47 @@ Icons use a curated combination of `iconoir-react` and `react-icons/gi`. Generic
 
 ---
 
+## 3-Mode Navigation Architecture & Halo Coordination
+
+Halo operates in synergy with the platform's **Unified 3-Mode Navigation Architecture** driven by `useNavigationScroll`:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Mode 1: DEFAULT (Global Scroll-Hide & Morph)                                │
+│ • Standard pages: Home, MyCountry, Dashboard, Vault, ThinkPages, Forum,     │
+│   Countries, Admin, Sports, Settings, Changelog, Studio.                    │
+│ • Sits in top anchor zone (<50px). Morphs tabs inwards (40px → 100px).     │
+│ • Scroll down hides with cubic-bezier / spring; scroll up reveals instantly.│
+│ • Halo pill stays sticky (8px), auto-collapsing to 200x36px after 1200ms.   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 2: HIDDEN (Immersion & Canvas Focus)                                   │
+│ • Canvas & focus surfaces: /messages, /builder, /mycountry/editor,          │
+│   /wiki/*, /blurbs/*                                                        │
+│ • Starts with navbar translated out of view (translateY(-100%)).           │
+│ • Reveals smoothly on upward scroll (>10px) or top-edge hover (<=16px).    │
+│ • Dedicated domain Halo (WikiHalo, BuilderHalo) remains active and floating.│
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Mode 3: MAPS (Chromeless Standalone Exception)                              │
+│ • Maps & spatial workflows: /maps.                                          │
+│ • Global <Navigation /> returns null; MapDynamicIsland handles controls.    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Dynamic Repulsion Physics & Presentation Continuity
+
+When secondary sub-headers, editor toolbars, or filter strips sit beneath the floating Halo:
+
+$$\text{repulsionProgress} = \text{clamp}\left(\frac{\text{scrollY}}{56}, 0, 1\right)$$
+
+1. **Center Branding Glide**: Sub-header center brands glide upward (`y: -repulsionProgress * 40px`), scale (`1 - repulsionProgress * 0.1`), and fade (`opacity: 1 - repulsionProgress`) to clear space for the collapsing Halo pill.
+2. **Seamless Action Tuck**: Right-rail action buttons slide inward directly beneath the floating Halo capsule.
+3. **Ambient Refraction Glow**: A subtle blue/purple radial glow appears during transition (`0 0 (1 - repulsionProgress) * 12px`).
+4. **Desktop Sticky Rails**: Desktop sidebars use `lg:sticky lg:top-20` (80px) to guarantee a 16px buffer beneath the 64px floating navbar without overlapping.
+
+---
+
 ## Physical Motion & Spring Physics
 
 Motion transitions across capsule expansion, tray reveals, and modal transforms utilize Apple critically damped spring physics:

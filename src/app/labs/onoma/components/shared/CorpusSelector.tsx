@@ -83,12 +83,12 @@ export function CorpusSelector({
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
             <div className="border-b border-border/30 pb-1">
-              <div className="text-[#ec4899] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+              <div className="text-pink-500 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                 Active Studio Session
               </div>
               <SelectItem
                 value="studio-active"
-                className="focus:bg-[#ec4899]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:bg-pink-500/10 focus:text-foreground text-xs cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#ec4899" />
@@ -104,14 +104,14 @@ export function CorpusSelector({
           {/* User's Stashed Custom Dictionaries */}
           {stashDictionaries.length > 0 && (
             <div className="border-b border-border/30 pb-1">
-              <div className="text-[#6366f1] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+              <div className="text-indigo-500 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                 Custom Stash Dictionaries ({stashDictionaries.length})
               </div>
               {stashDictionaries.map((dict) => (
                 <SelectItem
                   key={dict.id}
                   value={dict.id}
-                  className="focus:bg-[#6366f1]/10 focus:text-foreground text-xs cursor-pointer"
+                  className="focus:bg-indigo-500/10 focus:text-foreground text-xs cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <OnomaGlyph name="memory-dataset" size="xs" accentColor="#6366f1" />

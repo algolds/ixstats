@@ -247,7 +247,7 @@
 }
 .wikios-award-type-monthly {
   background: rgba(167, 139, 250, 0.12);
-  color: #a78bfa;
+  color: var(--color-chart-1);
 }
 
 .wikios-profile-award-date {
@@ -259,7 +259,7 @@
   font-weight: 600;
 }
 .wikios-award-runner {
-  color: #94a3b8;
+  color: var(--color-text-muted);
 }
 
 .wikios-profile-award-page {
@@ -372,10 +372,10 @@
 }
 
 .wikios-dot-gold {
-  background: #fbbf24;
+  background: var(--color-warning-light);
 }
 .wikios-dot-silver {
-  background: #94a3b8;
+  background: var(--color-text-muted);
 }
 
 .wikios-profile-activity-role {
@@ -462,7 +462,7 @@
 
 .wikios-streak-runner {
   background: rgba(148, 163, 184, 0.12);
-  color: #94a3b8;
+  color: var(--color-text-muted);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
@@ -759,7 +759,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  color: #f97316;
+  color: var(--color-forum-accent);
 }
 
 /* Background sparkline — fills entire card */

@@ -184,7 +184,7 @@ function TemplateEditorDialog({
               <div key={key} className="wikios-ve-template-field">
                 <label className="wikios-ve-template-field-label">
                   {schema?.label ?? key}
-                  {schema?.required && <span style={{ color: "#ef4444", marginLeft: 2 }}>*</span>}
+                  {schema?.required && <span className="text-destructive ml-0.5">*</span>}
                 </label>
                 {schema?.description && (
                   <div className="wikios-ti-param-desc">{schema.description}</div>

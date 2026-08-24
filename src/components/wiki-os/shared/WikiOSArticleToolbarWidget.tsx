@@ -82,7 +82,7 @@ export function WikiOSArticleToolbarWidget({
           className={cn(
             "rail-glow-highlighter rail-animate-wiggle flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer",
             isMarginOpen
-              ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-2 ring-margin-accent/40 shadow-[#fef036]/20"
+              ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-2 ring-margin-accent/40 shadow-margin-accent/20"
               : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
           )}
           title={isMarginOpen ? "Hide Margin (T)" : "Show Margin (Threads, Markup) [T]"}

@@ -42,6 +42,7 @@ import {
   althistoryGetWikitext,
   althistorySearch,
   fetchPageImagesHttp as httpGetPageImages,
+  httpGetCategoryMembers,
 } from "./http-reader";
 
 // Re-exported from image-url (shared with client-safe code)
@@ -181,14 +182,18 @@ export async function getBacklinks(title: string, limit?: number, offset?: numbe
 }
 
 /**
- * Get category members via direct MySQL.
+ * Get category members via direct MySQL for IxWiki or HTTP bridge for sister wikis.
  */
 export async function getCategoryMembers(
   category: string,
   limit?: number,
-  type?: "page" | "subcat" | "file"
+  type?: "page" | "subcat" | "file",
+  wiki: WikiSource = "ixwiki"
 ) {
-  return ixwikiGetCategoryMembers(category, limit, type);
+  if (wiki === "ixwiki") {
+    return ixwikiGetCategoryMembers(category, limit, type);
+  }
+  return httpGetCategoryMembers(category, limit, type, wiki);
 }
 
 /**

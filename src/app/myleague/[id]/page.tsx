@@ -592,7 +592,7 @@ export default function LeagueDetailPage() {
                                   ) : (
                                     <span
                                       className="h-2 w-2 shrink-0 rounded-full"
-                                      style={{ backgroundColor: s.team.color ?? "#888" }}
+                                      style={{ backgroundColor: s.team.color ?? "var(--color-text-muted)" }}
                                     />
                                   )}
                                   <span className="text-foreground truncate">{s.team.name}</span>
@@ -808,7 +808,7 @@ export default function LeagueDetailPage() {
                               ) : (
                                 <div
                                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 text-[9px] font-black text-white shadow"
-                                  style={{ backgroundColor: team.color ?? "#888" }}
+                                  style={{ backgroundColor: team.color ?? "var(--color-text-muted)" }}
                                 >
                                   {team.shortName || team.name.slice(0, 2).toUpperCase()}
                                 </div>
@@ -944,12 +944,12 @@ export default function LeagueDetailPage() {
                           onClick={() => handleTeamClick(team.id)}
                           className="border-border/40 bg-card/60 relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-xl border p-4 text-left backdrop-blur-md transition"
                           style={{
-                            borderLeft: `4px solid ${team.color ?? "#888"}`,
+                            borderLeft: `4px solid ${team.color ?? "var(--color-text-muted)"}`,
                           }}
                         >
                           <div
                             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-xs font-black text-white shadow"
-                            style={{ backgroundColor: team.color ?? "#888" }}
+                            style={{ backgroundColor: team.color ?? "var(--color-text-muted)" }}
                           >
                             {team.shortName || team.name.slice(0, 2).toUpperCase()}
                           </div>

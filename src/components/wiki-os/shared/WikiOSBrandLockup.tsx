@@ -46,7 +46,7 @@ export function WikiOSBrandLockup({
           <IxWikiLogo
             size={isCompact ? 20 : 24}
             className={cn(
-              "relative z-10 text-[#1d4e89] dark:text-blue-400 transition-transform duration-300 group-hover:scale-105"
+              "relative z-10 text-wiki dark:text-blue-400 transition-transform duration-300 group-hover:scale-105"
             )}
           />
 
@@ -88,7 +88,7 @@ export function WikiOSBrandLockup({
         {/* The Laurel Logo */}
         <IxWikiLogo
           size={84}
-          className="relative z-10 h-18 w-18 sm:h-22 sm:w-22 text-[#1d4e89] dark:text-[#60a5fa] drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)] transition-transform duration-300 group-hover:scale-105"
+          className="relative z-10 h-18 w-18 sm:h-22 sm:w-22 text-wiki dark:text-blue-400 drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)] transition-transform duration-300 group-hover:scale-105"
         />
       </motion.div>
 

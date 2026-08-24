@@ -293,27 +293,27 @@ export function MapWelcomeModal({
                           <p className="font-semibold">Trewartha Climate System</p>
                           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#990000]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-700" />
                               Tropical Wet (Ar)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#FF9933]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />
                               Steppe (Bs)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#00FF99]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" />
                               Temperate Oceanic (Do)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#0099FF]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500" />
                               Continental (Dc)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#FFCCFF]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-pink-300" />
                               Highland (H)
                             </span>
                             <span>
-                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#0066CC]" />
+                              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />
                               Boreal (E)
                             </span>
                           </div>

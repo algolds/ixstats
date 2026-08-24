@@ -234,9 +234,9 @@ export function LineupBuilder({
           <Button
             onClick={handleSave}
             disabled={setLineup.isPending}
-            className="w-full text-xs font-semibold transition-all hover:opacity-90"
+            className="w-full text-xs font-semibold text-white transition-all hover:opacity-90"
             size="sm"
-            style={{ backgroundColor: teamColor, color: "#ffffff" }}
+            style={{ backgroundColor: teamColor }}
           >
             {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Lineup

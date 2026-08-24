@@ -482,7 +482,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               <div className="absolute inset-0 -z-10 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')] bg-center" />
               <div
                 className="h-full w-full"
-                style={{ backgroundColor: props.labelColor ?? "#374151" }}
+                style={{ backgroundColor: props.labelColor ?? "var(--color-text-primary)" }}
               />
             </PopoverTrigger>
             <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
@@ -662,13 +662,13 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
                   <button className="flex items-center justify-center p-0">
                     <div
                       className="h-full w-full rounded"
-                      style={{ backgroundColor: props.subdivisionColor || "#3b82f6" }}
+                      style={{ backgroundColor: props.subdivisionColor || "var(--color-info)" }}
                     />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
                   <ColorPicker
-                    value={props.subdivisionColor || "#3b82f6"}
+                    value={props.subdivisionColor || "var(--color-info)"}
                     onChange={(rgbaArray) => {
                       let colorStr = "#000000";
                       if (rgbaArray[3] < 1) {

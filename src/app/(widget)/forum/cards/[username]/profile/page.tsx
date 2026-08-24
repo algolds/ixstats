@@ -84,8 +84,8 @@ export default async function ForumProfileWidget({
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {user.country?.flag && <img src={user.country.flag} alt="" style={styles.flag} />}
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#f3f4f6" }}>IxCards</span>
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>Lvl {user.collectorLevel}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>IxCards</span>
+          <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Lvl {user.collectorLevel}</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <span style={{ ...styles.statBadge, fontSize: 11 }}>{sorted.length} cards</span>

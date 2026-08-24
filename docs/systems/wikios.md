@@ -36,7 +36,9 @@ WikiOS is the lore and knowledge operating system for IxStates. Built with nativ
 - **Dynamic Explore Countries deck.** Unbiased Fisher-Yates shuffle randomizing 12 featured nations across all 82 sovereign realms on each reload.
 - **Tactile sound integration.** Declarative `data-cuelume-press` and `data-cuelume-hover` attributes triggering responsive Cuelume audio feedback.
 
-### Canvas visual editor (`CANVAS_VERSION = 1`)
+### Canvas visual editor (`CANVAS_VERSION = 1`) & Immersion Navigation
+- **Immersion Mode (Mode 2: HIDDEN).** Operates in distraction-free focus mode (`/wiki/*`, `/blurbs/*`): the top navbar starts translated `-100%` and smoothly reveals on upward scroll (>10px) or top-edge hover (<=16px), while `WikiHalo` remains interactive.
+- **Dynamic Repulsion Physics.** Visual and Source editor titlebars dynamically repulse under the sticky Halo capsule using $\text{clamp}(\text{scrollY} / 56, 0, 1)$, gliding the mode switch upward and tucking actions without layout shift.
 - **Capabilities.** Block-based document editing, infobox builders, interactive tables, bidirectional AST translation, and source or visual mode toggles.
 - **Draft store.** `src/lib/wiki-os/editor/draft-store.ts` autosaves client-side drafts under `wikios_draft:${source}:${title}`.
 

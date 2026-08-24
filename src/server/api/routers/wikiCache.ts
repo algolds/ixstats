@@ -15,63 +15,9 @@ import {
 import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
 import { getArticleWikitext, getCategoryMembers } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { withRetrySafe } from "~/lib/system/with-retry";
 import {
-  DEFAULT_MEDIAWIKI_URL,
-  getMediaWikiApiUrl,
-  DEFAULT_USER_AGENT,
   type WikiSource,
 } from "~/lib/wiki-os/config";
-
-function getApiBaseUrl(wikiSource: string): string {
-  return getMediaWikiApiUrl(wikiSource as any);
-}
-
-async function fetchCategoryMembers(apiBaseUrl: string, categoryName: string): Promise<string[]> {
-  if (apiBaseUrl.includes("ixwiki")) {
-    try {
-      const members = await getCategoryMembers(categoryName, 50, "page");
-      return (members?.members ?? []).map((m: any) => m.title).filter(Boolean);
-    } catch (_err) {
-      return [];
-    }
-  }
-
-  const titles: string[] = [];
-  try {
-    const params = new URLSearchParams({
-      action: "query",
-      format: "json",
-      list: "categorymembers",
-      cmtitle: `Category:${categoryName}`,
-      cmlimit: "50",
-      cmnamespace: "0",
-    });
-
-    const url = `${apiBaseUrl}?${params.toString()}`;
-    const result = await withRetrySafe(
-      async (signal) => {
-        const res = await fetch(url, {
-          headers: { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT },
-          signal,
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ query?: { categorymembers?: Array<{ title: string }> } }>;
-      },
-      { maxAttempts: 2, strategy: "linear" as const, baseDelayMs: 2000, timeoutMs: 15000 }
-    );
-
-    if (result.success && result.value) {
-      const members = result.value.query?.categorymembers ?? [];
-      for (const m of members) {
-        if (m.title && !m.title.startsWith("Category:")) titles.push(m.title);
-      }
-    }
-  } catch (err) {
-    console.warn(`[builderDeepScan] No category found for ${categoryName}:`, err);
-  }
-  return titles;
-}
 
 export const wikiCacheRouter = createTRPCRouter({
   /**
@@ -177,12 +123,19 @@ export const wikiCacheRouter = createTRPCRouter({
         pagesToScan = pageVariants;
       } else {
         // First, try to find pages in the country's own category (Category:CountryName)
-        const apiBaseUrl = getApiBaseUrl(wikiSource);
-        const categoryPages = await fetchCategoryMembers(apiBaseUrl, countryName);
+        const membersResult = await getCategoryMembers(
+          countryName,
+          50,
+          "page",
+          wikiSource as WikiSource
+        );
+        const categoryPages = (membersResult?.members ?? [])
+          .map((m: { title: string }) => m.title)
+          .filter((t: string) => Boolean(t) && !t.startsWith("Category:"));
 
         // Filter out the main page (we add it explicitly) and deduplicate
         const categoryRelated = categoryPages.filter(
-          (p) => p.toLowerCase() !== countryName.toLowerCase()
+          (p: string) => p.toLowerCase() !== countryName.toLowerCase()
         );
 
         pagesToScan = [

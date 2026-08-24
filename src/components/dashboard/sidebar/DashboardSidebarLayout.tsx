@@ -174,7 +174,7 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "sticky top-6 space-y-3.5 transition-[transform,opacity] duration-300 ease-out",
+                  "sticky top-20 space-y-3.5 transition-[transform,opacity] duration-300 ease-out",
                   variant === "rail"
                     ? "translate-x-0 opacity-100"
                     : isCollapsedNow

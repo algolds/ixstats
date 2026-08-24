@@ -386,7 +386,7 @@ export function MentionPopover({
               {isClub && teamData && (
                 <div className="flex flex-col gap-2 text-left">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg" style={{ color: teamData.color || "#eab308" }}>
+                    <span className="text-lg" style={{ color: teamData.color || "var(--color-warning-light)" }}>
                       🛡️
                     </span>
                     <div>

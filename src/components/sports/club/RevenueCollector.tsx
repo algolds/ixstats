@@ -44,7 +44,7 @@ export function RevenueCollector({
     <Card className="facet-hierarchy-child bg-card/40 border-border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base font-bold">
-          <Coins className="h-5 w-5" style={{ color: teamColor || "#f59e0b" }} />
+          <Coins className="h-5 w-5" style={{ color: teamColor || "var(--color-warning)" }} />
           Revenue Collection
         </CardTitle>
       </CardHeader>
@@ -70,10 +70,10 @@ export function RevenueCollector({
           </div>
           <div className="border-border flex items-center justify-between border-t pt-2 text-sm font-bold">
             <span className="text-foreground flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5" style={{ color: teamColor || "#10b981" }} />
+              <TrendingUp className="h-3.5 w-3.5" style={{ color: teamColor || "var(--color-success)" }} />
               Collect Match Revenue
             </span>
-            <span className="tabular-nums" style={{ color: teamColor || "#10b981" }}>
+            <span className="tabular-nums" style={{ color: teamColor || "var(--color-success)" }}>
               +{total.toLocaleString()}c
             </span>
           </div>
@@ -91,7 +91,7 @@ export function RevenueCollector({
           disabled={collect.isPending}
           className="w-full text-xs font-semibold text-white transition-all hover:opacity-90"
           size="sm"
-          style={{ backgroundColor: teamColor || "#3b82f6" }}
+          style={{ backgroundColor: teamColor || "var(--color-info)" }}
         >
           {collect.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
           Collect Revenue

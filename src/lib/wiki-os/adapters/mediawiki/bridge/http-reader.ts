@@ -175,6 +175,53 @@ export async function iiwikiSearch(query: string, limit: number = 10): Promise<W
   }
 }
 
+export async function httpGetCategoryMembers(
+  category: string,
+  limit: number = 50,
+  type?: "page" | "subcat" | "file",
+  wiki: WikiSource = "ixwiki"
+): Promise<{ members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }> }> {
+  const cleanCat = category.replace(/^Category:/i, "");
+  const base =
+    wiki === "iiwiki"
+      ? getIiwikiApiBaseUrl()
+      : wiki === "althistory"
+        ? ALTHISTORY_API
+        : DEFAULT_MEDIAWIKI_URL;
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("list", "categorymembers");
+  url.searchParams.set("cmtitle", `Category:${cleanCat}`);
+  url.searchParams.set("cmlimit", String(Math.min(limit, 100)));
+  url.searchParams.set("format", "json");
+  if (type) {
+    url.searchParams.set("cmtype", type);
+  }
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { members: [] };
+    const data = (await res.json()) as {
+      query?: {
+        categorymembers?: Array<{ pageid: number; title: string; ns: number }>;
+      };
+    };
+    const members = (data.query?.categorymembers ?? []).map((m) => ({
+      pageid: m.pageid,
+      title: m.title,
+      type: (m.ns === 14 ? "subcat" : m.ns === 6 ? "file" : "page") as "page" | "subcat" | "file",
+    }));
+    return { members };
+  } catch (err) {
+    console.error(`[WikiBridge] Error fetching category members for ${category} on ${wiki}:`, err);
+    return { members: [] };
+  }
+}
+
 // ──────────────────────────────────────────────
 // AltHistory Wiki HTTP API
 // ──────────────────────────────────────────────

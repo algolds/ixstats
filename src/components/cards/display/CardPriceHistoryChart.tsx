@@ -79,17 +79,17 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
               borderRadius: "8px",
               boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
             }}
-            labelStyle={{ color: "#94a3b8", fontSize: "10px", fontWeight: "bold" }}
-            itemStyle={{ color: "#38bdf8", fontSize: "11px", fontWeight: "black" }}
+            labelStyle={{ color: "var(--color-text-muted)", fontSize: "10px", fontWeight: "bold" }}
+            itemStyle={{ color: "var(--color-info-light)", fontSize: "11px", fontWeight: "black" }}
             formatter={(value) => [`${value} Credits`, "Value"]}
           />
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#f59e0b"
+            stroke="var(--color-warning)"
             strokeWidth={2}
-            dot={{ r: 3, stroke: "#f59e0b", strokeWidth: 1, fill: "#0f172a" }}
-            activeDot={{ r: 5, stroke: "#fbbf24", strokeWidth: 2, fill: "#f59e0b" }}
+            dot={{ r: 3, stroke: "var(--color-warning)", strokeWidth: 1, fill: "var(--color-bg-primary)" }}
+            activeDot={{ r: 5, stroke: "var(--color-warning-light)", strokeWidth: 2, fill: "var(--color-warning)" }}
           />
         </LineChart>
       </ResponsiveContainer>

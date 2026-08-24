@@ -362,8 +362,24 @@ export const nsImportCardsRouter = createTRPCRouter({
             select: {
               id: true,
               title: true,
+              description: true,
+              rarity: true,
+              season: true,
+              cardType: true,
+              category: true,
+              subcategory: true,
+              artwork: true,
+              artworkUrl: true,
+              artworkVariants: true,
+              artworkSource: true,
+              artworkCredit: true,
+              slug: true,
+              marketValue: true,
+              totalSupply: true,
+              stats: true,
               nsCardId: true,
               nsSeason: true,
+              nsData: true,
               isRetired: true,
               retiredAt: true,
               metadata: true,
@@ -389,14 +405,40 @@ export const nsImportCardsRouter = createTRPCRouter({
       })
       .map((o) => {
         const meta = (o.cards.metadata as Record<string, any>) || {};
-        const nation = (meta.nsData?.name as string) || o.cards.title;
+        const nsData = (o.cards.nsData as Record<string, any>) || {};
+        const nation = (meta.nsData?.name as string) || (nsData.name as string) || o.cards.title;
+        const flag =
+          (nsData.flag as string) ||
+          (meta.nsData?.flag as string) ||
+          o.cards.artworkUrl ||
+          o.cards.artwork ||
+          null;
         const takedown = meta.nsTakedown as Record<string, any> | null | undefined;
         return {
+          id: o.cards.id,
           cardId: o.cards.id,
           title: o.cards.title,
+          description: o.cards.description,
+          rarity: o.cards.rarity,
+          season: o.cards.season,
+          cardType: o.cards.cardType,
+          category: o.cards.category,
+          subcategory: o.cards.subcategory,
+          artwork: o.cards.artwork || flag || "",
+          artworkUrl: o.cards.artworkUrl || flag || null,
+          artworkVariants: (o.cards.artworkVariants as any) ?? null,
+          artworkSource: o.cards.artworkSource,
+          artworkCredit: o.cards.artworkCredit,
+          slug: o.cards.slug,
+          marketValue: o.cards.marketValue,
+          totalSupply: o.cards.totalSupply,
+          stats: o.cards.stats,
           nsCardId: o.cards.nsCardId,
           nsSeason: o.cards.nsSeason,
+          nsData: o.cards.nsData,
+          metadata: o.cards.metadata,
           nation,
+          imageUrl: flag,
           isHidden: o.cards.isRetired,
           hiddenAt: takedown?.hiddenAt ?? o.cards.retiredAt ?? null,
           reason: takedown?.reason ?? null,

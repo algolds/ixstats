@@ -80,7 +80,7 @@ export function MyLeagueSidebarLayout({
           <div
             className={cn("relative z-35 hidden shrink-0 lg:block", sidebarExtra ? "w-56" : "w-12")}
           >
-            <div className="sticky top-6 space-y-3">
+            <div className="sticky top-20 space-y-3">
               <MyLeagueSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}

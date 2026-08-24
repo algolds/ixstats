@@ -197,7 +197,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                           ) : (
                             <Icon
                               className="h-5 w-5"
-                              style={{ color: hasError ? "#ef4444" : cardColor }}
+                              style={{ color: hasError ? "var(--color-destructive)" : cardColor }}
                             />
                           )}
                         </div>
