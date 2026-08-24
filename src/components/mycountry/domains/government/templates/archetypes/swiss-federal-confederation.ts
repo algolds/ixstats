@@ -174,5 +174,4 @@ export const Swiss_Federal_ConfederationTemplate: GovernmentTemplate = {
         collectionMethod: "Import Based",
       },
     ],
-  }
 };

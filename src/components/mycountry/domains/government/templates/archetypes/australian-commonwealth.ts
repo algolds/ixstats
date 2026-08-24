@@ -174,8 +174,4 @@ export const Australian_CommonwealthTemplate: GovernmentTemplate = {
         collectionMethod: "Annual Filing",
       },
     ],
-  },
-];
-
-/**
 };

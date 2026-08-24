@@ -366,5 +366,4 @@ export const Imperial_AdministrationTemplate: GovernmentTemplate = {
         collectionMethod: "Annual Assessment",
       },
     ],
-  }
 };

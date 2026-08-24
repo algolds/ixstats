@@ -185,5 +185,4 @@ export const Nordic_Social_DemocracyTemplate: GovernmentTemplate = {
         collectionMethod: "Payroll Deduction",
       },
     ],
-  }
 };

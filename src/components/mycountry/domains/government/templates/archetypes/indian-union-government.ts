@@ -189,5 +189,4 @@ export const Indian_Union_GovernmentTemplate: GovernmentTemplate = {
         collectionMethod: "Import Based",
       },
     ],
-  }
 };

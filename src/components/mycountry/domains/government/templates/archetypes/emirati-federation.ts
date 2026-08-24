@@ -175,5 +175,4 @@ export const Emirati_FederationTemplate: GovernmentTemplate = {
         collectionMethod: "Import Based",
       },
     ],
-  }
 };

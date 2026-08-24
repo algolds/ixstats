@@ -179,5 +179,4 @@ export const German_Federal_RepublicTemplate: GovernmentTemplate = {
         collectionMethod: "Payroll Deduction",
       },
     ],
-  }
 };

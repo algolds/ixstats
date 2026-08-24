@@ -185,5 +185,4 @@ export const Canadian_ConfederationTemplate: GovernmentTemplate = {
         collectionMethod: "Payroll Deduction",
       },
     ],
-  }
 };

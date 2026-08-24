@@ -179,5 +179,4 @@ export const Brazilian_Federal_RepublicTemplate: GovernmentTemplate = {
         collectionMethod: "Payroll Deduction",
       },
     ],
-  }
 };

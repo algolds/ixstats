@@ -185,5 +185,4 @@ export const Singaporean_MeritocracyTemplate: GovernmentTemplate = {
         collectionMethod: "Transaction Based",
       },
     ],
-  }
 };

@@ -426,6 +426,5 @@ export const institutions_control_mapping: Partial<Record<ComponentType, AtomicG
           enabled: true,
         },
       ],
-    }
-};
+    },
 };

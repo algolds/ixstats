@@ -180,5 +180,4 @@ export const Japanese_Parliamentary_SystemTemplate: GovernmentTemplate = {
         collectionMethod: "Payroll Deduction",
       },
     ],
-  }
 };
