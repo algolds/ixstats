@@ -1,4 +1,7 @@
-import { getBasePath, withBasePath } from "../../lib/base-path";
+/**
+ * @jest-environment node
+ */
+import { getBasePath, withBasePath } from "~/lib/base-path";
 
 describe("Dynamic Base Path Resolution", () => {
   const originalEnv = { ...process.env };

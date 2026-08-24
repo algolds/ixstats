@@ -37,7 +37,10 @@ src/
 1. **`ClerkProvider`**: Multi-tenant authentication context (optional in development demo mode).
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
 3. **`FacetThemeProvider`**: Theme context (dark/light, flag-ambient glow injection).
-4. **`HaloWayfinding`**: Global navigation overlay (`<Halo />`) providing contextual shortcuts and system status.
+4. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
+5. **`HaloWayfinding`**: Global navigation overlay (`<Halo />`) providing contextual shortcuts, system status, and live dynamic notifications.
+
+> See **[Facet Design System & Interaction Bible](file:///home/jxsig/projects/ixstats/docs/reference/facet-design-system.md)** for complete specifications on volumetric Z-depth, compounding blur hierarchy, physical materials, 100% Radix primitive standards, Cuelume audio matrices, and Apple/Emil Kowalski motion physics.
 
 ---
 

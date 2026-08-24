@@ -92,7 +92,7 @@ export function extractDataFromWikiSections(
 
       // GDP Nominal
       const gdpMatch = content.match(
-        /GDP\s*(?:nominal)?\s*(?:is|of|stood at|reached|was)?\s*(?:around|approximately)?\s*(?:[\$€£])?\s*([\d,\.]+\s*(?:trillion|billion|million)?)/i
+        /(?:GDP|gross domestic product)\s*(?:nominal)?\s*(?:of [^\$€£\d]+?)?\s*(?:is|of|stood at|reached|was)?\s*(?:around|approximately)?\s*(?:[\$€£])?\s*([\d,\.]+\s*(?:trillion|billion|million)?)/i
       );
       if (gdpMatch && gdpMatch[1]) {
         const val = parseNumericValue(gdpMatch[1]);

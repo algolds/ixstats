@@ -1,17 +1,8 @@
 // src/app/admin/autosave-monitor/page.tsx
-// Admin page for autosave system monitoring
+"use client";
 
-import { AutosaveMonitoringDashboard } from "../_components/AutosaveMonitoringDashboard";
+import { AdminRouter } from "../_components/AdminRouter";
 
-export const metadata = {
-  title: "Autosave Monitor | Admin Console",
-  description: "Monitor autosave system health and performance",
-};
-
-export default function AutosaveMonitorPage() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <AutosaveMonitoringDashboard />
-    </div>
-  );
+export default function Page() {
+  return <AdminRouter />;
 }

@@ -1,0 +1,92 @@
+import { ComponentType } from "@prisma/client";
+
+/**
+ * Component Category Groupings with Display Names
+ */
+export const COMPONENT_CATEGORIES = {
+  "Power Distribution": [
+    ComponentType.CENTRALIZED_POWER,
+    ComponentType.FEDERAL_SYSTEM,
+    ComponentType.CONFEDERATE_SYSTEM,
+    ComponentType.UNITARY_SYSTEM,
+  ],
+  "Decision Process": [
+    ComponentType.DEMOCRATIC_PROCESS,
+    ComponentType.AUTOCRATIC_PROCESS,
+    ComponentType.TECHNOCRATIC_PROCESS,
+    ComponentType.CONSENSUS_PROCESS,
+    ComponentType.OLIGARCHIC_PROCESS,
+  ],
+  "Legitimacy Sources": [
+    ComponentType.ELECTORAL_LEGITIMACY,
+    ComponentType.TRADITIONAL_LEGITIMACY,
+    ComponentType.PERFORMANCE_LEGITIMACY,
+    ComponentType.CHARISMATIC_LEGITIMACY,
+    ComponentType.RELIGIOUS_LEGITIMACY,
+    ComponentType.INSTITUTIONAL_LEGITIMACY,
+  ],
+  Institutions: [
+    ComponentType.PROFESSIONAL_BUREAUCRACY,
+    ComponentType.MILITARY_ADMINISTRATION,
+    ComponentType.INDEPENDENT_JUDICIARY,
+    ComponentType.PARTISAN_INSTITUTIONS,
+    ComponentType.TECHNOCRATIC_AGENCIES,
+  ],
+  "Control Mechanisms": [
+    ComponentType.RULE_OF_LAW,
+    ComponentType.SURVEILLANCE_SYSTEM,
+    ComponentType.ECONOMIC_INCENTIVES,
+    ComponentType.SOCIAL_PRESSURE,
+    ComponentType.MILITARY_ENFORCEMENT,
+  ],
+  "Administrative Efficiency": [
+    ComponentType.DIGITAL_GOVERNMENT,
+    ComponentType.E_GOVERNANCE,
+    ComponentType.ADMINISTRATIVE_DECENTRALIZATION,
+    ComponentType.MERIT_BASED_SYSTEM,
+    ComponentType.PERFORMANCE_MANAGEMENT,
+    ComponentType.QUALITY_ASSURANCE,
+    ComponentType.STRATEGIC_PLANNING,
+    ComponentType.RISK_MANAGEMENT,
+  ],
+  "Social Policy": [
+    ComponentType.WELFARE_STATE,
+    ComponentType.UNIVERSAL_HEALTHCARE,
+    ComponentType.PUBLIC_EDUCATION,
+    ComponentType.SOCIAL_SAFETY_NET,
+    ComponentType.WORKER_PROTECTION,
+    ComponentType.ENVIRONMENTAL_PROTECTION,
+    ComponentType.CULTURAL_PRESERVATION,
+    ComponentType.MINORITY_RIGHTS,
+  ],
+  "International Relations": [
+    ComponentType.MULTILATERAL_DIPLOMACY,
+    ComponentType.BILATERAL_RELATIONS,
+    ComponentType.REGIONAL_INTEGRATION,
+    ComponentType.INTERNATIONAL_LAW,
+    ComponentType.DEVELOPMENT_AID,
+    ComponentType.HUMANITARIAN_INTERVENTION,
+    ComponentType.TRADE_AGREEMENTS,
+    ComponentType.SECURITY_ALLIANCES,
+  ],
+  "Innovation & Development": [
+    ComponentType.RESEARCH_AND_DEVELOPMENT,
+    ComponentType.INNOVATION_ECOSYSTEM,
+    ComponentType.TECHNOLOGY_TRANSFER,
+    ComponentType.ENTREPRENEURSHIP_SUPPORT,
+    ComponentType.INTELLECTUAL_PROPERTY,
+    ComponentType.STARTUP_INCUBATION,
+    ComponentType.DIGITAL_INFRASTRUCTURE,
+    ComponentType.SMART_CITIES,
+  ],
+  "Crisis Management": [
+    ComponentType.EMERGENCY_RESPONSE,
+    ComponentType.DISASTER_PREPAREDNESS,
+    ComponentType.PANDEMIC_MANAGEMENT,
+    ComponentType.CYBERSECURITY,
+    ComponentType.COUNTER_TERRORISM,
+    ComponentType.CRISIS_COMMUNICATION,
+    ComponentType.RECOVERY_PLANNING,
+    ComponentType.RESILIENCE_BUILDING,
+  ],
+};

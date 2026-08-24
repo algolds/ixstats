@@ -1,7 +1,7 @@
 /**
  * Unified Intelligence Router
  *
- * Comprehensive intelligence router that combines SDI/ECI functionality with
+ * Comprehensive intelligence router powering national security, crisis response,
  * executive dashboard operations, diplomatic channels, and unified intelligence feeds.
  *
  * Features:
@@ -303,16 +303,8 @@ export const intelCoreDiplomaticRouter = createTRPCRouter({
 
   // ===== CABINET MEETING MANAGEMENT =====
 
-  // ===== ECONOMIC POLICY MANAGEMENT =====
-  // ===== CRISIS MANAGEMENT (from SDI) =====
-
-  // ===== ECONOMIC INTELLIGENCE (from SDI) =====
-
-  // ===== DIPLOMATIC INTELLIGENCE (from SDI) =====
-
   /**
    * Get enhanced diplomatic intelligence
-   * Migrated from SDI router - extends existing diplomatic functionality
    */
   getEnhancedDiplomaticIntelligence: publicProcedure
     .input(
@@ -605,5 +597,3 @@ export const intelCoreDiplomaticRouter = createTRPCRouter({
     }),
 });
 
-// ===== HELPER FUNCTIONS =====
-// Migrated from ECI router for advanced analytics and AI recommendations

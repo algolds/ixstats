@@ -34,18 +34,21 @@ const PipelineWizard = nextDynamic(
   { ssr: false, loading: LazyLoading }
 );
 
-type TabId = "pipeline" | "edits" | "settings" | "style-editor";
+type TabId = "pipeline" | "edits" | "settings";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "settings", label: "Settings" },
-  { id: "style-editor", label: "Style Editor" },
   { id: "pipeline", label: "Import Pipeline" },
   { id: "edits", label: "Edit Queue" },
 ];
 
-export default function AdminMapsPage() {
-  usePageTitle({ title: "Admin - World Map" });
-  const [activeTab, setActiveTab] = useState<TabId>("settings");
+interface AdminMapsPageProps {
+  initialTab?: TabId;
+}
+
+export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPageProps = {}) {
+  usePageTitle({ title: "Admin - Atlas World Map" });
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   const { data: stats, isLoading } = api.geoCore.getMapStats.useQuery(undefined, {
     refetchInterval: 30000,
@@ -56,131 +59,80 @@ export default function AdminMapsPage() {
     <div className="space-y-6">
       <AdminHeader
         icon={Globe2}
-        title="World Map"
-        description="Manage the IxEarth map, assign countries, and review edits"
+        title="Atlas World Map"
+        description="Manage the IxEarth map, assign countries, coordinate PostGIS layers, and review vector edits."
       />
 
       {/* Summary stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <StatCard
-          label="Total Features"
-          value={stats?.totalFeatures}
-          isLoading={isLoading}
-          color="blue"
-        />
-        <StatCard
-          label="Political Regions"
-          value={stats?.politicalFeatures}
-          isLoading={isLoading}
-          color="emerald"
-        />
-        <StatCard
-          label="Linked Countries"
-          value={stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : undefined}
-          isLoading={isLoading}
-          color="amber"
-        />
-        <StatCard
-          label="Linkage Rate"
-          value={stats ? `${stats.linkageRate}%` : undefined}
-          isLoading={isLoading}
-          color="purple"
-        />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Features</p>
+          {isLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+              {stats?.totalFeatures?.toLocaleString() ?? "—"}
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Political Regions</p>
+          {isLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
+              {stats?.politicalFeatures?.toLocaleString() ?? "—"}
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Linked Countries</p>
+          {isLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="text-amber-400 mt-1 font-mono text-xl font-bold tracking-tight">
+              {stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : "—"}
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Linkage Rate</p>
+          {isLoading ? (
+            <Skeleton className="mt-1 h-7 w-20" />
+          ) : (
+            <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">
+              {stats ? `${stats.linkageRate}%` : "—"}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Tab navigation */}
-      <div className="border-border border-b">
-        <nav className="-mb-px flex gap-4 overflow-x-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`border-b-2 px-1 pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-500"
-                  : "text-muted-foreground hover:border-border hover:text-foreground border-transparent"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-all ${
+              activeTab === tab.id
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Tab content */}
-      {activeTab === "pipeline" && <PipelineWizard />}
-      {activeTab === "edits" && <EditQueuePanel />}
-      {activeTab === "settings" && <MapSettingsTab />}
-      {activeTab === "style-editor" && <MapStyleSettingsPanel />}
-    </div>
-  );
-}
-
-function MapStyleSettingsPanel() {
-  return (
-    <div className="space-y-6">
-      <div className="border-border bg-card rounded-xl border p-6">
-        <div className="flex items-start gap-4">
-          <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
-            <Palette className="h-6 w-6" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <h3 className="text-foreground text-lg font-semibold">Visual Style & Theme Editor</h3>
-            <p className="text-muted-foreground max-w-2xl text-sm">
-              IxStats uses the MapLibre GL style specification to define visual layers, fonts,
-              colors, and layout configurations. The embedded Maputnik style editor allows you to
-              edit standard, dark, and paper styles visually and preview them with live PostGIS
-              geographic boundaries.
-            </p>
-          </div>
-        </div>
-
-        <div className="border-border/60 mt-6 flex items-center justify-between border-t pt-6">
-          <div className="space-y-1">
-            <div className="text-foreground text-sm font-medium">Launch Style Editor</div>
-            <div className="text-muted-foreground text-xs">
-              Visual editing is done in a full-screen environment.
-            </div>
-          </div>
-          <Link
-            href="/admin/maps/style-editor"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-          >
-            <span>Open Style Editor</span>
-            <ExternalLink className="h-4 w-4" />
-          </Link>
-        </div>
+      <div className="space-y-4">
+        {activeTab === "pipeline" && <PipelineWizard />}
+        {activeTab === "edits" && <EditQueuePanel />}
+        {activeTab === "settings" && <MapSettingsTab />}
       </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  isLoading,
-  color,
-}: {
-  label: string;
-  value: string | number | undefined;
-  isLoading: boolean;
-  color: string;
-}) {
-  const colorMap: Record<string, string> = {
-    blue: "border-blue-500/20 from-blue-500/10 to-blue-600/5",
-    emerald: "border-emerald-500/20 from-emerald-500/10 to-emerald-600/5",
-    amber: "border-amber-500/20 from-amber-500/10 to-amber-600/5",
-    purple: "border-purple-500/20 from-purple-500/10 to-purple-600/5",
-  };
-
-  return (
-    <div className={`rounded-xl border bg-gradient-to-br p-4 ${colorMap[color] || colorMap.blue}`}>
-      <span className="text-muted-foreground text-xs font-medium uppercase">{label}</span>
-      {isLoading ? (
-        <Skeleton className="mt-1 h-8 w-20" />
-      ) : (
-        <div className="text-foreground mt-1 text-2xl font-bold">{value ?? "—"}</div>
-      )}
     </div>
   );
 }

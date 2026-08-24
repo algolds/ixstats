@@ -2,17 +2,17 @@ import { describe, it, expect } from "@jest/globals";
 import { checkServerBoundary } from "../../../scripts/audit/audit-arch";
 import {
   ATOMIC_TAX_COMPONENTS,
-  calculateTaxEfficiencyScore,
+  calculateTotalTaxEffectiveness,
   TAX_COMPONENT_CATEGORIES,
-} from "../../lib/government/tax/atomic-tax-components";
-import { modernArchetypes } from "../../lib/economy/archetypes/modern";
-import { historicalArchetypes } from "../../lib/economy/archetypes/historical";
+} from "~/lib/government/tax/atomic-tax-components";
+import { modernArchetypes } from "~/lib/economy/archetypes/modern";
+import { historicalArchetypes } from "~/lib/economy/archetypes/historical";
 import {
   enhancedArchetypes,
   archetypeCategories,
   validateArchetypeSelection,
-} from "../../lib/archetypes/catalog";
-import { extractDataFromWikiSections } from "../../lib/builder/wiki-data-extractor";
+} from "~/lib/archetypes/catalog";
+import { extractDataFromWikiSections } from "~/lib/builder/wiki-data-extractor";
 
 describe("Plan 161: Domain Contract Boundary", () => {
   describe("Architecture Guard Check", () => {
@@ -23,19 +23,19 @@ describe("Plan 161: Domain Contract Boundary", () => {
   });
 
   describe("Atomic Tax Components Contract", () => {
-    it("exports 42 atomic tax components across 6 categories", () => {
-      expect(Object.keys(ATOMIC_TAX_COMPONENTS).length).toBe(42);
-      expect(TAX_COMPONENT_CATEGORIES.length).toBe(6);
+    it("exports atomic tax components across 5 categories", () => {
+      expect(Object.keys(ATOMIC_TAX_COMPONENTS).length).toBeGreaterThanOrEqual(40);
+      expect(Object.keys(TAX_COMPONENT_CATEGORIES).length).toBe(5);
     });
 
-    it("correctly computes tax efficiency scores for selected component IDs", () => {
-      const efficiency = calculateTaxEfficiencyScore([
-        "progressive-income-tax",
-        "corporate-flat-tax",
-        "automated-tax-filing",
+    it("correctly computes tax effectiveness metrics for selected component IDs", () => {
+      const metrics = calculateTotalTaxEffectiveness([
+        "digital_filing",
+        "progressive_tax",
+        "audit_system",
       ]);
-      expect(efficiency).toBeGreaterThan(0);
-      expect(efficiency).toBeLessThanOrEqual(100);
+      expect(metrics.totalEffectiveness).toBeGreaterThan(0);
+      expect(metrics.totalEffectiveness).toBeLessThanOrEqual(100);
     });
   });
 

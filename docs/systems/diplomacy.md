@@ -1,12 +1,11 @@
-# Diplomacy System
+# 🏛️ MyCountry Diplomacy Domain
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`), powered by the **Concord Living-World Engine** (`CONCORD_ENGINE_VERSION = 2`).
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Concord Living-World Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
+**Primary Action:** `ALLIED` | **Domain Accent:** Cyan Blue (`#06B6D4` / `--color-cyan-500`)  
+**Route:** `/mycountry` (Diplomacy Domain) | **Status:** 📀 Gold Master (100% Ready)  
 
-The diplomacy domain handles international relations, embassy networks, missions, cultural exchanges, alliances, foreign policy, scenario generation, and autonomous NPC reactions.
-
-> **⚠️ IMPORTANT:** All diplomatic direct communications use the **ThinkShare unified messaging architecture** at `/messages` and embedded secure terminals.
+The diplomacy domain handles international relations, embassy networks, missions, cultural exchanges, multilateral alliances, foreign policy scenarios, and autonomous NPC reactions. Direct diplomatic communications route through **ThinkShare** (`/messages`).
 
 ---
 

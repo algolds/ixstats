@@ -118,25 +118,18 @@ export function Navigation() {
       <nav
         onMouseEnter={onNavMouseEnter}
         onMouseLeave={onNavMouseLeave}
-        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
+        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-200 ${
           isWikiPage
-            ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
-            : "from-background/80 via-secondary/80 to-background/80 border-border bg-gradient-to-r shadow-2xl"
+            ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-sm"
+            : "border-border/40 bg-background/80 shadow-xs"
         }`}
         style={{
           opacity: isNavVisible ? 1 : 0,
           transform: isNavVisible ? "translateY(0)" : "translateY(-100%)",
           pointerEvents: isNavVisible ? "auto" : "none",
-          transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out, background-color 0.3s ease",
+          transition: "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out, background-color 0.2s ease",
         }}
       >
-        {!isWikiPage && (
-          <div
-            className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent"
-            style={{ opacity: isNavVisible ? 1 : 0 }}
-          />
-        )}
-
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <NavigationBar
             visibleNavItems={visibleNavItems}
@@ -219,6 +212,8 @@ export function Navigation() {
 
       {!isMobile && (
         <motion.div
+          onMouseEnter={onNavMouseEnter}
+          onMouseLeave={onNavMouseLeave}
           className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
           animate={{
             y: activeIsSticky ? 8 : 10,
@@ -234,7 +229,9 @@ export function Navigation() {
             maxWidth: "100%",
           }}
         >
-          <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
+          <div className="pointer-events-auto">
+            <CommandPalette isSticky={activeIsSticky} scrollY={activeScrollY} />
+          </div>
         </motion.div>
       )}
     </>

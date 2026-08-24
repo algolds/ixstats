@@ -1,8 +1,9 @@
-# Economic & Statistical Calculations
+# 🏛️ Statecraft Economic & Statistical Calculus
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Reference / Calculation Engine for MyCountry Engine v4 and Economy subsystems.
+**Parent Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Scope:** Mathematical formulas, worked examples, and deterministic rules for growth caps, tax brackets, and vitality indices.  
+**Status:** 📀 Gold Master (100% Ready)  
 
 This document provides mathematical formulas, worked examples, and architectural rules for all economic models, tier-based growth caps, synergy calculations, and statistical indices in IxStates.
 

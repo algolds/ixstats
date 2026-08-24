@@ -1,6 +1,6 @@
-import { diplomaticCulturalNpcResponsesRouter } from "../../../../server/api/routers/diplomacy/cultural/npc/responses";
-import { createCallerFactory } from "../../../../server/api/trpc";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { diplomaticCulturalNpcResponsesRouter } from "~/server/api/routers/diplomacy/cultural/npc/responses";
+import { createCallerFactory } from "~/server/api/trpc";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 159: Diplomacy NPC Responses Query Batching", () => {
   const createCaller = createCallerFactory(diplomaticCulturalNpcResponsesRouter);

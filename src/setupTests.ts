@@ -11,6 +11,26 @@ if (typeof (globalThis as { fetch?: unknown }).fetch === "undefined") {
   if (fetchModule.Headers) g.Headers = fetchModule.Headers;
 }
 
+// Polyfill Clerk publishable key for test env
+process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_mock_key_for_testing";
+
+// Mock window.matchMedia for jsdom
+if (typeof window !== "undefined" && !window.matchMedia) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
+
 jest.mock("@number-flow/react", () => {
   return {
     __esModule: true,
@@ -19,3 +39,4 @@ jest.mock("@number-flow/react", () => {
 });
 
 export {};
+

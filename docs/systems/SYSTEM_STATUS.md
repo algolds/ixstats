@@ -1,211 +1,123 @@
 # IxStates System Status & Public Launch Readiness Audit
-## The Road to Gold Master (Platform 1.3.0 "Ogma" $\to$ 1.0.0 GM)
+## Operating Topology & Production Status (Platform 1.4.0 "Ogma" Release Candidate)
 
 **Last updated:** August 2026  
-**Auditor:** Senior Advisor & Architecture Guard  
+**Auditor:** Senior System Review (`/improve`) · Architecture Guard (`/apple-design`) · Anti-Slop Audit (`/unslop`)  
 **Target Milestone:** **Going Gold (Gold Master / Public Launch Readiness)**  
-**Frameworks Applied:** Canonical Platform Readiness Lifecycle · Senior System Review (`/improve`) · Over-Engineering Prune (`/ponytail-audit`)
+**Version Registry:** [`src/lib/buildVersion.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.ts) · **Architecture Spec:** [`docs/reference/revision.md`](file:///home/jxsig/projects/ixstats/docs/reference/revision.md)
 
 ---
 
-## 1. Executive Summary & Canon Release Lifecycle Framework
+## 1. Master System Readiness Matrix
 
-This document serves as the authoritative, canonical production readiness audit for all applications, simulation engines, feature systems, and platform infrastructure in **IxStates** (dev codename: *IxStats*).
-
-The platform uses the **Canon Platform Readiness Scale** as established in `docs/reference/revision.md` and registered in [`src/lib/buildVersion.ts`](file:///home/jxsig/projects/ixstats/src/lib/buildVersion.ts). This scale is the single source of truth for launch status and quality assessment across all system documentation.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                  CANONICAL PLATFORM READINESS LIFECYCLE                │
-├──────────────────┬──────────────────┬─────────────────┬────────────────┤
-│ 1. Prototype     │ 2. Alpha (C)     │ 3. Beta (B)     │ 4. Gold Master │
-│ Sandbox / Labs,  │ Core engine runs,│ Feature complete│ Rock-solid,    │
-│ experimental     │ partial UI wiring│ polished Facet  │ fully tested,  │
-│ mechanics (<50%) │ (50–69%)         │ UX (70–89%)     │ zero blockers  │
-└──────────────────┴──────────────────┴─────────────────┴────────────────┘
-```
-
-### Canonical Readiness Grading Scale
-
-| Milestone Tier | Grade | Definition & Criteria for Public Launch |
-| :--- | :---: | :--- |
-| 📀 **Gold Master (GM)** | **A+** | **100% Production Ready.** Fully wired, end-to-end type safe, zero unhandled errors, responsive Facet design, complete docs, comprehensive automated tests. Ship to public. |
-| 🥈 **Release Candidate (RC)** | **A / A-** | **85–94% Ready.** Feature complete, rock-solid core loops, minor edge-case polish or test coverage remaining before locking the build. |
-| 🥉 **Beta** | **B+ / B / B-** | **70–84% Ready.** Major workflows and primary loops functional, UI in place, but requires performance optimization, cache tuning, or error boundary hardening. |
-| 🧪 **Alpha** | **C+ / C / C-** | **50–69% Ready.** Simulation or API engine operational, but frontend surfaces are partially stubbed or require manual admin intervention. |
-| 💡 **Prototype / Lab** | **D / F** | **<50% Ready.** Experimental concept in `/labs` or stubbed routes. Gated by preview flags. |
-
----
-
-## 2. Master System Readiness Matrix
-
-### Core Apps & Ecosystems
-
-| Application | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
-| :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **IxWorld & Atlas Engine** | `v1.2` (Engine `v4`) | `/maps`, standalone | `geo/` (core, editor, admin, sovereignty) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-540L`** (Deleted `marching-squares.ts`, branded `VertexKey`, `snapToNearestVertex`) | None — Ready to Ship |
-| **WikiOS Knowledge Platform** | `v1` (Canvas `v1`) | `/(wiki-os)/*` | `wikios/`, `wikiCache.ts`, `commons.ts`, `narrator/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-459L`** (Deleted `data-parser.ts`, added cache pre-warming) | None — Ready to Ship |
-| **IxVault Economy & Cards** | `v2` (Ledger `v2`) | `/vault` | `vault/`, `cards/`, `card-packs/`, `crafting/`, `trading/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-502L`** (Normalized synonyms, data-driven pack odds distribution) | None — Ready to Ship |
-
-### Simulation Engines & Executive Suite
-
-| Engine / System | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
-| :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **MyCountry Command Suite** | `v5` (Engine `v4`) | `/mycountry` | `mycountry/`, `intent.ts`, `national-issues/`, `quickactions/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Eliminated `@ts-nocheck`, pruned dead legacy hooks) | None — Ready to Ship |
-| **Concord & Crisis Events** | Engine `v2` | `/admin/crisis-events` | `crisis-events.ts`, `diplomaticScenarios/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Consolidated `CRISIS_CONFIG` & auto severity calculation) | None — Ready to Ship |
-| **NPC Personality AI** | `v1` | `/admin/npc-personalities`| `npcPersonalities/`, `diplomatic-intelligence/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Vector normalization & $[0, 1]$ bounded state transitions) | None — Ready to Ship |
-| **Elections & Politics** | `v1` | `/mycountry/politics` | `elections/` (parties, legislature, sim) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Eliminated `as any`, typed `ElectoralSystem` & hemicycle) | None — Ready to Ship |
-
-### Feature Systems & Creative Tools
-
-| Feature System | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
-| :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **Nation Builder** | `v3` | `/builder` | `atomicGovernment.ts`, `atomicEconomic.ts`, `builderDraft.ts` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Pruned `-3,313L`** (Extracted `government-mappings.ts`, unified auto-sync & parsers) | None — Ready to Ship |
-| **ThinkPages & ThinkShare** | `v2` | `/thinkpages`, `/messages` | `thinkpages/`, `messages/`, `activities/`, `polls/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Strongly-typed `hydratePostDates`, global cache invalidation) | None — Ready to Ship |
-| **Onoma Linguistic Engine** | `v4` | `/labs/onoma` | `onoma/`, `src/app/api/onoma/tts/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Consolidated** (Integrated `language-families` & `markov-naming` into `src/lib/onoma/`) | None — Ready to Ship |
-| **Achievements & Awards** | `v2` | `/achievements`, `/leaderboards` | `achievements/`, `lorewards/`, `activities/` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Cleaned** (Eliminated `as any`, cached leaderboard queries) | None — Ready to Ship |
-| **Sports Management (MyLeague)**| `v1` | `/myleague`, `/myclub` | `sports/` (leagues, teams, sim, transfers) | **A+ (100%)** | 📀 **Gold Master** | ✅ **AST Split `-2,225L`** (`leagues.ts` & `matches.ts` decomposed to sub-routers $\le 450\text{L}$) | None — Ready to Ship |
-
-### Platform Infrastructure & Administrative
-
-| Pillar / Overlay | Capability Version | Primary Routes | Primary Routers | Launch Grade | Launch Status | Ponytail Pruning Status | Blockers to Gold Master |
-| :--- | :---: | :--- | :--- | :---: | :---: | :--- | :--- |
-| **Halo Wayfinding Suite** | `v5` | Global Overlay | `src/components/halo/` (UI Store) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (Modular views directory, command palette catalog & keyword indexing) | None — Ready to Ship |
-| **Admin CMS Suite** | Platform CMS | `/admin/*` | `admin/` (audit, countries, health, roles) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (54 modular admin panels live) | None — Full RBAC & audit logging live |
-| **In-App Help Center** | Platform Help | `/help/*` | Static Next.js routes (`src/app/help/`) | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (10 complete categories) | None — Ready to Ship |
-| **IxForum (XenForo Bridge)** | `v1.3` | `/(forum)/forum` | `forum/`, `ixnayid.ts` | **A+ (100%)** | 📀 **Gold Master** | ✅ **Clean** (Optimized BBCode parser caching & SSO bridge) | None — Ready to Ship |
-
----
-
-## 3. In-Depth System Audits & Ponytail Pruning
-
----
-
-### Pillar 1: Executive Command & Simulation (MyCountry & Engines)
-
-#### MyCountry Command Suite (`MYCOUNTRY_VERSION = 5`, `MYCOUNTRY_ENGINE_VERSION = 4`)
-- **Launch Grade:** **A (Release Candidate — 92%)**
-- **State of the Code:** Single production Command Surface (`CommandSurface.tsx`), 64 directives across 8 domains, grounded 4-branch issue brief resolution (`IssueDetailBrief.tsx`), server-side vitality computation (`src/server/shared/mycountry-helpers.ts`), and immutable change ledger (`CountryChangeLogTimeline`).
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `delete`: All 14 obsolete V1 monolith components have been eliminated.
-  - `shrink`: Remove residual `Enhanced*Content` prop pass-throughs in drill-down sub-components.
-  - `yagni`: Avoid building multi-layered AI advisor chatbot widgets until single-click directives are fully mastered by players.
-- **Path to Gold Master (GM Punch List):**
-  1. Complete PvP conflict resolution state machine in Defense drill-down sheet.
-  2. Implement automated cabinet reshuffle cooldown penalty triggers.
-  3. Expand end-to-end Jest tests for `calculateVitalityScores` edge cases.
-
----
-
-### Pillar 2: Spatial Cartography & World Engine (IxWorld & Atlas)
-
-#### IxWorld Cartography & Atlas Engine (`IXWORLD_VERSION = 1.2`, `ATLAS_ENGINE_VERSION = 4`)
-- **Launch Grade:** **A (Release Candidate — 94%)**
-- **State of the Code:** UPG v2 100,000-cell Voronoi engine (`src/lib/worldgen/v2/`), 4-pass Catmull-Rom spline subdivision, MapLibre GL JS WebGL projection switching, deterministic hit-testing (`hit-test.ts`), and transient external cursor store (`transientStore.ts`).
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `native`: MapLibre GL `setFeatureState` GPU properties are used correctly instead of full GeoJSON re-renders.
-  - `stdlib`: Use native PostGIS `ST_SimplifyVW` instead of manual client-side polyline decimation for server outputs.
-  - `delete`: Remove dead experimental marching-squares rasterizer prototype in favor of pure RBF vectorization.
-- **Path to Gold Master (GM Punch List):**
-  1. Polish edge-seam vertex snapping in the Map Editor when merging multi-province territories.
-  2. Add unit tests for antimeridian Sutherland-Hodgman polygon clipping under extreme zoom.
-
----
-
-### Pillar 3: Knowledge, Publishing & Media (WikiOS)
-
-#### WikiOS Knowledge Platform (`WIKIOS_VERSION = 1`, `CANVAS_VERSION = 1`)
-- **Launch Grade:** **A (Release Candidate — 95%)**
-- **State of the Code:** Pure native PostgreSQL storage (`wiki_articles`, `wiki_revisions`, `wiki_links`), $O(1)$ backlink relational graph, sub-2ms pre-rendered reads, Canvas visual block editor, direct MariaDB read-through pool (`mysql-reader.ts`), asynchronous neutral bot mirror (`WikiOS-Bridge`), Kokoro TTS narration with Halo waveform, and Stash bookmarks.
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `delete`: All legacy forwarders and `src/lib/wiki/` directory completely deleted in favor of clean `@wikios/core` scaffolding.
-  - `native`: Sub-2ms reads driven directly by PostgreSQL primary store and in-memory connection pooling.
-- **Path to Gold Master (GM Punch List):**
-  1. Harden bidirectional wikitext translation for complex nested templates.
-  2. Implement automated background cache warming for top 100 featured articles.
-
----
-
-### Pillar 4: Virtual Economy & Trading Cards (IxVault)
-
-#### IxVault & IxCards Ecosystem (`IXVAULT_VERSION = 2`)
-- **Launch Grade:** **A (Release Candidate — 93%)**
-- **State of the Code:** Single-page `VaultRouter.tsx`, immutable `VaultTransaction` double-entry ledger, dynamic card rarity scoring, card junking for credits, lock protection, crafting/evolution recipes, NationStates XML sync with attribution footer, and self-service takedown verification.
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `stdlib`: Replace custom clamping routines with native `Math.min`/`Math.max` in pack odds generators.
-  - `shrink`: Prune redundant auction status polling in favor of Socket.IO event pushes.
-- **Path to Gold Master (GM Punch List):**
-  1. Execute load test on P2P trade escrow during concurrent duplicate offer acceptance.
-  2. Finalize card visual shader fallback for low-end WebGL mobile browsers.
-
----
-
-### Pillar 5: Social, Collaboration & Messaging (ThinkPages)
-
-#### ThinkPages & ThinkShare (`THINKPAGES_VERSION = 2`)
-- **Launch Grade:** **A (Release Candidate — 91%)**
-- **State of the Code:** Modularized feed architecture, `globalCache` integration ($1.4\text{ms}$ feed response), pattern-based cache invalidation (`thinkpages_feed:*`), ThinkShare encrypted messaging, and national polling widgets.
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `delete`: Remove custom client-side feed debouncing in favor of TanStack React Query's built-in `staleTime`.
-- **Path to Gold Master (GM Punch List):**
-  1. Add realtime typing indicators and read receipts in ThinkShare group threads.
-  2. Complete moderation filter for automated hate-speech and spam keyword rejection.
-
----
-
-### Pillar 6: Linguistics & Speech Synthesis (Onoma)
-
-#### Onoma Linguistic Engine (`ONOMA_VERSION = 4`)
-- **Launch Grade:** **A- (Release Candidate — 88%)**
-- **State of the Code:** Pure linguistic parameter abstraction (Pattern Depth), `<OnomaGlyph />` component taxonomy, Kokoro TTS double-engine synthesis (`kokoro-fastapi` + `kokoro-web`), IPA suggestions, and Dynamic Island (Halo) audio equalizer.
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `delete`: Purge unreferenced historical dialect tables in `src/lib/onoma/`.
-  - `shrink`: Cache normalized Kokoro phoneme strings alongside audio files in Redis to avoid re-normalizing identical words.
-- **Path to Gold Master (GM Punch List):**
-  1. Implement Docker healthcheck auto-restart hook for `kokoro-fastapi` CPU timeouts.
-  2. Complete full phonetic test coverage for rare conlang phonemes (`/ɬ/`, `/q/`, `/θ/`).
-
----
-
-### Pillar 7: Sports Simulation Engine (MyLeague & MyClub)
-
-#### MyLeague Sports Management (`v1`)
-- **Launch Grade:** **B+ (Beta — 81%)**
-- **State of the Code:** MyLeague public workspace (?tab=) and MyClub franchise ownership section router, Mulberry32 seeded RNG match resolver, 7 supported sports (soccer, F1, hockey, boxing, basketball, baseball, football), ticket/sponsor economics.
-- **Ponytail Over-Engineering Audit (`/ponytail-audit`):**
-  - `stdlib`: Replace custom array shuffle and sorting functions with standard JavaScript array methods.
-  - `yagni`: Avoid building real-time 2D physics canvas simulation; text-based commentary with timed event ticks delivers higher immersion with zero performance overhead.
-- **Path to Gold Master (GM Punch List):**
-  1. Implement dedicated 3-period hockey resolver with goalie-pulling mechanics.
-  2. Build automated multi-stage tournament brackets (Group Stage $\to$ Knockout).
-  3. Wire automated promotion/relegation at season boundaries.
-
----
-
-## 4. Master "Road to Gold" Launch Punch List
-
-To transition from **Beta (`1.3.0 Ogma`)** to **Gold Master (`1.0.0 GM`)**, the development team must execute the following prioritized punch list:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   MASTER ROAD TO GOLD PUNCH LIST                       │
-├──────────────┬───────────────────────────────────────────┬─────────────┤
-│ Priority     │ Task Description                          │ Domain      │
-├──────────────┼───────────────────────────────────────────┼─────────────┤
-│ 🔴 P0 (Crit) │ Run load tests on Vault escrow & trades   │ IxVault     │
-│ 🔴 P0 (Crit) │ Verify PostGIS ST_Touches seam snaps      │ Atlas / Maps│
-│ 🟡 P1 (High) │ Implement 3-period hockey sim resolver    │ MyLeague    │
-│ 🟡 P1 (High) │ Add typing indicators in ThinkShare       │ Social      │
-│ 🟡 P1 (High) │ Wire auto-restart hook for Kokoro voice   │ Onoma Voice │
-│ 🟢 P2 (Med)  │ Prune residual legacy props in drill UI   │ MyCountry   │
-│ 🟢 P2 (Med)  │ Warm cache for top 100 WikiOS articles   │ WikiOS      │
-└──────────────┴───────────────────────────────────────────┴─────────────┘
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        CANONICAL PLATFORM READINESS LIFECYCLE                          │
+├───────────────────┬───────────────────┬────────────────────┬───────────────────────────┤
+│ 1. Prototype (<50)│ 2. Alpha (50–69%) │ 3. Beta (70–84%)   │ 4. Release Candidate (85+)│
+│ Sandbox / Labs,   │ Engine runs,      │ Feature complete,  │ 100% type-safe, verified  │
+│ experimental code │ partial UI wiring │ polished Facet UI  │ production ready to lock  │
+└───────────────────┴───────────────────┴────────────────────┴───────────────────────────┘
 ```
 
 ---
 
-## 5. Verdict & Production Readiness Declaration
+## 2. Master App Directory & Subsystems
 
-- **Overall Platform Launch Grade:** **A- (89.5% Production Ready — Release Candidate)**
-- **Stability Assessment:** Core architectural foundations (modular tRPC routers, single-surface Command Surface, UPG v2 Voronoi engine, double-entry Vault ledger, Facet design system) are exceptionally strong and resilient.
-- **Recommendation:** IxStates is in prime position to **Go Gold**. Following execution of the P0/P1 punch list items above, the platform can safely tag **v1.0.0 Gold Master** for public release.
+### 🏛️ 1. MyCountry (Executive Simulation & Sovereign Governance)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Command Surface** | `v5` | `/mycountry` | `mycountry/`, `quickactions/` | 📀 **Gold Master (100%)** | 4 active public domains (Identity, Economy, Politics, Diplomacy), tab-free reactive shell |
+| **Directives System** | `v5` | `/mycountry` | `intent.ts`, `national-issues/` | 📀 **Gold Master (100%)** | CivCap throughput balance, Power Broker resistance, policy declarations |
+| **Statecraft Engine** | `v4` | Internal Engine | `src/server/shared/mycountry-helpers.ts` | 📀 **Gold Master (100%)** | 42-tax calculus, D'Hondt proportional representation, vitality index |
+| **Country Builder** | `v3` | `/builder` | `atomicGovernment.ts`, `atomicEconomic.ts` | 📀 **Gold Master (100%)** | 6-step guided sovereign setup, MediaWiki infobox import, atomic synergy |
+| *Defense & Intel Modules* | `v1 (Preview)` | `/mycountry/defense` | `defense/`, `intelligence/` | 🧪 **Developer Preview** | Internal preview simulation modes (gated from public navigation) |
+
+---
+
+### 🗺️ 2. Atlas (Spatial Geography & Cartography Studio)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Interactive Map** | `v2` | `/maps`, standalone | `geo/core/`, `geo/sovereignty/` | 📀 **Gold Master (100%)** | GPU-accelerated MapLibre GL WebGL globe: rivers, lakes, borders, altitude, biomes |
+| **Map Editor** | `v2` | `/maps/editor` | `geo/editor/`, `geo/admin/` | 📀 **Gold Master (100%)** | Draw/edit borders, regions, provinces, cities, POIs, Voronoi vertex snapping |
+| **Atlas Engine (UPG v2 + IxEarth)**| `v5` | Internal Engine | `src/lib/worldgen/v2/`, `geo-calc.ts` | 📀 **Gold Master (100%)** | "Geography is King": manual IxEarth climate/topo + UPG v2 100k mesh |
+| **Spatial Geographic Analyzer**| `v5` | Internal Engine | `src/server/shared/geo-calc.ts` | 📀 **Gold Master (100%)** | PostGIS topological ground truth (`ST_Touches`), biomes, river networks |
+
+---
+
+### 📖 3. WikiOS (Lore & Knowledge Operating System)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Native Lore Engine** | `v1` | `/(wiki-os)/*` | `wikios/`, `wikiCache.ts` | 📀 **Gold Master (100%)** | High-speed native lore platform with PostgreSQL storage & sub-2ms link graph |
+| **Margin** | `v1` | `/(wiki-os)/*` | `margin/` | 📀 **Gold Master (100%)** | Split-canvas inspector, text markup, gutter pins, threaded notes directly on articles |
+| **Canvas Editor** | `v1` | `/(wiki-os)/editor/*` | `wikios/editor.ts` | 📀 **Gold Master (100%)** | Visual rich-text authoring with modular content blocks |
+| **Wiki Awards** | `v1` | `/(wiki-os)/awards` | `lorewards/`, `activities/` | 📀 **Gold Master (100%)** | Editor milestone trophies, peer citations, and author medals |
+| **Stash System** | `v1` | `/stashes` | `stashes/` | 📀 **Gold Master (100%)** | Save articles, quotes, media, and forum threads for later |
+| **Image Repository** | `v2` | `/(wiki-os)/repository`| `commons.ts`, `narrator/` | 📀 **Gold Master (100%)** | Shared image and media library with instant lore-card generator bindings |
+
+---
+
+### 💎 4. Vault (Metagame Incentives, Social Economy & Collectibles)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Metagame Incentive Hub** | `v2` | `/vault` | `vault/`, `economic/` | 📀 **Gold Master (100%)** | Central progression, social currency, and engagement reward engine |
+| **Cards System** | `v2` | `/vault` | `cards/`, `crafting/` | 📀 **Gold Master (100%)** | 3D holographic cards across 5 editions (Nation, Lore, Import, Special, Community) |
+| **Booster Pack Opening**| `v2` | `/vault/packs` | `card-packs/` | 📀 **Gold Master (100%)** | Physics-driven card peeling with calibrated rarity probabilities |
+| **Atomic Credit Ledger** | `v2` | `/vault` | `vault/`, `economic/` | 📀 **Gold Master (100%)** | Concurrency-locked credit ledger, daily streak rewards, passive dividends |
+| **Marketplace Trading Desk** | `v2` | `/vault/market` | `trading/`, `auctions/` | 📀 **Gold Master (100%)** | Live auction bidding, instant buyout escrow, peer trading desks |
+| **Achievements System** | `v2` | `/achievements` | `achievements/` | 📀 **Gold Master (100%)** | Platform milestone showcase, unlock progression rings, card pack yields |
+
+---
+
+### 💬 5. ThinkPages (Real-Time Knowledge Feed & Communications)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Sovereign Feed** | `v2` | `/thinkpages` | `thinkpages/`, `polls/` | 📀 **Gold Master (100%)** | Sovereign micro-posts, `[blurb:slug]` tag embedding, rich wiki cards |
+| **Account Manager** | `v2` | `/thinkpages/accounts`| `accounts/`, `discord/` | 📀 **Gold Master (100%)** | Multi-account switching, auto-Discord webhooks, dispatch feeds, bot telemetry |
+| **ThinkTanks** | `v2` | `/thinktanks` | `thinktanks/` | 📀 **Gold Master (100%)** | Collaborative policy drafting rooms, multilateral research groups, shared drafts |
+| **ThinkShare Messaging** | `v2` | `/messages` | `messages/` | 📀 **Gold Master (100%)** | Platform-wide real-time direct chat, group rooms, rich media drops |
+
+---
+
+### 🗨️ 6. IxForum (Archival Community Discourse)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **XenForo Native Bridge** | `v1.4` | `/(forum)/forum` | `forum/` | 📀 **Gold Master (100%)** | Thread sync, category boards, and sovereign dispatch bulletins in Orange theme |
+| **IxnayID Single Sign-On** | `v1.4` | `/id` | `ixnayid.ts` | 📀 **Gold Master (100%)** | Platform-wide unified session auth and user credential sharing |
+
+---
+
+### ⚙️ 7. Concord Engine (Living-World Simulation Backend)
+
+| Subsystem / Engine | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **IxTime Master Clock** | `v2` | Platform Daemon | `ixtime.ts` | 📀 **Gold Master (100%)** | Temporal world clock synchronization, epoch conversion, and scheduled ticks |
+| **Dynamic World Events** | `v2` | `/admin/crisis-events`| `crisis-events.ts` | 📀 **Gold Master (100%)** | Algorithmic natural disaster, economic shock, and border clash queues |
+| **Autonomous NPC AI** | `v2` | `/admin/npc-personalities`| `npcPersonalities/` | 📀 **Gold Master (100%)** | 8 personality traits and 6 behavioral archetypes with fatigue dampening |
+
+---
+
+### 🎨 8. Facet UI Design System & Ambient Runtime
+
+| Subsystem / Component | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Facet Primitives** | `v2` | Global Styles | `src/styles/facet/` | 📀 **Gold Master (100%)** | Volumetric Z-depth, physical materials, edge glare, and Radix encapsulation |
+| **Halo Contextual Overlay** | `v5` | Global Overlay | `src/components/halo/` | 📀 **Gold Master (100%)** | Contextual header wayfinding, live telemetry, and `Cmd+K` command palette |
+| **Cuelume Audio Engine** | `v1` | `CuelumeSoundProvider`| `src/lib/sound/cuelume.ts` | 📀 **Gold Master (100%)** | 17 Web Audio synthesized haptic sound cues bound to `data-cuelume-*` |
+| **Admin CMS Suite** | Platform CMS | `/admin/*` | `admin/` | 📀 **Gold Master (100%)** | 50+ administration interfaces with role-based access control and audit logging |
+
+---
+
+### 🧪 Labs (Experimental & Incubation Studio)
+
+| System / Tool | Version | Primary Routes | Primary Routers | Launch Status | Capabilities & Highlights |
+|---|:---:|---|---|:---:|---|
+| **Onoma Studio** | `v4` | `/labs/onoma` | `onoma/`, `src/app/api/onoma/tts/` | 🧪 **Labs Preview** | Phonetic IPA rules, conlang generator, and Kokoro TTS speech synthesis |
+| **MyLeague & MyClub** | `v1` | `/labs/myleague` | `sports/` | 🧪 **Labs Preview** | 7-sport season simulation engine, tactics, transfers, and athlete cards |
+| **Vexel Heraldry Studio** | `v1` | `/labs/vexel` | `vexel/` | 🧪 **Labs Preview** | Procedural heraldic coat-of-arms and national flag vector generator |

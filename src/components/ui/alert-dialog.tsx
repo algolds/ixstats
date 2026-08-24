@@ -5,6 +5,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
@@ -41,6 +42,10 @@ function AlertDialogContent({
   children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  React.useEffect(() => {
+    soundEffects.bloom();
+  }, []);
+
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop />
@@ -126,12 +131,15 @@ function AlertDialogClose({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
+      data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
   );
 }
+
+const AlertDialogCancel = AlertDialogClose;
 
 export {
   AlertDialog,
@@ -145,4 +153,5 @@ export {
   AlertDialogDescription,
   AlertDialogAction,
   AlertDialogClose,
+  AlertDialogCancel,
 };

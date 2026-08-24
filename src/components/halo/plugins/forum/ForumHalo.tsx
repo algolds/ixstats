@@ -12,7 +12,7 @@ import { ChatBubble as MessageSquare } from "iconoir-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { ForumView } from "./views";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
+import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { PreText } from "~/components/ui/pretext";
 
 function ForumBreadcrumb() {

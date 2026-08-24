@@ -1,11 +1,11 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { UnifiedAtomicComponentSelector } from "../../components/ui/atomic/shared/UnifiedAtomicComponentSelector";
+import { UnifiedAtomicComponentSelector } from "~/components/ui/atomic/shared/UnifiedAtomicComponentSelector";
 import type {
   UnifiedAtomicComponent,
   AtomicComponentTheme,
   EffectivenessMetrics,
-} from "../../components/ui/atomic/shared/types";
+} from "~/components/ui/atomic/shared/types";
 
 describe("atomic-ui characterization contract", () => {
   const mockComponents: Record<string, UnifiedAtomicComponent> = {

@@ -50,28 +50,29 @@ export function ValuationAdmin() {
   const busy = saveMutation.isPending || recomputeMutation.isPending;
 
   return (
-    <div className="facet-card-child rounded-xl border border-amber-500/20 p-6">
-      <div className="mb-1 flex items-center gap-2">
-        <Coins className="h-6 w-6 text-amber-400" />
-        <h2 className="text-foreground text-xl font-semibold">Card Valuation</h2>
+    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-5">
+      <div className="border-b border-border/20 pb-4">
+        <div className="flex items-center gap-2">
+          <Coins className="h-4 w-4 text-amber-400" />
+          <h2 className="text-foreground text-xs font-bold">Card Valuation Formula</h2>
+        </div>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          Single source of truth for every card&apos;s value:{" "}
+          <code className="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">
+            max(rarityFloor × typeMult, nsValue × premium)
+          </code>
+          . Saving applies the change and revalues all cards.
+        </p>
       </div>
-      <p className="text-muted-foreground mb-6 text-sm text-balance">
-        Single source of truth for every card&apos;s value:{" "}
-        <code className="font-mono text-xs text-amber-400">
-          max(rarityFloor × typeMult, nsValue × premium)
-        </code>
-        . Saving applies the change and revalues all cards (NS imports keep their bank value, lifted
-        onto the floor curve with the premium).
-      </p>
 
       {isLoading ? (
-        <p className="text-muted-foreground py-8 text-center text-sm">Loading config…</p>
+        <p className="text-muted-foreground py-8 text-center text-xs">Loading config…</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {FIELDS.map((f) => (
-              <label key={f.key} className="flex flex-col gap-1">
-                <span className="text-foreground text-sm font-medium">{f.label}</span>
+              <div key={f.key} className="space-y-1">
+                <span className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">{f.label}</span>
                 <input
                   type="number"
                   step="any"
@@ -80,36 +81,38 @@ export function ValuationAdmin() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, [f.key]: parseFloat(e.target.value) || 0 }))
                   }
-                  className="border-input bg-background/50 text-foreground focus-visible:ring-ring rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                  className="h-8 w-full rounded-xl border border-border/30 bg-background/50 px-3 font-mono text-xs text-foreground shadow-xs focus-visible:ring-1 focus-visible:outline-none"
                 />
-                {f.hint && <span className="text-muted-foreground text-xs">{f.hint}</span>}
-              </label>
+                {f.hint && <span className="text-muted-foreground text-[10px] block">{f.hint}</span>}
+              </div>
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5 pt-2">
             <Button
               onClick={() => saveMutation.mutate(form)}
               disabled={busy}
-              className="bg-amber-500 hover:bg-amber-600"
+              size="sm"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
             >
               {saveMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="h-4 w-4" />
+                <Save className="mr-1.5 h-3.5 w-3.5" />
               )}
               Save &amp; Revalue All
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => recomputeMutation.mutate()}
               disabled={busy}
-              className="border-amber-500/20 text-amber-400"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
             >
               {recomputeMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
               )}
               Recompute Only
             </Button>

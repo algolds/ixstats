@@ -45,3 +45,9 @@ export class TransactionalMockDatabase {
     return created;
   }
 }
+
+import { createMockPrisma } from "./mock-prisma";
+
+export function createMockDb(overrides: Record<string, any> = {}) {
+  return createMockPrisma(overrides);
+}

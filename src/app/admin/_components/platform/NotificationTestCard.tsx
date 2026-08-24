@@ -268,7 +268,7 @@ export function NotificationTestCard() {
                       id="notif-type"
                       value={type}
                       onChange={(e) => setType(e.target.value as ToastType)}
-                      className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                     >
                       {TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
@@ -289,7 +289,7 @@ export function NotificationTestCard() {
                       id="notif-priority"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                      className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -311,7 +311,7 @@ export function NotificationTestCard() {
                     id="notif-category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                    className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                    className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>

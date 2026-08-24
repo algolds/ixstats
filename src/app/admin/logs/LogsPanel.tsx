@@ -17,8 +17,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Terminal, Activity, User, WarningTriangle as AlertOctagon, Refresh as RefreshCw, Trash as Trash2, Search, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Terminal,
+  Activity,
+  User,
+  WarningTriangle as AlertOctagon,
+  Refresh as RefreshCw,
+  Trash as Trash2,
+  Search,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { toast } from "sonner";
+
+export function LogsPanel() {
+  return <DedicatedLogsPage />;
+}
 
 export default function DedicatedLogsPage() {
   usePageTitle({ title: "Admin - System Logs" });
@@ -117,6 +130,8 @@ export default function DedicatedLogsPage() {
     };
   });
 
+  const errorCount = entries.filter((e) => e.level === "error" || e.level === "warn").length;
+
   return (
     <div className="space-y-6">
       <AdminHeader
@@ -125,160 +140,149 @@ export default function DedicatedLogsPage() {
         description="Search, filter, and audit database-backed logs, runtime exceptions, and Next.js client-side rejections."
       />
 
-      {/* Volumetric Frosted Glass Filter Bar */}
-      <Card className="border-border/40 bg-card/20 shadow-lg backdrop-blur-md">
-        <CardContent className="p-4 md:p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Search Input */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">
-                Message / Content Search
-              </Label>
-              <div className="relative">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  placeholder="Search log messages..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-background/40 border-border/60 pl-9 text-xs"
-                />
-              </div>
-            </div>
+      {/* Metric Strip */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Fetched Logs</p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{entries.length}</p>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Errors / Warnings</p>
+          <p className={`mt-1 font-mono text-xl font-bold tracking-tight ${errorCount > 0 ? "text-red-400" : "text-emerald-400"}`}>
+            {errorCount}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Auto-Refresh</p>
+          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{autoRefresh ? "8s Live" : "Paused"}</p>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Level Scope</p>
+          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">{selectedLevel}</p>
+        </div>
+      </div>
 
-            {/* Level Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Log Level</Label>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60">
-                  <SelectItem value="ALL">All Levels</SelectItem>
-                  <SelectItem value="DEBUG">DEBUG</SelectItem>
-                  <SelectItem value="INFO">INFO</SelectItem>
-                  <SelectItem value="WARN">WARN</SelectItem>
-                  <SelectItem value="ERROR">ERROR</SelectItem>
-                  <SelectItem value="CRITICAL">CRITICAL</SelectItem>
-                  <SelectItem value="FATAL">FATAL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Category Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Category</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60">
-                  <SelectItem value="ALL">All Categories</SelectItem>
-                  {LOG_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* User Filter */}
-            <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold">Filter by User</Label>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="bg-background/40 border-border/60 text-xs">
-                  <SelectValue placeholder="All Users" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border/60 max-h-56">
-                  <SelectItem value="ALL">All Users</SelectItem>
-                  {usersData?.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.clerkUserId}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="border-border/20 mt-4 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
-            <div className="flex flex-wrap items-center gap-6">
-              {/* Next.js Errors Toggle */}
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="nextjs-errors"
-                  checked={nextJsErrors}
-                  onCheckedChange={setNextJsErrors}
-                />
-                <Label
-                  htmlFor="nextjs-errors"
-                  className="text-foreground flex cursor-pointer items-center gap-1.5 text-xs font-semibold"
-                >
-                  <AlertOctagon className="h-4 w-4 text-rose-500" />
-                  NextJS & Server Errors Only
-                </Label>
-              </div>
-
-              {/* Auto Refresh Toggle */}
-              <div className="flex items-center space-x-2">
-                <Switch id="auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-                <Label
-                  htmlFor="auto-refresh"
-                  className="text-muted-foreground cursor-pointer text-xs font-semibold"
-                >
-                  Auto-refresh (8s)
-                </Label>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void refetch()}
-                disabled={isLoading || isFetching}
-                className="border-border/60 h-8 gap-1.5 text-xs font-semibold"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                Reload
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearLogs}
-                disabled={clearLogsMutation.isPending}
-                className="h-8 gap-1.5 text-xs font-semibold"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Purge Database Logs
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Terminal Output card */}
-      <Card className="border-border/40 bg-card/20 shadow-xl backdrop-blur-md">
-        <CardContent className="p-4">
-          {isLoading ? (
-            <div className="flex h-96 items-center justify-center">
-              <div className="space-y-2 text-center">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-indigo-500" />
-                <p className="text-muted-foreground text-xs">
-                  Querying database systemLog entries...
-                </p>
-              </div>
-            </div>
-          ) : (
-            <LogViewerFilterable
-              entries={entries}
-              title={`System Event Stream (${entries.length} fetched)`}
-              maxHeight={600}
-              className="border-border/30 text-foreground bg-black/10 dark:bg-black/40"
+      {/* Single-line Filter Rail */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Input
+              placeholder="Search log messages..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
             />
-          )}
-        </CardContent>
-      </Card>
+          </div>
+
+          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+            <SelectTrigger className="h-8 w-32 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+              <SelectValue placeholder="All Levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-xs">All Levels</SelectItem>
+              <SelectItem value="DEBUG" className="text-xs">DEBUG</SelectItem>
+              <SelectItem value="INFO" className="text-xs">INFO</SelectItem>
+              <SelectItem value="WARN" className="text-xs">WARN</SelectItem>
+              <SelectItem value="ERROR" className="text-xs">ERROR</SelectItem>
+              <SelectItem value="CRITICAL" className="text-xs">CRITICAL</SelectItem>
+              <SelectItem value="FATAL" className="text-xs">FATAL</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-xs">All Categories</SelectItem>
+              {LOG_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat} className="text-xs">
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL" className="text-xs">All Users</SelectItem>
+              {usersData?.map((u) => (
+                <SelectItem key={u.id} value={u.id} className="text-xs">
+                  {u.clerkUserId}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <Switch
+              id="nextjs-errors"
+              checked={nextJsErrors}
+              onCheckedChange={setNextJsErrors}
+              className="scale-75"
+            />
+            <span>Errors only</span>
+          </label>
+
+          <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <Switch
+              id="auto-refresh"
+              checked={autoRefresh}
+              onCheckedChange={setAutoRefresh}
+              className="scale-75"
+            />
+            <span>Auto-refresh</span>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            disabled={isLoading || isFetching}
+            className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform"
+          >
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            Reload
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleClearLogs}
+            disabled={clearLogsMutation.isPending}
+            className="h-8 rounded-xl px-3 text-xs font-semibold active:scale-[0.98] transition-transform"
+          >
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            Purge Logs
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Terminal Output */}
+      <div className="overflow-hidden rounded-2xl border border-border/30 bg-card/25 p-3 backdrop-blur-md shadow-xs">
+        {isLoading ? (
+          <div className="flex h-96 items-center justify-center">
+            <div className="space-y-2 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground text-xs">
+                Querying database systemLog entries...
+              </p>
+            </div>
+          </div>
+        ) : (
+          <LogViewerFilterable
+            entries={entries}
+            title={`System Event Stream (${entries.length} fetched)`}
+            maxHeight={600}
+            className="border-border/20 text-foreground bg-black/10 dark:bg-black/40 rounded-xl"
+          />
+        )}
+      </div>
     </div>
   );
 }

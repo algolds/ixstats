@@ -1,24 +1,20 @@
-# IxWorld & IxMaps System Documentation
+# 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Top-level App **IxWorld** (`IXWORLD_VERSION = 2`), powered by the **Atlas Spatial Engine** (`ATLAS_ENGINE_VERSION = 5`). Canvas sub-version `CANVAS_VERSION = 1`.
+**Parent App Suite:** Atlas (`ATLAS_VERSION = 2`, formerly dev codename `IxWorld`)  
+**Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
+**Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer  
+**Primary Action:** `MAP` | **Domain Accent:** Sky Blue (`#0EA5E9` / `--color-blue-500`)  
+**Routes:** `/maps`, `/maps/editor`, standalone `maps.ixwiki.com` | **Status:** 📀 Gold Master (100% Ready)  
 
----
+Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
-## Overview & Product Architecture
-
-**IxWorld** is the spatial, cartographic, and worldbuilding engine for the platform. Built on **MapLibre GL JS**, it powers interactive world maps, procedural realm generation, admin cartography suites, embedded nation cards, and player territory editors.
-
-### Product Model: IxWorld vs Realms Platform
-
-- **IxWorld** is the default community realm (`realm="default"`) for the Ixnay community. It is a tenant on the platform.
-- **Realms** is the multi-tenant product platform. External players create their own isolated **Realms** with procedural physical geography, custom nation boundaries, and sovereign simulation instances.
-- **Unified Spatial Engine**: IxWorld and external Realms share identical code paths, data models, tRPC APIs, and WebGL rendering engines.
-- **Dual Deployment Architecture**:
-  - **Standalone App**: Hosted at `maps.ixwiki.com` (port 3002) via `NEXT_PUBLIC_IXWORLD_STANDALONE=true`.
-  - **Embedded Main App**: Interactive `/maps` route within IxStates.
-  - **Embedded Widgets**: Compact interactive cards embedded across `/mycountry`, `/diplomacy`, `/defense`, `/intelligence`, and `/dashboard`.
+### Core Foundation: "Geography is King"
+In IxStates, geography is not a passive cosmetic backdrop—it is the Tier-0 single source of truth driving the entire simulation:
+- **Topological Ground Truth**: Border treaties, territorial integrity, and neighboring adjacency derive directly from PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`).
+- **Climate & Biomes**: Altitude, coastal distance, river basins, and rain shadow topography determine agricultural yields, resource endowments, and economic growth modifiers.
+- **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
+  1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
+  2. **Procedural UPG v2 Vector Pipeline**: 100,000-cell Voronoi spatial mesh (`WorldGraph`), 5 Lloyd iterations, coastal hypsometric damping, and 4-pass Catmull-Rom spline vector subdivision.
 
 ---
 
@@ -58,59 +54,35 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
 
 ## Map Layers & Stacking Order
 
-MapLibre GL JS renders 7 primary vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
+MapLibre GL JS renders vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
 
 | Layer | Source File | z-Index | Purpose | Compression Tolerance |
 | :--- | :--- | :---: | :--- | :---: |
-| `rivers` | `rivers.geojson` | **7** | River linestrings with hierarchy | 0.025 |
+| `rivers` | `rivers.geojson` | **7** | River linestrings with flow hierarchy | 0.025 |
 | `lakes` | `lakes.geojson` | **6** | Freshwater and saline lakes | 0.015 |
-| `icecaps` | `icecaps.geojson` | **5** | Glacial sheets & polar coverage | 0.000 (exact) |
-| `political` | `political.geojson` | **4** | National borders & territory fills | 0.008 |
+| `political` | `political.geojson` | **4** | National borders & sovereign territory fills | 0.008 |
 | `altitudes` | `altitudes.geojson` | **3** | 9-zone hypsometric elevation contours | 0.035 |
 | `climate` | `climate.geojson` | **2** | 12 Trewartha biome zone polygons | 0.035 |
-| `background` | `background.geojson`| **0** | Ocean base & landmass geometry | 0.020 |
 
 ---
 
-## Component Architecture & Domain Boundaries
+## Map Editor Studio Architecture (`/maps/editor`)
 
-The cartographic frontend is strictly divided into three distinct modules with shared foundational atoms:
+The Map Editor is a full-screen vector cartography workstation for authoring geography at national, regional, and municipal levels:
 
-```
-src/components/maps/
-├── core/         # ALL Generic/Global MapLibre Primitives, Viewers, Info Panels & Controls
-├── editor/       # Strictly Authoring & Editing Tools, Panels, Forms & Draw Pipelines
-├── shared/       # Shared Visual Presentation Atoms & Lifecycle Hooks
-└── overlays/     # Global Data Layers (Choropleths, Geopolitical lines, Heatmaps, Transport)
-```
+### 1. Authoring Toolset & Entity Types
+- **Sovereign Boundaries & Territories**: Draw, split, merge, and modify national border polygons with shared-vertex topology locking to prevent border overlap slivers or tears.
+- **Sub-National Regions & Provinces**: Partition sovereign territory into administrative subdivisions, states, and cantons with autonomous attribute rollups.
+- **Cities & Municipalities**: Place capital cities, industrial hubs, and ports with population weight, status, and local timezone settings.
+- **Points of Interest (POIs) & Landmarks**: Place historical sites, military fortifications, mountain peaks, canal locks, and natural superlatives.
+- **Transit & Trade Corridors**: Friction-weighted pathfinding generating realistic highway, rail, and maritime shipping routes following terrain contours.
 
-### 1. Viewer Components (`src/components/maps/core/`)
-- `IxWorldMap.tsx` – Core MapLibre GL JS renderer with WebGL projection switching (Globe, Mercator, Dynamic), label distance fade, and layer styling
-- `MapContainer.tsx` – SSR-safe data loading wrapper with two-tier cache resolution (React Query + IndexedDB)
-- `MapControls.tsx` – Responsive control system: floating bottom-right dock on desktop ($\ge 768\text{px}$) and compact expandable FAB on mobile ($< 768\text{px}$) via `variant?: "desktop" | "mobile" | "auto"`
-- `CountryInfoPanel.tsx` – Right-side nation dossier drawer with MediaWiki extract, economic stat modals, flag, and neighbor lists
-- `MapPinInfoPanel.tsx` – Coordinate inspection drawer with Turf.js + PostGIS point lookup data
-- `StoryPinModal.tsx` – Deep reading modal for historical lore chronicles with photo carousels and wiki links
-
-### 2. Editor Components (`src/components/maps/editor/`)
-- `MapEditorOverlay.tsx` – Full-screen authoring canvas with tool rail, property panel, and status bar
-- `EditorMap.tsx` – Specialized MapLibre authoring map integrating `useEditorMapEvents` (hit testing & context menus) and `useEditorSnapGuide` (guide lines & cursors)
-- `ToolOptionsBar.tsx` – Declarative contextual switcher delegating to dedicated sub-toolbars under `toolbars/options/` (`SubdivisionOptions`, `RouteOptions`, `MagicWandOptions`, `RulerOptions`)
-- `TransportPropertyForm.tsx` – Modular route property form delegating to `ProceduralRouteGenerator`, `RouteWaypointList`, and `RouteFilterList` under `properties/transport/`
-- `LayerPanel.tsx` – Dual-mode layer manager supporting full layer controls or `<LayerPanel minimal />` for grouped feature lists
-
-### 3. Shared Primitives (`src/components/maps/shared/` & `src/hooks/`)
-- `useMapLibreInstance.ts` – Standardized hook for MapLibre container mounting, WebGL surface acquisition (`acquireSurface`), resize observation, and cleanup
-- `geojson-layer-helpers.ts` – Type-safe MapLibre source & layer utilities (`setOrUpdateGeoJSONSource`, `ensureMapLayer`, `removeLayerAndSource`)
-- `TimelineEraBadge.tsx` – Unified category-colored badge for historical AT/BT IxTime dates
-- `StoryPinDetailCard.tsx` – Unified lore presentation card for chronicles and event pins
-- `FacetOnboardingDialog.tsx` – Glassmorphic multi-step carousel onboarding modal with keyboard navigation and persistence
-
-### 4. Editor Selection & Hit-Testing Model
-- **Deterministic Hit-Testing (`hit-test.ts`)**: Two-phase spatial query (exact point wins, polygon containment second, grab-assist over empty space only).
-- **Transient Pointer State (`transientStore.ts`)**: `useSyncExternalStore` store for cursor movement, eliminating re-render cascades across React components.
-- **Copy-on-Write Polygon Snapping (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
-- **Branded Nominal Coordinates (`editor-types.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`, `BoundingBox`) prevent axis inversion bugs at compile-time.
+### 2. Precision GIS & Vertex Snapping Model
+- **Voronoi & Polygon Snapping**: Snaps vertices directly to neighboring country borders and underlying mesh points, maintaining topological correctness.
+- **Copy-on-Write Polygon Updates (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
+- **Two-Phase Hit-Testing (`hit-test.ts`)**: Exact point selection wins, polygon containment second, grab-assist over empty space only.
+- **Nominal Coordinate Typing (`editor-types.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`) prevent axis-inversion coordinate bugs.
+- **Universal I/O**: Direct import and export of industry-standard GeoJSON and SVG path files.
 
 ---
 

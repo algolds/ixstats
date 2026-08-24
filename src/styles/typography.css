@@ -324,7 +324,7 @@
   font-feature-settings: 'tnum';
 }
 
-/* Diplomatic SDI Typography Utility Classes */
+/* Domain Typography Utility Classes */
 .text-diplomatic {
   color: var(--color-brand-primary);
   text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);

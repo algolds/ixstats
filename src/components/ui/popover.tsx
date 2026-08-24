@@ -4,6 +4,7 @@ import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -45,6 +46,10 @@ function PopoverContent({
   children,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  React.useEffect(() => {
+    soundEffects.whisper();
+  }, []);
+
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -92,9 +97,11 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
   );
 }
 
-function PopoverCLose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
-  return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
+function PopoverClose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
+  return <PopoverPrimitive.Close data-cuelume-press="droplet" data-slot="popover-close" {...props} />;
 }
+
+const PopoverCLose = PopoverClose;
 
 export {
   Popover,
@@ -105,5 +112,6 @@ export {
   PopoverHeader,
   PopoverTitle,
   PopoverDescription,
+  PopoverClose,
   PopoverCLose,
 };

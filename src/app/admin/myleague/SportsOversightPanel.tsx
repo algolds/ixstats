@@ -190,7 +190,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
               <select
                 value={selectedMatchId}
                 onChange={(e) => setSelectedMatchId(e.target.value)}
-                className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 text-xs"
+                className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 text-xs focus:outline-none"
                 required
               >
                 <option value="">-- Choose Match --</option>
@@ -212,7 +212,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
+                  className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -225,7 +225,7 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
                   min="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(Number(e.target.value))}
-                  className="text-foreground w-full rounded-lg border border-white/10 bg-slate-900 p-2 font-mono text-xs"
+                  className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 font-mono text-xs focus:outline-none"
                   required
                 />
               </div>
@@ -482,7 +482,7 @@ function AINarratorLab() {
               <select
                 value={sport}
                 onChange={(e) => handleLoadTemplate(e.target.value)}
-                className="text-foreground w-full rounded-xl border border-white/10 bg-slate-900 p-2.5 text-xs font-semibold"
+                className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2.5 text-xs font-semibold focus:outline-none"
               >
                 <option value="soccer">Soccer ⚽</option>
                 <option value="f1">Formula 1 🏎️</option>
@@ -499,7 +499,7 @@ function AINarratorLab() {
               <button
                 type="button"
                 onClick={() => setShowConfig(!showConfig)}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[11px] font-bold transition select-none"
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[11px] font-bold transition select-none active:scale-[0.98]"
               >
                 <Settings className="h-3.5 w-3.5" />
                 {showConfig ? "Hide Advanced Settings" : "Configure AI Settings"}
@@ -508,8 +508,8 @@ function AINarratorLab() {
 
             {/* Config Fields */}
             {showConfig && (
-              <div className="space-y-3.5 rounded-2xl border border-white/5 bg-white/5 p-4">
-                <div className="flex items-center gap-2 border-b border-white/5 pb-2.5 select-none">
+              <div className="space-y-3.5 rounded-2xl border border-border/30 bg-card/25 p-4 backdrop-blur-md">
+                <div className="flex items-center gap-2 border-b border-border/20 pb-2.5 select-none">
                   <input
                     type="checkbox"
                     id="applyGlobally"
@@ -519,11 +519,11 @@ function AINarratorLab() {
                       setApplyGlobally(v);
                       saveConfig("applyGlobally", v);
                     }}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-white/10 bg-slate-950 text-amber-400 accent-amber-400"
+                    className="h-3.5 w-3.5 cursor-pointer rounded border-border/40 bg-background text-primary accent-primary"
                   />
                   <label
                     htmlFor="applyGlobally"
-                    className="cursor-pointer text-[10px] font-bold tracking-wider text-white uppercase"
+                    className="cursor-pointer text-[10px] font-bold tracking-wider text-foreground uppercase"
                   >
                     Apply settings globally (Write to DB)
                   </label>
@@ -540,7 +540,7 @@ function AINarratorLab() {
                         setProvider(e.target.value);
                         saveConfig("provider", e.target.value);
                       }}
-                      className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs font-semibold"
+                      className="text-foreground w-full rounded-xl border border-border/40 bg-background p-2 text-xs font-semibold focus:outline-none"
                     >
                       <option value="nvidia">Nvidia</option>
                       <option value="openrouter">OpenRouter</option>
@@ -716,14 +716,14 @@ function AINarratorLab() {
                       value={event}
                       onChange={(e) => handleEventChange(idx, e.target.value)}
                       placeholder="e.g. Referee blows whistle / Goal scored..."
-                      className="text-foreground flex-1 rounded-xl border border-white/10 bg-slate-900 p-2 text-xs"
+                      className="text-foreground flex-1 rounded-xl border border-border/40 bg-background p-2 text-xs focus:outline-none"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveEvent(idx)}
-                      className="h-8 w-8 rounded-full p-0 text-red-400 hover:text-red-300"
+                      className="h-8 w-8 rounded-full p-0 text-rose-400 hover:text-rose-300 active:scale-[0.98]"
                     >
                       ×
                     </Button>
@@ -736,7 +736,7 @@ function AINarratorLab() {
               type="button"
               onClick={handleRunTest}
               disabled={runTestMutation.isPending}
-              className="mt-2 w-full gap-2 rounded-xl bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+              className="mt-2 w-full gap-2 rounded-xl font-bold active:scale-[0.98]"
             >
               {runTestMutation.isPending ? (
                 <>

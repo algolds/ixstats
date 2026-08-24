@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { DynamicContainer } from "~/components/ui/dynamic-island";
+import { DynamicContainer } from "../HaloPrimitives";
 import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";

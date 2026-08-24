@@ -36,7 +36,7 @@ export interface NavigationScrollState {
 export function useNavigationScroll(options?: NavigationScrollOptions): NavigationScrollState {
   const isLocked = options?.isLocked ?? false;
   const isHiddenMode = (options?.mode === "hidden") || (options?.autoHideDefault ?? false);
-  const autoHideDelay = options?.autoHideDelay ?? 700;
+  const autoHideDelay = options?.autoHideDelay ?? 300;
 
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
@@ -75,7 +75,7 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
 
   const onNavMouseLeave = useCallback(() => {
     isNavHoveredRef.current = false;
-    startAutoHideTimer(600);
+    startAutoHideTimer(300);
   }, [startAutoHideTimer]);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
           setScrollY(smoothScrollY);
 
           // Absolute Top / Balanced Anchor Reset
-          if (currentScrollY <= 2) {
+          if (currentScrollY <= 8) {
             setIsSticky(false);
             setScrollNavVisible(!isHiddenModeRef.current);
             setScrollDirection("idle");
@@ -133,9 +133,12 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
                 setScrollNavVisible(false);
                 setIsMouseNearTop(false);
                 clearAutoHideTimer();
-              } else if (newDirection === "up" && accumulatedDelta > 10) {
-                // Instantly reveal when scrolling up
-                setScrollNavVisible(true);
+              } else if (newDirection === "up") {
+                // Scrolling up while sticky does NOT restore the navigation bar.
+                // Only restore natural navigation if user scrolled back to top zone.
+                if (currentScrollY < 48 && !isHiddenModeRef.current) {
+                  setScrollNavVisible(true);
+                }
               }
             }
           }
@@ -150,34 +153,34 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
     // Wheel and trackpad gesture listener
     const handleWheel = (e: WheelEvent) => {
       if (isLockedRef.current) return;
-      if (e.deltaY < -15) {
-        setScrollNavVisible(true);
-      } else if (e.deltaY > 15 && window.scrollY > 48) {
+      if (e.deltaY > 15 && window.scrollY > 48) {
         setScrollNavVisible(false);
         setIsMouseNearTop(false);
         clearAutoHideTimer();
+      } else if (e.deltaY < -15 && window.scrollY < 48 && !isHiddenModeRef.current) {
+        setScrollNavVisible(true);
       }
     };
 
-    // Top screen edge proximity peek & auto-hide
+    // Top screen edge & Halo proximity peek & auto-hide
     const handleMouseMove = (e: MouseEvent) => {
       if (isLockedRef.current) return;
 
-      const navZoneHeight = window.innerWidth >= 1024 ? 72 : 60;
+      const navZoneHeight = window.innerWidth >= 1024 ? 64 : 56;
 
-      // Mouse reached top activation threshold
-      if (e.clientY <= 24) {
+      // Mouse reached top activation threshold (or Halo pill top area)
+      if (e.clientY <= 48) {
         clearAutoHideTimer();
         setIsMouseNearTop(true);
       } else if (e.clientY > navZoneHeight && isMouseNearTop && !isNavHoveredRef.current) {
         // Mouse moved below navbar zone — trigger auto-hide grace period
-        startAutoHideTimer();
+        startAutoHideTimer(300);
       }
     };
 
     const handleMouseLeaveDoc = () => {
       if (!isNavHoveredRef.current) {
-        startAutoHideTimer(400);
+        startAutoHideTimer(200);
       }
     };
 
@@ -204,7 +207,7 @@ export function useNavigationScroll(options?: NavigationScrollOptions): Navigati
     isNavVisible = true;
   } else if (isMouseNearTop) {
     isNavVisible = true;
-  } else if (scrollY <= 5 && !isHiddenMode) {
+  } else if (scrollY <= 8 && !isHiddenMode) {
     isNavVisible = true;
   } else {
     isNavVisible = scrollNavVisible;

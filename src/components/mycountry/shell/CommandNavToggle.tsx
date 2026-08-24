@@ -5,10 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ViewGrid as LayoutGrid,
   KeyCommand as Command,
-  Community as Handshake,
-  Shield,
-  ScaleFrameEnlarge as Scale,
-  StatUp as TrendingUp,
   User,
   EditPencil as Edit3,
 } from "iconoir-react";
@@ -61,43 +57,6 @@ export function CommandNavToggle({
     },
   ];
 
-  const pageNav: {
-    href: string;
-    label: string;
-    icon: typeof Handshake;
-    activeCls: string;
-    hoverCls: string;
-  }[] = [
-    {
-      href: "/mycountry/diplomacy",
-      label: "Diplomacy",
-      icon: Handshake,
-      activeCls: "bg-teal-500/20 text-teal-300 border-teal-500/30 shadow-sm",
-      hoverCls: "hover:bg-teal-500/10 hover:text-teal-400 hover:border-teal-500/20",
-    },
-    {
-      href: "/mycountry/defense",
-      label: "Defense",
-      icon: Shield,
-      activeCls: "bg-red-500/20 text-red-300 border-red-500/30 shadow-sm",
-      hoverCls: "hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20",
-    },
-    {
-      href: "/mycountry/politics",
-      label: "Politics",
-      icon: Scale,
-      activeCls: "bg-violet-500/20 text-violet-300 border-violet-500/30 shadow-sm",
-      hoverCls: "hover:bg-violet-500/10 hover:text-violet-400 hover:border-violet-500/20",
-    },
-    {
-      href: "/mycountry/economy",
-      label: "Economy",
-      icon: TrendingUp,
-      activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-sm",
-      hoverCls: "hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20",
-    },
-  ];
-
   const isHomeSection =
     rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
@@ -123,31 +82,8 @@ export function CommandNavToggle({
               }
             }}
             className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
+              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all select-none active:scale-[0.98]",
               compactMode ? "px-3 py-1.25 text-xs" : "px-3.5 py-1.5 text-xs",
-              active ? activeCls : hoverCls
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-          </button>
-        );
-      })}
-
-      {/* Subtle vertical divider */}
-      <div className="mx-1 h-4 w-px shrink-0 bg-white/10" />
-
-      {/* Full Page Navigation Links */}
-      {pageNav.map(({ href, label, icon: Icon, activeCls, hoverCls }) => {
-        const active = rawPath.startsWith(href);
-        return (
-          <button
-            key={href}
-            type="button"
-            onClick={() => router.push(withBasePath(href))}
-            className={cn(
-              "text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border border-transparent font-semibold transition-all",
-              compactMode ? "px-2.5 py-1.25 text-xs" : "px-3 py-1.5 text-xs",
               active ? activeCls : hoverCls
             )}
           >

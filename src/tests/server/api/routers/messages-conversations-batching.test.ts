@@ -1,6 +1,6 @@
-import { messagesRouter } from "../../../../server/api/routers/messages";
-import { createCallerFactory } from "../../../../server/api/trpc";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { messagesRouter } from "~/server/api/routers/messages";
+import { createCallerFactory } from "~/server/api/trpc";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 159: Messages Conversations Unread Query Batching", () => {
   const createCaller = createCallerFactory(messagesRouter);
@@ -58,6 +58,13 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
       country: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      conversationParticipant: {
+        findMany: jest.fn().mockResolvedValue([
+          { conversationId: "conv-1", userId: "user-me", lastReadAt: new Date("2026-01-01") },
+          { conversationId: "conv-2", userId: "user-me", lastReadAt: new Date("2026-01-01") },
+          { conversationId: "conv-3", userId: "user-me", lastReadAt: new Date("2026-01-01") },
+        ]),
+      },
       thinkshareMessage: {
         findMany: findManyMessagesMock,
         count: countMessagesMock,
@@ -70,7 +77,7 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
     });
     const caller = createCaller(ctx as any);
 
-    const result = await (caller as any).getConversationsByFolder({ folder: "INBOX" });
+    const result = await (caller as any).getConversationsByFolder({ folder: "inbox" });
 
     // Assert query batching
     expect(findManyMessagesMock).toHaveBeenCalledTimes(1);

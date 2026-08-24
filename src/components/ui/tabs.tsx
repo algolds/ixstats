@@ -67,10 +67,10 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
       data-cuelume-hover="tick"
       data-state={isActive ? "active" : "inactive"}
       className={cn(
-        "rounded-full px-4 py-2 transition-colors",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-[color,box-shadow,transform] duration-150 active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isActive
-          ? "bg-gray-200 text-black dark:bg-zinc-800 dark:text-white"
-          : "bg-transparent text-gray-500 dark:text-gray-400",
+          ? "bg-background text-foreground shadow-xs font-semibold"
+          : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50",
         className
       )}
       aria-selected={isActive}

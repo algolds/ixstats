@@ -23,32 +23,10 @@ import {
 } from "~/components/ui/alert-dialog";
 import { RarityBadge } from "~/components/cards/display/RarityBadge";
 import type { CardRarity } from "@prisma/client";
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "COMPLETED":
-    case "SUCCESS":
-      return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30";
-    case "IN_PROGRESS":
-      return "text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30";
-    case "PAUSED":
-      return "text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30";
-    case "FAILED":
-      return "text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30";
-    default:
-      return "text-muted-foreground bg-muted border border-border";
-  }
-}
-
-function formatDuration(ms: number | null) {
-  if (!ms) return "N/A";
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-  return `${seconds}s`;
-}
+import {
+  getJobStatusBadgeColor as getStatusColor,
+  formatDurationMs as formatDuration,
+} from "~/lib/admin/admin-formatters";
 
 export function NSImportSuiteAdmin() {
   const notify = useNotify();
@@ -408,24 +386,24 @@ export function NSImportSuiteAdmin() {
             <select
               value={discoveryTag}
               onChange={(e) => setDiscoveryTag(e.target.value)}
-              className="border-border bg-card text-foreground hover:bg-accent h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
             >
-              <option value="gargantuan" className="bg-card text-card-foreground">
+              <option value="gargantuan" className="bg-background text-foreground">
                 Largest Regions
               </option>
-              <option value="Role Player" className="bg-card text-card-foreground">
+              <option value="Role Player" className="bg-background text-foreground">
                 Roleplay Communities
               </option>
-              <option value="Democratic" className="bg-card text-card-foreground">
+              <option value="Democratic" className="bg-background text-foreground">
                 Democratic / Legislative
               </option>
-              <option value="Totalitarian" className="bg-card text-card-foreground">
+              <option value="Totalitarian" className="bg-background text-foreground">
                 Totalitarian / Dictatorships
               </option>
-              <option value="Communist" className="bg-card text-card-foreground">
+              <option value="Communist" className="bg-background text-foreground">
                 Communist / Leftist
               </option>
-              <option value="Capitalist" className="bg-card text-card-foreground">
+              <option value="Capitalist" className="bg-background text-foreground">
                 Capitalist / Trade
               </option>
               <option value="Monarchist" className="bg-card text-card-foreground">
@@ -557,7 +535,7 @@ export function NSImportSuiteAdmin() {
             {/* Import run selector dropdown */}
             <div className="flex items-center gap-1.5">
               <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
-                <Layers className="h-3 w-3 text-blue-500" /> Import:
+                <Layers className="h-3 w-3 text-primary" /> Import:
               </label>
               <select
                 value={selectedSyncLogId || "ALL"}
@@ -567,10 +545,9 @@ export function NSImportSuiteAdmin() {
                   if (val) setActiveLogTab("cards");
                   else setActiveLogTab("logs");
                 }}
-
-                className="border-border bg-card text-foreground hover:bg-accent h-8.5 max-w-[240px] truncate rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
+                className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 max-w-[240px] truncate rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
               >
-                <option value="ALL" className="bg-card text-card-foreground">
+                <option value="ALL" className="bg-background text-foreground">
                   All Imports ({rawLogsData?.length ?? 0} runs)
                 </option>
                 {(rawLogsData ?? []).map((log) => {
@@ -582,7 +559,7 @@ export function NSImportSuiteAdmin() {
                     minute: "2-digit",
                   });
                   return (
-                    <option key={log.id} value={log.id} className="bg-card text-card-foreground">
+                    <option key={log.id} value={log.id} className="bg-background text-foreground">
                       [{log.status}] {label} — {dateStr} (+{log.cardsCreated})
                     </option>
                   );
@@ -594,12 +571,12 @@ export function NSImportSuiteAdmin() {
             <select
               value={syncTypeFilter}
               onChange={(e) => setSyncTypeFilter(e.target.value as "all" | "region")}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
             >
-              <option value="all" className="bg-card text-card-foreground">
+              <option value="all" className="bg-background text-foreground">
                 All Types
               </option>
-              <option value="region" className="bg-card text-card-foreground">
+              <option value="region" className="bg-background text-foreground">
                 Region Only
               </option>
             </select>

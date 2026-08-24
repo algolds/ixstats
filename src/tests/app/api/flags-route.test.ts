@@ -1,3 +1,7 @@
+import { TextDecoder, TextEncoder } from "util";
+global.TextDecoder = TextDecoder as any;
+global.TextEncoder = TextEncoder as any;
+
 import { NextRequest } from "next/server";
 import { GET as getFlag } from "~/app/api/flags/[country]/route";
 import { GET as getCache, POST as postCache, DELETE as deleteCache } from "~/app/api/flag-cache/route";
@@ -90,9 +94,10 @@ describe("Flag API Routes Contracts (Plan 164)", () => {
         body: JSON.stringify({ countries: ["Sweden", "Norway"] }),
       });
       const res = await postCache(req);
-      expect(res.status).toBe(200);
+      expect(res).toBeDefined();
+      expect(res!.status).toBe(200);
 
-      const json = await res.json();
+      const json = await res!.json();
       expect(json.success).toBe(true);
       expect(json.message).toContain("started");
     });
@@ -104,9 +109,10 @@ describe("Flag API Routes Contracts (Plan 164)", () => {
         method: "DELETE",
       });
       const res = await deleteCache(req);
-      expect(res.status).toBe(200);
+      expect(res).toBeDefined();
+      expect(res!.status).toBe(200);
 
-      const json = await res.json();
+      const json = await res!.json();
       expect(json.success).toBe(true);
       expect(clearSpy).toHaveBeenCalled();
     });

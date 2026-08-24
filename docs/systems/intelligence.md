@@ -1,10 +1,13 @@
-# Intelligence & Analytics System
+# 🏛️ MyCountry Intelligence & Recon Domain (Preview)
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Intelligence & Diplomacy domain group.
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `SURVEY` | **Domain Accent:** Dark Indigo / Amber Gold  
+**Route:** `/mycountry/intelligence` | **Status:** 🧪 Developer Preview (Not in Active Public Navigation)  
 
-The intelligence stack aggregates diplomatic, economic, and national security signals into executive-ready briefings, predictive forecasts, and real-time alert streams.
+> **⚠️ Status Note:** The Intelligence & Recon module is currently under development in developer preview and is not part of the active public navigation suite.
+
+The intelligence stack aggregates diplomatic, economic, and national security signals into executive briefings, predictive forecasts, recon research operations, and real-time alert feeds.
 
 ---
 

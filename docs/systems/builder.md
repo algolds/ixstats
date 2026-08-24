@@ -1,10 +1,11 @@
-# MyCountry Builder System
+# 🏛️ Country Builder — Sovereign Creation & Onboarding Wizard
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Builder v3  
-**Hierarchy:** Standalone Core Feature System (`BUILDER_VERSION = 3` in Version Registry).
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Subsystem:** Country Builder (`BUILDER_VERSION = 3`)  
+**Primary Action:** `CREATE` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
+**Route:** `/builder` | **Status:** 📀 Gold Master (100% Ready)  
 
-The builder lets players establish and configure a new nation from scratch: national identity, government structure, economic baseline, demographics, and fiscal policy. It combines wiki ingestion, atomic component libraries, and template archetypes to accelerate onboarding.
+The Country Builder serves as the sovereign onboarding and creation suite for MyCountry. It lets players configure a new nation across six foundational domains: national identity, government structure, economic baseline, demographics, fiscal policy, and final commit.
 
 ---
 

@@ -10,52 +10,48 @@
 .facet-depth-2,
 .facet-depth-3,
 .facet-depth-4 {
-  position: relative !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.facet-surface { z-index: var(--z-depth-surface) !important; }
-.facet-floating { z-index: var(--z-depth-floating) !important; }
-.facet-overlay { z-index: var(--z-depth-overlay) !important; }
+.facet-surface { z-index: var(--z-depth-surface, 0); }
+.facet-floating { z-index: var(--z-depth-floating, 100); }
+.facet-overlay { z-index: var(--z-depth-overlay, 1000); }
 
 .facet-depth-1 {
-  backdrop-filter: blur(var(--blur-moderate)) saturate(var(--facet-saturate, 180%)) !important;
-  -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(var(--facet-saturate, 180%)) !important;
-  border: 1px solid var(--facet-border-1) !important;
-  background: var(--facet-bg-1) !important;
-  box-shadow: var(--facet-shadow-1) !important;
-  z-index: var(--z-depth-surface) !important;
-  transform: translateZ(0) !important;
+  backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
+  -webkit-backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
+  border: 1px solid var(--facet-border-1, var(--border, rgba(255, 255, 255, 0.1)));
+  background: var(--facet-bg-1, rgba(var(--card-rgb, 24, 24, 27), 0.7));
+  box-shadow: var(--facet-shadow-1, 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08));
+  z-index: var(--z-depth-surface, 0);
 }
 
 .facet-depth-2 {
-  backdrop-filter: blur(var(--blur-prominent)) saturate(var(--facet-saturate, 180%)) !important;
-  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(var(--facet-saturate, 180%)) !important;
-  border: 1px solid var(--facet-border-2) !important;
-  background: var(--facet-bg-2) !important;
-  box-shadow: var(--facet-shadow-2) !important;
-  z-index: var(--z-depth-floating) !important;
-  transform: translateZ(10px) !important;
+  backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
+  -webkit-backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
+  border: 1px solid var(--facet-border-2, var(--border, rgba(255, 255, 255, 0.15)));
+  background: var(--facet-bg-2, rgba(var(--card-rgb, 24, 24, 27), 0.85));
+  box-shadow: var(--facet-shadow-2, 0 12px 36px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12));
+  z-index: var(--z-depth-floating, 100);
 }
 
 .facet-depth-3 {
-  backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 200%)) !important;
-  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 200%)) !important;
-  border: 1px solid var(--facet-border-3) !important;
-  background: var(--facet-bg-3) !important;
-  box-shadow: var(--facet-shadow-3) !important;
-  z-index: var(--z-depth-overlay) !important;
-  transform: translateZ(20px) !important;
+  backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
+  -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
+  border: 1px solid var(--facet-border-3, var(--border, rgba(255, 255, 255, 0.18)));
+  background: var(--facet-bg-3, rgba(var(--card-rgb, 24, 24, 27), 0.92));
+  box-shadow: var(--facet-shadow-3, 0 20px 60px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15));
+  z-index: var(--z-depth-overlay, 1000);
 }
 
 .facet-depth-4 {
-  backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 220%)) !important;
-  -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(var(--facet-saturate, 220%)) !important;
-  border: 1px solid var(--facet-border-4) !important;
-  background: var(--facet-bg-4) !important;
-  box-shadow: var(--facet-shadow-4) !important;
-  z-index: var(--z-depth-modal) !important;
-  transform: translateZ(30px) !important;
+  backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
+  -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
+  border: 1px solid var(--facet-border-4, var(--border, rgba(255, 255, 255, 0.2)));
+  background: var(--facet-bg-4, rgba(var(--card-rgb, 24, 24, 27), 0.98));
+  box-shadow: var(--facet-shadow-4, 0 32px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2));
+  z-index: var(--z-depth-modal, 100001);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

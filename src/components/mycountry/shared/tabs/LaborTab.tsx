@@ -103,7 +103,7 @@ export function LaborTab({
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.workforce === "participation"
@@ -147,7 +147,7 @@ export function LaborTab({
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
@@ -202,7 +202,7 @@ export function LaborTab({
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-[transform,opacity,border-color,background-color] duration-150 ease-out active:scale-[0.98] dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}

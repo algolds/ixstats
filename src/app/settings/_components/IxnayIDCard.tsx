@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Link as Link2, LinkSlash as Unlink, ChatBubble as MessageSquare, OpenBook as BookOpen, SystemRestart as Loader2, Check, Search, OpenNewWindow as ExternalLink } from "iconoir-react";
-import { FaDiscord } from "react-icons/fa";
+import Link from "next/link";
+import { Link as Link2, LinkSlash as Unlink, ChatBubble as MessageSquare, OpenBook as BookOpen, SystemRestart as Loader2, Check, Search, OpenNewWindow as ExternalLink, Discord, User as UserIcon } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
@@ -220,14 +220,25 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
     >
       <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <TextureOverlay texture="noise" opacity={0.04} />
-        <div className="relative z-10 mb-6 flex items-center justify-between">
+        <div className="relative z-10 mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">IxnayID©</h2>
             </div>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
-            Secure Layer Active
+          <div className="flex items-center gap-2.5">
+            {status?.passportHandle && (
+              <Link
+                href={`/id/@${status.passportHandle}`}
+                className="facet-interactive flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-95 cursor-pointer"
+              >
+                <UserIcon className="h-3.5 w-3.5" />
+                <span>View Passport</span>
+              </Link>
+            )}
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
+              Secure Layer Active
+            </div>
           </div>
         </div>
 
@@ -399,7 +410,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
           {/* Discord */}
           <ServiceRow
             name="Discord Global"
-            icon={<FaDiscord className="h-6 w-6 text-discord" />}
+            icon={<Discord className="h-6 w-6 text-discord" />}
             color="bg-indigo-100 dark:bg-indigo-900/30"
             linked={status?.discord.linked ?? false}
             username={status?.discord.username ?? null}

@@ -2,7 +2,7 @@
  * Tests for MyVault Service enhancements
  */
 
-import { VaultService } from "../../lib/vault/vault-service";
+import { VaultService } from "~/lib/vault/vault-service";
 
 describe("VaultService - Upgrades & Perks", () => {
   let vaultService: VaultService;

@@ -1,140 +1,67 @@
-const ORIGINAL_ENV = process.env;
-const globalWithWindow = global as typeof global & { window?: unknown };
-const ORIGINAL_WINDOW = globalWithWindow.window;
-const originalConsoleLog = console.log;
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { NativeSearchService, searchWiki, searchShadowArticles } from "~/lib/wiki-os/core/native-search-service";
+import { db } from "~/server/db";
 
-beforeAll(() => {
-  console.log = jest.fn();
-});
+jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers", () => ({
+  __esModule: true,
+  extractIntroFromWikitext: (txt: string) => txt,
+}));
 
-afterAll(() => {
-  console.log = originalConsoleLog;
-});
+const mockFindMany = jest.spyOn(db.wikiArticle, "findMany");
 
-function mockFetch() {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
-      query: {
-        search: [],
-      },
-    }),
-  }) as any;
-}
-
-describe("wiki-search-service base path handling", () => {
+describe("NativeSearchService & searchWiki contract", () => {
   beforeEach(() => {
-    if (typeof jest !== "undefined" && typeof jest.resetModules === "function") {
-      jest.resetModules();
-    }
-    process.env = { ...ORIGINAL_ENV };
-    globalWithWindow.window = ORIGINAL_WINDOW as any;
-    delete (global as any).__TEST_IS_SERVER;
-    mockFetch();
+    jest.clearAllMocks();
+    mockFindMany.mockResolvedValue([] as any);
   });
 
-  afterEach(() => {
-    process.env = ORIGINAL_ENV;
-    globalWithWindow.window = ORIGINAL_WINDOW as any;
-    delete (global as any).__TEST_IS_SERVER;
-    if (typeof jest !== "undefined" && typeof jest.restoreAllMocks === "function") {
-      jest.restoreAllMocks();
-    }
+  it("performs spotlight search across articles using title prefix and slug", async () => {
+    const mockArticles = [
+      {
+        id: "art-1",
+        title: "Caphiria",
+        wikitext: "== Overview ==\nCaphiria is a sovereign constitutional monarchy.",
+      },
+      {
+        id: "art-2",
+        title: "Caphirian Navy",
+        wikitext: "== Military ==\nThe naval forces of Caphiria.",
+      },
+    ];
+
+    mockFindMany.mockResolvedValue(mockArticles as any);
+
+    const results = await NativeSearchService.spotlightSearch("Caphiria", "ixwiki", 10);
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.title).toBe("Caphiria");
+    expect(results[0]?.slug).toBe("caphiria");
+    expect(results[0]?.snippet).toContain("Caphiria is a sovereign constitutional monarchy");
+    expect(mockFindMany).toHaveBeenCalledTimes(1);
   });
 
-  it("prefixes API proxy calls with base path on the server", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-    process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
-
-    // Simulate server side
-    (global as any).__TEST_IS_SERVER = true;
-    globalWithWindow.window = undefined as any;
-
-    const { searchWiki } = await import("../../lib/wiki-os/core/native-search-service");
-    await searchWiki("Caphiria", "ixwiki");
-
-    // Restore window / server simulation
-    delete (global as any).__TEST_IS_SERVER;
-    globalWithWindow.window = ORIGINAL_WINDOW as any;
-
-    const fetchCalls = (global.fetch as any).mock.calls as any[][];
-    const targetCall = fetchCalls.find(
-      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
-    );
-    expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(
-      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/mediawiki\/ixwiki\/api\.php\?/
-    );
+  it("returns empty array for whitespace or empty query", async () => {
+    const results = await NativeSearchService.spotlightSearch("   ");
+    expect(results).toEqual([]);
+    expect(mockFindMany).not.toHaveBeenCalled();
   });
 
-  it("prefixes API proxy calls with base path on the client", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-    // Simulate browser environment
-    globalWithWindow.window = {} as any;
-    delete (global as any).__TEST_IS_SERVER;
+  it("formats top-level searchWiki and searchShadowArticles output accurately", async () => {
+    mockFindMany.mockResolvedValue([
+      {
+        id: "art-1",
+        title: "Valora",
+        wikitext: "Valora is a member state.",
+      },
+    ] as any);
 
-    const { searchWiki } = await import("../../lib/wiki-os/core/native-search-service");
-    await searchWiki("Caphiria", "ixwiki");
+    const shadowResults = await searchShadowArticles("Valora", 5, "ixwiki");
+    expect(shadowResults).toHaveLength(1);
+    expect(shadowResults[0]?.title).toBe("Valora");
+    expect(shadowResults[0]?.snippet).toContain("Valora is a member state");
 
-    const fetchCalls = (global.fetch as any).mock.calls as any[][];
-    const targetCall = fetchCalls.find(
-      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
-    );
-    expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(
-      /^\/projects\/ixstates\/api\/mediawiki\/ixwiki\/api\.php\?/
-    );
-  });
-
-  it("supports all configured wiki endpoints", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-    process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
-
-    const { searchWiki } = await import("../../lib/wiki-os/core/native-search-service");
-
-    await searchWiki("Caphiria", "ixwiki");
-    await searchWiki("Caphiria", "iiwiki");
-    await searchWiki("Caphiria", "althistory");
-
-    const fetchCalls = ((global.fetch as any).mock.calls as any[][]).map(
-      (call: any[]) => call[0] as string
-    );
-
-    expect(fetchCalls.some((url: string) => url.includes("/api/mediawiki/ixwiki/api.php?"))).toBe(
-      true
-    );
-    expect(fetchCalls.some((url: string) => url.includes("https://iiwiki.com/api.php?"))).toBe(
-      true
-    );
-    expect(
-      fetchCalls.some((url: string) => url.includes("/api/mediawiki/althistory/api.php?"))
-    ).toBe(true);
-  });
-
-  it("falls back to localhost base when server env vars are missing", async () => {
-    delete process.env.NEXT_PUBLIC_APP_URL;
-    delete process.env.APP_URL;
-    delete process.env.VERCEL_URL;
-    process.env.PORT = "4567";
-
-    // Simulate server side
-    (global as any).__TEST_IS_SERVER = true;
-    globalWithWindow.window = undefined as any;
-
-    const { searchWiki } = await import("../../lib/wiki-os/core/native-search-service");
-    await searchWiki("Caphiria", "ixwiki");
-
-    // Restore window / server simulation
-    delete (global as any).__TEST_IS_SERVER;
-    globalWithWindow.window = ORIGINAL_WINDOW as any;
-
-    const fetchCalls = (global.fetch as any).mock.calls as any[][];
-    const targetCall = fetchCalls.find(
-      ([url]: any[]) => typeof url === "string" && url.includes("/api/mediawiki/ixwiki")
-    );
-    expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(
-      /^http:\/\/localhost:4567\/api\/mediawiki\/ixwiki\/api\.php\?/
-    );
+    const searchResults = await searchWiki("Valora", "ixwiki", 5);
+    expect(searchResults).toHaveLength(1);
+    expect(searchResults[0]?.title).toBe("Valora");
   });
 });

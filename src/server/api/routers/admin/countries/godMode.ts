@@ -8,10 +8,6 @@ import { isSystemOwner } from "~/lib/auth";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 export const adminCountriesGodModeRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
 
   // Get ThinkPages statistics (real DB values)
 

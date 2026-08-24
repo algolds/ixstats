@@ -14,7 +14,7 @@ import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
+import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
 import { SwipeableGroup } from "~/components/ui/facet/swipeable";
 import { MessageTrayItem, type MessageTrayConversation } from "./tray/MessageTrayItem";
 import { NotificationRow } from "./tray/NotificationRow";
@@ -300,7 +300,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="mb-3 flex items-center gap-1 rounded-xl border border-border/40 bg-accent/10 p-1">
+      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] p-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isSelected = activeTab === tab.id;
@@ -314,13 +314,13 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all select-none active:scale-[0.97]",
                 isSelected
                   ? "text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               )}
             >
               {isSelected && (
                 <motion.div
                   layoutId="halo-notif-tab-indicator"
-                  className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
+                  className="absolute inset-0 rounded-lg border border-black/[0.08] dark:border-white/15 bg-white/90 dark:bg-white/[0.12] shadow-xs backdrop-blur-md"
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                 />
               )}

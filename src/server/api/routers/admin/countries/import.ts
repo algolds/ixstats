@@ -12,10 +12,6 @@ import { generateSlug } from "~/lib/utils";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 export const adminCountriesImportRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
 
   // Get ThinkPages statistics (real DB values)
 

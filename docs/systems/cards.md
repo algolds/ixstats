@@ -1,10 +1,11 @@
-# IxCards System
+# 💎 Vault Cards & Booster Packs Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — IxCards v2  
-**Hierarchy:** Sub-system of **IxVault** (`IXVAULT_VERSION = 2`).
+**Parent App Suite:** Vault (`VAULT_VERSION = 2`, dev codename `IxVault`)  
+**Subsystems:** 3D Card Engine, Booster Pack Gacha, Crafting & Recycling, NS Import Bridge  
+**Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
+**Route:** `/vault/cards`, `/vault/packs` | **Status:** 📀 Gold Master (100% Ready)  
 
-The IxCards system provides collectible trading cards integrating nations, MediaWiki historical lore, NationStates card imports, and special editions. It features dynamic performance-based rarity calculation, leveling, crafting, peer-to-peer trading, and marketplace auctions.
+The Vault Cards system provides 3D holographic collectibles integrating sovereign states, MediaWiki historical lore, NationStates imports, and milestone editions with dynamic performance-based rarity calculation and physics-based pack peeling.
 
 ---
 

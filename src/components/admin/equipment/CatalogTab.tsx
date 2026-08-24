@@ -80,79 +80,77 @@ export function CatalogTab({
   handleDelete,
 }: CatalogTabProps) {
   return (
-    <div className="space-y-6">
-      <div className="facet-card-parent rounded-xl border border-white/10 p-4">
-        {/* Category Tabs */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-4">
-          <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
-            {Object.entries(CATEGORIES).map(([key, label]) => {
-              const Icon = CATEGORY_ICONS[key] || Rocket;
-              return (
-                <TabsTrigger key={key} value={key} className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </Tabs>
+    <div className="space-y-4">
+      {/* Category Tabs */}
+      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+        <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+          {Object.entries(CATEGORIES).map(([key, label]) => {
+            const Icon = CATEGORY_ICONS[key] || Rocket;
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
-        {/* Advanced Filters */}
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-5">
-          {/* Search */}
-          <div className="relative md:col-span-2">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-            <Input
-              placeholder="Search equipment..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      {/* Advanced Filters */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Input
+            placeholder="Search equipment..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 rounded-xl border-border/30 bg-background/50 pl-8 text-xs backdrop-blur-md focus:border-border/60"
+          />
+        </div>
 
-          {/* Era filter */}
-          <Select value={eraFilter} onValueChange={setEraFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Eras" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Eras</SelectItem>
-              {ERAS.map((era) => (
-                <SelectItem key={era.value} value={era.value}>
-                  {era.label}
+        <Select value={eraFilter} onValueChange={setEraFilter}>
+          <SelectTrigger className="h-8 w-36 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectValue placeholder="All Eras" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">All Eras</SelectItem>
+            {ERAS.map((era) => (
+              <SelectItem key={era.value} value={era.value} className="text-xs">
+                {era.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+          <SelectTrigger className="h-8 w-40 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md">
+            <SelectValue placeholder="All Subcategories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">All Subcategories</SelectItem>
+            {selectedCategory !== "all" &&
+              SUBCATEGORIES[selectedCategory as keyof typeof SUBCATEGORIES]?.map((sub) => (
+                <SelectItem key={sub} value={sub} className="text-xs capitalize">
+                  {sub}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
+          </SelectContent>
+        </Select>
 
-          {/* Subcategory filter */}
-          <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Subcategories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subcategories</SelectItem>
-              {selectedCategory !== "all" &&
-                SUBCATEGORIES[selectedCategory as keyof typeof SUBCATEGORIES]?.map((sub) => (
-                  <SelectItem key={sub} value={sub} className="capitalize">
-                    {sub}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-
-          {/* Show inactive toggle */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="showInactive"
-              checked={showInactive}
-              onCheckedChange={(checked) => setShowInactive(checked as boolean)}
-            />
-            <label htmlFor="showInactive" className="text-foreground cursor-pointer text-sm">
-              Show inactive
-            </label>
-          </div>
-        </div>
+        <label className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+          <Checkbox
+            id="showInactive"
+            checked={showInactive}
+            onCheckedChange={(checked) => setShowInactive(checked as boolean)}
+            className="h-3.5 w-3.5"
+          />
+          <span>Show inactive</span>
+        </label>
+      </div>
 
         {/* Advanced Filters Row 2 */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -190,60 +188,59 @@ export function CatalogTab({
 
         {/* Bulk Actions */}
         {selectedIds.size > 0 && (
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
-            <span className="text-foreground text-sm font-medium">{selectedIds.size} selected</span>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)}>
-              <Check className="mr-2 h-4 w-4" />
+          <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs">
+            <span className="text-foreground font-medium">{selectedIds.size} selected</span>
+            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)} className="h-7 px-2 text-xs active:scale-[0.98]">
+              <Check className="mr-1 h-3.5 w-3.5" />
               Activate
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(false)}>
-              <X className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="outline" onClick={() => handleBulkToggle(false)} className="h-7 px-2 text-xs active:scale-[0.98]">
+              <X className="mr-1 h-3.5 w-3.5" />
               Deactivate
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 px-2 text-xs active:scale-[0.98]">
               Clear Selection
             </Button>
           </div>
         )}
-      </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="facet-card-child p-4">
-          <p className="text-muted-foreground text-sm">Total Equipment</p>
-          <p className="text-foreground mt-2 text-3xl font-bold">{equipmentData?.length || 0}</p>
-        </Card>
-        <Card className="facet-card-child p-4">
-          <p className="text-muted-foreground text-sm">Active Equipment</p>
-          <p className="mt-2 text-3xl font-bold text-green-400">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Total Systems</p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{equipmentData?.length || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Active Registry</p>
+          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
-        </Card>
-        <Card className="facet-card-child p-4">
-          <p className="text-muted-foreground text-sm">Filtered Results</p>
-          <p className="mt-2 text-3xl font-bold text-blue-400">{filteredEquipment.length}</p>
-        </Card>
-        <Card className="facet-card-child p-4">
-          <p className="text-muted-foreground text-sm">Manufacturers</p>
-          <p className="mt-2 text-3xl font-bold text-purple-400">{manufacturers?.length || 0}</p>
-        </Card>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Filtered Results</p>
+          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{filteredEquipment.length}</p>
+        </div>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Manufacturers</p>
+          <p className="text-purple-400 mt-1 font-mono text-xl font-bold tracking-tight">{manufacturers?.length || 0}</p>
+        </div>
       </div>
 
       {/* Equipment Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-red-500"></div>
-          <p className="text-muted-foreground">Loading equipment catalog...</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+          <p className="text-muted-foreground text-xs">Loading equipment catalog...</p>
         </div>
       ) : filteredEquipment.length === 0 ? (
-        <Card className="facet-card-parent p-12 text-center">
-          <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-          <p className="text-muted-foreground">No equipment found matching your filters</p>
-          <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-12 text-center backdrop-blur-md">
+          <Filter className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
+          <p className="text-muted-foreground text-xs">No defense equipment matching current filters.</p>
+          <Button size="sm" className="mt-4 h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]" onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add First Equipment
           </Button>
-        </Card>
+        </div>
       ) : (
         <>
           {/* Select All Checkbox */}

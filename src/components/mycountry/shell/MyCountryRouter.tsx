@@ -14,39 +14,6 @@ import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { createUrl } from "~/lib/utils";
 import { CommandSurface } from "./CommandSurface";
 
-function SectionErrorFallback({ sectionName, retry }: { sectionName: string; retry: () => void }) {
-  return (
-    <div className="space-y-4 p-6">
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
-        <h3 className="mb-2 font-semibold text-red-400">Couldn't Load {sectionName}</h3>
-        <p className="mb-4 text-sm text-red-300">
-          There was an issue loading this section. Try again or refresh the page.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={retry}
-            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
-          >
-            Retry
-          </button>
-          <button
-            onClick={() => window.location.reload()}
-            className="rounded bg-red-600/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/30"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function createSectionFallback(sectionName: string) {
-  return function SectionFallback({ error: _error, retry }: { error: Error; retry: () => void }) {
-    return <SectionErrorFallback sectionName={sectionName} retry={retry} />;
-  };
-}
-
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
   executive: "Executive Directives",
@@ -176,14 +143,13 @@ function MyCountryRouterInner() {
 
   return (
     <DashboardErrorBoundary
-      fallback={createSectionFallback(SECTION_TITLES[activeSection])}
       title={`Unable to load ${SECTION_TITLES[activeSection]}`}
       description="This section could not be loaded. Try again or refresh the page."
       resetKeys={[activeSection]}
     >
       <CommandSurface section={activeSection} onNavigate={handleNavigate} />
 
-      {country?.id && complianceSections.length > 0 && activeSection === "overview" && (
+      {country?.id && Boolean(complianceSections?.length) && activeSection === "overview" && (
         <MyCountryComplianceModal
           isOpen={showComplianceModal}
           sections={complianceSections}

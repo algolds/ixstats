@@ -1,10 +1,10 @@
-# Stash System Specification & Architecture
+# 📖 Stash — Personal Reading Lists & Lore Archives
 
-**dev codename:** LoreStash  
-**Capability Level:** `STASH_VERSION: 1`  
-**Platforms:** WikiOS, IxStates, Margin, Forum  
-**Status:** Release Candidate (RC-1)  
-**Last Updated:** August 2026  
+**Parent App Suite:** WikiOS (`WIKIOS_VERSION = 1`)  
+**Subsystem:** Stash (`STASH_VERSION = 1`)  
+**Primary Action:** `STASH` | **Domain Accent:** Slate Cyan (`#06B6D4` / `--color-cyan-500`)  
+**Route:** `/stashes` | **Status:** 📀 Gold Master (100% Ready)  
+*(Note: Prisma models retain the `LoreStash` schema name for database stability)*  
 
 ---
 

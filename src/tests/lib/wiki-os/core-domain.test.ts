@@ -3,9 +3,9 @@
  */
 
 import { describe, expect, it } from "@jest/globals";
-import { ParserFunctionEvaluator } from "../../../lib/wiki-os/core/parser-functions";
-import { LinkGraphService } from "../../../lib/wiki-os/core/link-graph-service";
-import { toArticleSlug } from "../../../lib/wiki-os/core/domain-types";
+import { ParserFunctionEvaluator } from "~/lib/wiki-os/core/parser-functions";
+import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
+import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 
 describe("WikiOS Domain Types & Slugifier", () => {
   it("normalizes article titles into slugs correctly", () => {

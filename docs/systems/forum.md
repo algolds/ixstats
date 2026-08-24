@@ -1,10 +1,11 @@
-# Forum Integration (IxForum)
+# 🗨️ IxForum App — Community Discourse
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Integrated Product (inherits platform version `IXFORUM_VERSION = 1.3`). Wraps the XenForo REST bridge.
+**Parent App Suite:** IxForum (`IXFORUM_VERSION = 1.4` platform-inherited)  
+**Subsystems:** XenForo Native Bridge, Category Boards, Sovereign Dispatches, IxnayID SSO  
+**Primary Action:** `DEBATE` | **Domain Accent:** Warm Orange (`#F97316` / `--color-orange-500`)  
+**Route:** `/(forum)/forum` | **Status:** 📀 Gold Master (100% Ready)  
 
-IxForum provides a native forum experience inside IxStates by proxying and transforming data from a XenForo instance (`forum.ixwiki.com`) to the `/forum` route.
+IxForum delivers native community deliberation and archival debate inside IxStates by proxying and transforming data from a XenForo instance to the Next.js App Router with unified Facet styling and single sign-on.
 
 ---
 
@@ -39,6 +40,6 @@ IxForum provides a native forum experience inside IxStates by proxying and trans
 
 ## Related Documentation
 
-- [Social & Collaboration System](./social.md)
-- [Halo Plugin System](./dynamic-island.md)
+- [ThinkPages Suite](./social.md)
+- [Halo Wayfinding & Contextual Overlay](./halo.md)
 - [API Reference: Forum Router](../reference/api-complete.md#forum-router)

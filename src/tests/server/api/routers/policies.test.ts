@@ -1,16 +1,11 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-
-jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
-jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/lib/notifications/api", () => ({
-  notificationAPI: { create: jest.fn(() => Promise.resolve("note_1")) },
-}));
-
 import { createCallerFactory } from "~/server/api/trpc";
 import { policiesRouter } from "~/server/api/routers/policies";
 import { notificationAPI } from "~/lib/notifications/api";
 
-type MockFn = jest.Mock<any, any>;
+const notifSpy = jest.spyOn(notificationAPI, "create").mockResolvedValue({ success: true } as any);
+
+type MockFn = any;
 
 const mockDb = {
   $transaction: jest.fn(async (cb: any) => cb(mockDb)) as MockFn,
@@ -70,6 +65,7 @@ const baseContext = {
 describe("policiesRouter scheduling and notifications", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockDb.$transaction.mockImplementation(async (cb: any) => cb(mockDb));
     mockDb.storytellerEffect.create.mockResolvedValue({ id: "effect_1" });
     mockDb.storytellerEffect.updateMany.mockResolvedValue({ count: 1 });
   });
@@ -168,7 +164,7 @@ describe("policiesRouter scheduling and notifications", () => {
     const updated = await caller.activatePolicy({ id: "policy_1" });
 
     expect(updated.status).toBe("active");
-    expect(notificationAPI.create).toHaveBeenCalledWith(
+    expect(notifSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "📜 Policy Activated",
         countryId: "country_1",

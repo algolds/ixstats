@@ -27,21 +27,21 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
 | **Platform** | **IxStates (Ogma)** | **1.4.0 "Ogma"** | **Release Candidate** |
-| **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
-| | WikiOS | v1 | Headless Wiki & Canvas Architecture |
-| | IxVault | v2 | Cards, Credits & Marketplace |
-| **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
-| | Concord Engine | v2 | Living World Simulation & Events |
-| | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
-| **Systems** | MyCountry UI | v5 | 4-Tier Command Architecture |
-| | Nation Builder | v3 | Statecraft & Tax Builder Subsystems |
-| | ThinkPages | v2 | Social Knowledge & Feed Components |
-| | Achievements | v2 | Awards & LoreWards Resync |
-| | Stash | v1 | Article Stashing (was LoreStash) |
-| | Repository | v2 | Commons Media Explorer |
-| | Halo | v4 | Contextual Overlay System |
-| | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v2 | Refraction / Depth Design System |
+| **First-Party Apps** | MyCountry | v5 | Sovereign Command, Builder (v3), Statecraft (v4) |
+| | Atlas | v2 | Spatial Vector Maps & Atlas Engine (v5) |
+| | WikiOS | v1 | Native Lore OS, Margin, Canvas Editor (v1), Stash System |
+| | Vault | v2 | Metagame Incentives, Cards, Credits, Packs, Achievements (v2) |
+| | ThinkPages | v2 | Sovereign Feed, Account Manager, ThinkTanks, ThinkShare |
+| | IxForum | 1.4 | XenForo Bridge & IxnayID Single Sign-On |
+| **Engines** | Statecraft Engine | v4 | Deterministic Nation & Tax Simulation |
+| | Concord Engine | v2 | Living World Simulation Backend & Events |
+| | Atlas Engine | v5 | "Geography is King", Grounded IxEarth + UPG v2 |
+| **Facet UI & Ambient**| Facet Design System| v2 | Volumetric Glass & Tactile Materials Primitives |
+| | Halo Overlay | v5 | Contextual Header Overlay & `Cmd+K` Palette |
+| | Cuelume Engine | v1 | 17-Sound Web Audio Tactile Feedback Engine |
+| **Labs** | Onoma Studio | v4 | Conlang & Linguistics Studio (`/labs/onoma`) |
+| | Sports (MyLeague) | v1 | 7-Sport Season Simulation Engine (`/labs/myleague`) |
+| | Vexel | v1 | Procedural Heraldic Vector Studio (`/labs/vexel`) |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling

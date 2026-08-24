@@ -86,7 +86,7 @@ export function MarginHelpModal({ isOpen, onClose, themeColors }: MarginHelpModa
                 <div>
                   <h3 className="text-base font-bold tracking-tight">WikiOS Margin© guide</h3>
                   <p className="text-xs text-[var(--wikios-text-dim)]">
-                    Discussions, highlights, and simulation stats
+                    Discuss lore, highlight passages, and keep notes without leaving the page
                   </p>
                 </div>
               </div>

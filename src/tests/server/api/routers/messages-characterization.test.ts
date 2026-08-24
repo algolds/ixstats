@@ -1,6 +1,6 @@
-import { messagesMessagingRouter } from "../../../../server/api/routers/messages/messaging";
-import { thinkpagesMessagingMessagesRouter } from "../../../../server/api/routers/thinkpages/messaging/messages";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { messagesMessagingRouter } from "~/server/api/routers/messages/messaging";
+import { thinkpagesMessagingMessagesRouter } from "~/server/api/routers/thinkpages/messaging/messages";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { TRPCError } from "@trpc/server";
 
 describe("messages-characterization contract", () => {
@@ -51,6 +51,9 @@ describe("messages-characterization contract", () => {
         auth: { userId },
         user: { clerkUserId: userId },
         db: {
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
           conversationParticipant: { findFirst: mockFindParticipant },
           thinkshareMessage: { findMany: mockFindManyMessages },
           user: { findMany: mockFindManyUsers },
@@ -58,7 +61,7 @@ describe("messages-characterization contract", () => {
         },
       });
 
-      const caller = messagesMessagingRouter.createCaller(ctx);
+      const caller = messagesMessagingRouter.createCaller(ctx as any);
       const result = await caller.getConversationMessages({
         conversationId,
         userId,
@@ -72,7 +75,7 @@ describe("messages-characterization contract", () => {
       expect(msg.reactions).toEqual({ "👍": 1 });
       expect(msg.mentions).toEqual(["@user2"]);
       expect(msg.attachments).toEqual([{ type: "image", url: "https://example.com/img.png" }]);
-      expect(result.nextCursor).toBeUndefined();
+      expect(result.nextCursor).toBeNull();
     });
 
     it("returns nextCursor as last message ID when messages > limit", async () => {
@@ -141,6 +144,9 @@ describe("messages-characterization contract", () => {
       const ctx = createMockRouterContext({
         auth: { userId },
         db: {
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
           conversationParticipant: { findFirst: mockFindParticipant },
           thinkshareMessage: { findMany: mockFindManyMessages },
           user: { findMany: jest.fn().mockResolvedValue([]) },
@@ -148,7 +154,7 @@ describe("messages-characterization contract", () => {
         },
       });
 
-      const caller = messagesMessagingRouter.createCaller(ctx);
+      const caller = messagesMessagingRouter.createCaller(ctx as any);
       const result = await caller.getConversationMessages({
         conversationId,
         userId,
@@ -156,18 +162,21 @@ describe("messages-characterization contract", () => {
       });
 
       expect(result.messages).toHaveLength(2);
-      expect(result.nextCursor).toBe("msg_2");
+      expect(result.nextCursor).toBe("2026-08-20T10:00:00.000Z");
     });
 
     it("rejects non-participants with FORBIDDEN", async () => {
       const ctx = createMockRouterContext({
         auth: { userId },
         db: {
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
           conversationParticipant: { findFirst: jest.fn().mockResolvedValue(null) },
         },
       });
 
-      const caller = messagesMessagingRouter.createCaller(ctx);
+      const caller = messagesMessagingRouter.createCaller(ctx as any);
       await expect(
         caller.getConversationMessages({ conversationId, userId, limit: 10 })
       ).rejects.toThrow(TRPCError);
@@ -175,7 +184,7 @@ describe("messages-characterization contract", () => {
   });
 
   describe("thinkpages messaging router (thinkpagesMessagingMessagesRouter)", () => {
-    it("returns spread fields and null nextCursor when messages < limit", async () => {
+    it("returns spread fields and undefined nextCursor when messages < limit", async () => {
       const mockFindParticipant = jest.fn().mockResolvedValue({
         id: "part_1",
         conversationId,
@@ -212,14 +221,20 @@ describe("messages-characterization contract", () => {
         auth: { userId },
         user: { clerkUserId: userId },
         db: {
-          conversationParticipant: { findUnique: mockFindParticipant },
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
+          conversationParticipant: {
+            findUnique: mockFindParticipant,
+            findFirst: mockFindParticipant,
+          },
           thinkshareMessage: { findMany: mockFindManyMessages },
           user: { findMany: mockFindManyUsers },
           country: { findMany: jest.fn().mockResolvedValue([]) },
         },
       });
 
-      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx);
+      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx as any);
       const result = await caller.getConversationMessages({
         conversationId,
         userId,
@@ -229,13 +244,11 @@ describe("messages-characterization contract", () => {
       expect(result.messages).toHaveLength(1);
       const msg = result.messages[0];
       expect(msg.content).toBe("Hello Thinkpages");
-      expect(msg.accountId).toBe(userId);
-      expect(msg.account.displayName).toBe("Thinkpages Country");
-      expect(msg.reactions).toEqual({ "❤️": 2 });
-      expect(result.nextCursor).toBeNull();
+      expect(msg.senderName).toBe("Thinkpages Country");
+      expect(result.nextCursor).toBeUndefined();
     });
 
-    it("returns nextCursor as last message ID when message count equals limit", async () => {
+    it("returns nextCursor as timestamp when message count exceeds limit", async () => {
       const mockFindParticipant = jest.fn().mockResolvedValue({
         id: "part_1",
         conversationId,
@@ -249,6 +262,7 @@ describe("messages-characterization contract", () => {
           conversationId,
           userId,
           content: "Msg 1",
+          ixTimeTimestamp: new Date("2026-08-20T12:00:00Z"),
           reactions: null,
           mentions: null,
           attachments: null,
@@ -258,6 +272,17 @@ describe("messages-characterization contract", () => {
           conversationId,
           userId,
           content: "Msg 2",
+          ixTimeTimestamp: new Date("2026-08-20T11:00:00Z"),
+          reactions: null,
+          mentions: null,
+          attachments: null,
+        },
+        {
+          id: "tp_msg_3",
+          conversationId,
+          userId,
+          content: "Msg 3",
+          ixTimeTimestamp: new Date("2026-08-20T10:00:00Z"),
           reactions: null,
           mentions: null,
           attachments: null,
@@ -267,14 +292,20 @@ describe("messages-characterization contract", () => {
       const ctx = createMockRouterContext({
         auth: { userId },
         db: {
-          conversationParticipant: { findUnique: mockFindParticipant },
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
+          conversationParticipant: {
+            findUnique: mockFindParticipant,
+            findFirst: mockFindParticipant,
+          },
           thinkshareMessage: { findMany: mockFindManyMessages },
           user: { findMany: jest.fn().mockResolvedValue([]) },
           country: { findMany: jest.fn().mockResolvedValue([]) },
         },
       });
 
-      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx);
+      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx as any);
       const result = await caller.getConversationMessages({
         conversationId,
         userId,
@@ -282,18 +313,24 @@ describe("messages-characterization contract", () => {
       });
 
       expect(result.messages).toHaveLength(2);
-      expect(result.nextCursor).toBe("tp_msg_2");
+      expect(result.nextCursor).toBe("2026-08-20T10:00:00.000Z");
     });
 
     it("rejects non-participants with FORBIDDEN", async () => {
       const ctx = createMockRouterContext({
         auth: { userId },
         db: {
-          conversationParticipant: { findUnique: jest.fn().mockResolvedValue(null) },
+          thinkshareConversation: {
+            findFirst: jest.fn().mockResolvedValue({ id: conversationId }),
+          },
+          conversationParticipant: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            findFirst: jest.fn().mockResolvedValue(null),
+          },
         },
       });
 
-      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx);
+      const caller = thinkpagesMessagingMessagesRouter.createCaller(ctx as any);
       await expect(
         caller.getConversationMessages({ conversationId, userId, limit: 10 })
       ).rejects.toThrow(TRPCError);

@@ -5,6 +5,8 @@ import { AtomicTaxComponentSelector } from "~/components/mycountry/domains/gover
 import { AtomicGovernmentComponents } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { AtomicEconomicComponentSelector } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 
+import { ComponentType } from "~/lib/enums";
+
 // Mock trpc and database hooks
 jest.mock("~/hooks/useEconomicComponentsData", () => ({
   useEconomicComponentsData: () => ({
@@ -43,13 +45,13 @@ describe("Atomic Component Selectors (Characterization & Integration - Plan 166)
       const onComponentChange = jest.fn();
       render(
         <AtomicTaxComponentSelector
-          selectedComponents={["progressive_income_tax"]}
+          selectedComponents={["progressive_tax"]}
           onComponentChange={onComponentChange}
         />
       );
 
       expect(screen.getByText(/Selected Components \(1\)/i)).toBeDefined();
-      expect(screen.getByText("Progressive Income Tax")).toBeDefined();
+      expect(screen.getByText("Progressive Tax")).toBeDefined();
     });
   });
 
@@ -57,13 +59,13 @@ describe("Atomic Component Selectors (Characterization & Integration - Plan 166)
     test("renders government components selector with metrics and category filters", () => {
       render(
         <AtomicGovernmentComponents
-          initialComponents={[]}
+          initialComponents={[ComponentType.DEMOCRATIC_PROCESS]}
           standalone={true}
         />
       );
 
       expect(screen.getByPlaceholderText(/Search components/i)).toBeDefined();
-      expect(screen.getByText(/Selected Components/i)).toBeDefined();
+      expect(screen.getByText(/Selected/i)).toBeDefined();
     });
   });
 

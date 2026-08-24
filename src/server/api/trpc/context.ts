@@ -36,7 +36,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
   try {
     // Try to get auth from request first (for app router)
     if (opts.req) {
-      auth = getAuth(opts.req);
+      auth = (opts.req as any).auth ?? getAuth(opts.req);
     }
 
     // If no auth from request, try to get it from authorization header (for API routes)

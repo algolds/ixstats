@@ -28,6 +28,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       },
       thinkshareConversation: {
         findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn().mockResolvedValue({ id: "c_1" }),
         findUnique: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: "conv_1", participants: [] }),
         update: jest.fn().mockResolvedValue({ id: "conv_1" }),
@@ -138,7 +139,14 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
           messages: [{ id: "m_1", userId: "user_2", content: "hi", createdAt: new Date() }],
         },
       ]);
-      mockDb.thinkshareMessage.count.mockResolvedValue(3);
+      mockDb.conversationParticipant.findMany.mockResolvedValue([
+        { conversationId: "c_1", userId: "user_1", lastReadAt: new Date(0) },
+      ]);
+      mockDb.thinkshareMessage.findMany.mockResolvedValue([
+        { conversationId: "c_1", ixTimeTimestamp: new Date(1000) },
+        { conversationId: "c_1", ixTimeTimestamp: new Date(2000) },
+        { conversationId: "c_1", ixTimeTimestamp: new Date(3000) },
+      ]);
 
       const res = await service.getConversationsByFolder("user_1", { folder: "inbox", limit: 10 });
       expect(res.conversations).toHaveLength(1);
@@ -147,14 +155,20 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
 
     test("6. getFolderCounts aggregates unread counts across all category folders", async () => {
       mockDb.conversationParticipant.findMany.mockResolvedValue([
-        { conversationId: "c_1", isArchived: false, isMuted: false, conversation: { source: "thinkshare" } },
-        { conversationId: "c_2", isArchived: true, isMuted: false, conversation: { source: "thinkshare" } },
-        { conversationId: "c_3", isArchived: false, isMuted: false, conversation: { source: "diplomatic" } },
+        { conversationId: "c_1", isArchived: false, isMuted: false, lastReadAt: new Date(0), conversation: { source: "thinkshare" } },
+        { conversationId: "c_2", isArchived: true, isMuted: false, lastReadAt: new Date(0), conversation: { source: "thinkshare" } },
+        { conversationId: "c_3", isArchived: false, isMuted: false, lastReadAt: new Date(0), conversation: { source: "diplomatic" } },
+      ]);
+      mockDb.thinkshareMessage.findMany.mockResolvedValue([
+        { conversationId: "c_1", ixTimeTimestamp: new Date(1000) },
+        { conversationId: "c_1", ixTimeTimestamp: new Date(2000) },
+        { conversationId: "c_2", ixTimeTimestamp: new Date(1000) },
+        { conversationId: "c_3", ixTimeTimestamp: new Date(1000) },
       ]);
 
       const counts = await service.getFolderCounts("user_1");
       expect(counts.archive).toBe(1);
-      expect(counts.inbox).toBe(2);
+      expect(counts.inbox).toBe(3);
       expect(counts.diplomatic).toBe(1);
     });
 
@@ -177,6 +191,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
 
     test("8. getConversationMessages enforces participant authorization", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue(null);
+      mockDb.thinkshareConversation.findFirst.mockResolvedValue(null);
 
       await expect(
         service.getConversationMessages("unauthorized_user", { conversationId: "c_1" })

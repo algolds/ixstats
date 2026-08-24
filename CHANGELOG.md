@@ -33,6 +33,23 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 👤 Unified IxnayID Account Profile System & Universal Resolver (Plan 181)
+
+- **Consolidated `api.ixnayid.getUnifiedProfile` Backend Resolver**:
+  - Implemented a unified tRPC procedure in `src/server/api/routers/ixnayid.ts` consolidating Country, User, MediaWiki, XenForo, ThinkPages, and Vault queries in a single parallel lookup (`Promise.allSettled`).
+  - Supports automatic identity resolution across country slugs, nation names, Clerk IDs, MediaWiki handles, and XenForo user IDs.
+- **Universal Resolver Route (`/id/[username]` & `/id/@username`)**:
+  - Built universal profile route at `/id/[username]` that cleanly strips leading `@` symbols and dynamically discriminates between **Sovereign Profile Mode** (seamless redirect to `/countries/[slug]`) and **Citizen Profile Mode** (dedicated citizen masthead, accolades, forum reputation, and Vault card showcase).
+- **Reusable Facet Tab Primitives**:
+  - Created `<WikiTab />` (`src/app/countries/[slug]/_components/tabs/WikiTab.tsx`) with Lorewards metric tiles, GitHub-style Streak Calendar heatmap, verified award history, and live MediaWiki edits with +/- byte indicators.
+  - Created `<ForumTab />` (`src/app/countries/[slug]/_components/tabs/ForumTab.tsx`) with XenForo member card, reputation score, trophy points, location, HTML bio, and synced custom profile fields.
+- **Expanded Profile Backbone (`/countries/[slug]`)**:
+  - Expanded `CountryTabs.tsx` from 3 to 5 Tier-1 tabs: Factbook (`/factbook`), Dossier (`/dossier`), Wiki & Accolades (`/wiki`), Community (`/forum`), and Activity (`/activity`).
+  - Updated `CountryHeader.tsx` to render the **Dual-Identity Sovereign Hero** with delegate avatar, handle chip, role badges, and staff indicators.
+- **Two-Way Settings & Cross-System Bridges**:
+  - Added direct "Public Profile" link in `/settings` `AccountInformationCard.tsx`.
+  - Added bridge banners across standalone WikiOS user profiles (`/wiki/user/[username]`) and XenForo member pages (`/forum/members/[userId]`) linking back to the unified IxnayID profile.
+
 ### 🎨 Universal Iconoir Migration & Facet Design Token Cleanup
 
 - **Comprehensive Iconoir-React Icon Modernization**:

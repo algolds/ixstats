@@ -12,7 +12,7 @@ export default function DefenseOverviewArticle() {
       <ContentCard>
         <Section title="What the Defense Suite Covers">
           <ul className="list-disc space-y-2 pl-6">
-            <li>Strategic Defense Initiative (SDI) modules with readiness scoring.</li>
+            <li>National defense readiness scoring across military branches and strategic modules.</li>
             <li>Threat monitoring and incident tracking integrated with intelligence alerts.</li>
             <li>Compliance tasks to ensure critical defense follow-ups are not missed.</li>
           </ul>

@@ -1,4 +1,8 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { createCallerFactory } from "~/server/api/trpc";
+import { securityOperationsRouter } from "~/server/api/routers/security/operations";
+import { newsGenerator } from "~/lib/diplomacy/news-generator";
+import { notificationAPI } from "~/lib/notifications/api";
 
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({
@@ -7,19 +11,11 @@ jest.mock("~/server/db", () => ({
   },
   isDatabaseReadOnly: false,
 }));
-jest.mock("~/lib/diplomacy/news-generator", () => ({
-  generateDiplomaticNews: jest.fn(),
-}));
-jest.mock("~/lib/notifications/api", () => ({
-  notificationAPI: { create: jest.fn() },
-}));
 
-import { createCallerFactory } from "~/server/api/trpc";
-import { securityOperationsRouter } from "~/server/api/routers/security/operations";
-import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { notificationAPI } from "~/lib/notifications/api";
+const mockGenerateNews = jest.spyOn(newsGenerator, "generateDiplomaticNews").mockResolvedValue("post_1" as any);
+const mockNotifCreate = jest.spyOn(notificationAPI, "create").mockResolvedValue({ success: true } as any);
 
-type MockFn = jest.MockedFunction<any>;
+type MockFn = any;
 
 const mockDb = {
   user: { findUnique: jest.fn() as MockFn },
@@ -80,8 +76,8 @@ describe("securityOperationsRouter conflict news", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDb.systemLog.create.mockResolvedValue({ id: "log_1" });
-    (generateDiplomaticNews as MockFn).mockResolvedValue("post_1");
-    (notificationAPI.create as MockFn).mockResolvedValue(undefined);
+    mockGenerateNews.mockResolvedValue("post_1" as any);
+    mockNotifCreate.mockResolvedValue({ success: true } as any);
   });
 
   it("fires pvp_conflict_proposed news on both sides when proposing a conflict", async () => {
@@ -97,8 +93,8 @@ describe("securityOperationsRouter conflict news", () => {
 
     await caller.proposePvPConflict({ defenderId: "country_2", reason: "Border dispute" });
 
-    expect(generateDiplomaticNews).toHaveBeenCalledTimes(2);
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledTimes(2);
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_1",
       "pvp_conflict_proposed",
@@ -108,7 +104,7 @@ describe("securityOperationsRouter conflict news", () => {
         reason: "Border dispute",
       })
     );
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_2",
       "pvp_conflict_proposed",
@@ -132,8 +128,8 @@ describe("securityOperationsRouter conflict news", () => {
 
     await caller.respondToConflict({ conflictId: "conflict_1", accept: true });
 
-    expect(generateDiplomaticNews).toHaveBeenCalledTimes(2);
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledTimes(2);
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_2",
       "pvp_conflict_accepted",
@@ -142,7 +138,7 @@ describe("securityOperationsRouter conflict news", () => {
         targetName: "Aggressorland",
       })
     );
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_1",
       "pvp_conflict_accepted",
@@ -169,7 +165,7 @@ describe("securityOperationsRouter conflict news", () => {
 
     await caller.respondToConflict({ conflictId: "conflict_1", accept: false });
 
-    expect(generateDiplomaticNews).not.toHaveBeenCalled();
+    expect(mockGenerateNews).not.toHaveBeenCalled();
   });
 
   it("fires pvnpc_conflict_resolved news on both sides with the winner", async () => {
@@ -222,8 +218,8 @@ describe("securityOperationsRouter conflict news", () => {
 
     await caller.resolvePvNPCConflict({ targetCountryId: "country_2", reason: "Skirmish" });
 
-    expect(generateDiplomaticNews).toHaveBeenCalledTimes(2);
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledTimes(2);
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_1",
       "pvnpc_conflict_resolved",
@@ -233,7 +229,7 @@ describe("securityOperationsRouter conflict news", () => {
         winner: "Aggressorland",
       })
     );
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_2",
       "pvnpc_conflict_resolved",

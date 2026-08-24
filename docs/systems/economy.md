@@ -1,10 +1,11 @@
-# Economy & Resources System
+# 🏛️ MyCountry Economy Domain & Fiscal Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`), powered by the **MyCountry Simulation Engine** (`MYCOUNTRY_ENGINE_VERSION = 4`).
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `SIMULATE` | **Domain Accent:** Emerald Green / Amber Gold  
+**Route:** `/mycountry` (Economy Domain) | **Status:** 📀 Gold Master (100% Ready)  
 
-The economy system models macroeconomic output, fiscal policy, sector performance, labor dynamics, trade flows, tax brackets, and long-range statistical projections.
+The Economy system models macroeconomic output, 42-tax bracket fiscal policy, sector performance, labor dynamics, trade flows, and long-range statistical projections.
 
 ---
 

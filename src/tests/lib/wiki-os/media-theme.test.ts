@@ -6,8 +6,8 @@ import {
   normalizeMediaMode,
   HUE_PRESERVED_INVERT_FILTER,
   PURE_INVERT_FILTER,
-} from "../../../lib/wiki-os/transformers/media-theme";
-import { resolveHighResWikiImage } from "../../../lib/wiki-os/transformers/resolve-highres-image";
+} from "~/lib/wiki-os/transformers/media-theme";
+import { resolveHighResWikiImage } from "~/lib/wiki-os/transformers/resolve-highres-image";
 
 describe("WikiOS Media Theme System", () => {
   describe("detectMediaType", () => {

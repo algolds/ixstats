@@ -1,8 +1,8 @@
-# IxTime: Temporal Engine
+# ⚙️ IxTime: Concord Living-World Temporal Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready 
-**Platform Pillar:** Core Time Engine (Concord Platform Utility)  
+**Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
+**Platform Pillar:** Temporal Master World Clock & Simulation Ticks  
+**Role:** Living-World Simulation Backend | **Status:** 📀 Gold Master (100% Ready)  
 **Single Source of Truth:** `src/lib/ixtime/` · `src/stores/ixtime-store.ts` · `src/context/IxTimeContext.tsx`
 
 ---
@@ -15,7 +15,7 @@
 - **Diplomacy & Concord**: Cultural exchange durations, diplomatic mission lifecycles, and bilateral treaty expirations.
 - **Economy & Treasury**: Annual budget cycles, inflation adjustments, and passive IxCredit income intervals.
 - **MyLeague Sports**: League schedules, live match-clock simulation, qualifying windows, and contract expiries.
-- **Halo & UI Ambient Clock**: Dynamic Island live clock telemetry, relative time countdowns, and global game banners.
+- **Halo & UI Ambient Clock**: Global contextual live clock telemetry, relative time countdowns, and world event banners.
 
 IxTime features bidirectional mathematical time conversion, cross-service synchronization with the Discord bot daemon (`discord-bot`), and a fine-grained React/Zustand client telemetry loop.
 
@@ -46,7 +46,7 @@ IxTime features bidirectional mathematical time conversion, cross-service synchr
 │    • Granular Selector Hooks          — useIxTimeTimestamp(), useIxTimeGameYear(), etc │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 5. PLATFORM CONSUMERS & STORAGE                                                        │
-│    • Halo (Dynamic Island)            — Ambient clock & glance-level countdowns        │
+│    • Halo Contextual Overlay          — Ambient clock & glance-level countdowns        │
 │    • Statecraft & Executive Agenda    — Issue deadlines, recon countdowns, terms       │
 │    • MyLeague & Diplomacy             — Match live-clocks, treaty expiries, elections  │
 │    • PostgreSQL / PostGIS             — scheduledIxTime, deadlineIxTime (Float / Date) │
@@ -356,7 +356,7 @@ pm2 restart ixwiki-discord-bot
 
 - [Statecraft Game Loops & Decision Simulator](./statecraft/statecraft-game-loops.md)
 - [MyCountry Command Suite Specification](./mycountry.md)
-- [Halo Dynamic Island & Wayfinding](./halo.md)
+- [Halo Wayfinding & Contextual Overlay](./halo.md)
 - [MyLeague Sports Simulation Engine](./myleague.md)
 - [Versioning & Release Architecture](../reference/revision.md)
 - [Complete tRPC API Catalog](../reference/api-complete.md#system-router)

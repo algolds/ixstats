@@ -27,7 +27,7 @@ Routes whose `page.tsx` defers to `AdminRouter` are marked **(router)**; the sec
 | `notifications/` | Notification administration **(router)** |
 | `logs/` | System / calculation log viewer **(router)** |
 | `user-logs/` | User activity log viewer (`LogsPanel`) **(router)** |
-| `world-settings/` | World config: zoom, projection, wiki domains **(router)** |
+| `world-settings/` | World config (merged into `realms` World Configs tab) **(router)** |
 | `realms/` | Game realms + user→realm assignments **(router)** |
 | `storyteller/` | Storyteller world events / event chains **(router)** |
 | `worldstudio/` | World Studio map authoring panel **(router)** |
@@ -59,7 +59,7 @@ Routes whose `page.tsx` defers to `AdminRouter` are marked **(router)**; the sec
 | `user-management/` | User list / management (`UserManagement mode="users"`) **(router)** |
 | `user-roles/` | Role assignment (`UserManagement mode="roles"`) **(router)** |
 | `users/` | Legacy user analytics route **(standalone)** |
-| `maps/` | IxWorld map admin + `editor/`, `style-editor/` (own error boundary) **(standalone)** |
+| `maps/` | Atlas map admin + `editor/`, `style-editor/` (own error boundary) **(standalone)** |
 | `wiki/` | Wiki link status, manual link editor, system tuning **(router)** |
 | `wikios-settings/` | WikiOS base settings (link status + editor + tuning) **(router)** |
 | `lorescanner/` | WikiOS bulk wiki-link scanner **(router)** |

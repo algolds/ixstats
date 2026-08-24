@@ -8,7 +8,7 @@ import {
   removeTaxComponentTx,
   bulkUpdateTaxComponentsTx,
   createBudgetScenarioTx,
-} from "../../../../server/modules/atomic/services/component-mutations";
+} from "~/server/modules/atomic/services/component-mutations";
 
 class MockPrismaTxState {
   economicComponents: any[] = [];

@@ -1,18 +1,20 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import DiplomaticScenariosPage from "~/app/admin/diplomatic-scenarios/page";
-
-// Mock auth context
-const mockUseUser = jest.fn();
-jest.mock("~/context/auth-context", () => ({
-  useUser: () => mockUseUser(),
-  SignInButton: () => <button>Sign In</button>,
-}));
+import { DiplomaticScenariosPanel } from "~/app/admin/diplomatic-scenarios/DiplomaticScenariosPanel";
 
 // Mock hooks
 jest.mock("~/hooks/usePageTitle", () => ({
   usePageTitle: jest.fn(),
+}));
+
+jest.mock("~/context/auth-context", () => ({
+  useUser: () => ({ user: { id: "admin_1", role: "admin" } }),
+  AuthProvider: ({ children }: any) => children,
+}));
+
+jest.mock("~/app/admin/diplomatic-scenarios/_components/DiplomaticScenariosAnalyticsTab", () => ({
+  DiplomaticScenariosAnalyticsTab: () => <div data-testid="mock-analytics-tab">Analytics Content</div>,
 }));
 
 // Mock admin hook
@@ -20,7 +22,7 @@ const mockAdminHook = {
   scenarios: [
     {
       id: "scen-1",
-      title: "Border Dispute",
+      title: "Border Dispute Scenario",
       narrative: "Tensions flare at border checkpoint",
       type: "border_dispute",
       relationshipState: "tense",
@@ -34,7 +36,7 @@ const mockAdminHook = {
   filteredScenarios: [
     {
       id: "scen-1",
-      title: "Border Dispute",
+      title: "Border Dispute Scenario",
       narrative: "Tensions flare at border checkpoint",
       type: "border_dispute",
       relationshipState: "tense",
@@ -97,40 +99,38 @@ jest.mock("~/hooks/admin/useDiplomaticScenariosAdmin", () => ({
   useDiplomaticScenariosAdmin: () => mockAdminHook,
 }));
 
-describe("DiplomaticScenariosPage", () => {
+describe("DiplomaticScenariosPanel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("renders loading state when auth is not loaded", () => {
-    mockUseUser.mockReturnValue({ isLoaded: false, user: null });
-    render(<DiplomaticScenariosPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+  test("renders loading skeletons when isLoading is true", () => {
+    jest
+      .spyOn(require("~/hooks/admin/useDiplomaticScenariosAdmin"), "useDiplomaticScenariosAdmin")
+      .mockReturnValueOnce({
+        ...mockAdminHook,
+        isLoading: true,
+      });
+    const { container } = render(<DiplomaticScenariosPanel />);
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
   });
 
-  test("renders sign-in button when unauthenticated", () => {
-    mockUseUser.mockReturnValue({ isLoaded: true, user: null });
-    render(<DiplomaticScenariosPage />);
-    expect(screen.getByText("Sign In")).toBeInTheDocument();
-  });
-
-  test("renders access denied when user lacks admin role", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-1", publicMetadata: { role: "member" } },
-    });
-    render(<DiplomaticScenariosPage />);
-    expect(screen.getByText("Access Denied")).toBeInTheDocument();
-  });
-
-  test("renders diplomatic scenarios dashboard when user is admin", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-admin", publicMetadata: { role: "admin" } },
-    });
-    render(<DiplomaticScenariosPage />);
+  test("renders diplomatic scenarios dashboard header and scenarios", () => {
+    render(<DiplomaticScenariosPanel />);
     expect(screen.getByText("Diplomatic Scenarios")).toBeInTheDocument();
-    expect(screen.getByText("Back to Admin")).toBeInTheDocument();
-    expect(screen.getByText("Border Dispute")).toBeInTheDocument();
+    expect(screen.getByText("Border Dispute Scenario")).toBeInTheDocument();
+    expect(screen.getByText("Scenarios")).toBeInTheDocument();
+    expect(screen.getByText("Analytics")).toBeInTheDocument();
+  });
+
+  test("renders empty state message when no scenarios match filters", () => {
+    jest
+      .spyOn(require("~/hooks/admin/useDiplomaticScenariosAdmin"), "useDiplomaticScenariosAdmin")
+      .mockReturnValueOnce({
+        ...mockAdminHook,
+        filteredScenarios: [],
+      });
+    render(<DiplomaticScenariosPanel />);
+    expect(screen.getByText("No scenarios found matching your filters")).toBeInTheDocument();
   });
 });

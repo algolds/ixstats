@@ -20,19 +20,23 @@ describe("Messaging API Parity & Contract Invariants (Plan 163)", () => {
       "createConversation",
       "deleteMessage",
       "editMessage",
+      "getConversation",
       "getConversationMessages",
       "getConversationsByFolder",
       "getFolderCounts",
       "leaveConversation",
+      "markAllAsRead",
       "markMessagesAsRead",
       "removeReaction",
       "searchUsers",
+      "sendAdminBroadcast",
+      "sendAdminMessage",
       "sendMessage",
       "syncDiscussions",
     ].sort();
 
     expect(allMessagesProcedures).toEqual(expectedCurrent);
-    expect(allMessagesProcedures).toHaveLength(15);
+    expect(allMessagesProcedures).toHaveLength(19);
   });
 
   test("api.thinkpages messaging contains the exact 8 legacy procedure names", () => {

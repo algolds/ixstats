@@ -67,6 +67,8 @@ function ToggleGroupItem({
     <button
       type="button"
       data-slot="toggle-group-item"
+      data-cuelume-press="tick"
+      data-cuelume-hover="tick"
       data-state={isSelected ? "on" : "off"}
       aria-pressed={isSelected}
       onClick={() => context.onItemClick?.(itemValue)}

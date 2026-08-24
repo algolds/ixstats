@@ -388,7 +388,7 @@ export function LorewardsBotSection() {
               <select
                 value={selectedProcess}
                 onChange={(e) => setSelectedProcess(e.target.value as any)}
-                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
               >
                 <option value="ixwiki-discord-bot">Discord Bot</option>
                 <option value="ixstats-ixtwitter">IxTwitter Feed</option>
@@ -396,7 +396,7 @@ export function LorewardsBotSection() {
               <select
                 value={logType}
                 onChange={(e) => setLogType(e.target.value as any)}
-                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
               >
                 <option value="out">Stdout (info)</option>
                 <option value="err">Stderr (errors)</option>
@@ -815,7 +815,7 @@ export function LorewardsBotSection() {
               <select
                 value={blacklistDuration}
                 onChange={(e) => setBlacklistDuration(e.target.value)}
-                className="border-border/50 bg-background text-foreground h-9 w-full rounded-md border px-2.5 text-xs focus:outline-none"
+                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
               >
                 <option value="permanent">Permanent</option>
                 <option value="7days">7 Days</option>
@@ -832,7 +832,7 @@ export function LorewardsBotSection() {
                   type="date"
                   value={blacklistExpiry}
                   onChange={(e) => setBlacklistExpiry(e.target.value)}
-                  className="h-9 text-xs"
+                  className="h-9 rounded-xl text-xs"
                 />
               </div>
             )}
@@ -840,7 +840,7 @@ export function LorewardsBotSection() {
           <Button
             onClick={handleAddBlacklist}
             disabled={updateBlacklistMutation.isPending}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 w-full text-xs font-bold sm:w-auto"
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 w-full rounded-xl text-xs font-bold sm:w-auto active:scale-[0.98]"
           >
             Add to Blacklist
           </Button>
@@ -907,7 +907,7 @@ export function LorewardsBotSection() {
                 type="date"
                 value={overrideDate}
                 onChange={(e) => setOverrideDate(e.target.value)}
-                className="h-9 text-xs"
+                className="h-9 rounded-xl text-xs"
               />
             </div>
             <div className="space-y-1">
@@ -915,7 +915,7 @@ export function LorewardsBotSection() {
               <select
                 value={overrideType}
                 onChange={(e) => setOverrideType(e.target.value)}
-                className="border-border/50 bg-background text-foreground h-9 w-full rounded-md border px-2.5 text-xs focus:outline-none"
+                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
               >
                 <option value="daily">Daily Loreward</option>
                 <option value="weekly">Weekly Loreward</option>

@@ -1,18 +1,8 @@
 /**
- * Unified Intelligence Router
+ * Unified Intelligence Router — Policy Analytics
  *
- * Comprehensive intelligence router that combines SDI/ECI functionality with
+ * Comprehensive intelligence router powering national security, crisis response,
  * executive dashboard operations, diplomatic channels, and unified intelligence feeds.
- *
- * Features:
- * - Executive dashboard overview (vitality, alerts, quick actions)
- * - Enhanced quick actions with real database effects
- * - Secure diplomatic channel management
- * - Real-time intelligence feed aggregation
- * - Advanced analytics dashboard
- * - Classification-based access control
- * - Notification hooks for all major events
- * - Audit logging for sensitive operations
  */
 
 import { z } from "zod";
@@ -47,7 +37,6 @@ export const intelAnalyticsPoliciesRouter = createTRPCRouter({
 
   /**
    * Get economic policies for a country
-   * Migrated from ECI router
    */
   getEconomicPolicies: protectedProcedure
     .input(z.object({ countryId: z.string() }))
@@ -89,7 +78,6 @@ export const intelAnalyticsPoliciesRouter = createTRPCRouter({
 
   /**
    * Create a new economic policy
-   * Migrated from ECI router
    */
   createEconomicPolicy: premiumProcedure
     .input(economicPolicySchema)
@@ -198,7 +186,6 @@ export const intelAnalyticsPoliciesRouter = createTRPCRouter({
 
   /**
    * Implement an economic policy
-   * Migrated from ECI router
    */
   implementEconomicPolicy: premiumProcedure
     .input(
@@ -303,7 +290,6 @@ export const intelAnalyticsPoliciesRouter = createTRPCRouter({
 
   /**
    * Get policy effectiveness analysis
-   * Migrated from ECI router
    */
   getPolicyEffectiveness: premiumProcedure
     .input(
@@ -422,19 +408,9 @@ export const intelAnalyticsPoliciesRouter = createTRPCRouter({
             });
       }
     }),
-  // ===== CRISIS MANAGEMENT (from SDI) =====
-
-  // ===== ECONOMIC INTELLIGENCE (from SDI) =====
-
-  // ===== DIPLOMATIC INTELLIGENCE (from SDI) =====
-
-  // ===== STRATEGIC PLANS & SECURITY =====
-
-  // ===== KEY FINDINGS =====
 });
 
 // ===== HELPER FUNCTIONS =====
-// Migrated from ECI router for advanced analytics and AI recommendations
 
 /**
  * Calculate volatility metrics from historical data

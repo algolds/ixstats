@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+  HoverCardArrow,
+} from "~/components/ui/hover-card";
 import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
@@ -21,19 +26,18 @@ export function WikiAuthorPopover({ username }: { username: string }) {
   const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
 
   return (
-    <HoverCardPrimitive.Root open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
-      <HoverCardPrimitive.Trigger asChild>
+    <HoverCard open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>
+      <HoverCardTrigger asChild>
         <button className="text-foreground/80 hover:text-foreground cursor-pointer font-medium underline decoration-dotted underline-offset-2 transition-colors">
           {username}
         </button>
-      </HoverCardPrimitive.Trigger>
-      <HoverCardPrimitive.Portal>
-        <HoverCardPrimitive.Content
-          side="top"
-          align="start"
-          sideOffset={4}
-          className="bg-popover border-border/50 animate-in fade-in-0 zoom-in-95 z-50 w-56 rounded-xl border p-3 shadow-lg"
-        >
+      </HoverCardTrigger>
+      <HoverCardContent
+        side="top"
+        align="start"
+        sideOffset={4}
+        className="w-56 p-3"
+      >
           {isLoading ? (
             <div className="space-y-2">
               <div className="bg-muted h-4 w-24 animate-pulse rounded" />
@@ -118,9 +122,8 @@ export function WikiAuthorPopover({ username }: { username: string }) {
               </div>
             </div>
           )}
-          <HoverCardPrimitive.Arrow className="fill-popover" />
-        </HoverCardPrimitive.Content>
-      </HoverCardPrimitive.Portal>
-    </HoverCardPrimitive.Root>
+          <HoverCardArrow className="fill-popover" />
+        </HoverCardContent>
+    </HoverCard>
   );
 }

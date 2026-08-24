@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
@@ -40,6 +40,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Wallet, Search, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
+
+import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
 
 export function VaultUserDirectory() {
   const notify = useNotify();
@@ -268,236 +270,214 @@ export function VaultUserDirectory() {
     });
   };
 
-  // Pagination bounds
   const totalItems = vaultData?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
-
   const selectedUserVault = selectedUser
     ? vaultData?.users?.find((u: any) => u.id === selectedUser.id)?.vault
     : null;
 
+  const columns = useMemo<FacetColumn<any>[]>(
+    () => [
+      {
+        key: "user",
+        header: "User Identification",
+        mobileRole: "hero",
+        accessor: (user: any) => user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+        render: (_val: unknown, user: any) => (
+          <div className="flex items-center gap-2">
+            {user.country?.flag && (
+              <img
+                src={user.country.flag}
+                alt=""
+                className="h-4 w-6 shrink-0 rounded-sm object-cover"
+              />
+            )}
+            <div className="min-w-0">
+              <div
+                className="text-foreground max-w-[200px] truncate font-semibold"
+                title={`Clerk ID: ${user.clerkUserId}`}
+              >
+                {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
+              </div>
+              {user.country?.name && (
+                <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
+                  {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
+                  {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
+                  {user.discordUsername && <span>Discord: {user.discordUsername}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: "credits",
+        header: "Balance (IxC)",
+        align: "right",
+        sortable: true,
+        mobileRole: "badge",
+        accessor: (user: any) => user.vault?.credits ?? 0,
+        render: (_val: unknown, user: any) => (
+          <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+            {(user.vault?.credits ?? 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        ),
+      },
+      {
+        key: "lifetimeEarned",
+        header: "Lifetime Earned",
+        align: "right",
+        sortable: true,
+        mobileRole: "field",
+        mobileLabel: "Earned",
+        accessor: (user: any) => user.vault?.lifetimeEarned ?? 0,
+        render: (_val: unknown, user: any) => (
+          <span className="text-muted-foreground font-mono text-xs">
+            {(user.vault?.lifetimeEarned ?? 0).toLocaleString(undefined, {
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      },
+      {
+        key: "lifetimeSpent",
+        header: "Lifetime Spent",
+        align: "right",
+        sortable: true,
+        mobileRole: "field",
+        mobileLabel: "Spent",
+        accessor: (user: any) => user.vault?.lifetimeSpent ?? 0,
+        render: (_val: unknown, user: any) => (
+          <span className="text-muted-foreground font-mono text-xs">
+            {(user.vault?.lifetimeSpent ?? 0).toLocaleString(undefined, {
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      },
+      {
+        key: "streak",
+        header: "Streak",
+        align: "center",
+        mobileRole: "field",
+        accessor: (user: any) => user.vault?.loginStreak ?? 0,
+        render: (_val: unknown, user: any) => (
+          <Badge
+            variant="outline"
+            className="border-orange-500/20 bg-orange-500/5 text-orange-600 dark:text-orange-400"
+          >
+            {user.vault?.loginStreak ?? 0}d
+          </Badge>
+        ),
+      },
+      {
+        key: "level",
+        header: "Level",
+        align: "center",
+        mobileRole: "field",
+        accessor: (user: any) => user.vault?.vaultLevel ?? 1,
+        render: (_val: unknown, user: any) => (
+          <Badge
+            variant="outline"
+            className="border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400"
+          >
+            Lvl {user.vault?.vaultLevel ?? 1}
+          </Badge>
+        ),
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        align: "center",
+        mobileRole: "action",
+        render: (_val: unknown, user: any) => (
+          <div className="flex items-center justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="border-border/40 bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none">
+                <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
+                <span>Actions</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover border-border text-foreground w-44">
+                <DropdownMenuItem onClick={() => handleOpenAdjust(user)} className="cursor-pointer gap-2 py-2">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Adjust Credits</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenPack(user)} className="cursor-pointer gap-2 py-2">
+                  <Gift className="h-3.5 w-3.5 text-blue-500" />
+                  <span>Award Card Pack</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenCosmetics(user)} className="cursor-pointer gap-2 py-2">
+                  <Gem className="h-3.5 w-3.5 text-purple-500" />
+                  <span>Manage Cosmetics</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedUser({
+                      id: user.id,
+                      clerkUserId: user.clerkUserId,
+                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+                      country: user.country,
+                      credits: user.vault.credits,
+                    });
+                    setIsStreakOpen(true);
+                    setStreakDelta(0);
+                  }}
+                  className="cursor-pointer gap-2 py-2"
+                >
+                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  <span>Adjust Streak</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedUser({
+                      id: user.id,
+                      clerkUserId: user.clerkUserId,
+                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+                      country: user.country,
+                      credits: user.vault.credits,
+                    });
+                    setIsHistoryOpen(true);
+                  }}
+                  className="cursor-pointer gap-2 py-2"
+                >
+                  <History className="h-3.5 w-3.5 text-slate-400" />
+                  <span>Transaction History</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
     <div className="space-y-6">
       {/* Directory Table */}
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-foreground flex items-center gap-2 text-lg font-semibold">
-            User Vault Directory
-          </CardTitle>
-
-          {/* Search bar */}
-          <div className="relative w-full max-w-sm">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              type="text"
-              placeholder="Search user ID, clerk ID, usernames..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1); // reset to first page on search
-              }}
-              className="bg-background/50 border-border/50 focus-visible:ring-primary/30 text-foreground pl-9"
-            />
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {isVaultsLoading ? (
-            <div className="space-y-3">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : !vaultData?.users || vaultData.users.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">
-              No user vaults found matching your search.
-            </div>
-          ) : (
-            <div className="border-border/40 overflow-x-auto rounded-xl border">
-              <Table>
-                <TableHeader className="bg-muted/45">
-                  <TableRow>
-                    <TableHead>User Identification</TableHead>
-                    <TableHead className="text-right">Balance (IxC)</TableHead>
-                    <TableHead className="text-right">Lifetime Earned</TableHead>
-                    <TableHead className="text-right">Lifetime Spent</TableHead>
-                    <TableHead className="text-center">Streak</TableHead>
-                    <TableHead className="text-center">Level</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vaultData.users.map((user: any) => (
-                    <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {user.country?.flag && (
-                            <img
-                              src={user.country.flag}
-                              alt=""
-                              className="h-4 w-6 shrink-0 rounded-sm object-cover"
-                            />
-                          )}
-                          <div className="min-w-0">
-                            <div
-                              className="text-foreground max-w-[200px] truncate font-semibold"
-                              title={`Clerk ID: ${user.clerkUserId}`}
-                            >
-                              {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
-                            </div>
-                            {user.country?.name && (
-                              <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-[10px]">
-                                {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
-                                {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
-                                {user.discordUsername && (
-                                  <span>Discord: {user.discordUsername}</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                        {user.vault.credits.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-right font-mono text-xs">
-                        {user.vault.lifetimeEarned.toLocaleString(undefined, {
-                          maximumFractionDigits: 1,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-right font-mono text-xs">
-                        {user.vault.lifetimeSpent.toLocaleString(undefined, {
-                          maximumFractionDigits: 1,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center font-mono">
-                        <Badge
-                          variant="outline"
-                          className="border-orange-500/20 bg-orange-500/5 text-orange-600 dark:text-orange-400"
-                        >
-                          {user.vault.loginStreak}d
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant="outline"
-                          className="border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400"
-                        >
-                          Lvl {user.vault.vaultLevel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="border-border/40 bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none">
-                              <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
-                              <span>Actions</span>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="bg-popover border-border text-foreground w-44"
-                            >
-                              <DropdownMenuItem
-                                onClick={() => handleOpenAdjust(user)}
-                                className="cursor-pointer gap-2 py-2"
-                              >
-                                <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
-                                <span>Adjust Credits</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleOpenPack(user)}
-                                className="cursor-pointer gap-2 py-2"
-                              >
-                                <Gift className="h-3.5 w-3.5 text-blue-500" />
-                                <span>Award Card Pack</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleOpenCosmetics(user)}
-                                className="cursor-pointer gap-2 py-2"
-                              >
-                                <Gem className="h-3.5 w-3.5 text-purple-500" />
-                                <span>Manage Cosmetics</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedUser({
-                                    id: user.id,
-                                    clerkUserId: user.clerkUserId,
-                                    displayName:
-                                      user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                                    country: user.country,
-                                    credits: user.vault.credits,
-                                  });
-                                  setIsStreakOpen(true);
-                                  setStreakDelta(0);
-                                }}
-                                className="cursor-pointer gap-2 py-2"
-                              >
-                                <Flame className="h-3.5 w-3.5 text-orange-500" />
-                                <span>Adjust Streak</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedUser({
-                                    id: user.id,
-                                    clerkUserId: user.clerkUserId,
-                                    displayName:
-                                      user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
-                                    country: user.country,
-                                    credits: user.vault.credits,
-                                  });
-                                  setIsHistoryOpen(true);
-                                }}
-                                className="cursor-pointer gap-2 py-2"
-                              >
-                                <History className="h-3.5 w-3.5 text-slate-400" />
-                                <span>Transaction History</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          {/* Pagination controls */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">
-                Page {page} of {totalPages} ({totalItems} total vaults)
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-foreground h-8 w-8"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-foreground h-8 w-8"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <FacetDataTable
+        data={vaultData?.users || []}
+        columns={columns}
+        title="User Vault Directory"
+        description="Search, inspect, and adjust user balances, level progression, and card inventory."
+        searchable
+        searchPlaceholder="Search user ID, clerk ID, usernames..."
+        searchValue={searchTerm}
+        onSearchChange={(term) => {
+          setSearchTerm(term);
+          setPage(1);
+        }}
+        paginated
+        pageSize={limit}
+        page={page}
+        totalCount={totalItems}
+        onPageChange={setPage}
+        loading={isVaultsLoading}
+        emptyMessage="No user vaults found matching your search."
+      />
 
       {/* Adjust Credits Dialog */}
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>

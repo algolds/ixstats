@@ -1,4 +1,4 @@
-import { traceDownhillRiver } from "../../lib/maps/hydro-downhill-tracer";
+import { traceDownhillRiver } from "~/lib/maps/hydro-downhill-tracer";
 
 describe("HydroDownhillTracer", () => {
   it("generates a valid LineString river path flowing downhill", () => {

@@ -1,4 +1,4 @@
-import { IxTimeAccuracyVerifier } from "../../../lib/ixtime";
+import { IxTimeAccuracyVerifier } from "~/lib/ixtime";
 
 
 describe("IxTime Accuracy & Verification Suites", () => {

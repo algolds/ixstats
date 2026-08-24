@@ -1,10 +1,14 @@
-# MyCountry Command Suite
+# 🏛️ MyCountry Suite — Executive Simulation & Governance
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — MyCountry v5 & MyCountry Engine v4  
-**Hierarchy:** Flagship Core System (`MYCOUNTRY_VERSION = 5`), powered by the **MyCountry Simulation Engine** (`MYCOUNTRY_ENGINE_VERSION = 4`).
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `GOVERN` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
+**Route:** `/mycountry` | **Status:** 📀 Gold Master (100% Ready)  
 
-The MyCountry command suite provides nation leaders with a single-surface executive environment. Built around the **Command Surface** architecture, it unifies decision-making, crisis resolution, foreign relations, security posture, and macroeconomic planning into an action-first workflow.
+The MyCountry Suite provides sovereign leaders with an executive command environment. Built around the single-page **Command Surface** architecture, it unifies decision-making, foreign relations, macroeconomic planning, and legislative governance into an action-first workflow.
+
+> **Active Public Domains:** **Identity**, **Economy**, **Politics**, and **Diplomacy**.  
+> *(Defense & Intelligence modules are currently in developer preview and gated from public navigation).*
 
 ---
 

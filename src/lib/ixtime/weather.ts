@@ -39,10 +39,10 @@ function pseudoRandom(seed: number): number {
  * - Atmospheric weather condition variations derived from the day seed
  */
 export function getPrimeMeridianWeather(date: Date): PrimeMeridianWeather {
-  const month = date.getMonth(); // 0-11
-  const day = date.getDate();
-  const year = date.getFullYear();
-  const hours = date.getHours() + date.getMinutes() / 60;
+  const month = date.getUTCMonth(); // 0-11
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours() + date.getUTCMinutes() / 60;
 
   // 1. Season Determination (Northern standard canon baseline)
   let season: Season;

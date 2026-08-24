@@ -1,14 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import EconomicComponentsPage from "~/app/admin/economic-components/page";
-
-// Mock auth context
-const mockUseUser = jest.fn();
-jest.mock("~/context/auth-context", () => ({
-  useUser: () => mockUseUser(),
-  SignInButton: () => <button>Sign In</button>,
-}));
+import { EconomicComponentsPanel } from "~/app/admin/economic-components/EconomicComponentsPanel";
 
 // Mock hooks
 jest.mock("~/hooks/usePageTitle", () => ({
@@ -95,40 +88,23 @@ jest.mock("~/hooks/admin/useEconomicComponentsAdmin", () => ({
   useEconomicComponentsAdmin: () => mockAdminHook,
 }));
 
-describe("EconomicComponentsPage", () => {
+describe("EconomicComponentsPanel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("renders loading state when auth is not loaded", () => {
-    mockUseUser.mockReturnValue({ isLoaded: false, user: null });
-    render(<EconomicComponentsPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
-  });
-
-  test("renders sign-in button when unauthenticated", () => {
-    mockUseUser.mockReturnValue({ isLoaded: true, user: null });
-    render(<EconomicComponentsPage />);
-    expect(screen.getByText("Sign In")).toBeInTheDocument();
-  });
-
-  test("renders access denied when user lacks admin role", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-1", publicMetadata: { role: "member" } },
+  test("renders loading skeletons when isLoading is true", () => {
+    jest.spyOn(require("~/hooks/admin/useEconomicComponentsAdmin"), "useEconomicComponentsAdmin").mockReturnValueOnce({
+      ...mockAdminHook,
+      isLoading: true,
     });
-    render(<EconomicComponentsPage />);
-    expect(screen.getByText("Access Denied")).toBeInTheDocument();
+    const { container } = render(<EconomicComponentsPanel />);
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
   });
 
-  test("renders economic components dashboard when user is admin", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-admin", publicMetadata: { role: "admin" } },
-    });
-    render(<EconomicComponentsPage />);
+  test("renders economic components dashboard with components and stats", () => {
+    render(<EconomicComponentsPanel />);
     expect(screen.getByText("Economic Components")).toBeInTheDocument();
-    expect(screen.getByText("Back to Admin")).toBeInTheDocument();
     expect(screen.getByText("Free Market System")).toBeInTheDocument();
     expect(screen.getByText("Total Components")).toBeInTheDocument();
   });

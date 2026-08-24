@@ -152,23 +152,33 @@ export class MessagingService {
 
       const unreadMap = new Map<string, number>();
       if (conversationIds.length > 0) {
-        const myParticipants = await this.db.conversationParticipant.findMany({
+        const myParticipants = (await this.db.conversationParticipant.findMany({
           where: {
             conversationId: { in: conversationIds },
             userId: actorId,
           },
-        });
+        })) ?? [];
 
         for (const mp of myParticipants) {
-          const count = await this.db.thinkshareMessage.count({
+          unreadMap.set(mp.conversationId, 0);
+        }
+
+        if (myParticipants.length > 0) {
+          const unreadMessages = (await this.db.thinkshareMessage.findMany({
             where: {
-              conversationId: mp.conversationId,
-              ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+              OR: myParticipants.map((mp: any) => ({
+                conversationId: mp.conversationId,
+                ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+              })),
               userId: { not: actorId },
               deletedAt: null,
             },
-          });
-          unreadMap.set(mp.conversationId, count);
+            select: { conversationId: true },
+          })) ?? [];
+
+          for (const msg of unreadMessages) {
+            unreadMap.set(msg.conversationId, (unreadMap.get(msg.conversationId) ?? 0) + 1);
+          }
         }
       }
 
@@ -524,7 +534,7 @@ export class MessagingService {
         .catch(() => null);
     }
 
-    if (!participant && !conv) {
+    if (!participant) {
       throw new MessagingForbiddenError();
     }
 
@@ -586,7 +596,7 @@ export class MessagingService {
           participants: {
             create: allParticipants.map((uid) => ({
               userId: uid,
-              role: uid === actorId ? "admin" : "member",
+              role: "participant",
             })),
           },
         },
@@ -629,15 +639,19 @@ export class MessagingService {
   }
 
   public async sendMessage(actorId: string, input: SendMessageInput) {
-    const conv = await this.db.thinkshareConversation.findFirst({
-      where: {
-        OR: [
-          { id: input.conversationId },
-          { sourceId: input.conversationId },
-          { thinktankGroup: { id: input.conversationId } },
-        ],
-      },
-    });
+    const conv =
+      (await this.db.thinkshareConversation.findFirst?.({
+        where: {
+          OR: [
+            { id: input.conversationId },
+            { sourceId: input.conversationId },
+            { thinktankGroup: { id: input.conversationId } },
+          ],
+        },
+      })) ??
+      (await this.db.thinkshareConversation.findUnique?.({
+        where: { id: input.conversationId },
+      }));
 
     const targetConvId = conv?.id || input.conversationId;
 
@@ -694,9 +708,10 @@ export class MessagingService {
       where: { conversationId: input.conversationId, userId: { not: actorId }, isActive: true },
     });
 
-    if (this.notifications?.create) {
+    const notifFn = this.notifications?.create ?? this.notifications?.createNotification;
+    if (notifFn) {
       for (const p of otherParticipants) {
-        this.notifications.create({
+        notifFn.call(this.notifications, {
           userId: p.userId,
           type: "info",
           category: "social",
@@ -725,12 +740,28 @@ export class MessagingService {
       });
     }
 
-    if (conv?.source === "forum" && this.forumBridge?.postOutbound) {
+    const effectiveConv = {
+      ...(participant?.conversation || {}),
+      ...(conv || {}),
+      source: conv?.source || (participant as any)?.conversation?.source,
+      sourceId: conv?.sourceId || (participant as any)?.conversation?.sourceId,
+    };
+
+    if (effectiveConv?.source === "forum" && this.forumBridge?.postOutbound) {
       this.forumBridge.postOutbound({
         conversationId: input.conversationId,
         senderId: actorId,
         content: input.content,
       }).catch(() => {});
+    }
+
+    if (effectiveConv?.source === "wiki" && this.wikiBridge?.sendOutbound) {
+      this.wikiBridge.sendOutbound(
+        effectiveConv.sourceId || input.conversationId,
+        input.content,
+        actorId,
+        this.db
+      ).catch(() => {});
     }
 
     // Auto-prune default user messages beyond 1000 cap
@@ -746,16 +777,18 @@ export class MessagingService {
     });
 
     if (!msg) throw new MessagingNotFoundError();
-    if (msg.userId !== actorId) throw new MessagingForbiddenError("Cannot edit another user's message");
-    if (msg.deletedAt) throw new MessagingValidationError("Cannot edit a deleted message");
+    if (msg.userId !== actorId) throw new MessagingForbiddenError();
+    if (msg.deletedAt) throw new MessagingForbiddenError("Cannot edit a deleted message");
 
-    return await this.db.thinkshareMessage.update({
+    const updated = await this.db.thinkshareMessage.update({
       where: { id: input.messageId },
       data: {
         content: input.content,
         editedAt: new Date(),
       },
     });
+
+    return updated;
   }
 
   public async deleteMessage(actorId: string, input: DeleteMessageInput) {
@@ -764,15 +797,18 @@ export class MessagingService {
     });
 
     if (!msg) throw new MessagingNotFoundError();
-    if (msg.userId !== actorId) throw new MessagingForbiddenError("Cannot delete another user's message");
+    if (msg.userId !== actorId) throw new MessagingForbiddenError();
+    if (msg.deletedAt) return { success: true };
 
-    return await this.db.thinkshareMessage.update({
+    await this.db.thinkshareMessage.update({
       where: { id: input.messageId },
       data: {
-        deletedAt: new Date(),
         content: "This message was deleted",
+        deletedAt: new Date(),
       },
     });
+
+    return { success: true };
   }
 
   public async markMessagesAsRead(actorId: string, input: MarkMessagesAsReadInput) {
@@ -786,6 +822,18 @@ export class MessagingService {
       where: { conversationId: input.conversationId, userId: actorId },
       data: { lastReadAt: new Date() },
     });
+
+    if (input.messageIds && input.messageIds.length > 0 && this.db.messageReadReceipt?.createMany) {
+      await this.db.messageReadReceipt
+        .createMany({
+          data: input.messageIds.map((msgId) => ({
+            thinkshareMessageId: msgId,
+            userId: actorId,
+            messageType: "thinkshare",
+          })),
+        })
+        .catch(() => {});
+    }
 
     return { success: true };
   }
@@ -831,6 +879,17 @@ export class MessagingService {
   }
 
   public async removeReaction(actorId: string, input: RemoveReactionInput) {
+    const msg = await this.db.thinkshareMessage.findUnique({
+      where: { id: input.messageId },
+      include: { conversation: { include: { participants: true } } },
+    });
+
+    if (!msg) throw new MessagingNotFoundError();
+    const isParticipant = msg.conversation?.participants.some(
+      (p: any) => p.userId === actorId && p.isActive
+    );
+    if (!isParticipant) throw new MessagingForbiddenError();
+
     await this.db.messageReaction.deleteMany({
       where: {
         messageId: input.messageId,

@@ -69,7 +69,11 @@ export class NativeSearchService {
         id: a.id,
         slug,
         title: a.title,
-        snippet: a.summary || "WikiOS article entry.",
+        snippet:
+          a.summary ||
+          (a.wikitext
+            ? a.wikitext.replace(/^[=\s]+/, "").replace(/[{}\[\]]/g, "").slice(0, 160)
+            : "WikiOS article entry."),
         readingTime: a.readingTime || 1,
         leadImageUrl: a.leadImageUrl ?? null,
         matchType: isExact ? "title_exact" : isPrefix ? "title_fuzzy" : "content",

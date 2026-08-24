@@ -1,7 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
-import { generateSchedule } from "../../lib/sports/scheduler";
-import { resolveMatch, resolveRace } from "../../lib/sports/resolver";
-import type { TeamRatingVector } from "../../lib/sports/resolver";
+import { generateSchedule } from "~/lib/sports/scheduler";
+import { resolveMatch, resolveRace } from "~/lib/sports/resolver";
+import type { TeamRatingVector } from "~/lib/sports/resolver";
 
 describe("MyLeague Sports Engine", () => {
   describe("generateSchedule fallback for division_conference", () => {
@@ -172,7 +172,7 @@ describe("MyLeague Sports Engine", () => {
 
       expect(result.trace.length).toBeGreaterThan(0);
       const hasFreeThrows = result.trace.some(
-        (t) =>
+        (t: any) =>
           t.description.toLowerCase().includes("free throw") ||
           t.description.toLowerCase().includes("ft:")
       );
@@ -191,7 +191,7 @@ describe("MyLeague Sports Engine", () => {
       });
 
       expect(result.trace.length).toBeGreaterThan(0);
-      const hasPitchingChange = result.trace.some((t) =>
+      const hasPitchingChange = result.trace.some((t: any) =>
         t.description.toLowerCase().includes("pitching change")
       );
       expect(hasPitchingChange).toBe(true);

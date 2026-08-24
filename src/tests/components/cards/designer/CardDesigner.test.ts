@@ -1,7 +1,9 @@
 import { DEFAULT_DESIGN_STATE, RARITY_BASE_VALUES } from "~/components/cards/designer/types";
-import { RARITY_MATERIALS, getRarityMaterial } from "../../../../lib/cards/rarity-materials";
+import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards/rarity-materials";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { CATEGORY_SYNONYMS, findMatchingCategory } from "~/lib/cards/category-enums";
+import { LoreCategory } from "~/lib/cards/category-enums";
 
 jest.mock("@tsparticles/react", () => ({
   __esModule: true,
@@ -82,8 +84,6 @@ describe("Card Designer Studio & Game-Icons Library", () => {
   });
 
   it("should have comprehensive synonyms and keywords for all 13 LoreCategory entries", () => {
-    const { CATEGORY_SYNONYMS, findMatchingCategory, LoreCategory } = require("~/lib/cards");
-
     // Check Nations synonyms
     const nationSynonyms = CATEGORY_SYNONYMS[LoreCategory.NATION];
     expect(nationSynonyms).toContain("country");

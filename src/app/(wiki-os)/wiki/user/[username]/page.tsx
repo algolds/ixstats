@@ -67,6 +67,21 @@ export default function UserProfilePage() {
 
         {info?.exists && (
           <>
+            {/* Unified IxnayID Profile Banner */}
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-xs text-blue-300 backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white">IxnayID Account:</span>
+                <span>Unified account profile available for @{username}</span>
+              </div>
+              <Link
+                href={`/id/@${encodeURIComponent(username)}`}
+                className="flex items-center gap-1 font-bold text-blue-400 hover:text-blue-300 hover:underline"
+              >
+                <span>View Full Profile</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
             {/* Profile Header */}
             <div className="wikios-profile-header">
               <div className="wikios-profile-avatar">

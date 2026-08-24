@@ -1,4 +1,4 @@
-import { IxTime } from "../../../lib/ixtime";
+import { IxTime } from "~/lib/ixtime";
 
 
 
@@ -51,8 +51,8 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
       const ixDateAtPivot = new Date(ixTimeAtPivot);
       expect(ixDateAtPivot.toISOString()).toBe("2040-01-01T00:00:00.000Z");
 
-      // 6 months (182.625 days) after pivot real-time -> 1 full IxTime year (2041)
-      const realPlusHalfYear = realPivot + 182.625 * 24 * 60 * 60 * 1000;
+      // ~6 months (183.5 days) after pivot real-time -> 367 IxDays -> full IxTime year (2041, accounting for 2040 leap year)
+      const realPlusHalfYear = realPivot + 183.5 * 24 * 60 * 60 * 1000;
       const ixTimePlusYear = IxTime.convertToIxTime(realPlusHalfYear);
       const ixDatePlusYear = new Date(ixTimePlusYear);
       expect(ixDatePlusYear.getUTCFullYear()).toBe(2041);

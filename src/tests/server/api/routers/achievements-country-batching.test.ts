@@ -1,6 +1,6 @@
-import { achievementsCountryRouter } from "../../../../server/api/routers/achievements/country";
-import { createCallerFactory } from "../../../../server/api/trpc";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { achievementsCountryRouter } from "~/server/api/routers/achievements/country";
+import { createCallerFactory } from "~/server/api/trpc";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 159: Achievements Country Leaderboard Query Batching", () => {
   const createCaller = createCallerFactory(achievementsCountryRouter);

@@ -1,18 +1,8 @@
 /**
- * Unified Intelligence Router
+ * Unified Intelligence Router — Strategic Insights
  *
- * Comprehensive intelligence router that combines SDI/ECI functionality with
+ * Comprehensive intelligence router powering national security, crisis response,
  * executive dashboard operations, diplomatic channels, and unified intelligence feeds.
- *
- * Features:
- * - Executive dashboard overview (vitality, alerts, quick actions)
- * - Enhanced quick actions with real database effects
- * - Secure diplomatic channel management
- * - Real-time intelligence feed aggregation
- * - Advanced analytics dashboard
- * - Classification-based access control
- * - Notification hooks for all major events
- * - Audit logging for sensitive operations
  */
 
 import { z } from "zod";
@@ -189,7 +179,6 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
 
   /**
    * Get advanced analytics (volatility, trends, correlations)
-   * Migrated from ECI router
    */
   getAdvancedAnalytics: premiumProcedure
     .input(z.object({ countryId: z.string() }))
@@ -238,7 +227,6 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
 
   /**
    * Get AI-powered recommendations
-   * Migrated from ECI router
    */
   getAIRecommendations: premiumProcedure
     .input(z.object({ countryId: z.string() }))
@@ -279,7 +267,6 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
 
   /**
    * Get predictive economic models
-   * Migrated from ECI router
    */
   getPredictiveModels: premiumProcedure
     .input(
@@ -327,7 +314,6 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
 
   /**
    * Get real-time country metrics
-   * Migrated from ECI router
    */
   getRealTimeMetrics: protectedProcedure
     .input(z.object({ countryId: z.string() }))
@@ -422,24 +408,9 @@ export const intelAnalyticsInsightsRouter = createTRPCRouter({
       return briefing;
     }),
 
-  // ===== ALERT THRESHOLD MANAGEMENT =====
-
-  // ===== CABINET MEETING MANAGEMENT =====
-
-  // ===== ECONOMIC POLICY MANAGEMENT =====
-  // ===== CRISIS MANAGEMENT (from SDI) =====
-
-  // ===== ECONOMIC INTELLIGENCE (from SDI) =====
-
-  // ===== DIPLOMATIC INTELLIGENCE (from SDI) =====
-
-  // ===== STRATEGIC PLANS & SECURITY =====
-
-  // ===== KEY FINDINGS =====
 });
 
 // ===== HELPER FUNCTIONS =====
-// Migrated from ECI router for advanced analytics and AI recommendations
 
 /**
  * Calculate volatility metrics from historical data

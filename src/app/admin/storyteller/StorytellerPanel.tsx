@@ -13,6 +13,8 @@ import { StorytellerHistory } from "./_components/StorytellerHistory";
 import { SandboxMode } from "./_components/SandboxMode";
 import { Gamepad as Gamepad2, MagicWand as Wand2, Clock, Flash as Zap, ClockRotateRight as History, Flask as FlaskConical } from "iconoir-react";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+
 type StorytellerTab = "wizard" | "timeline" | "interventions" | "sandbox" | "history";
 
 const TABS: { id: StorytellerTab; label: string; icon: typeof Wand2 }[] = [
@@ -23,7 +25,7 @@ const TABS: { id: StorytellerTab; label: string; icon: typeof Wand2 }[] = [
   { id: "history", label: "History", icon: History },
 ];
 
-export default function StorytellerPage() {
+export function StorytellerPanel() {
   usePageTitle({ title: "Admin - Storyteller" });
   const [activeTab, setActiveTab] = useState<StorytellerTab>("wizard");
 
@@ -35,36 +37,41 @@ export default function StorytellerPage() {
         description="World events, narrative tools, interventions, and simulation"
       />
 
-      {/* Tab Navigation */}
-      <div className="facet-surface border-border/40 flex gap-1.5 overflow-x-auto rounded-xl p-1.5 shadow-sm">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
-                isActive
-                  ? "bg-card text-foreground border-border/30 border shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StorytellerTab)} className="w-full">
+        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-transform"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {tab.label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-      {/* Tab Content */}
-      <div className="facet-surface border-border/40 rounded-xl p-6 shadow-sm">
-        {activeTab === "wizard" && <EventWizard />}
-        {activeTab === "timeline" && <WorldTimeline />}
-        {activeTab === "interventions" && <ActiveInterventions />}
-        {activeTab === "sandbox" && <SandboxMode />}
-        {activeTab === "history" && <StorytellerHistory />}
-      </div>
+        <TabsContent value="wizard" className="mt-4 focus-visible:outline-none">
+          <EventWizard />
+        </TabsContent>
+        <TabsContent value="timeline" className="mt-4 focus-visible:outline-none">
+          <WorldTimeline />
+        </TabsContent>
+        <TabsContent value="interventions" className="mt-4 focus-visible:outline-none">
+          <ActiveInterventions />
+        </TabsContent>
+        <TabsContent value="sandbox" className="mt-4 focus-visible:outline-none">
+          <SandboxMode />
+        </TabsContent>
+        <TabsContent value="history" className="mt-4 focus-visible:outline-none">
+          <StorytellerHistory />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
+export default StorytellerPanel;

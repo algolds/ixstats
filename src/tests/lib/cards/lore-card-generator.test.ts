@@ -3,12 +3,10 @@
 
 import { describe, it, expect } from "@jest/globals";
 import { wikiLoreCardGenerator, WikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
-import { wikiLoreCardGenerator as reExportedGenerator } from "~/lib/cards/index";
 
 describe("Lore Card Generator Domain Colocation", () => {
-  it("exports singleton and class definition from lib/cards", () => {
+  it("exports singleton and class definition from lib/cards/lore-card-generator", () => {
     expect(wikiLoreCardGenerator).toBeDefined();
-    expect(reExportedGenerator).toBeDefined();
     expect(wikiLoreCardGenerator).toBeInstanceOf(WikiLoreCardGenerator);
     expect(typeof wikiLoreCardGenerator.generateCard).toBe("function");
   });

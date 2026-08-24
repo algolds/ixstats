@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import { resolveMatch } from "../../lib/sports/resolver";
+import { resolveMatch } from "~/lib/sports/resolver";
 
 describe("MyLeague Tactics & ELO+ Resolution Engine", () => {
   const defaultRoster = [

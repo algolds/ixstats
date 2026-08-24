@@ -1,23 +1,11 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/bot.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-
 import { IxTime } from "~/lib/ixtime";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 export const adminBotRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
   // Get bot status with health check
   getBotStatus: adminProcedure.query(async ({ ctx }) => {
     try {
@@ -301,21 +289,6 @@ export const adminBotRouter = createTRPCRouter({
       }
     }),
 
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
   // Sync with Discord bot
   syncWithBot: adminProcedure.mutation(async () => {
     try {
@@ -326,40 +299,5 @@ export const adminBotRouter = createTRPCRouter({
       throw new Error("Failed to sync with Discord bot");
     }
   }),
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 });
 
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

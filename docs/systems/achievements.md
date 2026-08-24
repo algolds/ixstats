@@ -1,10 +1,11 @@
-# Achievements & Awards System
+# 💎 Achievements & Progression Showcase
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Achievements v2  
-**Hierarchy:** Core Feature System (`ACHIEVEMENTS_VERSION = 2` in Version Registry). LoreWards (wiki scoring & medals) is an integrated sub-system.
+**Parent App Suite:** Vault (`VAULT_VERSION = 2`, dev codename `IxVault`)  
+**Subsystem:** Achievements & Leaderboards (`ACHIEVEMENTS_VERSION = 2`)  
+**Primary Action:** `PROGRESS` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
+**Routes:** `/achievements`, `/leaderboards` | **Status:** 📀 Gold Master (100% Ready)  
 
-Achievements reward milestone progress across economic, diplomatic, social, defense, and lore domains. Leaderboards surface comparative stats across nations and players.
+The Achievements system rewards milestone progress across economic, diplomatic, social, defense, and sovereign governance domains. Unlocks grant persistent ribbon racks, profile badges, and direct IxCredit / Booster Pack dividend payouts. Wiki authoring medals are recognized through **Wiki Awards** under WikiOS.
 
 ---
 
@@ -68,7 +69,7 @@ sequenceDiagram
 
 - **IxVault**: Unlocking achievements directly awards IxCredits (`EARN_ACTIVE`) and special collectible cards (`AcquireMethod.ACHIEVEMENT`).
 - **MyCountry**: National standing and prestige scores factor total achievement points into the composite rating.
-- **WikiOS / LoreWards**: Editing wiki pages and expanding nation lore awards dedicated LoreWard medals displayed on country profiles.
+- **WikiOS / Wiki Awards**: Editing wiki pages and expanding nation lore awards dedicated **Wiki Awards** (formerly LoreWards) medals displayed on country profiles.
 
 ---
 

@@ -35,7 +35,7 @@ graph TD
 
 ---
 
-## 2. Dynamic Island (Halo) Narrator Integration
+## 2. Halo Narrator & Audio Equalizer Integration
 
 The WikiOS article narrator bridges its audio state with Halo:
 1. **Pill-Center Equalizer**: Collapsed Halo renders a live bouncing audio waveform out-of-sync using Tailwind animation offsets, with a quick Play/Pause toggler.

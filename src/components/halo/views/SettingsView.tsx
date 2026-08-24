@@ -18,163 +18,14 @@ import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
-
-// ─── Local toggle hook ───────────────────────────────────────────────────────
-
-function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => void] {
-  const [value, setValue] = useState(defaultValue);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored !== null) setValue(stored === "true");
-    } catch {
-      /* SSR */
-    }
-  }, [key]);
-  const toggle = useCallback(() => {
-    setValue((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(key, String(next));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("wikios-settings-changed"));
-        }
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, [key]);
-  return [value, toggle];
-}
-
-function useLocalPref(key: string, defaultValue: boolean): [boolean, (checked: boolean) => void] {
-  const [val, setVal] = useState(defaultValue);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored !== null) setVal(stored === "true");
-    } catch {
-      /* SSR */
-    }
-  }, [key]);
-
-  const update = useCallback(
-    (checked: boolean) => {
-      setVal(checked);
-      try {
-        localStorage.setItem(key, String(checked));
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("wikios-settings-changed"));
-        }
-      } catch {
-        /* ignore */
-      }
-    },
-    [key]
-  );
-
-  return [val, update];
-}
-
-// ─── Toggle Switch ───────────────────────────────────────────────────────────
-
-function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return <Switch checked={enabled} onCheckedChange={onToggle} />;
-}
-
-// ─── Section label ───────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-      {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
-    </div>
-  );
-}
-
-// ─── Animated Volume Icon (Apple SF Symbols Wave Radiation) ──────────────────
-
-function AnimatedVolumeIcon({
-  enabled,
-  isHovered = false,
-  className = "h-3.5 w-3.5",
-}: {
-  enabled: boolean;
-  isHovered?: boolean;
-  className?: string;
-}) {
-  if (!enabled) {
-    return <VolumeX className={cn("text-muted-foreground", className)} />;
-  }
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={cn("text-emerald-600 dark:text-emerald-400 overflow-visible", className)}
-    >
-      {/* Speaker Cone (Static stable anchor) */}
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-
-      {/* Inner Sound Wave Arc — radiates smoothly on hover */}
-      <motion.path
-        d="M15.54 8.46a5 5 0 0 1 0 7.07"
-        className="origin-[11px_12px]"
-        initial={{ opacity: 1, scale: 1 }}
-        animate={
-          isHovered
-            ? {
-                opacity: [0.35, 1, 0.35],
-                scale: [0.95, 1.08, 0.95],
-              }
-            : { opacity: 1, scale: 1 }
-        }
-        transition={
-          isHovered
-            ? {
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }
-            : { duration: 0.2 }
-        }
-      />
-
-      {/* Outer Sound Wave Arc — radiates sequentially after inner wave */}
-      <motion.path
-        d="M19.07 4.93a10 10 0 0 1 0 14.14"
-        className="origin-[11px_12px]"
-        initial={{ opacity: 1, scale: 1 }}
-        animate={
-          isHovered
-            ? {
-                opacity: [0.2, 1, 0.2],
-                scale: [0.9, 1.15, 0.9],
-              }
-            : { opacity: 1, scale: 1 }
-        }
-        transition={
-          isHovered
-            ? {
-                duration: 0.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.16,
-              }
-            : { duration: 0.2 }
-        }
-      />
-    </svg>
-  );
-}
+import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
+import {
+  useLocalToggle,
+  useLocalPref,
+  ToggleSwitch,
+  SectionLabel,
+  AnimatedVolumeIcon,
+} from "./settings/SettingsControls";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -288,7 +139,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+          <div className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none">
             <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-primary h-3.5 w-3.5" />
@@ -378,10 +229,10 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               type="button"
               onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
               className={cn(
-                "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer group",
+                "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 cursor-pointer group active:scale-[0.985] select-none",
                 morePrefsExpanded
-                  ? "bg-blue-500/10 border border-blue-500/20 text-blue-400"
-                  : "hover:bg-accent/10"
+                  ? "bg-blue-500/10 border border-blue-500/25 text-blue-400 shadow-xs"
+                  : "hover:bg-black/[0.04] dark:hover:bg-white/[0.06] border border-transparent"
               )}
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -425,7 +276,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <SectionLabel>Account</SectionLabel>
               <button
                 onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="hover:bg-accent/10 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors cursor-pointer"
+                className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 cursor-pointer active:scale-[0.985] select-none"
               >
                 <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
                   <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
@@ -442,7 +293,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               </button>
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
-              <div className="border-border mt-1 border-t pt-2 flex items-center justify-between">
+              <div className="border-border/40 dark:border-white/10 mt-1 border-t pt-2 flex items-center justify-between">
                 {isAdmin ? (
                   <Button
                     asChild
@@ -672,7 +523,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="hover:bg-accent/10 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors">
+    <div className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-150 select-none">
       {onIconClick ? (
         <button
           type="button"

@@ -123,3 +123,37 @@ export interface DiplomaticIntelligence extends IntelligenceItem {
   treatyRelevance?: string[];
   diplomaticPriority: StandardPriority;
 }
+
+// Crisis event interface
+export interface CrisisEvent {
+  id: string;
+  type:
+    | "natural_disaster"
+    | "economic_crisis"
+    | "political_crisis"
+    | "security_threat"
+    | "pandemic"
+    | "environmental";
+  title: string;
+  severity: "low" | "medium" | "high" | "critical";
+  affectedCountries: string[];
+  casualties: number;
+  economicImpact: number;
+  status: "coordinating" | "monitoring" | "deployed" | "standby" | "resolved";
+  responseStatus: "coordinating" | "monitoring" | "deployed" | "standby" | "resolved";
+  timestamp: Date;
+  description: string;
+  location?: string;
+  coordinates?: { lat: number; lng: number };
+}
+
+// Global economic indicator interface
+export interface EconomicIndicator {
+  globalGDP: number;
+  globalGrowth: number;
+  inflationRate: number;
+  unemploymentRate: number;
+  tradeVolume: number;
+  currencyVolatility: number;
+  timestamp: Date;
+}

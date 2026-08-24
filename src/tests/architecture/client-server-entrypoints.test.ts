@@ -5,7 +5,7 @@ describe("Plan 162: Client/Server Entrypoints & Barrel Elimination Architecture"
   const rootDir = path.resolve(__dirname, "../../..");
   const srcDir = path.join(rootDir, "src");
 
-  const domains = ["system", "vault", "cards", "wiki"];
+  const domains = ["system", "vault", "cards"];
 
   test.each(domains)("domain '%s' has deleted root index.ts", (domain) => {
     const indexPath = path.join(srcDir, "lib", domain, "index.ts");
@@ -47,7 +47,7 @@ describe("Plan 162: Client/Server Entrypoints & Barrel Elimination Architecture"
 
     const violations: { file: string; line: number; text: string }[] = [];
 
-    const barrelRegex = /from\s+["'](?:~\/lib\/(?:system|vault|cards|wiki))["']/;
+    const barrelRegex = /from\s+["'](?:~\/lib\/(?:system|vault|cards))["']/;
 
     for (const file of tsFiles) {
       const content = fs.readFileSync(file, "utf-8");

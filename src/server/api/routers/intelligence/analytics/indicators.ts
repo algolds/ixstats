@@ -1,24 +1,14 @@
 /**
- * Unified Intelligence Router
+ * Unified Intelligence Router — Economic Indicators & Analytics
  *
- * Comprehensive intelligence router that combines SDI/ECI functionality with
+ * Comprehensive intelligence router powering national security, crisis response,
  * executive dashboard operations, diplomatic channels, and unified intelligence feeds.
- *
- * Features:
- * - Executive dashboard overview (vitality, alerts, quick actions)
- * - Enhanced quick actions with real database effects
- * - Secure diplomatic channel management
- * - Real-time intelligence feed aggregation
- * - Advanced analytics dashboard
- * - Classification-based access control
- * - Notification hooks for all major events
- * - Audit logging for sensitive operations
  */
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import type { EconomicIndicator } from "~/types/sdi";
+import type { EconomicIndicator } from "~/types/intelligence-unified";
 
 // ===== SCHEMAS =====
 // ===== UNIFIED INTELLIGENCE ROUTER =====
@@ -38,18 +28,8 @@ export const intelAnalyticsIndicatorsRouter = createTRPCRouter({
 
   // ===== ADMIN OPERATIONS =====
 
-  // ===== ALERT THRESHOLD MANAGEMENT =====
-
-  // ===== CABINET MEETING MANAGEMENT =====
-
-  // ===== ECONOMIC POLICY MANAGEMENT =====
-  // ===== CRISIS MANAGEMENT (from SDI) =====
-
-  // ===== ECONOMIC INTELLIGENCE (from SDI) =====
-
   /**
    * Get global economic indicators
-   * Migrated from SDI router
    */
   getEconomicIndicators: publicProcedure.query(async ({ ctx }): Promise<EconomicIndicator> => {
     try {
@@ -107,7 +87,6 @@ export const intelAnalyticsIndicatorsRouter = createTRPCRouter({
 
   /**
    * Get commodity prices
-   * Migrated from SDI router
    */
   getCommodityPrices: publicProcedure.query(async ({ ctx }) => {
     try {
@@ -245,16 +224,9 @@ export const intelAnalyticsIndicatorsRouter = createTRPCRouter({
       });
     }
   }),
-
-  // ===== DIPLOMATIC INTELLIGENCE (from SDI) =====
-
-  // ===== STRATEGIC PLANS & SECURITY =====
-
-  // ===== KEY FINDINGS =====
 });
 
 // ===== HELPER FUNCTIONS =====
-// Migrated from ECI router for advanced analytics and AI recommendations
 
 /**
  * Calculate volatility metrics from historical data

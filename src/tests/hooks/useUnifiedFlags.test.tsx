@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useBulkFlags, useFlag } from "../../hooks/useUnifiedFlags";
+import { useBulkFlags, useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 
 // Mock trpc react

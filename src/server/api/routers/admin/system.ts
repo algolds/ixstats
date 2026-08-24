@@ -1,6 +1,4 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/system.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
@@ -40,7 +38,8 @@ export const adminSystemRouter = createTRPCRouter({
       ],
     };
   }),
-  // Get global statistics for SDI interface
+
+  // Get global platform statistics
   getGlobalStats: adminProcedure.query(async ({ ctx }) => {
     try {
       const totalNations = await ctx.db.country.count();
@@ -48,20 +47,16 @@ export const adminSystemRouter = createTRPCRouter({
         _sum: { currentTotalGdp: true },
       });
 
-      // Real queries for each stat
-      const activeDiplomats = await ctx.db.user.count(); // Count all users for now
-      // For onlineUsers, you may need a real-time tracking system; fallback to 0 for now
+      const activeDiplomats = await ctx.db.user.count();
       const onlineUsers = 0;
-      // For tradeVolume, fallback to 0 since tradeRecord table doesn't exist
       const tradeVolume = 0;
-      // For activeConflicts, count unresolved crisis events
       const activeConflicts = await ctx.db.crisisEvent.count({
         where: { responseStatus: { not: "resolved" } },
       });
 
       return {
         totalNations,
-        globalGDP: (totalGDP._sum.currentTotalGdp || 0) / 1e12, // Convert to trillions
+        globalGDP: (totalGDP._sum.currentTotalGdp || 0) / 1e12,
         activeDiplomats,
         onlineUsers,
         tradeVolume,
@@ -70,64 +65,6 @@ export const adminSystemRouter = createTRPCRouter({
     } catch (error) {
       console.error("Failed to get global stats:", error);
       throw new Error("Failed to retrieve global statistics");
-    }
-  }),
-
-  // Get stash statistics (real DB values)
-  getStashStats: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [totalStashes, totalHighlights] = await Promise.all([
-        ctx.db.stashItem.count(),
-        ctx.db.stashAnnotation.count(),
-      ]);
-      return {
-        totalStashes,
-        totalHighlights,
-        avgCacheSizeKb: 143, // Fallback/average baseline
-      };
-    } catch (error) {
-      console.error("Failed to get stash stats:", error);
-      throw new Error("Failed to retrieve stash statistics");
-    }
-  }),
-
-  // Get ThinkPages statistics (real DB values)
-  getThinkPagesStats: adminProcedure.query(async ({ ctx }) => {
-    try {
-      const [totalPosts, totalAccounts] = await Promise.all([
-        ctx.db.thinkpagesPost.count(),
-        ctx.db.thinkpagesAccount.count(),
-      ]);
-
-      // Calculate weekly engagement growth (real DB ratio of posts in last 7 days vs previous 7 days)
-      const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-      const [postsThisWeek, postsLastWeek] = await Promise.all([
-        ctx.db.thinkpagesPost.count({
-          where: { createdAt: { gte: sevenDaysAgo } },
-        }),
-        ctx.db.thinkpagesPost.count({
-          where: { createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } },
-        }),
-      ]);
-
-      let weeklyGrowth = 0.0;
-      if (postsLastWeek > 0) {
-        weeklyGrowth = ((postsThisWeek - postsLastWeek) / postsLastWeek) * 100;
-      } else if (postsThisWeek > 0) {
-        weeklyGrowth = 100.0;
-      }
-
-      return {
-        totalPosts,
-        totalAccounts,
-        weeklyGrowth: parseFloat(weeklyGrowth.toFixed(1)),
-      };
-    } catch (error) {
-      console.error("Failed to get thinkpages stats:", error);
-      throw new Error("Failed to retrieve ThinkPages statistics");
     }
   }),
 
@@ -596,45 +533,6 @@ export const adminSystemRouter = createTRPCRouter({
       throw new Error("Failed to retrieve system health status");
     }
   }),
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 
   getSystemLogs: adminProcedure
     .input(

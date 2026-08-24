@@ -68,7 +68,8 @@
     },
     /* Performance Optimizations */
     "types": [
-      "node"
+      "node",
+      "jest"
     ],
     "assumeChangesOnlyAffectDirectDependencies": true,
     "disableSourceOfProjectReferenceRedirect": true,
@@ -98,11 +99,6 @@
     "build",
     "out",
     "coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "tests/**/*",
     "playwright.config.ts",
     "jest.config.js",
     "odysseus"

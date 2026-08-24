@@ -2,11 +2,29 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, SystemRestart as Loader2 } from "iconoir-react";
-import { MdGif as GifIcon } from "react-icons/md";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+
+function GifIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="4" width="18" height="16" rx="4" />
+      <path d="M7 12h2a1 1 0 0 0 1-1V9.5A1.5 1.5 0 0 0 8.5 8H7v8" />
+      <path d="M13 8v8" />
+      <path d="M16 8h3m-3 4h2m-2 4h1" />
+    </svg>
+  );
+}
 
 interface GiphyGif {
   id: string;

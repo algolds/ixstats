@@ -1,3 +1,5 @@
+// src/app/admin/myleague/MyLeagueAdminPanel.tsx
+// Unified MyLeague Sports Management Admin Panel
 "use client";
 
 import React from "react";
@@ -11,47 +13,46 @@ import SportsSeederPanel from "./SportsSeederPanel";
 export default function MyLeagueAdminPanel() {
   return (
     <div className="space-y-6">
-      {/* Central Admin Header */}
       <AdminHeader
         icon={Trophy}
-        title="MyLeague settings & Labs"
+        title="MyLeague Sports & Simulation"
         description="Comprehensive control center for canonical sports competitions. Configure presets, run sandboxed simulations, and seed simulation databases."
       />
 
-      <Tabs defaultValue="oversight" className="w-full space-y-4">
-        <TabsList className="bg-muted/20 border-border/50 grid w-full grid-cols-3 rounded-xl border p-1 md:w-[600px]">
+      <Tabs defaultValue="oversight" className="w-full space-y-6">
+        <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md md:w-auto">
           <TabsTrigger
             value="oversight"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
           >
-            <Trophy className="h-4 w-4" />
+            <Trophy className="h-4 w-4 text-emerald-400" />
             Oversight Dashboard
           </TabsTrigger>
           <TabsTrigger
             value="sandbox"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
           >
-            <FlaskConical className="h-4 w-4" />
+            <FlaskConical className="h-4 w-4 text-amber-400" />
             Simulation Sandbox
           </TabsTrigger>
           <TabsTrigger
             value="seeder"
-            className="flex items-center gap-1.5 rounded-lg py-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white"
+            className="flex items-center gap-2 text-xs font-semibold active:scale-[0.98] transition-transform"
           >
-            <Database className="h-4 w-4" />
+            <Database className="h-4 w-4 text-cyan-400" />
             Data Lab & Seeder
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="oversight" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="oversight" className="focus-visible:outline-none">
           <SportsOversightPanel />
         </TabsContent>
 
-        <TabsContent value="sandbox" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="sandbox" className="focus-visible:outline-none">
           <SportsLabsPanel />
         </TabsContent>
 
-        <TabsContent value="seeder" className="focus-visible:ring-0 focus-visible:outline-none">
+        <TabsContent value="seeder" className="focus-visible:outline-none">
           <SportsSeederPanel />
         </TabsContent>
       </Tabs>

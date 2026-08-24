@@ -1,10 +1,13 @@
-# Defense & Security System
+# 🏛️ MyCountry Defense & Security Domain (Preview)
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Military & Security domain group.
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `SECURE` | **Domain Accent:** Crimson Indigo (`#4F46E5` / `--color-indigo-600`)  
+**Route:** `/mycountry/defense` | **Status:** 🧪 Developer Preview (Not in Active Public Navigation)  
 
-Defense capabilities model national readiness, crisis response, military operations, equipment procurement, and strategic defense initiative (SDI) postures.
+> **⚠️ Status Note:** The Defense & Security module is currently under development in developer preview and is not part of the active public navigation suite.
+
+Defense capabilities model national force readiness, crisis response, operational deployments, equipment procurement, and strategic defense infrastructure postures.
 
 ---
 
@@ -20,7 +23,7 @@ Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense i
 - `src/components/defense/operations/` – `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
 
 ### Backend Routers
-- `src/server/api/routers/security/` (`index.ts`, `overview.ts`, `threats.ts`) – National security posture, threat detection hooks, SDI defense module configs
+- `src/server/api/routers/security/` (`index.ts`, `overview.ts`, `threats.ts`) – National security posture, threat detection hooks, defense module configs
 - `src/server/api/routers/militaryEquipment/` – Military hardware and equipment catalog (aircraft, naval, armor)
 - `src/server/api/routers/smallArmsEquipment/` – Infantry weapons and manufacturer catalogs
 - `src/server/api/routers/crisis-events.ts` – Dynamic crisis and security incident management
@@ -31,7 +34,7 @@ Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense i
 ## Data Models
 
 Defined in `prisma/schema/military.prisma` and `prisma/schema/core.prisma`:
-- `DefenseModule`: Installed defense infrastructure, radar, and SDI assets
+- `DefenseModule`: Installed defense infrastructure, radar, and air defense assets
 - `DefenseReadiness`: Readiness score (0–100), alert level, branch readiness splits
 - `DefenseIncident`: Active/historical border clashes, security breaches, and incursions
 - `MilitaryEquipment` / `SmallArmsEquipment`: Comprehensive equipment catalogs with stats, unit costs, and maintenance upkeep
@@ -52,7 +55,7 @@ graph TD
     H --> I[Narrator / ThinkPages News Broadcast]
 ```
 
-1. **Posture & Readiness**: Players tune readiness posture across branches (Army, Navy, Air Force, Cyber, SDI), consuming budget allocation.
+1. **Posture & Readiness**: Players tune readiness posture across branches (Army, Navy, Air Force, Cyber, Homeland Security), consuming budget allocation.
 2. **Operations & Deployments**: Players plan deployments or peacekeeping missions with automated success probability factoring equipment and readiness.
 3. **Equipment Management**: Procurement from domestic and international catalogs directly modifies military strength ratings on Nation Cards.
 4. **Crisis Response**: Security incidents trigger alerts in the Command Surface briefing rail, with decisions logged via the `CountryEventSpine`.

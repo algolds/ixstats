@@ -77,17 +77,15 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
   }, [selectedCountryId, wikiPageTitle, wikiSource, setWikiLinkMutation]);
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Globe className="h-5 w-5 text-blue-500" />
-          Manual Link Editor
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+      <div className="flex items-center gap-2 border-b border-border/20 pb-3">
+        <Globe className="h-4 w-4 text-blue-400" />
+        <h3 className="text-xs font-bold text-foreground">Manual Link Editor</h3>
+      </div>
+      <div className="space-y-4">
         {/* Country Selector */}
         <div className="space-y-1.5">
-          <label className="text-foreground text-sm font-medium">Country</label>
+          <label className="text-foreground text-xs font-medium">Country</label>
           <div className="relative">
             <Input
               placeholder="Search for a country..."
@@ -98,23 +96,22 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              className="h-8 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md"
             />
-            {showDropdown && filteredCountries.length > 0 && !selectedCountryId && (
-              <div className="border-border/50 bg-popover absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border shadow-lg">
+            {showDropdown && filteredCountries.length > 0 && !selectedCountry && (
+              <div className="border-border/40 bg-popover/95 text-popover-foreground absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border p-1 shadow-lg backdrop-blur-md">
                 {filteredCountries.map((c) => (
                   <button
                     key={c.id}
-                    type="button"
-                    className="text-foreground hover:bg-muted/50 w-full px-3 py-2 text-left text-sm transition-colors"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       setSelectedCountryId(c.id);
-                      setCountrySearch(c.name);
+                      setCountrySearch("");
                       setShowDropdown(false);
                     }}
+                    className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left text-xs font-medium"
                   >
-                    {c.name}
+                    <span>{c.name}</span>
+                    <span className="text-muted-foreground font-mono text-[10px]">{c.id.slice(0, 8)}...</span>
                   </button>
                 ))}
               </div>
@@ -122,65 +119,75 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
           </div>
         </div>
 
-        {/* Wiki Page Title */}
-        <div className="space-y-1.5">
-          <label className="text-foreground text-sm font-medium">Wiki Page Title</label>
-          <Input
-            placeholder="e.g., Urcea, Burgundie, Caphiria..."
-            value={wikiPageTitle}
-            onChange={(e) => {
-              setWikiPageTitle(e.target.value);
-              setTestResult(null);
-            }}
-          />
-        </div>
-
-        {/* Wiki Source */}
-        <div className="space-y-1.5">
-          <label className="text-foreground text-sm font-medium">Wiki Source</label>
-          <div className="flex gap-2">
-            {(["ixwiki", "iiwiki"] as const).map((source) => (
+        {/* Wiki Source & Page Title */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <label className="text-foreground text-xs font-medium">Wiki Source</label>
+            <div className="bg-card/40 border-border/40 flex rounded-xl border p-1 backdrop-blur-md">
               <button
-                key={source}
                 type="button"
-                onClick={() => {
-                  setWikiSource(source);
-                  setTestResult(null);
-                }}
+                onClick={() => setWikiSource("ixwiki")}
                 className={cn(
-                  "rounded-md border px-4 py-2 text-sm font-medium transition-all",
-                  wikiSource === source
-                    ? "text-foreground border-blue-500/50 bg-blue-500/10"
-                    : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                  "flex-1 rounded-lg py-1 text-xs font-semibold active:scale-[0.98] transition-all",
+                  wikiSource === "ixwiki"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {source === "ixwiki" ? "IxWiki" : "IIWiki"}
+                IxWiki
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setWikiSource("iiwiki")}
+                className={cn(
+                  "flex-1 rounded-lg py-1 text-xs font-semibold active:scale-[0.98] transition-all",
+                  wikiSource === "iiwiki"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                IIWiki
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-foreground text-xs font-medium">Wiki Page Title</label>
+            <Input
+              placeholder="e.g. United_States or Grand_Duchy_of_..."
+              value={wikiPageTitle}
+              onChange={(e) => setWikiPageTitle(e.target.value)}
+              className="h-8 rounded-xl border-border/30 bg-background/50 text-xs backdrop-blur-md font-mono"
+            />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
+            type="button"
             variant="outline"
+            size="sm"
             onClick={handleTestLink}
-            disabled={!wikiPageTitle.trim() || isTesting}
-            className="gap-2"
+            disabled={isTesting || !wikiPageTitle.trim()}
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
           >
             {isTesting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
             )}
             Test Link
           </Button>
+
           <Button
+            type="button"
+            size="sm"
             onClick={handleSave}
             disabled={!selectedCountryId || !wikiPageTitle.trim()}
-            className="gap-2"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98] transition-transform"
           >
-            <Save className="h-4 w-4" />
+            <Save className="mr-1.5 h-3.5 w-3.5" />
             Save Link
           </Button>
         </div>
@@ -189,31 +196,31 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
         {testResult && (
           <div
             className={cn(
-              "rounded-lg border p-3 text-sm",
+              "rounded-xl border p-3 text-xs",
               testResult.success
-                ? "text-foreground border-emerald-500/30 bg-emerald-500/5"
-                : "border-red-500/30 bg-red-500/5 text-red-400"
+                ? "text-foreground border-emerald-500/30 bg-emerald-500/10"
+                : "border-red-500/30 bg-red-500/10 text-red-400"
             )}
           >
             {testResult.success ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-emerald-500">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
                   <CheckCircle className="h-4 w-4" />
                   Article found
                 </div>
                 {testResult.intro && (
-                  <p className="text-muted-foreground line-clamp-4 text-xs">{testResult.intro}</p>
+                  <p className="text-muted-foreground line-clamp-3 text-[11px]">{testResult.intro}</p>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <XCircle className="h-4 w-4" />
                 Article not found. Check the title and source.
               </div>
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

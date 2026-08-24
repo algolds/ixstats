@@ -1,10 +1,10 @@
-# The Complete Lore Lifecycle in IxStates: Ideation to Canon
+# 📖 The Complete Lore Lifecycle in IxStates: Ideation to Canon
 
-**Document Version:** 1.0.0  
+**Document Version:** 1.4.0  
 **Last Updated:** August 2026  
 **Status:** Canonical System Guide  
-**Subsystems Involved:** ThinkTanks (`/thinktanks`), Lore Stashes (`/stashes`), Blurbs (`/blurbs`), WikiOS (`/wiki`), Commons Repository (`/wiki/repository`), Lorewards (`/wiki/lorewards`), IxVault (`/vault`)  
-**Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Glass Physics  
+**Subsystems Involved:** ThinkTanks (`/thinktanks`), Stash System (`/stashes`), Sovereign Feed (`/thinkpages`), WikiOS (`/wiki`), Margin (`/wiki`), Image Repository (`/wiki/repository`), Wiki Awards (`/wiki/awards`), Vault (`/vault`)  
+**Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Design System (`/facet-design-system`)  
 
 ---
 
@@ -17,8 +17,8 @@ In IxStates, worldbuilding is an active, collaborative ecosystem. Lore does not 
 │                                    THE IXSTATES LORE LIFECYCLE                                   │
 │                                                                                                  │
 │   [ 1. IDEATE ] ──────► [ 2. DRAFT ] ──────► [ 3. PUBLISH ] ──────► [ 4. REVIEW ] ──────► [ 5. REVISE ] │
-│   ThinkTanks &          Working Papers &       WikiOS Instant         Split-Canvas           Revisions & │
-│   Lore Stashes          Media Repository       Editor Bridge          Inspector & Pins       Lorewards   │
+│   ThinkTanks &          Working Papers &       WikiOS Canvas          Margin Inspector &     Revisions & │
+│   Stash System          Image Repository       Editor Bridge          Gutter Pins            Wiki Awards │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -32,13 +32,13 @@ stateDiagram-v2
     
     state "1. Ideation & Research" as Phase1 {
         ThinkTankChat: ThinkTank Brainstorming & Chat
-        BlurbsPrompt: Topic Prompts & Micro-Lore (/blurbs)
-        LoreStash: Lore Stash Clippings & Quotations
+        BlurbsPrompt: Topic Prompts & Micro-Lore (/thinkpages)
+        Stash: Stash Article & Quote Collection
         Repository: Media Repository Image Collection
         
-        ThinkTankChat --> LoreStash
-        BlurbsPrompt --> LoreStash
-        Repository --> LoreStash
+        ThinkTankChat --> Stash
+        BlurbsPrompt --> Stash
+        Repository --> Stash
     }
     
     state "2. Collaborative Drafting" as Phase2 {
@@ -46,7 +46,7 @@ stateDiagram-v2
         TemplateConfig: Infobox, Map Coords & Stat Config
         LocalDraft: IndexedDB Auto-Saved Local Draft
         
-        LoreStash --> WorkingDoc
+        Stash --> WorkingDoc
         WorkingDoc --> LocalDraft
         TemplateConfig --> LocalDraft
     }
@@ -72,12 +72,12 @@ stateDiagram-v2
     }
     
     state "5. Gamification & Evolution" as Phase5 {
-        Lorewards: Lorewards Streaks & Leaderboards
+        WikiAwards: Wiki Awards Streaks & Medals
         LoreCards: Collectible Lore Cards in IxVault
         RevisionSync: Side-by-Side Diffs & Revision History
         
         Inspector --> RevisionSync
-        ArticleLive --> Lorewards
+        ArticleLive --> WikiAwards
         ArticleLive --> LoreCards
         RevisionSync --> Phase4
     }

@@ -257,9 +257,9 @@ api.government.recalculateEffects.useMutation({ countryId: string })
 api.unifiedIntelligence.getExecutiveDashboard.useQuery({ countryId: string })
 api.unifiedIntelligence.getBriefing.useQuery({ countryId: string, date: Date })
 
-// SDI/ECI integration
-api.unifiedIntelligence.getSDIData.useQuery({ countryId: string })
-api.unifiedIntelligence.getECIData.useQuery({ countryId: string })
+// Threat and security monitoring
+api.unifiedIntelligence.getSecurityThreats.useQuery({ countryId: string })
+api.unifiedIntelligence.getCrisisFeed.useQuery({ countryId: string })
 
 // Operations
 api.unifiedIntelligence.createOperation.useMutation()

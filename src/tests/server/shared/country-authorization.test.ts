@@ -3,7 +3,7 @@ import {
   getRoleName,
   isPrivilegedCountryWriter,
   COUNTRY_WRITE_ROLES,
-} from "../../../server/shared/country-authorization";
+} from "~/server/shared/country-authorization";
 import { TRPCError } from "@trpc/server";
 
 describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {

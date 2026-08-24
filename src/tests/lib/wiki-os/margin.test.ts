@@ -4,12 +4,12 @@
 // Clustered Gutter Pins, and Avatar Normalization.
 
 import { describe, it, expect } from "@jest/globals";
-import { HIGHLIGHT_PALETTE } from "../../../components/wiki-os/margin/SelectionCapsule";
+import { HIGHLIGHT_PALETTE } from "~/components/wiki-os/margin/SelectionCapsule";
 import {
   THREAD_CATEGORIES,
   LORE_DIMENSIONS,
-} from "../../../components/wiki-os/margin/tabs/MarginThreadsTab";
-import { getInitials } from "../../../components/wiki-os/margin/shared/MarginUserAvatar";
+} from "~/components/wiki-os/margin/tabs/MarginThreadsTab";
+import { getInitials } from "~/components/wiki-os/margin/shared/MarginUserAvatar";
 
 describe("WikiOS Margin Suite & Lore Theory Engine", () => {
   it("provides valid highlight palette colors with distinct hex values", () => {
@@ -25,24 +25,24 @@ describe("WikiOS Margin Suite & Lore Theory Engine", () => {
     expect(LORE_DIMENSIONS).toBeDefined();
     expect(LORE_DIMENSIONS.length).toBe(5);
 
-    const whyDim = LORE_DIMENSIONS.find((d) => d.id === "WHY");
+    const whyDim = LORE_DIMENSIONS.find((d: any) => d.id === "WHY");
     expect(whyDim).toBeDefined();
     expect(whyDim?.emoji).toBe("🌟");
     expect(whyDim?.label).toContain("Why");
 
-    const whenDim = LORE_DIMENSIONS.find((d) => d.id === "WHEN");
+    const whenDim = LORE_DIMENSIONS.find((d: any) => d.id === "WHEN");
     expect(whenDim).toBeDefined();
     expect(whenDim?.emoji).toBe("⏳");
 
-    const whereDim = LORE_DIMENSIONS.find((d) => d.id === "WHERE");
+    const whereDim = LORE_DIMENSIONS.find((d: any) => d.id === "WHERE");
     expect(whereDim).toBeDefined();
     expect(whereDim?.emoji).toBe("🗺️");
 
-    const whoDim = LORE_DIMENSIONS.find((d) => d.id === "WHO");
+    const whoDim = LORE_DIMENSIONS.find((d: any) => d.id === "WHO");
     expect(whoDim).toBeDefined();
     expect(whoDim?.emoji).toBe("👤");
 
-    const whatDim = LORE_DIMENSIONS.find((d) => d.id === "WHAT");
+    const whatDim = LORE_DIMENSIONS.find((d: any) => d.id === "WHAT");
     expect(whatDim).toBeDefined();
     expect(whatDim?.emoji).toBe("📦");
   });
@@ -62,7 +62,7 @@ describe("WikiOS Margin Suite & Lore Theory Engine", () => {
       .trim()
       .replace(/ /g, "_");
 
-    expect(sproutChildSlug).toBe("Soltane_Harvest_Fruit_of_Taistia__Provi");
+    expect(sproutChildSlug).toBe("Soltane_Harvest_Fruit_of_Taistia__Provin");
     expect(sproutChildSlug).not.toContain("!");
     expect(sproutChildSlug).not.toContain("&");
   });

@@ -1,36 +1,42 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-
 // Mock env
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 
-let mockSpawnMode = "deterministic";
-jest.mock("../../../lib/national-issues", () => ({
-  getNationalIssuesConfig: () => ({
-    maxIssuesPerSession: 3,
-    maxIssuesPerWeek: 5,
-    spawnMode: mockSpawnMode,
-  }),
-  NationalIssuesEngine: { forceGenerate: jest.fn() },
-}));
-
-jest.mock("../../../lib/ixtime", () => ({
+jest.mock("~/lib/ixtime", () => ({
   IxTime: { getCurrentIxTime: () => 1000000 },
 }));
 
-import { NationalIssuesEngine } from "../../../lib/national-issues";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import {
   INTENT_CATEGORY_TO_TEMPLATE,
   spawnIntentResistance,
   spawnResistanceForIntent,
-} from "../../../lib/intent/resistance";
+} from "~/lib/intent/resistance";
+import { NationalIssuesEngine, nationalIssuesConfig } from "~/lib/national-issues";
 
-const forceGenerateMock = NationalIssuesEngine.forceGenerate as any;
+let mockSpawnMode = "deterministic";
+const forceGenerateMock = jest.spyOn(NationalIssuesEngine, "forceGenerate").mockResolvedValue("issue-1" as any);
+const configMock = jest.spyOn(nationalIssuesConfig, "getNationalIssuesConfig").mockImplementation(() => ({
+  maxIssuesPerSession: 3,
+  maxIssuesPerWeek: 5,
+  spawnMode: mockSpawnMode as any,
+}));
 
 function makeTemplate(overrides: Record<string, unknown> = {}) {
   return {
     id: "tmpl-economic",
+    title: "Economic Resistance in {{country}}",
+    description: "Citizens are demonstrating against economic reforms in {{country}}.",
+    triggerReason: "Policy resistance triggered",
     domain: "economic",
     category: "economic",
+    options: [
+      {
+        id: "opt_1",
+        label: "Compromise",
+        description: "Offer compromises",
+        consequences: [],
+      },
+    ],
     cooldownDays: 30,
     maxActivePerCountry: 1,
     baseUrgency: 60,
@@ -39,17 +45,50 @@ function makeTemplate(overrides: Record<string, unknown> = {}) {
 }
 
 function makeDb(overrides: Record<string, unknown> = {}): any {
-  return {
+  const defaultHandlers: Record<string, any> = {
+    findMany: (jest.fn() as any).mockResolvedValue([]),
+    findUnique: (jest.fn() as any).mockResolvedValue(null),
+    findFirst: (jest.fn() as any).mockResolvedValue(null),
+    count: (jest.fn() as any).mockResolvedValue(0),
+    update: (jest.fn() as any).mockResolvedValue({ id: "issue-1" }),
+    create: (jest.fn() as any).mockResolvedValue({ id: "issue-1" }),
+    updateMany: (jest.fn() as any).mockResolvedValue({ count: 1 }),
+    createMany: (jest.fn() as any).mockResolvedValue({ count: 1 }),
+    delete: (jest.fn() as any).mockResolvedValue({}),
+  };
+
+  const target: any = {
     nationalIssueTemplate: {
-      findMany: jest.fn(),
+      ...defaultHandlers,
+      findMany: (jest.fn() as any).mockResolvedValue([makeTemplate()]),
+      findUnique: (jest.fn() as any).mockResolvedValue(makeTemplate()),
     },
     nationalIssue: {
-      findFirst: jest.fn(),
-      count: jest.fn(),
-      update: jest.fn(),
+      ...defaultHandlers,
+      findFirst: (jest.fn() as any).mockResolvedValue(null),
+      count: (jest.fn() as any).mockResolvedValue(0),
+      update: (jest.fn() as any).mockResolvedValue({ id: "issue-1" }),
+      create: (jest.fn() as any).mockResolvedValue({ id: "issue-1" }),
+    },
+    country: {
+      ...defaultHandlers,
+      findUnique: (jest.fn() as any).mockResolvedValue({
+        id: "country-1",
+        name: "Testland",
+        currentGdpPerCapita: 20000,
+        currentPopulation: 1000000,
+      }),
     },
     ...overrides,
   };
+
+  return new Proxy(target, {
+    get(obj, prop: string) {
+      if (prop in obj) return obj[prop];
+      if (typeof prop === "symbol") return undefined;
+      return defaultHandlers;
+    },
+  });
 }
 
 const intent = { id: "intent-1", category: "economy", tier: "extreme" };
@@ -57,7 +96,12 @@ const intent = { id: "intent-1", category: "economy", tier: "extreme" };
 beforeEach(() => {
   jest.clearAllMocks();
   mockSpawnMode = "deterministic";
-  forceGenerateMock.mockResolvedValue("issue-1");
+  forceGenerateMock.mockResolvedValue("issue-1" as any);
+  configMock.mockImplementation(() => ({
+    maxIssuesPerSession: 3,
+    maxIssuesPerWeek: 5,
+    spawnMode: mockSpawnMode as any,
+  }));
 });
 
 describe("INTENT_CATEGORY_TO_TEMPLATE", () => {

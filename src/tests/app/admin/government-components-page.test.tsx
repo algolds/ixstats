@@ -1,14 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import GovernmentComponentsPage from "~/app/admin/government-components/page";
-
-// Mock auth context
-const mockUseUser = jest.fn();
-jest.mock("~/context/auth-context", () => ({
-  useUser: () => mockUseUser(),
-  SignInButton: () => <button>Sign In</button>,
-}));
+import { GovernmentComponentsPanel } from "~/app/admin/government-components/GovernmentComponentsPanel";
 
 // Mock hooks
 jest.mock("~/hooks/usePageTitle", () => ({
@@ -85,40 +78,23 @@ jest.mock("~/hooks/admin/useGovernmentComponentsAdmin", () => ({
   useGovernmentComponentsAdmin: () => mockAdminHook,
 }));
 
-describe("GovernmentComponentsPage", () => {
+describe("GovernmentComponentsPanel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("renders loading state when auth is not loaded", () => {
-    mockUseUser.mockReturnValue({ isLoaded: false, user: null });
-    render(<GovernmentComponentsPage />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
-  });
-
-  test("renders sign-in button when unauthenticated", () => {
-    mockUseUser.mockReturnValue({ isLoaded: true, user: null });
-    render(<GovernmentComponentsPage />);
-    expect(screen.getByText("Sign In")).toBeInTheDocument();
-  });
-
-  test("renders access denied when user lacks admin role", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-1", publicMetadata: { role: "member" } },
+  test("renders loading skeletons when isLoading is true", () => {
+    jest.spyOn(require("~/hooks/admin/useGovernmentComponentsAdmin"), "useGovernmentComponentsAdmin").mockReturnValueOnce({
+      ...mockAdminHook,
+      isLoading: true,
     });
-    render(<GovernmentComponentsPage />);
-    expect(screen.getByText("Access Denied")).toBeInTheDocument();
+    const { container } = render(<GovernmentComponentsPanel />);
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
   });
 
-  test("renders government components dashboard when user is admin", () => {
-    mockUseUser.mockReturnValue({
-      isLoaded: true,
-      user: { id: "user-admin", publicMetadata: { role: "admin" } },
-    });
-    render(<GovernmentComponentsPage />);
+  test("renders government components dashboard with components and stats", () => {
+    render(<GovernmentComponentsPanel />);
     expect(screen.getByText("Government Components")).toBeInTheDocument();
-    expect(screen.getByText("Back to Admin")).toBeInTheDocument();
     expect(screen.getByText("Centralized Power")).toBeInTheDocument();
     expect(screen.getByText("Total Components")).toBeInTheDocument();
   });

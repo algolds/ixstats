@@ -1,18 +1,8 @@
 /**
- * Unified Intelligence Router
+ * Unified Intelligence Router — Security & Threat Intelligence
  *
- * Comprehensive intelligence router that combines SDI/ECI functionality with
+ * Comprehensive intelligence router powering national security, crisis response,
  * executive dashboard operations, diplomatic channels, and unified intelligence feeds.
- *
- * Features:
- * - Executive dashboard overview (vitality, alerts, quick actions)
- * - Enhanced quick actions with real database effects
- * - Secure diplomatic channel management
- * - Real-time intelligence feed aggregation
- * - Advanced analytics dashboard
- * - Classification-based access control
- * - Notification hooks for all major events
- * - Audit logging for sensitive operations
  */
 
 import { z } from "zod";
@@ -43,18 +33,8 @@ export const intelAlertsSecurityRouter = createTRPCRouter({
 
   // ===== CABINET MEETING MANAGEMENT =====
 
-  // ===== ECONOMIC POLICY MANAGEMENT =====
-  // ===== CRISIS MANAGEMENT (from SDI) =====
-
-  // ===== ECONOMIC INTELLIGENCE (from SDI) =====
-
-  // ===== DIPLOMATIC INTELLIGENCE (from SDI) =====
-
-  // ===== STRATEGIC PLANS & SECURITY =====
-
   /**
    * Get security threats for a country
-   * Migrated from ECI router
    */
   getSecurityThreats: protectedProcedure
     .input(z.object({ countryId: z.string() }))
@@ -264,11 +244,9 @@ export const intelAlertsSecurityRouter = createTRPCRouter({
       }
     }),
 
-  // ===== KEY FINDINGS =====
 });
 
 // ===== HELPER FUNCTIONS =====
-// Migrated from ECI router for advanced analytics and AI recommendations
 
 /**
  * Calculate volatility metrics from historical data

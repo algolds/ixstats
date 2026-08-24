@@ -1,10 +1,11 @@
-# Crisis Events Management System
+# ⚙️ Dynamic Crisis Events Engine
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of Concord Living-World Engine (`CONCORD_ENGINE_VERSION = 2`) & MyCountry.
+**Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
+**Subsystem:** Incident Triage & Emergency Response Loop  
+**Primary Action:** `RESOLVE` | **Domain Accent:** Crimson Rose (`#F43F5E` / `--color-rose-500`)  
+**Route:** `/admin/crisis-events`, embedded in `/mycountry` | **Status:** 📀 Gold Master (100% Ready)  
 
-The Crisis Events Management System generates natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
+The Crisis Events Engine generates algorithmic natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
 
 ---
 

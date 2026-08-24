@@ -1,24 +1,25 @@
-# WikiOS system documentation
+# 📖 WikiOS — Lore & Knowledge Operating System
 
-Last updated: August 2026.  
-Status: Release candidate (direct database and multi-wiki integration).  
-Hierarchy: Top-level app WikiOS (`WIKIOS_VERSION = 1`). Canvas sub-system `CANVAS_VERSION = 1`.  
+**Parent App Suite:** WikiOS (`WIKIOS_VERSION = 1`)  
+**Subsystems:** Native Lore Engine, Margin (`v1`), Canvas Editor (`CANVAS_VERSION = 1`), Wiki Awards (`v1`), Stash System (`STASH_VERSION = 1`), Image Repository (`REPOSITORY_VERSION = 2`)  
+**Primary Action:** `PUBLISH` | **Domain Accent:** Slate Cyan (`#06B6D4` / `--color-cyan-500`)  
+**Routes:** `/(wiki-os)/*`, `/(wiki-os)/editor/*`, `/stashes`, `/(wiki-os)/repository` | **Status:** 📀 Gold Master (100% Ready)  
 
-WikiOS is the primary knowledge platform for IxStates. Article reads run through MariaDB socket queries and PostgreSQL indexes in under 2ms. Edits commit to PostgreSQL in under 10ms. MediaWiki (`https://ixwiki.com/`) operates as a classic fallback user interface, kept in continuous sync through `MediaWikiExportWorker`.
+WikiOS is the lore and knowledge operating system for IxStates. Built with native PostgreSQL storage and a sub-2ms relational link graph (`wiki_links`), it serves as an active lore platform with visual publishing, bilateral text annotations, reading queues, and editor recognition.
 
 ---
 
-## Architecture and subsystems
+## Core Architecture & Subsystems
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                   WIKIOS PRIMARY APP (src/app/(wiki-os)/)              │
-├──────────────────┬──────────────────┬─────────────────┬────────────────┤
-│ 1. Reader and nav│ 2. Canvas editor │ 3. Audio player │ 4. Commons hub │
-│ PostgreSQL CRUD, │ Visual block-    │ Kokoro TTS      │ Media assets,  │
-│ link graph, TOC, │ based rich text  │ narrator, Halo  │ SVG heraldry,  │
-│ Stash bookmarks  │ editor (v1)      │ audio equalizer │ blurhash cards │
-└──────────────────┴──────────────────┴─────────────────┴────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                   WIKIOS PRIMARY APP ARCHITECTURE (src/app/(wiki-os)/)                 │
+├────────────────────┬────────────────────┬────────────────────┬─────────────────────────┤
+│ 1. Native Reader   │ 2. Margin          │ 3. Canvas Editor   │ 4. Media & Metagame     │
+│ PostgreSQL CRUD,   │ Split-canvas sheet,│ Visual block-based │ Image repository,       │
+│ sub-2ms link graph,│ gutter text pins,  │ rich text editor   │ Wiki Awards medals,     │
+│ TOC & live embeds  │ bilateral threads  │ with live blocks   │ Stash reading lists     │
+└────────────────────┴────────────────────┴────────────────────┴─────────────────────────┘
 ```
 
 ### Direct database engine (`src/lib/wiki-os/`)

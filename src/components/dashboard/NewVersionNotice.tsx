@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Xmark as X, ArrowRight } from "iconoir-react";
-import { MdBrowserUpdated } from "react-icons/md";
+import { Xmark as X, ArrowRight, Spark } from "iconoir-react";
 import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
@@ -36,7 +35,7 @@ export function NewVersionNotice() {
     >
       <TextureOverlay texture="chevron" opacity={0.06} />
       <div className="relative z-10 flex items-center gap-2.5">
-        <MdBrowserUpdated className="h-4 w-4 shrink-0 text-blue-400" />
+        <Spark className="h-4 w-4 shrink-0 text-blue-400" />
         <p className="text-foreground text-xs font-medium">
           New version! The system has been updated to{" "}
           <Link href="/changelog" className="font-semibold text-blue-400 hover:underline">

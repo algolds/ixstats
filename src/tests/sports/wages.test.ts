@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { playerWage, teamWageBill } from "../../lib/sports/team-rating";
+import { playerWage, teamWageBill } from "~/lib/sports/team-rating";
 
 describe("MyClub wages", () => {
   it("scales wage with overall rating (monotonic)", () => {

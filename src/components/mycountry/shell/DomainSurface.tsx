@@ -2,7 +2,10 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
+import {
+  KeyCommand as Command,
+  ArrowUpRight,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
@@ -11,13 +14,18 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
+import type { MyCountrySection } from "./MyCountrySidebarNav";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
     import("~/components/mycountry/domains/diplomacy/EmbassiesAndRelationsPanel").then((m) => ({
       default: m.EmbassiesAndRelationsPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  {
+    ssr: false,
+    loading: () => <div className="bg-muted/40 h-96 animate-pulse rounded-2xl" />,
+  }
 );
 
 const DefenseCommandPanel = dynamic(
@@ -53,14 +61,14 @@ const DOMAIN_BORDER: Record<V2Domain, string> = {
 /**
  * V2DomainSurface — the full-page v2 surface for the four domain routes
  * (/mycountry/diplomacy, /defense, /politics, /executive). Renders the v2 chrome
- * (nav pill lives in V2CommandSurface) plus a themed domain hero and the domain's
- * v2 drill content inline as the primary body, with the shared v2 rail alongside.
- * Defense stays premium-gated via PremiumPreviewFrame.
+ * plus a themed domain hero and the domain's drill content inline as the primary body,
+ * with the shared rail alongside. Defense stays premium-gated via PremiumPreviewFrame.
  */
 export interface DomainSurfaceProps {
   countryId: string;
   section: string;
   onDeclare?: (prefilled?: string) => void;
+  onNavigate?: (section: any) => void;
 }
 
 export type V2DomainSurfaceProps = DomainSurfaceProps;
@@ -69,6 +77,7 @@ function DomainSurfaceComponent({
   countryId,
   section,
   onDeclare,
+  onNavigate,
 }: DomainSurfaceProps): React.JSX.Element {
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];
@@ -77,6 +86,7 @@ function DomainSurfaceComponent({
 
   return (
     <div className="space-y-5">
+
       {/* Domain Hero — themed header card */}
       <FacetCard
         depth={1}

@@ -30,10 +30,10 @@ export async function batchResolveMessagingAccounts(
   }
 
   if (realIds.length > 0) {
-    const users = await db.user.findMany({
+    const users = (await db.user.findMany({
       where: { clerkUserId: { in: realIds } },
       include: { country: true },
-    });
+    })) ?? [];
     for (const u of users) {
       map.set(u.clerkUserId, {
         id: u.clerkUserId,
@@ -46,9 +46,9 @@ export async function batchResolveMessagingAccounts(
 
     const unresolvedReal = realIds.filter((id) => !map.has(id));
     if (unresolvedReal.length > 0) {
-      const countries = await db.country.findMany({
+      const countries = (await db.country.findMany({
         where: { id: { in: unresolvedReal } },
-      });
+      })) ?? [];
       for (const c of countries) {
         map.set(c.id, {
           id: c.id,
@@ -64,10 +64,10 @@ export async function batchResolveMessagingAccounts(
   if (forumKeys.length > 0) {
     const numericIds = forumKeys.map((f) => parseInt(f.raw, 10)).filter((n) => !isNaN(n));
     if (numericIds.length > 0) {
-      const forumUsers = await db.user.findMany({
+      const forumUsers = (await db.user.findMany({
         where: { forumUserId: { in: numericIds } },
         include: { country: true },
-      });
+      })) ?? [];
       for (const u of forumUsers) {
         map.set(`forum:${u.forumUserId}`, {
           id: `forum:${u.forumUserId}`,

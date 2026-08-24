@@ -46,6 +46,7 @@ function Toggle({
     <button
       type="button"
       data-slot="toggle"
+      data-cuelume-toggle=""
       data-state={pressed ? "on" : "off"}
       aria-pressed={pressed}
       onClick={(e) => {

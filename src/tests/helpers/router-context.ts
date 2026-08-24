@@ -27,6 +27,7 @@ export interface MockRouterContextOptions {
   impersonatorId?: string;
   headers?: Headers;
   sourceIp?: string;
+  rateLimitIdentifier?: string;
 }
 
 export interface MockRouterContext {
@@ -36,6 +37,8 @@ export interface MockRouterContext {
   impersonatorId?: string;
   headers: Headers;
   sourceIp: string;
+  rateLimitIdentifier: string;
+  [key: string]: any;
 }
 
 /**
@@ -76,5 +79,6 @@ export function createMockRouterContext(
     impersonatorId: options.impersonatorId,
     headers: options.headers ?? defaultHeaders,
     sourceIp: options.sourceIp ?? "127.0.0.1",
+    rateLimitIdentifier: options.rateLimitIdentifier ?? "test_user_clerk_id",
   };
 }

@@ -396,7 +396,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   type="button"
                   onClick={() => dismissM.mutate({ id: issue.id })}
                   disabled={dismissM.isPending}
-                  className="bg-muted/20 hover:bg-muted/40 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-white/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all active:scale-95"
+                  className="bg-muted/20 hover:bg-muted/40 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-white/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out active:scale-[0.98]"
                 >
                   <Users className="text-muted-foreground h-4 w-4" />
                   <span className="text-foreground text-[11px] font-bold">Delegate</span>
@@ -421,7 +421,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   const el = document.getElementById("issue-brief-options");
                   el?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-cyan-500/20 active:scale-95 dark:border-cyan-400/25 dark:bg-cyan-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-cyan-500/20 active:scale-[0.98] dark:border-cyan-400/25 dark:bg-cyan-400/10"
               >
                 <Sliders className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
                 <span className="text-[11px] font-bold text-cyan-950 dark:text-cyan-200">
@@ -437,7 +437,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 type="button"
                 onClick={handleSetMeeting}
                 disabled={scheduleMeetingM.isPending}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-blue-500/30 bg-blue-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-blue-500/20 active:scale-95 dark:border-blue-400/25 dark:bg-blue-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-blue-500/30 bg-blue-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-blue-500/20 active:scale-[0.98] dark:border-blue-400/25 dark:bg-blue-400/10"
               >
                 <CalendarClock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                 <span className="text-[11px] font-bold text-blue-950 dark:text-blue-200">
@@ -455,7 +455,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   onClose?.();
                   onDeclare?.(issue.title);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:border-amber-400/25 dark:bg-amber-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-amber-500/20 active:scale-[0.98] dark:border-amber-400/25 dark:bg-amber-400/10"
               >
                 <Command className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                 <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200">

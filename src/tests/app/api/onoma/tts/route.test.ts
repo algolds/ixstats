@@ -36,7 +36,7 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 jest.mock("~/lib/auth", () => ({
-  isSystemOwner: jest.fn(() => false),
+  isSystemOwner: jest.fn(() => true),
 }));
 
 describe("TTS Proxy API Route (/api/onoma/tts)", () => {

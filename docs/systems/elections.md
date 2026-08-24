@@ -1,10 +1,11 @@
-# Elections & Political System
+# 🏛️ MyCountry Politics, Elections & Legislature Domain
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Governance & Politics domain group.
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 5`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `ELECT` | **Domain Accent:** Imperial Purple / Amber Gold  
+**Route:** `/mycountry` (Politics Domain) | **Status:** 📀 Gold Master (100% Ready)  
 
-Elections, political parties, and legislature management form the democratic and legislative governance simulation layer of IxStates. Players configure legislatures, manage political parties, register candidates, and simulate elections with algorithmic seat allocation.
+Elections, political parties, and legislature management form the parliamentary governance simulation layer of MyCountry. Sovereign states configure unicameral/bicameral chambers, manage political parties, and simulate elections with algorithmic D'Hondt or FPTP seat allocations.
 
 ---
 

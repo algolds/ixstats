@@ -267,20 +267,20 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="facet-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
+                      className="group rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs transition-colors hover:border-border/60 active:scale-[0.98] transition-transform block"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div
-                            className={`rounded-lg border border-${type.color}-500/20 bg-${type.color}-500/10 p-2`}
+                            className="rounded-xl border border-border/40 bg-card/40 p-2 text-foreground"
                           >
-                            <Icon className={`h-5 w-5 text-${type.color}-500`} />
+                            <Icon className="h-4 w-4 text-primary" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-foreground group-hover:text-primary text-sm font-medium transition-colors">
+                            <h3 className="text-foreground group-hover:text-primary text-xs font-semibold tracking-tight transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-muted-foreground mt-0.5 text-[11px] line-clamp-1">
                               {type.description}
                             </p>
                           </div>
@@ -290,16 +290,16 @@ export default function ReferenceDataPage() {
 
                       {/* Count badge */}
                       {count != null ? (
-                        <div className="border-border/30 mt-3 flex items-center justify-between border-t pt-2">
-                          <span className="text-muted-foreground text-xs">Records</span>
-                          <span className="text-foreground font-mono text-sm font-medium">
+                        <div className="border-border/20 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
+                          <span className="text-muted-foreground">Records</span>
+                          <span className="text-foreground font-mono font-bold">
                             {count.toLocaleString()}
                           </span>
                         </div>
                       ) : count === undefined &&
                         (govComponents.isLoading || econComponents.isLoading) ? (
-                        <div className="border-border/30 mt-3 border-t pt-2">
-                          <Skeleton className="ml-auto h-4 w-16" />
+                        <div className="border-border/20 mt-3 border-t pt-2">
+                          <Skeleton className="ml-auto h-3.5 w-12" />
                         </div>
                       ) : null}
                     </Link>

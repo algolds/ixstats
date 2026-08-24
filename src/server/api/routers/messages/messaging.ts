@@ -295,10 +295,20 @@ export const messagesMessagingRouter = createTRPCRouter({
         wikiBridge: wikiTalkBridge,
       });
 
-      return await messagingService.removeReaction(ctx.auth.userId, {
-        messageId: input.messageId,
-        emoji: input.reaction,
-      });
+      try {
+        return await messagingService.removeReaction(ctx.auth.userId, {
+          messageId: input.messageId,
+          emoji: input.reaction,
+        });
+      } catch (err: any) {
+        if (err.name === "MessagingNotFoundError") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
+        }
+        if (err.name === "MessagingForbiddenError") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this conversation" });
+        }
+        throw err;
+      }
     }),
 
   /**

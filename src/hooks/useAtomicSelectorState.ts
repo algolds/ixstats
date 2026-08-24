@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
 export interface UseAtomicSelectorStateProps<T extends string> {
   /** Uncontrolled initial selection (synced by value) */
@@ -87,18 +87,20 @@ export function useAtomicSelectorState<T extends string>({
   const [implementationOpen, setImplementationOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
 
+  const prevInitialRef = useRef<T[]>(initialSelection);
+
   // Synchronize internal state by value (anti-clobber protection)
   useEffect(() => {
     if (!isControlled) {
-      setInternalSelected((prev) => {
-        if (
-          prev.length === initialSelection.length &&
-          prev.every((item) => initialSelection.includes(item))
-        ) {
-          return prev;
-        }
-        return initialSelection;
-      });
+      const prevInit = prevInitialRef.current;
+      const isSameInit =
+        prevInit.length === initialSelection.length &&
+        prevInit.every((item, i) => item === initialSelection[i]);
+
+      if (!isSameInit) {
+        prevInitialRef.current = initialSelection;
+        setInternalSelected(initialSelection);
+      }
     }
   }, [initialSelection, isControlled]);
 

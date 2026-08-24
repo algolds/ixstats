@@ -5,9 +5,11 @@ import {
 } from "~/server/modules/forum";
 import * as userSync from "~/server/modules/forum/services/xenforo-user-sync";
 
+jest.mock("~/server/modules/forum/services/xenforo-user-sync");
+
 describe("Linked User Resolution (Canonical Forum Module)", () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   test("requireForumUser returns existing forumUserId", async () => {
@@ -39,7 +41,7 @@ describe("Linked User Resolution (Canonical Forum Module)", () => {
       },
     };
 
-    jest.spyOn(userSync, "lookupForumUser").mockResolvedValue({
+    (userSync.lookupForumUser as jest.Mock).mockResolvedValue({
       userId: 88,
       username: "testuser",
       email: "test@example.com",

@@ -214,7 +214,14 @@ export function useFacetDepth(initialDepth: FacetDepth = 2) {
 // Specialized Facet Cards, Modals, and Navigation frames
 export const FacetCard = forwardRef<HTMLDivElement, Omit<FacetContainerProps, "variant">>(
   (props, ref) => (
-    <FacetContainer ref={ref} variant="base" depth={1} interactive="hover" {...props} />
+    <FacetContainer
+      ref={ref}
+      variant="base"
+      depth={1}
+      interactive="hover"
+      enableRefraction={false}
+      {...props}
+    />
   )
 );
 FacetCard.displayName = "FacetCard";

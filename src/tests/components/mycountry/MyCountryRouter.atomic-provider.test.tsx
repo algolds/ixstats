@@ -82,13 +82,13 @@ jest.mock("~/trpc/react", () => ({
     },
     unifiedAtomic: {
       getAll: {
-        useQuery: mockUnifiedAtomicGetAll,
+        useQuery: () => mockUnifiedAtomicGetAll(),
       },
       detectSynergies: {
-        useQuery: mockUnifiedAtomicDetectSynergies,
+        useQuery: () => mockUnifiedAtomicDetectSynergies(),
       },
       calculateCombinedEffectiveness: {
-        useQuery: mockUnifiedAtomicCalculateCombined,
+        useQuery: () => mockUnifiedAtomicCalculateCombined(),
       },
     },
     intelligence: {
@@ -144,13 +144,19 @@ jest.mock("~/hooks/useNationalIssuesToast", () => ({
   useNationalIssuesToast: jest.fn(),
 }));
 
-jest.mock("~/components/mycountry/shell/CommandSurface", () => ({
-  CommandSurface: ({ country }: { country: any }) => (
-    <div data-testid="mock-command-surface">
-      Command Surface Active for {country?.name || "Unknown"}
-    </div>
-  ),
-}));
+jest.mock("~/components/mycountry/shell/CommandSurface", () => {
+  return {
+    CommandSurface: () => {
+      const { useCountryData } = jest.requireActual("~/components/mycountry/shared/primitives") as any;
+      const { country } = useCountryData();
+      return (
+        <div data-testid="mock-command-surface">
+          Command Surface Active for {country?.name || "Unknown"}
+        </div>
+      );
+    },
+  };
+});
 
 describe("Plan 165: MyCountryRouter without AtomicStateProvider", () => {
   beforeEach(() => {

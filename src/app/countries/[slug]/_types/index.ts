@@ -17,7 +17,7 @@ export const toCountryId = (id: string): CountryId => id as CountryId;
 export type BannerMode = "dynamic" | "flag" | "gradient" | "custom";
 
 /** Top-level navigation tab options */
-export type ProfileTabType = "overview" | "lore" | "activity";
+export type ProfileTabType = "overview" | "lore" | "wiki" | "forum" | "activity";
 
 /** Activity feed filters */
 export type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "social";

@@ -12,7 +12,7 @@ export default function DefenseCustomizationArticle() {
       <ContentCard>
         <Section title="Customization Options">
           <ul className="list-disc space-y-2 pl-6">
-            <li>Adjust SDI module emphasis (cyber, orbital, homeland security, etc.).</li>
+            <li>Adjust strategic module emphasis (cyber, air defense, naval readiness, etc.).</li>
             <li>
               Assign doctrines and readiness postures that affect compliance tasks and analytics.
             </li>

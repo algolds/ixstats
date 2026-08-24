@@ -104,17 +104,12 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
             transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
           >
             <div
-              className="overflow-hidden rounded-2xl border border-white/20 shadow-2xl dark:border-white/10"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-              }}
+              className="dynamic-island-shell overflow-hidden rounded-2xl shadow-2xl"
+              data-expanded="true"
             >
               {/* Refraction edges */}
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                <div className="absolute top-0 left-0 h-[1.5px] w-full bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-white/25" />
                 <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
               </div>
 

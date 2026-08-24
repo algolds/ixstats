@@ -1,10 +1,11 @@
-# Halo System & Command Palette Architecture
+# 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
-**Last updated:** August 2026  
-**Status:** Production Ready — Halo v5  
-**Hierarchy:** Core Feature System (`HALO_VERSION = 5` in Version Registry). Global contextual overlay, wayfinding suite, and executive command palette.
+**Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 2` / `HALO_VERSION = 5`)  
+**Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
+**Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
+**Status:** 📀 Gold Master (100% Ready)  
 
-> **Naming & Identifiers:** **Halo** is the canonical brand name (formerly "Dynamic Island"). Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are first-class interactive primitives of the **Facet UI Design System**. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
 Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Forum, Vault, Labs, and Builder).
 

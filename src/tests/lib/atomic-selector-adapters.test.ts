@@ -25,17 +25,17 @@ describe("Atomic Selector Adapters (Plan 166)", () => {
 
       expect(Object.keys(components).length).toBeGreaterThan(0);
       expect(Object.keys(categories).length).toBeGreaterThan(0);
-      expect(components["progressive_income_tax"]).toBeDefined();
+      expect(components["progressive_tax"]).toBeDefined();
     });
 
     test("delegates tax calculations and checks correctly", () => {
-      const metrics = calculateTaxMetrics(["progressive_income_tax"]);
+      const metrics = calculateTaxMetrics(["progressive_tax"]);
       expect(metrics.totalEffectiveness).toBeGreaterThan(0);
 
-      const synergy = evaluateTaxSynergy("progressive_income_tax", "wealth_tax");
+      const synergy = evaluateTaxSynergy("progressive_tax", "wealth_tax");
       expect(typeof synergy).toBe("number");
 
-      const conflict = evaluateTaxConflict("flat_income_tax", "progressive_income_tax");
+      const conflict = evaluateTaxConflict("flat_tax", "progressive_tax");
       expect(typeof conflict).toBe("boolean");
     });
   });
@@ -46,7 +46,7 @@ describe("Atomic Selector Adapters (Plan 166)", () => {
       const categories = getGovernmentCategories();
 
       expect(Object.keys(components).length).toBeGreaterThan(0);
-      expect(categories.length).toBeGreaterThan(0);
+      expect(Object.keys(categories).length).toBeGreaterThan(0);
     });
 
     test("delegates government domain metrics calculation", () => {
@@ -66,7 +66,7 @@ describe("Atomic Selector Adapters (Plan 166)", () => {
       const templates = getEconomicTemplates();
 
       expect(components.length).toBeGreaterThan(0);
-      expect(categories.length).toBeGreaterThan(0);
+      expect(Object.keys(categories).length).toBeGreaterThan(0);
       expect(templates.length).toBeGreaterThan(0);
     });
 

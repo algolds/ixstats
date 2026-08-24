@@ -1,10 +1,11 @@
-# MyLeague & MyClub — Sports Management System
+# 🧪 MyLeague & MyClub — Sports Simulation Studio (Labs)
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Sports Simulation Platform (MyLeague public league workspace + MyClub franchise ownership).
+**Parent Layer:** Labs (Experimental & Incubation Studio)  
+**Subsystems:** League Workspace, Franchise Management (MyClub), Match Simulation Engine, Athlete Cards  
+**Primary Action:** `COMPETE` | **Domain Accent:** Emerald Green / Sports Gold  
+**Routes:** `/labs/myleague`, `/labs/myclub` | **Status:** 🧪 Labs Preview  
 
-MyLeague and MyClub provide full-season sports simulation across soccer, Formula 1, hockey, boxing, basketball, baseball, and football.
+MyLeague and MyClub provide full-season sports simulation across soccer, Formula 1, hockey, boxing, basketball, baseball, and football with dynamic match resolvers and athlete roster progression.
 
 ---
 

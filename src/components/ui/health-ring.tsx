@@ -30,7 +30,7 @@ interface HealthRingProps {
   size?: number; // px
   color?: string; // tailwind or hex
   label?: string;
-  target?: number; // for SDI-style (default 100)
+  target?: number; // target threshold value (default 100)
   tooltip?: string;
   className?: string;
   onClick?: () => void;

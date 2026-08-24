@@ -1,5 +1,5 @@
-import { transformDatabaseComponent as transformEconomicComponent } from "../../../../server/api/routers/economicComponents/serializer";
-import { transformDatabaseComponent as transformGovernmentComponent } from "../../../../server/api/routers/governmentComponents/serializer";
+import { transformDatabaseComponent as transformEconomicComponent } from "~/server/api/routers/economicComponents/serializer";
+import { transformDatabaseComponent as transformGovernmentComponent } from "~/server/api/routers/governmentComponents/serializer";
 import { EconomicComponentType, ComponentType } from "@prisma/client";
 
 describe("component-serializers zero values and presence semantics", () => {

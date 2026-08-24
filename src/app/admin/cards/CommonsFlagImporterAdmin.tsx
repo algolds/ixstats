@@ -232,7 +232,7 @@ export function CommonsFlagImporterAdmin() {
         </div>
 
         {/* Card Minting Parameters */}
-        <div className="border-border grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
+        <div className="border-border/40 grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
           {/* Default Rarity */}
           <div>
             <label className="text-muted-foreground mb-1 block text-[11px] font-medium">
@@ -241,24 +241,24 @@ export function CommonsFlagImporterAdmin() {
             <select
               value={defaultRarity}
               onChange={(e) => setDefaultRarity(e.target.value as CardRarity)}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
             >
-              <option value="COMMON" className="bg-card text-card-foreground">
+              <option value="COMMON" className="bg-background text-foreground">
                 Common
               </option>
-              <option value="UNCOMMON" className="bg-card text-card-foreground">
+              <option value="UNCOMMON" className="bg-background text-foreground">
                 Uncommon
               </option>
-              <option value="RARE" className="bg-card text-card-foreground">
+              <option value="RARE" className="bg-background text-foreground">
                 Rare
               </option>
-              <option value="ULTRA_RARE" className="bg-card text-card-foreground">
+              <option value="ULTRA_RARE" className="bg-background text-foreground">
                 Ultra Rare
               </option>
-              <option value="EPIC" className="bg-card text-card-foreground">
+              <option value="EPIC" className="bg-background text-foreground">
                 Epic
               </option>
-              <option value="LEGENDARY" className="bg-card text-card-foreground">
+              <option value="LEGENDARY" className="bg-background text-foreground">
                 Legendary
               </option>
             </select>
@@ -272,15 +272,15 @@ export function CommonsFlagImporterAdmin() {
             <select
               value={season}
               onChange={(e) => setSeason(parseInt(e.target.value, 10))}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
             >
-              <option value={1} className="bg-card text-card-foreground">
+              <option value={1} className="bg-background text-foreground">
                 Season 1
               </option>
-              <option value={2} className="bg-card text-card-foreground">
+              <option value={2} className="bg-background text-foreground">
                 Season 2
               </option>
-              <option value={3} className="bg-card text-card-foreground">
+              <option value={3} className="bg-background text-foreground">
                 Season 3
               </option>
             </select>

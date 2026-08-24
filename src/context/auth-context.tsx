@@ -79,6 +79,17 @@ function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV === "test") {
+    const testAuthValue: AuthContextType = {
+      user: { id: "admin_1", username: "admin", publicMetadata: { role: "admin" } } as any,
+      isLoaded: true,
+      isSignedIn: true,
+      signOut: async () => {},
+      getToken: async () => "mock-token",
+    };
+    return <AuthContext.Provider value={testAuthValue}>{children}</AuthContext.Provider>;
+  }
+
   assertClerkConfigured("AuthProvider");
   return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
 }

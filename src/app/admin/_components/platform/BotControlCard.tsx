@@ -201,7 +201,7 @@ export function BotControlCard({
             id={`opt-${opt.name}`}
             value={value}
             onChange={(e) => setOptionValues((prev) => ({ ...prev, [opt.name]: e.target.value }))}
-            className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 w-full rounded-md border px-2.5 py-1.5 text-xs focus:outline-none"
+            className="bg-background border-border/40 text-foreground focus:border-primary/50 w-full rounded-xl border px-3 py-2 text-xs focus:outline-none"
           >
             <option value="" className="bg-background text-foreground">
               Select option...
@@ -1028,7 +1028,7 @@ export function BotControlCard({
                     id="log-proc-select"
                     value={logProcess}
                     onChange={(e) => setLogProcess(e.target.value as any)}
-                    className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 rounded border px-2 py-1 text-xs font-semibold focus:outline-none"
+                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
                   >
                     <option value="ixwiki-discord-bot" className="bg-background text-foreground">
                       ixwiki-discord-bot
@@ -1051,7 +1051,7 @@ export function BotControlCard({
                     id="log-type-select"
                     value={logType}
                     onChange={(e) => setLogType(e.target.value as any)}
-                    className="bg-card/20 border-border/30 text-foreground focus:border-primary/50 rounded border px-2 py-1 text-xs font-semibold focus:outline-none"
+                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
                   >
                     <option value="out" className="bg-background text-foreground">
                       stdout (Logs)

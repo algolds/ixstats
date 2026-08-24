@@ -6,8 +6,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   KeyCommand as Command,
+  Globe,
   Globe as Globe2,
   Shield,
+  HistoricShieldAlt,
   Bank as Landmark,
   StatUp as TrendingUp,
   Heart,
@@ -32,21 +34,19 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
-import { CommitmentsAgendaRail as _CommitmentsAgendaRail } from "./CommitmentsAgendaRail";
-import { V2CommandBriefingHero as CommandBriefingHero } from "~/components/mycountry/shared/headers/CommandBriefingHero";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { soundEffects } from "~/lib/sound/cuelume";
 import {
   DiplomacyGraphic,
   DefenseGraphic,
   PoliticsGraphic,
   EconomyGraphic,
 } from "./ActionCardGraphics";
-
-import { useCountryData, QuickVitalityRings } from "~/components/mycountry/shared/primitives";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -101,14 +101,19 @@ const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> 
     cls: "border-emerald-500/40 text-emerald-800 dark:text-emerald-400 bg-emerald-500/10",
   },
   social: {
-    label: "Society",
+    label: "Social",
     icon: Heart,
-    cls: "border-cyan-500/40 text-cyan-800 dark:text-cyan-400 bg-cyan-500/10",
+    cls: "border-pink-500/40 text-pink-800 dark:text-pink-400 bg-pink-500/10",
   },
-  emergency: {
+  intent: {
+    label: "Directive",
+    icon: Command,
+    cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10",
+  },
+  crisis: {
     label: "Crisis",
     icon: AlertTriangle,
-    cls: "border-amber-500/40 text-amber-800 dark:text-amber-400 bg-amber-500/10",
+    cls: "border-red-500/40 text-red-800 dark:text-red-400 bg-red-500/10",
   },
   ledger: {
     label: "Ledger",
@@ -117,86 +122,98 @@ const CATEGORY_STYLE: Record<string, { label: string; icon: any; cls: string }> 
   },
 };
 
-const DomainActionTiles = React.memo(function DomainActionTiles({
+export const DOMAIN_TILES: {
+  id: MyCountrySection;
+  title: string;
+  drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
+  icon: any;
+  graphic: React.ComponentType<{ className?: string }>;
+  badgeCls: string;
+  getPeek: (country: any) => string;
+}[] = [
+  {
+    id: "diplomacy",
+    title: "Diplomacy",
+    drillKind: { kind: "relations" },
+    icon: Globe,
+    graphic: DiplomacyGraphic,
+    badgeCls: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
+    getPeek: (c) =>
+      `${c?.activeEmbassiesCount ?? c?.embassies?.length ?? 12} Embassies • ${c?.diplomaticStance ?? "Active Alliance"}`,
+  },
+  {
+    id: "defense",
+    title: "Defense",
+    drillKind: { kind: "defense" },
+    icon: HistoricShieldAlt,
+    graphic: DefenseGraphic,
+    badgeCls: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+    getPeek: (c) =>
+      `${c?.militaryReadiness ?? c?.readiness ?? 94}% Readiness • ${c?.defensePosture ?? c?.posture ?? "Defensive"}`,
+  },
+  {
+    id: "politics",
+    title: "Politics",
+    drillKind: { kind: "politics" },
+    icon: Scale,
+    graphic: PoliticsGraphic,
+    badgeCls: "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30",
+    getPeek: (c) => {
+      const raw = c?.currentStability ?? c?.stability ?? 0.78;
+      return `${Math.round(raw > 1 ? raw : raw * 100)}% Stability • Active Cabinet`;
+    },
+  },
+  {
+    id: "economy",
+    title: "Economy & Budget",
+    drillKind: { kind: "economy" },
+    icon: TrendingUp,
+    graphic: EconomyGraphic,
+    badgeCls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    getPeek: (c) => {
+      const raw = c?.gdpGrowth ?? c?.currentGdpGrowth ?? 0.034;
+      return `+${(raw > 1 ? raw : raw * 100).toFixed(1)}% Growth • Fiscal Stable`;
+    },
+  },
+];
+
+export const DomainActionTiles = React.memo(function DomainActionTiles({
   onOpenDrill,
+  onNavigate,
 }: {
-  onOpenDrill: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onNavigate?: (section: MyCountrySection) => void;
 }) {
   const { country } = useCountryData();
 
-  const tiles = useMemo(() => {
-    const readiness = country?.militaryReadiness ?? country?.readiness ?? 94;
-    const posture = country?.defensePosture ?? country?.posture ?? "Defensive";
-
-    const embassies = country?.activeEmbassiesCount ?? country?.embassies?.length ?? 12;
-    const dipStance = country?.diplomaticStance ?? "Active Alliance";
-
-    const rawStab = country?.currentStability ?? country?.stability ?? 0.78;
-    const stabPct = Math.round(rawStab > 1 ? rawStab : rawStab * 100);
-
-    const rawGrowth = country?.gdpGrowth ?? country?.currentGdpGrowth ?? 0.034;
-    const growthPct = (rawGrowth > 1 ? rawGrowth : rawGrowth * 100).toFixed(1);
-
-    return [
-      {
-        title: "Diplomacy",
-        peek: `${embassies} Embassies • ${dipStance}`,
-        icon: Handshake,
-        graphic: DiplomacyGraphic,
-        accent:
-          "border-teal-500/30 dark:border-teal-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-teal-500/10 dark:to-emerald-500/5 text-teal-900 dark:text-teal-300 hover:border-teal-500/50 hover:bg-card/90 shadow-xs",
-        onClick: () => onOpenDrill({ kind: "relations" }),
-      },
-      {
-        title: "Defense",
-        peek: `${readiness}% Readiness • ${posture}`,
-        icon: Shield,
-        graphic: DefenseGraphic,
-        accent:
-          "border-red-500/30 dark:border-red-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-red-500/10 dark:to-rose-500/5 text-red-900 dark:text-red-300 hover:border-red-500/50 hover:bg-card/90 shadow-xs",
-        onClick: () => onOpenDrill({ kind: "defense" }),
-      },
-      {
-        title: "Politics",
-        peek: `${stabPct}% Stability • Active Cabinet`,
-        icon: Scale,
-        graphic: PoliticsGraphic,
-        accent:
-          "border-violet-500/30 dark:border-violet-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-violet-500/10 dark:to-purple-500/5 text-violet-900 dark:text-violet-300 hover:border-violet-500/50 hover:bg-card/90 shadow-xs",
-        onClick: () => onOpenDrill({ kind: "politics" }),
-      },
-      {
-        title: "Economy & Budget",
-        peek: `+${growthPct}% Growth • Fiscal Stable`,
-        icon: TrendingUp,
-        graphic: EconomyGraphic,
-        accent:
-          "border-emerald-500/30 dark:border-emerald-500/20 bg-card/60 dark:bg-gradient-to-r dark:from-emerald-500/10 dark:to-teal-500/5 text-emerald-900 dark:text-emerald-300 hover:border-emerald-500/50 hover:bg-card/90 shadow-xs",
-        onClick: () => onOpenDrill({ kind: "economy" }),
-      },
-    ];
-  }, [country, onOpenDrill]);
-
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {tiles.map(({ title, peek, icon: Icon, graphic: Graphic, accent, onClick }) => (
-        <motion.button
-          key={title}
-          type="button"
-          whileHover={{ scale: 1.015, transition: { type: "spring", stiffness: 450, damping: 25 } }}
-          whileTap={{ scale: 0.97 }}
-          onClick={onClick}
-          className={cn(
-            "group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border px-3.5 py-3 text-xs font-semibold backdrop-blur-md transition-colors duration-200 select-none",
-            accent
-          )}
+      {DOMAIN_TILES.map(({ id, title, icon: Icon, graphic: Graphic, badgeCls, drillKind, getPeek }) => (
+        <FacetCard
+          key={id}
+          depth={1}
+          interactive="none"
+          onClick={() => {
+            soundEffects.press();
+            if (onNavigate) {
+              onNavigate(id);
+            } else if (onOpenDrill) {
+              onOpenDrill(drillKind);
+            }
+          }}
+          className="group relative flex cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/60 p-3 shadow-xs backdrop-blur-md transition-all duration-150 select-none hover:border-border hover:bg-card/90 active:scale-[0.98] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
         >
-          {/* Rescaled Ambient Background Graphic & Glow */}
+          {/* Subtle Radial-Masked Architectural Watermark */}
           <Graphic />
 
-          {/* Left: Icon + Title + Telemetry Peek */}
+          {/* Left: Themed Icon Badge + Text */}
           <div className="relative z-10 flex min-w-0 items-center gap-3">
-            <div className="border-border/60 bg-card/60 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-2xs transition-transform duration-200 group-hover:scale-105 dark:border-white/12 dark:bg-white/5">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-transform duration-150 group-hover:scale-105",
+                badgeCls
+              )}
+            >
               <Icon className="h-4 w-4 shrink-0" />
             </div>
             <div className="flex min-w-0 flex-col gap-0.5 text-left">
@@ -204,14 +221,14 @@ const DomainActionTiles = React.memo(function DomainActionTiles({
                 {title}
               </span>
               <span className="text-muted-foreground truncate text-[11px] leading-tight font-medium tracking-tight">
-                {peek}
+                {getPeek(country)}
               </span>
             </div>
           </div>
 
           {/* Right: Arrow indicator */}
-          <ArrowUpRight className="relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-        </motion.button>
+          <ArrowUpRight className="text-muted-foreground group-hover:text-foreground relative z-10 h-3.5 w-3.5 shrink-0 opacity-60 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+        </FacetCard>
       ))}
     </div>
   );
@@ -459,7 +476,10 @@ function RecordFeed({
                   "group cursor-pointer rounded-xl border border-transparent p-2.5 transition-all duration-200 select-none",
                   isExpanded ? "border-border/60 bg-muted/20 my-1.5 shadow-sm" : "hover:bg-muted/10"
                 )}
-                onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
+                onClick={() => {
+                  soundEffects.droplet();
+                  setExpandedId((prev) => (prev === item.id ? null : item.id));
+                }}
               >
                 <div className="flex items-start gap-3">
                   <span
@@ -668,9 +688,6 @@ export function ExecutiveHomeComponent({
         onOpenIntent={onOpenIntent}
       />
 
-      {/* Country Actions grid */}
-      <DomainActionTiles onOpenDrill={onOpenDrill} />
-
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Main Column: Pulse & Agenda Widget + Recent Activity Feed */}
         <div className="space-y-5 lg:col-span-2">
@@ -683,7 +700,7 @@ export function ExecutiveHomeComponent({
           />
 
           {/* Main Feed */}
-          <FacetCard depth={1} className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} interactive="none" className="bg-card/30 flex flex-col gap-3 p-4 backdrop-blur-md">
             <h4 className="text-muted-foreground text-xs font-bold tracking-widest uppercase">
               Recent Activity - National log
             </h4>
@@ -693,10 +710,17 @@ export function ExecutiveHomeComponent({
 
         {/* Rail */}
         <aside className="space-y-5">
+          {/* 1. National Standing & Vitality Rings */}
+          <StandingBands countryId={countryId} />
+
+          {/* 2. Executive CivCap Throughput & Trigger */}
           {canCommit ? (
             <button
               type="button"
-              onClick={() => onDeclare()}
+              onClick={() => {
+                soundEffects.bloom();
+                onDeclare();
+              }}
               className="group border-border/50 bg-card/40 hover:bg-card/70 text-foreground relative flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border p-3 text-sm font-bold shadow-xs backdrop-blur-md transition-all duration-200 hover:border-amber-500/40 hover:shadow-md active:scale-[0.98]"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all group-hover:scale-105 group-hover:bg-amber-500/20 dark:text-amber-400">
@@ -744,7 +768,7 @@ export function ExecutiveHomeComponent({
             </Tooltip>
           )}
 
-          <StandingBands countryId={countryId} />
+          {/* 3. Interactive Territory Map Canvas */}
           <TerritoryMapWidget countryId={countryId} />
         </aside>
       </div>
@@ -762,7 +786,7 @@ const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
   return (
     <FacetCard
       depth={1}
-      interactive="hover"
+      interactive="none"
       className="group/map border-border/80 relative overflow-hidden rounded-2xl p-0 shadow-lg backdrop-blur-xl dark:border-white/10"
     >
       {/* Interactive Map Canvas (Full Bleed Edge-to-Edge) */}

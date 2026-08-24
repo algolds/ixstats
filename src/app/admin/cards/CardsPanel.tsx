@@ -13,38 +13,13 @@ import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { FacetContainer, FacetCard, FacetNavigation } from "~/components/ui/facet-container";
+import { AdminHeader } from "../_components/AdminHeader";
 import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";
 import { CardSettingsAdmin, type SettingsSubtab } from "./CardSettingsAdmin";
 import { CardDesignerStudio } from "~/components/cards/designer";
 
 type AdminTab = "overview" | "designer" | "explorer" | "imports" | "settings";
-
-function _getStatusColor(status: string) {
-  switch (status) {
-    case "COMPLETED":
-    case "SUCCESS":
-      return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30";
-    case "IN_PROGRESS":
-      return "text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30";
-    case "PAUSED":
-      return "text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30";
-    case "FAILED":
-      return "text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30";
-    default:
-      return "text-muted-foreground bg-muted border border-border";
-  }
-}
-
-function _formatDuration(ms: number | null) {
-  if (!ms) return "N/A";
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-  return `${seconds}s`;
-}
 
 export default function CardAdminDashboardPage() {
   const _notify = useNotify();
@@ -147,25 +122,16 @@ export default function CardAdminDashboardPage() {
   }, [unifiedLogsData?.logs]);
 
   return (
-    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="space-y-6">
+      <AdminHeader
+        icon={Database}
+        title="Cards Administration"
+        description="Comprehensive card administration suite — overview metrics, real-time library explorer, NationStates & wiki batch pipelines, card designer, and economic policies."
+      />
+
+      <div className="space-y-6">
         {/* ─── Facet Navigation Top Header ─────────────────────────── */}
-        <FacetNavigation className="border-border bg-card/80 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-2xl">
-          {/* Header Title Row */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="border-primary/30 bg-primary/10 rounded-2xl border p-3.5 shadow-sm backdrop-blur-md">
-                <Database className="text-primary h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-foreground text-2xl font-extrabold tracking-tight md:text-3xl">
-                    Cards Administration
-                  </h1>
-                </div>
-              </div>
-            </div>
-          </div>
+        <FacetNavigation className="border-border/30 bg-card/25 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-md">
 
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
@@ -400,30 +366,30 @@ export default function CardAdminDashboardPage() {
                   <select
                     value={logCategoryFilter}
                     onChange={(e) => setLogCategoryFilter(e.target.value as any)}
-                    className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+                    className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
                   >
-                    <option value="all" className="bg-card text-card-foreground">
+                    <option value="all" className="bg-background text-foreground">
                       All Logs ({unifiedLogsData?.stats.all ?? 0})
                     </option>
-                    <option value="imports" className="bg-card text-card-foreground">
+                    <option value="imports" className="bg-background text-foreground">
                       Imports & Syncs ({unifiedLogsData?.stats.imports ?? 0})
                     </option>
-                    <option value="designer" className="bg-card text-card-foreground">
+                    <option value="designer" className="bg-background text-foreground">
                       Card Designer ({unifiedLogsData?.stats.designer ?? 0})
                     </option>
-                    <option value="lore_batch" className="bg-card text-card-foreground">
+                    <option value="lore_batch" className="bg-background text-foreground">
                       Lore Batch Studio ({unifiedLogsData?.stats.lore_batch ?? 0})
                     </option>
-                    <option value="explorer" className="bg-card text-card-foreground">
+                    <option value="explorer" className="bg-background text-foreground">
                       Card Explorer & Takedowns ({unifiedLogsData?.stats.explorer ?? 0})
                     </option>
-                    <option value="settings" className="bg-card text-card-foreground">
+                    <option value="settings" className="bg-background text-foreground">
                       Settings & Valuations ({unifiedLogsData?.stats.settings ?? 0})
                     </option>
-                    <option value="duplicates" className="bg-card text-card-foreground">
+                    <option value="duplicates" className="bg-background text-foreground">
                       Duplicate Purges ({unifiedLogsData?.stats.duplicates ?? 0})
                     </option>
-                    <option value="admin" className="bg-card text-card-foreground">
+                    <option value="admin" className="bg-background text-foreground">
                       Admin Audit Trail ({unifiedLogsData?.stats.admin ?? 0})
                     </option>
                   </select>
@@ -432,7 +398,7 @@ export default function CardAdminDashboardPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => void refetchUnifiedLogs()}
-                    className="border-border h-8.5 rounded-xl border text-xs shadow-xs transition-all active:scale-95"
+                    className="border-border/40 h-9 rounded-xl border text-xs shadow-xs transition-all active:scale-[0.98]"
                   >
                     <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
                   </Button>

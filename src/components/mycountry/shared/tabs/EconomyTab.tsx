@@ -105,7 +105,7 @@ export function EconomyTab({
                     economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
@@ -169,7 +169,7 @@ export function EconomyTab({
                     fiscal: v.fiscal === "balance" ? "revenue" : "balance",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
@@ -217,7 +217,7 @@ export function EconomyTab({
                     trade: v.trade === "imports" ? "exports" : "imports",
                   }))
                 }
-                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
+                className="flex h-24 cursor-pointer flex-col justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3 text-left backdrop-blur-md transition-[transform,opacity,border-color,background-color] duration-150 ease-out hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 <p className="text-muted-foreground/80 text-[9px] font-extrabold tracking-wider uppercase">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}

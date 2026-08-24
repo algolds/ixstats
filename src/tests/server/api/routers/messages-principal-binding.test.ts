@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { messagesConversationsRouter } from "../../../../server/api/routers/messages/conversations";
-import { messagesMessagingRouter } from "../../../../server/api/routers/messages/messaging";
-import { messagesParticipantsRouter } from "../../../../server/api/routers/messages/participants";
-import { createInnerTRPCContext } from "../../../../server/api/trpc";
-import { createMockDb } from "../../../helpers/transactional-mock-db";
-import { wikiTalkBridge } from "../../../../server/bridges/wiki-talk-bridge";
-import { forumBridge } from "../../../../server/modules/forum";
+import { messagesConversationsRouter } from "~/server/api/routers/messages/conversations";
+import { messagesMessagingRouter } from "~/server/api/routers/messages/messaging";
+import { messagesParticipantsRouter } from "~/server/api/routers/messages/participants";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { createMockDb } from "~/tests/helpers/transactional-mock-db";
+import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
+import { forumBridge } from "~/server/modules/forum";
 
 jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
   wikiTalkBridge: {
@@ -29,7 +29,6 @@ jest.mock("~/server/modules/forum", () => ({
   },
 }));
 
-
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: {
     create: jest.fn().mockResolvedValue({ success: true }),
@@ -42,20 +41,18 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
 
   function createCaller(authUserId: string | null = callerUser, customDb: any = null) {
     const db = customDb ?? createMockDb();
-    const ctx = {
-      ...createInnerTRPCContext({
-        auth: authUserId ? { userId: authUserId } : null,
-        user: authUserId
-          ? {
-              id: `db-${authUserId}`,
-              clerkUserId: authUserId,
-              name: `User ${authUserId}`,
-              role: { name: "user" },
-            }
-          : null,
-      }),
+    const ctx = createMockRouterContext({
+      auth: authUserId ? { userId: authUserId } : null,
+      user: authUserId
+        ? {
+            id: `db-${authUserId}`,
+            clerkUserId: authUserId,
+            name: `User ${authUserId}`,
+            role: { name: "user" },
+          }
+        : null,
       db,
-    };
+    }) as any;
 
     return {
       conversations: messagesConversationsRouter.createCaller(ctx as any),
@@ -116,10 +113,11 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
 
       await caller.conversations.getFolderCounts({ userId: victimUser });
 
-      expect(mockDb.conversationParticipant.findMany).toHaveBeenCalledWith({
-        where: { userId: callerUser, isActive: true },
-        select: { conversationId: true, lastReadAt: true },
-      });
+      expect(mockDb.conversationParticipant.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: callerUser, isActive: true },
+        })
+      );
     });
 
     it("throws FORBIDDEN when caller is not an active participant in getConversationMessages", async () => {

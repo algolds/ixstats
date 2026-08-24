@@ -1,51 +1,55 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-
 // Mock env
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 
-// Mock DB cleanly using inline hoisted function returning mocks
-const mockFindUnique = jest.fn();
-const mockFindMany = jest.fn();
-const mockCount = jest.fn();
-const mockCreate = jest.fn();
-const mockUpdate = jest.fn();
-const mockRevisionFindMany = jest.fn();
-const mockRevisionCreate = jest.fn();
-const mockChargeFindMany = jest.fn();
-const mockChargeFindUnique = jest.fn();
-const mockChargeCount = jest.fn();
-const mockLogCreate = jest.fn();
+const mockDb = {
+  heraldryAchievement: {
+    findUnique: jest.fn() as any,
+    findMany: jest.fn() as any,
+    count: jest.fn() as any,
+    create: jest.fn() as any,
+    update: jest.fn() as any,
+  },
+  heraldryRevision: {
+    findMany: jest.fn() as any,
+    create: jest.fn() as any,
+  },
+  heraldryCharge: {
+    findMany: jest.fn() as any,
+    findUnique: jest.fn() as any,
+    count: jest.fn() as any,
+  },
+  userActionLog: {
+    create: jest.fn() as any,
+  },
+};
 
 jest.mock("~/server/db", () => ({
-  db: {
-    heraldryAchievement: {
-      findUnique: mockFindUnique,
-      findMany: mockFindMany,
-      count: mockCount,
-      create: mockCreate,
-      update: mockUpdate,
-    },
-    heraldryRevision: {
-      findMany: mockRevisionFindMany,
-      create: mockRevisionCreate,
-    },
-    heraldryCharge: {
-      findMany: mockChargeFindMany,
-      findUnique: mockChargeFindUnique,
-      count: mockChargeCount,
-    },
-    userActionLog: {
-      create: mockLogCreate,
-    },
-  },
+  __esModule: true,
+  db: mockDb,
 }));
 
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { heraldryRouter } from "~/server/api/routers/heraldry";
 import { db } from "~/server/db";
 
+const mockAchievementFindUnique = mockDb.heraldryAchievement.findUnique;
+const mockAchievementFindMany = mockDb.heraldryAchievement.findMany;
+const mockAchievementCount = mockDb.heraldryAchievement.count;
+const mockAchievementCreate = mockDb.heraldryAchievement.create;
+const mockAchievementUpdate = mockDb.heraldryAchievement.update;
+
+const mockRevisionFindMany = mockDb.heraldryRevision.findMany;
+const mockRevisionCreate = mockDb.heraldryRevision.create;
+
+const mockChargeFindMany = mockDb.heraldryCharge.findMany;
+const mockChargeFindUnique = mockDb.heraldryCharge.findUnique;
+const mockChargeCount = mockDb.heraldryCharge.count;
+
+const mockActionLogCreate = mockDb.userActionLog.create;
+
 const baseContext = {
-  db,
+  db: mockDb,
   user: { clerkUserId: "user_1", countryId: "country_1" },
   auth: { userId: "user_1" },
 } as any;
@@ -68,8 +72,8 @@ describe("heraldry tRPC Router", () => {
     const mockCharges = [
       { id: "star", name: "Star", svgData: "<svg></svg>", category: "COMMON", source: "SYSTEM" },
     ];
-    (mockChargeFindMany as any).mockResolvedValue(mockCharges);
-    (mockChargeCount as any).mockResolvedValue(1);
+    mockChargeFindMany.mockResolvedValue(mockCharges);
+    mockChargeCount.mockResolvedValue(1);
 
     const caller = createCallerFactory(heraldryRouter)(baseContext);
     const result = await caller.getChargeLibrary({ search: "star" });
@@ -91,7 +95,7 @@ describe("heraldry tRPC Router", () => {
       },
     };
 
-    (mockCreate as any).mockResolvedValue({
+    mockAchievementCreate.mockResolvedValue({
       id: "ach_1",
       title: "New Achievement",
       subjectType: "CHARACTER",
@@ -100,6 +104,7 @@ describe("heraldry tRPC Router", () => {
       generatedBlazon: "Or, a plain field",
       ownerId: "user_1",
     });
+    mockRevisionCreate.mockResolvedValue({ id: "rev_1" });
 
     const caller = createCallerFactory(heraldryRouter)(baseContext);
     const result = await caller.saveAchievement({
@@ -110,6 +115,6 @@ describe("heraldry tRPC Router", () => {
     });
 
     expect(result.id).toBe("ach_1");
-    expect(mockCreate).toHaveBeenCalled();
+    expect(mockAchievementCreate).toHaveBeenCalled();
   });
 });

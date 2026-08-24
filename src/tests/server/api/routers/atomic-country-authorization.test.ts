@@ -1,13 +1,13 @@
-import { atomicGovernmentRouter } from "../../../../server/api/routers/atomicGovernment";
-import { atomicEconomicRouter } from "../../../../server/api/routers/atomicEconomic";
-import { atomicTaxRouter } from "../../../../server/api/routers/atomicTax";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { atomicGovernmentRouter } from "~/server/api/routers/atomicGovernment";
+import { atomicEconomicRouter } from "~/server/api/routers/atomicEconomic";
+import { atomicTaxRouter } from "~/server/api/routers/atomicTax";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 149: Atomic Routers Country Authorization", () => {
   const callerCountryId = "country_caller";
   const foreignCountryId = "country_foreign";
 
-  function createTestCtx(overrides?: { userId?: string; countryId?: string; role?: string }) {
+  function createTestCtx(overrides?: { userId?: string; countryId?: string; role?: string }): any {
     const userId = overrides?.userId ?? "user_caller";
     const countryId = overrides?.countryId ?? callerCountryId;
     const role = overrides?.role ?? "member";
@@ -18,11 +18,11 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       { id: "gov_comp_foreign", countryId: foreignCountryId, componentType: "SUPREME_COURT" },
     ];
     const economicComponents = [
-      { id: "econ_comp_1", countryId: callerCountryId, componentType: "MARKET_ECONOMY" },
+      { id: "econ_comp_1", countryId: callerCountryId, componentType: "FREE_MARKET_SYSTEM" },
       { id: "econ_comp_foreign", countryId: foreignCountryId, componentType: "PLANNED_ECONOMY" },
     ];
     const taxComponents = [
-      { id: "tax_comp_1", countryId: callerCountryId, componentType: "INCOME_TAX" },
+      { id: "tax_comp_1", countryId: callerCountryId, componentType: "PROGRESSIVE_TAX" },
       { id: "tax_comp_foreign", countryId: foreignCountryId, componentType: "CORPORATE_TAX" },
     ];
     const fiscalPolicies = [
@@ -30,7 +30,10 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       { id: "policy_foreign", countryId: foreignCountryId, name: "Austerity" },
     ];
 
-    const mockDb = {
+    const mockDb: any = {
+      $transaction: jest.fn(async (cb: any) =>
+        typeof cb === "function" ? cb(mockDb) : Promise.all(cb)
+      ),
       user: {
         findUnique: jest.fn().mockImplementation(async ({ where }) => {
           if (where.clerkUserId === userId) {
@@ -104,7 +107,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
         role: { name: role },
       },
       db: mockDb,
-    });
+    }) as any;
   }
 
   describe("atomicGovernmentRouter", () => {
@@ -114,7 +117,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
 
       const result = await caller.createComponent({
         countryId: callerCountryId,
-        componentType: "SUPREME_COURT" as any,
+        componentType: "DEMOCRATIC_PROCESS" as any,
         effectivenessScore: 80,
       });
 
@@ -128,7 +131,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.createComponent({
           countryId: foreignCountryId,
-          componentType: "CENTRAL_BANK" as any,
+          componentType: "DEMOCRATIC_PROCESS" as any,
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -215,7 +218,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
 
       const result = await caller.createComponent({
         countryId: callerCountryId,
-        componentType: "FREE_MARKET" as any,
+        componentType: "FREE_MARKET_SYSTEM" as any,
       });
 
       expect(result.countryId).toBe(callerCountryId);
@@ -228,7 +231,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.createComponent({
           countryId: foreignCountryId,
-          componentType: "FREE_MARKET" as any,
+          componentType: "FREE_MARKET_SYSTEM" as any,
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -252,7 +255,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.bulkUpdate({
           countryId: foreignCountryId,
-          components: [{ componentType: "MARKET_ECONOMY" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
+          components: [{ componentType: "FREE_MARKET_SYSTEM" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -265,7 +268,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
 
       const result = await caller.createComponent({
         countryId: callerCountryId,
-        componentType: "PROGRESSIVE_INCOME" as any,
+        componentType: "PROGRESSIVE_TAX" as any,
       });
 
       expect(result.countryId).toBe(callerCountryId);
@@ -278,7 +281,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.createComponent({
           countryId: foreignCountryId,
-          componentType: "PROGRESSIVE_INCOME" as any,
+          componentType: "PROGRESSIVE_TAX" as any,
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -302,7 +305,7 @@ describe("Plan 149: Atomic Routers Country Authorization", () => {
       await expect(
         caller.bulkUpdate({
           countryId: foreignCountryId,
-          components: [{ componentType: "INCOME_TAX" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
+          components: [{ componentType: "PROGRESSIVE_TAX" as any, effectivenessScore: 50, isActive: true, implementationCost: 0, maintenanceCost: 0, requiredCapacity: 50 }],
         })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });

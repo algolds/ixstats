@@ -34,6 +34,7 @@ import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft/calendar";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 interface AgendaEvent {
   id: string;
@@ -744,6 +745,7 @@ function ExecutiveAgendaComponent({
               <button
                 type="button"
                 onClick={() => {
+                  soundEffects.bloom();
                   const goal = selectedEvent.directiveGoal;
                   setSelectedEvent(null);
                   onIssueDirective?.(goal);
@@ -759,6 +761,7 @@ function ExecutiveAgendaComponent({
                 <button
                   type="button"
                   onClick={() => {
+                    soundEffects.press();
                     const drill = selectedEvent.drillKind!;
                     setSelectedEvent(null);
                     onOpenDrill?.(drill);
@@ -776,6 +779,7 @@ function ExecutiveAgendaComponent({
                 <button
                   type="button"
                   onClick={() => {
+                    soundEffects.press();
                     const id = selectedEvent.intentId!;
                     setSelectedEvent(null);
                     onOpenIntent?.(id);

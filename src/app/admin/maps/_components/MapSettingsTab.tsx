@@ -32,15 +32,15 @@ export function MapSettingsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
         {SUB_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSubTab(tab.id)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold active:scale-[0.98] transition-all ${
               subTab === tab.id
-                ? "bg-blue-500/20 text-blue-400"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground/80"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -57,38 +57,36 @@ export function MapSettingsTab() {
 
 function MapStyleSettingsPanel() {
   return (
-    <div className="space-y-6">
-      <div className="border-border bg-card rounded-xl border p-6">
-        <div className="flex items-start gap-4">
-          <div className="rounded-lg bg-blue-500/10 p-3 text-blue-500">
-            <Palette className="h-6 w-6" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <h3 className="text-foreground text-lg font-semibold">Visual Style & Theme Editor</h3>
-            <p className="text-muted-foreground max-w-2xl text-sm">
-              IxStats uses the MapLibre GL style specification to define visual layers, fonts,
-              colors, and layout configurations. The embedded Maputnik style editor allows you to
-              edit standard, dark, and paper styles visually and preview them with live PostGIS
-              geographic boundaries.
-            </p>
-          </div>
+    <div className="rounded-2xl border border-border/30 bg-card/25 p-5 backdrop-blur-md shadow-xs space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="rounded-xl bg-blue-500/10 p-2.5 text-blue-400">
+          <Palette className="h-5 w-5" />
         </div>
+        <div className="flex-1 space-y-1">
+          <h3 className="text-xs font-bold text-foreground">Visual Style & Theme Editor</h3>
+          <p className="text-muted-foreground max-w-2xl text-[11px] leading-relaxed">
+            Atlas uses the MapLibre GL style specification to define visual layers, fonts,
+            colors, and layout configurations. The embedded Maputnik style editor allows you to
+            edit standard, dark, and paper styles visually and preview them with live PostGIS
+            geographic boundaries.
+          </p>
+        </div>
+      </div>
 
-        <div className="border-border/60 mt-6 flex items-center justify-between border-t pt-6">
-          <div className="space-y-1">
-            <div className="text-foreground text-sm font-medium">Launch Style Editor</div>
-            <div className="text-muted-foreground text-xs">
-              Visual editing is done in a full-screen environment.
-            </div>
+      <div className="border-border/20 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-foreground text-xs font-semibold">Launch Style Editor</div>
+          <div className="text-muted-foreground text-[11px]">
+            Visual editing is done in a full-screen canvas environment.
           </div>
-          <Link
-            href="/admin/maps/style-editor"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-          >
-            <span>Open Style Editor</span>
-            <ExternalLink className="h-4 w-4" />
-          </Link>
         </div>
+        <Link
+          href="/admin/maps/style-editor"
+          className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-semibold text-primary-foreground active:scale-[0.98] transition-transform"
+        >
+          <span>Open Style Editor</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );

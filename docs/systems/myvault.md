@@ -1,10 +1,11 @@
-# MyVault System
+# 💎 Vault — Metagame Incentives, Social Economy & Collectibles
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — IxVault v2  
-**Hierarchy:** Top-level App **IxVault** (`IXVAULT_VERSION = 2`), encompassing MyVault, IxCards, IxCredits, crafting, trading, and marketplace.
+**Parent App Suite:** Vault (`VAULT_VERSION = 2`, dev codename `IxVault`)  
+**Subsystems:** Metagame Progression, 3D Cards & Showcase, Booster Pack Gacha, Atomic Credit Ledger, Marketplace & Trading, Achievements (`ACHIEVEMENTS_VERSION = 2`)  
+**Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
+**Routes:** `/vault`, `/vault/packs`, `/vault/market`, `/achievements` | **Status:** 📀 Gold Master (100% Ready)  
 
-MyVault is the central economy hub where players earn, manage, and spend IxCredits (IxC) and manage their trading card collections.
+Vault is the central incentive, social currency, and metagame reward platform for IxStates. It rewards active governance, wiki authorship, and community collaboration with daily gross dividends, holographic collectible card packs, atomic ledger transactions, peer marketplace trading, and trophy progression racks.
 
 ---
 

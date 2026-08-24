@@ -1,70 +1,10 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/worldEvents.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 
 export const adminWorldEventsRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
   /**
    * Get all diplomatic options (with optional filtering)
    */
@@ -315,10 +255,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
       }
     }),
 
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
   /**
    * Get upcoming events across all systems for the timeline widget.
    * Aggregates StorytellerEffects (future), Elections (upcoming), Policies (expiring), and CrisisEvents.
@@ -459,10 +395,6 @@ export const adminWorldEventsRouter = createTRPCRouter({
         },
       };
     }),
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
 
   getWorldEvents: adminProcedure
     .input(

@@ -1,13 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Group as Users, StatUp as TrendingUp, MapPin, Globe, Camera, Check, MediaImage as ImageIcon, WhiteFlag as Flag, Sparks as Sparkles, Palette } from "iconoir-react";
+import {
+  Group as Users,
+  GraphUp as TrendingUp,
+  Pin as MapPin,
+  Globe,
+  Camera,
+  Check,
+  MediaImage as ImageIcon,
+  WhiteFlag as Flag,
+  Spark as Sparkles,
+  Palette,
+  User,
+  Shield,
+} from "iconoir-react";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
 import { cn } from "~/lib/utils";
@@ -29,6 +43,13 @@ interface CountryHeaderProps {
     adjustedGdpGrowth: number | null | undefined;
     continent: string | null | undefined;
   };
+  delegate?: {
+    username?: string | null;
+    roleName?: string | null;
+    forumAvatarUrl?: string | null;
+    isStaff?: boolean;
+    membershipTier?: string | null;
+  } | null;
   flagUrl: string | null | undefined;
   flagLoading: boolean;
   unsplashImageUrl: string | undefined;
@@ -102,6 +123,7 @@ function formatTotalGdpVerbose(gdp: number): string {
 
 export function CountryHeader({
   country,
+  delegate,
   flagUrl,
   flagLoading,
   unsplashImageUrl,
@@ -157,13 +179,13 @@ export function CountryHeader({
       <FacetCard
         depth={1}
         interactive="none"
-        className="relative overflow-hidden rounded-none border-0 border-b border-white/10 shadow-lg"
+        className="relative overflow-hidden rounded-3xl border border-black/10 dark:border-white/10 shadow-xl"
         style={flagThemeCSS}
       >
-        {/* Banner image area */}
+        {/* Banner image & glass wash area */}
         <div
           className={cn(
-            "relative h-64 w-full overflow-hidden transition-all duration-300 md:h-80 lg:h-96",
+            "relative w-full overflow-hidden transition-all duration-300 py-6 px-5 md:px-8",
             !hasImage && "from-primary/10 via-muted/30 to-accent/10 bg-gradient-to-br"
           )}
         >
@@ -176,36 +198,27 @@ export function CountryHeader({
                 backgroundSize: bannerMode === "flag" ? "100% auto" : "cover",
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/85" />
             </div>
           ) : (
-            <div className="to-background/80 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
+            <div className="to-background/90 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
           )}
 
           {/* Flag-derived ambient glow blobs */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-[var(--flag-glow-primary)] opacity-25 blur-3xl" />
-            <div className="absolute -right-16 -bottom-16 h-72 w-72 rounded-full bg-[var(--flag-glow-secondary)] opacity-20 blur-3xl" />
+            <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-[var(--flag-glow-primary)] opacity-30 blur-3xl" />
+            <div className="absolute -right-16 -bottom-16 h-72 w-72 rounded-full bg-[var(--flag-glow-secondary)] opacity-25 blur-3xl" />
           </div>
 
-          {/* Flag-tinted top light wash */}
-          <div
-            className="pointer-events-none absolute inset-0 mix-blend-multiply"
-            style={{
-              background: `linear-gradient(to bottom, ${flagColors.primary}26 0%, transparent 55%)`,
-            }}
-          />
+          {/* Apple Frosted Glass Scrim */}
+          <div className="absolute inset-0 border-b border-white/10 bg-black/20 backdrop-blur-md" />
 
-          {/* Apple Design Frosted glass bar behind content */}
-          {hasImage && (
-            <div className="absolute inset-x-0 bottom-0 h-32 border-t border-white/10 bg-black/40 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] saturate-180 backdrop-blur-xl md:h-36" />
-          )}
-
-          {/* Country Header Content */}
-          <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-8">
-            <div className="flex items-center gap-4 md:gap-6">
-              {/* Flag (state seal emblem) */}
-              <div className="h-14 w-14 shrink-0 transition-transform duration-200 hover:scale-105 md:h-16 md:w-16 lg:h-20 lg:w-20">
+          {/* Bento Masthead Grid Content */}
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            {/* Left: Sovereign Emblem & Statecraft Identity */}
+            <div className="flex items-center gap-5 sm:gap-6 min-w-0">
+              {/* Sovereign State Flag Seal */}
+              <div className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 transition-transform duration-200 hover:scale-105">
                 <UnifiedCountryFlag
                   countryName={country.name}
                   size="xl"
@@ -215,18 +228,18 @@ export function CountryHeader({
                   rounded={true}
                   shadow={true}
                   border={true}
-                  className="h-full w-full"
+                  className="h-full w-full shadow-2xl ring-2 ring-white/20"
                 />
               </div>
 
-              {/* Country Name and Basic Info */}
+              {/* Country Title & Sovereign Details */}
               <div className="min-w-0 flex-1">
-                <div className="mb-1 flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <h1
                     className={cn(
-                      "text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl",
+                      "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight",
                       hasImage
-                        ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
+                        ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.8),0_1px_4px_rgba(0,0,0,0.6)]"
                         : "text-foreground"
                     )}
                   >
@@ -234,28 +247,45 @@ export function CountryHeader({
                   </h1>
                   <FloatingRibbonRack />
                 </div>
-                <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
+
+                {/* Statecraft & Realm Context Subtext */}
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-300">
+                  {country.continent && (
+                    <span className="flex items-center gap-1 text-slate-200">
+                      <Globe className="h-3.5 w-3.5 text-blue-400" />
+                      <span>{country.continent} Realm</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Macro Telemetry Badges */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-2.5">
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-transform duration-100 ease-out active:scale-[0.96]",
+                      "cursor-pointer font-bold transition-all duration-150 ease-out active:scale-[0.96] rounded-xl px-2.5 py-1 select-none",
                       microLabel
                     )}
                     style={badgeTint("primary", hasImage)}
                     onClick={onTogglePopulationDisplay}
+                    data-cuelume-press="soft"
+                    title="Toggle population view"
                   >
                     <Users className="mr-1.5 h-3 w-3" />
                     {showFullPopulation
                       ? Math.round(country.currentPopulation).toLocaleString()
-                      : formatPopulation(country.currentPopulation)}
+                      : formatPopulation(country.currentPopulation)}{" "}
+                    Pop
                   </Badge>
 
                   <Badge
                     className={cn(
-                      "cursor-pointer font-semibold transition-transform duration-100 ease-out active:scale-[0.96]",
+                      "cursor-pointer font-bold transition-all duration-150 ease-out active:scale-[0.96] rounded-xl px-2.5 py-1 select-none",
                       microLabel
                     )}
                     style={badgeTint("secondary", hasImage)}
                     onClick={onToggleGdpDisplay}
+                    data-cuelume-press="soft"
+                    title="Toggle GDP view"
                   >
                     <TrendingUp className="mr-1.5 h-3 w-3" />
                     {showGdpPerCapita
@@ -265,83 +295,121 @@ export function CountryHeader({
 
                   {country.landArea && (
                     <Badge
-                      className={cn("font-semibold", microLabel)}
+                      className={cn("font-bold rounded-xl px-2.5 py-1 select-none", microLabel)}
                       style={badgeTint("accent", hasImage)}
                     >
                       <MapPin className="mr-1.5 h-3 w-3" />
                       {Math.round(country.landArea).toLocaleString()} km²
                     </Badge>
                   )}
-
-                  {country.continent && (
-                    <Badge
-                      variant="outline"
-                      className={cn("font-semibold", microLabel)}
-                      style={badgeTint("accent", hasImage)}
-                    >
-                      <Globe className="mr-1 h-3 w-3" />
-                      {country.continent}
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>
+
+            {/* Right: Citizen Delegate Persona Bento */}
+            <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-black/40 p-3 backdrop-blur-xl shrink-0 self-start lg:self-center">
+              {delegate?.username ? (
+                <Link
+                  href={`/id/@${delegate.username}`}
+                  data-cuelume-press="soft"
+                  className="group flex items-center gap-3 rounded-xl p-1 -m-1 transition-all duration-150 hover:bg-white/10 active:scale-[0.98] cursor-pointer"
+                  title={`View @${delegate.username}'s Global IxnayID Passport`}
+                >
+                  {delegate.forumAvatarUrl ? (
+                    <img
+                      src={delegate.forumAvatarUrl}
+                      alt={delegate.username}
+                      className="h-10 w-10 rounded-xl border border-white/20 object-cover shadow-sm transition-transform duration-150 group-hover:scale-105"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-base font-black text-blue-400 border border-blue-500/30 transition-transform duration-150 group-hover:scale-105">
+                      {delegate.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black text-white group-hover:text-blue-300 transition-colors">
+                        @{delegate.username}
+                      </span>
+                      {delegate.isStaff && (
+                        <span className="rounded bg-orange-500/20 px-1.5 py-0.2 text-[9px] font-extrabold text-orange-400 border border-orange-500/30">
+                          STAFF
+                        </span>
+                      )}
+                    </div>
+                    {delegate.roleName ? (
+                      <p className="text-[10px] font-semibold text-purple-300">
+                        {delegate.roleName}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] font-medium text-slate-400 capitalize">
+                        {delegate.membershipTier ?? "Citizen"} Delegate
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2 px-1 text-xs text-slate-300">
+                  <User className="h-4 w-4 text-slate-400" />
+                  <span className="font-semibold">Sovereign Territory</span>
+                </div>
+              )}
+
+              {/* Banner Change Popover (Owner only) */}
+              {isOwnCountry && (
+                <div className="border-l border-white/10 pl-2">
+                  <Popover open={showBannerPicker} onOpenChange={setShowBannerPicker}>
+                    <PopoverTrigger
+                      className={cn(
+                        "inline-flex cursor-pointer items-center justify-center rounded-xl p-2 text-xs font-semibold shadow-md backdrop-blur-xl transition-all duration-100 active:scale-[0.94] text-white hover:bg-white/10"
+                      )}
+                      title="Customize Banner"
+                      data-cuelume-press="soft"
+                    >
+                      <Camera className="h-4 w-4" />
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      sideOffset={8}
+                      className="glass-off border-border z-[100011] w-72 origin-top-right rounded-2xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold tracking-wider uppercase">
+                          Banner Style
+                        </p>
+                        {bannerOptions.map((option) => {
+                          const Icon = option.icon;
+                          const isActive = bannerMode === option.mode;
+                          return (
+                            <button
+                              key={option.mode}
+                              type="button"
+                              onClick={() => handleModeSelect(option.mode)}
+                              className={cn(
+                                "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.98] cursor-pointer",
+                                isActive
+                                  ? "bg-primary/10 text-primary font-semibold"
+                                  : "text-foreground hover:bg-muted"
+                              )}
+                            >
+                              <Icon className="h-4 w-4 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium">{option.label}</p>
+                                <p className="text-muted-foreground text-xs">{option.description}</p>
+                              </div>
+                              {isActive && <Check className="text-primary h-4 w-4 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Banner Change Button (owner-only) */}
-        {isOwnCountry && (
-          <div className="absolute top-4 right-4 z-20">
-            <Popover open={showBannerPicker} onOpenChange={setShowBannerPicker}>
-              <PopoverTrigger
-                className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-xl transition-all duration-100 active:scale-[0.96]",
-                  hasImage
-                    ? "border border-white/25 bg-black/50 text-white hover:bg-black/70"
-                    : "border-border bg-background/80 text-foreground hover:bg-muted"
-                )}
-              >
-                <Camera className="h-3.5 w-3.5" />
-                <span className="hidden text-xs sm:inline">Change Banner</span>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                sideOffset={8}
-                className="glass-off border-border z-[100011] w-72 rounded-xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
-              >
-                <div className="space-y-1">
-                  <p className="text-muted-foreground px-2 py-1.5 text-[10px] font-extrabold tracking-wider uppercase">
-                    Banner Style
-                  </p>
-                  {bannerOptions.map((option) => {
-                    const Icon = option.icon;
-                    const isActive = bannerMode === option.mode;
-                    return (
-                      <button
-                        key={option.mode}
-                        type="button"
-                        onClick={() => handleModeSelect(option.mode)}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.98]",
-                          isActive
-                            ? "bg-primary/10 text-primary font-semibold"
-                            : "text-foreground hover:bg-muted"
-                        )}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">{option.label}</p>
-                          <p className="text-muted-foreground text-xs">{option.description}</p>
-                        </div>
-                        {isActive && <Check className="text-primary h-4 w-4 shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
       </FacetCard>
 
       {/* Media Search Modal for custom banner */}

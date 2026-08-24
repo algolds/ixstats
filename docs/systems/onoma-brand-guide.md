@@ -1,8 +1,8 @@
-# ⟨ONOMA⟩ Linguistic Engine Brand Guide
+# 🧪 ⟨ONOMA⟩ Linguistic Studio — Labs Brand Guide
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Onoma v4  
-**Hierarchy:** Core Feature System (`ONOMA_VERSION = 4` in Version Registry).
+**Parent Layer:** Labs (Experimental & Incubation Studio) (`ONOMA_VERSION = 4`)  
+**Primary Action:** `SYNTHESIZE` | **Domain Accent:** Imperial Violet (`#8B5CF6` / `--color-purple-500`)  
+**Route:** `/labs/onoma` | **Status:** 🧪 Labs Preview  
 
 ---
 

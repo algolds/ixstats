@@ -1,6 +1,6 @@
-import { TransactionalMockDatabase } from "../../../helpers/transactional-mock-db";
-import { unifiedAtomicRouter } from "../../../../server/api/routers/unifiedAtomic";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { TransactionalMockDatabase } from "~/tests/helpers/transactional-mock-db";
+import { unifiedAtomicRouter } from "~/server/api/routers/unifiedAtomic";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("atomic-components characterization contract", () => {
   const countryId = "test_country_atomic_123";
@@ -46,13 +46,13 @@ describe("atomic-components characterization contract", () => {
       const ctx = createMockRouterContext({
         user: { clerkUserId: "user_owner", countryId },
         db: {
-          atomicGovernmentComponent: { findMany: jest.fn().mockResolvedValue(mockGov) },
-          atomicEconomicComponent: { findMany: jest.fn().mockResolvedValue(mockEcon) },
-          atomicTaxComponent: { findMany: jest.fn().mockResolvedValue(mockTax) },
+          governmentComponent: { findMany: jest.fn().mockResolvedValue(mockGov) },
+          economicComponent: { findMany: jest.fn().mockResolvedValue(mockEcon) },
+          taxComponent: { findMany: jest.fn().mockResolvedValue(mockTax) },
         },
       });
 
-      const caller = unifiedAtomicRouter.createCaller(ctx);
+      const caller = unifiedAtomicRouter.createCaller(ctx as any);
       const result = await caller.getAll({ countryId });
 
       expect(result).toHaveProperty("government");

@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { securityStabilityRouter } from "~/server/api/routers/security/stability";
+import { newsGenerator } from "~/lib/diplomacy/news-generator";
+import { notificationAPI } from "~/lib/notifications/api";
 
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({
@@ -7,18 +10,11 @@ jest.mock("~/server/db", () => ({
   },
   isDatabaseReadOnly: false,
 }));
-jest.mock("~/lib/diplomacy/news-generator", () => ({
-  generateDiplomaticNews: jest.fn(),
-}));
-jest.mock("~/lib/notifications/api", () => ({
-  notificationAPI: { create: jest.fn() },
-}));
 
-import { securityStabilityRouter } from "~/server/api/routers/security/stability";
-import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
-import { notificationAPI } from "~/lib/notifications/api";
+const mockGenerateNews = jest.spyOn(newsGenerator, "generateDiplomaticNews").mockResolvedValue("post_1" as any);
+const mockNotifCreate = jest.spyOn(notificationAPI, "create").mockResolvedValue({ success: true } as any);
 
-type MockFn = jest.MockedFunction<any>;
+type MockFn = any;
 
 const mockDb = {
   user: { findUnique: jest.fn() as MockFn },
@@ -49,8 +45,8 @@ const resolvedEvent = {
 describe("securityStabilityRouter resolveSecurityEvent news", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (generateDiplomaticNews as MockFn).mockResolvedValue("post_1");
-    (notificationAPI.create as MockFn).mockResolvedValue(undefined);
+    mockGenerateNews.mockResolvedValue("post_1" as any);
+    mockNotifCreate.mockResolvedValue({ success: true } as any);
   });
 
   it("fires security_event_resolved news when resolving a security event", async () => {
@@ -66,8 +62,8 @@ describe("securityStabilityRouter resolveSecurityEvent news", () => {
 
     await caller.resolveSecurityEvent({ id: "event_1", resolutionNotes: "Order restored" });
 
-    expect(generateDiplomaticNews).toHaveBeenCalledTimes(1);
-    expect(generateDiplomaticNews).toHaveBeenCalledWith(
+    expect(mockGenerateNews).toHaveBeenCalledTimes(1);
+    expect(mockGenerateNews).toHaveBeenCalledWith(
       expect.anything(),
       "country_1",
       "security_event_resolved",

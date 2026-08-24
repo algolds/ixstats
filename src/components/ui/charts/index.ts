@@ -7,13 +7,6 @@ export { GlassChart, chartTheme } from "./GlassChart";
 // Recharts Integration
 export { GlassBarChart, GlassLineChart, GlassPieChart } from "./RechartsIntegration";
 
-export {
-  GlassNumberPicker,
-  GlassDial,
-  GlassToggle,
-  GlassSlider,
-} from "../interactive-controls";
-
 // Chart Type Definitions
 export type ChartTheme = "default" | "gold" | "blue" | "emerald" | "purple";
 export type ChartDepth = "base" | "elevated" | "modal";

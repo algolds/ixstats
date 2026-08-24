@@ -48,7 +48,7 @@
 
 ### Endpoints Moved from PUBLIC to PROTECTED
 1. `getCalculationFormulas` - Internal calculation formulas
-2. `getGlobalStats` - Global statistics for SDI interface
+2. `getGlobalStats` - Global statistics for administrative oversight
 3. `getNavigationSettings` - Navigation tab visibility settings
 
 ### Endpoints Moved from PUBLIC to ADMIN

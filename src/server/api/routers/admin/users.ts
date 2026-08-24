@@ -1,53 +1,11 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/users.ts
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/auth";
 import { TRPCError } from "@trpc/server";
-
-import { invalidateCache } from "~/lib/cache";
-import { globalCache } from "~/lib/cache";
+import { invalidateCache, globalCache } from "~/lib/cache";
 
 export const adminUsersRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
   // List all users and their claimed countries
   listUsersWithCountries: adminProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
@@ -238,26 +196,6 @@ export const adminUsersRouter = createTRPCRouter({
         throw new Error("Failed to update navigation settings");
       }
     }),
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
 
   // Invite user and pre-seed nation reservation in publicMetadata (Clerk waitlist integration)
   inviteUserToBypassWaitlist: adminProcedure

@@ -421,11 +421,11 @@ export function TestSuitePanel() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Type</Label>
+                  <Label className="text-xs">Type</Label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as ToastType)}
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -435,11 +435,11 @@ export function TestSuitePanel() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Priority</Label>
+                  <Label className="text-xs">Priority</Label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {PRIORITIES.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -450,11 +450,11 @@ export function TestSuitePanel() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Category</Label>
+                <Label className="text-xs">Category</Label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="border-border/60 bg-background text-foreground flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>

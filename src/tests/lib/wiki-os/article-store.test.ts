@@ -1,26 +1,34 @@
-// Tests the shadow read-through decision logic: fresh hit, stale refetch,
-// MediaWiki-down fallback, and page-deleted handling.
+import { db } from "~/server/db";
+import {
+  getArticleWikitextShadow,
+  recordArticleRevision,
+  getArticleHistoryShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
 
-const mockDb = {
-  wikiArticle: {
-    findUnique: jest.fn(),
-    upsert: jest.fn(),
-    delete: jest.fn(),
-    deleteMany: jest.fn(),
-  },
-  wikiRevision: {
-    create: jest.fn(),
-    findFirst: jest.fn(),
-    findMany: jest.fn(),
-  },
-};
 const mockGetArticleWikitext = jest.fn();
 const mockGetCurrentRevMeta = jest.fn();
 const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 const mockGetRecentChanges = jest.fn();
 
-jest.mock("~/server/db", () => ({ db: mockDb }));
+jest.mock("~/server/db", () => ({
+  db: {
+    wikiArticle: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    wikiRevision: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+    },
+  },
+}));
+
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
@@ -29,12 +37,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getRecentChanges: (...a: unknown[]) => mockGetRecentChanges(...a),
 }));
 
-import {
-  getArticleWikitextShadow,
-  recordArticleRevision,
-  getArticleHistoryShadow,
-} from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { syncWikiRecentChanges } from "~/server/cron/sync-wiki-recentchanges";
+const mockDb = db as any;
 
 const row = (overrides: Record<string, unknown> = {}) => ({
   id: "1",
@@ -49,6 +52,9 @@ const row = (overrides: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDb.wikiArticle.findFirst.mockImplementation((args: any) =>
+    mockDb.wikiArticle.findUnique(args)
+  );
   mockDb.wikiArticle.upsert.mockResolvedValue(row());
   mockDb.wikiArticle.delete.mockResolvedValue(undefined);
   mockDb.wikiArticle.deleteMany.mockResolvedValue(undefined);

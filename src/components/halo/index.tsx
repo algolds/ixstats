@@ -9,7 +9,7 @@ import {
   SIZE_PRESETS,
   DynamicIslandProvider,
   type SizePresets,
-} from "../ui/dynamic-island";
+} from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
@@ -32,7 +32,7 @@ export {
   HaloContainer,
   useHaloSize,
   HaloProvider,
-} from "../ui/dynamic-island";
+} from "./HaloPrimitives";
 
 // Re-export plugin system for page-level consumption
 export {

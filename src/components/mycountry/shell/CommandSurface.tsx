@@ -6,12 +6,13 @@ import { useTheme } from "~/context/theme-context";
 import { cn } from "~/lib/utils";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { api } from "~/trpc/react";
-import { CommandNavToggle, CommandRightPillNav, type CommandNavMode } from "./CommandNavToggle";
+import { UnifiedGlassCommandBar } from "./headers/UnifiedGlassCommandBar";
 import { ExecutiveHome } from "./ExecutiveHome";
 import { ExecutiveConsole } from "./ExecutiveConsole";
 import { DomainSurface } from "./DomainSurface";
 import { DrillSheets, type DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { DOMAIN_SECTIONS } from "./domain-meta";
+import type { CommandNavMode } from "./CommandNavToggle";
 
 export interface CommandSurfaceProps {
   section?: string;
@@ -30,8 +31,6 @@ function CommandSurfaceComponent({
   const [drill, setDrill] = useState<DrillSheetKind>(null);
   const [goal, setGoal] = useState("");
   const [toast, setToast] = useState<string | null>(null);
-
-  const navRef = useRef<HTMLDivElement>(null);
 
   // Sync mode with route section: set executive mode if on executive section, or reset to home when navigating to a specific domain surface
   useEffect(() => {
@@ -71,21 +70,14 @@ function CommandSurfaceComponent({
           : "max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
       )}
     >
-      {/* Top Mirrored Pill Bar */}
-      <div ref={navRef} className="flex items-center justify-between gap-3">
-        <CommandNavToggle
-          mode={mode}
-          activeSection={section}
-          onChangeMode={(m) => {
-            setMode(m);
-            if (m === "home" || m === "executive") {
-              onNavigate?.("overview");
-            }
-          }}
-          onNavigate={onNavigate}
-        />
-        <CommandRightPillNav country={country} />
-      </div>
+      {/* Permanent Unified Glass Command Bar */}
+      <UnifiedGlassCommandBar
+        mode={mode}
+        activeSection={section}
+        onChangeMode={setMode}
+        onNavigate={onNavigate}
+        onDeclare={() => declare()}
+      />
 
       {/* Main Surface Body */}
       {mode === "executive" ? (
@@ -102,7 +94,12 @@ function CommandSurfaceComponent({
           }}
         />
       ) : DOMAIN_SECTIONS.has(section) ? (
-        <DomainSurface countryId={countryId} section={section as any} onDeclare={declare} />
+        <DomainSurface
+          countryId={countryId}
+          section={section as any}
+          onDeclare={declare}
+          onNavigate={onNavigate}
+        />
       ) : (
         <ExecutiveHome
           countryId={countryId}

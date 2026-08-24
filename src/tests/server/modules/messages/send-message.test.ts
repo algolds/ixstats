@@ -1,4 +1,4 @@
-import { persistMessageTx } from "../../../../server/modules/messages/services/message-mutations";
+import { persistMessageTx } from "~/server/modules/messages/services/message-mutations";
 
 class MockMessagePrismaTxState {
   participants: any[] = [];

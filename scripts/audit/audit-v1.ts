@@ -518,7 +518,7 @@ async function auditUIComponents() {
   });
 
   // Theme system
-  const themes = ["MyCountry", "Global", "ECI", "SDI", "Defense"];
+  const themes = ["MyCountry", "Global", "ThinkPages", "Vault", "Forum", "Defense"];
   log({
     category: "UI Components",
     test: "Theme System",

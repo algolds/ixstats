@@ -1,6 +1,6 @@
-import { craftingRecipesRouter } from "../../../../server/api/routers/crafting/recipes";
-import { createCallerFactory } from "../../../../server/api/trpc";
-import { createMockRouterContext } from "../../../helpers/router-context";
+import { craftingRecipesRouter } from "~/server/api/routers/crafting/recipes";
+import { createCallerFactory } from "~/server/api/trpc";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("Plan 159: Crafting Recipes Query Batching", () => {
   const createCaller = createCallerFactory(craftingRecipesRouter);

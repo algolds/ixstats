@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ControlSlider as Sliders, Refresh as RefreshCw, FloppyDisk as Save, ShieldCheck, ShoppingBag, Gift, Clock, Sparks as Sparkles, Component as Layers, Trash as Trash2, MediaImage as Image } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
 
@@ -30,73 +31,57 @@ export function CardGeneralSettingsAdmin() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const isSaving = saveMutation.isPending;
+  const handleSave = () => {
+    saveMutation.mutate(form);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header card with action bar */}
-      <FacetCard
-        depth={2}
-        className="border-border bg-card/80 rounded-2xl border p-6 shadow-lg backdrop-blur-xl"
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="border-primary/30 bg-primary/10 rounded-xl border p-2.5 backdrop-blur-md">
-              <Sliders className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-foreground text-lg font-bold">
-                General System & Trading Policies
-              </h2>
-              <p className="text-muted-foreground text-xs">
-                Global platform-level switches, market tax rates, pack allowances, and player
-                minting rules
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void refetch()}
-              disabled={isLoading || isSaving}
-              className="border-border bg-card/80 text-foreground hover:bg-accent h-8 rounded-xl border text-xs transition-all active:scale-95"
-            >
-              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              Reset
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => saveMutation.mutate(form)}
-              disabled={isLoading || isSaving}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95"
-            >
-              {isSaving ? (
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Save className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Save System Settings
-            </Button>
-          </div>
+    <FacetContainer className="space-y-6">
+      {/* Header bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-foreground text-lg font-bold">General Card System Policies</h2>
+          <p className="text-muted-foreground text-xs font-medium">
+            Configure global marketplace controls, free pack allowances, drop rates, and lore permissions.
+          </p>
         </div>
-      </FacetCard>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void refetch()}
+            disabled={isLoading}
+            className="border-border/40 rounded-xl active:scale-[0.98]"
+          >
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            Reload
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saveMutation.isPending}
+            className="rounded-xl active:scale-[0.98]"
+          >
+            <Save className="mr-1.5 h-3.5 w-3.5" />
+            {saveMutation.isPending ? "Saving..." : "Save Policies"}
+          </Button>
+        </div>
+      </div>
 
-      {/* Grid of Setting Sections */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Marketplace & Trading Policies */}
         <FacetCard
           depth={1}
-          className="border-border bg-card/60 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
+          className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
         >
-          <div className="border-border/60 flex items-center gap-2.5 border-b pb-3">
+          <div className="border-border/40 flex items-center gap-2.5 border-b pb-3">
             <ShoppingBag className="h-4 w-4 text-emerald-500" />
-            <h3 className="text-foreground text-sm font-bold">Marketplace & Trading Policies</h3>
+            <h3 className="text-foreground text-sm font-bold">Marketplace & Trading</h3>
           </div>
 
           <div className="space-y-4">
             {/* Global Trading Toggle */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Global Trading & Auction House
@@ -105,18 +90,14 @@ export function CardGeneralSettingsAdmin() {
                   Master kill-switch for direct card trades and auction marketplace
                 </p>
               </div>
-              <select
-                value={form.tradingEnabled ?? 1}
-                onChange={(e) => handleChange("tradingEnabled", Number(e.target.value))}
-                className="border-border bg-card text-foreground h-8 rounded-lg border px-2 text-xs font-semibold focus:outline-none"
-              >
-                <option value={1}>Enabled</option>
-                <option value={0}>Disabled (Kill-Switch)</option>
-              </select>
+              <Switch
+                checked={(form.tradingEnabled ?? 1) === 1}
+                onCheckedChange={(checked) => handleChange("tradingEnabled", checked ? 1 : 0)}
+              />
             </div>
 
             {/* Auction House Rake / Fee % */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Marketplace Transaction Tax (House Rake)
@@ -133,7 +114,7 @@ export function CardGeneralSettingsAdmin() {
                   step={0.5}
                   value={form.auctionHouseRakePct ?? 5}
                   onChange={(e) => handleChange("auctionHouseRakePct", Number(e.target.value))}
-                  className="border-border bg-card text-foreground focus:border-primary h-8 w-20 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-20 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
                 />
                 <span className="text-muted-foreground text-xs font-semibold">%</span>
               </div>
@@ -212,7 +193,7 @@ export function CardGeneralSettingsAdmin() {
 
           <div className="space-y-4">
             {/* Player Minting Toggle */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Player Lore Card Submissions
@@ -221,18 +202,14 @@ export function CardGeneralSettingsAdmin() {
                   Allow regular players to propose lore cards for review
                 </p>
               </div>
-              <select
-                value={form.allowPlayerMinting ?? 0}
-                onChange={(e) => handleChange("allowPlayerMinting", Number(e.target.value))}
-                className="border-border bg-card text-foreground h-8 rounded-lg border px-2 text-xs font-semibold focus:outline-none"
-              >
-                <option value={0}>Admin-Only (Locked)</option>
-                <option value={1}>Open for Player Drafts</option>
-              </select>
+              <Switch
+                checked={(form.allowPlayerMinting ?? 0) === 1}
+                onCheckedChange={(checked) => handleChange("allowPlayerMinting", checked ? 1 : 0)}
+              />
             </div>
 
             {/* Auto Generate Lore Thumbnails */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Auto-Resolve Wiki Thumbnails
@@ -241,14 +218,10 @@ export function CardGeneralSettingsAdmin() {
                   Automatically extract artwork during bulk wiki lore card scraping
                 </p>
               </div>
-              <select
-                value={form.autoGenerateLoreThumbnails ?? 1}
-                onChange={(e) => handleChange("autoGenerateLoreThumbnails", Number(e.target.value))}
-                className="border-border bg-card text-foreground h-8 rounded-lg border px-2 text-xs font-semibold focus:outline-none"
-              >
-                <option value={1}>Enabled (Auto-Scrape)</option>
-                <option value={0}>Disabled (Manual Artwork Only)</option>
-              </select>
+              <Switch
+                checked={(form.autoGenerateLoreThumbnails ?? 1) === 1}
+                onCheckedChange={(checked) => handleChange("autoGenerateLoreThumbnails", checked ? 1 : 0)}
+              />
             </div>
           </div>
         </FacetCard>
@@ -256,16 +229,16 @@ export function CardGeneralSettingsAdmin() {
         {/* Binder & Recycler Limits */}
         <FacetCard
           depth={1}
-          className="border-border bg-card/60 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
+          className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
         >
-          <div className="border-border/60 flex items-center gap-2.5 border-b pb-3">
+          <div className="border-border/40 flex items-center gap-2.5 border-b pb-3">
             <Layers className="h-4 w-4 text-cyan-500" />
             <h3 className="text-foreground text-sm font-bold">Inventory & Recycler Limits</h3>
           </div>
 
           <div className="space-y-4">
             {/* Max Inventory Cards */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Player Binder Capacity Cap
@@ -282,14 +255,14 @@ export function CardGeneralSettingsAdmin() {
                   step={100}
                   value={form.maxInventoryCards ?? 2500}
                   onChange={(e) => handleChange("maxInventoryCards", Number(e.target.value))}
-                  className="border-border bg-card text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
                 />
                 <span className="text-muted-foreground text-xs font-semibold">cards</span>
               </div>
             </div>
 
             {/* Max Junk Batch Size */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
               <div className="space-y-0.5">
                 <label className="text-foreground block text-xs font-semibold">
                   Max Batch Junk/Recycle Limit
@@ -306,7 +279,7 @@ export function CardGeneralSettingsAdmin() {
                   step={10}
                   value={form.maxJunkBatchSize ?? 100}
                   onChange={(e) => handleChange("maxJunkBatchSize", Number(e.target.value))}
-                  className="border-border bg-card text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
                 />
                 <span className="text-muted-foreground text-xs font-semibold">cards</span>
               </div>
@@ -314,6 +287,6 @@ export function CardGeneralSettingsAdmin() {
           </div>
         </FacetCard>
       </div>
-    </div>
+    </FacetContainer>
   );
 }

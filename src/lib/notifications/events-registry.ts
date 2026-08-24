@@ -99,7 +99,7 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
   {
     eventKey: "onIntelligenceAlert",
     name: "Intelligence Alert",
-    description: "Triggers for intelligence/SDI alerts: threats, opportunities, trends, anomalies",
+    description: "Triggers for intelligence alerts: threats, opportunities, trends, anomalies",
     category: "intelligence",
     source: "intelligence",
     triggerType: "pattern",

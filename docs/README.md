@@ -16,7 +16,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 - **Versioning & Release Architecture** — [reference/revision.md](reference/revision.md)
 - **API Catalog (90 Routers / 1,450+ Endpoints)** — [reference/api-complete.md](reference/api-complete.md)
 - **Database Schema Models** — [reference/database.md](reference/database.md)
-- **Facet Design System Specification** — [reference/facet-design-system.md](reference/facet-design-system.md)
+- **Facet Design System & Interaction Bible (v2)** — [reference/facet-design-system.md](reference/facet-design-system.md)
 - **Maps & Geographic Engine (UPG v2)** — [systems/maps.md](systems/maps.md)
 - **Local Dev Setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
 - **Production Deployment** — [operations/deployment.md](operations/deployment.md)
@@ -37,46 +37,77 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 
 ---
 
-## ⚙️ Systems & Platform Pillars
+## ⚙️ Systems & Platform Pillars (App-Centric Organization)
 
-| System | Document | Scope & Architecture | Launch Status |
+### 🏛️ 1. MyCountry Suite (Executive Simulation & Governance)
+| System / Tool | Document | Scope & Architecture | Status |
 | :--- | :--- | :--- | :---: |
-| **Status Audit** | [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md) | **Master System Status & Public Launch Readiness Matrix ("Going Gold")** | 📀 **Target: 1.0.0 GM** |
-| **Statecraft** | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | **Statecraft Philosophy** — Executive decision simulator vs spreadsheet simulation | 🥈 Release Candidate |
-| **Statecraft** | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | Statecraft closed game loops: Directives, Volatility, National Issues, Consequences | 🥈 Release Candidate |
-| **MyCountry** | [systems/mycountry.md](systems/mycountry.md) | Executive command suite (Command Surface v5, Statecraft Engine v4, Directives) | 🥈 Release Candidate |
-| **MyCountry** | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | **WikiOS Master Spec** — Native PostgreSQL engine, O(1) link graph, Canvas editor, direct MariaDB read-through | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | **WikiOS Margin Spec** — Unified split-canvas inspector, text markup, margin pins, threads | 🥈 Release Candidate |
-| **Stash** | [systems/stash.md](systems/stash.md) · [systems/stash-style-guide.md](systems/stash-style-guide.md) | **Stash Research Vault** — Save-for-later for lore, articles, Margin highlights, media, and forum threads | 🥈 Release Candidate |
-| **Lore Lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | **The Complete Lore Lifecycle** — Ideation (ThinkTanks/Stashes) to Publishing & Canonization | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | WikiOS Stage 2b (Postgres dual-write) & Stage 3 (render-service isolation) | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) | WikiOS Stage 3 render-service configuration and deployment architecture | 🥈 Release Candidate |
-| **WikiOS** | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | Multi-year WikiOS engine longevity and packaging workflow | 🥈 Release Candidate |
-| **Builder** | [systems/builder.md](systems/builder.md) | Nation creation wizard (Builder v3), atomic components, wiki cache | 🥈 Release Candidate |
-| **Economy** | [systems/economy.md](systems/economy.md) | Economic indicators, projections, tax system components, growth tiers | 🥈 Release Candidate |
-| **Calculations**| [systems/calculations.md](systems/calculations.md) | Mathematical formulas for economic modeling, ERI, PII, and synergies | 🥈 Release Candidate |
-| **Intelligence**| [systems/intelligence.md](systems/intelligence.md) | Intelligence feeds, vitality dashboard, threat forecasts, globalCache | 🥈 Release Candidate |
-| **Diplomacy** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, missions, cultural exchanges, ThinkShare messaging, Concord v2 | 🥈 Release Candidate |
-| **Defense** | [systems/defense.md](systems/defense.md) | Defense posture, readiness scoring, military operations, equipment catalogs | 🥈 Release Candidate |
-| **Elections** | [systems/elections.md](systems/elections.md) | Elections, political parties, legislature, D'Hondt/FPTP simulation, hemicycle | 🥈 Release Candidate |
-| **NPC AI** | [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 🥈 Release Candidate |
-| **Crises** | [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 🥈 Release Candidate |
-| **Social** | [systems/social.md](systems/social.md) | ThinkPages v2, ThinkShare unified messaging, activity feeds, polls | 🥈 Release Candidate |
-| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Collaborative groups & research engine, 4-pillar workspace, Apple design, Discord taxonomy | 🥈 Release Candidate |
-| **Cards & Vault** | [systems/cards.md](systems/cards.md) · [systems/myvault.md](systems/myvault.md) | IxCards v2 & MyVault v2 UI — dynamic rarity, pack opening, crafting, store perks | 🥈 Release Candidate |
-| **IxCredits** | [systems/ixcredits.md](systems/ixcredits.md) | Virtual currency ledger, atomic conditional balance locks, passive income | 🥈 Release Candidate |
-| **NationStates**| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown | 🥈 Release Candidate |
-| **Achievements**| [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon awards, LoreWards, leaderboards | 🥈 Release Candidate |
-| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic CMS reference data, RBAC, audit logging | 📀 **Gold Master** |
+| **Command Suite** | [systems/mycountry.md](systems/mycountry.md) | Single-surface executive console across active public domains (Identity, Economy, Politics, Diplomacy) | 📀 **Gold Master** |
+| **Statecraft Engine** | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | Statecraft Philosophy — Executive decision simulator vs spreadsheet simulation | 📀 **Gold Master** |
+| **Game Loops** | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | Closed decision loops: Directives, Volatility, National Issues, Consequences | 📀 **Gold Master** |
+| **Design Philosophy**| [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | MyCountry design bible, 12 commandments, and statecraft loop PRDs | 📀 **Gold Master** |
+| **Country Builder** | [systems/builder.md](systems/builder.md) | Sovereign onboarding wizard (Builder v3), atomic component matrix, wiki caching | 📀 **Gold Master** |
+| **Economy Domain** | [systems/economy.md](systems/economy.md) · [systems/calculations.md](systems/calculations.md) | Macroeconomic indicators, 42-tax system, ERI/PII index formulas, growth tiers | 📀 **Gold Master** |
+| **Diplomacy Domain** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, bilateral missions, cultural exchanges, treaty dashboards | 📀 **Gold Master** |
+| **Politics & Elections**| [systems/elections.md](systems/elections.md) | Legislature config, political parties, D'Hondt/FPTP simulation, hemicycle | 📀 **Gold Master** |
+| *Defense (Preview)* | [systems/defense.md](systems/defense.md) | Force readiness, military deployments, equipment procurement (preview) | 🧪 **Preview** |
+| *Intel (Preview)* | [systems/intelligence.md](systems/intelligence.md) | Executive threat briefings, vitality dashboard, recon research ops (preview) | 🧪 **Preview** |
+
+### 🗺️ 2. Atlas (Spatial Geography & Cartography Studio)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Atlas Maps** | [systems/maps.md](systems/maps.md) | Atlas v2 & Atlas Engine v5: "Geography is King", grounded manual IxEarth cartography + UPG v2 | 📀 **Gold Master** |
+| **Map Editor** | [systems/maps.md](systems/maps.md) · [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | Full-screen vector editor for borders, regions, provinces, cities, POIs, and Voronoi snapping | 📀 **Gold Master** |
+
+### 📖 3. WikiOS (Lore & Knowledge Operating System)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Native Lore Engine**| [systems/wikios.md](systems/wikios.md) · [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | Native PostgreSQL lore engine, sub-2ms O(1) link graph, Canvas Editor (v1) | 📀 **Gold Master** |
+| **Margin** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | Split-canvas inspector, text markup, gutter pins, threaded notes directly on text | 📀 **Gold Master** |
+| **Stash System** | [systems/stash.md](systems/stash.md) · [systems/stash-style-guide.md](systems/stash-style-guide.md) | Save articles, quotes, media, and forum threads for later | 📀 **Gold Master** |
+| **Lore Lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | Complete lore lifecycle from ThinkTanks/Stashes to Canvas Publishing and Wiki Awards | 📀 **Gold Master** |
+
+### 💎 4. Vault (Metagame Incentives, Social Economy & Collectibles)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Metagame Incentive Hub**| [systems/myvault.md](systems/myvault.md) | Central incentive and metagame engine, dividend payouts, social currency | 📀 **Gold Master** |
+| **Cards System** | [systems/cards.md](systems/cards.md) | 3D holographic cards across 5 editions, physics pack peeling, dynamic rarity | 📀 **Gold Master** |
+| **IxCredits Ledger** | [systems/ixcredits.md](systems/ixcredits.md) | Virtual currency ledger, atomic conditional balance locks, daily UTC streaks | 📀 **Gold Master** |
+| **Achievements** | [systems/achievements.md](systems/achievements.md) | Achievement unlocks (Achievements v2), ribbon racks, leaderboard progression | 📀 **Gold Master** |
+| **NationStates Bridge**| [systems/ns-integration.md](systems/ns-integration.md) | NationStates card-dump sync, collection import, image proxy, takedown verification | 📀 **Gold Master** |
+
+### 💬 5. ThinkPages (Real-Time Knowledge Feed & Communications)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Sovereign Feed** | [systems/social.md](systems/social.md) | Sovereign micro-posts, `[blurb:slug]` tag embedding, poll items, rich wiki cards | 📀 **Gold Master** |
+| **Account Manager** | [systems/social.md](systems/social.md) | Multi-account switching, automated Discord webhook syndication, bot telemetry | 📀 **Gold Master** |
+| **ThinkTanks** | [systems/thinktanks.md](systems/thinktanks.md) | Multilateral policy drafting rooms, research workgroups, shared drafts | 📀 **Gold Master** |
+
+### 🗨️ 6. IxForum App (Archival Community Discourse)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Forum Integration** | [systems/forum.md](systems/forum.md) | XenForo REST bridge (IxForum v1.4), Orange theme, BBCode transformation, IxnayID SSO | 📀 **Gold Master** |
+
+### ⚙️ 7. Concord Engine (Living-World Simulation Backend)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **IxTime Master Clock**| [systems/ixtime.md](systems/ixtime.md) | Continuous temporal simulation engine, epoch conversion, daemon synchronization | 📀 **Gold Master** |
+| **Crisis Events** | [systems/crisis-events.md](systems/crisis-events.md) | Dynamic crisis event management, 5-stage lifecycle, player response modes | 📀 **Gold Master** |
+| **NPC Personality AI**| [systems/npc-ai.md](systems/npc-ai.md) | NPC personality traits (8 traits), archetypes, behavioral prediction, drift | 📀 **Gold Master** |
+
+### 🎨 8. Facet UI Design System & Ambient Runtime
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Facet Primitives** | [reference/facet-design-system.md](reference/facet-design-system.md) | Volumetric Z-depth, physical materials, glare, 100% Radix UI encapsulation | 📀 **Gold Master** |
+| **Halo Overlay** | [systems/halo.md](systems/halo.md) | Facet contextual overlay, wayfinding suite, and `Cmd+K` command palette | 📀 **Gold Master** |
+| **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) | 50+ admin interfaces, dynamic reference catalogs, RBAC, audit logging | 📀 **Gold Master** |
 | **Help Center** | [systems/help.md](systems/help.md) | In-app help center architecture, 10 categories, authoring workflow | 📀 **Gold Master** |
-| **Forum** | [systems/forum.md](systems/forum.md) | XenForo forum integration (IxForum v1.3), BBCode transformation, IxnayID | 🥉 Beta |
-| **Maps** | [systems/maps.md](systems/maps.md) | IxWorld 1.2 & Atlas Engine v4: UPG v2 100k mesh, MapLibre GL, Realms platform | 🥈 Release Candidate |
-| **Map Editor** | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | Map editor architecture overview, performance and topology features | 🥈 Release Candidate |
-| **Halo** | [systems/halo.md](systems/halo.md) | **Halo v5** plugin-driven contextual overlay and wayfinding suite | 📀 **Gold Master** |
-| **MyLeague** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, lore competitions) | 🥉 Beta |
-| **Onoma** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-glyph-spec.md](systems/onoma-glyph-spec.md) · [systems/onoma-voice-guide.md](systems/onoma-voice-guide.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🥈 Release Candidate |
-| **IxTime** | [systems/ixtime.md](systems/ixtime.md) | **IxTime: Temporal Engine & Sync v2** — Continuous world simulation clock, speed dilation, bot sync, Statecraft temporal feeds | 📀 **Gold Master** |
+
+### 🧪 Labs (Experimental & Incubation Studio)
+| System / Tool | Document | Scope & Architecture | Status |
+| :--- | :--- | :--- | :---: |
+| **Onoma Studio** | [systems/onoma-brand-guide.md](systems/onoma-brand-guide.md) · [systems/onoma-roadmap.md](systems/onoma-roadmap.md) | Procedural linguistic engine, phonetic Markov chains, Kokoro TTS, glyphs | 🧪 **Labs Preview** |
+| **MyLeague & MyClub** | [systems/myleague.md](systems/myleague.md) · [systems/myleague-top5-features.md](systems/myleague-top5-features.md) | Sports simulation engine (7 sports, tactics, transfers, athlete cards) | 🧪 **Labs Preview** |
 
 ---
 
@@ -118,7 +149,7 @@ The authoritative index for all IxStates architecture, systems, operations, spec
 | [reference/database.md](reference/database.md) | Prisma models, relations, PostGIS extensions, and data ownership |
 | [reference/revision.md](reference/revision.md) | **Versioning & Release Architecture** — platform/app/engine/system versions |
 | [reference/branding.md](reference/branding.md) | Brand catalog — systems, icons, typography, and visual tokens |
-| [reference/facet-design-system.md](reference/facet-design-system.md) | Facet design system tokens, depth hierarchy, materials, refraction |
+| [reference/facet-design-system.md](reference/facet-design-system.md) | **Facet Design System & Interaction Bible (v2)** — materials, Z-depth scale, 100% Radix primitives, Cuelume audio matrix, and Apple/Emil motion physics |
 | [reference/events.md](reference/events.md) | WebSocket channels, notification payloads, and scheduled cron jobs |
 | [reference/edge-cases.md](reference/edge-cases.md) | Edge case handling, error boundaries, and recovery scenarios |
 | [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |

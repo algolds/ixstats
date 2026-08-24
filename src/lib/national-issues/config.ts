@@ -16,36 +16,43 @@ const DEFAULT_CONFIG: NationalIssuesConfig = {
   spawnMode: "probability",
 };
 
-export function getNationalIssuesConfig(): NationalIssuesConfig {
-  try {
-    if (!fs.existsSync(CONFIG_PATH)) {
-      // Ensure parent directory exists
-      const dir = path.dirname(CONFIG_PATH);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+export const nationalIssuesConfig = {
+  getNationalIssuesConfig(): NationalIssuesConfig {
+    try {
+      if (!fs.existsSync(CONFIG_PATH)) {
+        // Ensure parent directory exists
+        const dir = path.dirname(CONFIG_PATH);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(CONFIG_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2), "utf-8");
+        return DEFAULT_CONFIG;
       }
-      fs.writeFileSync(CONFIG_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2), "utf-8");
+      const data = fs.readFileSync(CONFIG_PATH, "utf-8");
+      const parsed = JSON.parse(data);
+      return {
+        maxIssuesPerSession:
+          typeof parsed.maxIssuesPerSession === "number"
+            ? parsed.maxIssuesPerSession
+            : DEFAULT_CONFIG.maxIssuesPerSession,
+        maxIssuesPerWeek:
+          typeof parsed.maxIssuesPerWeek === "number"
+            ? parsed.maxIssuesPerWeek
+            : DEFAULT_CONFIG.maxIssuesPerWeek,
+        spawnMode: ["probability", "deterministic", "off"].includes(parsed.spawnMode)
+          ? parsed.spawnMode
+          : DEFAULT_CONFIG.spawnMode,
+      };
+    } catch (err) {
+      console.error("[NationalIssuesConfig] Failed to read config, returning default:", err);
       return DEFAULT_CONFIG;
     }
-    const data = fs.readFileSync(CONFIG_PATH, "utf-8");
-    const parsed = JSON.parse(data);
-    return {
-      maxIssuesPerSession:
-        typeof parsed.maxIssuesPerSession === "number"
-          ? parsed.maxIssuesPerSession
-          : DEFAULT_CONFIG.maxIssuesPerSession,
-      maxIssuesPerWeek:
-        typeof parsed.maxIssuesPerWeek === "number"
-          ? parsed.maxIssuesPerWeek
-          : DEFAULT_CONFIG.maxIssuesPerWeek,
-      spawnMode: ["probability", "deterministic", "off"].includes(parsed.spawnMode)
-        ? parsed.spawnMode
-        : DEFAULT_CONFIG.spawnMode,
-    };
-  } catch (err) {
-    console.error("[NationalIssuesConfig] Failed to read config, returning default:", err);
-    return DEFAULT_CONFIG;
-  }
+  },
+  saveNationalIssuesConfig,
+};
+
+export function getNationalIssuesConfig(): NationalIssuesConfig {
+  return nationalIssuesConfig.getNationalIssuesConfig();
 }
 
 export function saveNationalIssuesConfig(config: NationalIssuesConfig): void {

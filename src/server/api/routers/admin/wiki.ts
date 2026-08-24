@@ -1,11 +1,8 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
+// src/server/api/routers/admin/wiki.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
-
 import { generateSlug } from "~/lib/utils";
 import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
@@ -15,76 +12,6 @@ import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 
 export const adminWikiRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
-
   setWikiLink: adminProcedure
     .input(
       z.object({
@@ -684,59 +611,6 @@ export const adminWikiRouter = createTRPCRouter({
         [searchKey]
       );
       return rows.map((r) => String(r.page_title).replace(/_/g, " "));
-    }),
-
-  getCronSchedules: adminProcedure.query(async ({ ctx }) => {
-    const keys = [
-      "cronSchedule_lorewardsScoring",
-      "cronSchedule_passiveIncome",
-      "cronSchedule_cardValue",
-    ];
-    const configs = await ctx.db.systemConfig.findMany({
-      where: { key: { in: keys } },
-    });
-    const schedules = configs.reduce(
-      (acc, config) => {
-        acc[config.key] = config.value;
-        return acc;
-      },
-      {
-        cronSchedule_lorewardsScoring: "0 6 * * *",
-        cronSchedule_passiveIncome: "0 0 * * *",
-        cronSchedule_cardValue: "0 */6 * * *",
-      } as Record<string, string>
-    );
-    return schedules;
-  }),
-
-  saveCronSchedules: adminProcedure
-    .input(
-      z.object({
-        cronSchedule_lorewardsScoring: z.string(),
-        cronSchedule_passiveIncome: z.string(),
-        cronSchedule_cardValue: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({
-        key,
-        value: value.trim(),
-      }));
-      await ctx.db.$transaction(
-        updates.map((cfg) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: cfg.key },
-            update: { value: cfg.value, updatedAt: new Date() },
-            create: {
-              key: cfg.key,
-              value: cfg.value,
-              description: `Cron schedule expression for ${cfg.key}`,
-            },
-          })
-        )
-      );
-      invalidateConfigCache();
-      return { success: true };
     }),
 
   searchWikiUsers: adminProcedure

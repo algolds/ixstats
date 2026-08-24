@@ -242,8 +242,11 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@swc/core": "^1.16.1",
+    "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4.3.3",
     "@tanstack/eslint-plugin-query": "^5.101.4",
+    "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.10.0",
     "@testing-library/react": "^16.3.2",
     "@types/dompurify": "^3.2.0",
@@ -265,7 +268,6 @@
     "prisma": "^6.19.3",
     "shadcn": "^4.18.0",
     "tailwindcss": "^4.3.3",
-    "ts-jest": "^29.4.12",
     "ts-morph": "^28.0.0",
     "typescript": "^7.0.2",
     "typescript-eslint": "^8.67.0"
@@ -295,7 +297,6 @@
     "bun": ">=1.4.0"
   },
   "jest": {
-    "preset": "ts-jest",
     "testEnvironment": "jsdom",
     "testEnvironmentOptions": {
       "customExportConditions": [
@@ -333,21 +334,30 @@
       "^~/trpc/react$": "<rootDir>/jest-mocks/trpc-react.ts",
       "^~/(.*)$": "<rootDir>/src/$1",
       "^@/(.*)$": "<rootDir>/src/$1",
+      "^cuelume$": "<rootDir>/jest-mocks/cuelume.ts",
       "^superjson$": "<rootDir>/jest-mocks/superjson.ts"
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(@t3-oss|zod|node-fetch|d3-delaunay|delaunator|robust-predicates)/)"
     ],
     "transform": {
-      "^.+\\.(ts|tsx)$": [
-        "ts-jest",
+      "^.+\\.(t|j)sx?$": [
+        "@swc/jest",
         {
-          "useESM": false,
-          "tsconfig": {
-            "module": "CommonJS",
-            "moduleResolution": "Node",
-            "esModuleInterop": true,
-            "allowSyntheticDefaultImports": true
+          "jsc": {
+            "parser": {
+              "syntax": "typescript",
+              "tsx": true,
+              "dynamicImport": true
+            },
+            "transform": {
+              "react": {
+                "runtime": "automatic"
+              }
+            }
+          },
+          "module": {
+            "type": "commonjs"
           }
         }
       ]

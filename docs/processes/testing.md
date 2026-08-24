@@ -1,6 +1,6 @@
 # Testing & Type Safety Practices
 
-**Test Runner**: Jest 30.4.2 · TypeScript 7.0.0 · Bun 1.4 Runtime  
+**Test Runner**: Jest 30.4.2 (@swc/jest) · TypeScript 7.0.0 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
 
 ---

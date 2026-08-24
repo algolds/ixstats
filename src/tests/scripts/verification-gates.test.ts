@@ -133,7 +133,7 @@ describe("verification-gates", () => {
 
     it("uses bun run lint:strict and not masking bun run lint", () => {
       expect(ciContent).toMatch(/bun run lint:strict/);
-      expect(ciContent).not.toMatch(/run:\s*bun run lint\b/);
+      expect(ciContent).not.toMatch(/run:\s*bun run lint(?:\s|$)/);
     });
 
     it("includes separate typecheck stages for UI, server, and tRPC", () => {

@@ -74,7 +74,7 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/30 focus:outline-none"
+            className="bg-black/[0.04] dark:bg-white/[0.06] text-foreground placeholder:text-muted-foreground/50 focus:bg-black/[0.06] dark:focus:bg-white/[0.09] w-full rounded-xl border border-black/[0.06] dark:border-white/10 py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/40 dark:focus:border-blue-400/40 focus:outline-none shadow-2xs"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -97,10 +97,10 @@ function SearchViewComponent({
               soundEffects.tick();
               setSearchFilter?.(f.value);
             }}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-all active:scale-95 ${
               searchFilter === f.value
-                ? "bg-foreground text-background shadow-xs"
-                : "bg-accent/10 text-muted-foreground hover:bg-accent/20 hover:text-foreground"
+                ? "bg-foreground text-background shadow-2xs"
+                : "bg-black/[0.03] dark:bg-white/[0.04] text-muted-foreground hover:bg-black/[0.06] dark:hover:bg-white/[0.08] hover:text-foreground"
             }`}
           >
             {f.label}
@@ -130,7 +130,7 @@ function SearchViewComponent({
                   result.action();
                   closeDropdown();
                 }}
-                className="hover:bg-accent/15 group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all"
+                className="hover:bg-black/[0.04] dark:hover:bg-white/[0.06] group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all active:scale-[0.985] select-none"
               >
                 {/* Icon or Flag */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">

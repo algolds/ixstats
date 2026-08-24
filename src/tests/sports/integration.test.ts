@@ -1,20 +1,8 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { createCallerFactory } from "../../server/api/trpc";
-import { sportsRouter } from "../../server/api/routers/sports";
-import { exchangeService } from "../../lib/vault/exchange-service";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { createCallerFactory } from "~/server/api/trpc";
+import { sportsRouter } from "~/server/api/routers/sports";
+import { exchangeService } from "~/lib/vault/exchange-service";
 import { transitionSeasonAction } from "~/lib/sports/transition";
-
-// Mock exchangeService
-jest.mock("../../lib/vault/exchange-service", () => {
-  const actual = jest.requireActual("../../lib/vault/exchange-service") as any;
-  return {
-    ...actual,
-    exchangeService: {
-      spend: jest.fn(),
-      earn: jest.fn(),
-    },
-  };
-});
 
 describe("MyLeague Phase 3 & 4 Integration Tests", () => {
   let mockPrisma: any;
@@ -22,93 +10,95 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (exchangeService.spend as any).mockResolvedValue({ success: true, newBalance: 1000 });
-    (exchangeService.earn as any).mockResolvedValue({ success: true, newBalance: 1000 });
+    jest.spyOn(exchangeService, "spend").mockResolvedValue({ success: true, newBalance: 1000 });
+    jest.spyOn(exchangeService, "earn").mockResolvedValue({ success: true, newBalance: 1000 });
+    jest.spyOn(exchangeService, "getOrCreateWallet").mockResolvedValue({ id: "wallet_1", sovereigns: 1000 } as any);
+    jest.spyOn(exchangeService, "getBalance").mockResolvedValue({ sovereigns: 1000, lifetimeEarned: 1000, lifetimeSpent: 0 } as any);
 
     mockPrisma = {
-      $transaction: jest.fn((cb: any) => cb(mockPrisma)),
+      $transaction: jest.fn<any>((cb: any) => cb(mockPrisma)),
       sportLeague: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       sportTeam: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue([]),
-        create: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        findMany: jest.fn<any>().mockResolvedValue([]),
+        create: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportPlayer: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue([]),
-        create: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        findMany: jest.fn<any>().mockResolvedValue([]),
+        create: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportCoach: {
-        create: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        create: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportSeason: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        create: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportStanding: {
-        findMany: jest.fn().mockResolvedValue([]),
-        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+        findMany: jest.fn<any>().mockResolvedValue([]),
+        createMany: jest.fn<any>().mockResolvedValue({ count: 0 }),
       },
       sportTeamSeason: {
-        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn<any>().mockResolvedValue({ count: 0 }),
       },
       sportRookieClass: {
-        create: jest.fn().mockResolvedValue({}),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       sportDraftPick: {
-        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+        createMany: jest.fn<any>().mockResolvedValue({ count: 0 }),
       },
       sportMatch: {
-        create: jest.fn().mockResolvedValue({}),
-        findMany: jest.fn().mockResolvedValue([]),
-        update: jest.fn().mockResolvedValue({}),
+        create: jest.fn<any>().mockResolvedValue({}),
+        findMany: jest.fn<any>().mockResolvedValue([]),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportTransferListing: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        upsert: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        upsert: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       sportTransferBid: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue([]),
-        create: jest.fn().mockResolvedValue({}),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        findMany: jest.fn<any>().mockResolvedValue([]),
+        create: jest.fn<any>().mockResolvedValue({}),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       country: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        findFirst: jest.fn().mockResolvedValue(null),
-        update: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        findFirst: jest.fn<any>().mockResolvedValue(null),
+        update: jest.fn<any>().mockResolvedValue({}),
       },
       policy: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
       card: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
+        findFirst: jest.fn<any>().mockResolvedValue(null),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       cardOwnership: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
+        findFirst: jest.fn<any>().mockResolvedValue(null),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       thinkpagesAccount: {
-        findUnique: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
+        findUnique: jest.fn<any>().mockResolvedValue(null),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       thinkpagesPost: {
-        create: jest.fn().mockResolvedValue({}),
+        create: jest.fn<any>().mockResolvedValue({}),
       },
       wikiCache: {
-        upsert: jest.fn().mockResolvedValue({}),
+        upsert: jest.fn<any>().mockResolvedValue({}),
       },
       vaultTransaction: {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       },
     };
 
@@ -492,7 +482,7 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           ticketPrice: 30,
         },
       ]);
-      mockPrisma.sportSeason.findMany = jest.fn().mockResolvedValue([
+      mockPrisma.sportSeason.findMany = jest.fn<any>().mockResolvedValue([
         {
           id: "season_1",
           leagueId: "league_1",
@@ -521,7 +511,7 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
           rank: 2,
         },
       ]);
-      mockPrisma.sportSeason.groupBy = jest.fn().mockResolvedValue([
+      mockPrisma.sportSeason.groupBy = jest.fn<any>().mockResolvedValue([
         {
           championTeamId: "team_1",
           _count: { championTeamId: 3 },
@@ -633,20 +623,20 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       ]);
 
       mockPrisma.sportRivalry = {
-        findFirst: jest.fn().mockResolvedValue({ intensity: 85 }),
+        findFirst: jest.fn<any>().mockResolvedValue({ intensity: 85 }),
       };
-      mockPrisma.sportPlayer.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      mockPrisma.sportPlayer.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
 
-      mockPrisma.sportMatch.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-      mockPrisma.sportMatch.findUnique = jest.fn().mockResolvedValue({ matchStats: {} });
+      mockPrisma.sportMatch.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
+      mockPrisma.sportMatch.findUnique = jest.fn<any>().mockResolvedValue({ matchStats: {} });
       mockPrisma.sportMatchStat = {
-        create: jest.fn().mockResolvedValue({}),
+        create: jest.fn<any>().mockResolvedValue({}),
       };
       mockPrisma.storytellerEffect = {
-        findMany: jest.fn().mockResolvedValue([]),
+        findMany: jest.fn<any>().mockResolvedValue([]),
       };
-      mockPrisma.sportTeamSeason.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-      mockPrisma.sportStanding.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      mockPrisma.sportTeamSeason.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
+      mockPrisma.sportStanding.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
 
       await caller.simulateMatchDay({
         seasonId: "season_123",

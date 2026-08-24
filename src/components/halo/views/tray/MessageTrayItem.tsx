@@ -108,10 +108,10 @@ export function MessageTrayItem({
         <div
           onClick={() => onClick(conversation)}
           className={cn(
-            "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-sm backdrop-blur-xl transition-all duration-200 active:scale-[0.985]",
+            "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-xs transition-all duration-200 active:scale-[0.985]",
             isUnread
-              ? "border-amber-500/30 bg-amber-500/[0.04] shadow-xs hover:border-amber-500/50"
-              : "border-border/50 bg-card/60 hover:border-border hover:bg-card/90"
+              ? "border-amber-500/30 bg-amber-500/[0.06] shadow-xs hover:border-amber-500/50"
+              : "border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] hover:border-black/10 dark:hover:border-white/20 hover:bg-black/[0.04] dark:hover:bg-white/[0.07]"
           )}
         >
           <div className="flex items-start gap-3">

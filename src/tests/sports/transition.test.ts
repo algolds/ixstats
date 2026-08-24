@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import { processAging } from "../../lib/sports/aging";
-import { transitionSeasonAction } from "../../lib/sports/transition";
+import { processAging } from "~/lib/sports/aging";
+import { transitionSeasonAction } from "~/lib/sports/transition";
 
 describe("MyLeague Off-Season & Transition Logic", () => {
   describe("processAging logic", () => {
@@ -45,7 +45,7 @@ describe("MyLeague Off-Season & Transition Logic", () => {
       expect(result.coachResults).toHaveLength(1);
 
       // Verify player 1 aged and progressed
-      const p1Res = result.playerResults.find((p) => p.playerId === "p1")!;
+      const p1Res = result.playerResults.find((p: any) => p.playerId === "p1")!;
       expect(p1Res.ageDelta).toBe(1);
       expect(p1Res.oldStage).toBe("rookie");
       // Rookies either stay rookies or progress to developing
@@ -54,7 +54,7 @@ describe("MyLeague Off-Season & Transition Logic", () => {
       expect(Object.keys(p1Res.ratingChanges)).toContain("shooting");
 
       // Verify coach aged and changed
-      const c1Res = result.coachResults.find((c) => c.playerId === "c1")!;
+      const c1Res = result.coachResults.find((c: any) => c.playerId === "c1")!;
       expect(c1Res.ageDelta).toBe(1);
       expect(c1Res.oldStage).toBe("prime");
     });
@@ -152,44 +152,44 @@ describe("MyLeague Off-Season & Transition Logic", () => {
 
       const mockPrisma: any = {
         sportSeason: {
-          findUnique: jest.fn().mockResolvedValue(mockSeason as any),
-          create: jest.fn().mockResolvedValue({ id: "s2", seasonNumber: 2 } as any),
-          update: jest.fn().mockResolvedValue({} as any),
+          findUnique: jest.fn<any>().mockResolvedValue(mockSeason),
+          create: jest.fn<any>().mockResolvedValue({ id: "s2", seasonNumber: 2 }),
+          update: jest.fn<any>().mockResolvedValue({}),
         },
         sportPlayer: {
-          update: jest.fn().mockResolvedValue({} as any),
-          create: jest.fn().mockResolvedValue({ id: "new_p" } as any),
+          update: jest.fn<any>().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({ id: "new_p" }),
         },
         sportCoach: {
-          update: jest.fn().mockResolvedValue({} as any),
-          create: jest.fn().mockResolvedValue({} as any),
+          update: jest.fn<any>().mockResolvedValue({}),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
         sportTeam: {
-          findMany: jest.fn().mockResolvedValue(mockSeason.league.teams as any),
-          update: jest.fn().mockResolvedValue({} as any),
+          findMany: jest.fn<any>().mockResolvedValue(mockSeason.league.teams),
+          update: jest.fn<any>().mockResolvedValue({}),
         },
         sportMatchStat: {
-          findMany: jest.fn().mockResolvedValue([] as any),
+          findMany: jest.fn<any>().mockResolvedValue([]),
         },
         sportSeasonRecord: {
-          deleteMany: jest.fn().mockResolvedValue({} as any),
-          createMany: jest.fn().mockResolvedValue({} as any),
+          deleteMany: jest.fn<any>().mockResolvedValue({}),
+          createMany: jest.fn<any>().mockResolvedValue({}),
         },
         sportStanding: {
-          findMany: jest.fn().mockResolvedValue([] as any),
-          createMany: jest.fn().mockResolvedValue({} as any),
+          findMany: jest.fn<any>().mockResolvedValue([]),
+          createMany: jest.fn<any>().mockResolvedValue({}),
         },
         sportTeamSeason: {
-          createMany: jest.fn().mockResolvedValue({} as any),
+          createMany: jest.fn<any>().mockResolvedValue({}),
         },
         sportRookieClass: {
-          create: jest.fn().mockResolvedValue({} as any),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
         sportDraftPick: {
-          createMany: jest.fn().mockResolvedValue({} as any),
+          createMany: jest.fn<any>().mockResolvedValue({}),
         },
         sportMatch: {
-          create: jest.fn().mockResolvedValue({} as any),
+          create: jest.fn<any>().mockResolvedValue({}),
         },
       };
 

@@ -101,53 +101,26 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Premium Frosted Glass Stats Overview */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Ballots Configured
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{polls.length}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <BarChart3 className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Ballots Configured</p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">{polls.length}</p>
+        </div>
 
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Active Ballots
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{activePollsCount}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <CheckCircle2 className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Active Ballots</p>
+          <p className="text-emerald-400 mt-1 font-mono text-xl font-bold tracking-tight">{activePollsCount}</p>
+        </div>
 
-        <Card className="border-border/20 bg-card/10 relative overflow-hidden border shadow-sm backdrop-blur-md">
-          <CardContent className="flex items-center justify-between p-5">
-            <div className="space-y-1">
-              <span className="text-muted-foreground block text-[10px] font-bold tracking-wider uppercase">
-                Responses Collected
-              </span>
-              <span className="text-foreground text-2xl font-semibold">{totalVotesCast}</span>
-            </div>
-            <div className="border-border/40 rounded-lg border p-2.5">
-              <Users className="text-muted-foreground h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/30 bg-card/25 p-3.5 backdrop-blur-md shadow-xs">
+          <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Responses Collected</p>
+          <p className="text-cyan-400 mt-1 font-mono text-xl font-bold tracking-tight">{totalVotesCast}</p>
+        </div>
       </div>
 
       {/* Poll Cards List */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4">
         {polls.map((poll: any) => {
           const isExpired = poll.endDate ? new Date() > new Date(poll.endDate) : false;
           const countryName = poll.countryId
@@ -156,17 +129,17 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           const votesCount = poll._count?.votes ?? 0;
 
           return (
-            <Card
+            <div
               key={poll.id}
-              className="border-border/20 bg-card/10 overflow-hidden border shadow-sm backdrop-blur-md transition-all duration-200"
+              className="rounded-2xl border border-border/30 bg-card/25 p-4 backdrop-blur-md shadow-xs space-y-3"
             >
-              <CardHeader className="border-border/20 border-b pb-3.5">
+              <div className="border-border/20 border-b pb-3">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <CardTitle className="text-foreground text-sm font-bold sm:text-base">
+                      <h4 className="text-foreground text-sm font-bold">
                         {poll.question}
-                      </CardTitle>
+                      </h4>
                       <Badge
                         variant="outline"
                         className="bg-background/40 border-border/60 text-[9px] font-bold tracking-wider uppercase"
@@ -285,9 +258,9 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     </span>
                   </div>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="p-4 sm:p-5">
+              <div className="pt-2">
                 <h4 className="text-muted-foreground/75 mb-3 text-[10px] font-bold tracking-wider uppercase">
                   Option-by-Option Breakdown
                 </h4>
@@ -324,8 +297,8 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                     <span className="text-poll">Multiple selection enabled</span>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           );
         })}
       </div>
