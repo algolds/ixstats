@@ -103,8 +103,8 @@ export class TaxCalculatorEngine {
   private calculateCategoryTax(
     category: TaxCategory,
     taxableIncome: number,
-    adjustedGrossIncome: number,
-    grossIncome: number
+    _adjustedGrossIncome: number,
+    _grossIncome: number
   ): {
     breakdown: TaxCategoryBreakdown;
     appliedBrackets: AppliedTaxBracket[];

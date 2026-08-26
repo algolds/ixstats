@@ -244,7 +244,7 @@ function getRevenueBalanceSuggestions(builderState: TaxBuilderState): Suggestion
     const directTaxCount = builderState.categories.filter(
       (cat: TaxBuilderState["categories"][number]) => cat.categoryType === "Direct Tax"
     ).length;
-    const indirectTaxCount = builderState.categories.filter(
+    const _indirectTaxCount = builderState.categories.filter(
       (cat: TaxBuilderState["categories"][number]) => cat.categoryType === "Indirect Tax"
     ).length;
 

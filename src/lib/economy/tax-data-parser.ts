@@ -46,7 +46,7 @@ export function parseEconomicDataForTaxSystem(
     useAggressiveParsing = true,
     includeGovernmentPolicies = true,
     autoGenerateBrackets = true,
-    targetRevenueMatch = true,
+    targetRevenueMatch: _targetRevenueMatch = true,
   } = options;
 
   // Normalize input indicators to prevent NaN values
@@ -159,7 +159,7 @@ export function parseEconomicDataForTaxSystem(
  */
 function parseTaxSystemFromCoreIndicators(coreIndicators: CoreEconomicIndicators): TaxSystemInput {
   const gdpPerCapita = coreIndicators.gdpPerCapita;
-  const economicTier = getEconomicTier(gdpPerCapita);
+  const _economicTier = getEconomicTier(gdpPerCapita);
 
   // Estimate tax system parameters based on economic development
   const complianceRate = Math.min(95, Math.max(60, 60 + gdpPerCapita / 1000));

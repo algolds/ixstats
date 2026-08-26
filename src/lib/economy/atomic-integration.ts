@@ -46,8 +46,8 @@ export interface CountryWithAtomicComponents extends Country {
 // Client-side version of calculateAtomicEconomicImpact
 export function calculateAtomicEconomicImpact(
   components: ComponentType[],
-  baseGdpPerCapita: number,
-  baseTaxRevenue: number = 0
+  _baseGdpPerCapita: number,
+  _baseTaxRevenue: number = 0
 ): AtomicEconomicModifiers {
   const modifiers: AtomicEconomicModifiers = {
     taxCollectionMultiplier: 1.0,
@@ -237,7 +237,7 @@ export function calculateAtomicEconomicEffectiveness(
 
 export function getAtomicEconomicRecommendations(
   components: ComponentType[],
-  baseEconomicData: {
+  _baseEconomicData: {
     gdpPerCapita: number;
     gdpGrowthRate: number;
     inflationRate: number;

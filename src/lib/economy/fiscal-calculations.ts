@@ -268,7 +268,7 @@ export function generateDebtCompositionData(fiscalData: FiscalSystemData): Chart
  * @param gdp - Nominal GDP
  * @returns Array of fiscal metrics with status indicators
  */
-export function calculateFiscalMetrics(fiscalData: FiscalSystemData, gdp: number): FiscalMetric[] {
+export function calculateFiscalMetrics(fiscalData: FiscalSystemData, _gdp: number): FiscalMetric[] {
   return [
     {
       label: "Tax Revenue",

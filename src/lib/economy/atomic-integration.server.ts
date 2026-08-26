@@ -11,8 +11,8 @@ import type {
 
 export async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],
-  baseGdpPerCapita: number,
-  baseTaxRevenue: number = 0
+  _baseGdpPerCapita: number,
+  _baseTaxRevenue: number = 0
 ): Promise<AtomicEconomicModifiers> {
   const atomicService = getAtomicEffectivenessService(db as any);
   const componentBreakdown = atomicService.getComponentBreakdown(components);
