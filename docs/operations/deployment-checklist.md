@@ -34,10 +34,10 @@ Complete checklist for deploying IxStates to production. Follow these steps to e
   # Should show: "Found 0 errors"
   ```
 
-- [ ] **No ESLint errors**
+- [ ] **No Oxlint errors** (TS 7 native, 50-100× faster)
   ```bash
   bun run lint
-  # Should show: "✓ No ESLint warnings or errors"
+  # Should show: 0 errors, warnings pre-existing and expected (see .oxlintrc.json)
   ```
 
 - [ ] **Code reviewed and approved**

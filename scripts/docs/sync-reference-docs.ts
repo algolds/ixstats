@@ -28,7 +28,7 @@ export interface PackageVersions {
   trpc: string;
   tailwindcss: string;
   zod: string;
-  eslint: string;
+  oxlint: string;
   jest: string;
   express: string;
   typescript: string;
@@ -111,7 +111,7 @@ export function getPackageVersions(rootDir = DEFAULT_ROOT): PackageVersions {
     trpc: clean(deps["@trpc/server"] || deps["@trpc/client"]),
     tailwindcss: clean(deps["@tailwindcss/postcss"] || deps["tailwindcss"]),
     zod: clean(deps["zod"]),
-    eslint: clean(deps["eslint"]),
+    oxlint: clean(deps["oxlint"]),
     jest: clean(deps["jest"]),
     express: clean(deps["express"]),
     typescript: clean(deps["typescript"]),
@@ -455,7 +455,7 @@ export function generateFrameworkMatrixMarkdown(pkgs = getPackageVersions()): st
     `| **tRPC** | ${pkgs.trpc} | Domain-split modular routers |`,
     `| **Tailwind CSS** | ${pkgs.tailwindcss} | v4 CSS-first theme configuration |`,
     `| **Zod** | ${pkgs.zod} | Schema validation |`,
-    `| **ESLint** | ${pkgs.eslint} | Flat config with architecture guard |`,
+    `| **Oxlint** | ${pkgs.oxlint} | Flat config, TS 7 native (50-100× faster) |`,
     `| **Jest** | ${pkgs.jest} | Unit and characterization suites |`,
     `| **Runtime** | Bun ${pkgs.bun} | Native concurrency & virtual store |`,
     `<!-- END_DOCS:FRAMEWORK_MATRIX -->`,

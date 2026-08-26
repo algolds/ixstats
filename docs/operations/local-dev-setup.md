@@ -153,7 +153,7 @@ scp ixwiki:"/ixwiki/public/projects/ixstats/docker-compose.yml" .
 scp -r ixwiki:"/ixwiki/public/projects/ixstats/docker" .
 
 # Copy sibling JS/TS toolchain configs, sub-project tsconfigs, and lockfiles
-scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json,skills-lock.json}" .
+scp ixwiki:"/ixwiki/public/projects/ixstats/{prisma.config.ts,c15t-backend.config.ts,next.config.js,.oxlintrc.json,eslint.config.js,postcss.config.js,prettier.config.js,components.json,bunfig.toml,opencode.json,skills-lock.json}" .
 scp ixwiki:"/ixwiki/public/projects/ixstats/tsconfig.*.json" .
 
 # Copy editor workspace settings
@@ -221,9 +221,9 @@ Run code quality checks and push local work to staging/production in one line:
 bun run deploy:local
 ```
 This script runs the [deploy-local.sh](file:///ixwiki/public/projects/ixstats/scripts/deploy-local.sh) wrapper, which:
-- Verifies code formatting with Prettier (`bun run format:check`).
-- Runs strict ESLint checks (`bun run lint:strict`).
-- Runs unit and integration tests (`bun run test`).
+ - Verifies code formatting with Prettier (`bun run format:check`).
+ - Runs strict Oxlint checks (`bun run lint:strict` — TS 7 native, 50-100× faster).
+ - Runs unit and integration tests (`bun run test`).
 - Pushes the active branch to GitHub.
 - Logs into the VPS and executes the deployment script.
 

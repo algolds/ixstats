@@ -3,13 +3,13 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (94 Routers, 1579 Endpoints)
+### Live tRPC API Inventory (94 Routers, 1661 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 6 | 3 | 0 | **9** | `src/server/api/routers/achievements/index.ts` |
 | **`api.activities`** | 14 | 6 | 0 | **20** | `src/server/api/routers/activities/index.ts` |
-| **`api.admin`** | 35 | 49 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
+| **`api.admin`** | 40 | 56 | 0 | **96** | `src/server/api/routers/admin/index.ts` |
 | **`api.archetypes`** | 7 | 6 | 0 | **13** | `src/server/api/routers/archetypes/index.ts` |
 | **`api.atomicEconomic`** | 2 | 4 | 0 | **6** | `src/server/api/routers/atomicEconomic.ts` |
 | **`api.atomicGovernment`** | 5 | 7 | 0 | **12** | `src/server/api/routers/atomicGovernment.ts` |
@@ -61,12 +61,12 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intelligence`** | 6 | 6 | 0 | **12** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intelligenceBriefing`** | 4 | 3 | 0 | **7** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
-| **`api.ixnayid`** | 3 | 6 | 0 | **9** | `src/server/api/routers/ixnayid.ts` |
+| **`api.ixnayid`** | 4 | 6 | 0 | **10** | `src/server/api/routers/ixnayid.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 15 | 9 | 0 | **24** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 16 | 4 | 0 | **20** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 9 | 20 | 0 | **29** | `src/server/api/routers/meetings/index.ts` |
-| **`api.messages`** | 4 | 14 | 0 | **18** | `src/server/api/routers/messages/index.ts` |
+| **`api.messages`** | 5 | 14 | 0 | **19** | `src/server/api/routers/messages/index.ts` |
 | **`api.militaryEquipment`** | 9 | 8 | 0 | **17** | `src/server/api/routers/militaryEquipment/index.ts` |
 | **`api.mycountry`** | 10 | 1 | 0 | **11** | `src/server/api/routers/mycountry/index.ts` |
 | **`api.narrator`** | 4 | 3 | 0 | **7** | `src/server/api/routers/narrator/index.ts` |
@@ -90,18 +90,18 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 3 | 8 | 0 | **11** | `src/server/api/routers/taxSystem/index.ts` |
-| **`api.thinkpages`** | 24 | 36 | 0 | **60** | `src/server/api/routers/thinkpages/index.ts` |
+| **`api.thinkpages`** | 26 | 38 | 0 | **64** | `src/server/api/routers/thinkpages/index.ts` |
 | **`api.trading`** | 4 | 4 | 0 | **8** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 6 | 8 | 0 | **14** | `src/server/api/routers/transport/index.ts` |
 | **`api.unifiedAtomic`** | 5 | 1 | 0 | **6** | `src/server/api/routers/unifiedAtomic.ts` |
 | **`api.userLogging`** | 8 | 3 | 0 | **11** | `src/server/api/routers/user-logging.ts` |
-| **`api.users`** | 13 | 11 | 0 | **24** | `src/server/api/routers/users/index.ts` |
+| **`api.users`** | 15 | 19 | 0 | **34** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 29 | 22 | 0 | **51** | `src/server/api/routers/vault/index.ts` |
-| **`api.wiki`** | 55 | 25 | 0 | **80** | `src/server/api/routers/wikios/index.ts` |
+| **`api.wiki`** | 70 | 37 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
 | **`api.wikiCache`** | 6 | 6 | 0 | **12** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikiImporter`** | 4 | 2 | 0 | **6** | `src/server/api/routers/wikiImporter/index.ts` |
-| **`api.wikios`** | 55 | 25 | 0 | **80** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **788** | **789** | **1** | **1579** | **94 registered namespaces** |
+| **`api.wikios`** | 70 | 37 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **829** | **830** | **1** | **1661** | **94 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 ---

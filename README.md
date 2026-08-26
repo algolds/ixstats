@@ -197,7 +197,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 | | Achievements | v2 | Awards & LoreWards Resync |
 | | Stash | v1 | Article Stashing (was LoreStash) |
 | | Repository | v2 | Commons Media Explorer |
-| | Halo | v4 | Contextual Overlay System |
+| | Halo | v5 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
 | **Design** | Facet | v2 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
@@ -216,7 +216,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 | **tRPC** | 11.18.0 | Domain-split modular routers |
 | **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
 | **Zod** | 4.4.3 | Schema validation |
-| **ESLint** | 10.8.1 | Flat config with architecture guard |
+| **Oxlint** | 1.80.0 | Flat config, TS 7 native (50-100× faster) |
 | **Jest** | 30.4.2 | Unit and characterization suites |
 | **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
 <!-- END_DOCS:FRAMEWORK_MATRIX -->

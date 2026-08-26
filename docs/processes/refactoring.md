@@ -963,7 +963,7 @@ When a tRPC router in `src/server/api/routers/` grows over **700 lines** (or 900
 
 **`scripts/split-router-template.ts`** (~250 lines, with a 100-line header comment documenting all 6 lessons learned). It handles:
 - Static + dynamic relative-import pre-flight (the bug pattern that broke wikios, intel/core, intel/alerts, geo/admin, geo/features, transport — all now fixed in the template)
-- Copy-whole-file strategy (retains module-level helpers per group, `eslint --fix` trims unused)
+- Copy-whole-file strategy (retains module-level helpers per group, `oxlint --fix` trims unused — legacy `eslint --fix` retained as fallback `lint:eslint`)
 - `mergeRouters` recombination in the new `index.ts` (or `--pattern=spread` for procedure-bag routers)
 - AST parity verification (mandatory, no separate verifier needed)
 

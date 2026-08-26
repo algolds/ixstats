@@ -45,7 +45,7 @@ Two independent workstreams, dispatched as background subagents. They don't touc
 ## Review gates (non-negotiable)
 - **No production config change** (nginx / LocalSettings / MediaWiki) ships without explicit human go-ahead.
 - **No prod DB schema push** by an agent — human runs `db:push:force` after reviewing the `migrate diff`.
-- Agents run eslint on touched files + targeted jest; **never** global `tsc`/`typecheck:full`.
+- Agents run oxlint on touched files + targeted jest; **never** global `tsc`/`typecheck:full`.
 - Human integrates: review both agents' output → push 2b schema → decide Stage 3 rollout.
 
 ## Sequencing
