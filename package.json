@@ -88,7 +88,7 @@
     "lint:fix": "oxlint --fix --fix-suggestions src",
     "lint:fix:safe": "oxlint --fix src",
     "lint:manual": "oxlint src",
-    "lint:strict": "oxlint --max-warnings 2100 src",
+    "lint:strict": "oxlint --max-warnings 0 src",
     "lint:strict:deny": "oxlint --deny-warnings src",
     "lint:eslint": "eslint src --cache || echo 'Note: Pre-existing lint issues. Build still passes.'",
     "lint:eslint:strict": "eslint src --cache --max-warnings 0",
