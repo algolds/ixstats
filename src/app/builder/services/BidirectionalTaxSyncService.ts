@@ -710,6 +710,7 @@ export class BidirectionalTaxSyncService {
    * Update tax system based on economy builder state
    * Stub implementation - returns a basic TaxSystem structure
    */
+  // oxlint-disable-next-line eslint/no-unused-vars
   updateTaxSystemFromEconomy(economyBuilder: EconomyBuilderState): TaxSystem {
     const recommendations =
       this.state.taxRecommendations.length > 0 ? this.state.taxRecommendations : [];
@@ -758,6 +759,7 @@ export class BidirectionalTaxSyncService {
    * Get tax impact analysis of economy builder state
    * Stub implementation - returns impact data
    */
+  // oxlint-disable-next-line eslint/no-unused-vars
   getTaxImpactOfEconomy(economyBuilder: EconomyBuilderState): any {
     const recommendations =
       this.state.taxRecommendations.length > 0 ? this.state.taxRecommendations : [];

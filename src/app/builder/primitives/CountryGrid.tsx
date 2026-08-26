@@ -43,6 +43,7 @@ export function CountryGrid({
   onCountryClick,
   onClearFilters,
   softSelectedCountryId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   scrollPosition,
   onScroll,
   flagUrls = {},
@@ -162,6 +163,7 @@ export function CountryGrid({
     }
   }, [isAutoScrolling, onScroll, checkAndAppendCountries]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const toggleAutoScroll = useCallback(() => {
     setIsAutoScrolling((prev) => !prev);
   }, []);

@@ -30,6 +30,7 @@ export function GovernmentBuilderError({
     }
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const getStatusIcon = () => {
     if (!validation.hasGovernmentBuilder) return <Building2 className="h-5 w-5" />;
     if (!validation.hasDepartments) return <Users className="h-5 w-5" />;

@@ -1,3 +1,4 @@
+// oxlint-disable-next-line eslint/no-unused-vars
 import { StatUp as TrendingUp, StatsReport as BarChart3, Crown, Building, Globe, Group as Users, Dollar as Banknote, Shield, CheckSquare as Vote, Hammer as Gavel, OpenBook as BookOpen } from "iconoir-react";
 import type { CountryArchetype } from "./country-selector-utils";
 import type { RealCountryData } from "../lib/economy-data-service";

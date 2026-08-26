@@ -43,6 +43,7 @@ export function SliderWithDirectInput({
   referenceValue,
   referenceLabel,
   showComparison = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   animationDuration = 800,
   className,
   orientation = "horizontal",
@@ -64,6 +65,7 @@ export function SliderWithDirectInput({
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 
   // Ensure all numeric values are safe for calculations

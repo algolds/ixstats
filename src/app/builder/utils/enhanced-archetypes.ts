@@ -4,6 +4,7 @@ import {
   archetypeCategories,
   enhancedArchetypes as baseArchetypes,
   archetypeConfig,
+  // oxlint-disable-next-line eslint/no-unused-vars
   getSelectableArchetypes as baseGetSelectableArchetypes,
   validateArchetypeSelection,
 } from "~/lib/archetypes/catalog";

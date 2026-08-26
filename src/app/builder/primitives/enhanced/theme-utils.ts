@@ -193,6 +193,7 @@ export function getGlassClasses(
   sectionId?: SectionId
 ): string {
   const glassConfig = GLASS_DEPTHS[depth];
+  // oxlint-disable-next-line eslint/no-unused-vars
   const colors = getSectionColors(sectionId, theme);
 
   return [

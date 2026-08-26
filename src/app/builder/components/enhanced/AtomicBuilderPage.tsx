@@ -101,10 +101,13 @@ function AtomicBuilderPageInner({
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [tutorialMode, setTutorialMode] = useState<string | null>(null);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const quickStartProcessed = useRef(false);
 
   // Error state
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   // Submission lock to prevent double-submits

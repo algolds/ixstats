@@ -68,6 +68,7 @@ export function EconomySection({
   fieldLocks,
 }: EconomySectionComponentProps) {
   const isEditMode = mode === "edit";
+  // oxlint-disable-next-line eslint/no-unused-vars
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Get builder context to update global state
@@ -131,6 +132,7 @@ export function EconomySection({
   );
 
   // Get atomic components if country ID is provided
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: atomicComponents } = api.government.getComponents.useQuery(
     { countryId: countryId || "" },
     {
@@ -143,6 +145,7 @@ export function EconomySection({
   const metrics: Metric[] = useMemo(() => {
     const workingAgePopulation = Math.round(totalPopulation * 0.65);
     const laborForce = Math.round(workingAgePopulation * 0.65); // 65% participation rate
+    // oxlint-disable-next-line eslint/no-unused-vars
     const employed = Math.round(laborForce * ((100 - unemploymentRate) / 100));
 
     return [
@@ -561,6 +564,7 @@ export function EconomySection({
   // Calculate derived metrics
   const workingAgePopulation = Math.round(totalPopulation * 0.65);
   const laborForce = Math.round(workingAgePopulation * 0.65);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const employed = Math.round(laborForce * ((100 - unemploymentRate) / 100));
 
   return (

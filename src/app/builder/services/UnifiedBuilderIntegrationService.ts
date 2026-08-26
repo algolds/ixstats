@@ -493,6 +493,7 @@ export class UnifiedBuilderIntegrationService {
     if (!this.state.government.builder || !this.state.tax.builder) return;
 
     const totalBudget = this.state.government.builder.structure?.totalBudget || 0;
+    // oxlint-disable-next-line eslint/no-unused-vars
     const currentRevenue =
       this.state.government.builder.revenueSources?.reduce(
         (sum, r) => sum + (r.revenueAmount || 0),

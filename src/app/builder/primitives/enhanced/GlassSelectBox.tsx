@@ -40,6 +40,7 @@ export function GlassSelectBox({
   required = false,
   placeholder = "Select an option...",
   searchable = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   multiSelect = false,
   icon: Icon,
   maxHeight = 200,

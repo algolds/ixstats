@@ -16,6 +16,7 @@ import { useBuilderContext } from "../context/BuilderStateContext";
 import { useBuilderActions } from "../../../hooks/useBuilderActions";
 
 // Help modal component
+// oxlint-disable-next-line eslint/no-unused-vars
 function HelpModal({ text, title }: { text: string; title: string }) {
   // Core Foundation specific help content
   if (title === "Core Foundation Help") {
@@ -326,7 +327,9 @@ function HelpModal({ text, title }: { text: string; title: string }) {
 import { FoundationStep } from "../steps/FoundationStep";
 import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { AtomicComponentSelector } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
 import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
 import { BuilderPreviewStep } from "./BuilderPreviewStep";

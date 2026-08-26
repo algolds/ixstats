@@ -58,11 +58,13 @@ export function EnhancedSlider({
   const [isHovered, setIsHovered] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 
   // Ensure all numeric values are safe for calculations
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
   const safeMax = typeof max === "number" && !isNaN(max) ? max : 100;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const safeStep = typeof step === "number" && !isNaN(step) ? step : 1;
   const numericValue =
     typeof value === "number" && !isNaN(value)
@@ -99,6 +101,7 @@ export function EnhancedSlider({
 
   // Animated percentage for smooth value display with safe calculations
   const range = safeMax - safeMin;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const animatedPercentage = useAnimatedPercentage(
     range > 0 ? ((localValue - safeMin) / range) * 100 : 0,
     1,

@@ -131,6 +131,7 @@ export function EnhancedNumberInput({
 
   // Safely handle all numeric parameters
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const safeMax = typeof max === "number" && !isNaN(max) ? max : Infinity;
   const safeStep = typeof step === "number" && !isNaN(step) ? step : 1;
 
@@ -144,6 +145,7 @@ export function EnhancedNumberInput({
   const isNumeric = typeof value === "number" && !acceptText;
 
   // Animated value for smooth transitions (only for numeric values)
+  // oxlint-disable-next-line eslint/no-unused-vars
   const animatedValue = useFormattedAnimatedValue(numericValue, isNumeric ? format : undefined, {
     ...DEFAULT_ANIMATIONS.numberFlow,
     duration: animationDuration,
@@ -155,6 +157,7 @@ export function EnhancedNumberInput({
     lg: "text-lg px-5 py-4 h-14",
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const buttonSizeClasses = {
     sm: "w-8 h-8",
     md: "w-10 h-10",

@@ -55,6 +55,7 @@ export function GlassSlider({
     ? ((referenceValue - min) / (max - min)) * 100
     : undefined;
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const themeStyles = {
     gold: "border-amber-400/30 bg-gradient-to-r from-amber-400/20 to-amber-600/20",
     blue: "border-blue-400/30 bg-gradient-to-r from-blue-400/20 to-blue-600/20",
@@ -335,6 +336,7 @@ export function GlassToggle({
   size = "md",
   label,
   help,
+  // oxlint-disable-next-line eslint/no-unused-vars
   theme = "neutral",
   disabled = false,
   className,

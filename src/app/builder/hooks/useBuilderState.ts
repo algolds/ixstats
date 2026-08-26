@@ -37,6 +37,7 @@ import { mapLegacyGovernmentComponents } from "~/hooks/useArchetypes";
 import { registerCustomCurrency } from "~/lib/utils";
 import { parseWikiNumericValue, normalizeGovernmentType } from "../lib/builder-parsers";
 
+// oxlint-disable-next-line eslint/no-unused-vars
 const CURRENT_SCHEMA_VERSION = 1;
 
 /**

@@ -77,6 +77,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   displayedResults,
   hasMoreResults,
   selectedResult,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isLoading,
   parsedData,
   error,
@@ -88,6 +89,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   loadMoreResults,
   onContinueWithCountry,
   formatNumber,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onBackFromSelection,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);

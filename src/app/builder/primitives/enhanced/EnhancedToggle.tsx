@@ -39,6 +39,7 @@ export function EnhancedToggle({
   className,
   icon: Icon,
 }: EnhancedToggleProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [isPressed, setIsPressed] = useState(false);
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 

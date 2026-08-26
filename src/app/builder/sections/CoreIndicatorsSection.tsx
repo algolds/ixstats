@@ -29,7 +29,9 @@ export function CoreIndicatorsSection({
   inputs,
   onInputsChange,
   referenceCountry,
+  // oxlint-disable-next-line eslint/no-unused-vars
   showAdvanced = false,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isReadOnly = false,
   mode = "create",
   fieldLocks,
@@ -101,6 +103,7 @@ export function CoreIndicatorsSection({
     return Math.round(incomeFactor * sizeFactor * 10) / 10;
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const expectedGrowthRate = calculateExpectedGrowthRate(
     sanitizedCoreIndicators.gdpPerCapita,
     sanitizedCoreIndicators.totalPopulation

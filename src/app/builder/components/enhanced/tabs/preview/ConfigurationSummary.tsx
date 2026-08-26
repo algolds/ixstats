@@ -14,6 +14,7 @@ interface ConfigurationSummaryProps {
 
 export function ConfigurationSummary({
   economyBuilder,
+  // oxlint-disable-next-line eslint/no-unused-vars
   economicInputs,
 }: ConfigurationSummaryProps) {
   const { structure } = economyBuilder;

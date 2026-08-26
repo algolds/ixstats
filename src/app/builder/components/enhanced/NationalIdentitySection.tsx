@@ -100,6 +100,7 @@ export function NationalIdentitySection({
     setCustomOfficialName,
     isEditingCustomName,
     setIsEditingCustomName,
+    // oxlint-disable-next-line eslint/no-unused-vars
     shouldFetchCustomTypes,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,

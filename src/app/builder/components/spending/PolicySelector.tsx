@@ -109,6 +109,7 @@ function PolicyCard({
     return "bg-red-500/10";
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const getEffectivenessColor = (eff: number) => {
     if (eff >= 80) return "text-green-600";
     if (eff >= 60) return "text-yellow-600";

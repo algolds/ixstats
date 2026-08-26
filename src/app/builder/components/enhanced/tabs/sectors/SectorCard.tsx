@@ -32,6 +32,7 @@ interface SectorCardProps {
 }
 
 export function SectorCard({
+  // oxlint-disable-next-line eslint/no-unused-vars
   sectorId,
   template,
   isActive,

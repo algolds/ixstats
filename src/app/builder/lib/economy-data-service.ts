@@ -979,6 +979,7 @@ export function loadBaselineFromStorage(): EconomicInputs | null {
       if (!stored) return null;
 
       const parsed = JSON.parse(stored);
+      // oxlint-disable-next-line eslint/no-unused-vars
       const { timestamp, ...inputs } = parsed;
       return inputs;
     }

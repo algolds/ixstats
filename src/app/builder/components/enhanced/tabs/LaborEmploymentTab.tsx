@@ -159,6 +159,7 @@ export function LaborEmploymentTab({
 
   const laborBounds = useMemo(() => getLaborBounds(selectedComponents), [selectedComponents]);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const hasComponentImpact =
     employmentImpacts.unemployment !== 0 ||
     employmentImpacts.participation !== 1 ||

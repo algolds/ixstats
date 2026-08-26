@@ -90,6 +90,7 @@ export function BuilderPreviewWidget({
   const { economicInputs, selectedCountry } = builderState;
   const { setPreviewWidgetHeight } = foundationFilter;
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const sectionTheme = activeSection ? BUILDER_SECTION_THEMES[activeSection] : null;
   const themeTextColor = activeSection
     ? sectionThemeTextClasses[activeSection]?.split(" ")[0] || "text-zinc-400"
@@ -277,6 +278,7 @@ export function BuilderPreviewWidget({
     if (!el) return;
 
     const observer = new ResizeObserver((entries) => {
+      // oxlint-disable-next-line eslint/no-unused-vars
       for (const entry of entries) {
         const rectHeight = el.getBoundingClientRect().height;
         if (rectHeight > 0) {
