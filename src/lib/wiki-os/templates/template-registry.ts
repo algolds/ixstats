@@ -12,6 +12,7 @@ import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 // ---------------------------------------------------------------------------
 
 export interface TemplateParam {
+  name?: string; // palette presets use this; registry lookups key by map key
   label?: string;
   description?: string;
   type?: string; // string, number, boolean, date, wiki-page-name, etc.
@@ -21,6 +22,7 @@ export interface TemplateParam {
   example?: string;
   autovalue?: string;
   aliases?: string[];
+  variantOnly?: string[]; // palette presets filter by variant
 }
 
 export interface TemplateDataInfo {
