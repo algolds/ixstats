@@ -136,6 +136,32 @@ export function WikiVisualEditor({
     fmt.removeEditingNode();
   }, [fmt]);
 
+  // Raw-wikitext save for templates without a TemplateData schema.
+  const handleUpdateTemplateRaw = useCallback(
+    (wikitext: string) => {
+      const editor = editorRef.current;
+      if (!editor || !fmt.editingTemplate) return;
+      const { id } = fmt.editingTemplate;
+      const { Editor, Transforms } = require("slate") as typeof import("slate");
+      const entries = Array.from(
+        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
+          at: [],
+          match: (n) => (n as unknown as { id?: string }).id === id,
+        })
+      );
+      if (entries.length === 0) return;
+      const [, path] = entries[0]!;
+      Transforms.setNodes(
+        editor as unknown as import("slate").BaseEditor,
+        { wikitext } as unknown as Partial<import("slate").Descendant>,
+        { at: path }
+      );
+      fmt.setEditingTemplate(null);
+      state.setIsDirty(true);
+    },
+    [editorRef, fmt, state]
+  );
+
   const handleUpdateInfoboxFields = useCallback(
     (id: string, fields: Array<{ label: string; value: string }>) => {
       const editor = editorRef.current;
@@ -286,6 +312,7 @@ export function WikiVisualEditor({
         editingTemplate={fmt.editingTemplate}
         setEditingTemplate={fmt.setEditingTemplate}
         onUpdateTemplate={fmt.handleTemplateUpdate}
+        onUpdateTemplateRaw={handleUpdateTemplateRaw}
         onRemoveTemplate={handleRemoveTemplate}
       />
     </div>

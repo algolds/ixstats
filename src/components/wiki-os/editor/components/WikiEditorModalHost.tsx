@@ -14,6 +14,7 @@ import {
   MapCoordsModal,
 } from "~/components/wiki-os/editor/WikiTemplateModals";
 import { useEditorModalContext } from "../context/EditorModalContext";
+import { useTemplateSchema } from "../hooks/useTemplateSchema";
 
 export interface WikiEditorModalHostProps {
   onInsertImage: (wikitext: string) => void;
@@ -33,6 +34,7 @@ export interface WikiEditorModalHostProps {
   } | null;
   setEditingTemplate?: (val: null) => void;
   onUpdateTemplate?: (params: Record<string, string>) => void;
+  onUpdateTemplateRaw?: (wikitext: string) => void;
   onRemoveTemplate?: () => void;
 }
 
@@ -45,6 +47,7 @@ export function WikiEditorModalHost({
   editingTemplate,
   setEditingTemplate,
   onUpdateTemplate,
+  onUpdateTemplateRaw,
   onRemoveTemplate,
 }: WikiEditorModalHostProps) {
   const modal = useEditorModalContext();
@@ -80,11 +83,12 @@ export function WikiEditorModalHost({
         onInsert={onInsertMapCoords}
       />
 
-      {editingTemplate && setEditingTemplate && onUpdateTemplate && onRemoveTemplate && (
+      {editingTemplate && setEditingTemplate && (onUpdateTemplate || onUpdateTemplateRaw) && onRemoveTemplate && (
         <TemplateEditorDialog
           templateName={editingTemplate.name}
           params={editingTemplate.params}
-          onSave={onUpdateTemplate}
+          onSave={(p) => onUpdateTemplate?.(p)}
+          onSaveRaw={onUpdateTemplateRaw}
           onClose={() => setEditingTemplate(null)}
           onRemove={onRemoveTemplate}
         />
@@ -100,17 +104,24 @@ function TemplateEditorDialog({
   templateName,
   params,
   onSave,
+  onSaveRaw,
   onClose,
   onRemove,
 }: {
   templateName: string;
   params: Record<string, string>;
   onSave: (p: Record<string, string>) => void;
+  /** Raw wikitext save for templates without a TemplateData schema. */
+  onSaveRaw?: (wikitext: string) => void;
   onClose: () => void;
   onRemove: () => void;
 }) {
   const [values, setValues] = useState<Record<string, string>>({ ...params });
   const [showPreview, setShowPreview] = useState(false);
+  const { paramList, hasSchema } = useTemplateSchema(templateName);
+  const [rawWikitext, setRawWikitext] = useState(() =>
+    `{{${templateName}${Object.entries(params).filter(([, v]) => v.trim()).map(([k, v]) => `|${k}=${v}`).join("")}}}`
+  );
 
   const tdQuery = api.wikios.getTemplateData.useQuery(
     { title: templateName },
@@ -127,7 +138,13 @@ function TemplateEditorDialog({
         params?: Record<string, { label?: string; description?: string; required?: boolean }>;
       }
     )?.params ?? {};
-  const allKeys = [...new Set([...Object.keys(params), ...Object.keys(tdParams)])];
+  const allKeys = hasSchema
+    ? [
+        ...paramList.filter((p) => p.meta.required).map((p) => p.key),
+        ...paramList.filter((p) => !p.meta.required).map((p) => p.key),
+        ...Object.keys(params).filter((k) => !paramList.some((p) => p.key === k)),
+      ]
+    : [...new Set([...Object.keys(params), ...Object.keys(tdParams)])];
 
   return (
     <div className="wikios-modal-backdrop" onClick={onClose}>
@@ -145,7 +162,20 @@ function TemplateEditorDialog({
           </button>
         </div>
         <div className="wikios-quick-modal-body">
-          {allKeys.map((key) => {
+          {!hasSchema && (
+            <div className="wikios-ve-template-field">
+              <label className="wikios-ve-template-field-label">
+                Wikitext <span className="text-muted-foreground">(no TemplateData schema — edit source directly)</span>
+              </label>
+              <textarea
+                value={rawWikitext}
+                onChange={(e) => setRawWikitext(e.target.value)}
+                rows={5}
+                className="w-full rounded-lg border border-border/40 bg-background px-2 py-1.5 font-mono text-xs text-foreground outline-none focus:border-wiki/60"
+              />
+            </div>
+          )}
+          {hasSchema && allKeys.map((key) => {
             const schema = tdParams[key];
             return (
               <div key={key} className="wikios-ve-template-field">
@@ -161,7 +191,7 @@ function TemplateEditorDialog({
                   value={values[key] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
                   className="wikios-ti-param-input"
-                  placeholder={`Enter ${schema?.label ?? key}...`}
+                  placeholder={(schema as { example?: string })?.example ?? `Enter ${schema?.label ?? key}...`}
                 />
               </div>
             );
@@ -186,7 +216,15 @@ function TemplateEditorDialog({
               {showPreview ? "Hide Preview" : "Preview"}
             </button>
             <button
-              onClick={() => onSave(values)}
+              onClick={() => {
+                if (hasSchema || !onSaveRaw) {
+                  onSave(values);
+                } else if (rawWikitext.trim() && rawWikitext !== rawWikitext.trim()) {
+                  onSaveRaw(rawWikitext.trim());
+                } else {
+                  onSaveRaw(rawWikitext);
+                }
+              }}
               className="wikios-ve-btn wikios-ve-btn-primary"
               type="button"
             >
