@@ -370,8 +370,8 @@ export function WikiOSUnifiedSidebar({
 
         <div className="my-0.5 w-full border-t border-[var(--wikios-border)]" />
 
-        {/* Navigation Group */}
-        {NAV_GROUP_1.map((item) => {
+        {/* Navigation Group (Categories/Utilities hidden on article pages) */}
+        {NAV_GROUP_1.filter((item) => !(isArticlePage && item.id === "categories")).map((item) => {
           let glowClass =
             "border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15 rail-glow-blue rail-animate-bounce";
           if (item.id === "categories") {
@@ -444,7 +444,7 @@ export function WikiOSUnifiedSidebar({
           index: rowIndex++,
         })}
 
-        {renderRow({
+        {!isArticlePage && renderRow({
           id: "utilities",
           href: withBasePath("/util"),
           icon: Wrench,

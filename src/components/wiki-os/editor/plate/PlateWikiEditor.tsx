@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/react";
 import { Editor, Transforms, type Descendant } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
-import { createIxWikiPlugins } from "./plugins/createIxWikiPlugins";
+import { createIxWikiPlugins, getIxWikiComponents } from "./plugins/createIxWikiPlugins";
 import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
 import { WikiSlashMenu } from "./slash-menu/WikiSlashMenu";
 import type { SlashItem } from "./slash-menu/slash-items";
@@ -104,6 +104,7 @@ export function PlateWikiEditor({
   const editor = usePlateEditor(
     {
       plugins: createIxWikiPlugins(),
+      components: getIxWikiComponents(),
       value: initialValue as never,
     } as never,
     [] as never
