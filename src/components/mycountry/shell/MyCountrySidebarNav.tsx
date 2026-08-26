@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Brain,
   Shield,
   Crown,
   Crown as CrownIcon,
@@ -12,9 +11,7 @@ import {
   Lock,
   EditPencil as Edit2,
   StatUp as TrendingUp,
-  Dashboard as LayoutDashboard,
   ShieldCheck,
-  Map,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { usePremium } from "~/hooks/usePremium";

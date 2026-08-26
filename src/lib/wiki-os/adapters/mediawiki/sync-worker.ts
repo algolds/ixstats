@@ -81,7 +81,7 @@ export class MediaWikiExportWorker {
           await updateRevisionActor(res.revisionId, job.authorWikiUsername);
         }
       }
-    } catch (err) {
+    } catch  {
       if (job.attempts < 3) {
         job.attempts++;
         const delayMs = Math.pow(2, job.attempts) * 1000;

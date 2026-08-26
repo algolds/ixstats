@@ -9,7 +9,7 @@
 import React, { useMemo } from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { WarningTriangle as AlertTriangle, CheckCircle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, InfoCircle as Info } from "iconoir-react";
+import { WarningTriangle as AlertTriangle, CheckCircle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight } from "iconoir-react";
 import { BudgetAllocationForm } from "~/components/mycountry/domains/government/atoms/BudgetAllocationForm";
 import { BudgetMeter } from "./BudgetMeter";
 import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";

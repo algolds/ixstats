@@ -5,9 +5,8 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/ui/poll-widget";
 import { FeatureVoting } from "~/components/ui/feature-voting";
-import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ArrowUp, SystemRestart as Loader2 } from "iconoir-react";
+import { ArrowUp } from "iconoir-react";
 import { toast } from "sonner";
 
 interface PollOptionData {

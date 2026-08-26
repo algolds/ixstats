@@ -3,7 +3,6 @@
 "use client";
 
 import React from "react";
-import { Card } from "~/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
   BarChart,

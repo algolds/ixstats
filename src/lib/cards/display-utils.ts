@@ -4,7 +4,7 @@
  * Phase 1: Card Display Components
  */
 
-import { CardRarity, type CardType } from "./enums";
+import { CardRarity } from "./enums";
 import type {
   CardInstance,
   FormattedStats,
@@ -15,7 +15,6 @@ import type {
 } from "~/types/cards-display";
 import {
   getBaseStatDefs,
-  getBaseStatDef,
   getSpecialStatsForType,
   STAT_PROGRESSION,
   LEGACY_KEY_MAP,

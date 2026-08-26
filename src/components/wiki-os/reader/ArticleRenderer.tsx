@@ -5,7 +5,6 @@
 "use client";
 
 import React, { useRef, useEffect, useMemo, useState } from "react";
-import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
@@ -46,7 +45,6 @@ import {
   SelectionCapsule,
   MarginShareModal,
   type SelectionPayload,
-  type MarginTab,
 } from "~/components/wiki-os/margin";
 
 const CoordinatesMapEmbed = dynamic(
@@ -287,7 +285,7 @@ export function ArticleRenderer({
   // --- Portal & Dynamic Widgets Setup ---
   const statKeys = useMemo(() => {
     const keys = new Set<string>();
-    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi;
+    const regex = /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi;
     let match;
     while ((match = regex.exec(contentHtml)) !== null) {
       if (match[1]) keys.add(match[1]);

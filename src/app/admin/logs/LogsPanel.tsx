@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect, useDeferredValue } from "react";
+import { useState, useDeferredValue } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
-import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -19,9 +17,7 @@ import {
 } from "~/components/ui/select";
 import {
   Terminal,
-  Activity,
   User,
-  WarningTriangle as AlertOctagon,
   Refresh as RefreshCw,
   Trash as Trash2,
   Search,

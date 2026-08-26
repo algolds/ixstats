@@ -543,7 +543,7 @@ export function useBuilderState(
                       : typeof dept.functions === "string"
                         ? JSON.parse(dept.functions)
                         : [];
-                  } catch (e) {
+                  } catch  {
                     return [];
                   }
                 })(),
@@ -554,7 +554,7 @@ export function useBuilderState(
                       : typeof dept.kpis === "string"
                         ? JSON.parse(dept.kpis)
                         : [];
-                  } catch (e) {
+                  } catch  {
                     return [];
                   }
                 })(),
@@ -1185,7 +1185,7 @@ export function useBuilderState(
             setLastSaved(new Date(savedLastSaved));
           }
         }
-      } catch (error) {
+      } catch  {
         // Failed to load saved state, continue with default
       }
     }
@@ -1272,7 +1272,7 @@ export function useBuilderState(
 
         safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         safeSetItemSync(savedKey, new Date().toISOString());
-      } catch (error) {
+      } catch  {
         // Failed to save state on unload
       }
     };
@@ -1414,7 +1414,7 @@ export function useBuilderState(
       try {
         lastSyncedStateRef.current = currentSyncPayload;
         await updateMutation.mutateAsync(currentSyncPayload);
-      } catch (err) {
+      } catch  {
         // Handled by mutation onError
       }
     };
@@ -1832,7 +1832,7 @@ export function useBuilderState(
       }
       setLastSaved(null);
       setBuilderState(getInitialState(mode));
-    } catch (error) {
+    } catch  {
       // Failed to clear draft
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

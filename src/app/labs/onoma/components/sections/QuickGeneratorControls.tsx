@@ -4,7 +4,7 @@
 // Onoma Lab — Quick Generator Controls Bar with Expanded Seed Editor & Custom Lexicon Management
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { ControlSlider as SlidersHorizontal, SystemRestart as Loader2, NavArrowDown as ChevronDown, Undo as RotateCcw, Plus, FloppyDisk as Save, Trash as Trash2, EditPencil as Edit2, Check, Xmark as X, Bookmark } from "iconoir-react";
+import { ControlSlider as SlidersHorizontal, SystemRestart as Loader2, NavArrowDown as ChevronDown, Undo as RotateCcw, Plus, FloppyDisk as Save, Trash as Trash2, EditPencil as Edit2, Check, Xmark as X } from "iconoir-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { PatternDepthControl } from "../shared/PatternDepthControl";
@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { getOnomaDomainIcon } from "../shared/onoma-icon-families";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
   loadCustomDictionaries,
   saveCustomDictionary,

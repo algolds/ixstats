@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { BuilderState } from "./useBuilderState";
-import { stepOrder } from "../components/enhanced/builderConfig";
 import { TAX_SYSTEM_TEMP_DISABLED } from "../constants";
 
 /**

@@ -201,7 +201,7 @@ export const narratorRouter = createTRPCRouter({
           let metrics: any;
           try {
             metrics = JSON.parse(input.sandboxMetricsJson);
-          } catch (e) {
+          } catch  {
             throw new TRPCError({
               code: "BAD_REQUEST",
               message: "Invalid JSON format in sandbox metrics",

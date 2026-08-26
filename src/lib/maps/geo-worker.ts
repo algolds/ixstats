@@ -42,10 +42,10 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     case "FILTER_BY_AREA": {
       const result = filterByArea(msg.data, msg.minArea);
       const response: WorkerResponse = { type: "FILTERED", id: msg.id, result };
-      self.postMessage(response);
+      self.postMessage(response, self.location.origin);
       break;
     }
   }
 };
 
-export {}; // Make it a module
+ // Make it a module

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShareAndroid as Share2, Check, Group as Users, Settings, Shield, Spark as Sparkles } from "iconoir-react";
+import { ShareAndroid as Share2, Check, Group as Users, Settings, Spark as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 interface CountryRightPillNavProps {

@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
 import { cn } from "~/lib/utils";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import { api } from "~/trpc/react";
 import { UnifiedGlassCommandBar } from "./headers/UnifiedGlassCommandBar";
 import { ExecutiveHome } from "./ExecutiveHome";
 import { ExecutiveConsole } from "./ExecutiveConsole";

@@ -3,7 +3,6 @@
 "use client";
 
 import React from "react";
-import { Card } from "~/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
   BarChart,
@@ -14,14 +13,12 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
   Line,
 } from "recharts";
 import { api } from "~/trpc/react";
 import {
   StatsReport as BarChart3,
   Reports as PieChartIcon,
-  StatUp as TrendingUp,
   Activity,
 } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";

@@ -169,15 +169,15 @@ async function handleTts(request: NextRequest) {
     let enabled = map.get("onoma.kokoro.enabled") === "true";
     let baseUrl = map.get("onoma.kokoro.baseUrl") || "";
     let apiKey = map.get("onoma.kokoro.apiKey") || "";
-    let defaultModel = map.get("onoma.kokoro.model") || "model_q8f16";
-    let defaultVoice = map.get("onoma.kokoro.voice") || "af_heart";
+    const defaultModel = map.get("onoma.kokoro.model") || "model_q8f16";
+    const defaultVoice = map.get("onoma.kokoro.voice") || "af_heart";
     const defaultSpeedVal = map.get("onoma.kokoro.speed");
-    let defaultSpeed =
+    const defaultSpeed =
       defaultSpeedVal != null && defaultSpeedVal !== "" ? Number(defaultSpeedVal) : 1.0;
     // Phoneme-native engine + its base URL. kokoro-fastapi is primary; kokoro-web
     // (the re-spelling path) stays as fallback so the swap is rollback-safe.
-    let engine = parseEngine(map.get("onoma.kokoro.engine"));
-    let fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
+    const engine = parseEngine(map.get("onoma.kokoro.engine"));
+    const fastApiUrl = map.get("onoma.kokoro.fastApiUrl") || "";
 
     // Per-culture voice assignments (JSON in systemConfig).
     let voiceMap: Record<string, string> = {};
@@ -225,7 +225,7 @@ async function handleTts(request: NextRequest) {
           // In test mode we bypass the "enabled" switch
           enabled = true;
         }
-      } catch (e) {
+      } catch  {
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
       }
     } else {

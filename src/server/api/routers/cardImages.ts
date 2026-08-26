@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { isValidCardType, type CardImageType } from "~/lib/cards/image-presets";
 
 /**
  * Card Images Router

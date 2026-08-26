@@ -10,7 +10,6 @@ import {
   removeVertex,
   clampToGeometry,
   simplifyGeometry,
-  snapToBorderEdge,
   snapPointToGeometries,
   snapToNeighborBorders,
   sanitizeRegionShape,

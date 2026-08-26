@@ -217,7 +217,7 @@ function getDiscordAvatarUrl(author: DiscordMessage["author"]): string | null {
 function formatPostContent(message: DiscordMessage): string {
   let content = message.content.trim();
   // Match a bold block at the start of the message: **header**
-  const headerMatch = content.match(/^\*\*([^\*]+?)\*\*/);
+  const headerMatch = content.match(/^\*\*([^*]+?)\*\*/);
   if (headerMatch) {
     const headerText = headerMatch[1] || "";
     // If it looks like a profile header (contains @ or :verified:)

@@ -5,13 +5,11 @@ import { motion } from "motion/react";
 import {
   RssFeed,
   Send,
-  Sparks,
   User,
   MediaImage,
   ChatBubble,
   Heart,
   Repeat,
-  ShareAndroid,
   Group,
   Plus,
 } from "iconoir-react";

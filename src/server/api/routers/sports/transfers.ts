@@ -336,7 +336,7 @@ export const sportsTransfersRouter = createTRPCRouter({
         },
         orderBy: { createdAt: "desc" },
       });
-    } catch (error) {
+    } catch  {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch transfer listings",

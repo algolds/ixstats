@@ -8,10 +8,8 @@ import {
   Search,
   Folder,
   ArrowRight,
-  Sparks as Sparkles,
   Packages as Layers,
   Xmark as X,
-  OpenBook as BookOpen,
   Hashtag as Hash,
   Globe as IconoirGlobe,
   Building as IconoirBuilding,
@@ -32,7 +30,6 @@ import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Badge } from "~/components/ui/badge";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 
 // ---------------------------------------------------------------------------

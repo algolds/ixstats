@@ -16,9 +16,7 @@ import { Label } from "~/components/ui/label";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from "~/components/ui/sheet";
 import { SPORT_PRESETS, type SportPreset } from "~/lib/sports/presets";
 import PlayerStats from "~/components/sports/player-stats/PlayerStats1";

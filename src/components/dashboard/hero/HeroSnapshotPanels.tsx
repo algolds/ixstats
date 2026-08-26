@@ -1,20 +1,13 @@
 "use client";
 
-import { useState, useMemo, memo, type ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useMemo, memo, type ReactNode } from "react";
 import {
-  Shield,
   Coins,
   Group as Users,
-  Map as MapIcon,
   Bell,
-  Page as FileText,
   Component as Layers,
-  City as Building2,
   Community as Handshake,
-  Globe,
   WarningTriangle as AlertTriangle,
-  Tournament as Sword,
   Archery as Target,
   Activity,
   Heart,
@@ -23,13 +16,9 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { HealthRing } from "~/components/ui/health-ring";
-import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { PreText } from "~/components/ui/pretext";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { StandingBands } from "~/components/mycountry/shell/StandingBands";
-import type { HeroSection } from "./useHeroAutoCycle";
 
 // Helper UI primitives
 export function StatPill({

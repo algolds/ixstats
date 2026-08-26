@@ -64,7 +64,7 @@ export function saveNationalIssuesConfig(config: NationalIssuesConfig): void {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), "utf-8");
   } catch (err) {
     console.error("[NationalIssuesConfig] Failed to write config:", err);
-    throw new Error("Failed to save national issues configuration");
+    throw new Error("Failed to save national issues configuration", { cause: err });
   }
 }
 

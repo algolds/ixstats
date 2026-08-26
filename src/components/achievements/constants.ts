@@ -1,4 +1,4 @@
-import { Trophy, Star, Medal, Crown, Sparks as Sparkles, StatUp as TrendingUp, Shield, Bank as Landmark, OpenBook as BookOpen, Globe } from "iconoir-react";
+import { Trophy, Star, Crown, Sparks as Sparkles, StatUp as TrendingUp, Shield, Bank as Landmark, OpenBook as BookOpen, Globe } from "iconoir-react";
 
 export const QUEST_PATHS = [
   {

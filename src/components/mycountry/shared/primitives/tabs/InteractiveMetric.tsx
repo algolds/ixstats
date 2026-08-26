@@ -7,7 +7,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
-import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, InfoCircle as Info, OpenNewWindow as ExternalLink } from "iconoir-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus, NavArrowDown as ChevronDown, InfoCircle as Info, OpenNewWindow as ExternalLink } from "iconoir-react";
 
 export interface InteractiveMetricProps {
   value: number;

@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
 import { Globe, StatUp as TrendingUp, LightBulb as Lightbulb, Group as Users, City as Building2, Archery as Target, CheckCircle, WarningTriangle as AlertTriangle, InfoCircle as Info, ArrowRight, Refresh as RefreshCw, Cpu, ModernTv as Mountain, Industry as Factory, Leaf, Dollar as Banknote, Crown, DeliveryTruck as Ship, Car, Wrench, Hammer, Hammer as Gavel, OpenBook as BookOpen, Tree as TreePine, Farm as Wheat, Hammer as Pickaxe, Building, Bank as Landmark, Coins, Search } from "iconoir-react";

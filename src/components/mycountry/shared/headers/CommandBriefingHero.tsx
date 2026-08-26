@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 
 function formatRolloutRemaining(remainingMs: number): string {

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, LockSlash as UnlockIcon, ArrowLeft, ArrowRight, NavArrowRight as ChevronRight } from "iconoir-react";
+import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
@@ -15,7 +15,6 @@ import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/Buil
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 import { BuilderHalo } from "~/components/halo/plugins";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
 import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
 import { ImportSection } from "./sections/ImportSection";

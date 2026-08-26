@@ -1,15 +1,13 @@
 // src/components/media-search/WikiRepositoryTab.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import {
   Search,
   SystemRestart as Loader2,
-  Check,
   Xmark as X,
-  Folder as FolderOpen,
   Globe,
   Database,
   Bookmark,

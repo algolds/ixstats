@@ -19,7 +19,6 @@ import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import { resolveWikiUsername } from "~/lib/wiki-os/auth";
 
 import {
-  saveToMediaWiki,
   cleanHtmlForParsoid,
   executeMediaWikiWrite,
 } from "~/lib/wiki-os/adapters/mediawiki/write-service";

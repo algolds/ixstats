@@ -9,7 +9,6 @@ import {
   SystemRestart as Loader2,
   Play,
   Translate as Languages,
-  Refresh as RefreshCw,
   Flash as Zap,
   Activity,
 } from "iconoir-react";

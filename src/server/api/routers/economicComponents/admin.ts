@@ -23,7 +23,6 @@ import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 import {
   type ParsedEconomicComponent,
-  transformDatabaseComponent,
 } from "./serializer";
 
 // ============================================================================

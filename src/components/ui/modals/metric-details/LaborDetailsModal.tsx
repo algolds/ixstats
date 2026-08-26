@@ -10,15 +10,12 @@ import {
   GraphUp as LineChart,
   Globe,
   InfoCircle as Info,
-  Archery as Target,
   Activity,
-  Dollar as DollarSign,
   Calculator,
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -32,7 +29,6 @@ import {
   BarChart,
   Bar,
   ResponsiveContainer,
-  ComposedChart,
   Tooltip,
 } from "recharts";
 import { format, subMonths } from "date-fns";
@@ -91,12 +87,14 @@ export function LaborDetailsModal({
     const currentUnemploymentRate = labor?.unemploymentRate || 6;
 
     const now = new Date();
-    const rangeMap = {
+    const rangeMap: Record<TimeRange, number> = {
       "3m": 3,
       "6m": 6,
       "1y": 12,
       "2y": 24,
+      "4y": 48,
       "5y": 60,
+      "20y": 240,
       all: Infinity,
     };
 

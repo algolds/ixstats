@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import dynamic from "next/dynamic";
 
 // Dynamic import for heavy media search modal

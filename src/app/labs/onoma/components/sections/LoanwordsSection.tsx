@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash as Trash2, ArrowRight, Copy, Check, Refresh as RefreshCw, ControlSlider as Sliders, Globe as Globe2, HelpCircle, Xmark as X, OpenBook as BookOpen, Sparks as Sparkles } from "iconoir-react";
+import { Plus, Trash as Trash2, ArrowRight, Copy, Check, Refresh as RefreshCw, ControlSlider as Sliders, Globe as Globe2, HelpCircle, Xmark as X, OpenBook as BookOpen } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";

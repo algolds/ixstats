@@ -144,7 +144,7 @@ export const wikiImporterDiscoveryRouter = createTRPCRouter({
         return result;
       } catch (error) {
         throw new Error(
-          `Failed to fetch wiki page: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to fetch wiki page: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

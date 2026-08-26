@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -35,7 +34,7 @@ import {
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, Trash as Trash2, ClockRotateRight as History, Sparks as Sparkles, Cpu, Crown, OpenBook as BookOpen, Database, StatUp as TrendingUp, Trophy as Award, FireFlame as Flame, Shield, Star, Flash as Zap, Gift, Coins, Heart, Palette, Wrench, Dashboard as Gauge, Lock, Compass, Trophy, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
+import { NavArrowDown as ChevronDown, Plus, EditPencil as Edit2, ClockRotateRight as History, Sparks as Sparkles, Crown, Database, Trophy as Award, Shield, Flash as Zap, Coins, Palette, Dashboard as Gauge, Compass, SystemRestart as Loader2, SwitchOff as ToggleLeft, SwitchOn as ToggleRight } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 export function VaultStoreControl() {

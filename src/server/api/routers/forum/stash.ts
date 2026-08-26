@@ -4,16 +4,7 @@
 // and handles account linking + profile sync.
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import {
-  type XFPost,
-  type XFThread,
-  type XFForum,
-  getXfApiKey,
-  getXfApiUrl,
-  transformBBCode,
-} from "~/server/modules/forum";
 
 export const forumStashRouter = createTRPCRouter({
   // =========================================================================

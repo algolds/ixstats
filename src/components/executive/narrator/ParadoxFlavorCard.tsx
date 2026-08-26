@@ -29,7 +29,7 @@ export function ParadoxFlavorCard({
       if (stored !== null) {
         setIsEnabled(stored === "true");
       }
-    } catch (e) {
+    } catch  {
       // Ignore localStorage errors
     }
     setMounted(true);
@@ -40,7 +40,7 @@ export function ParadoxFlavorCard({
     setIsEnabled(nextVal);
     try {
       localStorage.setItem("narrator:flavor:enabled", String(nextVal));
-    } catch (e) {
+    } catch  {
       // Ignore
     }
   };

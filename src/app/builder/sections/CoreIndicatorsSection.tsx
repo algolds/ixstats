@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { StatsReport as BarChart3, Group as Users, Dollar as DollarSign, Activity, Percentage as Percent } from "iconoir-react";
+import React from "react";
+import { Group as Users, Dollar as DollarSign, Activity, Percentage as Percent } from "iconoir-react";
 import { SliderWithDirectInput } from "../primitives/enhanced";
-import { GlassBarChart } from "~/components/ui/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";
-import { CutoutCard, CutoutCardContent } from "~/components/ui/cutout-card";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 import { Switch } from "~/components/ui/switch";

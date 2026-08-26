@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ViewGrid, Search, Code, Check, Spark, OpenBook, Packages, Copy, Plus, Eye, List } from "iconoir-react";
+import { ViewGrid, Search, Code, Check, Spark, Packages, Copy, Eye, List } from "iconoir-react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";

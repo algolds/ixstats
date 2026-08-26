@@ -258,7 +258,7 @@ export const usersProfileRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        throw new Error("Failed to fetch user profile");
+        throw new Error("Failed to fetch user profile", { cause: error });
       }
     }),
 
@@ -336,7 +336,7 @@ export const usersProfileRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error updating profile:", error);
-        throw new Error("Failed to update profile");
+        throw new Error("Failed to update profile", { cause: error });
       }
     }),
 

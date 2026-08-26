@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Calendar,
-  Clock,
   KeyCommand as Command,
   ArrowUpRight,
   Shield,
@@ -15,7 +14,6 @@ import {
   Hammer as Gavel,
   Crown,
   ShieldAlert,
-  Heart,
   CalendarRotate as CalendarClock,
   Filter,
   WarningCircle as AlertCircle,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure, publicProcedure } from "~/server/api/trpc";
-import type { FeatureCollection, Feature, Geometry } from "geojson";
+import type { FeatureCollection, Geometry } from "geojson";
 import { MAP_LAYER_TYPES, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { getZoomBucket } from "./cache";
 import { loadLayerFromDB, loadGeoJSONFromFile } from "./layer-loader";

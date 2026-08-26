@@ -4,9 +4,7 @@ import {
   Compass,
   Search,
   Globe,
-  HomeSimple,
   Settings,
-  LogIn,
   LogOut,
   Book,
   Page,
@@ -19,7 +17,6 @@ import {
   CheckCircle,
   RefreshDouble,
   Palette,
-  Database,
   User,
   Shield,
 } from "iconoir-react";

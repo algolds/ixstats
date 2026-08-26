@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, type ElementType } from "react";
-import { StatUp as TrendingUp, Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Dashboard as Gauge, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, StatDown as TrendingDown, Settings, Play } from "iconoir-react";
+import React, { useMemo, type ElementType } from "react";
+import { StatUp as TrendingUp, Dollar as DollarSign, StatsReport as BarChart3, City as Building2, Dashboard as Gauge, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, StatDown as TrendingDown, Settings } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 import { useBuilderContext } from "../components/enhanced/context/BuilderStateContext";
@@ -38,7 +37,6 @@ import {
 } from "../lib/economy-calculations";
 
 // Economy Builder Integration
-import type { EconomyBuilderState } from "~/types/economy-builder";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 
 import { EDIT_MODE_FIELD_LOCKS } from "../components/enhanced/builderConfig";

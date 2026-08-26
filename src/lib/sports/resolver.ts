@@ -1421,7 +1421,7 @@ export function resolveMatch(args: {
       trace.push({
         t: 60,
         type: "tactic_shift",
-        description: `END OF REGULATION: Tied at ${homeScore}-\Score. Proceeding to Overtime under possession rules.`,
+        description: `END OF REGULATION: Tied at ${homeScore}-Score. Proceeding to Overtime under possession rules.`,
         team: possession,
       });
 

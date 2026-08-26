@@ -794,7 +794,7 @@ export function PollWidgetOptions({ className, children, ...props }: PollWidgetO
   }, []);
 
   return (
-    <div
+    <div tabIndex={0}
       className={cn("flex flex-col gap-2", className)}
       data-slot="poll-widget-options"
       onKeyDown={handleKeyDown}

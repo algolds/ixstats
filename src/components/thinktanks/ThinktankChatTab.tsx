@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ChatBubble, User, Plus, Refresh, Sparks } from "iconoir-react";
+import { ChatBubble, Plus, Refresh } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { MessagesChatPanel } from "~/components/messages/MessagesChatPanel";
 import { Button } from "~/components/ui/button";

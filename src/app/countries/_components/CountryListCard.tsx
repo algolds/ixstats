@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Group as Users, StatUp as TrendingUp, Globe as GlobeIcon, ArrowRight, Expand as Scaling, Pin as LocateFixed, WhiteFlag as FlagIcon, OpenNewWindow as ExternalLink, OpenBook as BookOpen } from "iconoir-react";
+import { Group as Users, StatUp as TrendingUp, Globe as GlobeIcon, ArrowRight, Expand as Scaling, Pin as LocateFixed, WhiteFlag as FlagIcon, OpenBook as BookOpen } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter } from "~/components/ui/card";

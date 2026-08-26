@@ -2,9 +2,8 @@
 "use client";
 
 import React from "react";
-import { Database, OpenNewWindow as ExternalLink, CheckCircle, Server, HardDrive } from "iconoir-react";
+import { Database, CheckCircle, Server, HardDrive } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 

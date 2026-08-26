@@ -3,12 +3,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "motion/react";
 import {
   ViewGrid as LayoutGrid,
-  Globe,
   HistoricShieldAlt as HistoricShield,
-  ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
   KeyCommand as Command,
   EditPencil as Edit3,
@@ -22,7 +19,6 @@ import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { DOMAIN_TILES } from "../ExecutiveHome";
-import type { MyCountrySection } from "../MyCountrySidebarNav";
 import type { CommandNavMode } from "../CommandNavToggle";
 
 interface UnifiedGlassCommandBarProps {

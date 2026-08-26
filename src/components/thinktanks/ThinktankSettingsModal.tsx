@@ -4,16 +4,13 @@ import React, { useState } from "react";
 import {
   Settings,
   Group,
-  Shield,
   Trash,
   Check,
   Globe,
   Lock,
-  User,
   Plus,
   Send,
   MediaImage,
-  Refresh,
   Xmark,
 } from "iconoir-react";
 import {
@@ -27,7 +24,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Switch } from "~/components/ui/switch";
-import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
 import { api } from "~/trpc/react";

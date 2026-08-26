@@ -11,7 +11,6 @@ import type {
   ListItemEl,
   RowEl,
   CellEl,
-  InfoboxBoxEl,
 } from "./wiki-html";
 import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 

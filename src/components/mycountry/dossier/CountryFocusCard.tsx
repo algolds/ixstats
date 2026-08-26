@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";

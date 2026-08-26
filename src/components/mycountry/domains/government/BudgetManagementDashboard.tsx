@@ -5,7 +5,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { safeFormatCurrency, formatNumber, formatCurrency, toTitleCase, cn } from "~/lib/utils";
+import { safeFormatCurrency, formatCurrency, toTitleCase, cn } from "~/lib/utils";
 import {
   PieChart,
   Pie,

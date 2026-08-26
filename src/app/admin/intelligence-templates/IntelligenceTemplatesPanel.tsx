@@ -6,7 +6,6 @@ import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +25,6 @@ import {
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
 import {
-  Page as FileText,
   Plus,
   EditPencil as Pencil,
   Trash as Trash2,

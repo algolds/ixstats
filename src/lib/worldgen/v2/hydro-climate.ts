@@ -12,8 +12,8 @@
  * 8. Trewartha Biome Classification (12 Biomes)
  */
 
-import type { WorldGraph, WorldGenParams, RiverNetwork, Watershed } from "./types";
-import { CLIMATE_CONSTANTS, TREWARTHA_BIOMES, getElevationZone } from "./config";
+import type { WorldGraph, WorldGenParams, Watershed } from "./types";
+import { CLIMATE_CONSTANTS, getElevationZone } from "./config";
 import { makeRng } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
 

@@ -2,7 +2,6 @@
  * editor-types.ts — Shared forms and domain types for the Map Editor slices.
  */
 
-import type { Polygon, MultiPolygon, Position } from "geojson";
 
 export type FeatureType =
   | "city"

@@ -4,7 +4,6 @@
  */
 
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
-import type { ComponentType } from "~/lib/enums";
 import type {
   EconomicInputs,
   NationalIdentityData,
@@ -13,7 +12,6 @@ import type {
   FiscalSystemData,
   IncomeWealthData,
   DemographicData,
-  GeographyData,
 } from "../lib/economy-data-service";
 import type {
   GovernmentBuilderState,
@@ -24,7 +22,6 @@ import type {
 } from "~/types/government";
 import type { GovernmentSpendingData } from "~/types/economics";
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import type { ExtractedBuilderData } from "./wiki-data-extractor";
 import type { WikiGovernmentAttributes } from "./wiki-government-parser";
 import type { WikiEconomyAttributes } from "./wiki-economy-parser";
 import type { ParsedDepartment } from "./wiki-department-parser";
@@ -61,7 +58,7 @@ interface AssembleInput {
 function parseWikiNumericValue(value: unknown): number | null {
   if (typeof value === "number") return value > 0 ? value : null;
   if (typeof value !== "string") return null;
-  const match = value.match(/([\d,\.]+)\s*(trillion|billion|million|thousand)?/i);
+  const match = value.match(/([\d,.]+)\s*(trillion|billion|million|thousand)?/i);
   if (!match) return null;
   let num = parseFloat(match[1]!.replace(/,/g, ""));
   if (isNaN(num)) return null;

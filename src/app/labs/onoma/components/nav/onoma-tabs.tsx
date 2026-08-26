@@ -6,7 +6,6 @@
 
 import React from "react";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
-import { ArrowLeft } from "iconoir-react";
 import { RiFlashlightLine } from "react-icons/ri";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaGlyphName } from "../glyphs/onoma-glyphs-catalog";

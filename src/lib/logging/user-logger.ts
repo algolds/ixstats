@@ -553,7 +553,7 @@ export class UserLogger {
       output.on("finish", () => {
         fs.unlinkSync(filePath); // Remove original file
       });
-    } catch (error) {
+    } catch  {
       // Silent fail for compression
     }
   }
@@ -621,7 +621,7 @@ export class UserLogger {
           userAgent: context.userAgent,
         },
       });
-    } catch (error) {
+    } catch  {
       // Silent fail for session updates
     }
   }

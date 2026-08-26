@@ -9,7 +9,6 @@ import {
   RefreshDouble as RefreshCw,
   Cart as ShoppingCart,
   Flash,
-  Shield,
   OpenNewWindow as ExternalLink,
   Crown,
 } from "iconoir-react";

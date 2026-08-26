@@ -254,7 +254,7 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
   if (!html || typeof html !== "string") return null;
 
   // 1. Strip out all known maintenance / notice / ambox blocks
-  let cleanHtml = html
+  const cleanHtml = html
     .replace(/<table[^>]*class=["'][^"']*\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b[^"']*["'][\s\S]*?<\/table>/gi, "")
     .replace(/<div[^>]*class=["'][^"']*\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b[^"']*["'][\s\S]*?<\/div>/gi, "")
     .replace(/<aside[^>]*class=["'][^"']*\b(?:notice|ambox)\b[^"']*["'][\s\S]*?<\/aside>/gi, "");

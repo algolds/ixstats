@@ -6,7 +6,6 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
-import { makeRng } from "~/lib/worldgen/rng";
 
 // ──────────────────────────────────────────────
 // Types
@@ -1184,7 +1183,7 @@ export function insertVertexIfOnSegment(
   point: Position,
   tolerance: number = 1e-7
 ): { geometry: Polygon | MultiPolygon; modified: boolean } {
-  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  const rings = getAllRings(geometry).map((r) => r.map((c) => [...c]));
   let modified = false;
 
   for (let ri = 0; ri < rings.length; ri++) {

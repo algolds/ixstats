@@ -8,7 +8,6 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  HelpCircle,
   Xmark as X,
   Compass,
 } from "iconoir-react";

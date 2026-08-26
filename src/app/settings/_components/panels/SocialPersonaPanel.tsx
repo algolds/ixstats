@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChatBubble as MessageCircle,
   User,
   FloppyDisk as Save,
   Xmark as X,

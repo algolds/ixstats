@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { MapEditorContextType, MapEditorPlugin } from "./types";
+import type { MapEditorContextType } from "./types";
 import { getPlugins } from "./registry";
 
 const MapEditorContext = createContext<MapEditorContextType | null>(null);

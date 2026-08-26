@@ -5,7 +5,7 @@
  * Decomposed into modular sub-hooks under src/hooks/map-editor/ (Plan 175).
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useMapHistory } from "./map-editor/useMapHistory";
 import { useMapEditorSync } from "./map-editor/useMapEditorSync";

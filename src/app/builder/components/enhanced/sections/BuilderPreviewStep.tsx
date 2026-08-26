@@ -29,7 +29,6 @@ import { RevenueSourcesList } from "../government-preview/RevenueSourcesList";
 // Fiscal preview
 import { FiscalTab } from "../tabs/fiscal/FiscalTab";
 import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
-import { calculateComponentEffectiveness } from "../tabs/utils/previewCalculations";
 
 interface SectionState {
   nationalIdentity: boolean;

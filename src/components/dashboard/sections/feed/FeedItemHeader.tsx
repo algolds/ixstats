@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Clock, OpenNewWindow as ExternalLink, RssFeed as Rss } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { formatTimeAgo } from "~/lib/utils";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import {
   WikiHtmlContent,
   WikiLinkPreview,

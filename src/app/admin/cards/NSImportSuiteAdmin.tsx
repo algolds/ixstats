@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, StatUp as TrendingUp, WarningTriangle as AlertTriangle, CheckCircle, Filter, Xmark as X, Component as Layers, Calendar, Clock, ArrowRight, Label as Tag, Eye, Sparks as Sparkles, OpenNewWindow as ExternalLink, MediaImage as ImageIcon, Page as FileText, Check } from "iconoir-react";
+import { Refresh as RefreshCw, Database, Globe, MapPin, Search, Group as Users, Play, Pause, Square, WarningTriangle as AlertTriangle, Filter, Xmark as X, Component as Layers, Clock, ArrowRight, Eye, Sparks as Sparkles, MediaImage as ImageIcon, Page as FileText } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";

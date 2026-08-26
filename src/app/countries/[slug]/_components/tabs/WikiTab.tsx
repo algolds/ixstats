@@ -5,9 +5,7 @@ import Link from "next/link";
 import {
   Trophy,
   Calendar,
-  Page as FileText,
   Clock,
-  Shield,
   GraphUp as TrendingUp,
   Medal as Award,
   FireFlame as Flame,

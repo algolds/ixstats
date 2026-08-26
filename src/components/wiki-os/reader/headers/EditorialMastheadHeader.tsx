@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { User, EditPencil as PenTool, Calendar } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
 import { CategoryBreadcrumb } from "../CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleHeaderProps } from "../ArticleHeader";

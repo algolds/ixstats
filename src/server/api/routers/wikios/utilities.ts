@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";

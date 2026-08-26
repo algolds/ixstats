@@ -13,7 +13,7 @@ import {
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
-import { useActiveDIPlugin, DIPluginProvider } from "./plugin-context";
+import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { IOSActivityIndicator } from "~/components/ui/loader";

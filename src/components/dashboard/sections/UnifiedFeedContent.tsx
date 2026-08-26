@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { RssFeed as Rss, Group as Users } from "iconoir-react";
-import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";

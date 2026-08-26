@@ -4,13 +4,12 @@
 // Onoma Lab — Historical Sound Change & Language Evolution Studio
 
 import { useState, useMemo } from "react";
-import { GitFork, Plus, Trash as Trash2, SoundHigh as Volume2, Undo as RotateCcw, ArrowRight, HelpCircle, Copy, Check, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Component as Layers, ArrowUp, ArrowDown, Bookmark, Globe as Globe2, Folder as FolderDown } from "iconoir-react";
+import { GitFork, Plus, Trash as Trash2, SoundHigh as Volume2, ArrowRight, Copy, Check, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, Component as Layers, ArrowUp, ArrowDown, Bookmark, Globe as Globe2, Folder as FolderDown } from "iconoir-react";
 import {
   SOUND_SHIFT_PRESETS,
   applySoundShifts,
   type SoundShiftEpoch,
   type SoundShiftRule,
-  type SoundShiftPreset,
   type WordEvolutionResult,
 } from "~/lib/onoma/sound-shifts";
 import { speakName } from "~/lib/onoma/browser-speech";

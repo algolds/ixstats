@@ -91,7 +91,7 @@ export const systemValidationRouter = createTRPCRouter({
     // Check env vars
     checks.push({
       name: "Clerk Config",
-      status: !!process.env.CLERK_SECRET_KEY ? "pass" : "fail",
+      status: process.env.CLERK_SECRET_KEY ? "pass" : "fail",
       details: process.env.CLERK_SECRET_KEY ? "Secret key configured" : "Missing CLERK_SECRET_KEY",
     });
 

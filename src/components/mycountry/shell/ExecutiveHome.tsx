@@ -17,18 +17,15 @@ import {
   ScaleFrameEnlarge as Scale,
   ClockRotateRight as FileClock,
   ArrowUpRight,
-  Community as Handshake,
   NavArrowDown as ChevronDown,
   NavArrowUp as ChevronUp,
   ArrowUp,
   ArrowDown,
   Clock,
-  Expand as Maximize2,
   Compress as Minimize2,
   MapPin,
   EditPencil as Edit3,
 } from "iconoir-react";
-import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Group as Users, BellOff, Globe, Shield, AntennaSignal as Radio, Pin } from "iconoir-react";
+import { Group as Users, BellOff, Globe, AntennaSignal as Radio } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { MessageFolder } from "~/types/messages";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";

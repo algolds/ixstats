@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Badge } from "~/components/ui/badge";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
 import { Shield, Dollar as DollarSign, Globe, Trophy, Flash as Zap, Sparks as Sparkles, WarningTriangle as AlertTriangle, ShieldAlert, Trophy as Award, Play, Bell, Flask as FlaskConical } from "iconoir-react";

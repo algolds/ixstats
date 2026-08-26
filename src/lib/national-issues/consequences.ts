@@ -14,10 +14,6 @@
 import { IxTime } from "~/lib/ixtime";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import {
-  calculateCivilServiceCapacity,
-  calculateTotalConsumedStaff,
-} from "~/lib/government/atomic-utils";
-import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
   type ConsequenceDefinition,

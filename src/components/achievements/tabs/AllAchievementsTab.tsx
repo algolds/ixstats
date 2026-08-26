@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, Trophy as Award, ViewGrid as LayoutGrid, List, Eye, EyeClosed as EyeOff, Crown as Diamond, Search, Xmark as X, Crown as Gem, Flash as Zap, Archery as Target, OnePointCircle as CircleDot, Component as Layers, Hexagon, Check } from "iconoir-react";
+import { Lock, Trophy as Award, ViewGrid as LayoutGrid, List, Eye, EyeClosed as EyeOff, Crown as Diamond, Search, Xmark as X, Crown as Gem, Flash as Zap, Archery as Target, OnePointCircle as CircleDot, Component as Layers, Hexagon } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {

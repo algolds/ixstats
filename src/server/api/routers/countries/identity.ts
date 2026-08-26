@@ -120,7 +120,7 @@ export const identityProcedures = {
       } catch (error) {
         console.error("[Countries API] Failed to update national identity:", error);
         throw new Error(
-          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

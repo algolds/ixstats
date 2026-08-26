@@ -2,7 +2,6 @@
 // Universal Telemetry & Usage Statistics Grid for Atomic Components
 "use client";
 
-import { Card } from "~/components/ui/card";
 import {
   Component as Layers,
   CheckCircle,

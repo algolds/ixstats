@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
+import { formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { StatUp as TrendingUp, Suitcase as Briefcase, Group as Users, Dollar as DollarSign } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";

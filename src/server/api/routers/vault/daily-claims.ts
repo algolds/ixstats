@@ -74,7 +74,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error("Failed to claim daily bonus");
+      throw new Error("Failed to claim daily bonus", { cause: error });
     }
   }),
 
@@ -131,7 +131,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Router] Error claiming combined daily reward:", error);
         if (error instanceof Error) throw error;
-        throw new Error("Failed to claim combined daily reward");
+        throw new Error("Failed to claim combined daily reward", { cause: error });
       }
     }),
 
@@ -155,7 +155,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("[Vault Router] Error claiming streak bonus:", error);
-      throw new Error("Failed to update login streak");
+      throw new Error("Failed to update login streak", { cause: error });
     }
   }),
 
@@ -183,7 +183,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         return capCheck;
       } catch (error) {
         console.error("[Vault Router] Error checking daily cap:", error);
-        throw new Error("Failed to check daily earning cap");
+        throw new Error("Failed to check daily earning cap", { cause: error });
       }
     }),
 
@@ -234,7 +234,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         return { success: true, newStreak };
       } catch (error) {
         console.error("[Vault Router] Error adjusting streak:", error);
-        throw new Error("Failed to adjust user streak");
+        throw new Error("Failed to adjust user streak", { cause: error });
       }
     }),
 

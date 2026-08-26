@@ -14,7 +14,6 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import type { MyCountrySection } from "./MyCountrySidebarNav";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 const EmbassiesAndRelationsPanel = dynamic(

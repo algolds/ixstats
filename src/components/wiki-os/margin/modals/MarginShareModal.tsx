@@ -16,7 +16,6 @@ import {
   Code,
   ShareAndroid as Share2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";

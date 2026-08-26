@@ -16,7 +16,7 @@ export const ixnayidRouter = createTRPCRouter({
   // =========================================================================
 
   getStatus: protectedProcedure.query(async ({ ctx }) => {
-    let user = await db.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: ctx.user.id },
       select: {
         id: true,

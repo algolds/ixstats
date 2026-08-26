@@ -6,7 +6,7 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
-import { OpenBook as BookOpen, OpenNewWindow as ExternalLink, Xmark as X } from "iconoir-react";
+import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { parseWikiContent } from "~/lib/builder";
 
 interface WikiContentModalProps {

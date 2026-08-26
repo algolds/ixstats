@@ -37,7 +37,7 @@ export async function getOrCreateVault(userIdOrClerkId: string, db: PrismaClient
     return vault;
   } catch (error) {
     console.error(`[Vault Service] Failed to get/create vault for ${userIdOrClerkId}:`, error);
-    throw new Error("Failed to access vault");
+    throw new Error("Failed to access vault", { cause: error });
   }
 }
 

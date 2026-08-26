@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { Hexagon, Copy, Cut as Scissors, Sparks as Sparkles, ControlSlider as Sliders, ColorPicker as PaintBucket } from "iconoir-react";
+import { Hexagon, Copy, Cut as Scissors, Sparks as Sparkles, ControlSlider as Sliders } from "iconoir-react";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import {
   CityScatterPopover,

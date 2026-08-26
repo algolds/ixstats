@@ -419,7 +419,7 @@ export function PostActions({
         }
 
         onReaction?.(postId, reactionType);
-      } catch (error: any) {
+      } catch  {
         // Handled in mutation onError
       }
     },

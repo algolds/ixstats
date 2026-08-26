@@ -2,7 +2,6 @@
 // Policy management and tracking system
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { calculateRealTimePolicyEffects } from "~/lib/policies";
 import { getPolicyDecretals } from "~/lib/policies/registry";

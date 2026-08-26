@@ -1,23 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
-import { Label } from "~/components/ui/label";
-import { Industry as Factory, Group as Users, Archery as Target, WarningTriangle as AlertTriangle, CheckCircle, Flash as Zap, Globe, Eye, SystemRestart as Loader2, Shield, HelpCircle, Bank as Landmark, Page as Receipt } from "iconoir-react";
+import { Industry as Factory, Group as Users, WarningTriangle as AlertTriangle, Flash as Zap, Globe, SystemRestart as Loader2, HelpCircle, Page as Receipt } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 import { isEqual } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 // Economy Builder Components
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { AtomicEconomicComponentSelector } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import { EconomicWelcomeModal } from "~/components/mycountry/domains/economy/atomic";
-import { Checkbox } from "~/components/ui/checkbox";
 
 // Types and Services
 import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
@@ -34,7 +29,6 @@ import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
 // Step Components
-import { PreviewStep } from "./steps/PreviewStep";
 import { GlassCard, GlassCardContent } from "../glass/GlassCard";
 import { FiscalTab, TaxTab } from "./tabs";
 import { ComponentErrorBoundary } from "~/components/ui/comprehensive-error-boundary";

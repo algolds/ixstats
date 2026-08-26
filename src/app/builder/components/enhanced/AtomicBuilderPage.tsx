@@ -35,7 +35,6 @@ import { StepContent } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import type { BuilderStep } from "./builderConfig";
-import { BuilderStepNav } from "../BuilderStepNav";
 import type { BuilderSection } from "../../lib/builder-theme";
 
 /**
@@ -305,7 +304,7 @@ function AtomicBuilderPageInner({
         }
         // Clear the server draft so a completed build can't resurrect on /builder.
         clearBuilderDraftMutation.mutate();
-      } catch (error) {
+      } catch  {
         // Failed to clear saved state
       }
 
@@ -362,7 +361,7 @@ function AtomicBuilderPageInner({
           localStorage.removeItem(`builder_state_${countryId}`);
           localStorage.removeItem(`builder_last_saved_${countryId}`);
         }
-      } catch (error) {
+      } catch  {
         // Failed to clear saved state
       }
 
@@ -458,7 +457,7 @@ function AtomicBuilderPageInner({
         });
       }
       setIsConfirmModalOpen(false);
-    } catch (error) {
+    } catch  {
       // Error handled by mutation's onError callback
       // Release lock on error
       submissionLockRef.current = false;
@@ -544,7 +543,7 @@ function AtomicBuilderPageInner({
         localStorage.removeItem("builder_state");
         localStorage.removeItem("builder_last_saved");
       }
-    } catch (error) {
+    } catch  {
       // Failed to clear saved state
     }
 

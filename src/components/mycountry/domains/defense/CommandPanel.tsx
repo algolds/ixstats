@@ -2,7 +2,7 @@
 "use client";
 
 import { useDefenseBudget } from "~/hooks/useDefenseBudget";
-import { BudgetManagementCard, ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command";
+import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command";
 
 interface CommandPanelProps {
   countryId: string;

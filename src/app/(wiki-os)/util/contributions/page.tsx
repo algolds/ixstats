@@ -14,9 +14,7 @@ import { withBasePath } from "~/lib/base-path";
 import {
   User as UserIcon,
   Search,
-  ArrowRight,
   Folder as FolderTree,
-  Page as FileText,
   Clock,
   GitCommit,
 } from "iconoir-react";

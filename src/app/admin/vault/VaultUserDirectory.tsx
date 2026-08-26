@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -18,14 +17,6 @@ import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -39,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Wallet, Search, NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
+import { Search, NavArrowRight as ChevronRight, SystemRestart as Loader2, Gift, ArrowSeparateVertical as ArrowUpDown, MoreHoriz as MoreHorizontal, FireFlame as Flame, ClockRotateRight as History, Crown as Gem } from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
 

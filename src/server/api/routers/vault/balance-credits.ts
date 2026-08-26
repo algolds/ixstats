@@ -54,7 +54,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         return balance;
       } catch (error) {
         console.error("[Vault Router] Error getting balance:", error);
-        throw new Error("Failed to retrieve vault balance");
+        throw new Error("Failed to retrieve vault balance", { cause: error });
       }
     }),
 
@@ -107,7 +107,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         if (error instanceof Error) {
           throw error;
         }
-        throw new Error("Failed to spend credits");
+        throw new Error("Failed to spend credits", { cause: error });
       }
     }),
 
@@ -132,7 +132,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting vault level:", error);
-        throw new Error("Failed to retrieve vault level");
+        throw new Error("Failed to retrieve vault level", { cause: error });
       }
     }),
 
@@ -150,7 +150,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       return summary;
     } catch (error) {
       console.error("[Vault Router] Error getting earnings summary:", error);
-      throw new Error("Failed to retrieve earnings summary");
+      throw new Error("Failed to retrieve earnings summary", { cause: error });
     }
   }),
 
@@ -190,7 +190,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("[Vault Router] Error getting today's earnings:", error);
-      throw new Error("Failed to retrieve today's earnings");
+      throw new Error("Failed to retrieve today's earnings", { cause: error });
     }
   }),
 
@@ -218,7 +218,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error calculating passive income:", error);
-        throw new Error("Failed to calculate passive income");
+        throw new Error("Failed to calculate passive income", { cause: error });
       }
     }),
 
@@ -271,7 +271,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         if (error instanceof Error) {
           throw error;
         }
-        throw new Error("Failed to earn credits");
+        throw new Error("Failed to earn credits", { cause: error });
       }
     }),
 
@@ -330,7 +330,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       return stats;
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);
-      throw new Error("Failed to retrieve user stats");
+      throw new Error("Failed to retrieve user stats", { cause: error });
     }
   }),
 
@@ -359,7 +359,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting budget multiplier:", error);
-        throw new Error("Failed to retrieve budget multiplier");
+        throw new Error("Failed to retrieve budget multiplier", { cause: error });
       }
     }),
 
@@ -391,7 +391,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting budget breakdown:", error);
-        throw new Error("Failed to retrieve budget multiplier breakdown");
+        throw new Error("Failed to retrieve budget multiplier breakdown", { cause: error });
       }
     }),
 

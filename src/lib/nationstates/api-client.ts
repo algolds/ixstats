@@ -204,7 +204,7 @@ export class NSApiClient {
    * Extract value from XML tag
    */
   private extractTag(xml: string, tagName: string): string | null {
-    const regex = new RegExp(`<${tagName}>(.*?)<\/${tagName}>`, "is");
+    const regex = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "is");
     const match = xml.match(regex);
     return match ? match[1].trim() : null;
   }
@@ -533,7 +533,7 @@ export class NSApiClient {
         name,
         numnations: numStr ? parseInt(numStr, 10) : 0,
       };
-    } catch (error) {
+    } catch  {
       return null;
     }
   }
@@ -789,7 +789,7 @@ export class NSApiClient {
     } catch (error) {
       console.error(`[NS API] Fatal error parsing card dump:`, error);
       throw new Error(
-        `Failed to parse card dump: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to parse card dump: ${error instanceof Error ? error.message : String(error)}`, { cause: error }
       );
     }
   }

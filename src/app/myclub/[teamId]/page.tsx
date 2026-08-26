@@ -25,7 +25,6 @@ import { MyLeagueSidebarLayout } from "~/components/sports/league/MyLeagueSideba
 import { type MyLeagueSection } from "~/components/sports/league/MyLeagueSidebarNav";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
 import { Settings } from "iconoir-react";
-import { GlareCard } from "~/components/ui/glare-card";
 import SportyPlayerCard from "~/components/sports/player-cards/PlayerCard1";
 import Scoreboard from "~/components/sports/scoreboards/Scoreboard1";
 import PlayerMatchup1 from "~/components/sports/player-matchups/PlayerMatchup1";
@@ -38,7 +37,7 @@ import { LineupBuilder } from "~/components/sports/club/LineupBuilder";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { RevenueCollector } from "~/components/sports/club/RevenueCollector";
 import { TeamTrainingButton } from "~/components/sports/club/TeamTrainingButton";
-import { ArrowLeft, Trophy, Group as Users, Calendar, StatsReport as BarChart3, WhiteFlag as Flag, MapPin, Shield, Check, FireFlame as Flame, ArrowSeparate as ArrowLeftRight, StatUp as TrendingUp, Dollar as DollarSign, Suitcase as Briefcase, Search, OpenNewWindow as ExternalLink } from "iconoir-react";
+import { ArrowLeft, Trophy, Group as Users, Calendar, StatsReport as BarChart3, WhiteFlag as Flag, MapPin, Shield, FireFlame as Flame, ArrowSeparate as ArrowLeftRight, Dollar as DollarSign, Search, OpenNewWindow as ExternalLink } from "iconoir-react";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",

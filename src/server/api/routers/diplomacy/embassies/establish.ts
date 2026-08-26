@@ -1,36 +1,22 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
-  rateLimitedPublicProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notifications/api";
-import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 import {
   calculateCulturalCompatibility,
   type CountryBasicInfo,
   type DiplomaticRelationship,
   type EmbassyConnection,
 } from "~/lib/diplomacy/cultural-compatibility";
-import {
-  NPCCulturalParticipation,
-  type NPCParticipationContext,
-} from "~/lib/diplomacy/npc-cultural-participation";
 import { NPCPersonalitySystem, type ObservableData } from "~/lib/diplomacy/npc-personality";
-import {
-  STRATEGIC_PRIORITIES,
-  PARTNERSHIP_GOALS,
-  KEY_ACHIEVEMENTS,
-} from "~/lib/diplomacy/profile-options";
 import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 
-import { normalizeFlagUrl } from "~/lib/flags/normalization";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

@@ -12,7 +12,7 @@ export async function GET() {
   try {
     await db.$queryRaw`SELECT 1`;
     checks.db = "ok";
-  } catch (err) {
+  } catch  {
     checks.db = "error";
     healthy = false;
   }

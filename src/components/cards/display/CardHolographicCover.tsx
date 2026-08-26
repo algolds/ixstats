@@ -19,7 +19,7 @@
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import type { CardRarity, CardType } from "@prisma/client";
+import type { CardRarity } from "@prisma/client";
 import {
   getRainbowHolographicGradient,
   getSparkleGridGradient,

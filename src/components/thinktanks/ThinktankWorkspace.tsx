@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Group,
-  Sparks,
   Plus,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -17,7 +16,6 @@ import { ThinktankLayout } from "./ThinktankLayout";
 import { ThinktankDirectorySidebar } from "./ThinktankDirectorySidebar";
 import { ThinktankHeader, type ThinktankTab } from "./ThinktankHeader";
 import { ThinktankFeedTab } from "./ThinktankFeedTab";
-import { ThinktankChatTab } from "./ThinktankChatTab";
 import { ThinktankPapersTab } from "./ThinktankPapersTab";
 import { ThinktankRosterTab } from "./ThinktankRosterTab";
 import { ThinktankSettingsModal } from "./ThinktankSettingsModal";

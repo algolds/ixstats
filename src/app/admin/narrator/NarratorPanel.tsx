@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -25,7 +24,6 @@ import {
   Database,
   Play,
   SystemRestart as Loader2,
-  Check,
   ControlSlider as SlidersHorizontal,
   FloppyDisk as Save,
 } from "iconoir-react";

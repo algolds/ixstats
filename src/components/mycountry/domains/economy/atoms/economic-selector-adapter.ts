@@ -6,7 +6,6 @@
 
 import {
   type EconomicComponentType,
-  type EconomicCategory,
   type EconomicTemplate,
   ECONOMIC_TEMPLATES,
   COMPONENT_CATEGORIES,

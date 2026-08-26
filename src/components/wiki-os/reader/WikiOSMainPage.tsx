@@ -8,7 +8,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";

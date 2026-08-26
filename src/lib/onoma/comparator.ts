@@ -22,7 +22,7 @@ export function getPhonemeInventory(profile: CulturalProfile): Set<string> {
       for (const seg of segments) {
         if (seg.ipa && /[a-zøɛɔœɨŋʃθðɬʁvjˈ]/.test(seg.ipa)) {
           // Normalize phoneme (remove stress markings or brackets for strict inventory comparison)
-          const cleanPhoneme = seg.ipa.replace(/[ˈ\[\]\/]/g, "").trim();
+          const cleanPhoneme = seg.ipa.replace(/[ˈ[\]/]/g, "").trim();
           if (cleanPhoneme) {
             phonemes.add(cleanPhoneme);
           }

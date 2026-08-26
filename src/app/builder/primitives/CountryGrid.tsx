@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { motion } from "motion/react";
 import { Globe } from "iconoir-react";
 import { CountriesFocusGridModularBuilder } from "../components/CountriesFocusGridModularBuilder";
 import type { RealCountryData } from "../lib/economy-data-service";
 import type { CountryCardData } from "../components/CountryFocusCardBuilder";
 import { useBuilderFilter } from "../components/builder-filter-context";
-import { DYNAMIC_ISLAND_STYLE, RefractiveGridBezel } from "../components/glass";
+import { RefractiveGridBezel } from "../components/glass";
 
 interface CountryGridProps {
   countries: RealCountryData[];

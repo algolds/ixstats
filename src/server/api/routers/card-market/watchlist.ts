@@ -77,7 +77,7 @@ export const cardMarketWatchlistRouter = createTRPCRouter({
             },
           },
         });
-      } catch (e) {
+      } catch  {
         // Ignore if doesn't exist
       }
       return { success: true };

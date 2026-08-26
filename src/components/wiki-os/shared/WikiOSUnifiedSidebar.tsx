@@ -14,7 +14,6 @@ import {
   Search,
   MediaImage as ImageIcon,
   EditPencil as FileEdit,
-  ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
   Clock,
   Link as Link2,
@@ -28,10 +27,8 @@ import {
   SidebarExpand as PanelLeftOpen,
   MoreHoriz as MoreHorizontal,
   Printer,
-  Code as FileCode,
   Wrench,
   Folder,
-  ViewGrid,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";

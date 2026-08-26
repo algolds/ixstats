@@ -238,7 +238,7 @@ export const myCountryIntelligenceRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[MyCountry] Vitality tracking error:", error);
-        throw new Error("Failed to update vitality tracking");
+        throw new Error("Failed to update vitality tracking", { cause: error });
       }
     }),
 

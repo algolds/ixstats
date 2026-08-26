@@ -7,7 +7,6 @@ import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import {
   type UndoStack,
   type VertexRef,
-  type EdgeRef,
   type AltitudeSnapResult,
   createUndoStack,
   pushUndo,
@@ -19,13 +18,10 @@ import {
   redo as redoStack,
   moveVertex,
   addVertex,
-  removeVertex,
   findNearestVertex,
   findNearestEdge,
-  findNearestAltitudeSnap,
   getVertices,
   calculateArea,
-  calculateBBox,
   validateGeometry,
   distanceDeg,
   smoothGeometry,
@@ -34,7 +30,6 @@ import {
 } from "~/lib/maps/border-editor";
 import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
 import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
-import type { FeatureVertexRef } from "~/lib/maps/shared-vertex-builder";
 import { traceAlongLayer } from "~/lib/maps/border-trace";
 import type { TraceFeature } from "~/lib/maps/border-trace";
 

@@ -16,7 +16,6 @@ import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } fr
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
 import {
-  chaikinSmooth,
   chaikinSmoothLine,
   catmullRomSmooth,
   catmullRomSmoothLine,

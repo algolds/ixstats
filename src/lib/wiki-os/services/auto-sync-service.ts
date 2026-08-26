@@ -34,7 +34,7 @@ export function isIrlOrMaintenanceCategory(name: string): boolean {
     lower.includes("www.") ||
     lower.includes("%2f") ||
     lower.includes("%3a") ||
-    /[<>{}\[\]%]/.test(name)
+    /[<>{}[\]%]/.test(name)
   ) {
     return true;
   }
@@ -356,7 +356,7 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
     if (updated > 0) {
       console.log(`[WikiAutoSync] 🔄 Auto-synced ${updated} new edits from MediaWiki into PostgreSQL.`);
     }
-  } catch (err: any) {
+  } catch  {
     // Non-fatal background polling error
   } finally {
     isSyncing = false;

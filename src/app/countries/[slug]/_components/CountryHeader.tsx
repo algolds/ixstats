@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
-import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -20,7 +19,6 @@ import {
   Spark as Sparkles,
   Palette,
   User,
-  Shield,
 } from "iconoir-react";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";

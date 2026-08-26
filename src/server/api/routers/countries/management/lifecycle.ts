@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
@@ -64,7 +63,7 @@ export const managementLifecycleProcedures = {
       } catch (error) {
         console.error("[Countries API] Failed to update country:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

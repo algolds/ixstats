@@ -4,7 +4,7 @@
 // Onoma Custom Studio Workshop — Saved Dictionary Card Component
 
 import { useState, useEffect, useRef } from "react";
-import { OpenBook as BookOpen, Globe, Lock, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown, Wrench, FolderPlus, EditPencil as Pencil, Download, Trash as Trash2, SystemRestart as Loader2, SoundHigh as AudioLines, GitFork, Sparks as Sparkles } from "iconoir-react";
+import { Globe, Lock, NavArrowUp as ChevronUp, NavArrowDown as ChevronDown, Wrench, FolderPlus, EditPencil as Pencil, Download, Trash as Trash2, SystemRestart as Loader2, SoundHigh as AudioLines, GitFork, Sparks as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";

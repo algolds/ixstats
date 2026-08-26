@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import type { SelectedCountry, SelectedFeature, HoveredCountry } from "../IxWorldMap";
-import type { ProjectionMode, MapLayerType } from "~/lib/maps/map-config";
+import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { OverlayVisibility } from "../IxWorldMap";
 import { buildDefaultVisibility, applyOverlayToggle } from "~/lib/maps/overlay-registry";
 

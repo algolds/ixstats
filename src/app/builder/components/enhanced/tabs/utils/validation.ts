@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import type { ValidationMessage } from "~/components/ui/shared/feedback/ValidationFeedback";

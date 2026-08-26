@@ -14,7 +14,6 @@ import {
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Card } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Plus, Search, Check, Xmark as X, Filter, Rocket } from "iconoir-react";
 import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/military/catalog-utils";

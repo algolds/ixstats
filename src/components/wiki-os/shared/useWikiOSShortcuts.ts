@@ -7,7 +7,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
+import { navigateWithBasePath } from "~/lib/base-path";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 
 export function useWikiOSShortcuts() {

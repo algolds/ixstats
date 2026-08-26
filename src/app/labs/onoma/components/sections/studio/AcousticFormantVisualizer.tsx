@@ -4,9 +4,8 @@
 // Onoma Lab — Real-Time IPA Formant & Acoustic Spectrogram Visualizer
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Activity, SoundHigh as AudioWaveform, ControlSlider as Sliders, InfoCircle as Info, AntennaSignal as Radio, Eye } from "iconoir-react";
+import { SoundHigh as AudioWaveform, InfoCircle as Info, AntennaSignal as Radio } from "iconoir-react";
 import {
-  IPA_VOWEL_FORMANTS,
   CARDINAL_VOWEL_GRID,
   extractVowelsFromIpa,
   f1ToY,

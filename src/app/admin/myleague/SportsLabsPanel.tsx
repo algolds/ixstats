@@ -14,10 +14,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Card, CardContent } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { AdminHeader } from "../_components/AdminHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
 import { Trophy, Group as Users, Calendar, Tournament as Swords, ControlSlider as Sliders, Database, Flask as FlaskConical } from "iconoir-react";

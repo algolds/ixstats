@@ -8,7 +8,6 @@ import {
   Settings,
   Send,
   ShareAndroid as Share2,
-  ShieldCheck as Shield,
   Globe,
   Trophy,
   Clock,

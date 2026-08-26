@@ -182,7 +182,7 @@ function processSwitcher(value: string): string {
 function processConvert(value: string): string {
   return value
     .replace(
-      /\{\{convert\|([^|]+)\|([^|]+)[\|]?[^}]*\}\}/g,
+      /\{\{convert\|([^|]+)\|([^|]+)[|]?[^}]*\}\}/g,
       (_m, num, unit) => `${num.trim()} ${unit.trim()}`
     )
     .replace(

@@ -21,14 +21,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "~/components/ui/dialog";
 import {
   Group as Users,
-  LinkSlash as Unlink,
   Link as LinkIcon,
-  User,
   Search,
   Sparks as Sparkles,
   Book as WikiIcon,

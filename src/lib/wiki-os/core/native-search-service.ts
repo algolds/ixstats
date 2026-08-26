@@ -83,7 +83,7 @@ export class NativeSearchService {
           a.summary ||
           (a.wikitext
             ? extractIntroFromWikitext(a.wikitext).slice(0, 160) ||
-              a.wikitext.replace(/^[=\s]+/, "").replace(/[{}\[\]]/g, "").slice(0, 160)
+              a.wikitext.replace(/^[=\s]+/, "").replace(/[{}[\]]/g, "").slice(0, 160)
             : "WikiOS article entry."),
         readingTime: a.readingTime || 1,
         leadImageUrl: a.leadImageUrl ?? null,
@@ -158,7 +158,7 @@ export class NativeSearchService {
             snippet:
               r.summary ||
               (r.preview
-                ? r.preview.replace(/^[=\s]+/, "").replace(/[{}\[\]]/g, "").slice(0, 160)
+                ? r.preview.replace(/^[=\s]+/, "").replace(/[{}[\]]/g, "").slice(0, 160)
                 : "WikiOS article entry."),
             readingTime: r.readingTime || 1,
             leadImageUrl: r.leadImageUrl || null,
@@ -214,10 +214,10 @@ export class NativeSearchService {
           const end = Math.min(a.wikitext.length, idx + 120);
           snippet =
             (start > 0 ? "…" : "") +
-            a.wikitext.substring(start, end).replace(/[{}\[\]]/g, "") +
+            a.wikitext.substring(start, end).replace(/[{}[\]]/g, "") +
             (end < a.wikitext.length ? "…" : "");
         } else {
-          snippet = a.wikitext.substring(0, 160).replace(/[{}\[\]]/g, "") + "…";
+          snippet = a.wikitext.substring(0, 160).replace(/[{}[\]]/g, "") + "…";
         }
       }
 
@@ -280,7 +280,7 @@ export async function getArticleSummaryFromShadow(
         leadImageUrl: null,
       };
     }
-  } catch (err) {
+  } catch  {
     // Postgres table column not present yet or read-only shadow miss — fall through
   }
 

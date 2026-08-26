@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ControlSlider as Sliders, Refresh as RefreshCw, FloppyDisk as Save, ShieldCheck, ShoppingBag, Gift, Clock, Sparks as Sparkles, Component as Layers, Trash as Trash2, MediaImage as Image } from "iconoir-react";
+import { Refresh as RefreshCw, FloppyDisk as Save, ShoppingBag, Gift, Sparks as Sparkles, Component as Layers, MediaImage as Image } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";

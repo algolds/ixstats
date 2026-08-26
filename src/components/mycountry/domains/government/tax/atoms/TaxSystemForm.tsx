@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -12,10 +11,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
-import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Autocomplete } from "~/components/ui/autocomplete";
-import { Calculator, Building, Calendar, StatUp as TrendingUp, Shield, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info } from "iconoir-react";
+import { Building, Calendar, StatUp as TrendingUp, Shield, WarningTriangle as AlertTriangle, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import type { TaxSystemInput } from "~/types/tax-system";
 import { api } from "~/trpc/react";
 

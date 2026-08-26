@@ -15,7 +15,7 @@
  */
 
 import { useRef, useCallback, useState } from "react";
-import { Settings as Settings2, List, OpenBook as BookOpen } from "iconoir-react";
+import { Settings as Settings2, List } from "iconoir-react";
 
 type MobileTab = "properties" | "features";
 

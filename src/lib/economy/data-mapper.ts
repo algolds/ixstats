@@ -11,10 +11,8 @@ import {
   safeParseEconomyData,
   type EconomyData,
   type FiscalSystemData,
-  type LaborEmploymentData,
   type IncomeWealthDistributionData,
   type DemographicsData,
-  type CoreEconomicIndicatorsData,
   type GovernmentSpendingData,
 } from "~/types/economics";
 

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type {
-  EditorMode,
   EditorFeature,
   CityFormData,
   POIFormData,

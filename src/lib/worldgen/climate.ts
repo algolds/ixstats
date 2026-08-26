@@ -7,8 +7,8 @@
  */
 
 import type { PackedGraph, WorldGenParams } from "./types";
-import { WATER_THRESHOLD, elevToMeters } from "./types";
-import { isLand, cellLat, cellAreaKm2 } from "./voronoi-mesh";
+import { elevToMeters } from "./types";
+import { isLand, cellLat } from "./voronoi-mesh";
 
 // ──────────────────────────────────────────────
 // Trewartha Climate Types

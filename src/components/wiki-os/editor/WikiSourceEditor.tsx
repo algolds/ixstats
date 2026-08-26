@@ -39,7 +39,7 @@ import {
 } from "./utils/codemirror-wikitext";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
 import { EditorModalProvider } from "./context/EditorModalContext";
-import { getDraft, clearDraft } from "~/lib/wiki-os/editor/draft-store";
+import { getDraft } from "~/lib/wiki-os/editor/draft-store";
 import { WikiSourceToolbar } from "./components/WikiSourceToolbar";
 import { WikiEditorSavePanel } from "./components/WikiEditorSavePanel";
 import { WikiEditorModalHost } from "./components/WikiEditorModalHost";

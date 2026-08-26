@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Heart, Reply, EditPencil as Edit, Trash as Trash2, Check, CheckCircle as CheckCheck, Xmark as X, Shield, Emoji as Smile } from "iconoir-react";
+import { Reply, EditPencil as Edit, Trash as Trash2, Check, CheckCircle as CheckCheck, Shield, Emoji as Smile } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
@@ -166,7 +166,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
     const content = message.content;
     if (!searchQuery?.trim()) return content;
 
-    const escapedQuery = searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const escapedQuery = searchQuery.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
     const parts = content.split(/(<[^>]+>)/g);
     const highlightedParts = parts.map((part) => {
       if (part.startsWith("<") && part.endsWith(">")) {

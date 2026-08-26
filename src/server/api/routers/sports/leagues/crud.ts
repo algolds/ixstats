@@ -400,7 +400,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             sportPreset: l.sportPreset,
           })),
         };
-      } catch (error) {
+      } catch  {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Search failed" });
       }
     }),

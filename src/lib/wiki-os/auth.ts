@@ -39,7 +39,7 @@ export interface WikiAuthIdentity {
 /** Sanitize a string to be a safe MediaWiki username. */
 export function sanitizeMediaWikiUsername(input: string): string {
   // MediaWiki usernames cannot contain # < > [ ] | { } / @ : =
-  let clean = input.replace(/[#<>\[\]|{}\/@:=]/g, "").trim().replace(/\s+/g, "_");
+  let clean = input.replace(/[#<>[\]|{}/@:=]/g, "").trim().replace(/\s+/g, "_");
   if (!clean) clean = "User";
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }

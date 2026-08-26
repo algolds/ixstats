@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Star, ShieldCheck, Trophy as Award } from "iconoir-react";
-import { FORUM_RIBBONS, type ForumRibbon } from "./constants";
+import { Star, Trophy as Award } from "iconoir-react";
+import { FORUM_RIBBONS } from "./constants";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 

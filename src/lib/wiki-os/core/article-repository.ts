@@ -10,7 +10,6 @@ import {
   toArticleSlug,
   toArticleId,
   toRevisionId,
-  type ArticleSlug,
   type ArticleId,
   type RevisionId,
   type SaveArticleInput,

@@ -25,9 +25,7 @@ import {
 } from "~/components/ui/dialog";
 import {
   Shield,
-  Plus,
   Search,
-  User,
   Sparks as Sparkles,
   Group as Users,
   Mail,

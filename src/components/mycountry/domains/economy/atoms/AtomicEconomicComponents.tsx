@@ -19,7 +19,6 @@ import { Dollar as DollarSign, WarningTriangle as AlertTriangle, FloppyDisk as S
 // Data imports
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
-  COMPONENT_CATEGORIES,
   type EconomicComponentType,
 } from "~/lib/economy/atomic-data";
 

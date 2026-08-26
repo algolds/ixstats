@@ -1,7 +1,6 @@
 // src/app/admin/_components/BotIntegrationCenter.tsx
 "use client";
 
-import { useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
 import { SystemCronScheduleWidget } from "./SystemCronScheduleWidget";
@@ -9,7 +8,6 @@ import { BotControlCard } from "./platform/BotControlCard";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
-import { useBotSync } from "../_hooks/useBotSync";
 import { Cpu } from "iconoir-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LorewardsBotSection } from "./platform/LorewardsBotSection";

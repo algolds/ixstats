@@ -206,7 +206,7 @@ async function logAdminAction(
         ipAddress: "",
       },
     });
-  } catch (error) {
+  } catch  {
     // Silently fail if AdminAuditLog doesn't exist
     console.warn("Admin audit logging skipped (model may not exist)");
   }

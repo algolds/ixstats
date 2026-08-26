@@ -78,7 +78,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         return result;
       } catch (error) {
         console.error("[MyCountry Dashboard] Error:", error);
-        throw new Error("Failed to get country dashboard data");
+        throw new Error("Failed to get country dashboard data", { cause: error });
       }
     }),
 
@@ -169,7 +169,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         return summary;
       } catch (error) {
         console.error("[MyCountry Summary] Error:", error);
-        throw new Error("Failed to get national summary");
+        throw new Error("Failed to get national summary", { cause: error });
       }
     }),
 

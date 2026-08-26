@@ -120,7 +120,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!c) return "";
     rawImageUrls.forEach((url: any) => {
       const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
       c = c.replace(reg, " ");
     });
@@ -157,7 +157,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
     if (!c) return "";
     repostImageUrls.forEach((url: any) => {
       const stringUrl = String(url);
-      const escapedUrl = stringUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedUrl = stringUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
       c = c.replace(reg, " ");
     });

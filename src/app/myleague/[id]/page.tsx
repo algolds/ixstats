@@ -9,7 +9,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
-import { StandingsTable } from "~/components/sports/league/StandingsTable";
 import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdown";
 import { ScheduleView } from "~/components/sports/league/ScheduleView";
 import { BracketView } from "~/components/sports/league/BracketView";
@@ -30,7 +29,7 @@ import {
   type LeagueSection,
 } from "~/components/sports/league/LeagueSidebarNav";
 import { getSportColors, getPreset, type SportPresetKey } from "~/lib/sports/presets";
-import { ArrowLeft, Play, Eye, Trophy, Group as Users, Calendar, Medal, Tournament as Swords, MapPin, Shield, Settings, ArrowRight, SystemRestart as Loader2, Activity, FastArrowRight as FastForward } from "iconoir-react";
+import { ArrowLeft, Play, Trophy, Group as Users, Calendar, Medal, Tournament as Swords, MapPin, Shield, Settings, SystemRestart as Loader2, Activity, FastArrowRight as FastForward } from "iconoir-react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";

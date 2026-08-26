@@ -240,7 +240,7 @@ class RealTimeIntelligenceServer {
         // Send ping to check connection health
         try {
           client.ws.ping();
-        } catch (error) {
+        } catch  {
           console.log(`🧹 Connection failed ping: ${clientId}`);
           this.clients.delete(clientId);
         }

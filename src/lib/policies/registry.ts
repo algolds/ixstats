@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 
 export interface DecretalSliderOption {
   label: string;
@@ -234,8 +233,8 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
       const maintenanceCost = level * 2000000;
 
       let gdpEffect = 0;
-      let employmentEffect = 0;
-      let inflationEffect = 0;
+      const employmentEffect = 0;
+      const inflationEffect = 0;
       let taxRevenueEffect = 0;
       let stabilityEffect = 0;
 

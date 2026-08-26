@@ -133,7 +133,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
       try {
         const status = await IxTime.checkBotHealth();
         setBotStatus(status);
-      } catch (error) {
+      } catch  {
         setBotStatus({
           available: false,
           message: "Connection failed",

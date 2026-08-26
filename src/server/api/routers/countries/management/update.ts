@@ -277,7 +277,7 @@ export const managementUpdateProcedures = {
       } catch (error) {
         console.error("[updateCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

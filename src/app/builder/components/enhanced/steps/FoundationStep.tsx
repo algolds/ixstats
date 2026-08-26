@@ -17,7 +17,6 @@ import {
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { cn } from "~/lib/utils";
-import { DynamicIslandEffects, DYNAMIC_ISLAND_STYLE } from "../../glass";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useIntersectionObserver } from "../PerformanceOptimizer";
 

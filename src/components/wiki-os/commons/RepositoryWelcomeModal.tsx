@@ -10,13 +10,10 @@ import {
   ControlSlider as SlidersHorizontal,
   Bookmark,
   Copy,
-  Download,
   OpenNewWindow as ExternalLink,
-  OpenBook as BookOpen,
   Sparks as Sparkles,
   InfoCircle as Info,
   Emoji as Smile,
-  HelpCircle,
   Eye,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";

@@ -9,7 +9,7 @@ import {
 } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
-import type { SystemStatus, BaseCountryData } from "~/types/ixstats";
+import type { SystemStatus } from "~/types/ixstats";
 import { prepareBaseCountryData, getCountryComponentsStatsData } from "~/server/shared/country-helpers";
 
 export const adminSystemRouter = createTRPCRouter({
@@ -64,7 +64,7 @@ export const adminSystemRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to get global stats:", error);
-      throw new Error("Failed to retrieve global statistics");
+      throw new Error("Failed to retrieve global statistics", { cause: error });
     }
   }),
 
@@ -109,7 +109,7 @@ export const adminSystemRouter = createTRPCRouter({
       return systemStatus;
     } catch (error) {
       console.error("Failed to get system status:", error);
-      throw new Error("Failed to retrieve system status");
+      throw new Error("Failed to retrieve system status", { cause: error });
     }
   }),
 
@@ -277,7 +277,7 @@ export const adminSystemRouter = createTRPCRouter({
         return { success: true, message: "Configuration saved successfully" };
       } catch (error) {
         console.error("Failed to save config:", error);
-        throw new Error("Failed to save configuration");
+        throw new Error("Failed to save configuration", { cause: error });
       }
     }),
 
@@ -315,7 +315,7 @@ export const adminSystemRouter = createTRPCRouter({
         }
       } catch (error) {
         console.error("Failed to set custom time:", error);
-        throw new Error("Failed to set custom time");
+        throw new Error("Failed to set custom time", { cause: error });
       }
     }),
 
@@ -355,7 +355,7 @@ export const adminSystemRouter = createTRPCRouter({
           name: error instanceof Error ? error.name : "Unknown",
         });
         throw new Error(
-          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to retrieve calculation logs: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),
@@ -415,7 +415,7 @@ export const adminSystemRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Failed to sync epoch:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time");
+        throw new Error(error instanceof Error ? error.message : "Failed to sync epoch time", { cause: error });
       }
     }),
 
@@ -494,7 +494,7 @@ export const adminSystemRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to force recalculation:", error);
-      throw new Error("Failed to recalculate country statistics");
+      throw new Error("Failed to recalculate country statistics", { cause: error });
     }
   }),
 
@@ -530,7 +530,7 @@ export const adminSystemRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to get system health:", error);
-      throw new Error("Failed to retrieve system health status");
+      throw new Error("Failed to retrieve system health status", { cause: error });
     }
   }),
 

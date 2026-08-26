@@ -62,7 +62,7 @@ export const adminBotRouter = createTRPCRouter({
       return result;
     } catch (error) {
       console.error("Failed to sync bot:", error);
-      throw new Error("Failed to sync with Discord bot");
+      throw new Error("Failed to sync with Discord bot", { cause: error });
     }
   }),
 
@@ -72,7 +72,7 @@ export const adminBotRouter = createTRPCRouter({
       return result;
     } catch (error) {
       console.error("Failed to pause bot:", error);
-      throw new Error("Failed to pause bot time");
+      throw new Error("Failed to pause bot time", { cause: error });
     }
   }),
 
@@ -82,7 +82,7 @@ export const adminBotRouter = createTRPCRouter({
       return result;
     } catch (error) {
       console.error("Failed to resume bot:", error);
-      throw new Error("Failed to resume bot time");
+      throw new Error("Failed to resume bot time", { cause: error });
     }
   }),
 
@@ -92,7 +92,7 @@ export const adminBotRouter = createTRPCRouter({
       return result;
     } catch (error) {
       console.error("Failed to clear bot overrides:", error);
-      throw new Error("Failed to clear bot overrides");
+      throw new Error("Failed to clear bot overrides", { cause: error });
     }
   }),
 
@@ -296,7 +296,7 @@ export const adminBotRouter = createTRPCRouter({
       return result;
     } catch (error) {
       console.error("Failed to sync with bot:", error);
-      throw new Error("Failed to sync with Discord bot");
+      throw new Error("Failed to sync with Discord bot", { cause: error });
     }
   }),
 });

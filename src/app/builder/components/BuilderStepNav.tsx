@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Globe, City as Building2, StatUp as TrendingUp, CheckCircle, Check, Lock } from "iconoir-react";
+import { Globe, City as Building2, StatUp as TrendingUp, CheckCircle, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   HEADER_NAV_STEPS,

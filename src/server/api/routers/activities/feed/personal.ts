@@ -406,7 +406,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error fetching following activity feed:", error);
-        throw new Error("Failed to fetch following activity feed");
+        throw new Error("Failed to fetch following activity feed", { cause: error });
       }
     }),
 
@@ -476,7 +476,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error fetching user activity feed:", error);
-        throw new Error("Failed to fetch user activity feed");
+        throw new Error("Failed to fetch user activity feed", { cause: error });
       }
     }),
 

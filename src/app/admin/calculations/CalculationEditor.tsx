@@ -6,18 +6,12 @@ import { useState, useEffect } from "react";
 import {
   Calculator,
   FloppyDisk as Save,
-  Play,
   WarningTriangle as AlertTriangle,
-  CheckCircle,
   StatUp as TrendingUp,
-  Dollar as DollarSign,
   Group as Users,
-  Globe,
   EditPencil as Pencil,
-  Code,
   Search,
 } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -27,7 +21,6 @@ import { useNotify } from "~/hooks/useNotify";
 
 import {
   type CalculationModule,
-  type TestCase,
   type CalculationResult,
   CALCULATION_CATEGORIES,
 } from "./calculation-types";

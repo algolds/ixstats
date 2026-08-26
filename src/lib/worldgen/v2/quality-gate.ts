@@ -172,7 +172,7 @@ function checkContinentShapeDiversity(
 ): QualityCheckResult {
   const continents = graph.features.filter((f) => f.type === "continent");
 
-  let aspectRatios: number[] = [];
+  const aspectRatios: number[] = [];
   for (const cont of continents) {
     let minLng = Infinity,
       maxLng = -Infinity,

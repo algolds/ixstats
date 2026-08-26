@@ -6,7 +6,6 @@
 import Link from "next/link";
 import {
   EditPencil as FileEdit,
-  ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
   Clock,
   Link as Link2,
@@ -21,7 +20,6 @@ import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
-  type MediaThemeMode,
   MEDIA_THEME_OPTIONS,
 } from "~/lib/wiki-os/transformers/media-theme";
 import {

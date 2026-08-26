@@ -12,7 +12,6 @@ import {
   type XFPost,
   type XFThread,
   type XFForum,
-  getXfApiKey,
   getXfApiUrl,
   transformBBCode,
   invalidateThread,

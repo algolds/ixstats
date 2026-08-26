@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useElement, useReadOnly } from "platejs/react";
-import { PlateRawHtmlElement, AtomicBlock } from "./PlateRawHtmlElement";
+import { PlateRawHtmlElement } from "./PlateRawHtmlElement";
 import type { InfoboxBoxEl } from "../wiki-html";
 import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 

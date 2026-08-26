@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 

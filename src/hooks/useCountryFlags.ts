@@ -1,7 +1,7 @@
 // React hook for country flag management (Plan 164)
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 

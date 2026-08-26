@@ -193,7 +193,7 @@ export const nationalIdentityRouter = createTRPCRouter({
         });
 
         throw new Error(
-          `Failed to autosave national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to autosave national identity: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),
@@ -244,7 +244,7 @@ export const nationalIdentityRouter = createTRPCRouter({
       } catch (error) {
         console.error("[NationalIdentity API] Update failed:", error);
         throw new Error(
-          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),
@@ -281,7 +281,7 @@ export const nationalIdentityRouter = createTRPCRouter({
       } catch (error) {
         console.error("[NationalIdentity API] Get failed:", error);
         throw new Error(
-          `Failed to get national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to get national identity: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),
@@ -330,7 +330,7 @@ export const nationalIdentityRouter = createTRPCRouter({
       } catch (error) {
         console.error("[NationalIdentity API] Create failed:", error);
         throw new Error(
-          `Failed to create national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to create national identity: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

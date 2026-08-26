@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { OrganizationProfile, useOrganization, useOrganizationList } from "@clerk/nextjs";
-import { Globe, NavArrowLeft, Crown } from "iconoir-react";
+import { Globe, NavArrowLeft } from "iconoir-react";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
 

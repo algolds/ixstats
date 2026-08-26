@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
-  createTRPCRouter,
   cachedStaticProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
@@ -232,11 +231,11 @@ async function fetchWikiRichIntro(
       // Convert wiki links to HTML
       const linkBase = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
       const processedContent = cleanContent
-        .replace(/\[\[([^\[\]|]+)\|([^\[\]]+?)\]\]/g, (_, pg: string, display: string) => {
+        .replace(/\[\[([^[\]|]+)\|([^[\]]+?)\]\]/g, (_, pg: string, display: string) => {
           if (pg.toLowerCase().includes("template:")) return "";
           return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${display}</a>`;
         })
-        .replace(/\[\[([^\[\]]+?)\]\]/g, (_, pg: string) => {
+        .replace(/\[\[([^[\]]+?)\]\]/g, (_, pg: string) => {
           if (pg.toLowerCase().includes("template:")) return "";
           return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${pg}</a>`;
         })

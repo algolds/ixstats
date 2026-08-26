@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { Card } from "~/components/ui/card";
 import { useDiplomaticScenariosAdmin } from "~/hooks/admin/useDiplomaticScenariosAdmin";
 import { DiplomaticScenariosHeader } from "~/components/admin/diplomatic-scenarios/DiplomaticScenariosHeader";
 import { DiplomaticScenarioBulkActions } from "~/components/admin/diplomatic-scenarios/DiplomaticScenarioBulkActions";

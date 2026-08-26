@@ -5,7 +5,7 @@ import { COVERT_ORG_DATA, MILITARY_UNIT_DATA, MYSTIC_ORDER_DATA } from "./data/g
 import { MarkovChain } from "./markov-chain";
 import { generateFantasySyllableName } from "./name-generator";
 import { type GenerateOptions } from "./types";
-import { pickRandom, pickAndRemove, resolvePatternTemplate } from "./template-resolver";
+import { pickRandom, resolvePatternTemplate } from "./template-resolver";
 
 /**
  * Generates a name for a mystic or academic/religious order.

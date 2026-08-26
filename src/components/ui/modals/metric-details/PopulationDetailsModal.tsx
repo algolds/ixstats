@@ -25,7 +25,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  AreaChart,
   Area,
   ComposedChart,
   Bar,

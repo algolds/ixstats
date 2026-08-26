@@ -16,10 +16,8 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { stripBasePath } from "~/lib/base-path";
 import {
-  HomeSimple as Home,
   ViewGrid as Grid3x3,
   Wallet,
-  Package,
   ArrowSeparate as ArrowRightLeft,
   Download,
   Trophy,
@@ -29,7 +27,6 @@ import { cn } from "~/lib/utils";
 import {
   CutoutCard,
   CutoutCardContent,
-  CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";

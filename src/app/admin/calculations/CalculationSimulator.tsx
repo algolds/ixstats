@@ -3,7 +3,6 @@
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Play, SystemRestart as Loader2, CheckCircle, WarningTriangle as AlertTriangle } from "iconoir-react";
 import type { CalculationModule, CalculationResult } from "./calculation-types";

@@ -102,7 +102,7 @@ export const activitiesActivitiesRouter = createTRPCRouter({
         return { success: true, activity };
       } catch (error) {
         console.error("Error creating activity:", error);
-        throw new Error("Failed to create activity");
+        throw new Error("Failed to create activity", { cause: error });
       }
     }),
 
@@ -309,7 +309,7 @@ export const activitiesActivitiesRouter = createTRPCRouter({
       return { success: true, comment };
     } catch (error) {
       console.error("Error adding comment:", error);
-      throw new Error("Failed to add comment");
+      throw new Error("Failed to add comment", { cause: error });
     }
   }),
 
@@ -341,7 +341,7 @@ export const activitiesActivitiesRouter = createTRPCRouter({
         return { comments, nextCursor };
       } catch (error) {
         console.error("Error fetching comments:", error);
-        throw new Error("Failed to fetch comments");
+        throw new Error("Failed to fetch comments", { cause: error });
       }
     }),
 

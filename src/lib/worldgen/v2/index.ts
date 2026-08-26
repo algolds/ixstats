@@ -18,7 +18,6 @@ import type {
   GeneratedWorld,
   WorldStats,
   ProgressCallback,
-  WorldGraph,
 } from "./types";
 import { DEFAULT_PARAMS } from "./config";
 import { createMesh } from "./mesh";

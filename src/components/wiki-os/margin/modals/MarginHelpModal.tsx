@@ -11,7 +11,6 @@ import {
   ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
   Bookmark,
-  Sparks as Sparkles,
   Xmark as X,
   Keyframe as Keyboard,
   Compass,

@@ -14,7 +14,6 @@ import { type PrismaClient } from "@prisma/client";
 import { getAchievementById, type ExtendedAchievementData } from "./definitions";
 import { getScaleThresholds } from "./scaling";
 import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
-import { getCardRewardForAchievement, hasCardReward } from "./card-rewards";
 import { awardAchievementCard } from "~/lib/cards/card-service";
 import { eventBus } from "~/lib/event-bus";
 import { Redis } from "ioredis";

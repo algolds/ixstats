@@ -24,7 +24,6 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { computeApproval } from "~/lib/government/approval";
-import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { V2Domain } from "./domain-meta";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command/ReadinessOverviewCard";

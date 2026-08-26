@@ -7,7 +7,6 @@
  */
 
 import { IxTime } from "./core";
-import { IxTimeAccuracyVerifier } from "./accuracy";
 
 export interface SyncTarget {
   id: string;
@@ -348,10 +347,10 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - Discord bot may be unresponsive");
+              throw new Error("Request timeout - Discord bot may be unresponsive", { cause: fetchError });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - Discord bot may be offline");
+              throw new Error("Network error - Discord bot may be offline", { cause: fetchError });
             }
           }
           throw fetchError;
@@ -387,10 +386,10 @@ export class IxTimeSyncManager {
           clearTimeout(timeoutId);
           if (fetchError instanceof Error) {
             if (fetchError.name === "AbortError") {
-              throw new Error("Request timeout - external service unresponsive");
+              throw new Error("Request timeout - external service unresponsive", { cause: fetchError });
             }
             if (fetchError.message.includes("fetch")) {
-              throw new Error("Network error - external service unavailable");
+              throw new Error("Network error - external service unavailable", { cause: fetchError });
             }
           }
           throw fetchError;
@@ -420,7 +419,7 @@ export class IxTimeSyncManager {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`);
+      throw new Error(`Failed to sync with ${target.name}: ${errorMessage}`, { cause: error });
     }
   }
 

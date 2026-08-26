@@ -1,5 +1,4 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { useTheme } from "~/context/theme-context";
@@ -10,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
-import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundHigh as Volume2, SoundOff as VolumeX, HalfMoon as SunMoon, Square, Globe } from "iconoir-react";
+import { Settings, Xmark as X, HalfMoon as Moon, SunLight as Sun, User, ViewGrid as Layout, Refresh as RefreshCw, LogOut, NavArrowRight as ChevronRight, OpenBook as BookOpen, ChatBubble as MessageSquare, List, OpenNewWindow as ExternalLink, Search, SoundOff as VolumeX, HalfMoon as SunMoon, Square } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -20,7 +19,6 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
 import {
-  useLocalToggle,
   useLocalPref,
   ToggleSwitch,
   SectionLabel,

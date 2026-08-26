@@ -1,7 +1,6 @@
 // src/lib/utils/chart-utils.ts
 // FIXED: Consistent percentage and number formatting
 
-import { formatPopulation, formatCurrency, formatPercentage, formatNumber } from "./format-utils";
 
 /**
  * FIXED: Format growth rates from decimal to percentage

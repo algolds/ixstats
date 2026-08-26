@@ -63,7 +63,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
       });
     } catch (error) {
       console.error("[Vault Router] adminGetPurchaseLogs error:", error);
-      throw new Error("Failed to retrieve purchase logs");
+      throw new Error("Failed to retrieve purchase logs", { cause: error });
     }
   }),
 
@@ -106,7 +106,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Admin Router] Error getting user purchased items:", error);
-        throw new Error("Failed to retrieve purchased items for user");
+        throw new Error("Failed to retrieve purchased items for user", { cause: error });
       }
     }),
 
@@ -164,7 +164,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         return { success: true, message: `Successfully granted ${item.name} to user.` };
       } catch (error) {
         console.error("[Vault Admin Router] Error granting item:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to grant item");
+        throw new Error(error instanceof Error ? error.message : "Failed to grant item", { cause: error });
       }
     }),
 
@@ -211,7 +211,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         return { success: true, message: "Successfully revoked item from user." };
       } catch (error) {
         console.error("[Vault Admin Router] Error revoking item:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to revoke item");
+        throw new Error(error instanceof Error ? error.message : "Failed to revoke item", { cause: error });
       }
     }),
 
@@ -232,7 +232,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
         return { success: true, equipped };
       } catch (error) {
         console.error("[Vault Admin Router] adminGetEquippedCosmetics error:", error);
-        throw new Error("Failed to retrieve equipped cosmetics for user");
+        throw new Error("Failed to retrieve equipped cosmetics for user", { cause: error });
       }
     }),
 
@@ -273,7 +273,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
           throw new Error("User does not own this cosmetic item");
         }
 
-        let equipped = vault.equippedCosmetics
+        const equipped = vault.equippedCosmetics
           ? vault.equippedCosmetics.split(",").filter(Boolean)
           : [];
 
@@ -300,7 +300,7 @@ export const vaultAdminItemsRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Admin Router] adminToggleEquipCosmetic error:", error);
         throw new Error(
-          error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic"
+          error instanceof Error ? error.message : "Failed to toggle user equipped cosmetic", { cause: error }
         );
       }
     }),

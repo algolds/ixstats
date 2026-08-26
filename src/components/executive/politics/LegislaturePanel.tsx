@@ -6,9 +6,7 @@ import { api } from "~/trpc/react";
 import { Bank as Landmark, StatsReport as BarChart2, Page as ScrollText, WarningTriangle as AlertTriangle, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
-import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
 

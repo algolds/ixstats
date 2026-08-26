@@ -10,7 +10,7 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
-import { toVertexKey, type TopologyRef, type VertexKey } from "./topology-engine";
+import { type TopologyRef } from "./topology-engine";
 
 export type FeatureVertexRef = TopologyRef;
 

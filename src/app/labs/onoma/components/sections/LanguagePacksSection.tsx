@@ -6,12 +6,11 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Xmark as X, OpenBook as BookOpen, SoundHigh as Volume2 } from "iconoir-react";
+import { Search, Refresh as RefreshCw, OpenNewWindow as ExternalLink, Xmark as X, SoundHigh as Volume2 } from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
   RiStarFill,
-  RiTranslate2,
   RiSoundModuleLine,
   RiStore2Line,
 } from "react-icons/ri";

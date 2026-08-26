@@ -3,12 +3,11 @@
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import { Trash as Trash2, Plus, Calendar, Globe, Group as Users, StatsReport as BarChart3, CheckCircle as CheckCircle2, Clock, Send, SystemRestart as Loader2 } from "iconoir-react";
+import { Trash as Trash2, Plus, Calendar, Globe, Group as Users, StatsReport as BarChart3, Clock, Send, SystemRestart as Loader2 } from "iconoir-react";
 import { toast } from "sonner";
-import { cn } from "~/lib/utils";
 
 interface PollManagerProps {
   onCreateNew: () => void;

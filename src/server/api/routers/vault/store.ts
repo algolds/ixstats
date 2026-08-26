@@ -65,7 +65,7 @@ export const vaultStoreRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting transactions:", error);
-        throw new Error("Failed to retrieve transaction history");
+        throw new Error("Failed to retrieve transaction history", { cause: error });
       }
     }),
 
@@ -125,7 +125,7 @@ export const vaultStoreRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("[Vault Router] Error getting purchased items:", error);
-      throw new Error("Failed to retrieve purchased items");
+      throw new Error("Failed to retrieve purchased items", { cause: error });
     }
   }),
 
@@ -224,7 +224,7 @@ export const vaultStoreRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] purchaseStoreItem error:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item");
+        throw new Error(error instanceof Error ? error.message : "Failed to purchase store item", { cause: error });
       }
     }),
 
@@ -245,7 +245,7 @@ export const vaultStoreRouter = createTRPCRouter({
       return items;
     } catch (error) {
       console.error("[Vault Router] listStoreItems error:", error);
-      throw new Error("Failed to retrieve store items");
+      throw new Error("Failed to retrieve store items", { cause: error });
     }
   }),
 
@@ -268,7 +268,7 @@ export const vaultStoreRouter = createTRPCRouter({
       return { success: true, equipped };
     } catch (error) {
       console.error("[Vault Router] getEquippedCosmetics error:", error);
-      throw new Error("Failed to retrieve equipped cosmetics");
+      throw new Error("Failed to retrieve equipped cosmetics", { cause: error });
     }
   }),
 
@@ -321,7 +321,7 @@ export const vaultStoreRouter = createTRPCRouter({
           throw new Error("You do not own this cosmetic item");
         }
 
-        let equipped = vault.equippedCosmetics
+        const equipped = vault.equippedCosmetics
           ? vault.equippedCosmetics.split(",").filter(Boolean)
           : [];
 
@@ -348,7 +348,7 @@ export const vaultStoreRouter = createTRPCRouter({
       } catch (error) {
         console.error("[Vault Router] toggleEquipCosmetic error:", error);
         throw new Error(
-          error instanceof Error ? error.message : "Failed to toggle equipped cosmetic"
+          error instanceof Error ? error.message : "Failed to toggle equipped cosmetic", { cause: error }
         );
       }
     }),

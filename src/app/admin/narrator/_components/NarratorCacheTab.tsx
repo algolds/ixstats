@@ -4,15 +4,12 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Database,
   Trash as Trash2,
-  Check,
   Page as ScrollText,
-  Refresh as RefreshCw,
   WarningTriangle as AlertTriangle,
   SystemRestart as Loader2,
 } from "iconoir-react";

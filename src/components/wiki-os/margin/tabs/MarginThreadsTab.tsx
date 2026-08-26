@@ -19,7 +19,6 @@ import {
   Search,
   Crown,
   Copy,
-  OpenNewWindow as ExternalLink,
   Leaf as Sprout,
   HelpCircle,
 } from "iconoir-react";

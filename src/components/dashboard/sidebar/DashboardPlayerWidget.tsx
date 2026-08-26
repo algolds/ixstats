@@ -18,7 +18,6 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import * as IconoirIcons from "iconoir-react";
-import { motion } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";

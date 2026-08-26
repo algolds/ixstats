@@ -10,7 +10,6 @@ import {
   calculateTotalTaxEffectiveness,
   checkTaxSynergy,
   checkTaxConflicts,
-  type AtomicTaxComponent,
 } from "~/lib/government/tax/atomic-tax-components";
 import type { UnifiedAtomicComponent } from "~/components/ui/atomic/shared/types";
 

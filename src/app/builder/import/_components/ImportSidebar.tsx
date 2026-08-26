@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { PreText } from "~/components/ui/pretext";
-import { Globe, Sparks as Sparkles, Database, Group as Users, Dollar as DollarSign, MapPin, Building, Crown, CheckCircle as CheckCircle2, SystemRestart as Loader2, ArrowRight, ShieldCheck } from "iconoir-react";
+import { Globe, Database, Group as Users, Dollar as DollarSign, MapPin, Building, Crown, SystemRestart as Loader2, ArrowRight, ShieldCheck } from "iconoir-react";
 
 import type { UnifiedInfoboxData } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 

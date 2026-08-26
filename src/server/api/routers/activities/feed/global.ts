@@ -598,7 +598,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Error fetching global activity feed:", error);
-      throw new Error("Failed to fetch activity feed");
+      throw new Error("Failed to fetch activity feed", { cause: error });
     }
   }),
 

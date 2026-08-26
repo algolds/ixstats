@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
-  StatsReport as Activity,
   Bookmark,
   Xmark as X,
   Expand as Maximize2,

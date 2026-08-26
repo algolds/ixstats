@@ -4,7 +4,6 @@ import type { Polygon, MultiPolygon, Position, FeatureCollection, Geometry } fro
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import {
-  OCEAN_COLOR,
   LAYER_CONFIGS,
   MAP_SYMBOL_FONTS,
   MAP_LAYER_TYPES,

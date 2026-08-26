@@ -7,7 +7,6 @@ import { EditorDialogs } from "./EditorDialogs";
 import { EditorContextMenuWrapper } from "./EditorContextMenuWrapper";
 import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { LayerPanel } from "~/components/maps/editor/LayerPanel";
-import type { EditorFeature } from "~/hooks/useMapEditor";
 
 const MobileEditorSheet = dynamic(
   () => import("~/components/maps/editor/MobileEditorSheet").then((m) => m.MobileEditorSheet),

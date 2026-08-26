@@ -4,11 +4,8 @@
 
 import type {
   WikiInlineNode,
-  WikiLinkInline,
   WikiExternalLinkInline,
-  CoordChipInline,
   EngineDataChipInline,
-  CitationInline,
   MediaBlock,
 } from "./types";
 

@@ -11,18 +11,14 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { createUrl } from "~/lib/utils";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
-import { cn } from "~/lib/utils";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { EconomicTierBadge, PopulationTierBadge } from "~/components/ui/tier-badge";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
+import { type HeroHelpStep } from "~/components/ui/hero-help-modal";
 
-import { useHeroAutoCycle, type HeroSection } from "./useHeroAutoCycle";
 import { HeroSnapshotPanels, type HeroSnapshotData } from "./HeroSnapshotPanels";
 
 const DASHBOARD_HELP_STEPS: HeroHelpStep[] = [

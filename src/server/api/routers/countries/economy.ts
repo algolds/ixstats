@@ -68,7 +68,7 @@ export const economyProcedures = {
           },
           include: includeObject,
         });
-      } catch (dbError) {
+      } catch  {
         const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
           where: {
@@ -601,7 +601,7 @@ export const economyProcedures = {
         };
       } catch (error) {
         console.error("Failed to generate activity rings data:", error);
-        throw new Error("Failed to generate activity rings data");
+        throw new Error("Failed to generate activity rings data", { cause: error });
       }
     }),
 };

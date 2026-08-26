@@ -17,7 +17,6 @@ import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/
 import { ComposerAccountSwitcher } from "../composer/ComposerAccountSwitcher";
 import { GifPicker } from "../GifPicker";
 import { useUser } from "~/context/auth-context";
-import { ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
 import { cn } from "~/lib/utils";
 
 const MediaSearchModal = dynamic(

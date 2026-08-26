@@ -8,7 +8,7 @@ import { transformScale } from "@turf/transform-scale";
 import { union } from "@turf/union";
 import { featureCollection } from "@turf/helpers";
 import { api } from "~/trpc/react";
-import { splitPolygonByLine, cleanPolygonGeometry, getNearestPointOnGeometryBoundary } from "~/lib/maps/map-editor-geom";
+import { splitPolygonByLine, cleanPolygonGeometry } from "~/lib/maps/map-editor-geom";
 import type { EditorFeature } from "./editor-types";
 
 interface UseMapEditorTransformsProps {
@@ -187,7 +187,7 @@ export function useMapEditorTransforms({
     if (subs.length < 2) return;
 
     let mergedGeom: any = null;
-    let baseSub = subs[0]!;
+    const baseSub = subs[0]!;
 
     for (const sub of subs) {
       const feat = { type: "Feature" as const, geometry: sub.geometry as any, properties: {} };

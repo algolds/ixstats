@@ -153,7 +153,7 @@ export const wikiImporterMappingRouter = createTRPCRouter({
         };
       } catch (e) {
         throw new Error(
-          `Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`
+          `Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`, { cause: e }
         );
       }
     }),
@@ -246,7 +246,7 @@ export const wikiImporterMappingRouter = createTRPCRouter({
             err
           );
           throw new Error(
-            `Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`
+            `Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`, { cause: err }
           );
         }
       } else if (input.createNew) {
@@ -588,11 +588,11 @@ export const wikiImporterMappingRouter = createTRPCRouter({
           console.error(`[wikiImporter] importCountry create failed for user ${userId}:`, err);
           if (err instanceof Error && err.message.includes("Unique constraint")) {
             throw new Error(
-              `A country with slug "${slug}" already exists. Use the update flow instead.`
+              `A country with slug "${slug}" already exists. Use the update flow instead.`, { cause: err }
             );
           }
           throw new Error(
-            `Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`
+            `Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`, { cause: err }
           );
         }
       }

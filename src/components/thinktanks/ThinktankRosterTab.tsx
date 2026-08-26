@@ -2,21 +2,16 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Group,
   Search,
   User,
   Crown,
   Shield,
-  Clock,
   MoreHoriz,
-  LogOut,
   Spark,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 interface Member {
   id: string;

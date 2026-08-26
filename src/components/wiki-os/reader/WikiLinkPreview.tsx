@@ -8,7 +8,6 @@ import {
   HoverCardContent,
   HoverCardArrow,
 } from "~/components/ui/hover-card";
-import { Tooltip } from "~/components/ui/tooltip-card";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 // ──────────────────────────────────────────────

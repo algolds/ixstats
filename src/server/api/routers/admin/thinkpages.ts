@@ -39,7 +39,7 @@ export const adminThinkpagesRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to get thinkpages stats:", error);
-      throw new Error("Failed to retrieve ThinkPages statistics");
+      throw new Error("Failed to retrieve ThinkPages statistics", { cause: error });
     }
   }),
 

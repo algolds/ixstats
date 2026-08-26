@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
-import { Xmark as X, Component as Blocks, Component as Layers, Flash as Zap, WarningTriangle as AlertTriangle, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Settings, ViewGrid as LayoutGrid, InfoCircle as Info, Dollar as DollarSign, StatUp as TrendingUp, Crown } from "iconoir-react";
+import { Xmark as X, Component as Blocks, Flash as Zap, WarningTriangle as AlertTriangle, NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft, Settings, ViewGrid as LayoutGrid, InfoCircle as Info, Dollar as DollarSign, StatUp as TrendingUp, Crown } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { ATOMIC_WELCOME_VERSION } from "~/lib/buildVersion";

@@ -130,7 +130,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         for (const shift of soundShifts) {
           if (shift.from && shift.to) {
             // Escape regex characters
-            const escapedFrom = shift.from.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            const escapedFrom = shift.from.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
             adapted = adapted.replace(new RegExp(escapedFrom, "g"), shift.to);
           }
         }

@@ -3,7 +3,6 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import fallbackGov from "../../../../data/seed/fallback-government.json";
 
 type Prisma = PrismaClient;
 

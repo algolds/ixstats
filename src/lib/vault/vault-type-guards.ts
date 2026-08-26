@@ -5,8 +5,8 @@
  * to guarantee strict type safety across Vault, Cards, Auctions, Store, and Trading.
  */
 
-import type { CardRarity, CardType, TradeStatus, AuctionStatus } from "@prisma/client";
-import type { CardInstance, AuctionListing, Bid, MarketFilters } from "~/types/marketplace";
+import type { CardRarity, TradeStatus } from "@prisma/client";
+import type { CardInstance, AuctionListing, Bid } from "~/types/marketplace";
 
 /**
  * Nominal / Branded Types for Domain Identifiers

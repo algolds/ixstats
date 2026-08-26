@@ -2,9 +2,8 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { motion } from "motion/react";
 import Image from "next/image";
-import { Xmark as X, ArrowSeparate as ArrowRightLeft, Coins, Send, WarningCircle as AlertCircle, Search, User } from "iconoir-react";
+import { Xmark as X, ArrowSeparate as ArrowRightLeft, Coins, Send, WarningCircle as AlertCircle, Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import {
   Dialog,

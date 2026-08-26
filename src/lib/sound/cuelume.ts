@@ -14,7 +14,6 @@ import {
   bind as cuelumeBind,
   setEnabled as cuelumeSetEnabled,
   setVolume as cuelumeSetVolume,
-  sounds as cuelumeSounds,
   type SoundName,
 } from "cuelume";
 

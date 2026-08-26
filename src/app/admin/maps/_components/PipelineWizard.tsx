@@ -49,7 +49,7 @@ const LAYER_KEYWORDS: Record<string, string[]> = {
 };
 
 function detectLayerFromFilename(fileName: string): string | null {
-  const lower = fileName.toLowerCase().replace(/[_\-\.]/g, " ");
+  const lower = fileName.toLowerCase().replace(/[_\-.]/g, " ");
   for (const [layerType, keywords] of Object.entries(LAYER_KEYWORDS)) {
     if (keywords.some((kw) => lower.includes(kw))) return layerType;
   }

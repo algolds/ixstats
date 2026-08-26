@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Xmark as X, Crown, Journal as Newspaper, Group as Users, Sparks as Sparkles, Check, WarningCircle as AlertCircle, ArrowLeft, SystemRestart as Loader2, HelpCircle } from "iconoir-react";
+import { Xmark as X, Journal as Newspaper, Sparks as Sparkles, WarningCircle as AlertCircle, SystemRestart as Loader2, HelpCircle } from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

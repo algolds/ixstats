@@ -10,7 +10,6 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId } from "~/lib/wiki-os/auth";
 
 import { db } from "~/server/db";
-import { saveToMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 export const wikiosStashRouter = createTRPCRouter({
   /** Get all stashes for the current user with item counts. */

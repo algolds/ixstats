@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
 import { Component as Layers, ArrowRight, Download } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";

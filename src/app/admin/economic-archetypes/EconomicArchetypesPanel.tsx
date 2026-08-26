@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Card } from "~/components/ui/card";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
@@ -22,9 +21,7 @@ import {
   Trash as Trash2,
   Copy,
   Search,
-  StatsReport as BarChart3,
   EyeClosed as EyeOff,
-  Sparks as Sparkles,
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";

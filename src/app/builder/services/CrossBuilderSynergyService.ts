@@ -5,7 +5,6 @@
 
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentBuilderState } from "~/types/government";
-import { checkComponentSynergy } from "~/lib/government/synergy";
 
 export interface CrossBuilderSynergyItem {
   id: string;

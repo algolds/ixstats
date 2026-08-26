@@ -86,7 +86,7 @@ export function injectPlaceholderElements(html: string): string {
 
   // 6. Process raw wikitext templates
   processed = processed.replace(
-    /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi,
+    /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi,
     (_match, key) => {
       const safeKey = key.replace(/"/g, "&quot;");
       return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;

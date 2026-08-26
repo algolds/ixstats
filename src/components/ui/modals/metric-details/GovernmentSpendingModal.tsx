@@ -17,7 +17,6 @@ import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -107,12 +106,14 @@ export function GovernmentSpendingModal({
     const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
 
     const now = new Date();
-    const rangeMap = {
+    const rangeMap: Record<TimeRange, number> = {
       "3m": 3,
       "6m": 6,
       "1y": 12,
       "2y": 24,
+      "4y": 48,
       "5y": 60,
+      "20y": 240,
       all: Infinity,
     };
 

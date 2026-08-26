@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
-import { getSoundService } from "~/lib/media";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";

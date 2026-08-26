@@ -4,7 +4,6 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -117,7 +116,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       utils.countries.getAll.invalidate();
       setScanResults([]);
       setScanComplete(false);
-    } catch (err) {
+    } catch  {
       notify.error("Error", "Failed to apply bulk links");
     } finally {
       setIsLinking(false);

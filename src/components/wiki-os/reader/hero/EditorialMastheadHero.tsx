@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  Search,
   Shuffle,
-  Bookmark,
   MediaImage as ImageIcon,
-  Globe,
   Star,
   ChatBubble as MessageSquare,
   ArrowUpRight,
@@ -24,12 +21,10 @@ import {
   Trophy as IconoirTrophy,
   OpenBook as IconoirOpenBook,
   Folder as IconoirFolder,
-  Globe as IconoirGlobe,
 } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";

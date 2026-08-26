@@ -140,7 +140,7 @@ export function StashedImageModal({
         const cleanName = image.title.replace(/^File:/, "");
         const res = await utils.wikios.downloadFile.fetch({ filename: cleanName });
         if (!res || !res.content) {
-          throw new Error("Failed to download image from server");
+          throw new Error("Failed to download image from server", { cause: directErr });
         }
         const byteCharacters = atob(res.content);
         const byteNumbers = new Array(byteCharacters.length);

@@ -247,7 +247,7 @@ export function useMobilePerformance() {
           const battery = await (navigator as any).getBattery();
           const isLowBattery = battery.level < 0.2 && !battery.charging;
           setPerformanceState((prev) => ({ ...prev, lowBattery: isLowBattery }));
-        } catch (error) {
+        } catch  {
           // Battery API not supported or failed
         }
       }

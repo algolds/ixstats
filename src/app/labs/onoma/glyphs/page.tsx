@@ -11,7 +11,6 @@ import {
   Search,
   Check,
   Copy,
-  ViewGrid,
   Settings,
 } from "iconoir-react";
 import {

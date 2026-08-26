@@ -5,7 +5,6 @@ import { InfoCircle as Info, WarningTriangle as AlertTriangle, Settings as Setti
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { TaxSystemForm } from "../atoms/TaxSystemForm";
 import { TaxCategoryForm } from "../atoms/TaxCategoryForm";
 import { AtomicTaxComponentSelector } from "../atoms/AtomicTaxComponents";

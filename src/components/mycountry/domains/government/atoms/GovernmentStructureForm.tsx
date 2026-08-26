@@ -14,7 +14,6 @@ import {
 import { City as Building2, Crown, ScaleFrameEnlarge as Scale, Group as Users, Suitcase as Briefcase, Link as Link2, LinkSlash as Link2Off } from "iconoir-react";
 import type { GovernmentStructureInput, GovernmentType } from "~/types/government";
 import { safeFormatCurrency } from "~/lib/utils";
-import { CurrencySelector } from "~/components/ui/currency-selector";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";

@@ -9,7 +9,7 @@
  * - Nearby wiki-mentioned places not yet on the map
  */
 
-import { LightBulb, SeaWaves as Anchor, ModernTv as Mountain, Tree as TreePine, SeaWaves as Waves, Bank as Landmark, Sparks as Sparkles, Shield, Droplet as Droplets } from "iconoir-react";
+import { SeaWaves as Anchor, ModernTv as Mountain, Tree as TreePine, SeaWaves as Waves, Bank as Landmark, Sparks as Sparkles, Shield, Droplet as Droplets } from "iconoir-react";
 
 interface SmartPlacementProps {
   /** Terrain at the clicked point */

@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Key, Globe, Shield, Refresh as RefreshCw } from "iconoir-react";
+import { Key, Shield, Refresh as RefreshCw } from "iconoir-react";
 import {
   ArticleLayout,
   Section,

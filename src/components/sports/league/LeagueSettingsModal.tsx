@@ -975,7 +975,7 @@ export function LeagueSettingsModal({
                       a.download = `${league.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_data.json`;
                       a.click();
                       notify.success("Export Successful", "League database records downloaded.");
-                    } catch (err) {
+                    } catch  {
                       notify.error("Export Failed", "Could not retrieve league records.");
                     }
                   }}

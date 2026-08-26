@@ -7,7 +7,6 @@ import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { getNationUrl } from "~/lib/utils";
-import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
 interface UserProfileMenuProps {
   user: any;

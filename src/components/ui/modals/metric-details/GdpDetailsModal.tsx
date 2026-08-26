@@ -16,7 +16,6 @@ import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -30,7 +29,6 @@ import {
   BarChart,
   Bar,
   ComposedChart,
-  Tooltip,
   Legend,
 } from "recharts";
 import { format } from "date-fns";

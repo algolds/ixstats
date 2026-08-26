@@ -5,7 +5,6 @@
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
-import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -24,9 +23,7 @@ import {
   EditPencil as Pencil,
   Trash as Trash2,
   Copy,
-  Group as Users,
   User,
-  EyeClosed as EyeOff,
   StatsReport as BarChart3,
   Globe,
 } from "iconoir-react";

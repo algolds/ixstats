@@ -2,9 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 

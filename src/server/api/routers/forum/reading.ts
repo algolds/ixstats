@@ -4,7 +4,6 @@
 // and handles account linking + profile sync.
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
   type XFForumsResponse,
@@ -15,7 +14,6 @@ import {
   type XFUser,
   type XFThread,
   type XFForum,
-  getXfApiKey,
   getXfApiUrl,
   transformBBCode,
   cachedFetch,

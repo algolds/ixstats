@@ -4,7 +4,7 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Search, OpenBook as BookOpen } from "iconoir-react";
+import { Search } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { BulkScannerSection } from "../wiki/components";
 

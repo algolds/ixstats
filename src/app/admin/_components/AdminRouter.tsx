@@ -9,7 +9,7 @@ import { BotIntegrationCenter } from "./BotIntegrationCenter";
 import { NotificationsAdmin } from "./NotificationsAdmin";
 import { StashSettingsContent } from "./StashSettingsContent";
 import { ThinkPagesSettingsContent } from "./ThinkPagesSettingsContent";
-import { SystemRestart as Loader2, Settings } from "iconoir-react";
+import { Settings } from "iconoir-react";
 import { AdminHeader } from "./AdminHeader";
 import { useAdminNavigation } from "./AdminNavigationContext";
 import { Skeleton } from "~/components/ui/skeleton";

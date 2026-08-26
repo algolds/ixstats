@@ -33,7 +33,6 @@ import { useSubdivisionDraw } from "./hooks/useSubdivisionDraw";
 import { useSubdivisionVertexEdit } from "./hooks/useSubdivisionVertexEdit";
 import { useRouteEdit } from "./hooks/useRouteEdit";
 import { usePointDrag } from "./hooks/usePointDrag";
-import { useEditorMapEvents } from "./map/useEditorMapEvents";
 import { useEditorSnapGuide } from "./map/useEditorSnapGuide";
 
 import { useMapEditorContext } from "~/components/maps/editor/plugins/context";

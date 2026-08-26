@@ -3,7 +3,6 @@
 // Handles conversion between /wiki/ (MediaWiki) and /wiki/ (WikiOS) URL schemes
 
 import { withBasePath } from "~/lib/base-path";
-import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 
 /**
  * Convert a MediaWiki-style title to a WikiOS URL path.

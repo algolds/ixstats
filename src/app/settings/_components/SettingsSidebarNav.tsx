@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { Search, Xmark, User as UserIcon, Crown } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { cn } from "~/lib/utils";

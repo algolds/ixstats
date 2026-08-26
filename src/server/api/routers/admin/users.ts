@@ -193,7 +193,7 @@ export const adminUsersRouter = createTRPCRouter({
         return { success: true, message: "Navigation settings updated successfully" };
       } catch (error) {
         console.error("Failed to update navigation settings:", error);
-        throw new Error("Failed to update navigation settings");
+        throw new Error("Failed to update navigation settings", { cause: error });
       }
     }),
 
@@ -393,7 +393,7 @@ export const adminUsersRouter = createTRPCRouter({
       }
 
       // 2. Fetch guild members or discover via recent channel interactions
-      let rawMembers: Array<{ id: string; username: string; nick?: string; globalName?: string }> = [];
+      const rawMembers: Array<{ id: string; username: string; nick?: string; globalName?: string }> = [];
 
       try {
         const membersRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {

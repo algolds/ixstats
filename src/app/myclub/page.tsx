@@ -3,11 +3,10 @@
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { sportCoverUrl } from "~/lib/sports/league-covers";

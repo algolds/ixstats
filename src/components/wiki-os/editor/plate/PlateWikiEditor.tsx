@@ -10,9 +10,9 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { usePlateEditor, Plate, PlateContent, useValueVersion } from "platejs/react";
-import { Editor, Transforms, type Descendant } from "slate";
+import { Transforms, type Descendant } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
-import { wikitextToAst, astToPlateNodes, plateNodesToAst, astToWikitext } from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import { wikitextToAst, astToPlateNodes, astToWikitext } from "~/lib/wiki-os/transformers/wiki-ast-converter";
 import { createIxWikiPlugins, getIxWikiComponents } from "./plugins/createIxWikiPlugins";
 import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
 import { WikiSlashMenu } from "./slash-menu/WikiSlashMenu";

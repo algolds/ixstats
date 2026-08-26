@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Activity, Dollar as DollarSign, Group as Users, Globe, Building, Heart, Shield, Flash as Zap } from "iconoir-react";
+import { Activity, Dollar as DollarSign, Group as Users, Globe, Building, Shield } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 

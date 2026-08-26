@@ -1,4 +1,3 @@
-import { IxTime } from "~/lib/ixtime";
 
 export interface SummationDraftResult {
   postId: string;

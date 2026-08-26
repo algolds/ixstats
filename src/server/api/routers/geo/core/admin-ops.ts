@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import type { Geometry } from "geojson";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import {
   buildGeoProfile,

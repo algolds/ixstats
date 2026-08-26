@@ -284,7 +284,7 @@ function SpecificationsTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, specifications: parsed });
-    } catch (e) {
+    } catch  {
       // Invalid JSON, don't update formData
     }
   };
@@ -325,7 +325,7 @@ function CapabilitiesTab({
     try {
       const parsed = JSON.parse(value);
       setFormData({ ...formData, capabilities: parsed });
-    } catch (e) {
+    } catch  {
       // Invalid JSON, don't update formData
     }
   };

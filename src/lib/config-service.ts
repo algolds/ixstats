@@ -2,7 +2,6 @@
 // Configuration service with DB-backed config reading and proper growth factor handling
 
 import { Cache } from "~/lib/cache";
-import type { PrismaClient } from "@prisma/client";
 import type { EconomicConfig, IxStatsConfig } from "../types/ixstats";
 
 /**

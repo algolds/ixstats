@@ -10,12 +10,10 @@ import {
   Lock,
   Sparks,
   Xmark,
-  User,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 

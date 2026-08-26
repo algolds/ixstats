@@ -12,9 +12,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
-  adminProcedure,
 } from "~/server/api/trpc";
 import { generateWorld } from "~/lib/worldgen/engine";
 import { normalizeAzgaarGraph } from "~/lib/maps/pipeline/azgaar-normalizer";

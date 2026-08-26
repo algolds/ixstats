@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { Translate as Languages, Heart, MusicDoubleNote as Music, Sparks as Sparkles, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Globe, Trophy, Eye as Rabbit, Eye as Bird, Fish, Group as Users, Flower as Flower2, Cutlery as UtensilsCrossed, Apple, GlassEmpty as Wine, MusicDoubleNote as Guitar, Star, MediaImage as Image, Xmark as X } from "iconoir-react";
+import { Translate as Languages, Heart, MusicDoubleNote as Music, Sparks as Sparkles, NavArrowDown as ChevronDown, NavArrowUp as ChevronUp, Globe, Trophy, Eye as Rabbit, Eye as Bird, Fish, Group as Users, Flower as Flower2, Cutlery as UtensilsCrossed, Apple, GlassEmpty as Wine, MusicDoubleNote as Guitar, Star, MediaImage as Image } from "iconoir-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
 import { EnhancedNumberInput } from "../../../primitives/enhanced";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";

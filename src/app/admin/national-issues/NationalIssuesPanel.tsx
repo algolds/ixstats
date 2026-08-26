@@ -12,7 +12,6 @@ import {
   SwitchOn as ToggleRight,
   ControlSlider as Sliders,
 } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {

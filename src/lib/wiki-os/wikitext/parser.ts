@@ -11,7 +11,6 @@ import { parseWikitable } from "./table-parser";
 import { parseWikiList } from "./list-parser";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import type {
-  WikiDocument,
   WikiBlockNode,
   ParseResult,
   Diagnostic,
@@ -19,7 +18,6 @@ import type {
   WikiInfoboxBlock,
   WikiTemplateNode,
   WikiParserFunctionBlock,
-  WikiRawNode,
   DividerBlock,
 } from "./types";
 
@@ -198,10 +196,10 @@ function parseTextBlocks(
     }
 
     // 4. Lists: * or # or : or ;
-    if (/^[\*#\:\;]/.test(trimmed)) {
+    if (/^[*#:\;]/.test(trimmed)) {
       const listLines: string[] = [line];
       i++;
-      while (i < lines.length && /^[\*#\:\;]/.test(lines[i]!.trim())) {
+      while (i < lines.length && /^[*#:\;]/.test(lines[i]!.trim())) {
         listLines.push(lines[i]!);
         i++;
       }
@@ -242,7 +240,7 @@ function parseTextBlocks(
       lines[i]!.trim() !== "" &&
       !/^={1,6}\s/.test(lines[i]!.trim()) &&
       !lines[i]!.trim().startsWith("{|") &&
-      !/^[\*#\:\;]/.test(lines[i]!.trim()) &&
+      !/^[*#:\;]/.test(lines[i]!.trim()) &&
       !/^----+$/.test(lines[i]!.trim()) &&
       !lines[i]!.trim().startsWith("<pre")
     ) {

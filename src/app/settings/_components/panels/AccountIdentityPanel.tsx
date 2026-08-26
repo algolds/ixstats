@@ -23,7 +23,6 @@ import {
   Globe,
   Settings,
   Plus,
-  FireFlame as Flame,
   Clock,
 } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
@@ -35,7 +34,6 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { Input } from "~/components/ui/input";
-import { Switch } from "~/components/ui/switch";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { soundEffects } from "~/lib/sound/cuelume";

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { WhiteFlag as Flag, Shield, MediaImage as ImageIcon, NavArrowDown as ChevronDown, Sparks as Sparkles, Upload, SystemRestart as Loader2 } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { WhiteFlag as Flag, Shield, MediaImage as ImageIcon, Sparks as Sparkles, Upload } from "iconoir-react";
 import { extractColorsFromImage, type ExtractedColors } from "~/lib/media";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { useNotify } from "~/hooks/useNotify";

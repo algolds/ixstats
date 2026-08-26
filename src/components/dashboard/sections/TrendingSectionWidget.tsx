@@ -4,10 +4,8 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   FireFlame as Flame,
-  OpenNewWindow as ExternalLink,
   RssFeed as Rss,
   Journal as Newspaper,
-  ChatBubble as MessageCircle,
   OpenBook as BookOpen,
   Group as Users,
   Eye,

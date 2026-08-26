@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
 

@@ -4,8 +4,7 @@ import React, { useState, useMemo } from "react";
 import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Group as Users, Heart, GraduationCap, City as Building2, UserBadgeCheck as UserCheck, InfoCircle as Info, Lullaby as Baby, MapPin } from "iconoir-react";
+import { Group as Users, Heart, GraduationCap, City as Building2, UserBadgeCheck as UserCheck, Lullaby as Baby, MapPin } from "iconoir-react";
 import { MetricCard } from "../../../primitives/enhanced";
 import type {
   EconomyBuilderState,

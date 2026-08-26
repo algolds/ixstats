@@ -7,12 +7,10 @@ import {
   Heart,
   Trophy,
   Calendar,
-  Pin as MapPin,
   Shield,
   OpenNewWindow as ExternalLink,
   Spark as Sparkles,
   Component as Layers,
-  Globe,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMetricTile } from "~/components/profile/FacetMetricTile";

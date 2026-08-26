@@ -2,7 +2,6 @@
 
 import { SystemRestart as Loader2, Coins, Label as Ticket, Dollar as BadgeDollarSign, StatUp as TrendingUp } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 

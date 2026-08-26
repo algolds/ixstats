@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
@@ -25,7 +25,7 @@ import {
 } from "~/components/ui/table";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
-import { ControlSlider as SlidersHorizontal, Plus, Trash as Trash2, Undo as RotateCcw, WarningTriangle as AlertTriangle } from "iconoir-react";
+import { ControlSlider as SlidersHorizontal, Plus, Trash as Trash2, Undo as RotateCcw } from "iconoir-react";
 
 interface ThresholdForm {
   id: string | undefined;

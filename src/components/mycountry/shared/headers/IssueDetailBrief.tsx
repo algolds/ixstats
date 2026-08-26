@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { StatUp as TrendingUp, Bank as Landmark, Group as Users, Shield, Globe, Building, Leaf, Clock, FireFlame as Flame, WarningTriangle as AlertTriangle, CheckCircle, ArrowUpRight, KeyCommand as Command, ControlSlider as Sliders, Xmark as X, Calendar, CalendarRotate as CalendarClock } from "iconoir-react";
+import { StatUp as TrendingUp, Bank as Landmark, Group as Users, Shield, Globe, Building, Leaf, Clock, FireFlame as Flame, WarningTriangle as AlertTriangle, CheckCircle, ArrowUpRight, KeyCommand as Command, ControlSlider as Sliders, Xmark as X, CalendarRotate as CalendarClock } from "iconoir-react";
 import { motion } from "motion/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";

@@ -8,7 +8,6 @@ import {
   NavArrowUp as ChevronUp,
   NavArrowDown as ChevronDown,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 interface StickyTocProps {

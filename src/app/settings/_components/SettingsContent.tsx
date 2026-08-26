@@ -14,7 +14,7 @@ import { SettingsSidebarNav } from "./SettingsSidebarNav";
 import { SettingsSkeleton } from "./SettingsSkeleton";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { Backlight } from "~/components/ui/backlight";
-import { SETTINGS_SECTIONS, type SettingSectionId } from "../_lib/sections";
+import { type SettingSectionId } from "../_lib/sections";
 
 export { SettingsSkeleton };
 
@@ -220,7 +220,7 @@ export function SettingsContent() {
                 {activeSection === "country" && (
                   country?.newStats || userProfile?.country ? (
                     <CountryNationPanel
-                      country={country?.newStats ?? userProfile?.country!}
+                      country={country?.newStats ?? userProfile?.country}
                       membershipTier={userProfile?.membershipTier}
                       roleDisplayName={userProfile?.role?.displayName || userProfile?.role?.name}
                     />

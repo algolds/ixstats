@@ -78,7 +78,7 @@ export const achievementsCountryRouter = createTRPCRouter({
           points: 10,
           progress: 100,
         }));
-      } catch (error) {
+      } catch  {
         return [];
       }
     }),

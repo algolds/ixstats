@@ -10,8 +10,8 @@
  * Height: 32px, matches Photoshop's slim context bar.
  */
 
-import React, { memo, useState } from "react";
-import { Crown, Trash as Trash2, Copy, MapPin, Hexagon, Bank as Landmark, Type, Navigator as Route, Bookmark as BookMarked, Check, Undo as Undo2, Navigator as Navigation, ArrowSeparate as ArrowLeftRight, Magnet, Eye, Archery as Crosshair, Cut as Scissors, GitMerge, ControlSlider as Sliders, Sparks as Sparkles, HandBrake as Hand, SelectWindow as LassoSelect, Ruler, ColorPicker as PaintBucket, ColorPicker as Pipette, MagicWand as Wand2 } from "iconoir-react";
+import React, { memo } from "react";
+import { Crown, Trash as Trash2, Copy, MapPin, Bank as Landmark, Type, Bookmark as BookMarked, Check, Undo as Undo2, ArrowSeparate as ArrowLeftRight, Eye, Cut as Scissors, GitMerge, ControlSlider as Sliders, Sparks as Sparkles, HandBrake as Hand, SelectWindow as LassoSelect, ColorPicker as PaintBucket, ColorPicker as Pipette } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
@@ -26,7 +26,6 @@ import {
 } from "~/components/ui/color-picker";
 
 import {
-  CityScatterPopover,
   TransformGeometryPopover,
   CityTransformationsPopover,
 } from "./toolbars/options/ScatterToolOptions";

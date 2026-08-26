@@ -3,14 +3,12 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { OpenBook as BookOpen, Crown, Search, Eye, Bookmark, OpenNewWindow as ExternalLink, ClockRotateRight as History, User, Clock, ArrowUpRight, Filter, CheckCircle, PagePlus as FilePlus, EditPencil as Edit3 } from "iconoir-react";
+import { OpenBook as BookOpen, Search, Eye, Bookmark, ClockRotateRight as History, User, Clock, ArrowUpRight, CheckCircle, PagePlus as FilePlus, EditPencil as Edit3 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 function formatTimestamp(date: Date | string): string {

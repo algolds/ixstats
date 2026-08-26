@@ -3,10 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ShieldCheck,
   UserXmark,
   EyeClosed as EyeOff,
-  Eye,
   Download,
   Lock,
   Key as KeyIcon,

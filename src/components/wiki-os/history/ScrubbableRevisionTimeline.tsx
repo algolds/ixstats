@@ -3,11 +3,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { Clock, User, Restart as RotateLeft, Undo, ViewColumns2 as Columns2, AlignLeft, Check, WarningTriangle as AlertTriangle } from "iconoir-react";
+import { Clock, User, Restart as RotateLeft, Undo, ViewColumns2 as Columns2, AlignLeft, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 
 interface RevisionItem {
   id: string;

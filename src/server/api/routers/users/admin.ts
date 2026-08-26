@@ -193,7 +193,7 @@ export const usersAdminRouter = createTRPCRouter({
     } catch (error) {
       console.error("Error setting up database:", error);
       throw new Error(
-        `Failed to setup database: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to setup database: ${error instanceof Error ? error.message : String(error)}`, { cause: error }
       );
     }
   }),
@@ -300,7 +300,7 @@ export const usersAdminRouter = createTRPCRouter({
         }
       } catch (error) {
         console.error("Error adding admin favorite:", error);
-        throw new Error("Failed to add favorite");
+        throw new Error("Failed to add favorite", { cause: error });
       }
     }),
 
@@ -330,7 +330,7 @@ export const usersAdminRouter = createTRPCRouter({
         return { removed: true };
       } catch (error) {
         console.error("Error removing admin favorite:", error);
-        throw new Error("Failed to remove favorite");
+        throw new Error("Failed to remove favorite", { cause: error });
       }
     }),
 
@@ -363,7 +363,7 @@ export const usersAdminRouter = createTRPCRouter({
         return { reordered: true };
       } catch (error) {
         console.error("Error reordering admin favorites:", error);
-        throw new Error("Failed to reorder favorites");
+        throw new Error("Failed to reorder favorites", { cause: error });
       }
     }),
 

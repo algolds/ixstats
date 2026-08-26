@@ -1,8 +1,6 @@
 import React from "react";
 import {
-  EditPencil as PenTool,
   ShieldAlert,
-  NavArrowRight as ChevronRight,
   Xmark as X,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";

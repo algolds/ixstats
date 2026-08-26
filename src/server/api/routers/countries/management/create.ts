@@ -376,7 +376,7 @@ export const managementCreateProcedures = {
       } catch (error) {
         console.error("[createCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error }
         );
       }
     }),

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import {
@@ -14,11 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
 import {
   NOTIFICATION_CATEGORIES,
-  NOTIFICATION_SOURCES,
   NOTIFICATION_TRIGGER_TYPES,
   CATEGORY_ORDER,
 } from "~/lib/notifications/events-registry";

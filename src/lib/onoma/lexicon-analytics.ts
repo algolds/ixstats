@@ -142,7 +142,7 @@ export function auditLexiconHealth(words: string[]): LexiconHealthReport {
 
   // 3. Characters / Symbols check
   // Allow letters, space, hyphen, and single quotes (standard in names like O'Connor or Al-Farabi)
-  const allowedCharRegex = /^[a-zA-Z\s'\-]+$/;
+  const allowedCharRegex = /^[a-zA-Z\s'-]+$/;
   let invalidCharCount = 0;
   const invalidSamples: string[] = [];
 

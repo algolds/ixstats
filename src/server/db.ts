@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 // Direct leaf imports avoid loading the system barrel during database initialization

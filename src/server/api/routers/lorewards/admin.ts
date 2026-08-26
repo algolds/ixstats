@@ -219,7 +219,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
         }
         return await res.json();
       } catch (err: any) {
-        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`);
+        throw new Error(`Failed to sync blacklist with Discord bot: ${err.message}`, { cause: err });
       }
     }),
 
@@ -279,7 +279,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
         }
         return { success: true };
       } catch (err: any) {
-        throw new Error(`Failed to sync override with Discord bot: ${err.message}`);
+        throw new Error(`Failed to sync override with Discord bot: ${err.message}`, { cause: err });
       }
     }),
 });

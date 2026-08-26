@@ -1,7 +1,7 @@
 "use client";
 
 import { CreateOrganization } from "@clerk/nextjs";
-import { Globe, Crown } from "iconoir-react";
+import { Globe } from "iconoir-react";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
 

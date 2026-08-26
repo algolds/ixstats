@@ -159,7 +159,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error linking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to link country");
+        throw new Error(error instanceof Error ? error.message : "Failed to link country", { cause: error });
       }
     }),
 
@@ -403,7 +403,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error creating country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to create country");
+        throw new Error(error instanceof Error ? error.message : "Failed to create country", { cause: error });
       }
     }),
 
@@ -438,7 +438,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error unlinking country:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to unlink country");
+        throw new Error(error instanceof Error ? error.message : "Failed to unlink country", { cause: error });
       }
     }),
 
@@ -474,7 +474,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         return country;
       } catch (error) {
         console.error("Error fetching linked country:", error);
-        throw new Error("Failed to fetch linked country");
+        throw new Error("Failed to fetch linked country", { cause: error });
       }
     }),
 
@@ -599,7 +599,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Error updating membership tier:", error);
-        throw new Error("Failed to update membership tier");
+        throw new Error("Failed to update membership tier", { cause: error });
       }
     }),
 

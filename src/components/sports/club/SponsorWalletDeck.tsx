@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
-import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, Check, HelpCircle } from "iconoir-react";
+import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, HelpCircle } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 

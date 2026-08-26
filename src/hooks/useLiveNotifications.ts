@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useVisibleRefetch } from "./useVisibleRefetch";

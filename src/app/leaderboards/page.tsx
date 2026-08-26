@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { LeaderboardTab } from "~/components/achievements/tabs/LeaderboardTab";
-import { Trophy, Globe as Globe2 } from "iconoir-react";
+import { Trophy } from "iconoir-react";
 import {
   CutoutCard,
   CutoutCardContent,

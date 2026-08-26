@@ -1,12 +1,10 @@
 "use client";
 
-import React, { memo, useCallback, Suspense } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Globe, WhiteFlag as Flag, StatsReport as BarChart3, InfoCircle as Info, City as Building2, Settings, Crown, Coins, Eye, HelpCircle, CheckCircle } from "iconoir-react";
+import React, { memo, useCallback } from "react";
+import { motion } from "motion/react";
+import { Globe, WhiteFlag as Flag, StatsReport as BarChart3, City as Building2, Settings, Crown, Eye, HelpCircle, CheckCircle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -328,13 +326,9 @@ function HelpModal({ text, title }: { text: string; title: string }) {
 import { FoundationStep } from "../steps/FoundationStep";
 import { GovernmentStep } from "../steps/GovernmentStep";
 import { NationalIdentitySection } from "../NationalIdentitySection";
-import { CoreIndicatorsSection } from "../../../sections/CoreIndicatorsSection";
 import { AtomicComponentSelector } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
-import { GovernmentBuilder } from "~/components/mycountry/domains/government/GovernmentBuilder";
 import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
-import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import { EconomyBuilderPage } from "../index"; // Eagerly loaded from index
-import { BuilderLoadingFallback } from "../../LoadingFallback";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
 

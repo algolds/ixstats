@@ -3,7 +3,7 @@
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Globe, EditPencil as Pencil, Copy, Trash as Trash2, WarningTriangle as AlertTriangle } from "iconoir-react";
+import { Globe, EditPencil as Pencil, Copy, Trash as Trash2 } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,

@@ -50,7 +50,7 @@ class InMemoryCache {
   deleteByPattern(pattern: string): void {
     const isWildcard = pattern.includes("*");
     if (isWildcard) {
-      const regexStr = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+      const regexStr = pattern.replace(/[-/\\^$*+?.()|[\]{}]/g, (ch) =>
         ch === "*" ? ".*" : "\\" + ch
       );
       const regex = new RegExp(`^${regexStr}$`);

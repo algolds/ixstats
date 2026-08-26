@@ -670,7 +670,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
   getTemplateData: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
-      let templateName = input.title.replace(/^Template:/i, "").trim();
+      const templateName = input.title.replace(/^Template:/i, "").trim();
       const cleanKey = templateName.toLowerCase();
 
       // Check alias mapping first

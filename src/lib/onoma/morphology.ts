@@ -2,7 +2,6 @@
 // Onoma Lab — Linguistics Engine Morphology Simulator
 
 import { MarkovChain } from "./markov-chain";
-import { isVowel } from "./phonetics-shared";
 
 export type GrammaticalGender = "masculine" | "feminine" | "neuter" | "common";
 

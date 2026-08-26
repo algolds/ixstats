@@ -20,7 +20,6 @@ import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
-import { useEditorDockLayout } from "./useEditorDockLayout";
 import { useEditorModalState } from "./useEditorModalState";
 
 interface UseMapEditorOverlayStateProps {

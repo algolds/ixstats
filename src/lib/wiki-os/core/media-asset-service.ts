@@ -239,7 +239,7 @@ export class MediaAssetService {
     }
 
     // 3. Match <img src="/images/..." data-file="Name.ext">
-    const htmlImgRegex = /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'\/?#]+))|data-file=["']([^"']+)["'])/gi;
+    const htmlImgRegex = /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'/?#]+))|data-file=["']([^"']+)["'])/gi;
     while ((match = htmlImgRegex.exec(content)) !== null) {
       const raw = match[1] || match[2];
       if (raw) {

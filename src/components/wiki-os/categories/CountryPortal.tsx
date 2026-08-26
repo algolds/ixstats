@@ -4,7 +4,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { Badge } from "~/components/ui/badge";
 import {
   OpenNewWindow as ExternalLink,
   GraphUp as TrendingUp,

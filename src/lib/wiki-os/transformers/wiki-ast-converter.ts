@@ -13,7 +13,6 @@ import type {
   WikiDocument,
   WikiBlockNode,
   WikiInlineNode,
-  WikiParagraphBlock,
   WikiHeadingBlock,
   WikiInfoboxBlock,
   WikiTemplateNode,
@@ -23,9 +22,7 @@ import type {
   ListBlock,
   QuoteBlock,
   CodeBlock,
-  DividerBlock,
   MediaBlock,
-  WikiMapEmbedBlock,
 } from "../core/wiki-ast";
 
 export interface WikitextParseResult extends WikiDocument {

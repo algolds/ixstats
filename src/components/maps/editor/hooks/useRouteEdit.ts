@@ -5,7 +5,6 @@ import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,
   updateSnapGuide,
-  haversineDistance,
   getFeatureCoords,
   EMPTY_FC,
 } from "../utils/map-helpers";

@@ -75,7 +75,7 @@ export class PackOpeningService {
 
       const vibrationPattern = HAPTIC_PATTERNS[pattern];
       navigator.vibrate(vibrationPattern);
-    } catch (error) {
+    } catch  {
       // Silently fail - haptic is optional
     }
   }

@@ -17,7 +17,6 @@
  */
 
 import { Redis } from "ioredis";
-import { initTRPC } from "@trpc/server";
 import { createHash } from "crypto";
 import type { createTRPCContext } from "~/server/api/trpc";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
@@ -51,7 +50,7 @@ function getRedisClient(): Redis | null {
       });
 
       return redis;
-    } catch (err) {
+    } catch  {
       console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
       return null;
     }

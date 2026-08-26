@@ -16,7 +16,6 @@ import {
   Folder as FolderTree,
   Page as FileText,
   ArrowRight,
-  Sparks as Sparkles,
 } from "iconoir-react";
 
 export default function WhatLinksHereHubPage() {

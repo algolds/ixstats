@@ -87,7 +87,7 @@ export function SyntaxSentenceBuilder({
     const numEnd = isPlural ? pluralSuffix : "";
     const art = isDefinite ? defArticle : indefArticle;
 
-    let adjConlang = adjEnglish ? dictionary[adjEnglish] || adjEnglish : "";
+    const adjConlang = adjEnglish ? dictionary[adjEnglish] || adjEnglish : "";
 
     let nounPhrase = `${baseConlang}${numEnd}${caseEnd}`;
     if (adjConlang) {

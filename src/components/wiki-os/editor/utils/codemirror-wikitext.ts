@@ -59,7 +59,7 @@ export const wikitextHighlightPlugin = ViewPlugin.fromClass(
             matches.push({ from: lineFrom, to: lineTo, deco: headingDeco });
           } else {
             // Lists
-            const listMatch = /^([\*#\:\;]+)/.exec(lineText);
+            const listMatch = /^([*#:\;]+)/.exec(lineText);
             if (listMatch) {
               matches.push({
                 from: lineFrom,
@@ -107,7 +107,7 @@ export const wikitextHighlightPlugin = ViewPlugin.fromClass(
           }
 
           // External Links: [URL Title] or [URL]
-          const extLinkRegex = /\[([^\[\]\n]+?)\]/g;
+          const extLinkRegex = /\[([^[\]\n]+?)\]/g;
           while ((m = extLinkRegex.exec(lineText)) !== null) {
             const start = m.index;
             const end = m.index + m[0].length;

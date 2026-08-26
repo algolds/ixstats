@@ -2,11 +2,9 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Page,
   Plus,
   Search,
   Clock,
-  User,
   Trash,
   EditPencil,
   Eye,

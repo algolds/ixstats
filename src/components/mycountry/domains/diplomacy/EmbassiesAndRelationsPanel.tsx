@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { City as Building2, Globe, Group as Users, Community as Handshake, Page as FileText, Palette, Plus, NavArrowDown as ChevronDown, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
+import { City as Building2, Group as Users, Community as Handshake, Page as FileText, Palette, Plus, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 
@@ -17,7 +15,6 @@ import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
 
 // Sub-components (embassy network)
 import {
-  NetworkOverviewCard,
   EmbassyGrid,
   EmptyState,
 } from "./embassy-network";

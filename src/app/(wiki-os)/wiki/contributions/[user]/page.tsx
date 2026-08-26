@@ -16,7 +16,6 @@ import {
   Folder as FolderTree,
   Clock,
   GitCommit,
-  ArrowRight,
 } from "iconoir-react";
 
 export default function ContributionsPage() {

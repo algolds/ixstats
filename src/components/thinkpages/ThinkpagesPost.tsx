@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { withBasePath } from "~/lib/base-path";
 import { HeroPostView } from "./post/HeroPostView";
 import { StandardPostView } from "./post/StandardPostView";
 import { useThinkpagesPost } from "./post/useThinkpagesPost";
-import { LiveDataCard } from "./LiveDataCard";
 
 import { proxyDiscordUrl } from "./post/ThinkpagesPostUtils";
 

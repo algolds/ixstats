@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Refresh as RefreshCw, StatsReport as BarChart3, StatUp as TrendingUp, Globe, InfoCircle as Info, Xmark as X } from "iconoir-react";
+import { Refresh as RefreshCw, StatsReport as BarChart3, StatUp as TrendingUp, Globe, InfoCircle as Info } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { type TimeRange, type ChartType, TIME_RANGE_OPTIONS, CHART_TYPE_OPTIONS } from "./types";
 import { type MetricThemeVariant, getThemeClasses } from "./MetricModalLayout";

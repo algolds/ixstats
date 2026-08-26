@@ -6,7 +6,6 @@ import { Shield, Group as Users, Archery as Target, Activity, HelpCircle, InfoCi
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,

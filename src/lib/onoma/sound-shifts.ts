@@ -99,8 +99,8 @@ export function applySingleRule(word: string, rule: SoundShiftRule): string {
     });
   }
 
-  let leftCtx = rawCtx.substring(0, underscoreIdx);
-  let rightCtx = rawCtx.substring(underscoreIdx + 1);
+  const leftCtx = rawCtx.substring(0, underscoreIdx);
+  const rightCtx = rawCtx.substring(underscoreIdx + 1);
 
   const expandLeft = (s: string) =>
     s

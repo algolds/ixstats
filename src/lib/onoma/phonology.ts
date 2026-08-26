@@ -6,7 +6,7 @@ import {
   getTemplateLinguisticProfile,
 } from "./template-phonetics";
 import { getNameOverride } from "./ipa-overrides";
-import type { IPAString, LinguisticProfile, ResolvedNamePhonetics } from "./types";
+import type { IPAString, ResolvedNamePhonetics } from "./types";
 
 // Standard English-like phonetic rules for fallback
 const DEFAULT_RULES: [string, string][] = [
@@ -465,7 +465,7 @@ export function translateToIPA(
   const words = name.split(/(\s+|-)/);
   const translatedWords = words.map((part) => {
     // If it's punctuation or spacing, leave it
-    if (/^[\s\-'\"]+$/.test(part)) return part;
+    if (/^[\s\-'"]+$/.test(part)) return part;
 
     const lowerWord = part.toLowerCase();
     let ipaWord = "";

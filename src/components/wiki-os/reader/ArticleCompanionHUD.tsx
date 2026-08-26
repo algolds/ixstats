@@ -18,7 +18,6 @@ import {
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { withBasePath } from "~/lib/base-path";
-import { StashButton } from "./StashButton";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
 
 interface ArticleCompanionHUDProps {

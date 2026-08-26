@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       if (!response.ok) {
         throw new Error(`Discord bot health check failed: ${response.status}`);
       }
-    } catch (healthError) {
+    } catch  {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");
       const currentState = {

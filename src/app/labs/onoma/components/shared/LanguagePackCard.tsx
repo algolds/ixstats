@@ -5,13 +5,11 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Star, GitFork, OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import {
   RiBookMarkedLine,
   RiGitForkLine,
   RiStarFill,
   RiTranslate2,
-  RiSoundModuleLine,
 } from "react-icons/ri";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

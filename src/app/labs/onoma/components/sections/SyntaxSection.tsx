@@ -4,7 +4,7 @@
 // Onoma Lab — Syntax & Sentence Builder Section
 
 import React, { useState, useEffect } from "react";
-import { ControlSlider as SlidersHorizontal, Trash as Trash2, Cpu, Page as FileText } from "iconoir-react";
+import { Trash as Trash2, Page as FileText } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

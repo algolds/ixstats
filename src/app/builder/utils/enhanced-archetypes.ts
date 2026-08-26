@@ -4,7 +4,6 @@ import {
   archetypeCategories,
   enhancedArchetypes as baseArchetypes,
   archetypeConfig,
-  getArchetypesByCategory as baseGetArchetypesByCategory,
   getSelectableArchetypes as baseGetSelectableArchetypes,
   validateArchetypeSelection,
 } from "~/lib/archetypes/catalog";

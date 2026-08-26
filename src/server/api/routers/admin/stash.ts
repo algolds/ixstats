@@ -17,7 +17,7 @@ export const adminStashRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Failed to get stash stats:", error);
-      throw new Error("Failed to retrieve stash statistics");
+      throw new Error("Failed to retrieve stash statistics", { cause: error });
     }
   }),
 

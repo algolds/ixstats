@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
@@ -15,9 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Globe,
   FloppyDisk as Save,
-  ChatBubble as MessageSquare,
   FireFlame as Flame,
-  StatUp as TrendingUp,
   RssFeed as Rss,
   Send,
 } from "iconoir-react";

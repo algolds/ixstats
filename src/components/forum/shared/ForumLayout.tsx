@@ -4,16 +4,15 @@
 
 "use client";
 
-import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
+import { type ReactNode, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HomeSimple as Home, FireFlame as Flame, Clock, Search, Bookmark, ChatBubble as MessageCircle, Bell, Reply, ShareAndroid as Share2, EditPencil as PenSquare } from "iconoir-react";
+import { HomeSimple as Home, FireFlame as Flame, Clock, Search, Bookmark, ChatBubble as MessageCircle, Reply, ShareAndroid as Share2, EditPencil as PenSquare } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
-import { api } from "~/trpc/react";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";
 
 // ---------------------------------------------------------------------------

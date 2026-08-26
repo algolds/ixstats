@@ -4,7 +4,7 @@
 
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { Medal, OpenBook as BookOpen } from "iconoir-react";
+import { Medal } from "iconoir-react";
 import { AwardsManagerSection } from "../wiki/components";
 
 export function AchievementsPanel() {

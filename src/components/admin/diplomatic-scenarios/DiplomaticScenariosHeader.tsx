@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -11,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ArrowLeft, Globe, Plus, Search } from "iconoir-react";
+import { Globe, Plus, Search } from "iconoir-react";
 import {
   SCENARIO_TYPES,
   RELATIONSHIP_LEVELS,

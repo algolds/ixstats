@@ -4,8 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "~/lib/utils";
-import { BUILDER_SECTION_THEMES, type BuilderSection } from "../lib/builder-theme";
-import { CutoutCard } from "~/components/ui/cutout-card";
+import { type BuilderSection } from "../lib/builder-theme";
 
 export interface TabDefinition {
   id: string;

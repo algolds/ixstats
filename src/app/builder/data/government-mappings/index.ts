@@ -1,5 +1,5 @@
 import { ComponentType } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
-import type { AtomicGovernmentMapping, AtomicIntegrationFeedback } from "./types";
+import type { AtomicGovernmentMapping } from "./types";
 import { power_distribution_mapping } from "./power-distribution";
 import { institutions_control_mapping } from "./institutions-control";
 import { economic_governance_mapping } from "./economic-governance";

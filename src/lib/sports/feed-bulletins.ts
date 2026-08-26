@@ -48,7 +48,7 @@ export function encodeSportsBulletin(data: SportsBulletinData, markdown: string)
 }
 
 function cleanNameAndId(rawName: string): { name: string; id?: string } {
-  let clean = rawName.replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "").trim();
+  const clean = rawName.replace(/🏆|🛡️|⭐|🏒|⚽|🏀|🏈|⚾|🏎️|🥊|\*\*/g, "").trim();
 
   const linkMatch = clean.match(/\[([^\]]+)\]\(([^)]+)\)/);
   if (linkMatch) {

@@ -2,7 +2,7 @@
  * Pure transforms, constants, and utilities for Economic Components admin
  */
 
-import { EconomicComponentType, ComponentType } from "~/lib/enums";
+import { EconomicComponentType } from "~/lib/enums";
 
 export const COMPONENT_CATEGORIES = {
   "Economic Model": [

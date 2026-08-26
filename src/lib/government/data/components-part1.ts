@@ -1,5 +1,5 @@
 import { ComponentType } from "@prisma/client";
-import { Settings, City as Building2, Group as Users, Shield, Crown, CheckSquare as Vote, Clock, StatUp as TrendingUp, Star, PharmacyCrossCircle as Cross, Suitcase as Briefcase, ScaleFrameEnlarge as Scale, WhiteFlag as Flag, Cpu, Eye, Dollar as DollarSign, Archery as Target, StatsReport as BarChart3, Heart, Leaf, Brain, ModernTv as Monitor, Globe, Network, Trophy as Award, CheckCircle, WarningTriangle as AlertTriangle, GraduationCap, OpenBook as BookOpen, Community as Handshake, Microscope, LightBulb as Lightbulb, ArrowSeparate as ArrowRightLeft, Copyright, Flash as Zap, Wifi, ChatBubble as MessageSquare, Refresh as RefreshCw } from "iconoir-react";
+import { Settings, City as Building2, Group as Users, Shield, Crown, CheckSquare as Vote, Clock, StatUp as TrendingUp, Star, PharmacyCrossCircle as Cross, Suitcase as Briefcase, ScaleFrameEnlarge as Scale, WhiteFlag as Flag, Cpu, Eye, Archery as Target, Heart, Brain, Globe, Trophy as Award, WarningTriangle as AlertTriangle, OpenBook as BookOpen, Microscope, ArrowSeparate as ArrowRightLeft, Flash as Zap, ChatBubble as MessageSquare } from "iconoir-react";
 import type { AtomicGovernmentComponent } from "./types";
 
 export const ATOMIC_COMPONENTS_PART_1: Partial<Record<ComponentType, AtomicGovernmentComponent>> = {

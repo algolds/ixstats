@@ -31,14 +31,12 @@ import {
   saveArticleHtmlShadow,
   getArticleHtmlShadow,
   getArticleAuthors,
-  type ArticleAuthorInfo,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 
-import { db } from "~/server/db";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -291,7 +289,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       let article: any;
       try {
         article = await getArticleHtml(resolvedTitle);
-      } catch (err) {
+      } catch  {
         // Direct shadow and bridge fallback
         const shadowRes = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
         if (shadowRes?.wikitext) {

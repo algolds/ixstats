@@ -98,7 +98,7 @@ export const achievementsProgressRouter = createTRPCRouter({
           if (m.rewardsJson) {
             try {
               rewards = JSON.parse(m.rewardsJson);
-            } catch (e) {
+            } catch  {
               // ignore
             }
           }

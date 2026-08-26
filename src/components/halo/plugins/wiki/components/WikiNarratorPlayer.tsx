@@ -14,7 +14,6 @@ import {
 import { Transport } from "~/components/audio/elements/transport";
 import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
-import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";

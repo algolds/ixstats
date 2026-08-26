@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ModernTv as Mountain, SeaWaves as Waves, Wind, Compass, Xmark as X } from "iconoir-react";
+import { ModernTv as Mountain, Wind, Compass, Xmark as X } from "iconoir-react";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 
 interface HypsometricElevationHUDProps {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Xmark as X, ArrowRight, Spark } from "iconoir-react";
-import { APP_VERSION, BUILD_VERSION, CHANNEL } from "~/lib/buildVersion";
+import { APP_VERSION, BUILD_VERSION } from "~/lib/buildVersion";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 const STORAGE_KEY = "ixstats:version-seen";

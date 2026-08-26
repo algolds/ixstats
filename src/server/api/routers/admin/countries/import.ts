@@ -176,7 +176,7 @@ export const adminCountriesImportRouter = createTRPCRouter({
         return analysis;
       } catch (error) {
         console.error("Failed to analyze import:", error);
-        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file");
+        throw new Error(error instanceof Error ? error.message : "Failed to analyze import file", { cause: error });
       }
     }),
 

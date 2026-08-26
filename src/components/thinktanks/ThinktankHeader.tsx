@@ -11,16 +11,13 @@ import {
   Check,
   Plus,
   LogOut,
-  Sparks,
   ChatBubble,
   RssFeed,
-  Page,
   Group,
   SidebarCollapse,
   SidebarExpand,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";

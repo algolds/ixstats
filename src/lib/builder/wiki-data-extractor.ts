@@ -58,7 +58,7 @@ export interface ExtractedBuilderData {
  * Extracts numeric values with multipliers (e.g., "1.2 trillion", "500 million")
  */
 export function parseNumericValue(text: string): number | undefined {
-  const match = text.match(/([\d,\.]+)\s*(trillion|billion|million|thousand|k|m|b|t)?/i);
+  const match = text.match(/([\d,.]+)\s*(trillion|billion|million|thousand|k|m|b|t)?/i);
   if (!match) return undefined;
 
   const numStr = match[1]?.replace(/,/g, "") || "0";
@@ -92,7 +92,7 @@ export function extractDataFromWikiSections(
 
       // GDP Nominal
       const gdpMatch = content.match(
-        /(?:GDP|gross domestic product)\s*(?:nominal)?\s*(?:of [^\$€£\d]+?)?\s*(?:is|of|stood at|reached|was)?\s*(?:around|approximately)?\s*(?:[\$€£])?\s*([\d,\.]+\s*(?:trillion|billion|million)?)/i
+        /(?:GDP|gross domestic product)\s*(?:nominal)?\s*(?:of [^$€£\d]+?)?\s*(?:is|of|stood at|reached|was)?\s*(?:around|approximately)?\s*(?:[$€£])?\s*([\d,.]+\s*(?:trillion|billion|million)?)/i
       );
       if (gdpMatch && gdpMatch[1]) {
         const val = parseNumericValue(gdpMatch[1]);
@@ -104,7 +104,7 @@ export function extractDataFromWikiSections(
 
       // GDP Per Capita
       const perCapitaMatch = content.match(
-        /per capita\s*(?:is|of|stood at)?\s*(?:[\$€£])?\s*([\d,\.]+)/i
+        /per capita\s*(?:is|of|stood at)?\s*(?:[$€£])?\s*([\d,.]+)/i
       );
       if (perCapitaMatch && perCapitaMatch[1]) {
         const val = parseNumericValue(perCapitaMatch[1]);
@@ -116,7 +116,7 @@ export function extractDataFromWikiSections(
 
       // Inflation
       const inflationMatch = content.match(
-        /inflation\s*(?:rate)?\s*(?:is|of|stood at)?\s*([\d,\.]+)\s*%/i
+        /inflation\s*(?:rate)?\s*(?:is|of|stood at)?\s*([\d,.]+)\s*%/i
       );
       if (inflationMatch && inflationMatch[1]) {
         const val = parseFloat(inflationMatch[1]);
@@ -128,7 +128,7 @@ export function extractDataFromWikiSections(
 
       // Unemployment
       const unemploymentMatch = content.match(
-        /unemployment\s*(?:rate)?\s*(?:is|of|stood at)?\s*([\d,\.]+)\s*%/i
+        /unemployment\s*(?:rate)?\s*(?:is|of|stood at)?\s*([\d,.]+)\s*%/i
       );
       if (unemploymentMatch && unemploymentMatch[1]) {
         const val = parseFloat(unemploymentMatch[1]);
@@ -140,7 +140,7 @@ export function extractDataFromWikiSections(
 
       // Industries
       const industriesMatch = content.match(
-        /(?:major|primary|key) industries (?:include|are) ([^\.]+)\./i
+        /(?:major|primary|key) industries (?:include|are) ([^.]+)\./i
       );
       if (industriesMatch && industriesMatch[1]) {
         economy.majorIndustries = industriesMatch[1]
@@ -161,7 +161,7 @@ export function extractDataFromWikiSections(
 
       // Central bank
       const centralBankMatch = content.match(
-        /(?:central bank|reserve bank|monetary authority) (?:is |called |known as )?(?:the )?([A-Z][a-zA-Z\s]+?Bank[^,\.]*|[A-Z][a-zA-Z\s]+?Reserve[^,\.]*)/i
+        /(?:central bank|reserve bank|monetary authority) (?:is |called |known as )?(?:the )?([A-Z][a-zA-Z\s]+?Bank[^,.]*|[A-Z][a-zA-Z\s]+?Reserve[^,.]*)/i
       );
       if (centralBankMatch && centralBankMatch[1]) {
         economy.centralBank = centralBankMatch[1].trim();
@@ -183,7 +183,7 @@ export function extractDataFromWikiSections(
       if (economy.hasFreeTradeZones) conf += 5;
 
       // Major exports
-      const exportsMatch = content.match(/(?:major|primary|key) exports (?:include|are) ([^\.]+)/i);
+      const exportsMatch = content.match(/(?:major|primary|key) exports (?:include|are) ([^.]+)/i);
       if (exportsMatch && exportsMatch[1]) {
         economy.majorExports = exportsMatch[1]
           .split(/,|\band\b/)
@@ -193,7 +193,7 @@ export function extractDataFromWikiSections(
       }
 
       // Major imports
-      const importsMatch = content.match(/(?:major|primary|key) imports (?:include|are) ([^\.]+)/i);
+      const importsMatch = content.match(/(?:major|primary|key) imports (?:include|are) ([^.]+)/i);
       if (importsMatch && importsMatch[1]) {
         economy.majorImports = importsMatch[1]
           .split(/,|\band\b/)
@@ -204,7 +204,7 @@ export function extractDataFromWikiSections(
 
       // Trade partners
       const tradeMatch = content.match(
-        /(?:major|primary|key) trade partners (?:include|are) ([^\.]+)/i
+        /(?:major|primary|key) trade partners (?:include|are) ([^.]+)/i
       );
       if (tradeMatch && tradeMatch[1]) {
         economy.tradePartners = tradeMatch[1]
@@ -249,7 +249,7 @@ export function extractDataFromWikiSections(
 
       // Government Type
       const typeMatch = content.match(
-        /is a (federal republic|constitutional monarchy|unitary republic|dictatorship|theocracy|absolute monarchy)[,\.]/i
+        /is a (federal republic|constitutional monarchy|unitary republic|dictatorship|theocracy|absolute monarchy)[,.]/i
       );
       if (typeMatch && typeMatch[1]) {
         gov.governmentType = typeMatch[1].toLowerCase();
@@ -258,7 +258,7 @@ export function extractDataFromWikiSections(
 
       // Legislature
       const legMatch = content.match(
-        /(?:legislature|parliament) is (?:the|called the)? ([A-Z][a-zA-Z\s]+?)(?:[,\.]| and)/
+        /(?:legislature|parliament) is (?:the|called the)? ([A-Z][a-zA-Z\s]+?)(?:[,.]| and)/
       );
       if (legMatch && legMatch[1]) {
         gov.legislature = legMatch[1].trim();
@@ -297,7 +297,7 @@ export function extractDataFromWikiSections(
 
       // Judicial system
       const judicialMatch = content.match(
-        /(?:has |features |maintains )?(an? )?(independent judiciary|supreme court|constitutional court|federal court system|judicial branch)[,\.]?/i
+        /(?:has |features |maintains )?(an? )?(independent judiciary|supreme court|constitutional court|federal court system|judicial branch)[,.]?/i
       );
       if (judicialMatch && judicialMatch[2]) {
         gov.judicialSystem = judicialMatch[2].toLowerCase();
@@ -306,7 +306,7 @@ export function extractDataFromWikiSections(
 
       // Electoral system
       const electoralMatch = content.match(
-        /(?:uses |employs |operates under )?(proportional representation|first-past-the-post|single transferable vote|mixed member proportional|ranked choice voting|two-round system)[,\.]?/i
+        /(?:uses |employs |operates under )?(proportional representation|first-past-the-post|single transferable vote|mixed member proportional|ranked choice voting|two-round system)[,.]?/i
       );
       if (electoralMatch && electoralMatch[1]) {
         gov.electoralSystem = electoralMatch[1].toLowerCase();
@@ -322,7 +322,7 @@ export function extractDataFromWikiSections(
 
       // Political parties
       const partiesMatch = content.match(
-        /(?:political parties|major parties|leading parties) (?:include|are) ([^\.]+)/i
+        /(?:political parties|major parties|leading parties) (?:include|are) ([^.]+)/i
       );
       if (partiesMatch && partiesMatch[1]) {
         gov.politicalParties = partiesMatch[1]
@@ -363,7 +363,7 @@ export function extractDataFromWikiSections(
       const demo: NonNullable<ExtractedBuilderData["demographics"]> = { confidence: 0 };
 
       const popMatch = content.match(
-        /population (?:of|is|was|estimated at) ([\d,\.]+\s*(?:million|billion|thousand)?)/i
+        /population (?:of|is|was|estimated at) ([\d,.]+\s*(?:million|billion|thousand)?)/i
       );
       if (popMatch && popMatch[1]) {
         const val = parseNumericValue(popMatch[1]);
@@ -373,7 +373,7 @@ export function extractDataFromWikiSections(
         }
       }
 
-      const lifeMatch = content.match(/life expectancy (?:is|of) ([\d,\.]+)/i);
+      const lifeMatch = content.match(/life expectancy (?:is|of) ([\d,.]+)/i);
       if (lifeMatch && lifeMatch[1]) {
         const val = parseFloat(lifeMatch[1]);
         if (!isNaN(val)) {
