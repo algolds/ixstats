@@ -20,7 +20,6 @@ import {
   addVertex,
   findNearestVertex,
   findNearestEdge,
-  getVertices,
   calculateArea,
   validateGeometry,
   distanceDeg,
@@ -260,6 +259,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     }));
   }, []);
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const updateGeometry = useCallback(
     (newGeom: Polygon | MultiPolygon, action: Parameters<typeof pushUndo>[1]) => {
       setState((s) => {

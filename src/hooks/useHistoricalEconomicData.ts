@@ -113,10 +113,13 @@ interface UseHistoricalEconomicDataReturn {
  * });
  */
 export function useHistoricalEconomicData({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
   countryName,
   historicalData,
+  // oxlint-disable-next-line eslint/no-unused-vars
   totalPopulation,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isEditable = false,
 }: UseHistoricalEconomicDataConfig): UseHistoricalEconomicDataReturn {
   // View state

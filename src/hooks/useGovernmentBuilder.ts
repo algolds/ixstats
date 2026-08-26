@@ -107,6 +107,7 @@ export function useGovernmentBuilder(
   options: UseGovernmentBuilderOptions = {}
 ): UseGovernmentBuilderReturn {
   const notify = useNotify();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { countryId, enableAutoSync = false, isReadOnly = false, onSave, onChange } = options;
 
   // ==================== LOCAL STATE ====================
@@ -147,6 +148,7 @@ export function useGovernmentBuilder(
   } = useGovernmentBuilderAutoSync(countryId, localBuilderState, {
     enabled: enableAutoSync && !!countryId,
     showConflictWarnings: true,
+    // oxlint-disable-next-line eslint/no-unused-vars
     onSyncSuccess: (result) => {
       notify.success("Government changes saved");
     },
@@ -377,6 +379,7 @@ export function useGovernmentBuilder(
   );
 
   const importTaxData = useCallback(
+    // oxlint-disable-next-line eslint/no-unused-vars
     (taxCategories: TaxCategoryInput[]) => {
       // Import tax categories as revenue sources
       // This is a placeholder - implement conversion logic as needed

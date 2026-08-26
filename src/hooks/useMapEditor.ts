@@ -5,7 +5,7 @@
  * Decomposed into modular sub-hooks under src/hooks/map-editor/ (Plan 175).
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { useMapHistory } from "./map-editor/useMapHistory";
 import { useMapEditorSync } from "./map-editor/useMapEditorSync";
@@ -106,6 +106,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   // ── Route Editor State ──
   const [routeWaypoints, setRouteWaypoints] = useState<[number, number][]>([]);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [routeDrawingHistory, setRouteDrawingHistory] = useState<[number, number][][]>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [editingRouteVertices, setEditingRouteVertices] = useState<[number, number][]>([]);
@@ -117,6 +118,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [showGaps, setShowGaps] = useState(false);
   const [gapFeatures, setGapFeatures] = useState<any>(null);
   const [showEmptyRegions, setShowEmptyRegions] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [emptyRegionsFeatures, setEmptyRegionsFeatures] = useState<any>(null);
 
   // ── Sub-Hooks ──

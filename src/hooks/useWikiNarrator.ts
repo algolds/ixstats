@@ -77,9 +77,11 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const notify = useNotify();
   const {
     articleTitle,
+    // oxlint-disable-next-line eslint/no-unused-vars
     tocEntries,
     setNarratorState,
     registerNarratorActions,
+    // oxlint-disable-next-line eslint/no-unused-vars
     activeSectionId,
     setActiveSectionId,
   } = useWikiContext() as any;
@@ -92,6 +94,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1.0);
   const [voice, setVoice] = useState("");
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [volume, setVolume] = useState(0.2);
 
   // Load persisted audio preferences (default volume ~20%)

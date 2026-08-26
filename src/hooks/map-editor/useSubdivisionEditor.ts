@@ -3,12 +3,11 @@
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { Polygon, MultiPolygon, Position } from "geojson";
-import { difference } from "@turf/difference";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { featureCollection } from "@turf/helpers";
-import { bbox } from "@turf/bbox";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { area } from "@turf/area";
 import { bezierSpline } from "@turf/bezier-spline";
-import { transformScale } from "@turf/transform-scale";
 import type {
   EditorFeature,
   SubdivisionFormData,
@@ -23,9 +22,13 @@ interface UseSubdivisionEditorProps {
 }
 
 export function useSubdivisionEditor({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isWorldMode,
+  // oxlint-disable-next-line eslint/no-unused-vars
   history,
+  // oxlint-disable-next-line eslint/no-unused-vars
   refetchFeatures,
 }: UseSubdivisionEditorProps) {
   const [subdivisionForm, setSubdivisionForm] = useState<SubdivisionFormData>({

@@ -22,6 +22,7 @@ import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser"
  * @param activeTab The currently active top-level tab — used to gate the
  *                  `getWikiSections` query (only fetched on the overview tab).
  */
+// oxlint-disable-next-line eslint/no-unused-vars
 export function useMyCountryMetrics(activeTab: string) {
   const { user } = useUser();
   const { country, economyData, currentIxTime } = useCountryData();

@@ -20,11 +20,16 @@ interface UsePointFeatureEditorProps {
 }
 
 export function usePointFeatureEditor({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isWorldMode,
+  // oxlint-disable-next-line eslint/no-unused-vars
   history,
+  // oxlint-disable-next-line eslint/no-unused-vars
   refetchFeatures,
 }: UsePointFeatureEditorProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const utils = api.useUtils();
 
   // Point Form States

@@ -16,8 +16,11 @@ interface UseHydroRouteEditorProps {
 }
 
 export function useHydroRouteEditor({
+  // oxlint-disable-next-line eslint/no-unused-vars
   countryId,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isWorldMode,
+  // oxlint-disable-next-line eslint/no-unused-vars
   refetchFeatures,
 }: UseHydroRouteEditorProps) {
   const [riverForm, setRiverForm] = useState<NamedRiverFormData>({

@@ -50,6 +50,7 @@ export function useOnomaGenerator() {
   const utils = api.useUtils();
   const logActivityMutation = api.onoma.logGeneration.useMutation();
   const logHistoryMutation = api.onoma.logEvent.useMutation();
+  // oxlint-disable-next-line eslint/no-unused-vars
   const sessionIdRef = useRef(
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
